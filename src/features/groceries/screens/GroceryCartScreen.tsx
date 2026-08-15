@@ -1,0 +1,954 @@
+import React, { useState, useMemo } from 'react';
+import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCartStore, CartItem, ReplacementPreference } from '../store/useCartStore';
+import { useShoppingModeStore } from '../store/useShoppingModeStore';
+import { ReplacementPicker } from '../components/grocery/ReplacementPicker';
+import { mockProducts } from '../data/mockProducts';
+import { Ionicons } from '@expo/vector-icons';
+import { AppColors, AppFonts } from '../theme/AppColors';
+import { MiniProductCard } from '../components/ui/MiniProductCard';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { useGroceryUiStore } from '../store/useGroceryUiStore';
+import { usePGowStore } from '@/store/usePGowStore';
+
+export function GroceryCartScreen() {
+  const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
+  const mode = useShoppingModeStore((s) => s.mode);
+  const popScreen = usePGowStore((s) => s.popScreen);
+  const pushScreen = usePGowStore((s) => s.pushScreen);
+  const owner = usePGowStore((s) => s.loggedInOwner);
+  const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
+  const setSelectedProductId = useGroceryUiStore((s) => s.setSelectedProductId);
+  const insets = useSafeAreaInsets();
+
+  const [editingReplacementId, setEditingReplacementId] = useState<string | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState(
+    (owner ?? ownerForGuest)?.address ?? 'Your PG address',
+  );
+
+  // Calculations
+  const subtotal = getCartTotal();
+  const { cgst, sgst, grandTotal } = getGSTDetails();
+  const cartItemCount = getItemCount();
+  const totalSavings = getTotalSavings();
+
+  // Alert confirmations
+  const handleClearCart = () => {
+    Alert.alert(
+      "Clear Cart",
+      "Are you sure you want to remove all items from your cart?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Clear All", style: "destructive", onPress: () => clearCart() }
+      ]
+    );
+  };
+
+  const handleRemoveItem = (itemId: string, itemName: string) => {
+    Alert.alert(
+      "Remove Item",
+      `Are you sure you want to remove ${itemName} from the cart?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: () => removeItem(itemId) }
+      ]
+    );
+  };
+
+  const handleUpdateAddress = () => {
+    Alert.prompt(
+      "Change Address",
+      "Enter your delivery address:",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Save", onPress: (text?: string) => text && setDeliveryAddress(text) }
+      ],
+      "plain-text",
+      deliveryAddress
+    );
+  };
+
+  const isChef = usePGowStore((s) => s.activeRole) === 'CHEF';
+  const submitChefGroceryRequest = usePGowStore((s) => s.submitChefGroceryRequest);
+
+  const handleCheckoutOrRequest = () => {
+    if (isChef) {
+      const itemsSummary = items.map((i) => `${i.quantity}x ${i.name}`).join(', ');
+      submitChefGroceryRequest(itemsSummary, cartItemCount, grandTotal);
+      clearCart();
+      Alert.alert('Request Sent', 'Your grocery list has been sent to the Manager for purchase.');
+      popScreen();
+      return;
+    }
+    pushScreen('GROCERY_CHECKOUT');
+  };
+
+  // Reusable add for recommendations
+  // Recommended products list (Section 14)
+  const recommendations = useMemo(() => mockProducts.slice(0, 6), []);
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
+
+      {/* 2. Cart Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => popScreen()} style={styles.backBtn} activeOpacity={0.7}>
+          <Ionicons name="close" size={20} color={AppColors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Your Cart ({cartItemCount})</Text>
+        {items.length > 0 ? (
+          <TouchableOpacity onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
+            <Ionicons name="trash-outline" size={16} color={AppColors.error} />
+            <Text style={styles.clearText}>Clear</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 48 }} />
+        )}
+      </View>
+
+      {items.length === 0 ? (
+        /* 18. Empty Cart State */
+        <View style={styles.emptyCart}>
+          <View style={styles.emptyIconWrapper}>
+            <Ionicons name="cart-outline" size={64} color={AppColors.primary} />
+          </View>
+          <Text style={styles.emptyTitle}>Your cart is empty</Text>
+          <Text style={styles.emptySubtitle}>
+            Add groceries for your PG kitchen or pick up essentials for your stay.
+          </Text>
+          <TouchableOpacity style={styles.shopBtn} onPress={() => popScreen()} activeOpacity={0.8}>
+            <Text style={styles.shopBtnText}>Start Shopping</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            {/* 3. Delivery Information */}
+            <TouchableOpacity style={styles.deliveryCard} onPress={handleUpdateAddress} activeOpacity={0.9}>
+              <View style={styles.deliveryLeft}>
+                <View style={styles.deliveryHeaderRow}>
+                  <Ionicons name="location-outline" size={16} color={AppColors.info} style={styles.locationIcon} />
+                  <Text style={styles.deliveryTitle}>Deliver to</Text>
+                </View>
+                <Text style={styles.deliveryAddress} numberOfLines={1}>
+                  {deliveryAddress} <Ionicons name="chevron-down" size={11} color={AppColors.textSecondary} />
+                </Text>
+              </View>
+              <View style={styles.deliveryRight}>
+                <Text style={styles.deliveryRightLabel}>Estimated Delivery</Text>
+                <Text style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* 4. Free Delivery Progress Box */}
+            <View style={styles.freeDeliveryCard}>
+              <Ionicons name="checkmark-circle" size={18} color={AppColors.primary} />
+              <Text style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
+            </View>
+
+            {/* 5. Cart Item Cards */}
+            <Text style={styles.sectionHeading}>Items in Cart</Text>
+            {items.map((item) => {
+              const isEditingReplacement = editingReplacementId === item.id;
+              const hasDiscount = item.originalPrice && item.originalPrice > item.price;
+              const itemSavings = hasDiscount ? (item.originalPrice! - item.price) * item.quantity : 0;
+              
+              // Calculate unit price if in owner mode (e.g. 10 kg -> ₹48/kg)
+              const perUnitRateText = mode === 'owner' ? getPerUnitPriceText(item.unit, item.price) : '';
+
+              return (
+                <View key={item.id} style={styles.cartCard}>
+                  <View style={styles.cartItemHeader}>
+                    {/* Left: Product Image */}
+                    <View style={styles.imageContainer}>
+                      <Image
+                        source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+                        style={styles.itemImage}
+                      />
+                    </View>
+
+                    {/* Middle: Product Info */}
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                      <Text style={styles.itemUnit}>{item.unit}</Text>
+                      
+                      {perUnitRateText ? (
+                        <Text style={styles.unitRateText}>{perUnitRateText}</Text>
+                      ) : null}
+
+                      <View style={styles.priceRow}>
+                        <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
+                        {item.originalPrice ? (
+                          <Text style={styles.strikePrice}>₹{item.originalPrice * item.quantity}</Text>
+                        ) : null}
+                      </View>
+
+                      {itemSavings > 0 ? (
+                        <Text style={styles.itemSavingsText}>Save ₹{itemSavings}</Text>
+                      ) : null}
+                    </View>
+
+                    {/* Right: Quantity Adjuster & Delete Action */}
+                    <View style={styles.actionsContainer}>
+                      <View style={styles.quantityControl}>
+                        <TouchableOpacity
+                          style={styles.qtyBtn}
+                          onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : handleRemoveItem(item.id, item.name)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="remove" size={14} color={AppColors.primary} />
+                        </TouchableOpacity>
+                        <Text style={styles.qtyText}>{item.quantity}</Text>
+                        <TouchableOpacity
+                          style={styles.qtyBtn}
+                          onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="add" size={14} color={AppColors.primary} />
+                        </TouchableOpacity>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.removeAction}
+                        onPress={() => handleRemoveItem(item.id, item.name)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="trash-outline" size={12} color={AppColors.error} />
+                        <Text style={styles.removeActionText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Replacement Picker option */}
+                  <TouchableOpacity
+                    style={styles.replacementToggle}
+                    onPress={() => setEditingReplacementId(isEditingReplacement ? null : item.id)}
+                    activeOpacity={0.8}
+                  >
+                    <ReplacementPicker value={item.replacement || 'best-match'} onChange={() => {}} compact />
+                    <Ionicons
+                      name={isEditingReplacement ? 'chevron-up' : 'chevron-down'}
+                      size={14}
+                      color={AppColors.primary}
+                    />
+                  </TouchableOpacity>
+
+                  {isEditingReplacement && (
+                    <View style={styles.replacementPickerWrapper}>
+                      <ReplacementPicker
+                        value={item.replacement || 'best-match'}
+                        onChange={(pref) => {
+                          setReplacement(item.id, pref);
+                          setEditingReplacementId(null);
+                        }}
+                      />
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+
+            {/* 13. Savings Summary banner card */}
+            {totalSavings > 0 && (
+              <View style={styles.savingsCard}>
+                <Text style={styles.savingsTagIcon}>🏷️</Text>
+                <View style={styles.savingsTextWrapper}>
+                  <Text style={styles.savingsCardTitle}>You save ₹{totalSavings} today!</Text>
+                  <Text style={styles.savingsCardSubtitle}>Great deal for your PG kitchen</Text>
+                </View>
+                <View style={styles.savingsBadge}>
+                  <Text style={styles.savingsBadgeText}>-₹{totalSavings}</Text>
+                </View>
+              </View>
+            )}
+
+            {/* 12. Bill Details Box */}
+            <View style={styles.billCard}>
+              <Text style={styles.billTitle}>Bill Details</Text>
+              
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Item Total</Text>
+                <Text style={styles.billValue}>₹{subtotal}</Text>
+              </View>
+
+              {totalSavings > 0 && (
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Discount</Text>
+                  <Text style={[styles.billValue, { color: AppColors.error }]}>-₹{totalSavings}</Text>
+                </View>
+              )}
+
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>CGST (2.5%)</Text>
+                <Text style={styles.billValue}>₹{cgst}</Text>
+              </View>
+
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>SGST (2.5%)</Text>
+                <Text style={styles.billValue}>₹{sgst}</Text>
+              </View>
+
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Delivery Fee</Text>
+                <Text style={[styles.billValue, { color: AppColors.primary }]}>FREE</Text>
+              </View>
+
+              <View style={[styles.billRow, styles.totalRow]}>
+                <Text style={styles.totalLabel}>To Pay</Text>
+                <Text style={styles.totalValue}>₹{grandTotal}</Text>
+              </View>
+            </View>
+
+            {/* 14. You May Also Need — shared MiniProductCard */}
+            <View style={styles.recSection}>
+              <SectionHeader
+                title="You May Also Need"
+                actionLabel="View All →"
+                onAction={() => pushScreen('GROCERY_CATEGORY')}
+              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.recScrollContent}
+              >
+                {recommendations.map((p) => (
+                  <MiniProductCard
+                    key={p.id}
+                    product={p}
+                    onPress={() => { setSelectedProductId(p.id); pushScreen('GROCERY_PRODUCT'); }}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* 15. Trust / Quality Reassurance strip */}
+            <View style={styles.reassuranceStrip}>
+              <View style={styles.reassuranceItem}>
+                <Ionicons name="checkmark-circle" size={14} color={AppColors.primary} />
+                <Text style={styles.reassuranceText}>Quality Checked</Text>
+              </View>
+              <View style={styles.reassuranceItem}>
+                <Ionicons name="checkmark-circle" size={14} color={AppColors.primary} />
+                <Text style={styles.reassuranceText}>Hygienically Packed</Text>
+              </View>
+              <View style={styles.reassuranceItem}>
+                <Ionicons name="checkmark-circle" size={14} color={AppColors.primary} />
+                <Text style={styles.reassuranceText}>Easy Replacement</Text>
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* 16 & 17. Sticky Checkout Bar */}
+          <View style={[styles.stickyCheckoutBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <View style={styles.checkoutBarLeft}>
+              <Text style={styles.checkoutPrice}>₹{grandTotal}</Text>
+              <Text style={styles.checkoutInfoText}>
+                {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.checkoutBtn}
+              onPress={handleCheckoutOrRequest}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.checkoutBtnText}>{isChef ? 'Request via Manager' : 'Proceed to Checkout'}</Text>
+              <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={AppColors.surface} style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+// Per unit rate parser helper
+const getPerUnitPriceText = (unitStr: string, price: number) => {
+  const numMatch = unitStr.match(/^(\d+(\.\d+)?)/);
+  if (!numMatch) return '';
+  const num = parseFloat(numMatch[1]);
+  if (num <= 0) return '';
+  const perUnit = Math.round(price / num);
+  const type = unitStr.toLowerCase();
+  let label = 'unit';
+  if (type.includes('kg')) label = 'kg';
+  else if (type.includes('g')) label = 'g';
+  else if (type.includes('l')) label = 'L';
+  else if (type.includes('ml')) label = 'ml';
+  else if (type.includes('pc') || type.includes('dozen')) label = 'pc';
+  return `₹${perUnit}/${label}`;
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+    backgroundColor: AppColors.surface,
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: AppColors.textPrimary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+  },
+  clearBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  clearText: {
+    fontSize: 13,
+    fontFamily: AppFonts.bold,
+    color: AppColors.error,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 110, // Avoid overlapping sticky bar
+  },
+  // Delivery layout (Split Row)
+  deliveryCard: {
+    flexDirection: 'row',
+    backgroundColor: AppColors.infoLight,
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    marginBottom: 16,
+  },
+  deliveryLeft: {
+    flex: 1.2,
+    justifyContent: 'center',
+  },
+  deliveryHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  locationIcon: {
+    marginTop: -1,
+  },
+  deliveryTitle: {
+    fontSize: 10,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.bold,
+  },
+  deliveryAddress: {
+    fontSize: 12,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+  },
+  deliveryRight: {
+    flex: 1,
+    paddingLeft: 12,
+    borderLeftWidth: 1,
+    borderLeftColor: AppColors.border,
+    justifyContent: 'center',
+  },
+  deliveryRightLabel: {
+    fontSize: 10,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.bold,
+    marginBottom: 2,
+  },
+  deliveryTimeText: {
+    color: AppColors.info,
+    fontFamily: AppFonts.bold,
+    fontSize: 12,
+  },
+  // Free delivery tag
+  freeDeliveryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.primaryLight,
+    borderWidth: 1,
+    borderColor: AppColors.softGreen,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    gap: 6,
+  },
+  freeDeliveryText: {
+    color: AppColors.primaryDark,
+    fontSize: 12,
+    fontFamily: AppFonts.bold,
+  },
+  sectionHeading: {
+    fontSize: 14,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+    marginBottom: 12,
+  },
+  // Cart Card Layout
+  cartCard: {
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: AppColors.textPrimary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  cartItemHeader: {
+    flexDirection: 'row',
+  },
+  imageContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  itemImage: {
+    width: '85%',
+    height: '85%',
+    resizeMode: 'contain',
+  },
+  itemInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  itemName: {
+    fontSize: 14,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+    lineHeight: 18,
+    marginBottom: 2,
+  },
+  itemUnit: {
+    fontSize: 12,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.regular,
+  },
+  unitRateText: {
+    fontSize: 10,
+    color: AppColors.textMuted,
+    fontFamily: AppFonts.regular,
+    marginTop: 2,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    marginTop: 4,
+  },
+  itemPrice: {
+    fontSize: 15,
+    fontFamily: AppFonts.bold,
+    color: AppColors.primary,
+  },
+  strikePrice: {
+    fontSize: 11,
+    color: AppColors.textMuted,
+    textDecorationLine: 'line-through',
+    fontFamily: AppFonts.regular,
+  },
+  itemSavingsText: {
+    fontSize: 10,
+    color: AppColors.primary,
+    fontFamily: AppFonts.bold,
+    marginTop: 2,
+  },
+  actionsContainer: {
+    width: 90,
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  quantityControl: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.softGreen,
+    borderRadius: 8,
+    height: 32,
+    paddingHorizontal: 2,
+    gap: 8,
+  },
+  qtyBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    backgroundColor: AppColors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  qtyText: {
+    fontSize: 13,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+    minWidth: 14,
+    textAlign: 'center',
+  },
+  removeAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 4,
+  },
+  removeActionText: {
+    fontSize: 11,
+    fontFamily: AppFonts.bold,
+    color: AppColors.error,
+  },
+  replacementToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+  },
+  replacementPickerWrapper: {
+    marginTop: 8,
+  },
+  // Savings banner summary card
+  savingsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AppColors.primaryLight,
+    borderWidth: 1,
+    borderColor: AppColors.softGreen,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
+  },
+  savingsTagIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  savingsTextWrapper: {
+    flex: 1,
+  },
+  savingsCardTitle: {
+    fontSize: 13,
+    fontFamily: AppFonts.bold,
+    color: AppColors.primary,
+  },
+  savingsCardSubtitle: {
+    fontSize: 11,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.regular,
+    marginTop: 1,
+  },
+  savingsBadge: {
+    backgroundColor: AppColors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  savingsBadgeText: {
+    color: AppColors.surface,
+    fontSize: 10,
+    fontFamily: AppFonts.bold,
+  },
+  // Bill Details card
+  billCard: {
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    marginBottom: 16,
+  },
+  billTitle: {
+    fontSize: 14,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+    marginBottom: 12,
+  },
+  billRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  billLabel: {
+    fontSize: 12,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.bold,
+  },
+  billValue: {
+    fontSize: 12,
+    color: AppColors.textPrimary,
+    fontFamily: AppFonts.bold,
+  },
+  totalRow: {
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+    paddingTop: 10,
+    marginTop: 6,
+    marginBottom: 0,
+  },
+  totalLabel: {
+    fontSize: 14,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+  },
+  totalValue: {
+    fontSize: 16,
+    fontFamily: AppFonts.bold,
+    color: AppColors.primary,
+  },
+  // You May Also Need Section
+  recSection: {
+    marginBottom: 16,
+  },
+  recHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  recTitle: {
+    fontSize: 14,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+  },
+  recSeeAllText: {
+    fontSize: 11,
+    fontFamily: AppFonts.bold,
+    color: AppColors.primary,
+  },
+  recScrollContent: {
+    gap: 8,
+  },
+  recCard: {
+    width: 125,
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: 14,
+    padding: 10,
+    position: 'relative',
+    marginRight: 6,
+  },
+  recDiscountBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: AppColors.error,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    zIndex: 2,
+  },
+  recDiscountText: {
+    color: AppColors.surface,
+    fontSize: 8,
+    fontFamily: AppFonts.bold,
+  },
+  recImageContainer: {
+    height: 70,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 4,
+    backgroundColor: AppColors.surface,
+  },
+  recImage: {
+    width: '80%',
+    height: '80%',
+    resizeMode: 'contain',
+  },
+  recName: {
+    fontSize: 11,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+    marginTop: 4,
+  },
+  recUnit: {
+    fontSize: 9,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.regular,
+    marginBottom: 4,
+  },
+  recPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 3,
+    marginBottom: 8,
+  },
+  recPrice: {
+    fontSize: 12,
+    fontFamily: AppFonts.bold,
+    color: AppColors.primary,
+  },
+  recStrikePrice: {
+    fontSize: 9,
+    color: AppColors.textMuted,
+    textDecorationLine: 'line-through',
+    fontFamily: AppFonts.regular,
+  },
+  recAddBtn: {
+    backgroundColor: AppColors.surface,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+    borderRadius: 6,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recAddBtnText: {
+    color: AppColors.primary,
+    fontSize: 11,
+    fontFamily: AppFonts.bold,
+  },
+  // Reassurance strip
+  reassuranceStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: AppColors.surface,
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    marginBottom: 10,
+  },
+  reassuranceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  reassuranceText: {
+    fontSize: 9,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+  },
+  // Sticky Bottom Checkout
+  stickyCheckoutBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: AppColors.surface,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: AppColors.textPrimary,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  checkoutBarLeft: {
+    justifyContent: 'center',
+  },
+  checkoutPrice: {
+    fontSize: 18,
+    fontFamily: AppFonts.bold,
+    color: AppColors.primary,
+  },
+  checkoutInfoText: {
+    fontSize: 11,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.regular,
+    marginTop: 1,
+  },
+  checkoutBtn: {
+    backgroundColor: AppColors.primary,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    minWidth: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  checkoutBtnText: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.bold,
+    fontSize: 13,
+  },
+  // Empty state stylings
+  emptyCart: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    backgroundColor: AppColors.background,
+  },
+  emptyIconWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: AppColors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: AppColors.softGreen,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontFamily: AppFonts.bold,
+    color: AppColors.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: AppColors.textSecondary,
+    fontFamily: AppFonts.regular,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 24,
+  },
+  shopBtn: {
+    backgroundColor: AppColors.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  shopBtnText: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.bold,
+    fontSize: 14,
+  },
+});

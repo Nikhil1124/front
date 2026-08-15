@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "PGow",
+    "slug": "pgow-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "pgow",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#060D10"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.pgow"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#060D10"
+      },
+      "package": "com.example.pgow"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#14E2B1"
+        }
+      ],
+      "expo-font"
+    ]
+  }
+}
