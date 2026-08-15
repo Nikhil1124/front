@@ -230,7 +230,7 @@ export function GroceriesScreen() {
 
       <Animated.View style={[styles.floatingCartContainer, { transform: [{ translateY: cartAnimY }], opacity: cartOpacity, bottom: 24 }]}>
         <TouchableOpacity style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>
-          <BlurView intensity={80} tint="light" style={[StyleSheet.absoluteFillObject, { borderRadius: 32 }]} />
+          <BlurView intensity={80} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} />
           <View style={styles.cartInfo}>
             <View style={styles.cartIconWrapper}>
               <Ionicons name="cart" size={14} color="#fff" />

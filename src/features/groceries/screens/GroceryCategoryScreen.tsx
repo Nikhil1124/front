@@ -290,7 +290,7 @@ export function GroceryCategoryScreen() {
             <BlurView
               intensity={80}
               tint="light"
-              style={[StyleSheet.absoluteFillObject, { borderRadius: 32 }]}
+              style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
             />
             <View style={styles.cartInfo}>
               <View style={styles.cartIconWrapper}>

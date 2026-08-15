@@ -7,9 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "pgow",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "backgroundColor": "#060D10"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.example.pgow"
@@ -31,7 +28,16 @@
           "color": "#14E2B1"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#060D10",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ]
     ]
   }
 }

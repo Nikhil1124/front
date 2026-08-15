@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   mapLoading: { alignItems: 'center', justifyContent: 'center' },
   pinWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     // Half the icon height, so the pin's tip marks the centre rather than its middle.
