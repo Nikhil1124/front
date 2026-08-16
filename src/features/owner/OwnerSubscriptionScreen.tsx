@@ -11,7 +11,8 @@
  * am I on and what do I owe" is the question an owner returns here to ask.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Image, TouchableOpacity, Platform, BackHandler } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, Image, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn } from '@/components/ui';
@@ -42,18 +43,6 @@ const money = (value: string | number) => `₹${Math.round(Number(value)).toLoca
 
 export function OwnerSubscriptionScreen() {
   const owner = usePGowStore((s) => s.loggedInOwner);
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const refreshAll = usePGowStore((s) => s.refreshAll);
   const logout = usePGowStore((s) => s.logout);
   const pgId = useAuthStore((s) => s.activePgId);
@@ -146,7 +135,7 @@ export function OwnerSubscriptionScreen() {
           {active ? 'Subscription & Billing' : 'Secure PG Portal Activation'}
         </Txt>
         <IconBtn
-          onPress={() => (active ? popScreen() : logout())}
+          onPress={() => (active ? router.back() : logout())}
           icon={active ? 'arrow-back' : 'exit'}
           size={20}
           tint={Colors.SlateMutedText}

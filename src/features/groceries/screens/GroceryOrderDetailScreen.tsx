@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Platform, BackHandler } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
-import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { OrderStepper } from '../components/grocery/OrderStepper';
 import { orderEngine, DetailedOrder, OrderItemUpdate } from '../services/orderEngine';
 import { mockProducts } from '../data/mockProducts';
 import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
-import { usePGowStore } from '@/store/usePGowStore';
 
 const STATUS_HERO: Record<string, string> = {
   received: 'Order Received',
@@ -31,20 +29,9 @@ const KIND_BADGE: Record<string, { bg: string; text: string }> = {
 };
 
 export function GroceryOrderDetailScreen() {
-  const id = useGroceryUiStore((s) => s.selectedOrderId);
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
+  const { id } = useLocalSearchParams<{ id: string }>();
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const addItem = useCartStore((state) => state.addItem);
 
   const [order, setOrder] = useState<DetailedOrder | undefined>(() =>
@@ -71,9 +58,9 @@ export function GroceryOrderDetailScreen() {
 
   if (!order) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => popScreen()}>
+          <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={AppColors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Order Tracking</Text>
@@ -83,7 +70,7 @@ export function GroceryOrderDetailScreen() {
           <Ionicons name="receipt-outline" size={64} color={AppColors.textMuted} />
           <Text style={styles.emptyText}>Order not found</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -106,13 +93,13 @@ export function GroceryOrderDetailScreen() {
         addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, item.quantity);
       }
     });
-    pushScreen('GROCERY_CART');
+    router.push('/groceries/cart');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => popScreen()}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={AppColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order #{order.id.slice(-6)}</Text>
@@ -242,7 +229,7 @@ export function GroceryOrderDetailScreen() {
           <Text style={styles.buyAgainText}>Reorder All Items</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

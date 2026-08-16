@@ -5,7 +5,7 @@
  * Why this exists:
  *   The hub-and-spoke architecture means each action tile opens a dedicated
  *   full-screen page. Every one of those pages needs the same three things:
- *     (1) A sticky top bar with a back button that calls `popScreen()`.
+ *     (1) A sticky top bar with a back button that calls `router.back()`.
  *     (2) A consistent title + subtitle layout.
  *     (3) A scrollable body that doesn't fight the back button for space.
  *
@@ -22,14 +22,14 @@
  *     dashboard's own icon buttons.
  *   - Body sits on the mint canvas with the standard 16dp page padding.
  */
-import { useEffect, type ReactNode } from 'react';
-import { View, StyleSheet, Platform, ViewStyle, BackHandler } from 'react-native';
+import { type ReactNode } from 'react';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect } from '@/utils/haptics';
 
 export interface HubScreenWrapperProps {
@@ -46,7 +46,7 @@ export interface HubScreenWrapperProps {
   scrollable?: boolean;
   /** Custom content container style for the scroll view. */
   contentContainerStyle?: ViewStyle;
-  /** Override the back handler. By default calls `popScreen()`. */
+  /** Override the back handler. By default calls `router.back()`. */
   onBack?: () => void;
   testID?: string;
 }
@@ -62,26 +62,13 @@ export function HubScreenWrapper({
   onBack,
   testID,
 }: HubScreenWrapperProps) {
-  const popScreen = usePGowStore((s) => s.popScreen);
-
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const handleBack = () => {
     hapticSelect();
     if (onBack) onBack();
-    else popScreen();
+    else router.back();
   };
-
-  // Android hardware back: pop the stack (consistent with the back chevron).
-  // Without this, the OS would try its default behaviour (exit app) because
-  // we don't use a Navigator — our back-stack is custom in the store.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      handleBack();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <View style={styles.root} testID={testID}>

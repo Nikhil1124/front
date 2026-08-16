@@ -1,8 +1,9 @@
 /**
  * OwnerRegisterScreen — port of Kotlin `OwnerRegisterScreen(viewModel)`.
  */
-import { useState, useEffect} from 'react';
-import { Modal, StyleSheet, Alert, Platform, BackHandler } from 'react-native';
+import { useState } from 'react';
+import { Modal, StyleSheet, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { Txt, Btn, Row, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
@@ -13,18 +14,6 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 export function OwnerRegisterScreen() {
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const registerOwner = usePGowStore((s) => s.registerOwner);
   const [picking, setPicking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,7 +65,7 @@ export function OwnerRegisterScreen() {
   return (
     <FormScroll contentContainerStyle={styles.scroll} style={styles.root}>
       <Row align="center" style={{ marginBottom: 16 }}>
-        <IconBtn onPress={() => popScreen()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
+        <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
         <Txt size={22} weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>Register PG Owner</Txt>
       </Row>
 

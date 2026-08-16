@@ -15,6 +15,7 @@
  */
 import { useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { Colors } from '@/theme';
@@ -29,7 +30,6 @@ export function OwnerServicesTab() {
 
   const repairs = usePGowStore((s) => s.pgRepairRequestsState);
   const owner = usePGowStore((s) => s.loggedInOwner);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
   const isManagerMode = usePGowStore((s) => s.isManagerMode);
 
   // Task 8: pending procurement approvals count (owner view). The manager mode
@@ -67,7 +67,7 @@ export function OwnerServicesTab() {
         </Row>
         <Spacer size={10} />
         <Btn
-          onPress={() => { hapticSelect(); pushScreen('PROCUREMENT_SCREEN'); }}
+          onPress={() => { hapticSelect(); router.push('/procurement'); }}
           containerColor={Colors.primary}
           textColor={Colors.textInverse}
           borderRadius={10}

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert, StatusBar, Platform, BackHandler } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useCartStore, CartItem, ReplacementPreference } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { ReplacementPicker } from '../components/grocery/ReplacementPicker';
@@ -9,29 +10,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppColors, AppFonts } from '../theme/AppColors';
 import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { getPerUnitRateLabel } from '../utils/pricing';
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
   const mode = useShoppingModeStore((s) => s.mode);
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const owner = usePGowStore((s) => s.loggedInOwner);
   const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
-  const setSelectedProductId = useGroceryUiStore((s) => s.setSelectedProductId);
   const insets = useSafeAreaInsets();
 
   const [editingReplacementId, setEditingReplacementId] = useState<string | null>(null);
@@ -90,10 +78,10 @@ export function GroceryCartScreen() {
       submitChefGroceryRequest(itemsSummary, cartItemCount, grandTotal);
       clearCart();
       Alert.alert('Request Sent', 'Your grocery list has been sent to the Manager for purchase.');
-      popScreen();
+      router.back();
       return;
     }
-    pushScreen('GROCERY_CHECKOUT');
+    router.push('/groceries/checkout');
   };
 
   // Reusable add for recommendations
@@ -105,8 +93,8 @@ export function GroceryCartScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
 
       {/* 2. Cart Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => popScreen()} style={styles.backBtn} activeOpacity={0.7}>
+      <View style={[styles.header, { paddingTop: 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="close" size={20} color={AppColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Cart ({cartItemCount})</Text>
@@ -130,7 +118,7 @@ export function GroceryCartScreen() {
           <Text style={styles.emptySubtitle}>
             Add groceries for your PG kitchen or pick up essentials for your stay.
           </Text>
-          <TouchableOpacity style={styles.shopBtn} onPress={() => popScreen()} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.shopBtn} onPress={() => router.back()} activeOpacity={0.8}>
             <Text style={styles.shopBtnText}>Start Shopping</Text>
           </TouchableOpacity>
         </View>
@@ -319,7 +307,7 @@ export function GroceryCartScreen() {
               <SectionHeader
                 title="You May Also Need"
                 actionLabel="View All →"
-                onAction={() => pushScreen('GROCERY_CATEGORY')}
+                onAction={() => router.push('/groceries/categories')}
               />
               <ScrollView
                 horizontal
@@ -330,7 +318,7 @@ export function GroceryCartScreen() {
                   <MiniProductCard
                     key={p.id}
                     product={p}
-                    onPress={() => { setSelectedProductId(p.id); pushScreen('GROCERY_PRODUCT'); }}
+                    onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })}
                   />
                 ))}
               </ScrollView>

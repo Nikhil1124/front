@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Animated, BackHandler, FlatList, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Animated, FlatList, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 
@@ -16,7 +16,6 @@ import { TodaysKitchenNeeds } from '../components/kitchen/TodaysKitchenNeeds';
 import { getDealsProducts, mockCategories, mockProducts } from '../data/mockProducts';
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppFonts } from '../theme/AppColors';
 import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -29,8 +28,6 @@ import { FormScroll } from '@/components/ui/FormScroll';
  */
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();
-  const pushScreen = usePGowStore((s) => s.pushScreen);
-  const popScreen = usePGowStore((s) => s.popScreen);
   const activeRole = usePGowStore((s) => s.activeRole);
   const owner = usePGowStore((s) => s.loggedInOwner);
   const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
@@ -41,9 +38,6 @@ export function GroceriesScreen() {
 
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const getCartTotal = useCartStore((s) => s.getCartTotal);
-
-  const setSelectedProductId = useGroceryUiStore((s) => s.setSelectedProductId);
-  const setSelectedCategoryName = useGroceryUiStore((s) => s.setSelectedCategoryName);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -58,17 +52,8 @@ export function GroceriesScreen() {
     if (pgOwner) setPgDetails(pgOwner.pgName, pgOwner.address);
   }, [activeRole, owner, ownerForGuest, setMode, setPgDetails]);
 
-  // Android hardware back — the groceries mini-app had no way out except the header's
-  // (forward-only) profile button; this and the header's new back arrow both pop the stack.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
 
   const dailyEssentials = useMemo(() => {
     const keywords = ['milk', 'curd', 'bread', 'egg', 'banana', 'tomato', 'onion', 'potato', 'water', 'oil'];
@@ -124,14 +109,12 @@ export function GroceriesScreen() {
   }, [cartItemCount, cartAnimY, cartOpacity]);
 
   const openProduct = (productId: string) => {
-    setSelectedProductId(productId);
-    pushScreen('GROCERY_PRODUCT');
+    router.push({ pathname: '/groceries/product/[id]', params: { id: productId } });
   };
   const openCategory = (categoryName: string | null) => {
-    setSelectedCategoryName(categoryName);
-    pushScreen('GROCERY_CATEGORY');
+    router.push({ pathname: '/groceries/categories', params: categoryName ? { name: categoryName } : {} });
   };
-  const openCart = () => pushScreen('GROCERY_CART');
+  const openCart = () => router.push('/groceries/cart');
 
   const dealsTitle = mode === 'owner' ? "🔥 Today's Bulk Deals" : "🔥 Today's Deals";
   const dealsSub = mode === 'owner' ? 'Save more on your PG kitchen essentials' : 'Everything you need during your stay';
@@ -140,8 +123,8 @@ export function GroceriesScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <Header deliveryLabel={deliveryLabel} onProfilePress={() => pushScreen('GROCERY_ORDERS')} onBack={() => popScreen()} />
+      <View style={styles.safeArea}>
+        <Header deliveryLabel={deliveryLabel} onProfilePress={() => router.push('/groceries/profile')} onBack={() => router.back()} />
 
         <FormScroll showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={styles.searchContainer}>
@@ -239,7 +222,7 @@ export function GroceriesScreen() {
             </>
           )}
         </FormScroll>
-      </SafeAreaView>
+      </View>
 
       <Animated.View style={[styles.floatingCartContainer, { transform: [{ translateY: cartAnimY }], opacity: cartOpacity, bottom: 24 }]}>
         <TouchableOpacity style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>

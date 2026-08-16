@@ -2,7 +2,7 @@
  * OwnerComplaintsTab — port of Kotlin `OwnerComplaintsTab`.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, RefreshControl } from 'react-native';
+import { View, StyleSheet, Alert, Modal, RefreshControl, FlatList } from 'react-native';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { EmptyState } from '@/components/EmptyState';
@@ -67,81 +67,88 @@ export function OwnerComplaintsTab() {
   };
 
   return (
-    <FormScroll
-      contentContainerStyle={{ padding: 16, gap: 12 }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
-    >
-      <Txt size={20} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance Management System</Txt>
+    <>
+      {/* Submissions can run to ~200 (refreshAll fetches up to 200) — FlatList instead of
+          `.map()` in a ScrollView so only the visible rows mount. */}
+      <FlatList
+        style={{ flex: 1 }}
+        data={submissions}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, gap: 12 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
+        ListHeaderComponent={
+          <View style={{ gap: 12 }}>
+            <Txt size={20} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance Management System</Txt>
 
-      <Row gap={8}>
-        <View style={styles.metricBox}>
-          <Txt size={10} weight="700" color={Colors.SlateMutedText}>TOTAL REVIEWS</Txt>
-          <Txt size={24} weight="900" color={Colors.IvoryWhiteText}>{totalReviews}</Txt>
-        </View>
-        <View style={styles.metricBox}>
-          <Txt size={10} weight="700" color={Colors.SlateMutedText}>OPEN/PENDING</Txt>
-          <Txt size={24} weight="900" color="#EF4444">{openCount}</Txt>
-        </View>
-        <View style={styles.metricBox}>
-          <Txt size={10} weight="700" color={Colors.SlateMutedText}>RESOLVED</Txt>
-          <Txt size={24} weight="900" color="#10B981">{resolvedCount}</Txt>
-        </View>
-      </Row>
-
-      <Card containerColor="#111723" borderRadius={18} borderWidth={1} borderColor="#283244" padding={[16, 16]}>
-        <Row justify="space-between" align="center">
-          <Col>
-            <Txt size={10} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: 1 }}>PG SERVICE QUALITY SCORECARD</Txt>
-            <Txt size={11} color={Colors.SlateMutedText}>Calculated PG Ratings & Category Metrics</Txt>
-          </Col>
-          <View style={styles.starBox}>
-            <Txt size={16}>★</Txt>
-            <Txt size={16} weight="900" color="#FFB800">{totalReviews === 0 ? '—' : avgOverall.toFixed(1)}</Txt>
-            <Txt size={10} color={Colors.SlateMutedText}> / 5.0</Txt>
-          </View>
-        </Row>
-        <Spacer size={14} />
-        {totalReviews === 0 ? (
-          <Txt size={12} color={Colors.SlateMutedText} style={{ paddingVertical: 8 }}>
-            No ratings yet — scores will appear once residents submit feedback.
-          </Txt>
-        ) : (
-          [
-            ['Daily Meals (Mess)', '🍛', avgMeals],
-            ['Cleanliness & Service', '🧹', avgClean],
-            ['Manager Response', '💼', avgMgr],
-            ['Staff Behaviour', '👨‍🍳', avgStaff],
-            ['Others & Facilities', '⚙️', avgOther],
-          ].map(([label, icon, score]) => {
-            const s = Number(score);
-            const color = s >= 4.5 ? Colors.CyberGreen : s >= 3.5 ? Colors.CyberAmber : Colors.CyberPink;
-            return (
-              <View key={label as string} style={{ marginVertical: 4 }}>
-                <Row justify="space-between" align="center">
-                  <Row gap={6}><Txt size={12}>{icon as string}</Txt><Txt size={11} weight="500" color={Colors.IvoryWhiteText}>{label as string}</Txt></Row>
-                  <Txt size={11} weight="700" color="#FFB800">{s.toFixed(1)} ★</Txt>
-                </Row>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${(s / 5) * 100}%`, backgroundColor: color }]} />
-                </View>
+            <Row gap={8}>
+              <View style={styles.metricBox}>
+                <Txt size={10} weight="700" color={Colors.SlateMutedText}>TOTAL REVIEWS</Txt>
+                <Txt size={24} weight="900" color={Colors.IvoryWhiteText}>{totalReviews}</Txt>
               </View>
-            );
-          })
-        )}
-      </Card>
+              <View style={styles.metricBox}>
+                <Txt size={10} weight="700" color={Colors.SlateMutedText}>OPEN/PENDING</Txt>
+                <Txt size={24} weight="900" color="#EF4444">{openCount}</Txt>
+              </View>
+              <View style={styles.metricBox}>
+                <Txt size={10} weight="700" color={Colors.SlateMutedText}>RESOLVED</Txt>
+                <Txt size={24} weight="900" color="#10B981">{resolvedCount}</Txt>
+              </View>
+            </Row>
 
-      {submissions.length === 0 ? (
-        <EmptyState
-          icon="chatbubble-ellipses-outline"
-          title="No guest feedback or complaints yet"
-          subtitle="Resident feedback, complaints, and star ratings will appear here once submitted. Pull down to refresh."
-          accent={Colors.CyberAmber}
-        />
-      ) : (
-        submissions.map((item) => (
+            <Card containerColor="#111723" borderRadius={18} borderWidth={1} borderColor="#283244" padding={[16, 16]}>
+              <Row justify="space-between" align="center">
+                <Col>
+                  <Txt size={10} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: 1 }}>PG SERVICE QUALITY SCORECARD</Txt>
+                  <Txt size={11} color={Colors.SlateMutedText}>Calculated PG Ratings & Category Metrics</Txt>
+                </Col>
+                <View style={styles.starBox}>
+                  <Txt size={16}>★</Txt>
+                  <Txt size={16} weight="900" color="#FFB800">{totalReviews === 0 ? '—' : avgOverall.toFixed(1)}</Txt>
+                  <Txt size={10} color={Colors.SlateMutedText}> / 5.0</Txt>
+                </View>
+              </Row>
+              <Spacer size={14} />
+              {totalReviews === 0 ? (
+                <Txt size={12} color={Colors.SlateMutedText} style={{ paddingVertical: 8 }}>
+                  No ratings yet — scores will appear once residents submit feedback.
+                </Txt>
+              ) : (
+                [
+                  ['Daily Meals (Mess)', '🍛', avgMeals],
+                  ['Cleanliness & Service', '🧹', avgClean],
+                  ['Manager Response', '💼', avgMgr],
+                  ['Staff Behaviour', '👨‍🍳', avgStaff],
+                  ['Others & Facilities', '⚙️', avgOther],
+                ].map(([label, icon, score]) => {
+                  const s = Number(score);
+                  const color = s >= 4.5 ? Colors.CyberGreen : s >= 3.5 ? Colors.CyberAmber : Colors.CyberPink;
+                  return (
+                    <View key={label as string} style={{ marginVertical: 4 }}>
+                      <Row justify="space-between" align="center">
+                        <Row gap={6}><Txt size={12}>{icon as string}</Txt><Txt size={11} weight="500" color={Colors.IvoryWhiteText}>{label as string}</Txt></Row>
+                        <Txt size={11} weight="700" color="#FFB800">{s.toFixed(1)} ★</Txt>
+                      </Row>
+                      <View style={styles.progressTrack}>
+                        <View style={[styles.progressFill, { width: `${(s / 5) * 100}%`, backgroundColor: color }]} />
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </Card>
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon="chatbubble-ellipses-outline"
+            title="No guest feedback or complaints yet"
+            subtitle="Resident feedback, complaints, and star ratings will appear here once submitted. Pull down to refresh."
+            accent={Colors.CyberAmber}
+          />
+        }
+        renderItem={({ item }) => (
           <AnimatedPress
-            key={item.id}
             scale={0.985}
             hapticPattern="light"
             onPress={() => openResponse(item)}
@@ -180,8 +187,8 @@ export function OwnerComplaintsTab() {
               </Row>
             </Card>
           </AnimatedPress>
-        ))
-      )}
+        )}
+      />
 
       {/* Response Editor Dialog */}
       <Modal visible={active != null} transparent animationType="fade">
@@ -215,7 +222,7 @@ export function OwnerComplaintsTab() {
           </Card>
         </View>
       </Modal>
-    </FormScroll>
+    </>
   );
 }
 

@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert, StatusBar, Platform, BackHandler } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
 import { useOrderStore } from '../store/useOrderStore';
-import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppColors, AppFonts } from '../theme/AppColors';
 import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -38,22 +38,10 @@ const PAYMENT_METHODS = [
 ];
 
 export function GroceryCheckoutScreen() {
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const owner = usePGowStore((s) => s.loggedInOwner);
   const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
-  const setSelectedOrderId = useGroceryUiStore((s) => s.setSelectedOrderId);
   const insets = useSafeAreaInsets();
 
   const { items, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
@@ -116,8 +104,7 @@ export function GroceryCheckoutScreen() {
 
     const newOrder = placeOrder(payload);
     clearCart();
-    setSelectedOrderId(newOrder.id);
-    pushScreen('GROCERY_ORDER_DETAIL');
+    router.push({ pathname: '/groceries/orders/[id]', params: { id: newOrder.id } });
   };
 
   return (
@@ -125,8 +112,8 @@ export function GroceryCheckoutScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => popScreen()} style={styles.backBtn} activeOpacity={0.7}>
+      <View style={[styles.header, { paddingTop: 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
@@ -422,7 +409,7 @@ export function GroceryCheckoutScreen() {
         {/* View Cart mini trigger */}
         <TouchableOpacity
           style={styles.viewCartBadgeBtn}
-          onPress={() => pushScreen('GROCERY_CART')}
+          onPress={() => router.push('/groceries/cart')}
           activeOpacity={0.8}
         >
           <View style={styles.cartIconWrapper}>

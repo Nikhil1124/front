@@ -1,13 +1,12 @@
 import { View, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect } from '@/utils/haptics';
 
 export function WelcomeScreen() {
-  const pushScreen = usePGowStore((s) => s.pushScreen);
 
   return (
     <View style={styles.root}>
@@ -35,7 +34,7 @@ export function WelcomeScreen() {
         <AnimatedPress
           scale={0.985}
           hapticPattern="light"
-          onPress={() => { hapticSelect(); pushScreen('OWNER_LOGIN'); }}
+          onPress={() => { hapticSelect(); router.push('/owner-login'); }}
         >
           <Card
             containerColor={Colors.surface}
@@ -56,7 +55,7 @@ export function WelcomeScreen() {
 
             <Row gap={10}>
               <Btn
-                onPress={() => { hapticSelect(); pushScreen('OWNER_REGISTER'); }}
+                onPress={() => { hapticSelect(); router.push('/owner-register'); }}
                 containerColor={Colors.primary}
                 textColor={Colors.textInverse}
                 borderRadius={12}
@@ -67,7 +66,7 @@ export function WelcomeScreen() {
                 <Txt size={13} weight="700" color={Colors.textInverse}>Register PG</Txt>
               </Btn>
               <OutlinedBtn
-                onPress={() => { hapticSelect(); pushScreen('OWNER_LOGIN'); }}
+                onPress={() => { hapticSelect(); router.push('/owner-login'); }}
                 borderColor={Colors.primary}
                 textColor={Colors.primary}
                 borderRadius={12}
@@ -85,7 +84,7 @@ export function WelcomeScreen() {
         <AnimatedPress
           scale={0.985}
           hapticPattern="light"
-          onPress={() => { hapticSelect(); pushScreen('GUEST_JOIN'); }}
+          onPress={() => { hapticSelect(); router.push('/guest-join'); }}
         >
           <Card
             containerColor={Colors.surface}
@@ -105,7 +104,7 @@ export function WelcomeScreen() {
             </Row>
 
             <Btn
-              onPress={() => { hapticSelect(); pushScreen('GUEST_JOIN'); }}
+              onPress={() => { hapticSelect(); router.push('/guest-join'); }}
               containerColor={Colors.success}
               textColor={Colors.textInverse}
               borderRadius={12}
@@ -123,7 +122,7 @@ export function WelcomeScreen() {
         <AnimatedPress
           scale={0.985}
           hapticPattern="light"
-          onPress={() => { hapticSelect(); pushScreen('STAFF_LOGIN'); }}
+          onPress={() => { hapticSelect(); router.push('/staff-login'); }}
         >
           <Card
             containerColor={Colors.surface}
@@ -143,7 +142,7 @@ export function WelcomeScreen() {
             </Row>
 
             <Btn
-              onPress={() => { hapticSelect(); pushScreen('STAFF_LOGIN'); }}
+              onPress={() => { hapticSelect(); router.push('/staff-login'); }}
               containerColor="#000000ff"
               textColor={Colors.CyberAmber}
               borderRadius={12}

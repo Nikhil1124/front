@@ -135,9 +135,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync(KEYS.ACCESS);
-    await SecureStore.deleteItemAsync(KEYS.REFRESH);
-    await SecureStore.deleteItemAsync(KEYS.PG_ID);
+    // State first: the (auth) route group's guard is `!accessToken`, so this is what
+    // actually signs the user out on screen. The SecureStore deletes below are real cleanup
+    // but must never gate that — a slow or failed delete would otherwise leave someone
+    // looking at protected content with a token that no longer works.
     set({
       accessToken: null,
       refreshToken: null,
@@ -145,6 +146,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       activePgId: null,
       activeRole: null,
       deviceId: null,
+    });
+    await Promise.all([
+      SecureStore.deleteItemAsync(KEYS.ACCESS),
+      SecureStore.deleteItemAsync(KEYS.REFRESH),
+      SecureStore.deleteItemAsync(KEYS.PG_ID),
+    ]).catch(() => {
+      // Best-effort — the in-memory session is already cleared, which is what matters for
+      // the guard. A leftover SecureStore entry is overwritten on the next successful login.
     });
   },
 

@@ -12,13 +12,13 @@
  *     <CameraProofModal>. After both photos captured, a "Mark Resolved" button
  *     calls `POST /v1/requests/{id}/resolve` with a resolution note +
  *     attachments.
- *   - Floating PanicButton (bottom-right) → `POST /v1/staff/panic`.
  *
  * High-contrast design: 48dp minimum touch targets, 16sp body text, 22sp
  * headings. All colors from theme.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, RefreshControl, TouchableOpacity, Alert, Platform, BackHandler } from 'react-native';
+import { View, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn } from '@/components/ui';
@@ -32,9 +32,7 @@ import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { formatLongDate } from '@/utils/format';
 
 import { CameraProofModal } from '@/components/CameraProofModal';
-import { PanicButton } from '@/components/PanicButton';
 import { EmptyState } from '@/components/EmptyState';
-import { triggerPanic } from '@/features/panic/usePanic';
 
 import { resolveComplaint, getAttachmentUploadUrl, uploadAttachment, addAttachment } from '@/features/requests/useComplaints';
 import type { FeedbackComplaintEntity } from '@/types';
@@ -75,19 +73,7 @@ export function HousekeepingDashboard() {
   const staff = usePGowStore((s) => s.loggedInStaff);
   const complaints = usePGowStore((s) => s.currentFeedbackComplaints);
   const refreshAll = usePGowStore((s) => s.refreshAll);
-  const popScreen = usePGowStore((s) => s.popScreen);
 
-  // Android hardware back — this screen is a drill-down from StaffDashboardScreen, reached by
-  // tile tap, and had no way back at all (no header back button, no BackHandler) before this.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const activePgId = useAuthStore((s) => s.activePgId);
   const activeMembership = useAuthStore(
     (s) =>
@@ -239,7 +225,7 @@ export function HousekeepingDashboard() {
             <Row justify="space-between" align="center">
               <Row gap={10} align="center" style={{ flex: 1 }}>
                 <IconBtn
-                  onPress={() => popScreen()}
+                  onPress={() => router.back()}
                   icon="arrow-back"
                   size={20}
                   tint={Colors.primaryDark}
@@ -396,9 +382,6 @@ export function HousekeepingDashboard() {
           onCapture={handleCapture}
           onClose={() => setCameraTicketId(null)}
         />
-
-        {/* Floating SOS */}
-        <PanicFloating />
       </View>
   );
 }
@@ -477,57 +460,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceMuted, borderRadius: 8, borderWidth: 1, borderColor: Colors.borderSubtle,
     paddingHorizontal: 10, paddingVertical: 4,
   },
-  panicWrap: {
-    position: 'absolute', bottom: 24, right: 18, zIndex: 999,
-  },
 });
-
-/** Task 8: floating PanicButton wrapper. Task 7's PanicButton is purely
- *  presentational (fires `onPress`), so this wrapper owns the confirmation
- *  dialog + triggerPanic + toast flow that the spec requires. Kept local to
- *  the housekeeping screen — the staff dashboard has its own identical
- *  wrapper that's shared across all its tabs. */
-function PanicFloating() {
-  const activePgId = useAuthStore((s) => s.activePgId);
-  const toast = useToast();
-  const [sending, setSending] = useState(false);
-
-  const onTrigger = () => {
-    Alert.alert(
-      'Trigger Panic Alert?',
-      'This will notify the manager and owner immediately. Only use it in a real emergency.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Trigger SOS',
-          style: 'destructive',
-          onPress: async () => {
-            if (!activePgId) {
-              toast('error', 'No active PG', 'Cannot determine which property to alert.');
-              return;
-            }
-            setSending(true);
-            try {
-              await triggerPanic(activePgId, {});
-              hapticSuccess();
-              toast('warning', 'Panic alert sent', 'Manager and owner have been notified.');
-            } catch (err: any) {
-              hapticError();
-              toast('error', 'Could not trigger', err?.message ?? 'Please try again or contact the manager directly.');
-            } finally {
-              setSending(false);
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  return (
-    <View style={styles.panicWrap} pointerEvents="box-none">
-      <PanicButton onPress={onTrigger} disabled={sending} />
-    </View>
-  );
-}
 
 export default HousekeepingDashboard;

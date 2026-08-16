@@ -1,15 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Platform, BackHandler } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, StatusBar, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { mockProducts, EnrichedProduct } from '../data/mockProducts';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppColors, AppFonts } from '../theme/AppColors';
-import { usePGowStore } from '@/store/usePGowStore';
 
 // Extracted shared components
 import { MiniProductCard } from '../components/ui/MiniProductCard';
@@ -62,21 +61,9 @@ const getProductDetails = (prod: EnrichedProduct, selectedUnit: string) => {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function GroceryProductScreen() {
-  const id = useGroceryUiStore((s) => s.selectedProductId);
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
-  const setSelectedProductId = useGroceryUiStore((s) => s.setSelectedProductId);
+  const { id } = useLocalSearchParams<{ id: string }>();
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const insets = useSafeAreaInsets();
 
   const product = mockProducts.find((p) => p.id === id);
@@ -113,16 +100,16 @@ export function GroceryProductScreen() {
   // ── 404 state ──
   if (!product || options.length === 0) {
     return (
-      <SafeAreaView style={styles.errorContainer}>
+      <View style={styles.errorContainer}>
         <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
         <View style={styles.errorState}>
           <Ionicons name="alert-circle-outline" size={48} color={AppColors.textSecondary} />
           <Text style={styles.errorText}>Product not found</Text>
-          <TouchableOpacity style={styles.backBtnError} onPress={() => popScreen()}>
+          <TouchableOpacity style={styles.backBtnError} onPress={() => router.back()}>
             <Text style={styles.backBtnText}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -162,18 +149,18 @@ export function GroceryProductScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
 
       {/* Floating top header */}
-      <View style={[styles.floatingHeader, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => popScreen()} activeOpacity={0.7}>
+      <View style={[styles.floatingHeader, { paddingTop: 8 }]}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerBtn} onPress={handleShare} activeOpacity={0.7}>
             <Ionicons name="share-social-outline" size={18} color={AppColors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => pushScreen('GROCERY_CATEGORY')} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/groceries/categories')} activeOpacity={0.7}>
             <Ionicons name="search" size={18} color={AppColors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => pushScreen('GROCERY_CART')} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/groceries/cart')} activeOpacity={0.7}>
             <Ionicons name="cart-outline" size={18} color={AppColors.textPrimary} />
             {cartItemCount > 0 && (
               <View style={styles.headerCartBadge}>
@@ -187,7 +174,7 @@ export function GroceryProductScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* ── Top split: image + title ── */}
-        <View style={[styles.topRowSection, { paddingTop: insets.top + 54 }]}>
+        <View style={[styles.topRowSection, { paddingTop: 54 }]}>
 
           {/* Left: product image */}
           <View style={styles.leftImageColumn}>
@@ -363,14 +350,14 @@ export function GroceryProductScreen() {
             <SectionHeader
               title="You May Also Need"
               actionLabel="View All →"
-              onAction={() => pushScreen('GROCERY_CATEGORY')}
+              onAction={() => router.push('/groceries/categories')}
             />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScrollContent}>
               {relatedProducts.map((p) => (
                 <MiniProductCard
                   key={p.id}
                   product={p}
-                  onPress={() => { setSelectedProductId(p.id); pushScreen('GROCERY_PRODUCT'); }}
+                  onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })}
                   showWishlist
                   showRating
                 />
@@ -388,14 +375,14 @@ export function GroceryProductScreen() {
         </View>
 
         {cartItemCount > 0 && (
-          <TouchableOpacity style={styles.stickyBarMiddle} onPress={() => pushScreen('GROCERY_CART')} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
             <Ionicons name="cart-outline" size={14} color={AppColors.primary} />
             <Text style={styles.stickyCartText}>View Cart ({cartItemCount})</Text>
           </TouchableOpacity>
         )}
 
         {quantity > 0 ? (
-          <TouchableOpacity style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => pushScreen('GROCERY_CART')} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
             <Ionicons name="checkmark-circle-outline" size={16} color={AppColors.surface} style={{ marginRight: 4 }} />
             <Text style={styles.stickyAddBtnText}>Added ✓</Text>
           </TouchableOpacity>

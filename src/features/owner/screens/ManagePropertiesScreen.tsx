@@ -7,6 +7,7 @@
  */
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -24,7 +25,6 @@ export function ManagePropertiesScreen() {
   const allComplaints = usePGowStore((s) => s.allComplaintsState);
   const currentOwner = usePGowStore((s) => s.loggedInOwner);
   const switchPG = usePGowStore((s) => s.switchActivePG);
-  const popScreen = usePGowStore((s) => s.popScreen);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPgModal, setShowAddPgModal] = useState(false);
@@ -146,7 +146,7 @@ export function ManagePropertiesScreen() {
                 <Row justify="space-between" align="center">
                   <Txt size={11} weight="800" color={Colors.primaryDark}>Collected: ₹{Math.round(pgRevenue).toLocaleString('en-IN')}</Txt>
                   <Btn
-                    onPress={async () => { await switchPG(pg); popScreen(); }}
+                    onPress={async () => { await switchPG(pg); router.back(); }}
                     containerColor={isCurrent ? Colors.primary : Colors.surfaceMuted}
                     textColor={isCurrent ? Colors.textInverse : Colors.textPrimary}
                     borderRadius={10}

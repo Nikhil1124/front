@@ -4,7 +4,8 @@
  * between Guest Login and Join PG via QR.
  */
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, Modal, TouchableOpacity, LayoutChangeEvent, Platform, BackHandler } from 'react-native';
+import { View, StyleSheet, Alert, Modal, TouchableOpacity, LayoutChangeEvent } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -29,18 +30,6 @@ interface Props {
 const TABS = ['PG Owner', 'PG Manager', 'Kitchen/Staff', 'Resident'];
 
 export function OwnerLoginScreen({ initialTab = 0 }: Props) {
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const loginOwner = usePGowStore((s) => s.loginOwner);
   const loginManager = usePGowStore((s) => s.loginManager);
   const loginStaff = usePGowStore((s) => s.loginStaff);
@@ -131,6 +120,10 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     if (result.ok) {
       hapticSuccess();
       toast('success', 'Welcome back!', 'Owner dashboard loading…');
+      // Root-level guards for the owner group and for /groceries both flip true in the
+      // same instant a token lands — an explicit target beats leaving the router to guess
+      // between two simultaneously-valid screens. "/" re-runs app/index.tsx's role redirect.
+      router.replace('/');
     } else if (result.mustChangePassword) {
       hapticSelect();
       setTempPasswordHeld(passwordInput);
@@ -146,6 +139,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     if (result.ok) {
       hapticSuccess();
       toast('success', 'Welcome Resident!', 'Your resident dashboard is ready.');
+      router.replace('/');
     } else if (result.mustChangePassword) {
       hapticSelect();
       setTempPasswordHeld(guestPasswordInputForLogin);
@@ -172,6 +166,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       hapticSuccess();
       setShowFirstTimePasswordModal(false);
       toast('success', 'Password updated', 'Welcome to your dashboard.');
+      router.replace('/');
     } else {
       hapticError();
       Alert.alert('Password Change Failed', result.error ?? 'Could not update password');
@@ -183,6 +178,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     if (result.ok) {
       hapticSuccess();
       toast('success', 'QR Verified!', 'Resident profile created.');
+      router.replace('/');
     } else {
       hapticError();
       Alert.alert('Failed', result.error ?? 'Unknown');
@@ -206,6 +202,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     if (result.ok) {
       hapticSuccess();
       toast('success', 'Welcome Manager!', 'Manager dashboard loading…');
+      router.replace('/');
     } else {
       hapticError();
       Alert.alert('Login Failed', result.error ?? 'Unknown');
@@ -217,6 +214,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     if (result.ok) {
       hapticSuccess();
       toast('success', 'Welcome Staff!', 'Staff dashboard loading…');
+      router.replace('/');
     } else {
       hapticError();
       Alert.alert('Login Failed', result.error ?? 'Unknown');
@@ -312,7 +310,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
 
       {/* Header */}
       <Row align="center" style={{ marginVertical: 8 }}>
-        <IconBtn onPress={() => popScreen()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
+        <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
         <Txt size={22} weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>PG Portal Login</Txt>
       </Row>
 

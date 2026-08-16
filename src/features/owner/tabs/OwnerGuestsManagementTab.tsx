@@ -4,7 +4,7 @@
  * roster don't fight for the same long scroll.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, StyleSheet, Alert, Modal, TouchableOpacity, RefreshControl, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -168,154 +168,158 @@ export function OwnerGuestsManagementTab() {
         })}
       </View>
 
-      <FormScroll
-        contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
-      >
-        {subTab === 0 && (
-          <>
-            {/* Above the manual form on purpose: this is the moment the owner is about to
-                type a resident in themselves, and therefore the moment the alternative is
-                worth seeing. */}
-            <JoinCodeCard />
+      {subTab === 0 ? (
+        <FormScroll
+          contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
+        >
+          {/* Above the manual form on purpose: this is the moment the owner is about to
+              type a resident in themselves, and therefore the moment the alternative is
+              worth seeing. */}
+          <JoinCodeCard />
 
-            <Row gap={8} align="center">
-              <View style={styles.divider} />
-              <Txt size={10} weight="800" color={Colors.textMuted}>OR REGISTER MANUALLY</Txt>
-              <View style={styles.divider} />
-            </Row>
+          <Row gap={8} align="center">
+            <View style={styles.divider} />
+            <Txt size={10} weight="800" color={Colors.textMuted}>OR REGISTER MANUALLY</Txt>
+            <View style={styles.divider} />
+          </Row>
 
-            <OutlinedTextField label="Guest Full Name *" placeholder="Ramesh Kumar" value={guestName} onChangeText={setGuestName} containerColor={Colors.surfaceMuted} testID="owner_guest_name_input" style={{ marginBottom: 8 }} />
-            <OutlinedTextField label="Guest Email ID *" placeholder="ramesh@gmail.com" value={guestEmail} onChangeText={setGuestEmail} keyboardType="email-address" containerColor={Colors.surfaceMuted} testID="owner_guest_email_input" style={{ marginBottom: 8 }} />
-            <Row gap={8}>
-              <OutlinedTextField label="Room No *" placeholder="101" value={guestRoom} onChangeText={setGuestRoom} containerColor={Colors.surfaceMuted} testID="owner_guest_room_input" style={{ flex: 1 }} />
-              <OutlinedTextField label="Phone" placeholder="9876543210" value={guestPhone} onChangeText={setGuestPhone} keyboardType="phone-pad" containerColor={Colors.surfaceMuted} style={{ flex: 1.2 }} />
-            </Row>
-            <Spacer size={8} />
-            <OutlinedTextField label="Monthly Rent Fee (₹) *" placeholder="6500" value={guestRent} onChangeText={setGuestRent} keyboardType="number-pad" containerColor={Colors.surfaceMuted} testID="owner_guest_rent_input" style={{ marginBottom: 8 }} />
-            <OutlinedTextField label="Login Passcode / Password *" placeholder="At least 8 characters" value={guestPassword} onChangeText={setGuestPassword} secureTextEntry containerColor={Colors.surfaceMuted} testID="owner_guest_password_input" style={{ marginBottom: 14 }} />
-            <Btn onPress={handleCreate} loading={isCreating} disabled={isCreating} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={44} testID="owner_guest_submit_btn">
-              <Ionicons name="person-add" size={16} color={Colors.textInverse} />
-              <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>Register Resident ID & Password</Txt>
-            </Btn>
-          </>
-        )}
-
-        {subTab === 1 && (
-          <>
-            {roomOccupancy.length > 0 && (
-              <View>
-                <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 8 }}>
-                  ROOM OCCUPANCY
-                </Txt>
-                <View style={styles.roomGrid}>
-                  {roomOccupancy.map(([room, count]) => (
-                    <View key={room} style={styles.roomChip}>
-                      <Txt size={12} weight="800" color={Colors.textPrimary}>Room {room}</Txt>
-                      <Txt size={10} color={Colors.textMuted}>{count} resident{count === 1 ? '' : 's'}</Txt>
-                    </View>
-                  ))}
+          <OutlinedTextField label="Guest Full Name *" placeholder="Ramesh Kumar" value={guestName} onChangeText={setGuestName} containerColor={Colors.surfaceMuted} testID="owner_guest_name_input" style={{ marginBottom: 8 }} />
+          <OutlinedTextField label="Guest Email ID *" placeholder="ramesh@gmail.com" value={guestEmail} onChangeText={setGuestEmail} keyboardType="email-address" containerColor={Colors.surfaceMuted} testID="owner_guest_email_input" style={{ marginBottom: 8 }} />
+          <Row gap={8}>
+            <OutlinedTextField label="Room No *" placeholder="101" value={guestRoom} onChangeText={setGuestRoom} containerColor={Colors.surfaceMuted} testID="owner_guest_room_input" style={{ flex: 1 }} />
+            <OutlinedTextField label="Phone" placeholder="9876543210" value={guestPhone} onChangeText={setGuestPhone} keyboardType="phone-pad" containerColor={Colors.surfaceMuted} style={{ flex: 1.2 }} />
+          </Row>
+          <Spacer size={8} />
+          <OutlinedTextField label="Monthly Rent Fee (₹) *" placeholder="6500" value={guestRent} onChangeText={setGuestRent} keyboardType="number-pad" containerColor={Colors.surfaceMuted} testID="owner_guest_rent_input" style={{ marginBottom: 8 }} />
+          <OutlinedTextField label="Login Passcode / Password *" placeholder="At least 8 characters" value={guestPassword} onChangeText={setGuestPassword} secureTextEntry containerColor={Colors.surfaceMuted} testID="owner_guest_password_input" style={{ marginBottom: 14 }} />
+          <Btn onPress={handleCreate} loading={isCreating} disabled={isCreating} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={44} testID="owner_guest_submit_btn">
+            <Ionicons name="person-add" size={16} color={Colors.textInverse} />
+            <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>Register Resident ID & Password</Txt>
+          </Btn>
+        </FormScroll>
+      ) : (
+        // Directory roster can run to ~200 residents (refreshAll fetches up to 200) — a real
+        // FlatList here instead of `.map()` in a ScrollView so only the visible rows mount.
+        <FlatList
+          data={guests}
+          keyExtractor={(g) => g.id}
+          contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
+          ListHeaderComponent={
+            <View style={{ gap: 14 }}>
+              {roomOccupancy.length > 0 && (
+                <View>
+                  <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 8 }}>
+                    ROOM OCCUPANCY
+                  </Txt>
+                  <View style={styles.roomGrid}>
+                    {roomOccupancy.map(([room, count]) => (
+                      <View key={room} style={styles.roomChip}>
+                        <Txt size={12} weight="800" color={Colors.textPrimary}>Room {room}</Txt>
+                        <Txt size={10} color={Colors.textMuted}>{count} resident{count === 1 ? '' : 's'}</Txt>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            )}
+              )}
 
-            {pendingKyc.length > 0 && (
-              <Card containerColor="#FFFBEB" borderRadius={16} borderWidth={1} borderColor="#FDE68A" padding={[14, 14]}>
-                <Row gap={8} align="center">
-                  <Ionicons name="hourglass" size={20} color="#B45309" />
-                  <Txt size={13} weight="900" color="#92400E">Pending Resident KYC ({pendingKyc.length})</Txt>
-                </Row>
-                <Spacer size={10} />
-                {pendingKyc.map((g) => (
-                  <Card key={g.id} containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 12]} style={{ marginBottom: 8 }}>
-                    <Row justify="space-between" align="center">
-                      <Col style={{ flex: 1 }}>
-                        <Txt size={13} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
-                        <Txt size={11} color={Colors.textMuted}>Room {g.roomNo} • ID: {g.idProofType}</Txt>
-                        {g.idProofNumber ? <Txt size={10} color={Colors.textMuted}>No: {g.idProofNumber}</Txt> : null}
-                      </Col>
-                      <Btn onPress={() => setReviewing(g)} containerColor={Colors.surfaceElevated} textColor={Colors.primaryDark} borderRadius={8} height={32} contentStyle={{ paddingHorizontal: 10 }}>
-                        <Txt size={11} weight="800" color={Colors.primaryDark}>Review Docs</Txt>
-                      </Btn>
-                    </Row>
-                    <Spacer size={8} />
-                    <Row gap={8}>
-                      <Btn onPress={() => handleApprove(g)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={8} height={34} style={{ flex: 1 }}>
-                        <Txt size={11} weight="800" color={Colors.textInverse}>✅ Approve</Txt>
-                      </Btn>
-                      <Btn onPress={() => setRejecting(g)} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={8} height={34} style={{ flex: 1 }}>
-                        <Txt size={11} weight="800" color={Colors.textInverse}>❌ Reject</Txt>
-                      </Btn>
-                    </Row>
-                  </Card>
-                ))}
-              </Card>
-            )}
-
-            <Row justify="space-between" align="center">
-              <Txt size={14} weight="900" color={Colors.textPrimary}>Registered Residents</Txt>
-              <View style={styles.countBadge}>
-                <Txt size={11} weight="800" color={Colors.primaryDark}>{guests.length} Guests</Txt>
-              </View>
-            </Row>
-
-            {!isManager && (
-              <TouchableOpacity onPress={() => setShowEditProperty(true)} activeOpacity={0.7}>
-                <Row gap={6} align="center">
-                  <Ionicons name="bed-outline" size={14} color={Colors.textMuted} />
-                  <Txt size={11} color={Colors.textMuted}>{owner?.totalBeds ?? 0} total beds</Txt>
-                  <Txt size={11} weight="800" color={Colors.primary}>Edit ›</Txt>
-                </Row>
-              </TouchableOpacity>
-            )}
-
-            {guests.length === 0 ? (
-              <EmptyState
-                icon="people-outline"
-                title="No residents registered yet"
-                subtitle="Add one on the Add Guest tab or share your lobby Join Code so residents can self-register. Pull down to refresh."
-                accent={Colors.primary}
-              />
-            ) : (
-              guests.map((g) => {
-                const kyc = KYC_STYLE[g.kycStatus] ?? KYC_STYLE.DEFAULT;
-                return (
-                  <AnimatedPress key={g.id} scale={0.985} hapticPattern="light" onPress={() => openDetail(g)}>
-                    <Card containerColor={Colors.surface} borderRadius={14} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]} style={{ marginTop: 10 }}>
+              {pendingKyc.length > 0 && (
+                <Card containerColor="#FFFBEB" borderRadius={16} borderWidth={1} borderColor="#FDE68A" padding={[14, 14]}>
+                  <Row gap={8} align="center">
+                    <Ionicons name="hourglass" size={20} color="#B45309" />
+                    <Txt size={13} weight="900" color="#92400E">Pending Resident KYC ({pendingKyc.length})</Txt>
+                  </Row>
+                  <Spacer size={10} />
+                  {pendingKyc.map((g) => (
+                    <Card key={g.id} containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 12]} style={{ marginBottom: 8 }}>
                       <Row justify="space-between" align="center">
-                        <Row gap={12} style={{ flex: 1 }}>
-                          <View style={styles.avatar}>
-                            <Txt size={17} weight="900" color={Colors.primaryDark}>{g.name.charAt(0).toUpperCase()}</Txt>
-                          </View>
-                          <Col style={{ flex: 1 }}>
-                            <Txt size={14} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
-                            <Txt size={11} color={Colors.textMuted}>Room {g.roomNo} • {g.email}</Txt>
-                            <Txt size={11} weight="700" color={Colors.primaryDark}>₹{Math.round(g.rentAmount)}/mo</Txt>
-                            <Row gap={6} style={{ marginTop: 4 }}>
-                              <View style={[styles.pill, { backgroundColor: kyc.bg, borderColor: kyc.border }]}>
-                                <Txt size={9} weight="800" color={kyc.text}>{kyc.label}</Txt>
-                              </View>
-                              <View style={[styles.pill, { backgroundColor: g.isBillPaid ? '#ECFDF5' : '#FFFBEB', borderColor: g.isBillPaid ? '#A7F3D0' : '#FDE68A' }]}>
-                                <Txt size={9} weight="800" color={g.isBillPaid ? '#047857' : '#B45309'}>{g.isBillPaid ? '💵 Paid' : '⏳ Due'}</Txt>
-                              </View>
-                            </Row>
-                          </Col>
-                        </Row>
-                        <Row gap={2}>
-                          <IconBtn onPress={() => openEdit(g)} icon="create-outline" size={19} tint={Colors.primary} testID={`owner_edit_guest_${g.id}`} />
-                          <IconBtn onPress={() => confirmDeleteGuest(g)} icon="trash-outline" size={19} tint={Colors.danger} />
-                        </Row>
+                        <Col style={{ flex: 1 }}>
+                          <Txt size={13} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                          <Txt size={11} color={Colors.textMuted}>Room {g.roomNo} • ID: {g.idProofType}</Txt>
+                          {g.idProofNumber ? <Txt size={10} color={Colors.textMuted}>No: {g.idProofNumber}</Txt> : null}
+                        </Col>
+                        <Btn onPress={() => setReviewing(g)} containerColor={Colors.surfaceElevated} textColor={Colors.primaryDark} borderRadius={8} height={32} contentStyle={{ paddingHorizontal: 10 }}>
+                          <Txt size={11} weight="800" color={Colors.primaryDark}>Review Docs</Txt>
+                        </Btn>
+                      </Row>
+                      <Spacer size={8} />
+                      <Row gap={8}>
+                        <Btn onPress={() => handleApprove(g)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={8} height={34} style={{ flex: 1 }}>
+                          <Txt size={11} weight="800" color={Colors.textInverse}>✅ Approve</Txt>
+                        </Btn>
+                        <Btn onPress={() => setRejecting(g)} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={8} height={34} style={{ flex: 1 }}>
+                          <Txt size={11} weight="800" color={Colors.textInverse}>❌ Reject</Txt>
+                        </Btn>
                       </Row>
                     </Card>
-                  </AnimatedPress>
-                );
-              })
-            )}
-          </>
-        )}
+                  ))}
+                </Card>
+              )}
 
-      </FormScroll>
+              <Row justify="space-between" align="center">
+                <Txt size={14} weight="900" color={Colors.textPrimary}>Registered Residents</Txt>
+                <View style={styles.countBadge}>
+                  <Txt size={11} weight="800" color={Colors.primaryDark}>{guests.length} Guests</Txt>
+                </View>
+              </Row>
+
+              {!isManager && (
+                <TouchableOpacity onPress={() => setShowEditProperty(true)} activeOpacity={0.7}>
+                  <Row gap={6} align="center">
+                    <Ionicons name="bed-outline" size={14} color={Colors.textMuted} />
+                    <Txt size={11} color={Colors.textMuted}>{owner?.totalBeds ?? 0} total beds</Txt>
+                    <Txt size={11} weight="800" color={Colors.primary}>Edit ›</Txt>
+                  </Row>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="people-outline"
+              title="No residents registered yet"
+              subtitle="Add one on the Add Guest tab or share your lobby Join Code so residents can self-register. Pull down to refresh."
+              accent={Colors.primary}
+            />
+          }
+          renderItem={({ item: g }) => {
+            const kyc = KYC_STYLE[g.kycStatus] ?? KYC_STYLE.DEFAULT;
+            return (
+              <AnimatedPress scale={0.985} hapticPattern="light" onPress={() => openDetail(g)}>
+                <Card containerColor={Colors.surface} borderRadius={14} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+                  <Row justify="space-between" align="center">
+                    <Row gap={12} style={{ flex: 1 }}>
+                      <View style={styles.avatar}>
+                        <Txt size={17} weight="900" color={Colors.primaryDark}>{g.name.charAt(0).toUpperCase()}</Txt>
+                      </View>
+                      <Col style={{ flex: 1 }}>
+                        <Txt size={14} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                        <Txt size={11} color={Colors.textMuted}>Room {g.roomNo} • {g.email}</Txt>
+                        <Txt size={11} weight="700" color={Colors.primaryDark}>₹{Math.round(g.rentAmount)}/mo</Txt>
+                        <Row gap={6} style={{ marginTop: 4 }}>
+                          <View style={[styles.pill, { backgroundColor: kyc.bg, borderColor: kyc.border }]}>
+                            <Txt size={9} weight="800" color={kyc.text}>{kyc.label}</Txt>
+                          </View>
+                          <View style={[styles.pill, { backgroundColor: g.isBillPaid ? '#ECFDF5' : '#FFFBEB', borderColor: g.isBillPaid ? '#A7F3D0' : '#FDE68A' }]}>
+                            <Txt size={9} weight="800" color={g.isBillPaid ? '#047857' : '#B45309'}>{g.isBillPaid ? '💵 Paid' : '⏳ Due'}</Txt>
+                          </View>
+                        </Row>
+                      </Col>
+                    </Row>
+                    <Row gap={2}>
+                      <IconBtn onPress={() => openEdit(g)} icon="create-outline" size={19} tint={Colors.primary} testID={`owner_edit_guest_${g.id}`} />
+                      <IconBtn onPress={() => confirmDeleteGuest(g)} icon="trash-outline" size={19} tint={Colors.danger} />
+                    </Row>
+                  </Row>
+                </Card>
+              </AnimatedPress>
+            );
+          }}
+        />
+      )}
 
       {showEditProperty && owner && (
         <EditPgPropertyDialog pg={owner} onDismiss={() => setShowEditProperty(false)} />

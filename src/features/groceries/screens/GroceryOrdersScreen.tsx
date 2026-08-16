@@ -1,11 +1,10 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, Platform, Image, ScrollView, BackHandler } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { mockProducts } from '../data/mockProducts';
 import { useOrderStore, DetailedOrder } from '../store/useOrderStore';
 import { useCartStore } from '../store/useCartStore';
-import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
 import { usePGowStore } from '@/store/usePGowStore';
 
@@ -13,21 +12,8 @@ export function GroceryOrdersScreen() {
   const orders = useOrderStore((state) => state.orders);
   const logout = usePGowStore((s) => s.logout);
   const addItem = useCartStore((state) => state.addItem);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
-  const popScreen = usePGowStore((s) => s.popScreen);
-  const setSelectedOrderId = useGroceryUiStore((s) => s.setSelectedOrderId);
-
-  // Android hardware back — the header had a title and a logout button but no way to leave the
-  // screen and return to wherever opened it (the groceries home's profile tile, or a checkout).
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
 
   const activeOrder = orders.find((o) => o.status !== 'delivered');
 
@@ -43,12 +29,11 @@ export function GroceryOrdersScreen() {
         addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, item.quantity);
       }
     });
-    pushScreen('GROCERY_CART');
+    router.push('/groceries/cart');
   };
 
   const openOrder = (orderId: string) => {
-    setSelectedOrderId(orderId);
-    pushScreen('GROCERY_ORDER_DETAIL');
+    router.push({ pathname: '/groceries/orders/[id]', params: { id: orderId } });
   };
 
   const renderOrder = ({ item }: { item: DetailedOrder }) => (
@@ -89,11 +74,11 @@ export function GroceryOrdersScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => popScreen()} style={styles.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Your Orders</Text>
@@ -175,7 +160,7 @@ export function GroceryOrdersScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

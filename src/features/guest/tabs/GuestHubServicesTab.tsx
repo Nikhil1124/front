@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { ScrollView, View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { Colors } from '@/theme';
@@ -13,7 +14,6 @@ import { GuestLaundryBookingDialog } from '@/components/dialogs/HubDialogs';
 export function GuestHubServicesTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const laundryRequests = usePGowStore((s) => s.guestLaundryRequestsState);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
   const [showLaundryDialog, setShowLaundryDialog] = useState(false);
 
   const myLaundry = laundryRequests.filter((r) => r.guestId === guest?.id);
@@ -62,7 +62,7 @@ export function GuestHubServicesTab() {
       {/* 2x2 Hub Service Grid */}
       <View style={{ gap: 12 }}>
         <Row gap={12}>
-          <HubServiceCard title="GROCERY\n(Bulk Dark Store)" icon="cart" iconColor="#14E2B1" statusText="Ready" statusColor="#14E2B1" buttonText="[ Order Now ]" onPress={() => pushScreen('GROCERIES_SCREEN')} />
+          <HubServiceCard title="GROCERY\n(Bulk Dark Store)" icon="cart" iconColor="#14E2B1" statusText="Ready" statusColor="#14E2B1" buttonText="[ Order Now ]" onPress={() => router.push('/groceries')} />
           <HubServiceCard title="REPAIRS &\nMAINTENANCE" icon="build" iconColor="#FFA726" statusText="Repairs Due" statusColor="#FFA726" buttonText="[ Log Grievance ]" onPress={() => Alert.alert('Info', 'Redirecting to Repairs Filing Desk...')} />
         </Row>
         <Row gap={12}>

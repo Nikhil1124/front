@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, StatusBar, TextInput, Platform, BackHandler } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, StatusBar, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { mockCategories, mockProducts, getProductsByCategory, Category } from '../data/mockProducts';
 import { ProductCard } from '../components/grocery/ProductCard';
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
-import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 // Section Grouping Definition
@@ -76,23 +75,11 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNam
 };
 
 export function GroceryCategoryScreen() {
-  const popScreen = usePGowStore((s) => s.popScreen);
-
-  // Android hardware back — consistent with every screen's visible back button.
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      popScreen();
-      return true;
-    });
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const pushScreen = usePGowStore((s) => s.pushScreen);
+  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
+  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const initialCategory = useGroceryUiStore((s) => s.selectedCategoryName);
-  const setSelectedProductId = useGroceryUiStore((s) => s.setSelectedProductId);
+  const { name: initialCategory } = useLocalSearchParams<{ name?: string }>();
   const filter: string | undefined = undefined;
 
   const mode = useShoppingModeStore((s) => s.mode);
@@ -100,7 +87,7 @@ export function GroceryCategoryScreen() {
   const cartItemCount = useCartStore((s) => s.getItemCount());
 
   // Active category state (null = show category section groups; string = show products of that category)
-  const [activeCategory, setActiveCategory] = useState<string | null>(initialCategory);
+  const [activeCategory, setActiveCategory] = useState<string | null>(initialCategory ?? null);
   const [search, setSearch] = useState('');
 
   // Determine if a section filter param exists
@@ -162,7 +149,7 @@ export function GroceryCategoryScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
 
-      <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
         <View style={styles.topHeader}>
           {showProductList ? (
@@ -173,7 +160,7 @@ export function GroceryCategoryScreen() {
                   setActiveCategory(null);
                   setSearch('');
                 } else {
-                  popScreen();
+                  router.back();
                 }
               }}
               activeOpacity={0.7}
@@ -270,21 +257,21 @@ export function GroceryCategoryScreen() {
               <View style={{ width: productCardWidth }}>
                 <ProductCard
                   product={item}
-                  onPress={(p) => { setSelectedProductId(p.id); pushScreen('GROCERY_PRODUCT'); }}
+                  onPress={(p) => router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })}
                   style={{ width: '100%', marginRight: 0 }}
                 />
               </View>
             )}
           />
         )}
-      </SafeAreaView>
+      </View>
 
       {/* Floating Cart Bar */}
       {cartItemCount > 0 && (
         <View style={[styles.floatingCartContainer, { bottom: Math.max(insets.bottom + 85, 105) }]}>
           <TouchableOpacity
             style={styles.floatingCart}
-            onPress={() => pushScreen('GROCERY_CART')}
+            onPress={() => router.push('/groceries/cart')}
             activeOpacity={0.9}
           >
             <BlurView

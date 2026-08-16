@@ -183,24 +183,6 @@ export const API = {
   BILLING_EXPORT_CSV: (pgId: string, start: string, end: string) =>
     `/v1/billing/export-csv?pg_id=${pgId}&start_date=${start}&end_date=${end}`,
   BILLING_REMIND_UNPAID: "/v1/billing/remind-unpaid",
-
-  // Panic — staff triggers from /v1/staff/panic; owner/manager list, ack, and
-  // resolve from /v1/panic/alerts. The trigger route lives under /staff because
-  // the staff auth scope owns it; the alert routes live under /panic because the
-  // owner auth scope owns those.
-  PANIC_TRIGGER: "/v1/staff/panic",
-  PANIC_ALERTS: (pgId: string, status: string) => `/v1/panic/alerts?pg_id=${pgId}&status=${status}`,
-  PANIC_ACKNOWLEDGE: (id: string) => `/v1/panic/alerts/${id}/acknowledge`,
-  PANIC_RESOLVE: (id: string) => `/v1/panic/alerts/${id}/resolve`,
-
-  // Attendance — shifts (manager creates), punch-in/out (staff executes), and
-  // the weekly schedule grid the manager and the staff member both read.
-  ATTENDANCE_SHIFTS: "/v1/attendance/shifts",
-  ATTENDANCE_PUNCH_IN: "/v1/attendance/punch-in",
-  ATTENDANCE_PUNCH_OUT: (id: string) => `/v1/attendance/punches/${id}/punch-out`,
-  ATTENDANCE_PUNCHES: "/v1/attendance/punches",
-  ATTENDANCE_WEEKLY_SCHEDULE: (pgId: string, staffId: string, weekStart: string) =>
-    `/v1/attendance/weekly-schedule?pg_id=${pgId}&staff_membership_id=${staffId}&week_start_date=${weekStart}`,
 } as const;
 
 // The five gate codes — switches on error.code, never error.message

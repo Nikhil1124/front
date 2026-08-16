@@ -35,7 +35,6 @@ import * as staffApi from '@/features/staff/useStaff';
 import { useAuthStore, type Membership } from '@/store/authStore';
 import { parseTime } from '@/utils/format';
 import type {
-  AppScreen,
   UserRole,
   PGOwnerEntity,
   GuestEntity,
@@ -100,13 +99,6 @@ function toUserRole(role: Membership['role'] | null): UserRole | null {
   return 'STAFF';
 }
 
-function screenForRole(role: UserRole | null): AppScreen {
-  if (role === 'OWNER' || role === 'MANAGER') return 'OWNER_DASHBOARD';
-  if (role === 'GUEST') return 'GUEST_DASHBOARD';
-  if (role === 'STAFF' || role === 'CHEF') return 'STAFF_DASHBOARD';
-  return 'WELCOME';
-}
-
 /** ADR-004's gate is the resident's own KYC state, which is the one piece of KYC a guest can
  *  read about themselves — `/v1/kyc/pending` is owner-only. */
 function kycStatusFromGate(gate: string | null): string {
@@ -117,8 +109,6 @@ function kycStatusFromGate(gate: string | null): string {
 }
 
 export interface PGowState {
-  // ===== Navigation =====
-  currentScreen: AppScreen;
   activeRole: UserRole | null;
 
   // ===== Logged-in entities =====
@@ -232,25 +222,6 @@ export interface PGowState {
   init: () => Promise<void>;
   refreshAll: () => Promise<void>;
 
-  // ===== Navigation actions =====
-  setScreen: (screen: AppScreen) => void;
-  /** Push a screen onto the back-stack. Replaces the current screen if it's the same, so we
-   *  don't accumulate duplicate entries when a screen taps its own navigation button. */
-  pushScreen: (screen: AppScreen) => void;
-  /** Pop the back-stack by one. Returns true if a pop happened, false if the stack was empty
-   *  (which the caller should interpret as "exit the app"). */
-  popScreen: () => boolean;
-  /** Replace the current screen WITHOUT pushing onto the stack. Used for login → dashboard
-   *  transitions where the login screen should not remain in history (you can't "back" into
-   *  a login form after you've already logged in). */
-  replaceScreen: (screen: AppScreen) => void;
-  /** Reset the back-stack entirely and jump to `screen`. Used on logout. */
-  resetScreenTo: (screen: AppScreen) => void;
-  /** Read-only stack snapshot. Don't mutate directly — use push/pop/replace/reset. */
-  screenStack: AppScreen[];
-  /** True when there is something to pop to. Convenience selector for back-button visibility. */
-  canGoBack: () => boolean;
-
   // ===== Setters (form inputs etc.) =====
   set: <K extends keyof PGowState>(key: K, value: PGowState[K]) => void;
   patch: (partial: Partial<PGowState>) => void;
@@ -363,8 +334,6 @@ export interface PGowState {
 }
 
 export const usePGowStore = create<PGowState>((set, get) => ({
-  currentScreen: 'WELCOME',
-  screenStack: ['WELCOME'],
   activeRole: null,
 
   loggedInOwner: null,
@@ -469,20 +438,17 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (get()._initialized) return;
     set({ _initialized: true });
     // Tokens are hydrated by the root layout before this runs. No token means no session to
-    // restore, and WELCOME is already the initial screen.
+    // restore, and the (auth) route group's Stack.Protected guard is already showing Welcome.
     if (!useAuthStore.getState().accessToken) return;
     try {
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
       const role = toUserRole(useAuthStore.getState().activeRole);
-      const target = screenForRole(role);
+      // Navigation reacts to activeRole/isManagerMode on its own now (see app/_layout.tsx's
+      // Stack.Protected guards) — no screen/stack to set here anymore.
       set({
         activeRole: role,
         isManagerMode: role === 'MANAGER',
-        currentScreen: target,
-        // On session restore we treat the dashboard as the root: there's no
-        // login screen to "back" into, so reset the stack to a single entry.
-        screenStack: [target],
       });
       await get().refreshAll();
     } catch {
@@ -499,11 +465,19 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     const isGuest = role === 'GUEST';
 
     // Every property this account holds. Owners switch between them; a guest gets the one.
-    const properties = await safeList('properties', async () =>
+    // Kicked off but not awaited yet — on every refresh after the first login `activePgId` is
+    // already known, so this can run concurrently with the property-scoped batch below instead
+    // of gating it behind a whole extra round trip.
+    const propertiesPromise = safeList('properties', async () =>
       (await cachedFetch(qk.properties.list(), () => propertiesApi.listProperties({ limit: 100 }))).items
     );
 
-    const pgId = activePgId ?? properties[0]?.id ?? null;
+    // Only the very first load — before any property has ever been selected — actually needs
+    // to wait on `properties` to derive pgId.
+    let pgId = activePgId;
+    if (!pgId) {
+      pgId = (await propertiesPromise)[0]?.id ?? null;
+    }
     if (!pgId) {
       // A freshly registered owner with no property yet. Nothing property-scoped can load,
       // and the portfolio dialog is how they create their first one.
@@ -517,8 +491,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     }
 
     const [
-      staffRows, guestRows, kycRows, paymentRows, requestRows, mealRows, inboxRows, expenseRows,
+      properties, staffRows, guestRows, kycRows, paymentRows, requestRows, mealRows, inboxRows, expenseRows,
     ] = await Promise.all([
+        propertiesPromise,
         safeList('staff', async () =>
           (await cachedFetch(qk.staff.list(pgId), () => staffApi.listStaff(pgId, { limit: 100 }))).items
         ),
@@ -826,60 +801,8 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     });
   },
 
-  // ── Navigation ──────────────────────────────────────────────────────────────
-  // The back-stack is a simple array of AppScreens; the top of the stack IS the
-  // current screen. `currentScreen` stays in state as the source of truth for
-  // `PGowApp.renderScreen()` to avoid a render storm when callers read
-  // `screenStack[screenStack.length - 1]`.
-  //
-  // Rules:
-  //   pushScreen:  WELCOME/OWNER_LOGIN/OWNER_REGISTER/etc → pushes current on
-  //                stack and sets new screen. Skips the push if the requested
-  //                screen equals current (idempotent nav button).
-  //   popScreen:   Pops stack. Returns false if stack has only one entry (root).
-  //   replaceScreen: Login → dashboard transitions. Login screen should never
-  //                be in the back-stack because you can't "back" into it once
-  //                authenticated.
-  //   resetScreenTo: Clears stack and jumps. Used on logout / role switch.
-
-  setScreen: (screen) => {
-    // Back-compat: behave like pushScreen so existing callers get back-stack
-    // semantics for free without needing to find every call site.
-    get().pushScreen(screen);
-  },
-
-  pushScreen: (screen) => {
-    const current = get().currentScreen;
-    if (current === screen) return; // idempotent — don't stack duplicates
-    set((state) => ({
-      currentScreen: screen,
-      screenStack: [...state.screenStack, screen],
-    }));
-  },
-
-  popScreen: () => {
-    const stack = get().screenStack;
-    if (stack.length <= 1) return false; // at root — caller should exit app
-    const next = stack[stack.length - 2];
-    set({
-      currentScreen: next,
-      screenStack: stack.slice(0, -1),
-    });
-    return true;
-  },
-
-  replaceScreen: (screen) => {
-    const stack = get().screenStack;
-    // Replace top of stack with the new screen, keep history below.
-    const newStack = stack.length > 0 ? [...stack.slice(0, -1), screen] : [screen];
-    set({ currentScreen: screen, screenStack: newStack });
-  },
-
-  resetScreenTo: (screen) => {
-    set({ currentScreen: screen, screenStack: [screen] });
-  },
-
-  canGoBack: () => get().screenStack.length > 1,
+  // Navigation lives in Expo Router now (see app/_layout.tsx's Stack.Protected guards and
+  // each screen's own router.push/router.back calls) — this store no longer owns any of it.
 
   set: (key, value) => set({ [key]: value } as any),
   patch: (partial) => set(partial as any),
@@ -1573,10 +1496,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       if (!created.ok) return created;
       set({
         activeRole: 'OWNER',
-        currentScreen: 'OWNER_DASHBOARD',
-        // Registration is a one-way door: replacing the stack means the owner
-        // can't "back" into the register form once their account is live.
-        screenStack: ['OWNER_DASHBOARD'],
         // Cleared together: both are secrets or one-shot state that must not survive into
         // whatever the owner does next.
         ownerPasswordInput: '',
@@ -1605,14 +1524,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'OWNER';
-      const target = screenForRole(role);
       set({
         activeRole: role,
         isManagerMode: role === 'MANAGER',
-        currentScreen: target,
-        // Replace the stack so back from a dashboard exits the app, not the
-        // login form (you can't "back" into a screen that already logged in).
-        screenStack: [target],
       });
       await get().refreshAll();
       return { ok: true };
@@ -1643,12 +1557,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
-      const target = screenForRole(role);
       set({
         activeRole: role,
         isManagerMode: role === 'MANAGER',
-        currentScreen: target,
-        screenStack: [target],
       });
       await get().refreshAll();
       return { ok: true };
@@ -1742,10 +1653,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       set({
         activeRole: 'GUEST',
         isManagerMode: false,
-        currentScreen: 'GUEST_DASHBOARD',
-        // Joining is a one-way door: replace the stack so the resident cannot
-        // "back" into the join form after the account is created.
-        screenStack: ['GUEST_DASHBOARD'],
         // Never left sitting in the store after it has been exchanged for tokens.
         guestPasswordInput: '',
       });
@@ -1770,12 +1677,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
-      const target = screenForRole(role);
       set({
         activeRole: role,
         isManagerMode: role === 'MANAGER',
-        currentScreen: target,
-        screenStack: [target],
       });
       await get().refreshAll();
       return { ok: true };
@@ -2044,12 +1948,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         useAuthStore.getState().setActivePgId(me.memberships[0].pg_id);
       }
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'STAFF';
-      const target = screenForRole(role);
       set({
         activeRole: role,
         isManagerMode: role === 'MANAGER',
-        currentScreen: target,
-        screenStack: [target],
       });
       await get().refreshAll();
       return { ok: true };
@@ -2280,12 +2181,13 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     // a dashboard waiting for a network round trip to sign out.
     authApi.logoutEverywhere().catch(() => {});
     queryClient.clear();
+    // The (auth) route group's guard is `!accessToken` (see app/_layout.tsx) — without
+    // clearing it here too, this action used to rely entirely on `currentScreen` to look
+    // like a sign-out while the real session token sat untouched in authStore/SecureStore.
+    useAuthStore.getState().logout();
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
-      activeRole: null, isManagerMode: false, currentScreen: 'WELCOME',
-      // Reset the back-stack so the user lands on a clean WELCOME root with no
-      // stale dashboard entries to "back" into.
-      screenStack: ['WELCOME'],
+      activeRole: null, isManagerMode: false,
       currentGuests: [], currentStaff: [], currentPayments: [],
       currentFeedbackComplaints: [], currentPGNotifications: [], currentRoleNotifications: [],
       currentRSVPs: [], currentExpenses: [],

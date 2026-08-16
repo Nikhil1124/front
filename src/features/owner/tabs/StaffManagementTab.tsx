@@ -4,7 +4,7 @@
  * the form and the full roster fighting for scroll space.
  */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -79,9 +79,8 @@ export function StaffManagementTab() {
         })}
       </View>
 
-      <FormScroll contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
-        {subTab === 0 && (
-          <>
+      {subTab === 0 ? (
+        <FormScroll contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             <Row gap={6} align="center">
               <Txt size={15} weight="900" color={Colors.textPrimary}>{!isManager ? 'Appoint Manager / Staff' : 'Add Staff Member'}</Txt>
               <InfoTip
@@ -173,82 +172,87 @@ export function StaffManagementTab() {
                 {!isManager ? 'Appoint & Provision Member' : 'Register Staff Member'}
               </Txt>
             </Btn>
-          </>
-        )}
-
-        {subTab === 1 && (
-          <>
-            <Row justify="space-between" align="center">
-              <Txt size={14} weight="900" color={Colors.textPrimary}>Registered Staff & Managers</Txt>
-              <View style={styles.countBadge}>
-                <Txt size={11} weight="800" color={Colors.primaryDark}>{staffList.length} Active</Txt>
-              </View>
-            </Row>
-            <Spacer size={10} />
-
-            {staffList.length === 0 ? (
-              <Card containerColor={Colors.surface} borderRadius={14} padding={[20, 16]} style={{ alignItems: 'center' }}>
-                <Ionicons name="people-outline" size={32} color={Colors.textMuted} />
-                <Txt size={12} weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>No staff registered yet.</Txt>
-              </Card>
-            ) : (
-              staffList.map((staff) => {
-                const branchName = allPGs.find((p) => p.id === staff.pgId)?.pgName ?? `PG #${staff.pgId}`;
-                const isMgr = staff.role.toLowerCase() === 'manager';
-                return (
-                  <Card
-                    key={staff.id}
-                    containerColor={isMgr ? '#F0FDF9' : Colors.surface}
-                    borderRadius={16}
-                    borderWidth={1}
-                    borderColor={isMgr ? '#86EFAC' : Colors.borderSubtle}
-                    padding={[14, 14]}
-                    style={{ marginBottom: 10 }}
-                  >
-                    <Row justify="space-between" align="center">
-                      <Row gap={12} style={{ flex: 1 }} align="center">
-                        <View style={[styles.roleIcon, { backgroundColor: isMgr ? '#DCFCE7' : Colors.surfaceMuted }]}>
-                          <Ionicons
-                            name={roleIconName(staff.role)}
-                            size={20}
-                            color={isMgr ? '#16A34A' : Colors.primary}
-                          />
-                        </View>
-                        <Col style={{ flex: 1 }}>
-                          <Row align="center" gap={6}>
-                            <Txt size={14} weight="800" color={Colors.textPrimary}>{staff.name}</Txt>
-                            <View style={[styles.rolePill, { backgroundColor: isMgr ? '#BBF7D0' : '#E0F2FE' }]}>
-                              <Txt size={9} weight="800" color={isMgr ? '#166534' : '#0369A1'}>{staff.role}</Txt>
-                            </View>
-                          </Row>
-                          <Txt size={11} weight="700" color={Colors.primaryDark} style={{ marginTop: 2 }}>
-                            🏢 {branchName}
-                          </Txt>
-                          <Txt size={10} color={Colors.textMuted}>
-                            📞 {staff.phone} • PIN: {staff.loginPin}
-                          </Txt>
-                          <Txt size={10} weight="700" color={Colors.textSecondary}>
-                            {staff.shiftTime ? `${staff.shiftTime} • ` : ''}₹{Math.round(staff.monthlySalary).toLocaleString('en-IN')}/mo
-                          </Txt>
-                        </Col>
-                      </Row>
-                      <IconBtn
-                        onPress={() => Alert.alert('Remove Staff Member', `Remove ${staff.name} from this property?`, [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Remove', style: 'destructive', onPress: () => deleteStaff(staff.id) },
-                        ])}
-                        icon="trash-outline"
-                        size={18}
-                        tint="#EF4444"
+        </FormScroll>
+      ) : (
+        // Roster can run to ~100 staff (refreshAll fetches up to 100) — FlatList instead of
+        // `.map()` in a ScrollView so only the visible rows mount.
+        <FlatList
+          style={{ flex: 1 }}
+          data={staffList}
+          keyExtractor={(staff) => staff.id}
+          contentContainerStyle={{ paddingTop: 14, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View>
+              <Row justify="space-between" align="center">
+                <Txt size={14} weight="900" color={Colors.textPrimary}>Registered Staff & Managers</Txt>
+                <View style={styles.countBadge}>
+                  <Txt size={11} weight="800" color={Colors.primaryDark}>{staffList.length} Active</Txt>
+                </View>
+              </Row>
+              <Spacer size={10} />
+            </View>
+          }
+          ListEmptyComponent={
+            <Card containerColor={Colors.surface} borderRadius={14} padding={[20, 16]} style={{ alignItems: 'center' }}>
+              <Ionicons name="people-outline" size={32} color={Colors.textMuted} />
+              <Txt size={12} weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>No staff registered yet.</Txt>
+            </Card>
+          }
+          renderItem={({ item: staff }) => {
+            const branchName = allPGs.find((p) => p.id === staff.pgId)?.pgName ?? `PG #${staff.pgId}`;
+            const isMgr = staff.role.toLowerCase() === 'manager';
+            return (
+              <Card
+                containerColor={isMgr ? '#F0FDF9' : Colors.surface}
+                borderRadius={16}
+                borderWidth={1}
+                borderColor={isMgr ? '#86EFAC' : Colors.borderSubtle}
+                padding={[14, 14]}
+                style={{ marginBottom: 10 }}
+              >
+                <Row justify="space-between" align="center">
+                  <Row gap={12} style={{ flex: 1 }} align="center">
+                    <View style={[styles.roleIcon, { backgroundColor: isMgr ? '#DCFCE7' : Colors.surfaceMuted }]}>
+                      <Ionicons
+                        name={roleIconName(staff.role)}
+                        size={20}
+                        color={isMgr ? '#16A34A' : Colors.primary}
                       />
-                    </Row>
-                  </Card>
-                );
-              })
-            )}
-          </>
-        )}
-      </FormScroll>
+                    </View>
+                    <Col style={{ flex: 1 }}>
+                      <Row align="center" gap={6}>
+                        <Txt size={14} weight="800" color={Colors.textPrimary}>{staff.name}</Txt>
+                        <View style={[styles.rolePill, { backgroundColor: isMgr ? '#BBF7D0' : '#E0F2FE' }]}>
+                          <Txt size={9} weight="800" color={isMgr ? '#166534' : '#0369A1'}>{staff.role}</Txt>
+                        </View>
+                      </Row>
+                      <Txt size={11} weight="700" color={Colors.primaryDark} style={{ marginTop: 2 }}>
+                        🏢 {branchName}
+                      </Txt>
+                      <Txt size={10} color={Colors.textMuted}>
+                        📞 {staff.phone} • PIN: {staff.loginPin}
+                      </Txt>
+                      <Txt size={10} weight="700" color={Colors.textSecondary}>
+                        {staff.shiftTime ? `${staff.shiftTime} • ` : ''}₹{Math.round(staff.monthlySalary).toLocaleString('en-IN')}/mo
+                      </Txt>
+                    </Col>
+                  </Row>
+                  <IconBtn
+                    onPress={() => Alert.alert('Remove Staff Member', `Remove ${staff.name} from this property?`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: () => deleteStaff(staff.id) },
+                    ])}
+                    icon="trash-outline"
+                    size={18}
+                    tint="#EF4444"
+                  />
+                </Row>
+              </Card>
+            );
+          }}
+        />
+      )}
     </View>
   );
 }
