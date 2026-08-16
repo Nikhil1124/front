@@ -46,7 +46,6 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const removeItem = useCartStore((s) => s.removeItem);
 
   const bannerScrollRef = useRef<ScrollView>(null);
 
@@ -181,9 +180,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
   };
 
   const handleDecrement = (ing: any, currentQty: number) => {
-    const id = `${ing.productId}-${ing.unit}`;
-    if (currentQty <= 1) removeItem(id);
-    else updateQuantity(id, currentQty - 1);
+    updateQuantity(`${ing.productId}-${ing.unit}`, currentQty - 1);
   };
 
   const handleAddAllToCart = (targetConfig: DayMenuConfig) => {

@@ -27,7 +27,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const removeItem = useCartStore((s) => s.removeItem);
   const isWishlisted = useWishlistStore((s) => s.isWishlisted(product.id));
   const toggleItem = useWishlistStore((s) => s.toggleItem);
 
@@ -66,11 +65,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleDecrease = () => {
-    if (quantity > 1) {
-      updateQuantity(compoundId, quantity - 1);
-    } else {
-      removeItem(compoundId);
-    }
+    updateQuantity(compoundId, quantity - 1);
   };
 
   // Full Layout (Blinkit Redesign Layout)

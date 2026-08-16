@@ -215,7 +215,7 @@ export function GroceryOrderDetailScreen() {
           )}
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Delivery Fee</Text>
-            <Text style={styles.billVal}>FREE</Text>
+            <Text style={styles.billVal}>{order.deliveryFee === 0 ? 'FREE' : `₹${order.deliveryFee}`}</Text>
           </View>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Platform Fee</Text>

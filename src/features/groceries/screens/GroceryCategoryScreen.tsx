@@ -95,9 +95,8 @@ export function GroceryCategoryScreen() {
   const filter: string | undefined = undefined;
 
   const mode = useShoppingModeStore((s) => s.mode);
-  const cartItems = useCartStore((s) => s.items);
   const getCartTotal = useCartStore((s) => s.getCartTotal);
-  const cartItemCount = cartItems.reduce((t, i) => t + i.quantity, 0);
+  const cartItemCount = useCartStore((s) => s.getItemCount());
 
   // Active category state (null = show category section groups; string = show products of that category)
   const [activeCategory, setActiveCategory] = useState<string | null>(initialCategory);

@@ -79,11 +79,17 @@ export const useCartStore = create<CartState>()(
       removeItem: (cartItemId) =>
         set((state) => ({ items: state.items.filter((item) => item.id !== cartItemId) })),
 
+      // quantity <= 0 removes the line rather than leaving a zero/negative-quantity item -
+      // this used to be a guard every caller had to reimplement (four separate copies of
+      // "if qty > 1 update else remove"); owning it here means calling updateQuantity
+      // unconditionally is always correct.
       updateQuantity: (cartItemId, quantity) =>
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === cartItemId ? { ...item, quantity } : item
-          ),
+          items: quantity <= 0
+            ? state.items.filter((item) => item.id !== cartItemId)
+            : state.items.map((item) =>
+                item.id === cartItemId ? { ...item, quantity } : item
+              ),
         })),
 
       setReplacement: (cartItemId, preference) =>

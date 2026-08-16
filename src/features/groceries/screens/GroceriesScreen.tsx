@@ -37,7 +37,7 @@ export function GroceriesScreen() {
   const setMode = useShoppingModeStore((s) => s.setMode);
   const setPgDetails = useShoppingModeStore((s) => s.setPgDetails);
 
-  const cartItems = useCartStore((s) => s.items);
+  const cartItemCount = useCartStore((s) => s.getItemCount());
   const getCartTotal = useCartStore((s) => s.getCartTotal);
 
   const setSelectedProductId = useGroceryUiStore((s) => s.setSelectedProductId);
@@ -74,7 +74,6 @@ export function GroceriesScreen() {
     [mode],
   );
 
-  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   const hasActiveFilters =
     filters.sort !== 'popular' || filters.dietary.length > 0 || filters.maxPrice !== undefined || filters.onDealOnly === true;

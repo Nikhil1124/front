@@ -16,6 +16,7 @@ import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { QuantityStepper } from '../components/ui/QuantityStepper';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { BulkPricingGrid } from '../components/grocery/BulkPricingGrid';
+import { parseUnitQuantity } from '../utils/pricing';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,6 @@ export function GroceryProductScreen() {
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const removeItem = useCartStore((s) => s.removeItem);
   const getItemCount = useCartStore((s) => s.getItemCount);
 
   const isWishlisted = useWishlistStore((s) => s.isWishlisted(product?.id || ''));
@@ -93,10 +93,10 @@ export function GroceryProductScreen() {
   const currentSavings = useMemo(() => {
     if (!options || options.length <= 1) return 0;
     const base = options[0];
-    const rate = base.price / parseFloat(base.unit);
+    const rate = base.price / parseUnitQuantity(base.unit);
     const cur = options[selectedIdx];
     if (!base || !cur) return 0;
-    return Math.max(0, Math.round(rate * parseFloat(cur.unit) - cur.price));
+    return Math.max(0, Math.round(rate * parseUnitQuantity(cur.unit) - cur.price));
   }, [options, selectedIdx]);
 
   // ── 404 state ──
@@ -143,10 +143,7 @@ export function GroceryProductScreen() {
 
   const handleAdd = () => addItem(product, selectedOption, 1);
   const handleIncrease = () => updateQuantity(compoundId, quantity + 1);
-  const handleDecrease = () => {
-    if (quantity > 1) updateQuantity(compoundId, quantity - 1);
-    else removeItem(compoundId);
-  };
+  const handleDecrease = () => updateQuantity(compoundId, quantity - 1);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (

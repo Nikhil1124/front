@@ -68,7 +68,7 @@ export function GroceryCheckoutScreen() {
 
   const subtotal = getCartTotal();
   const { cgst, sgst, totalGst } = getGSTDetails();
-  const deliveryFee = selectedSlot.fee;
+  const deliveryFee = fulfillmentMode === 'pickup' ? 0 : selectedSlot.fee;
   const platformFee = 10;
   const grandTotal = Math.round((subtotal + totalGst + deliveryFee + platformFee + selectedTip) * 100) / 100;
   const cartItemCount = getItemCount();
@@ -177,48 +177,54 @@ export function GroceryCheckoutScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.slotListLabel}>Select delivery time</Text>
+          {fulfillmentMode === 'delivery' ? (
+            <>
+              <Text style={styles.slotListLabel}>Select delivery time</Text>
 
-          {/* Slots list */}
-          <View style={styles.slotList}>
-            {CHECKOUT_SLOTS.map((slot) => {
-              const isSelected = selectedSlotId === slot.id;
-              const isFastest = slot.badge === 'FASTEST';
+              {/* Slots list */}
+              <View style={styles.slotList}>
+                {CHECKOUT_SLOTS.map((slot) => {
+                  const isSelected = selectedSlotId === slot.id;
+                  const isFastest = slot.badge === 'FASTEST';
 
-              return (
-                <TouchableOpacity
-                  key={slot.id}
-                  style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
-                  onPress={() => setSelectedSlotId(slot.id)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.slotRowLeft}>
-                    <Ionicons
-                      name={isSelected ? "radio-button-on" : "radio-button-off"}
-                      size={18}
-                      color={isSelected ? AppColors.primary : AppColors.textMuted}
-                      style={styles.radioIcon}
-                    />
-                    <View style={styles.slotDetails}>
-                      <View style={styles.slotDayBadgeRow}>
-                        <Text style={styles.slotDay}>{slot.day}</Text>
-                        <View style={[styles.slotBadge, isFastest ? styles.fastestBadge : styles.freeBadge]}>
-                          <Text style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
-                            {slot.badge}
-                          </Text>
+                  return (
+                    <TouchableOpacity
+                      key={slot.id}
+                      style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
+                      onPress={() => setSelectedSlotId(slot.id)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.slotRowLeft}>
+                        <Ionicons
+                          name={isSelected ? "radio-button-on" : "radio-button-off"}
+                          size={18}
+                          color={isSelected ? AppColors.primary : AppColors.textMuted}
+                          style={styles.radioIcon}
+                        />
+                        <View style={styles.slotDetails}>
+                          <View style={styles.slotDayBadgeRow}>
+                            <Text style={styles.slotDay}>{slot.day}</Text>
+                            <View style={[styles.slotBadge, isFastest ? styles.fastestBadge : styles.freeBadge]}>
+                              <Text style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
+                                {slot.badge}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={styles.slotWindow}>{slot.window}</Text>
                         </View>
                       </View>
-                      <Text style={styles.slotWindow}>{slot.window}</Text>
-                    </View>
-                  </View>
 
-                  <Text style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
-                    {slot.feeText}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                      <Text style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
+                        {slot.feeText}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          ) : (
+            <Text style={styles.slotListLabel}>Pickup is free — collect your order from the store counter, no delivery fee.</Text>
+          )}
         </View>
 
         {/* Section 2: Address & Instructions */}

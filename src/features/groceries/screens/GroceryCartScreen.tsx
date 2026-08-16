@@ -11,6 +11,7 @@ import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { usePGowStore } from '@/store/usePGowStore';
+import { getPerUnitRateLabel } from '../utils/pricing';
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
@@ -156,7 +157,7 @@ export function GroceryCartScreen() {
               const itemSavings = hasDiscount ? (item.originalPrice! - item.price) * item.quantity : 0;
               
               // Calculate unit price if in owner mode (e.g. 10 kg -> ₹48/kg)
-              const perUnitRateText = mode === 'owner' ? getPerUnitPriceText(item.unit, item.price) : '';
+              const perUnitRateText = mode === 'owner' ? getPerUnitRateLabel(item.unit, item.price) : '';
 
               return (
                 <View key={item.id} style={styles.cartCard}>
@@ -364,22 +365,6 @@ export function GroceryCartScreen() {
   );
 }
 
-// Per unit rate parser helper
-const getPerUnitPriceText = (unitStr: string, price: number) => {
-  const numMatch = unitStr.match(/^(\d+(\.\d+)?)/);
-  if (!numMatch) return '';
-  const num = parseFloat(numMatch[1]);
-  if (num <= 0) return '';
-  const perUnit = Math.round(price / num);
-  const type = unitStr.toLowerCase();
-  let label = 'unit';
-  if (type.includes('kg')) label = 'kg';
-  else if (type.includes('g')) label = 'g';
-  else if (type.includes('l')) label = 'L';
-  else if (type.includes('ml')) label = 'ml';
-  else if (type.includes('pc') || type.includes('dozen')) label = 'pc';
-  return `₹${perUnit}/${label}`;
-};
 
 const styles = StyleSheet.create({
   container: {

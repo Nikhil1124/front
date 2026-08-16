@@ -27,7 +27,12 @@ export interface BannerConfig {
 export const homeBanners: BannerConfig[] = [
   {
     id: "kitchen-essentials",
-    image: require('../../../assets/images/banners/bulk.png'),
+    // TODO: swap for a real "kitchen essentials" marketing banner. The original
+    // require() pointed at assets/images/banners/bulk.png, a file (and directory)
+    // that doesn't exist anywhere in the repo - it crashed Metro bundling for the
+    // whole app. Standing in with an existing on-theme photo until real banner
+    // art is supplied.
+    image: require('../../../../../assets/img_meal_service_ad_1784642265436.jpg'),
     title: "Kitchen Essentials",
     cta: "Shop Now",
     route: "/collection/kitchen-essentials",
@@ -37,7 +42,8 @@ export const homeBanners: BannerConfig[] = [
   },
   {
     id: "fresh-everyday",
-    image: require('../../../assets/images/banners/Fresh.png'),
+    // TODO: swap for a real "fresh everyday" marketing banner (see note above).
+    image: require('../../../../../assets/pg_grocery_eggs_1785343431667.jpg'),
     title: "Fresh Everyday",
     cta: "Shop Fresh",
     route: "/collection/fresh-everyday",
@@ -47,7 +53,8 @@ export const homeBanners: BannerConfig[] = [
   },
   {
     id: "monthly-stock-up",
-    image: require('../../../assets/images/banners/Monthly savings.png'),
+    // TODO: swap for a real "monthly stock up" marketing banner (see note above).
+    image: require('../../../../../assets/img_premium_subscription.jpg'),
     title: "Monthly Stock Up",
     cta: "Stock Up Now",
     route: "/collection/monthly-stock-up",
@@ -57,7 +64,8 @@ export const homeBanners: BannerConfig[] = [
   },
   {
     id: "smart-savings",
-    image: require('../../../assets/images/banners/buy more.png'),
+    // TODO: swap for a real "smart savings" marketing banner (see note above).
+    image: require('../../../../../assets/pg_grocery_milk_1785343413850.jpg'),
     title: "Smart Savings",
     cta: "Shop & Save",
     route: "/collection/smart-savings",

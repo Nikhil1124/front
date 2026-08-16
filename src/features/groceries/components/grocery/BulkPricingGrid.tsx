@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppColors, AppFonts } from '../../theme/AppColors';
 import { PricingOption } from '../../data/mockProducts';
+import { getPerUnitRateLabel, parseUnitQuantity } from '../../utils/pricing';
 
 interface BulkPricingGridProps {
   options: PricingOption[];
@@ -14,21 +15,6 @@ interface BulkPricingGridProps {
  * Bulk pricing comparison grid for owner mode.
  * Extracted from product/[id].tsx — Section 10 ("Best Value for PG Owners").
  */
-const getPerUnitRateLabel = (unitStr: string, price: number): string => {
-  const numMatch = unitStr.match(/^(\d+(\.\d+)?)/);
-  if (!numMatch) return '';
-  const num = parseFloat(numMatch[1]);
-  if (num <= 0) return '';
-  const perUnit = Math.round(price / num);
-  const type = unitStr.toLowerCase();
-  let label = 'unit';
-  if (type.includes('kg')) label = 'kg';
-  else if (type.includes('g')) label = 'g';
-  else if (type.includes('l')) label = 'L';
-  else if (type.includes('ml')) label = 'ml';
-  else if (type.includes('pc') || type.includes('dozen')) label = 'pc';
-  return `₹${perUnit}/${label}`;
-};
 
 export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
   options,
@@ -47,7 +33,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
             const perUnitRate = getPerUnitRateLabel(opt.unit, opt.price);
 
             const firstOpt = options[0];
-            const expected = (firstOpt.price / parseFloat(firstOpt.unit)) * parseFloat(opt.unit);
+            const expected = (firstOpt.price / parseUnitQuantity(firstOpt.unit)) * parseUnitQuantity(opt.unit);
             const calcSavings = Math.round(expected - opt.price);
 
             return (
