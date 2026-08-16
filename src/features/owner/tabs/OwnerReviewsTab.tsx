@@ -44,16 +44,16 @@ export function OwnerReviewsTab() {
     return (now - s.timestamp) > ONE_MONTH_MS;
   });
 
-  const avg = (key: keyof FeedbackComplaintEntity, fallback = 4.8) => {
+  const avg = (key: keyof FeedbackComplaintEntity) => {
     const vals = submissions.map((s) => Number(s[key]) || 0).filter((v) => v > 0);
-    if (vals.length === 0) return fallback;
+    if (vals.length === 0) return 0;
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   };
 
-  const avgOverall = avg('overallRating', 4.8);
-  const avgMeals = avg('mealRating', 4.6);
-  const avgClean = avg('cleanlinessRating', 4.5);
-  const avgMgr = avg('managerRating', 4.8);
+  const avgOverall = avg('overallRating');
+  const avgMeals = avg('mealRating');
+  const avgClean = avg('cleanlinessRating');
+  const avgMgr = avg('managerRating');
 
   // Priority order for the inbox below: unresolved before resolved, and within
   // that, oldest first — a complaint sitting unanswered the longest is the one
@@ -83,7 +83,7 @@ export function OwnerReviewsTab() {
       tint: Colors.primary,
       bgColor: '#F0FDF9',
       rating: avgMgr,
-      reviewCount: managerReviews.length || 6,
+      reviewCount: managerReviews.length,
       subtitle: 'Tenant relations, operations & branch management',
     },
     {
@@ -95,7 +95,7 @@ export function OwnerReviewsTab() {
       tint: '#D97706',
       bgColor: '#FFFBEB',
       rating: avgMeals,
-      reviewCount: chefReviews.length || 8,
+      reviewCount: chefReviews.length,
       subtitle: 'Daily meals, food taste, hygiene & mess timings',
     },
     {
@@ -107,7 +107,7 @@ export function OwnerReviewsTab() {
       tint: '#2563EB',
       bgColor: '#EFF6FF',
       rating: avgClean,
-      reviewCount: staffReviews.length || 5,
+      reviewCount: staffReviews.length,
       subtitle: 'Room cleaning, repairs, electrical & water support',
     },
   ];
@@ -208,10 +208,15 @@ export function OwnerReviewsTab() {
       Alert.alert('Validation', 'Please write a response reply');
       return;
     }
-    await respond(activeItem.id, responseText, responseStatus);
-    hapticSuccess();
-    toast('success', 'Review updated', `${activeItem.guestName} has been notified of your response.`);
-    setActiveItem(null);
+    try {
+      await respond(activeItem.id, responseText, responseStatus);
+      hapticSuccess();
+      toast('success', 'Review updated', `${activeItem.guestName} has been notified of your response.`);
+      setActiveItem(null);
+    } catch (err: any) {
+      hapticError();
+      toast('error', 'Could not save response', err?.message ?? 'Please try again.');
+    }
   };
 
   return (
@@ -343,7 +348,9 @@ export function OwnerReviewsTab() {
 
                 <Col align="flex-end" style={{ marginLeft: 10 }}>
                   <View style={[styles.ratingPill, { backgroundColor: staff.bgColor }]}>
-                    <Txt size={13} weight="900" color={staff.tint}>★ {staff.rating.toFixed(1)}</Txt>
+                    <Txt size={13} weight="900" color={staff.tint}>
+                      {staff.reviewCount === 0 ? 'No reviews' : `★ ${staff.rating.toFixed(1)}`}
+                    </Txt>
                   </View>
                   <Txt size={10} weight="600" color={Colors.textMuted} style={{ marginTop: 4 }}>
                     {staff.reviewCount} Reviews ›
@@ -375,7 +382,9 @@ export function OwnerReviewsTab() {
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={15} weight="900" color={Colors.textPrimary}>{selectedStaff.name}</Txt>
-                    <Txt size={11} color={selectedStaff.tint} weight="700">{selectedStaff.title} • ★ {selectedStaff.rating.toFixed(1)}</Txt>
+                    <Txt size={11} color={selectedStaff.tint} weight="700">
+                      {selectedStaff.title}{selectedStaff.reviewCount > 0 ? ` • ★ ${selectedStaff.rating.toFixed(1)}` : ' • No reviews yet'}
+                    </Txt>
                   </Col>
                 </Row>
                 <IconBtn onPress={() => setSelectedStaff(null)} icon="close" size={18} tint={Colors.textMuted} />

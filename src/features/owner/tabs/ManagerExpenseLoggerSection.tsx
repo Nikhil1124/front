@@ -219,7 +219,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
                 <Row justify="space-between" align="center">
                   <Row gap={10} style={{ flex: 1 }} align="center">
                     <View style={[styles.catIcon, { backgroundColor: '#FEF2F2' }]}>
-                      <Ionicons name={categoryIcon(e.category) as any} size={18} color="#DC2626" />
+                      <Ionicons name={categoryIcon(e.category)} size={18} color="#DC2626" />
                     </View>
                     <Col style={{ flex: 1 }}>
                       <Row align="center" gap={6}>
@@ -247,7 +247,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
   );
 }
 
-function categoryIcon(cat: string): string {
+function categoryIcon(cat: string): keyof typeof Ionicons.glyphMap {
   switch (cat) {
     case 'Staff Salary': return 'ribbon';
     case 'Daily Mess Groceries': return 'cart';

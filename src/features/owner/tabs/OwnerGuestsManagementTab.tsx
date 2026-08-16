@@ -40,12 +40,20 @@ export function OwnerGuestsManagementTab() {
   const deleteGuest = usePGowStore((s) => s.deleteGuest);
   const verifyGuestKycByOwner = usePGowStore((s) => s.verifyGuestKycByOwner);
 
+  const confirmDeleteGuest = (g: GuestEntity) => {
+    Alert.alert('Remove Resident', `Remove ${g.name} from this property?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => deleteGuest(g.id) },
+    ]);
+  };
+
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [guestRoom, setGuestRoom] = useState('');
   const [guestPassword, setGuestPassword] = useState('');
   const [guestRent, setGuestRent] = useState('6500');
+  const [isCreating, setIsCreating] = useState(false);
 
   const [editing, setEditing] = useState<GuestEntity | null>(null);
   const [editName, setEditName] = useState('');
@@ -81,14 +89,20 @@ export function OwnerGuestsManagementTab() {
   ).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
 
   const handleCreate = async () => {
-    const result = await createGuestByOwner(guestName, guestEmail, guestPhone, guestRoom, guestPassword, parseFloat(guestRent) || 6500);
-    if (result.ok) {
-      hapticSuccess();
-      toast('success', 'Resident Registered', `${guestName} can now log in.`);
-      setGuestName(''); setGuestEmail(''); setGuestPhone(''); setGuestRoom(''); setGuestPassword(''); setGuestRent('6500');
-    } else {
-      hapticError();
-      Alert.alert('Failed', result.error ?? 'Unknown');
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      const result = await createGuestByOwner(guestName, guestEmail, guestPhone, guestRoom, guestPassword, parseFloat(guestRent) || 6500);
+      if (result.ok) {
+        hapticSuccess();
+        toast('success', 'Resident Registered', `${guestName} can now log in.`);
+        setGuestName(''); setGuestEmail(''); setGuestPhone(''); setGuestRoom(''); setGuestPassword(''); setGuestRent('6500');
+      } else {
+        hapticError();
+        Alert.alert('Failed', result.error ?? 'Unknown');
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -180,7 +194,7 @@ export function OwnerGuestsManagementTab() {
             <Spacer size={8} />
             <OutlinedTextField label="Monthly Rent Fee (₹) *" placeholder="6500" value={guestRent} onChangeText={setGuestRent} keyboardType="number-pad" containerColor={Colors.surfaceMuted} testID="owner_guest_rent_input" style={{ marginBottom: 8 }} />
             <OutlinedTextField label="Login Passcode / Password *" placeholder="At least 8 characters" value={guestPassword} onChangeText={setGuestPassword} secureTextEntry containerColor={Colors.surfaceMuted} testID="owner_guest_password_input" style={{ marginBottom: 14 }} />
-            <Btn onPress={handleCreate} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={44} testID="owner_guest_submit_btn">
+            <Btn onPress={handleCreate} loading={isCreating} disabled={isCreating} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={44} testID="owner_guest_submit_btn">
               <Ionicons name="person-add" size={16} color={Colors.textInverse} />
               <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>Register Resident ID & Password</Txt>
             </Btn>
@@ -289,7 +303,7 @@ export function OwnerGuestsManagementTab() {
                         </Row>
                         <Row gap={2}>
                           <IconBtn onPress={() => openEdit(g)} icon="create-outline" size={19} tint={Colors.primary} testID={`owner_edit_guest_${g.id}`} />
-                          <IconBtn onPress={() => deleteGuest(g.id)} icon="trash-outline" size={19} tint={Colors.danger} />
+                          <IconBtn onPress={() => confirmDeleteGuest(g)} icon="trash-outline" size={19} tint={Colors.danger} />
                         </Row>
                       </Row>
                     </Card>
@@ -328,7 +342,7 @@ export function OwnerGuestsManagementTab() {
                   <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Review KYC</Txt>
                 </Btn>
               )}
-              <Btn onPress={() => { deleteGuest(detailGuest.id); setDetailGuest(null); }} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
+              <Btn onPress={() => { confirmDeleteGuest(detailGuest); setDetailGuest(null); }} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
                 <Ionicons name="trash" size={16} color={Colors.textInverse} />
                 <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Delete</Txt>
               </Btn>

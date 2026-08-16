@@ -39,7 +39,7 @@ import { OwnerReviewsTab } from '@/features/owner/tabs/OwnerReviewsTab';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 
-interface TabDef { label: string; icon: keyof any; }
+interface TabDef { label: string; icon: keyof typeof Ionicons.glyphMap; }
 const TABS: TabDef[] = [
   { label: 'Overview', icon: 'grid' },
   { label: 'Guests', icon: 'people' },
@@ -54,7 +54,7 @@ interface ActionTile {
   action?: 'NOTICES';
   label: string;
   desc: string;
-  icon: keyof any;
+  icon: keyof typeof Ionicons.glyphMap;
   tint: string;
 }
 
@@ -251,7 +251,7 @@ export function OwnerDashboardScreen() {
                         padding={[14, 14]}
                       >
                         <View style={[styles.tileIcon, { backgroundColor: `${tile.tint}1A` }]}>
-                          <Ionicons name={tile.icon as any} size={20} color={tile.tint} />
+                          <Ionicons name={tile.icon} size={20} color={tile.tint} />
                         </View>
                         <Txt size={13} weight="800" color={Colors.textPrimary} style={{ marginTop: 10 }}>{tile.label}</Txt>
                         <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
@@ -327,7 +327,7 @@ export function OwnerDashboardScreen() {
                 ]}
               >
                 <Ionicons
-                  name={tab.icon as any}
+                  name={tab.icon}
                   size={18}
                   color={isSelected ? Colors.primaryDark : Colors.textMuted}
                 />
@@ -466,7 +466,9 @@ export function OwnerDashboardScreen() {
                           </Txt>
                         </Col>
                         <Col align="flex-end">
-                          <Txt size={14} weight="900" color="#B45309">₹{Math.round(g.rentAmount || 6500)}</Txt>
+                          <Txt size={14} weight="900" color="#B45309">
+                            {g.rentAmount ? `₹${Math.round(g.rentAmount)}` : '—'}
+                          </Txt>
                           <Row gap={6} style={{ marginTop: 4 }}>
                             {g.phone ? (
                               <IconBtn

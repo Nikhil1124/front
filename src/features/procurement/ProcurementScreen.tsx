@@ -22,7 +22,7 @@ interface SupplyItem {
   category: 'bedding' | 'cleaning' | 'hardware' | 'toiletries';
   unit: string;
   defaultPrice: number;
-  icon: keyof any;
+  icon: keyof typeof Ionicons.glyphMap;
   desc: string;
 }
 

@@ -23,25 +23,9 @@ const SUB_TABS = ['📊 Balance Sheet', '💸 Expenses', '🧾 Collections'];
 export function OwnerPaymentsTab() {
   const [subTab, setSubTab] = useState(0);
   const payments = usePGowStore((s) => s.currentPayments);
-  const guests = usePGowStore((s) => s.currentGuests);
-  const markPaid = usePGowStore((s) => s.markGuestPaymentDone);
-  const verifyPayment = usePGowStore((s) => s.verifyPaymentByOwner);
-  const dispatchAlerts = usePGowStore((s) => s.dispatchAutomatedRentAlerts);
   const { refreshing, onRefresh } = usePullToRefresh();
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const unpaidCount = guests.filter((g) => !g.isBillPaid).length;
-  const paidCount = guests.filter((g) => g.isBillPaid).length;
-
-  const filteredGuests = guests.filter((g) =>
-    !searchQuery.trim() ||
-    g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    g.roomNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    String(g.id).includes(searchQuery),
-  );
-
-  const highestReward = guests.filter((g) => g.rewardPoints > 0).reduce((a, b) => (b.rewardPoints > a.rewardPoints ? b : a), guests[0]);
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
@@ -112,7 +96,7 @@ export function OwnerPaymentsTab() {
                   p.payerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   (p.utrRef && p.utrRef.toLowerCase().includes(searchQuery.toLowerCase())) ||
                   String(p.id).includes(searchQuery) ||
-                  String(p.guestId).includes(searchQuery)
+                  String(p.payerId).includes(searchQuery)
                 );
 
               if (verifiedList.length === 0) {

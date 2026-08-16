@@ -93,7 +93,7 @@ export function useSubmitProcurementOrder() {
   return useMutation({
     mutationFn: submitProcurementOrder,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["procurement", "orders"] });
+      qc.invalidateQueries({ queryKey: qk.procurement.ordersAll() });
     },
   });
 }
@@ -103,7 +103,7 @@ export function useApproveProcurementOrder() {
   return useMutation({
     mutationFn: (orderId: string) => approveProcurementOrder(orderId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["procurement", "orders"] });
+      qc.invalidateQueries({ queryKey: qk.procurement.ordersAll() });
     },
   });
 }
@@ -114,7 +114,7 @@ export function useRejectProcurementOrder() {
     mutationFn: (params: { orderId: string; reason: string }) =>
       rejectProcurementOrder(params.orderId, params.reason),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["procurement", "orders"] });
+      qc.invalidateQueries({ queryKey: qk.procurement.ordersAll() });
     },
   });
 }

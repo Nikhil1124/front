@@ -30,23 +30,33 @@ export function StaffManagementTab() {
   const set = usePGowStore((s) => s.set);
   const registerStaff = usePGowStore((s) => s.registerStaffMember);
   const deleteStaff = usePGowStore((s) => s.deleteStaffMember);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const availableRoles = isManager
     ? ['Chef', 'Kitchen Staff', 'Maintenance Staff', 'Housekeeping', 'Security']
     : ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff', 'Housekeeping', 'Security'];
 
+  // Keyed on owner?.id (not the whole `owner` object) — `owner` gets a fresh reference on
+  // every refreshAll(), which used to re-fire this and silently reset a role the user had
+  // already picked mid-form back to the default.
   useEffect(() => {
     if (!isManager && owner) {
       set('staffRoleInput', 'Manager');
     } else if (isManager) {
       set('staffRoleInput', 'Chef');
     }
-  }, [isManager, owner]);
+  }, [isManager, owner?.id]);
 
   const handleRegister = async () => {
-    const result = await registerStaff();
-    if (result.ok) Alert.alert('Success', 'Staff registered successfully!');
-    else Alert.alert('Failed', result.error ?? 'Unknown');
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const result = await registerStaff();
+      if (result.ok) Alert.alert('Success', 'Staff registered successfully!');
+      else Alert.alert('Failed', result.error ?? 'Unknown');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -150,6 +160,8 @@ export function StaffManagementTab() {
             <Spacer size={14} />
             <Btn
               onPress={handleRegister}
+              loading={isSubmitting}
+              disabled={isSubmitting}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
               borderRadius={12}
@@ -196,7 +208,7 @@ export function StaffManagementTab() {
                       <Row gap={12} style={{ flex: 1 }} align="center">
                         <View style={[styles.roleIcon, { backgroundColor: isMgr ? '#DCFCE7' : Colors.surfaceMuted }]}>
                           <Ionicons
-                            name={roleIconName(staff.role) as any}
+                            name={roleIconName(staff.role)}
                             size={20}
                             color={isMgr ? '#16A34A' : Colors.primary}
                           />
@@ -219,7 +231,15 @@ export function StaffManagementTab() {
                           </Txt>
                         </Col>
                       </Row>
-                      <IconBtn onPress={() => deleteStaff(staff.id)} icon="trash-outline" size={18} tint="#EF4444" />
+                      <IconBtn
+                        onPress={() => Alert.alert('Remove Staff Member', `Remove ${staff.name} from this property?`, [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Remove', style: 'destructive', onPress: () => deleteStaff(staff.id) },
+                        ])}
+                        icon="trash-outline"
+                        size={18}
+                        tint="#EF4444"
+                      />
                     </Row>
                   </Card>
                 );
@@ -232,7 +252,7 @@ export function StaffManagementTab() {
   );
 }
 
-function roleIconName(role: string): string {
+function roleIconName(role: string): keyof typeof Ionicons.glyphMap {
   if (role.toLowerCase() === 'manager') return 'people-circle';
   if (role.toLowerCase() === 'chef') return 'restaurant';
   if (role.toLowerCase().includes('maintenance')) return 'build';

@@ -115,6 +115,10 @@ export const qk = {
     // answer from cache.
     tenantInvoices: (filters?: Record<string, unknown>) =>
       ["billing", "tenantInvoices", filters ?? {}] as const,
+    // The invalidation-only prefix: matches every filtered tenantInvoices() list, so a
+    // mutation can clear "all of them" without hand-typing the ["billing","tenantInvoices"]
+    // literal (which would silently stop matching if the shape above ever changes).
+    tenantInvoicesAll: () => ["billing", "tenantInvoices"] as const,
     pnl: (pgId: string, interval: string) =>
       ["billing", "pnl", pgId, interval] as const,
     ledger: (pgId: string, start: string, end: string) =>
@@ -137,6 +141,9 @@ export const qk = {
     // object is part of the key so two filtered views do not collide.
     orders: (filters?: Record<string, unknown>) =>
       ["procurement", "orders", filters ?? {}] as const,
+    // Invalidation-only prefix — see billing.tenantInvoicesAll for why this exists
+    // alongside orders() instead of hand-typing ["procurement", "orders"].
+    ordersAll: () => ["procurement", "orders"] as const,
   },
 
   panic: {

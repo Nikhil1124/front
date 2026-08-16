@@ -375,7 +375,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
             <OutlinedTextField
               label="Manager 4-digit PIN"
               value={managerPinInput}
-              onChangeText={(v) => setManagerPinInput(v.slice(0, 6))}
+              onChangeText={(v) => setManagerPinInput(v.replace(/\D/g, '').slice(0, 4))}
               leadingIcon="lock-closed"
               keyboardType="number-pad"
               secureTextEntry

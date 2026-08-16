@@ -69,7 +69,7 @@ export function usePayTenantInvoice(pgId: string | null) {
     }) => payTenantInvoice(params.invoiceId, { method: params.method, upi_ref: params.upi_ref }),
     onSuccess: () => {
       // Any filter combination could have changed; clear the whole bucket.
-      qc.invalidateQueries({ queryKey: ["billing", "tenantInvoices"] });
+      qc.invalidateQueries({ queryKey: qk.billing.tenantInvoicesAll() });
     },
   });
 }

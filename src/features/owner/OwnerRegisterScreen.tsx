@@ -15,6 +15,7 @@ export function OwnerRegisterScreen() {
   const popScreen = usePGowStore((s) => s.popScreen);
   const registerOwner = usePGowStore((s) => s.registerOwner);
   const [picking, setPicking] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Bindings
   const pgNameInput = usePGowStore((s) => s.pgNameInput);
@@ -27,11 +28,17 @@ export function OwnerRegisterScreen() {
   const set = usePGowStore((s) => s.set);
 
   const handleSubmit = async () => {
-    const result = await registerOwner();
-    if (result.ok) {
-      Alert.alert('Registration Successful!', 'Configure bed capacity.');
-    } else {
-      Alert.alert('Registration Failed', result.error ?? 'Unknown error');
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const result = await registerOwner();
+      if (result.ok) {
+        Alert.alert('Registration Successful!', 'Configure bed capacity.');
+      } else {
+        Alert.alert('Registration Failed', result.error ?? 'Unknown error');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -119,6 +126,8 @@ export function OwnerRegisterScreen() {
 
       <Btn
         onPress={handleSubmit}
+        loading={isSubmitting}
+        disabled={isSubmitting}
         containerColor={Colors.primary}
         textColor={Colors.textInverse}
         borderRadius={12}

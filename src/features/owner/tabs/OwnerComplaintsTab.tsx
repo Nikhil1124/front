@@ -29,7 +29,7 @@ export function OwnerComplaintsTab() {
   const resolvedCount = submissions.filter((s) => s.status === 'Resolved').length;
 
   const avg = (key: keyof FeedbackComplaintEntity) => {
-    if (submissions.length === 0) return 4.8;
+    if (submissions.length === 0) return 0;
     const vals = submissions.map((s) => Number(s[key]) || 0);
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   };
@@ -54,10 +54,15 @@ export function OwnerComplaintsTab() {
       Alert.alert('Validation', 'Please write a response reply');
       return;
     }
-    await respond(active.id, responseText, responseStatus);
-    hapticSuccess();
-    toast('success', 'Workflow updated', `${active.guestName} has been notified of your response.`);
-    setActive(null);
+    try {
+      await respond(active.id, responseText, responseStatus);
+      hapticSuccess();
+      toast('success', 'Workflow updated', `${active.guestName} has been notified of your response.`);
+      setActive(null);
+    } catch (err: any) {
+      hapticError();
+      toast('error', 'Could not save response', err?.message ?? 'Please try again.');
+    }
   };
 
   return (
@@ -91,32 +96,38 @@ export function OwnerComplaintsTab() {
           </Col>
           <View style={styles.starBox}>
             <Txt size={16}>★</Txt>
-            <Txt size={16} weight="900" color="#FFB800">{avgOverall.toFixed(1)}</Txt>
+            <Txt size={16} weight="900" color="#FFB800">{totalReviews === 0 ? '—' : avgOverall.toFixed(1)}</Txt>
             <Txt size={10} color={Colors.SlateMutedText}> / 5.0</Txt>
           </View>
         </Row>
         <Spacer size={14} />
-        {[
-          ['Daily Meals (Mess)', '🍛', avgMeals],
-          ['Cleanliness & Service', '🧹', avgClean],
-          ['Manager Response', '💼', avgMgr],
-          ['Staff Behaviour', '👨‍🍳', avgStaff],
-          ['Others & Facilities', '⚙️', avgOther],
-        ].map(([label, icon, score]) => {
-          const s = Number(score);
-          const color = s >= 4.5 ? Colors.CyberGreen : s >= 3.5 ? Colors.CyberAmber : Colors.CyberPink;
-          return (
-            <View key={label as string} style={{ marginVertical: 4 }}>
-              <Row justify="space-between" align="center">
-                <Row gap={6}><Txt size={12}>{icon as string}</Txt><Txt size={11} weight="500" color={Colors.IvoryWhiteText}>{label as string}</Txt></Row>
-                <Txt size={11} weight="700" color="#FFB800">{s.toFixed(1)} ★</Txt>
-              </Row>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${(s / 5) * 100}%`, backgroundColor: color }]} />
+        {totalReviews === 0 ? (
+          <Txt size={12} color={Colors.SlateMutedText} style={{ paddingVertical: 8 }}>
+            No ratings yet — scores will appear once residents submit feedback.
+          </Txt>
+        ) : (
+          [
+            ['Daily Meals (Mess)', '🍛', avgMeals],
+            ['Cleanliness & Service', '🧹', avgClean],
+            ['Manager Response', '💼', avgMgr],
+            ['Staff Behaviour', '👨‍🍳', avgStaff],
+            ['Others & Facilities', '⚙️', avgOther],
+          ].map(([label, icon, score]) => {
+            const s = Number(score);
+            const color = s >= 4.5 ? Colors.CyberGreen : s >= 3.5 ? Colors.CyberAmber : Colors.CyberPink;
+            return (
+              <View key={label as string} style={{ marginVertical: 4 }}>
+                <Row justify="space-between" align="center">
+                  <Row gap={6}><Txt size={12}>{icon as string}</Txt><Txt size={11} weight="500" color={Colors.IvoryWhiteText}>{label as string}</Txt></Row>
+                  <Txt size={11} weight="700" color="#FFB800">{s.toFixed(1)} ★</Txt>
+                </Row>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${(s / 5) * 100}%`, backgroundColor: color }]} />
+                </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          })
+        )}
       </Card>
 
       {submissions.length === 0 ? (

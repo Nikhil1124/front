@@ -253,7 +253,7 @@ function StatTile({
       ]}
     >
       <View style={[styles.statIcon, { backgroundColor: `${tint}1A` }]}>
-        <Ionicons name={icon as any} size={14} color={tint} />
+        <Ionicons name={icon} size={14} color={tint} />
       </View>
       <Txt size={10} weight="700" color={Colors.textMuted} style={{ marginTop: 6, letterSpacing: 0.5 }}>{label.toUpperCase()}</Txt>
       <Txt size={14} weight="800" color={tint} style={{ marginTop: 2 }}>{value}</Txt>

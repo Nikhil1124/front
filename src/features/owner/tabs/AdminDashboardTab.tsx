@@ -366,7 +366,10 @@ export function AdminDashboardTab({ onAddPg }: Props) {
                     containerColor="transparent"
                   />
                   <IconBtn
-                    onPress={() => { deleteGuest(guest.id); }}
+                    onPress={() => Alert.alert('Remove Resident', `Remove ${guest.name} from this property?`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: () => deleteGuest(guest.id) },
+                    ])}
                     icon="trash"
                     size={16}
                     tint="#EF4444"
