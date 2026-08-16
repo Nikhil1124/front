@@ -8,13 +8,14 @@
  *     which now renders status banners + opens <KycUploadDialog/>.
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { GuestKycVerificationTab } from './GuestKycVerificationTab';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 type KycStatus = 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
@@ -50,7 +51,7 @@ export function GuestSecurityTab() {
   const pill = kycPill(kycStatus);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+    <FormScroll contentContainerStyle={{ padding: 16, gap: 16 }}>
       {/* Section title */}
       <Txt size={18} weight="800" color={Colors.textPrimary}>Profile & KYC Verification</Txt>
 
@@ -150,7 +151,7 @@ export function GuestSecurityTab() {
           <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Update Passcode</Txt>
         </Btn>
       </Card>
-    </ScrollView>
+    </FormScroll>
   );
 }
 

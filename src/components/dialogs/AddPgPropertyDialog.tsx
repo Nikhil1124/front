@@ -2,7 +2,7 @@
  * AddPgPropertyDialog — port of Kotlin `AddPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -11,6 +11,7 @@ import LocationPicker from '@/components/LocationPicker';
 import type { PickedLocation } from '@/features/places/pendingLocation';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface Props {
   onDismiss: () => void;
@@ -87,7 +88,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             </Col>
           </Row>
 
-          <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          <FormScroll style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             <OutlinedTextField
               label="Property / PG Name *"
               placeholder="Koramangala Executive Hub"
@@ -152,7 +153,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
                 ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
               </Txt>
             </View>
-          </ScrollView>
+          </FormScroll>
 
           <Spacer size={14} />
           <Row gap={8}>

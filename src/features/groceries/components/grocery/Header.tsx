@@ -8,11 +8,16 @@ interface HeaderProps {
    *  address, so there is no map picker here (unlike the source app). */
   deliveryLabel: string;
   onProfilePress: () => void;
+  /** Leaves the groceries mini-app back to whatever screen pushed it. */
+  onBack: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress }) => {
+export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, onBack }) => {
   return (
     <View style={styles.header}>
+      <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+        <Ionicons name="arrow-back" size={22} color={AppColors.textPrimary} />
+      </TouchableOpacity>
       <View style={styles.headerLeft}>
         <View style={styles.deliveryContainer}>
           <View style={styles.deliveryBadge}>
@@ -52,6 +57,10 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surface,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.divider,
+  },
+  backBtn: {
+    padding: 4,
+    marginRight: 10,
   },
   headerLeft: {
     flex: 1,

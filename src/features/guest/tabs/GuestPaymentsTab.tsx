@@ -4,7 +4,7 @@
  * Includes PGow Resident Card, fee alerts, current-month rent card, 4 payment paths.
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
@@ -31,6 +31,7 @@ import {
 import { fetchWithTimeout } from '@/hooks/useApi';
 import { BASE_URL } from '@/config';
 import type { PaymentEntity, TenantInvoice } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 export function GuestPaymentsTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
@@ -173,7 +174,7 @@ export function GuestPaymentsTab() {
 
       {/* Task 8: tenant invoices sub-tab */}
       {activeSubTab === 2 && (
-        <ScrollView
+        <FormScroll
           contentContainerStyle={{ paddingTop: 12, gap: 8 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
@@ -246,11 +247,11 @@ export function GuestPaymentsTab() {
               );
             })
           )}
-        </ScrollView>
+        </FormScroll>
       )}
 
       {activeSubTab === 1 ? (
-        <ScrollView
+        <FormScroll
           contentContainerStyle={{ paddingTop: 12, gap: 8 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
@@ -312,9 +313,9 @@ export function GuestPaymentsTab() {
               );
             })
           )}
-        </ScrollView>
+        </FormScroll>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingTop: 12, gap: 14 }}>
+        <FormScroll contentContainerStyle={{ paddingTop: 12, gap: 14 }}>
           {/* PGow Resident Card */}
           <View style={styles.residentCard}>
             <Col style={{ flex: 1, justifyContent: 'space-between' }}>
@@ -456,7 +457,7 @@ export function GuestPaymentsTab() {
               </>
             )}
           </Card>
-        </ScrollView>
+        </FormScroll>
       )}
     </View>
   );

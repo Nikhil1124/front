@@ -3,7 +3,7 @@
  * Sticky header + 3-tab bottom dock (Eaters/Menu/Kitchen).
  */
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInRight } from 'react-native-reanimated';
 import { Card, Txt, Btn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
@@ -15,6 +15,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { VisualDishItem } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const PRESET_DISHES: VisualDishItem[] = [
   { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true },
@@ -192,7 +193,7 @@ export function StaffDashboardScreen() {
         </Row>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
+      <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
         {activeRole === 'CHEF' && (
           <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => pushScreen('GROCERIES_SCREEN')}>
             <Card containerColor={Colors.surfaceElevated} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
@@ -221,11 +222,11 @@ export function StaffDashboardScreen() {
               <>
                 <Txt size={11} weight="700" color={Colors.textSecondary}>Select Active Meal to View RSVP Data:</Txt>
                 <Spacer size={6} />
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                   {notifications.map((n) => (
                     <Chip key={n.id} label={`${n.mealType} - ${n.menuItems.slice(0, 20)}...`} selected={activeMeal?.id === n.id} onPress={() => setActiveMeal(n)} selectedColor={Colors.primary} size={11} />
                   ))}
-                </ScrollView>
+                </FormScroll>
                 <Spacer size={14} />
 
                 <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
@@ -295,30 +296,30 @@ export function StaffDashboardScreen() {
               {selectedDishes.length === 0 ? (
                 <Txt size={12} weight="700" color={Colors.primaryDark}>👈 Tap the food items below to select menu (No typing needed!)</Txt>
               ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                   {selectedDishes.map((d) => (
                     <TouchableOpacity key={d} onPress={() => toggleDish(d)} style={styles.selectedDishPill}>
                       <Txt size={12} weight="800" color={Colors.primaryDark}>{d}</Txt>
                       <Txt size={10} weight="900" color={Colors.danger}>✕</Txt>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                </FormScroll>
               )}
             </Card>
 
             <Spacer size={16} />
             <Txt size={12} weight="900" color={Colors.primaryDark}>👉 TAP DISHES TO ADD TO TODAY'S MENU:</Txt>
             <Spacer size={6} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
               {['All', 'Breakfast', 'Rice & Dal', 'Curry & Fry', 'Sweets'].map((c) => (
                 <Chip key={c} label={c} selected={selectedCat === c} onPress={() => setSelectedCat(c)} selectedColor={Colors.primary} size={11} />
               ))}
-            </ScrollView>
+            </FormScroll>
             <Spacer size={10} />
 
             {/* Horizontal shelf, not a tall vertical grid — browsing ~19 dishes
                 sideways keeps this from eating the whole screen's scroll. */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {filteredDishes.map((dish) => {
                 const isSel = selectedDishes.includes(dish.name);
                 return (
@@ -330,7 +331,7 @@ export function StaffDashboardScreen() {
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </FormScroll>
 
             <Spacer size={14} />
             <TouchableOpacity onPress={() => setShowManualInput(!showManualInput)}>
@@ -463,13 +464,13 @@ export function StaffDashboardScreen() {
               <OutlinedTextField placeholder="Type custom kitchen update..." value={chefBroadcast} onChangeText={setChefBroadcast} focusedBorderColor={Colors.primary} multiline numberOfLines={3} style={{ marginBottom: 10 }} />
               <Txt size={10} weight="700" color={Colors.textMuted}>Tap to quick-populate template:</Txt>
               <Spacer size={6} />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                 {ANNOUNCEMENTS.map((msg) => (
                   <TouchableOpacity key={msg} onPress={() => setChefBroadcast(msg)} style={styles.templateChip}>
                     <Txt size={10} weight="800" color={Colors.primaryDark}>{msg}</Txt>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </FormScroll>
               <Spacer size={14} />
               <Btn onPress={sendCustomAnnouncement} disabled={!chefBroadcast.trim()} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={10} height={42}>
                 <Ionicons name="send" size={16} color="#FFFFFF" />
@@ -479,7 +480,7 @@ export function StaffDashboardScreen() {
           </>
           </Animated.View>
         )}
-      </ScrollView>
+      </FormScroll>
 
       {/* Sticky bottom dock */}
       <View style={styles.dockWrap}>

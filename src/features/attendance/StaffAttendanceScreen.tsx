@@ -13,12 +13,12 @@
  *   - Weekly schedule view (7 day cards with shift start/end or "Off Day").
  *   - Bottom: list of recent attendance punches (last 7 days).
  */
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, Alert, Platform, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 
-import { Card, Txt, Btn, Row, Col, Spacer, Divider } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { EmptyState } from '@/components/EmptyState';
@@ -44,6 +44,7 @@ const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export function StaffAttendanceScreen() {
   const staff = usePGowStore((s) => s.loggedInStaff);
+  const popScreen = usePGowStore((s) => s.popScreen);
   const activePgId = useAuthStore((s) => s.activePgId);
   const user = useAuthStore((s) => s.user);
   const staffMembershipId =
@@ -51,6 +52,17 @@ export function StaffAttendanceScreen() {
   const toast = useToast();
   const { refreshing, onRefresh } = usePullToRefresh();
   const { requestPermission } = useDeviceLocation();
+
+  // Android hardware back — a drill-down from StaffDashboardScreen with no way back before this.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const today = new Date();
   const todayIso = todayLocalISO(today);
@@ -161,10 +173,21 @@ export function StaffAttendanceScreen() {
         {/* Header */}
         <Card containerColor={Colors.surface} borderRadius={Radii.huge} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
           <Row justify="space-between" align="center">
-            <Col>
-              <Txt size={20} weight="900" color={Colors.primaryDark}>Attendance</Txt>
-              <Txt size={12} color={Colors.textMuted}>{staff?.name ?? 'Staff'} · {formatLongDate(today.getTime())}</Txt>
-            </Col>
+            <Row gap={10} align="center" style={{ flex: 1 }}>
+              <IconBtn
+                onPress={() => popScreen()}
+                icon="arrow-back"
+                size={20}
+                tint={Colors.primaryDark}
+                containerColor={Colors.surfaceMuted}
+                borderRadius={999}
+                padding={8}
+              />
+              <Col>
+                <Txt size={20} weight="900" color={Colors.primaryDark}>Attendance</Txt>
+                <Txt size={12} color={Colors.textMuted}>{staff?.name ?? 'Staff'} · {formatLongDate(today.getTime())}</Txt>
+              </Col>
+            </Row>
             <View style={styles.headerIcon}><Ionicons name="time" size={24} color={Colors.primary} /></View>
           </Row>
           <Spacer size={12} />

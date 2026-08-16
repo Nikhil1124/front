@@ -4,7 +4,7 @@
  * UPI configuration lives in UpiConfigSection (dashboard quick action + Settings tab).
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -17,6 +17,7 @@ import { hapticSelect } from '@/utils/haptics';
 import { ManagerExpenseLoggerSection } from './ManagerExpenseLoggerSection';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
 import type { PaymentEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const SUB_TABS = ['📊 Balance Sheet', '💸 Expenses', '🧾 Collections'];
 
@@ -51,7 +52,7 @@ export function OwnerPaymentsTab() {
         })}
       </View>
 
-      <ScrollView
+      <FormScroll
         contentContainerStyle={{ paddingTop: 12, gap: 14, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
@@ -165,7 +166,7 @@ export function OwnerPaymentsTab() {
           </>
         )}
 
-      </ScrollView>
+      </FormScroll>
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, StatusBar, Image } from 'react-native';
+import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, StatusBar, Image, Platform, BackHandler } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -64,6 +64,17 @@ const getProductDetails = (prod: EnrichedProduct, selectedUnit: string) => {
 export function GroceryProductScreen() {
   const id = useGroceryUiStore((s) => s.selectedProductId);
   const popScreen = usePGowStore((s) => s.popScreen);
+
+  // Android hardware back — consistent with every screen's visible back button.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const pushScreen = usePGowStore((s) => s.pushScreen);
   const setSelectedProductId = useGroceryUiStore((s) => s.setSelectedProductId);
   const insets = useSafeAreaInsets();

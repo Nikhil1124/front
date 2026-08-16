@@ -2,7 +2,7 @@
  * OwnerComplaintsTab — port of Kotlin `OwnerComplaintsTab`.
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, RefreshControl } from 'react-native';
+import { View, StyleSheet, Alert, Modal, RefreshControl } from 'react-native';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { EmptyState } from '@/components/EmptyState';
@@ -13,6 +13,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { FeedbackComplaintEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 export function OwnerComplaintsTab() {
   const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
@@ -66,7 +67,7 @@ export function OwnerComplaintsTab() {
   };
 
   return (
-    <ScrollView
+    <FormScroll
       contentContainerStyle={{ padding: 16, gap: 12 }}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
@@ -156,14 +157,14 @@ export function OwnerComplaintsTab() {
               <Txt size={15} weight="700" color={Colors.IvoryWhiteText}>{item.type === 'COMPLAINT' ? '🚨' : '🌟'} {item.title}</Txt>
               <Txt size={12} color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{item.description}</Txt>
               <Spacer size={8} />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                 <View style={styles.ratingPill}><Txt size={10} weight="700" color="#FFB800">⭐ Overall: {item.overallRating.toFixed(1)}★</Txt></View>
                 <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>🍛 Meals: {item.mealRating.toFixed(0)}★</Txt></View>
                 <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>🧹 Cleanliness: {item.cleanlinessRating.toFixed(0)}★</Txt></View>
                 <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>💼 Manager: {item.managerRating.toFixed(0)}★</Txt></View>
                 <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>👨‍🍳 Staff: {item.staffRating.toFixed(0)}★</Txt></View>
                 <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>⚙️ Others: {item.otherRating.toFixed(0)}★</Txt></View>
-              </ScrollView>
+              </FormScroll>
               <Spacer size={10} />
               <Row justify="space-between" align="center">
                 <Row gap={6}>
@@ -214,7 +215,7 @@ export function OwnerComplaintsTab() {
           </Card>
         </View>
       </Modal>
-    </ScrollView>
+    </FormScroll>
   );
 }
 

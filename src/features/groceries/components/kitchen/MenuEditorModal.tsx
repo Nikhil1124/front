@@ -5,13 +5,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Image,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppColors, AppFonts } from '../../theme/AppColors';
 import { mockProducts, EnrichedProduct } from '../../data/mockProducts';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 export interface MenuEditorModalProps {
   visible: boolean;
@@ -68,7 +68,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+          <FormScroll style={styles.scroll} showsVerticalScrollIndicator={false}>
             {/* Current dishes */}
             <Text style={styles.listHeading}>Current Dishes</Text>
             {dishes.map((dish, index) => (
@@ -107,7 +107,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
             <Text style={styles.relatedHeading}>
               {newDishText.trim() ? 'Matching Stock Products' : 'Popular Ingredients'}
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
+            <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
               {suggestions.map((prod) => {
                 const isAdded = dishes.includes(prod.name);
                 return (
@@ -138,8 +138,8 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
-          </ScrollView>
+            </FormScroll>
+          </FormScroll>
 
           {/* Footer */}
           <View style={styles.footer}>

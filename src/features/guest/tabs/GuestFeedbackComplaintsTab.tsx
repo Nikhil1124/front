@@ -2,7 +2,7 @@
  * GuestFeedbackComplaintsTab — port of Kotlin `GuestFeedbackComplaintsTab`.
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, Modal, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -10,6 +10,7 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { SimulatedMedia, FeedbackComplaintEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const MOCK_COMPLAINT_MEDIA: SimulatedMedia[] = [
   { id: '1', name: 'Soggy Roti Photo', isVideo: false, textRepresentation: '📷 Broken fan and soggy roti evidence attached', mockIcon: '🫓' },
@@ -62,7 +63,7 @@ export function GuestFeedbackComplaintsTab() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+    <FormScroll contentContainerStyle={{ padding: 16, gap: 16 }}>
       <Row gap={6} align="center">
         <Txt size={20} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance & Review Portal</Txt>
         <InfoTip text="File official complaints or share constructive feedback. Upload videos or photos of issues for immediate staff resolution." />
@@ -79,11 +80,11 @@ export function GuestFeedbackComplaintsTab() {
         <Spacer size={14} />
         <Txt size={11} weight="700" color={Colors.SlateMutedText}>Select Category</Txt>
         <Spacer size={6} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+        <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
           {CATEGORIES.map((c) => (
             <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} selectedColor={Colors.CyberGreen} size={11} />
           ))}
-        </ScrollView>
+        </FormScroll>
 
         <Spacer size={14} />
         <Txt size={11} weight="700" color={Colors.SlateMutedText}>Rate PG Experience & Service Categories</Txt>
@@ -112,13 +113,13 @@ export function GuestFeedbackComplaintsTab() {
         <Spacer size={10} />
         <Txt size={10} color={Colors.SlateMutedText}>Or Select Sandbox Simulated Media Assets:</Txt>
         <Spacer size={4} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+        <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
           {mockMedia.map((m) => (
             <TouchableOpacity key={m.id} onPress={() => { setMediaUri(`mock_media_${m.id}`); setMediaIsVideo(m.isVideo); setMediaName(m.name); if (!title) setTitle(m.name); if (!description) setDescription(m.textRepresentation); }} style={styles.mockMediaChip}>
               <Row gap={4}><Txt size={12}>{m.mockIcon}</Txt><Txt size={10} color={Colors.IvoryWhiteText}>{m.name}</Txt></Row>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </FormScroll>
         {mediaUri && (
           <View style={styles.mediaBanner}>
             <Row gap={6} style={{ flex: 1 }}>
@@ -204,7 +205,7 @@ export function GuestFeedbackComplaintsTab() {
           </Card>
         </View>
       </Modal>
-    </ScrollView>
+    </FormScroll>
   );
 }
 

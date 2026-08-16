@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Platform,
-} from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Platform, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
@@ -41,6 +33,17 @@ const KIND_BADGE: Record<string, { bg: string; text: string }> = {
 export function GroceryOrderDetailScreen() {
   const id = useGroceryUiStore((s) => s.selectedOrderId);
   const popScreen = usePGowStore((s) => s.popScreen);
+
+  // Android hardware back — consistent with every screen's visible back button.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const pushScreen = usePGowStore((s) => s.pushScreen);
   const addItem = useCartStore((state) => state.addItem);
 

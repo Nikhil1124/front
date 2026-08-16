@@ -3,13 +3,14 @@
  * showMode: 0=balance sheet only, 1=logger only, 2=both.
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { OwnerFinancialSummaryChartCard } from '@/components/charts/OwnerFinancialSummaryChartCard';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const CATEGORIES = ['Staff Salary', 'Daily Mess Groceries', 'Utility Bills', 'Maintenance & Repairs', 'Wi-Fi & Internet', 'Other Operations'];
 
@@ -147,20 +148,20 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
               <Spacer size={8} />
               <Txt size={10} weight="800" color={Colors.textMuted}>Quick Presets:</Txt>
               <Spacer size={4} />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                 <Chip label="👨‍🍳 Chef Salary ₹15k" selected={false} onPress={() => { setExpenseTitle('Chef Monthly Salary - Ramesh'); setExpenseCategory('Staff Salary'); setExpenseAmount('15000'); setRecipientName('Ramesh Kumar (Head Cook)'); setPaymentMode('Bank Transfer'); setNotes('Monthly salary paid for July 2026'); }} />
                 <Chip label="🛒 Mess Grocery ₹2.4k" selected={false} onPress={() => { setExpenseTitle('Daily Mess Grocery Procurement'); setExpenseCategory('Daily Mess Groceries'); setExpenseAmount('2450'); setRecipientName('Local Wholesale Mart'); setPaymentMode('UPI'); setNotes('Milk, Eggs, Rice, Vegetables for daily mess'); }} />
                 <Chip label="⚡ Electricity Bill ₹6.8k" selected={false} onPress={() => { setExpenseTitle('PG Electricity & Power Bill'); setExpenseCategory('Utility Bills'); setExpenseAmount('6800'); setRecipientName('State Electricity Board'); setPaymentMode('UPI'); setNotes('Monthly power bill & generator diesel'); }} />
-              </ScrollView>
+              </FormScroll>
               <Spacer size={10} />
               <Txt size={11} weight="800" color={Colors.textMuted}>Category:</Txt>
               <Spacer size={4} />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                 <Chip label="All" selected={filter === 'All'} onPress={() => setFilter('All')} />
                 {CATEGORIES.map((cat) => (
                   <Chip key={cat} label={cat} selected={expenseCategory === cat} onPress={() => setExpenseCategory(cat)} />
                 ))}
-              </ScrollView>
+              </FormScroll>
               <Spacer size={10} />
               <OutlinedTextField label="Expense Title / Purpose" placeholder="Cook Salary, Vegetables, Plumbing Parts" value={expenseTitle} onChangeText={setExpenseTitle} containerColor={Colors.surfaceMuted} style={{ marginBottom: 8 }} />
               <Row gap={8}>
@@ -201,11 +202,11 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
             </View>
           </Row>
           <Spacer size={8} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
             {['All', ...CATEGORIES].map((cat) => (
               <Chip key={cat} label={cat} selected={filter === cat} onPress={() => setFilter(cat)} />
             ))}
-          </ScrollView>
+          </FormScroll>
           <Spacer size={10} />
 
           {filtered.length === 0 ? (

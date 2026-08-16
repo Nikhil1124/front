@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, Platform, Image, ScrollView } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, Platform, Image, ScrollView, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { mockProducts } from '../data/mockProducts';
 import { useOrderStore, DetailedOrder } from '../store/useOrderStore';
@@ -14,7 +14,20 @@ export function GroceryOrdersScreen() {
   const logout = usePGowStore((s) => s.logout);
   const addItem = useCartStore((state) => state.addItem);
   const pushScreen = usePGowStore((s) => s.pushScreen);
+  const popScreen = usePGowStore((s) => s.popScreen);
   const setSelectedOrderId = useGroceryUiStore((s) => s.setSelectedOrderId);
+
+  // Android hardware back — the header had a title and a logout button but no way to leave the
+  // screen and return to wherever opened it (the groceries home's profile tile, or a checkout).
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const activeOrder = orders.find((o) => o.status !== 'delivered');
 
@@ -79,7 +92,12 @@ export function GroceryOrdersScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Your Orders</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => popScreen()} style={styles.backBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Your Orders</Text>
+        </View>
         <TouchableOpacity onPress={logout}>
           <Ionicons name="log-out-outline" size={24} color={AppColors.error} />
         </TouchableOpacity>
@@ -175,6 +193,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: AppColors.divider,
     backgroundColor: AppColors.surface,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: AppColors.background,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,

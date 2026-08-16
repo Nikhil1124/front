@@ -41,7 +41,7 @@ interface Props {
 const FALLBACK = { latitude: 17.4401, longitude: 78.3489 };
 
 export default function LocationPicker({ initial, onConfirm }: Props) {
-  const { locating, getCurrentCoordinates } = useDeviceLocation();
+  const { locating, requestPermission, getCurrentCoordinates } = useDeviceLocation();
   const cameraRef = useRef<CameraRef>(null);
   const [centre, setCentre] = useState(initial ?? FALLBACK);
   const [zoom, setZoom] = useState(17);
@@ -58,6 +58,29 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
     return () => {
       live = false;
     };
+  }, []);
+
+  // Ask for location on open, not only once someone taps the GPS button — a map picker with
+  // no location permission has nothing better to center on than a fixed fallback city, so
+  // asking upfront (rather than waiting for a tap that may never come) is what actually gets
+  // this screen to a usable, personally-relevant starting point. Only overrides the pin when
+  // there's no already-saved location to preserve (editing an existing property keeps its own
+  // coordinates; only a brand-new pick auto-centers on the device).
+  useEffect(() => {
+    if (initial) return;
+    let live = true;
+    requestPermission().then((granted) => {
+      if (!granted || !live) return;
+      getCurrentCoordinates().then((pos) => {
+        if (pos && live) {
+          cameraRef.current?.flyTo({ center: [pos.longitude, pos.latitude], zoom: 17, duration: 500 });
+        }
+      });
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Resolve the address under the pin whenever it settles somewhere new. Debounced, and

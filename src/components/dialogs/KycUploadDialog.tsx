@@ -24,6 +24,7 @@
 import { useEffect, useState } from 'react';
 import {
   Modal, View, StyleSheet, Pressable, TouchableOpacity, Alert, Platform, BackHandler,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
@@ -118,6 +119,7 @@ export function KycUploadDialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Pressable style={styles.backdrop} onPress={onDismiss}>
         <Pressable onPress={() => {/* swallow tap so it doesn't bubble */}} style={styles.cardWrap}>
           <Card
@@ -301,6 +303,7 @@ export function KycUploadDialog({
           </Card>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

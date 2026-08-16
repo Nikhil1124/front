@@ -4,7 +4,7 @@
  * roster don't fight for the same long scroll.
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, StyleSheet, Alert, Modal, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { formatDateTime } from '@/utils/format';
 import type { GuestEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const SUB_TABS = ['➕ Add Guest', '👥 Directory'];
 
@@ -167,7 +168,7 @@ export function OwnerGuestsManagementTab() {
         })}
       </View>
 
-      <ScrollView
+      <FormScroll
         contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
@@ -314,7 +315,7 @@ export function OwnerGuestsManagementTab() {
           </>
         )}
 
-      </ScrollView>
+      </FormScroll>
 
       {showEditProperty && owner && (
         <EditPgPropertyDialog pg={owner} onDismiss={() => setShowEditProperty(false)} />

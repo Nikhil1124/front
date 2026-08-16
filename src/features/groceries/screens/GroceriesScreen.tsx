@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Animated, FlatList, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, BackHandler, FlatList, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -19,6 +19,7 @@ import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppFonts } from '../theme/AppColors';
 import { usePGowStore } from '@/store/usePGowStore';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 /**
  * Home/catalog screen — the source app let the shopper flip a "PG Stock" /
@@ -29,6 +30,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();
   const pushScreen = usePGowStore((s) => s.pushScreen);
+  const popScreen = usePGowStore((s) => s.popScreen);
   const activeRole = usePGowStore((s) => s.activeRole);
   const owner = usePGowStore((s) => s.loggedInOwner);
   const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
@@ -55,6 +57,18 @@ export function GroceriesScreen() {
     const pgOwner = isBulkRole ? owner : ownerForGuest;
     if (pgOwner) setPgDetails(pgOwner.pgName, pgOwner.address);
   }, [activeRole, owner, ownerForGuest, setMode, setPgDetails]);
+
+  // Android hardware back — the groceries mini-app had no way out except the header's
+  // (forward-only) profile button; this and the header's new back arrow both pop the stack.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dailyEssentials = useMemo(() => {
     const keywords = ['milk', 'curd', 'bread', 'egg', 'banana', 'tomato', 'onion', 'potato', 'water', 'oil'];
@@ -127,9 +141,9 @@ export function GroceriesScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <Header deliveryLabel={deliveryLabel} onProfilePress={() => pushScreen('GROCERY_ORDERS')} />
+        <Header deliveryLabel={deliveryLabel} onProfilePress={() => pushScreen('GROCERY_ORDERS')} onBack={() => popScreen()} />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <FormScroll showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={styles.searchContainer}>
             <SearchBar
               value={searchQuery}
@@ -224,7 +238,7 @@ export function GroceriesScreen() {
               <ProductRow title="Recommended for You" products={recommendedProducts} onProductPress={(p) => openProduct(p.id)} onSeeAllPress={() => openCategory(null)} />
             </>
           )}
-        </ScrollView>
+        </FormScroll>
       </SafeAreaView>
 
       <Animated.View style={[styles.floatingCartContainer, { transform: [{ translateY: cartAnimY }], opacity: cartOpacity, bottom: 24 }]}>

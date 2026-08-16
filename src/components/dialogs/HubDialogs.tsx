@@ -3,7 +3,7 @@
  * Ported to Cyber Mint Light Theme.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, ScrollView, TouchableOpacity, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, Alert, ScrollView, TouchableOpacity, Pressable, KeyboardAvoidingView } from 'react-native';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors } from '@/theme';
@@ -26,6 +26,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Card
@@ -85,6 +86,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
           </Btn>
         </Card>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -108,6 +110,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Card
@@ -178,6 +181,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
           </Btn>
         </Card>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -207,6 +211,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Card
@@ -297,6 +302,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
           </Row>
         </Card>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

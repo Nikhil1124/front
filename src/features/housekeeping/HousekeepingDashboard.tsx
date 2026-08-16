@@ -17,11 +17,11 @@
  * High-contrast design: 48dp minimum touch targets, 16sp body text, 22sp
  * headings. All colors from theme.
  */
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, StyleSheet, RefreshControl, TouchableOpacity, Alert, Platform, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Card, Txt, Btn, Row, Col, Spacer, Divider } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -38,6 +38,7 @@ import { triggerPanic } from '@/features/panic/usePanic';
 
 import { resolveComplaint, getAttachmentUploadUrl, uploadAttachment, addAttachment } from '@/features/requests/useComplaints';
 import type { FeedbackComplaintEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 // ─── Recurring housekeeping checklist ────────────────────────────────────────
 //
@@ -74,6 +75,19 @@ export function HousekeepingDashboard() {
   const staff = usePGowStore((s) => s.loggedInStaff);
   const complaints = usePGowStore((s) => s.currentFeedbackComplaints);
   const refreshAll = usePGowStore((s) => s.refreshAll);
+  const popScreen = usePGowStore((s) => s.popScreen);
+
+  // Android hardware back — this screen is a drill-down from StaffDashboardScreen, reached by
+  // tile tap, and had no way back at all (no header back button, no BackHandler) before this.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const activePgId = useAuthStore((s) => s.activePgId);
   const activeMembership = useAuthStore(
     (s) =>
@@ -215,7 +229,7 @@ export function HousekeepingDashboard() {
 
   return (
     <View style={styles.root}>
-      <ScrollView
+      <FormScroll
           contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
@@ -223,10 +237,21 @@ export function HousekeepingDashboard() {
           {/* Header */}
           <Card containerColor={Colors.surface} borderRadius={Radii.huge} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Row justify="space-between" align="center">
-              <Col>
-                <Txt size={20} weight="900" color={Colors.primaryDark}>Housekeeping</Txt>
-                <Txt size={12} color={Colors.textMuted}>{staff?.name ?? 'Staff'} · {formatLongDate(today.getTime())}</Txt>
-              </Col>
+              <Row gap={10} align="center" style={{ flex: 1 }}>
+                <IconBtn
+                  onPress={() => popScreen()}
+                  icon="arrow-back"
+                  size={20}
+                  tint={Colors.primaryDark}
+                  containerColor={Colors.surfaceMuted}
+                  borderRadius={999}
+                  padding={8}
+                />
+                <Col>
+                  <Txt size={20} weight="900" color={Colors.primaryDark}>Housekeeping</Txt>
+                  <Txt size={12} color={Colors.textMuted}>{staff?.name ?? 'Staff'} · {formatLongDate(today.getTime())}</Txt>
+                </Col>
+              </Row>
               <View style={styles.headerIcon}><Ionicons name="sparkles" size={24} color={Colors.primary} /></View>
             </Row>
             <Spacer size={14} />
@@ -361,7 +386,7 @@ export function HousekeepingDashboard() {
               );
             })
           )}
-        </ScrollView>
+        </FormScroll>
 
         {/* Task 8: single-capture camera modal */}
         <CameraProofModal

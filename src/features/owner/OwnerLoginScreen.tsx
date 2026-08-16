@@ -4,7 +4,7 @@
  * between Guest Login and Join PG via QR.
  */
 import { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, TouchableOpacity, LayoutChangeEvent } from 'react-native';
+import { View, StyleSheet, Alert, Modal, TouchableOpacity, LayoutChangeEvent, Platform, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -20,6 +20,7 @@ import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface Props {
   initialTab?: number;
@@ -29,6 +30,17 @@ const TABS = ['PG Owner', 'PG Manager', 'Kitchen/Staff', 'Resident'];
 
 export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const popScreen = usePGowStore((s) => s.popScreen);
+
+  // Android hardware back — consistent with every screen's visible back button.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const loginOwner = usePGowStore((s) => s.loginOwner);
   const loginManager = usePGowStore((s) => s.loginManager);
   const loginStaff = usePGowStore((s) => s.loginStaff);
@@ -212,7 +224,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} style={styles.root}>
+    <FormScroll contentContainerStyle={styles.scroll} style={styles.root}>
       {/* First-Time Login: Set New Password Modal */}
       <Modal visible={showFirstTimePasswordModal} transparent animationType="fade">
         <View style={styles.dialogBackdrop}>
@@ -500,7 +512,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
           </View>
         )}
       </Animated.View>
-    </ScrollView>
+    </FormScroll>
   );
 }
 

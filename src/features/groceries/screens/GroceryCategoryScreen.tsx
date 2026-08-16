@@ -1,16 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  useWindowDimensions,
-  StatusBar,
-  TextInput,
-  ScrollView,
-} from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, StatusBar, TextInput, Platform, BackHandler } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +10,7 @@ import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
 import { usePGowStore } from '@/store/usePGowStore';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 // Section Grouping Definition
 interface CategoryGroup {
@@ -87,6 +77,17 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNam
 
 export function GroceryCategoryScreen() {
   const popScreen = usePGowStore((s) => s.popScreen);
+
+  // Android hardware back — consistent with every screen's visible back button.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const pushScreen = usePGowStore((s) => s.pushScreen);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -224,7 +225,7 @@ export function GroceryCategoryScreen() {
         {/* MAIN CONTENT AREA */}
         {!showProductList ? (
           /* ── CATEGORY SECTION GROUPS (Blinkit Style 4-Column Layout) ── */
-          <ScrollView
+          <FormScroll
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.sectionsScrollContent}
           >
@@ -249,7 +250,7 @@ export function GroceryCategoryScreen() {
                 </View>
               );
             })}
-          </ScrollView>
+          </FormScroll>
         ) : (
           /* ── PRODUCT GRID (When a Category is Tapped) ── */
           <FlatList

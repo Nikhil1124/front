@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl } from 'react-native';
+import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -10,6 +10,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { FeedbackComplaintEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface StaffProfile {
   id: string;
@@ -220,7 +221,7 @@ export function OwnerReviewsTab() {
   };
 
   return (
-    <ScrollView
+    <FormScroll
       contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 32 }}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
@@ -394,7 +395,7 @@ export function OwnerReviewsTab() {
               <Txt size={12} weight="800" color={Colors.textMuted}>TENANT FEEDBACK & MESSAGES</Txt>
               <Spacer size={8} />
 
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 10 }}>
+              <FormScroll showsVerticalScrollIndicator={false} style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 10 }}>
                 {getFilteredReviewsForStaff(selectedStaff).length === 0 ? (
                   <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[18, 16]} style={{ alignItems: 'center' }}>
                     <Ionicons name="chatbox-ellipses-outline" size={32} color={Colors.textMuted} />
@@ -405,7 +406,7 @@ export function OwnerReviewsTab() {
                 ) : (
                   getFilteredReviewsForStaff(selectedStaff).map(renderComplaintCard)
                 )}
-              </ScrollView>
+              </FormScroll>
             </Card>
           </View>
         </Modal>
@@ -481,7 +482,7 @@ export function OwnerReviewsTab() {
           </View>
         </Modal>
       )}
-    </ScrollView>
+    </FormScroll>
   );
 }
 

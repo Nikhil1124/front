@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -10,6 +10,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { GuestEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface RoomDef {
   roomNo: string;
@@ -187,7 +188,7 @@ export function BedVisualizerScreen() {
       <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
         SELECT FLOOR
       </Txt>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 6 }}>
+      <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 6 }}>
         {[1, 2, 3].map((f) => {
           const isSel = selectedFloor === f;
           const roomsOnFloor = allRooms.filter((r) => r.floor === f);
@@ -219,7 +220,7 @@ export function BedVisualizerScreen() {
             </AnimatedPress>
           );
         })}
-      </ScrollView>
+      </FormScroll>
 
       <Spacer size={14} />
 

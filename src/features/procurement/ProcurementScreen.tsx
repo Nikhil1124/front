@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, RefreshControl, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, Alert, RefreshControl, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, Row, Col, Spacer, Chip, OutlinedBtn, IconBtn } from '@/components/ui';
@@ -11,6 +11,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 export interface ProcurementScreenProps {
   mode?: 'manager' | 'owner';
@@ -206,7 +207,7 @@ function ManagerProcurementView() {
       <Spacer size={12} />
 
       {/* Category Pills */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {CATEGORY_TABS.map((tab) => {
           const isSel = selectedCat === tab.key;
           return (
@@ -224,7 +225,7 @@ function ManagerProcurementView() {
             </AnimatedPress>
           );
         })}
-      </ScrollView>
+      </FormScroll>
 
       <Spacer size={14} />
 
@@ -412,7 +413,7 @@ function ManagerProcurementView() {
 
             <Spacer size={14} />
 
-            <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false}>
+            <FormScroll style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false}>
               <View style={{ gap: 8 }}>
                 {Object.entries(cart).map(([id, qty]) => {
                   const it = DEFAULT_SUPPLIES.find((s) => s.id === id);
@@ -432,7 +433,7 @@ function ManagerProcurementView() {
                   );
                 })}
               </View>
-            </ScrollView>
+            </FormScroll>
 
             <Spacer size={14} />
             <View style={{ height: 1, backgroundColor: Colors.borderSubtle }} />

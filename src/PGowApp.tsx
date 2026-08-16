@@ -21,6 +21,8 @@ import { StatusBar } from 'expo-status-bar';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { registerDevice } from '@/features/devices/useDevices';
 import { Colors } from '@/theme';
 import { WelcomeScreen } from '@/features/owner/WelcomeScreen';
 import { OwnerRegisterScreen } from '@/features/owner/OwnerRegisterScreen';
@@ -79,12 +81,30 @@ const TAB_INDEX = {
 export function PGowApp() {
   const currentScreen = usePGowStore((s) => s.currentScreen);
   const popScreen = usePGowStore((s) => s.popScreen);
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const setDeviceId = useAuthStore((s) => s.setDeviceId);
 
   // NOTE: `init()` is called from `app/_layout.tsx`, sequenced after
   // `hydrateFromStorage()` resolves. Calling it again here would race ahead
   // of hydration (child effects run before parent effects on mount), see
   // it with no token yet, and permanently mark the store `_initialized`
   // before the real token is available — silently breaking session restore.
+
+  // Registers this device for push once someone is actually signed in (never on WELCOME/login,
+  // where asking for a permission the person can't yet act on just teaches them to dismiss
+  // every future prompt). This is also the ONE place notification permission gets requested at
+  // all — `acquireToken` inside `registerDevice` handles the ask, respecting `canAskAgain` so a
+  // prior "never ask again" isn't re-prompted. Re-runs on a property switch so the device
+  // follows to the right topic; the server upserts on the token, so repeating it is free.
+  useEffect(() => {
+    if (!activeRole) return;
+    registerDevice(activePgId)
+      .then((device) => setDeviceId(device?.id ?? null))
+      .catch(() => {
+        // Push is an enhancement, never a blocker for reaching the app.
+      });
+  }, [activeRole, activePgId, setDeviceId]);
 
   // Hardware back-button handling — Android only. iOS swipe-back gesture is
   // not applicable here because we don't use a Navigator; the visible header

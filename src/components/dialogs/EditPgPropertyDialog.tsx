@@ -2,7 +2,7 @@
  * EditPgPropertyDialog — port of Kotlin `EditPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { Modal, View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -13,6 +13,7 @@ import type { PickedLocation } from '@/features/places/pendingLocation';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PGOwnerEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface Props {
   pg: PGOwnerEntity;
@@ -87,7 +88,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
             </Col>
           </Row>
 
-          <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          <FormScroll style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             <OutlinedTextField
               label="Property / PG Name"
               value={name}
@@ -147,7 +148,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
                 style={{ flex: 1 }}
               />
             </Row>
-          </ScrollView>
+          </FormScroll>
 
           <Spacer size={14} />
           <Row gap={8}>

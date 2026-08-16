@@ -22,11 +22,12 @@
  *     dashboard's own icon buttons.
  *   - Body sits on the mint canvas with the standard 16dp page padding.
  */
-import { useEffect, type ComponentType, type ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, Platform, ViewStyle, BackHandler } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { View, StyleSheet, Platform, ViewStyle, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect } from '@/utils/haptics';
@@ -82,11 +83,6 @@ export function HubScreenWrapper({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const Body: ComponentType<any> = scrollable ? ScrollView : View;
-  const bodyProps = scrollable
-    ? { contentContainerStyle: { padding: 16, paddingBottom: 32, ...contentContainerStyle }, showsVerticalScrollIndicator: false }
-    : { style: { flex: 1, padding: 16, ...contentContainerStyle } };
-
   return (
     <View style={styles.root} testID={testID}>
       {/* Sticky top bar — mint-tinted band with back chevron + title */}
@@ -112,10 +108,18 @@ export function HubScreenWrapper({
         {rightAction ? <View>{rightAction}</View> : <Spacer size={40} horizontal />}
       </View>
 
-      {/* Body — scrollable by default, padding for cards */}
-      <Body {...bodyProps} style={scrollable ? styles.scrollBody : bodyProps.style}>
-        {children}
-      </Body>
+      {/* Body — scrollable by default (keyboard-safe via FormScroll — see its own doc comment
+          for why a plain ScrollView isn't enough on Android), padding for cards */}
+      {scrollable ? (
+        <FormScroll
+          contentContainerStyle={{ padding: 16, paddingBottom: 32, ...contentContainerStyle }}
+          style={styles.scrollBody}
+        >
+          {children}
+        </FormScroll>
+      ) : (
+        <View style={{ flex: 1, padding: 16, ...contentContainerStyle }}>{children}</View>
+      )}
     </View>
   );
 }

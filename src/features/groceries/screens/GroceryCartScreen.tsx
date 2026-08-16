@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert, StatusBar, Platform, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCartStore, CartItem, ReplacementPreference } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
@@ -17,6 +17,17 @@ export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
   const mode = useShoppingModeStore((s) => s.mode);
   const popScreen = usePGowStore((s) => s.popScreen);
+
+  // Android hardware back — consistent with every screen's visible back button.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const pushScreen = usePGowStore((s) => s.pushScreen);
   const owner = usePGowStore((s) => s.loggedInOwner);
   const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);

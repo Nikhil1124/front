@@ -1,15 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  Alert,
-  StatusBar,
-} from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert, StatusBar, Platform, BackHandler } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
@@ -17,6 +7,7 @@ import { useOrderStore } from '../store/useOrderStore';
 import { useGroceryUiStore } from '../store/useGroceryUiStore';
 import { AppColors, AppFonts } from '../theme/AppColors';
 import { usePGowStore } from '@/store/usePGowStore';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface CheckoutSlot {
   id: string;
@@ -48,6 +39,17 @@ const PAYMENT_METHODS = [
 
 export function GroceryCheckoutScreen() {
   const popScreen = usePGowStore((s) => s.popScreen);
+
+  // Android hardware back — consistent with every screen's visible back button.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      popScreen();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const pushScreen = usePGowStore((s) => s.pushScreen);
   const owner = usePGowStore((s) => s.loggedInOwner);
   const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
@@ -131,7 +133,7 @@ export function GroceryCheckoutScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <FormScroll showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Section 1: Fulfillment & Time Slot */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -401,7 +403,7 @@ export function GroceryCheckoutScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+      </FormScroll>
 
       {/* Sticky Bottom Placement Bar */}
       <View style={[styles.stickyFooter, { paddingBottom: Math.max(insets.bottom, 12) }]}>

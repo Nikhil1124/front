@@ -4,7 +4,7 @@
  * the form and the full roster fighting for scroll space.
  */
 import { useEffect, useState } from 'react';
-import { ScrollView, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -12,6 +12,7 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect } from '@/utils/haptics';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const SUB_TABS = ['➕ Add Staff', '👥 Staff Directory'];
 
@@ -78,7 +79,7 @@ export function StaffManagementTab() {
         })}
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+      <FormScroll contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         {subTab === 0 && (
           <>
             <Row gap={6} align="center">
@@ -102,7 +103,7 @@ export function StaffManagementTab() {
 
             <Txt size={11} weight="800" color={Colors.textMuted}>Designation / Role</Txt>
             <Spacer size={4} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
               {availableRoles.map((role) => (
                 <Chip
                   key={role}
@@ -112,7 +113,7 @@ export function StaffManagementTab() {
                   size={11}
                 />
               ))}
-            </ScrollView>
+            </FormScroll>
             <Spacer size={10} />
 
             <Row gap={8}>
@@ -247,7 +248,7 @@ export function StaffManagementTab() {
             )}
           </>
         )}
-      </ScrollView>
+      </FormScroll>
     </View>
   );
 }

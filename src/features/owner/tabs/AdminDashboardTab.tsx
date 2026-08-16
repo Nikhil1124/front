@@ -2,7 +2,7 @@
  * AdminDashboardTab — port of Kotlin `AdminDashboardTab(viewModel, notifications, guests)`.
  */
 import { useEffect, useState } from 'react';
-import { ScrollView, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -13,6 +13,7 @@ import { OwnerFinancialSummaryChartCard } from '@/components/charts/OwnerFinanci
 import { PnLChart } from '@/components/charts/PnLChart';
 import type { PnLInterval } from '@/types';
 import type { PGOwnerEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface Props {
   onAddPg: () => void;
@@ -84,7 +85,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
   const pendingCount = guests.length - reqCount - notReqCount;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <FormScroll contentContainerStyle={{ padding: 16, gap: 12 }}>
       {/* Portfolio/Manager banner */}
       {isManager ? (
         <Card containerColor="#1E1B4B" borderRadius={20} borderWidth={1} borderColor="rgba(255,167,38,0.6)" padding={[16, 16]}>
@@ -143,7 +144,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
             </View>
           </Row>
           <Spacer size={12} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {allPGs.map((pg: PGOwnerEntity) => {
               const isCurrent = owner?.id === pg.id;
               return (
@@ -162,7 +163,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
                 <Txt size={11} weight="700" color={Colors.CyberGreen} style={{ marginLeft: 4 }}>Add PG</Txt>
               </View>
             </TouchableOpacity>
-          </ScrollView>
+          </FormScroll>
         </Card>
       )}
 
@@ -220,7 +221,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
             <Txt size={12} color="#9CA3AF">No meal schedules published yet.</Txt>
           </View>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+          <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
             {notifications.map((notif) => (
               <Chip
                 key={notif.id}
@@ -229,7 +230,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
                 onPress={() => setSelectedNotification(notif)}
               />
             ))}
-          </ScrollView>
+          </FormScroll>
         )}
         {selectedNotification && (
           <View style={styles.scheduleDetail}>
@@ -309,7 +310,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
         />
         <Txt size={11} weight="700" color={Colors.SlateMutedText}>RSVP Choice Filter</Txt>
         <Spacer size={4} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+        <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
           {['All', 'Eating', 'Skipping', 'Pending'].map((opt) => (
             <Chip
               key={opt}
@@ -318,7 +319,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
               onPress={() => setSelectedRsvpFilter(opt)}
             />
           ))}
-        </ScrollView>
+        </FormScroll>
       </Card>
 
       {filteredGuests.length === 0 ? (
@@ -381,7 +382,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
           );
         })
       )}
-    </ScrollView>
+    </FormScroll>
   );
 }
 
