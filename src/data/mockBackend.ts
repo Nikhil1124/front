@@ -535,8 +535,29 @@ route("PUT", "/v1/meals/:id/response", ({ params, body, init }) => {
   const user = currentUser(init);
   const guestId = user?.memberships[0]?.membership_id ?? "unknown";
   const existing = db.mealResponses.find((r) => r.meal_id === params.id && r.guest_id === guestId);
-  if (existing) existing.choice = body.choice;
-  else db.mealResponses.push({ meal_id: params.id, guest_id: guestId, choice: body.choice });
+  if (existing) {
+    existing.choice = body.choice;
+  } else {
+    db.mealResponses.push({ meal_id: params.id, guest_id: guestId, choice: body.choice });
+    // Reward points for responding — only on the first response to a given meal, not on every
+    // edit, so switching an answer back and forth can't be used to farm points. Skipping is
+    // worth more than eating: it's the response that actually helps the kitchen (less over-prep,
+    // less waste), which is also why the seed data's own reward entries frame it that way.
+    const meal = db.meals.find((m) => m.id === params.id);
+    const mealLabel = meal ? meal.meal_type[0].toUpperCase() + meal.meal_type.slice(1) : "Meal";
+    const isSkipping = body.choice === "skipping";
+    const ledger = db.rewardsLedger[guestId] ?? (db.rewardsLedger[guestId] = []);
+    ledger.push({
+      id: db.genId("rw"),
+      delta: isSkipping ? 20 : 5,
+      reason: isSkipping
+        ? `Skipped ${mealLabel.toLowerCase()} — kitchen saved a portion`
+        : `Responded to ${mealLabel.toLowerCase()} RSVP`,
+      ref_type: "meal_response",
+      ref_id: params.id,
+      created_at: db.nowIso(),
+    });
+  }
   return ok({ meal_id: params.id, guest_id: guestId, choice: body.choice });
 });
 route("GET", "/v1/meals/:id/response-summary", ({ params }) => {

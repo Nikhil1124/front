@@ -1,3 +1,9 @@
+/**
+ * Web fallback for MapLibre — `@maplibre/maplibre-react-native` is native-only (iOS/Android),
+ * so this file (picked automatically for web builds via the `.web.tsx` extension) stands in
+ * with the same component shapes LocationPicker.tsx and PropertyMap.tsx already use, so those
+ * two files need no platform branching of their own.
+ */
 import React, { useImperativeHandle } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Txt } from '@/components/ui';
@@ -7,7 +13,7 @@ export const Map = ({ children, style }: any) => (
   <View style={[styles.fallback, style]}>
     {children}
     <Txt size={12} color={Colors.SlateMutedText} style={styles.text}>
-      Map Preview (Native build required for MapLibre)
+      Map preview unavailable on web — open the app on iOS or Android to see the live map.
     </Txt>
   </View>
 );

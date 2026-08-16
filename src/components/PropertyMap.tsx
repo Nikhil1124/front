@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
-import { Map, Camera, ViewAnnotation } from '@/components/maplibreMock';
+import { Map, Camera, ViewAnnotation } from '@/components/maplibreCompat';
 
 import { Txt } from '@/components/ui';
 import { fetchMapStyle } from '@/features/places/mapStyle';

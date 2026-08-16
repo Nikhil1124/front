@@ -20,6 +20,10 @@ import {
   registerMealRsvpCategory,
   routeFromPushData,
 } from '@/features/notifications/channels';
+// Side-effect import: defines BACKGROUND_NOTIFICATION_TASK at module scope, which must happen
+// on every JS launch — including Expo's headless relaunch for a killed app — before the OS can
+// deliver an Eat/Skip button tap to it.
+import { BACKGROUND_NOTIFICATION_TASK } from '@/tasks/backgroundNotificationTask';
 import { Colors } from '@/theme';
 
 /**
@@ -56,6 +60,7 @@ setGateHandler(() => {});
 
 export default function RootLayout() {
   const init = usePGowStore((s) => s.init);
+  const submitRSVP = usePGowStore((s) => s.submitRSVP);
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
 
   useEffect(() => {
@@ -71,13 +76,44 @@ export default function RootLayout() {
     // arrive, and this device may receive one before anyone signs in.
     registerNotificationChannels();
     registerMealRsvpCategory();
+    // Activates the task backgroundNotificationTask.ts already defined at module scope above —
+    // without this call the task exists but is never subscribed to notification-response
+    // events, so an Eat/Skip tap while the app is backgrounded or fully killed goes nowhere.
+    Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK).catch(() => {
+      // Best-effort — the killed-app RSVP path is an enhancement, not a boot requirement.
+    });
 
-    // Tapping a push (foreground, background, or the app fully closed) routes here.
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      routeFromPushData(response.notification.request.content.data as Record<string, unknown>);
+    // Tapping a push (foreground, background, or the app fully closed) routes here. Background/
+    // killed taps are handled by BACKGROUND_NOTIFICATION_TASK instead, which runs with no React
+    // tree mounted yet — this listener only ever fires for a foreground tap.
+    const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      const { actionIdentifier, notification } = response;
+      const data = notification.request.content.data as
+        | { actionType?: string; actionId?: string; screen?: string }
+        | undefined;
+
+      if (actionIdentifier === 'EAT' || actionIdentifier === 'SKIP') {
+        if (data?.actionType !== 'meal' || !data.actionId) return;
+        const result = await submitRSVP(data.actionId, actionIdentifier === 'EAT' ? 'REQUIRED' : 'NOT_REQUIRED');
+        if (result.ok) {
+          usePGowStore.getState().patch({
+            activeAlert: {
+              title: actionIdentifier === 'EAT' ? '✅ Marked as eating' : '❌ Marked as skipping',
+              description: 'Your RSVP was recorded.',
+              type: 'SUCCESS',
+              timestamp: Date.now(),
+            },
+          });
+        }
+        // On failure, submitRSVP already surfaced its own "❌ RSVP NOT RECORDED" alert.
+        await Notifications.dismissNotificationAsync(notification.request.identifier).catch(() => {});
+        return;
+      }
+
+      routeFromPushData(data as Record<string, unknown> | undefined);
     });
     return () => sub.remove();
-  }, []);
+  }, [submitRSVP]);
 
   return (
     <QueryClientProvider client={queryClient}>

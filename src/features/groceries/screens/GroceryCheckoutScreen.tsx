@@ -27,8 +27,11 @@ interface CheckoutSlot {
   feeText: string;
 }
 
+// Delivery is free across every slot for now — see GroceryCartScreen's matching notice.
+// When real pricing comes from the area-manager/warehouse portal, this table (and the
+// per-slot fee it carries) is what should start reading from that instead of a constant.
 const CHECKOUT_SLOTS: CheckoutSlot[] = [
-  { id: '1', day: 'Today', badge: 'FASTEST', window: 'Express • 15–25 min', fee: 20, feeText: '₹20' },
+  { id: '1', day: 'Today', badge: 'FASTEST', window: 'Express • 15–25 min', fee: 0, feeText: 'FREE' },
   { id: '2', day: 'Today', badge: 'FREE', window: '4:00 PM – 5:00 PM', fee: 0, feeText: 'FREE' },
   { id: '3', day: 'Today', badge: 'FREE', window: '6:00 PM – 7:00 PM', fee: 0, feeText: 'FREE' },
   { id: '4', day: 'Tomorrow', badge: 'FREE', window: '9:00 AM – 10:00 AM', fee: 0, feeText: 'FREE' },

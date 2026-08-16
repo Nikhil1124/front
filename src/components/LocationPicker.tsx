@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
-import { Map, Camera, type CameraRef } from '@/components/maplibreMock';
+import { Map, Camera, type CameraRef } from '@/components/maplibreCompat';
 
 import { Txt } from '@/components/ui';
 import { API, BASE_URL } from '@/config';

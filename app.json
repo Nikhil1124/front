@@ -38,7 +38,8 @@
           "imageWidth": 200,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ]
   }
 }

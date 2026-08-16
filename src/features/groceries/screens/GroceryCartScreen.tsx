@@ -143,12 +143,10 @@ export function GroceryCartScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* 4. Delivery/fees notice — Checkout picks the delivery slot and can add a fee
-                (fastest slot, platform fee, tip), so this screen must not promise "free" ahead
-                of that choice. */}
+            {/* 4. Free Delivery Progress Box — delivery is free on every checkout slot for now. */}
             <View style={styles.freeDeliveryCard}>
-              <Ionicons name="information-circle" size={18} color={AppColors.primary} />
-              <Text style={styles.freeDeliveryText}>Delivery slot &amp; fees are chosen at checkout</Text>
+              <Ionicons name="checkmark-circle" size={18} color={AppColors.primary} />
+              <Text style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
             </View>
 
             {/* 5. Cart Item Cards */}
@@ -295,14 +293,14 @@ export function GroceryCartScreen() {
 
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>Delivery Fee</Text>
-                <Text style={[styles.billValue, { color: AppColors.textSecondary }]}>At checkout</Text>
+                <Text style={[styles.billValue, { color: AppColors.primary }]}>FREE</Text>
               </View>
 
               <View style={[styles.billRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Subtotal</Text>
                 <Text style={styles.totalValue}>₹{grandTotal}</Text>
               </View>
-              <Text style={styles.billFootnote}>Delivery &amp; platform fees are added at checkout.</Text>
+              <Text style={styles.billFootnote}>Platform fee &amp; tip are added at checkout.</Text>
             </View>
 
             {/* 14. You May Also Need — shared MiniProductCard */}
