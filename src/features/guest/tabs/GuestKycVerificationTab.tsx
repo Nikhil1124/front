@@ -19,7 +19,7 @@
  * `guest.kycStatus` re-renders with the new state on the next tick.
  */
 import { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -102,7 +102,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
   // The container is either a ScrollView (when this tab is the only thing
   // on the screen) or a plain View (when it's embedded inside another tab
   // that already provides a scroll view — GuestSecurityTab does this).
-  const Container: any = scrollable ? require('react-native').ScrollView : View;
+  const Container = scrollable ? ScrollView : View;
   const containerProps = scrollable
     ? { contentContainerStyle: { padding: 16, gap: 16 } }
     : { style: { gap: 16 } };

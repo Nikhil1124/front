@@ -35,7 +35,7 @@ import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 import type { AppScreen, MealNotificationEntity } from '@/types';
 
-interface TabDef { label: string; icon: keyof any; }
+interface TabDef { label: string; icon: keyof typeof Ionicons.glyphMap; }
 const TABS: TabDef[] = [
   { label: 'Home',     icon: 'home' },
   { label: 'Meals',    icon: 'restaurant' },
@@ -44,7 +44,7 @@ const TABS: TabDef[] = [
   { label: 'Profile',  icon: 'ribbon' },
 ];
 
-interface QuickTile { label: string; desc: string; icon: keyof any; tint: string; tab?: number; screen?: AppScreen; }
+interface QuickTile { label: string; desc: string; icon: keyof typeof Ionicons.glyphMap; tint: string; tab?: number; screen?: AppScreen; }
 const QUICK_TILES: QuickTile[] = [
   { label: 'Rent & Receipts',  desc: 'Pay • Download PDF',    icon: 'card',            tint: '#0D9488', tab: 2 },
   { label: 'Maintenance',      desc: 'Raise & track tickets',  icon: 'construct',       tint: '#D97706', tab: 3 },
@@ -338,7 +338,7 @@ export function GuestDashboardScreen() {
                         padding={[14, 14]}
                       >
                         <View style={[styles.tileIcon, { backgroundColor: `${tile.tint}1A` }]}>
-                          <Ionicons name={tile.icon as any} size={20} color={tile.tint} />
+                          <Ionicons name={tile.icon} size={20} color={tile.tint} />
                         </View>
                         <Txt size={13} weight="800" color={Colors.textPrimary} style={{ marginTop: 10 }}>{tile.label}</Txt>
                         <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
@@ -408,7 +408,7 @@ export function GuestDashboardScreen() {
                 onPress={() => switchTab(idx)}
                 style={[styles.dockBtn, { backgroundColor: sel ? Colors.primary : 'transparent' }]}
               >
-                <Ionicons name={t.icon as any} size={16} color={sel ? Colors.textInverse : Colors.textMuted} />
+                <Ionicons name={t.icon} size={16} color={sel ? Colors.textInverse : Colors.textMuted} />
                 <Txt size={10} weight={sel ? '900' : '700'} color={sel ? Colors.textInverse : Colors.textSecondary} style={{ marginTop: 2 }}>{t.label}</Txt>
               </AnimatedPress>
             );

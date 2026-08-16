@@ -129,7 +129,7 @@ export function GuestRSVPsTab() {
   ).length;
   const progressPercent = totalMealsCount > 0 ? answeredMealsCount / totalMealsCount : 0;
 
-  const mealSlots = [
+  const mealSlots: { name: string; icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
     { name: 'Breakfast', icon: 'sunny', key: 'BREAKFAST' },
     { name: 'Lunch', icon: 'restaurant', key: 'LUNCH' },
     { name: 'Dinner', icon: 'moon', key: 'DINNER' },
@@ -211,7 +211,7 @@ export function GuestRSVPsTab() {
               >
                 <View style={[styles.mealCard, { backgroundColor: statusBg, borderColor: isFilterSelected ? Colors.CyberPink : statusBorder, borderWidth: isFilterSelected ? 2 : 1 }]}>
                   <Col align="center">
-                    <Ionicons name={slot.icon as any} size={20} color={statusColor} />
+                    <Ionicons name={slot.icon} size={20} color={statusColor} />
                     <Spacer size={4} />
                     <Txt size={11} weight="700" color={isFilterSelected ? Colors.CyberPink : Colors.IvoryWhiteText}>{slot.name}</Txt>
                     <Txt size={10} weight="800" color={statusColor}>{statusText}</Txt>

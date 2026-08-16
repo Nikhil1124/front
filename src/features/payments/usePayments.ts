@@ -50,7 +50,6 @@ export interface LaunchUpiParams {
   payeeName?: string;
   amount: number;
   note?: string;
-  preferredApp?: "PHONEPE" | "PAYTM" | "GPAY" | "GENERIC";
 }
 
 // GET /v1/payments/due?pg_id=

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { ScrollView, View, StyleSheet, Alert, Modal, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors } from '@/theme';
@@ -207,8 +207,6 @@ export function GuestFeedbackComplaintsTab() {
     </ScrollView>
   );
 }
-
-import { Chip } from '@/components/ui';
 
 interface RatingProps {
   title: string;

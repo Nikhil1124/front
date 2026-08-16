@@ -90,7 +90,7 @@ export function GuestHubServicesTab() {
 
 interface HubCardProps {
   title: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   statusText: string;
   statusColor: string;
@@ -104,7 +104,7 @@ function HubServiceCard({ title, icon, iconColor, statusText, statusColor, butto
       <Col align="center" style={{ flex: 1, justifyContent: 'space-between' }}>
         <Txt size={10} weight="900" color={Colors.IvoryWhiteText} align="center" style={{ lineHeight: 13 }}>{title}</Txt>
         <View style={[styles.hubIcon, { backgroundColor: `${iconColor}1A` }]}>
-          <Ionicons name={icon as any} size={24} color={iconColor} />
+          <Ionicons name={icon} size={24} color={iconColor} />
         </View>
         <View style={[styles.hubStatusPill, { backgroundColor: `${statusColor}26` }]}>
           <Txt size={9} weight="700" color={statusColor}>{statusText}</Txt>

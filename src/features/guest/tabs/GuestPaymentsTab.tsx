@@ -47,6 +47,7 @@ export function GuestPaymentsTab() {
   const { data: invoices = [], isLoading: invoicesLoading } = useTenantInvoices(activePgId, activeMembership ?? undefined);
   const payInvoice = usePayTenantInvoice(activePgId);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
 
   const [activeSubTab, setActiveSubTab] = useState(0);
   const [payMode, setPayMode] = useState('ONLINE_PHONEPE');
@@ -58,8 +59,11 @@ export function GuestPaymentsTab() {
   const ownerUpi = ownerForGuest?.upiId?.trim() || 'pgowowner@ybl';
   const isBillPaid = guest?.isBillPaid ?? false;
 
-  const highestReward = allGuests.filter((g) => g.rewardPoints > 0).reduce((a, b) => (b.rewardPoints > a.rewardPoints ? b : a), allGuests[0]);
-  const isWinner = highestReward?.id === guest?.id;
+  const guestsWithRewardPoints = allGuests.filter((g) => g.rewardPoints > 0);
+  const highestReward = guestsWithRewardPoints.length > 0
+    ? guestsWithRewardPoints.reduce((a, b) => (b.rewardPoints > a.rewardPoints ? b : a))
+    : null;
+  const isWinner = highestReward !== null && highestReward.id === guest?.id;
   // Today's actual date — the on-time discount is a real rule, not a demo toggle.
   const isOnTime = new Date().getDate() <= 5;
   const baseRent = guest?.rentAmount ?? 6500;
@@ -71,14 +75,13 @@ export function GuestPaymentsTab() {
   const totalPaid = guestPayments.filter((p) => p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0);
   const pendingAmount = guestPayments.filter((p) => p.status === 'PENDING').reduce((s, p) => s + p.amount, 0);
 
-  const handleUpiLaunch = async (app: 'PHONEPE' | 'PAYTM' | 'GPAY' | 'GENERIC' | null) => {
+  const handleUpiLaunch = async () => {
     hapticSelect();
     const result = await launchUpiPayment({
       upiId: ownerUpi,
       payeeName: 'PG Rent Payment',
       amount: rentAmount,
       note: `Rent ${currentMonthYear}`,
-      preferredApp: app ?? 'GENERIC',
     });
     Alert.alert('UPI Payment', result.message);
   };
@@ -99,6 +102,7 @@ export function GuestPaymentsTab() {
   // accepts upi_manual as the method and tracks the invoice as paid once the
   // UTR is reported separately if needed).
   const handlePayInvoice = async (inv: TenantInvoice) => {
+    setPayingInvoiceId(inv.id);
     try {
       await payInvoice.mutateAsync({ invoiceId: inv.id, method: 'upi_manual' });
       hapticSuccess();
@@ -106,6 +110,8 @@ export function GuestPaymentsTab() {
     } catch (err: any) {
       hapticError();
       toast('error', 'Pay failed', err?.message ?? 'Please try again.');
+    } finally {
+      setPayingInvoiceId(null);
     }
   };
 
@@ -120,44 +126,26 @@ export function GuestPaymentsTab() {
         toast('error', 'PDF unavailable', 'The invoice PDF could not be generated.');
         return;
       }
-      // Fetch the bytes through the gateway so the auth token travels with the
-      // request. The PDF endpoint returns a binary stream.
+      // Fetch through the gateway so the auth token travels with the request and to confirm
+      // the PDF actually exists server-side, then hand the resident the link. expo-sharing's
+      // shareAsync needs a file:// URI, and expo-file-system (to write one) is not installed —
+      // TODO: install expo-file-system and switch to a real local save + Sharing.shareAsync.
       const res = await fetchWithTimeout(pdfUrl.startsWith('http') ? pdfUrl : `${BASE_URL}${pdfUrl}`);
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
-      const blob = await res.blob();
-      const fr = new FileReader();
-      fr.onload = async () => {
-        const base64 = (fr.result as string).split(',')[1];
-        const fileUri = `${Date.now()}_invoice.pdf`;
-        // expo-sharing's shareAsync expects a file:// URI. RNFetchBlob would be
-        // the right tool here, but it is not installed — we fall back to a
-        // copy-to-clipboard of the URL plus a success toast so the resident at
-        // least sees the link. TODO: install expo-file-system to write the
-        // PDF locally and use Sharing.shareAsync.
-        try {
-          await Clipboard.setStringAsync(pdfUrl);
-          hapticSuccess();
-          toast('success', 'PDF link copied', 'The invoice PDF URL has been copied. Open it in a browser to download.');
-        } catch {
-          hapticSuccess();
-          toast('success', 'PDF ready', 'The invoice PDF is available; check your downloads.');
-        }
-        // Reference base64/fileUri so the linter doesn't flag them — these
-        // will be used once expo-file-system is wired in.
-        void base64; void fileUri;
-        setDownloadingInvoiceId(null);
-      };
-      fr.onerror = () => {
-        hapticError();
-        toast('error', 'PDF read failed', 'Could not read the downloaded PDF.');
-        setDownloadingInvoiceId(null);
-      };
-      fr.readAsDataURL(blob);
+      try {
+        await Clipboard.setStringAsync(pdfUrl);
+        hapticSuccess();
+        toast('success', 'PDF link copied', 'The invoice PDF URL has been copied. Open it in a browser to download.');
+      } catch {
+        hapticSuccess();
+        toast('success', 'PDF ready', 'The invoice PDF is available; check your downloads.');
+      }
     } catch (err: any) {
       hapticError();
       toast('error', 'PDF failed', err?.message ?? 'Please try again later.');
+    } finally {
       setDownloadingInvoiceId(null);
     }
   };
@@ -228,7 +216,7 @@ export function GuestPaymentsTab() {
                       {!isPaid && (
                         <Btn
                           onPress={() => handlePayInvoice(inv)}
-                          loading={payInvoice.isPending}
+                          loading={payingInvoiceId === inv.id}
                           containerColor={Colors.CyberGreen}
                           textColor={Colors.LuxuryPureBlack}
                           borderRadius={8}
@@ -417,7 +405,7 @@ export function GuestPaymentsTab() {
                           <IconBtn onPress={() => { Clipboard.setStringAsync(ownerUpi); Alert.alert('Copied', `Copied UPI VPA: ${ownerUpi}`); }} icon="copy" size={20} tint={Colors.CyberPink} />
                         </Row>
                         <Spacer size={10} />
-                        <OutlinedBtn onPress={() => handleUpiLaunch(null)} borderColor={Colors.CyberPink} textColor={Colors.CyberPink} borderRadius={8} height={36}>
+                        <OutlinedBtn onPress={handleUpiLaunch} borderColor={Colors.CyberPink} textColor={Colors.CyberPink} borderRadius={8} height={36}>
                           <Ionicons name="open" size={14} color={Colors.CyberPink} />
                           <Txt size={11} weight="700" color={Colors.CyberPink} style={{ marginLeft: 6 }}>Launch PhonePe / UPI App Directly</Txt>
                         </OutlinedBtn>

@@ -37,7 +37,7 @@ function stageFromStatus(status: string): Stage {
   return 'SUBMITTED';
 }
 
-const STAGES: { key: Stage; label: string; icon: string }[] = [
+const STAGES: { key: Stage; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'SUBMITTED', label: 'Submitted', icon: 'paper-plane' },
   { key: 'ASSIGNED', label: 'Assigned', icon: 'person-add' },
   { key: 'IN_PROGRESS', label: 'In Progress', icon: 'construct' },
@@ -78,7 +78,7 @@ export function TicketDetailScreen({ ticket }: Props) {
                   borderColor: done ? Colors.primary : Colors.borderMuted,
                   transform: [{ scale: active ? 1.15 : 1 }],
                 }]}>
-                  <Ionicons name={stage.icon as any} size={14} color={done ? Colors.textInverse : Colors.textMuted} />
+                  <Ionicons name={stage.icon} size={14} color={done ? Colors.textInverse : Colors.textMuted} />
                 </View>
                 <Txt
                   size={9}
