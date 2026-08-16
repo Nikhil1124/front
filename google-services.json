@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "950261978595",
+    "project_id": "pgow-8973e",
+    "storage_bucket": "pgow-8973e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:950261978595:android:535540150b113c753dbcd6",
+        "android_client_info": {
+          "package_name": "com.pgow.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmu_lGIAWOoHCDOLB_BwzpN2wW9lfNCME"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

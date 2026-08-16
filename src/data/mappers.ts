@@ -313,6 +313,7 @@ export function toComplaint(r: RequestRecord): FeedbackComplaintEntity {
     mediaUri: photo?.url ?? null,
     isVideo: !!photo?.content_type?.startsWith("video/"),
     adminResponse: r.resolution_note ?? lastComment?.body ?? null,
+    assignedMembershipId: r.assigned_membership_id ?? null,
     // Star ratings were a demo-only field on the same row. The requests API carries no
     // ratings, so these read as unrated rather than inventing a score.
     mealRating: 0,

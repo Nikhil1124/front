@@ -137,10 +137,13 @@ export function GuestRSVPsTab() {
 
   const handleRSVP = useCallback(
     async (notificationId: string, choice: 'REQUIRED' | 'NOT_REQUIRED') => {
-      hapticSuccess();
-      await submitRSVP(notificationId, choice);
-      const label = choice === 'REQUIRED' ? 'Eating' : 'Skipping';
-      toast('success', `RSVP: ${label}`, 'Your portion is booked. +15 points!');
+      const result = await submitRSVP(notificationId, choice);
+      if (result.ok) {
+        hapticSuccess();
+        const label = choice === 'REQUIRED' ? 'Eating' : 'Skipping';
+        toast('success', `RSVP: ${label}`, 'Your portion is booked.');
+      }
+      // On failure, submitRSVP already surfaced the "❌ RSVP NOT RECORDED" alert itself.
     },
     [submitRSVP, toast],
   );

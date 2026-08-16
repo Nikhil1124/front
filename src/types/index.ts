@@ -123,6 +123,9 @@ export interface FeedbackComplaintEntity {
   mediaUri: string | null;
   isVideo: boolean;
   adminResponse: string | null;
+  /** Who this ticket is assigned to, or null when unassigned. The staff-facing "my tickets"
+   *  filter matches this against the signed-in staffer's own membership id. */
+  assignedMembershipId: string | null;
   mealRating: number;
   cleanlinessRating: number;
   managerRating: number;

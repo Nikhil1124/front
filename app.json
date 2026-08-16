@@ -9,13 +9,14 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.pgow"
+      "bundleIdentifier": "com.pgow.app"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#060D10"
       },
-      "package": "com.example.pgow"
+      "package": "com.pgow.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",

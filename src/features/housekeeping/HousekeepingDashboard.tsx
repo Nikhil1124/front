@@ -105,7 +105,7 @@ export function HousekeepingDashboard() {
   const myTickets = useMemo(() => {
     if (!activeMembership) return [] as FeedbackComplaintEntity[];
     return complaints.filter(
-      (c) => c.status !== 'Resolved' && c.guestId !== '' /* has been assigned */,
+      (c) => c.status !== 'Resolved' && c.assignedMembershipId === activeMembership,
     );
   }, [complaints, activeMembership]);
 

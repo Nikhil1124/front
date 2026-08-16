@@ -346,8 +346,8 @@ export interface PGowState {
 
   // ===== Meal notifications & RSVPs =====
   sendMealNotification: () => Promise<{ ok: boolean; error?: string }>;
-  submitRSVP: (notificationId: string, choice: string) => Promise<void>;
-  submitRSVPFromNotification: (notificationId: string, choice: string) => Promise<void>;
+  submitRSVP: (notificationId: string, choice: string) => Promise<{ ok: boolean; error?: string }>;
+  submitRSVPFromNotification: (notificationId: string, choice: string) => Promise<{ ok: boolean; error?: string }>;
 
   // ===== Payments & billing =====
   submitGuestPayment: (paymentMode: string, amount: number, paymentType: string, utrRef: string, monthYear: string) => Promise<{ ok: boolean; error?: string }>;
@@ -2107,20 +2107,22 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       await mealsApi.submitResponse(notificationId, choice === 'REQUIRED' ? 'eating' : 'skipping');
     } catch (err) {
+      const message = err instanceof PGowApiError ? err.message : 'Your answer was not saved. Try again.';
       set({
         activeAlert: {
           title: '❌ RSVP NOT RECORDED',
-          description: err instanceof PGowApiError ? err.message : 'Your answer was not saved. Try again.',
+          description: message,
           type: 'MEAL', notificationId, timestamp: Date.now(),
         },
       });
-      return;
+      return { ok: false, error: message };
     }
     await get().refreshAll();
+    return { ok: true };
   },
 
   submitRSVPFromNotification: async (notificationId, choice) => {
-    await get().submitRSVP(notificationId, choice);
+    return get().submitRSVP(notificationId, choice);
   },
 
   // ── Payments ──────────────────────────────────────────────────────────────

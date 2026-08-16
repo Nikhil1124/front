@@ -9,11 +9,17 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
+import * as Notifications from 'expo-notifications';
 
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { queryClient } from '@/data/queryClient';
 import { setGateHandler, setSessionExpiredHandler } from '@/data/apiClient';
+import {
+  registerNotificationChannels,
+  registerMealRsvpCategory,
+  routeFromPushData,
+} from '@/features/notifications/channels';
 import { Colors } from '@/theme';
 
 /**
@@ -59,6 +65,19 @@ export default function RootLayout() {
       init();
     });
   }, [init, hydrateFromStorage]);
+
+  useEffect(() => {
+    // Independent of auth: channels/categories must exist before a push naming one can
+    // arrive, and this device may receive one before anyone signs in.
+    registerNotificationChannels();
+    registerMealRsvpCategory();
+
+    // Tapping a push (foreground, background, or the app fully closed) routes here.
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      routeFromPushData(response.notification.request.content.data as Record<string, unknown>);
+    });
+    return () => sub.remove();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
