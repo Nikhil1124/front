@@ -31,6 +31,10 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
   const [picking, setPicking] = useState(false);
 
   const handleSave = async () => {
+    if (!name.trim() || !address.trim()) {
+      Alert.alert('Validation', 'PG Name and Address are required.');
+      return;
+    }
     const result = await updatePG(
       pg, name, address, parseInt(totalBeds, 10) || pg.totalBeds,
       mgrName, mgrPhone, mgrPin, pg.upiId, location,

@@ -30,12 +30,13 @@
  */
 import { useEffect } from 'react';
 import {
-  Modal, View, StyleSheet, ScrollView, Pressable, Linking, Platform,
+  Modal, View, StyleSheet, ScrollView, Pressable, Linking, Platform, BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { Colors, Layout } from '@/theme';
 import { formatDateTime } from '@/utils/format';
+import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { hapticSelect } from '@/utils/haptics';
 import type { PaymentEntity } from '@/types';
 
@@ -81,9 +82,9 @@ export function PaymentReceiptDialog({
       return true; // we handled it
     };
     if (Platform.OS === 'android') {
-      // RN's BackHandler only exists on Android; on iOS this is a no-op.
-      // The dynamic import keeps TS happy without adding a platform check.
-      const BackHandler = require('react-native').BackHandler;
+      // BackHandler is a normal cross-platform RN export (its iOS addEventListener is
+      // simply a no-op), so this only needs the Platform check to skip subscribing at all
+      // on iOS, not a dynamic import.
       const sub = BackHandler.addEventListener('hardwareBackPress', subscription);
       return () => sub.remove();
     }
@@ -214,7 +215,7 @@ export function PaymentReceiptDialog({
                 <Row justify="space-between">
                   <Txt size={12} color={Colors.textMuted}>Billing Period</Txt>
                   <Txt size={12} weight="700" color={Colors.textPrimary}>
-                    {payment.monthYear || 'August 2026'}
+                    {payment.monthYear || periodToMonthYear(currentPeriod(new Date(payment.timestamp || Date.now())))}
                   </Txt>
                 </Row>
                 <Row justify="space-between" style={{ marginTop: 6 }}>

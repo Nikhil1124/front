@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle } from 'react';
+import React, { useImperativeHandle } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Txt } from '@/components/ui';
 import { Colors } from '@/theme';
@@ -17,13 +17,13 @@ export type CameraRef = {
   zoomTo: (zoom: number, options?: any) => void;
 };
 
-export const Camera = forwardRef((props: any, ref) => {
+export const Camera = ({ ref, ...props }: { ref?: React.Ref<CameraRef> } & Record<string, any>) => {
   useImperativeHandle(ref, () => ({
     flyTo: () => {},
     zoomTo: () => {},
   }));
   return null;
-});
+};
 
 export const ViewAnnotation = ({ children }: any) => <View>{children}</View>;
 

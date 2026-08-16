@@ -22,8 +22,8 @@
  *     dashboard's own icon buttons.
  *   - Body sits on the mint canvas with the standard 16dp page padding.
  */
-import { useEffect, type ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, Platform, ViewStyle } from 'react-native';
+import { useEffect, type ComponentType, type ReactNode } from 'react';
+import { View, StyleSheet, ScrollView, Platform, ViewStyle, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -74,7 +74,6 @@ export function HubScreenWrapper({
   // we don't use a Navigator — our back-stack is custom in the store.
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    const BackHandler = require('react-native').BackHandler;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       handleBack();
       return true;
@@ -83,7 +82,7 @@ export function HubScreenWrapper({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const Body: any = scrollable ? ScrollView : View;
+  const Body: ComponentType<any> = scrollable ? ScrollView : View;
   const bodyProps = scrollable
     ? { contentContainerStyle: { padding: 16, paddingBottom: 32, ...contentContainerStyle }, showsVerticalScrollIndicator: false }
     : { style: { flex: 1, padding: 16, ...contentContainerStyle } };
@@ -98,7 +97,7 @@ export function HubScreenWrapper({
           onPress={handleBack}
           style={styles.backBtn}
         >
-          <Ionicons name={icon as any} size={22} color={Colors.primaryDark} />
+          <Ionicons name={icon} size={22} color={Colors.primaryDark} />
         </AnimatedPress>
 
         <View style={styles.titleWrap}>

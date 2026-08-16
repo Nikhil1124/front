@@ -59,7 +59,13 @@ function useCountdown(targetMs: number | null): CountdownResult {
 
   useEffect(() => {
     if (targetMs == null) return; // nothing to count toward
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => {
+      const tick = Date.now();
+      setNow(tick);
+      // Once the cutoff has passed, the rendered row is static ("Cutoff passed") -
+      // stop ticking instead of re-rendering every second for the rest of the session.
+      if (tick >= targetMs) clearInterval(id);
+    }, 1000);
     return () => clearInterval(id);
   }, [targetMs]);
 

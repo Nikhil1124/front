@@ -43,8 +43,6 @@ export interface DetailBottomSheetProps {
   testID?: string;
 }
 
-const AnimatedView = Animated.createAnimatedComponent(View);
-
 export function DetailBottomSheet({
   visible,
   title,
@@ -69,7 +67,7 @@ export function DetailBottomSheet({
           style={styles.sheetWrapper}
           onPress={(e) => e.stopPropagation()}
         >
-          <AnimatedView
+          <Animated.View
             entering={SlideInDown.springify().damping(18).stiffness(260).mass(0.7)}
             style={styles.sheet}
           >
@@ -115,7 +113,7 @@ export function DetailBottomSheet({
 
             {/* Optional pinned footer */}
             {footer ? <View style={styles.footer}>{footer}</View> : null}
-          </AnimatedView>
+          </Animated.View>
         </Pressable>
       </Pressable>
     </Modal>

@@ -32,6 +32,10 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
       Alert.alert('Validation', 'PG Name and Address are required.');
       return;
     }
+    if (!location) {
+      Alert.alert('Location Required', 'Pin the property location on the map before saving.');
+      return;
+    }
     const result = await createPG(
       name, address, parseInt(totalBeds, 10) || 30,
       mgrName, mgrPhone, mgrPin, 'pgowowner@ybl', location,

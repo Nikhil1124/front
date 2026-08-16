@@ -60,8 +60,14 @@ export function FeaturedMonetizedAdCard() {
           <Txt size={10} weight="700" color={Colors.SlateMutedText}>Monetized Channel</Txt>
         </Row>
         <Row gap={4}>
-          {ADS.map((_, idx) => (
-            <TouchableOpacity key={idx} onPress={() => setActiveAdIdx(idx)}>
+          {ADS.map((ad, idx) => (
+            <TouchableOpacity
+              key={idx}
+              onPress={() => setActiveAdIdx(idx)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${ad.brandName} ad`}
+            >
               <View style={[styles.dot, { backgroundColor: idx === activeAdIdx ? Colors.CyberPink : 'rgba(156,163,175,0.4)' }]} />
             </TouchableOpacity>
           ))}
@@ -172,7 +178,6 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
   bannerBox: { height: 130, backgroundColor: '#1A1F36', position: 'relative', overflow: 'hidden' },
   bannerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
-  bannerEmoji: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   bannerPillsRow: { position: 'absolute', bottom: 8, left: 16, flexDirection: 'row', gap: 8 },
   bannerPill: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, backgroundColor: 'rgba(30,41,59,0.8)' },
   nextBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#1F1B3E', alignItems: 'center', justifyContent: 'center' },

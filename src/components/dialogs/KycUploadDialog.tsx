@@ -23,7 +23,7 @@
  */
 import { useEffect, useState } from 'react';
 import {
-  Modal, View, StyleSheet, Pressable, TouchableOpacity, Alert, Platform,
+  Modal, View, StyleSheet, Pressable, TouchableOpacity, Alert, Platform, BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
@@ -67,7 +67,6 @@ export function KycUploadDialog({
   useEffect(() => {
     if (!visible) return;
     if (Platform.OS !== 'android') return;
-    const BackHandler = require('react-native').BackHandler;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       onDismiss();
       return true;

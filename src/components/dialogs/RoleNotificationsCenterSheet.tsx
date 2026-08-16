@@ -38,7 +38,7 @@ function accentColor(category: string): string {
   }
 }
 
-function roleIcon(role: string): keyof any {
+function roleIcon(role: string): keyof typeof Ionicons.glyphMap {
   switch (role) {
     case 'OWNER': return 'business';
     case 'MANAGER': return 'ribbon';
@@ -103,7 +103,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
             <Row justify="space-between" align="center" style={styles.headerRow}>
               <Row gap={10} style={{ flex: 1 }} align="center">
                 <View style={[styles.roleIconBox, { backgroundColor: '#F0FDF9' }]}>
-                  <Ionicons name={roleIcon(roleTitle) as any} size={20} color={Colors.primary} />
+                  <Ionicons name={roleIcon(roleTitle)} size={20} color={Colors.primary} />
                 </View>
                 <Col style={{ flex: 1 }}>
                   <Row align="center">

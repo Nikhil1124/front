@@ -223,12 +223,15 @@ export interface IconBtnProps {
   padding?: number;
   disabled?: boolean;
   testID?: string;
+  /** Required for icon-only buttons to be usable with a screen reader — there's no
+   *  visible text label to announce otherwise. */
+  accessibilityLabel?: string;
 }
 
 export function IconBtn({
   onPress, icon, size = 20, tint = Colors.textPrimary,
   containerColor = 'transparent', borderRadius = 999, padding = 8, disabled, testID,
-  hitSlop,
+  accessibilityLabel, hitSlop,
 }: IconBtnProps & { hitSlop?: { top: number; bottom: number; left: number; right: number } }) {
   return (
     <TouchableOpacity
@@ -237,6 +240,8 @@ export function IconBtn({
       disabled={disabled}
       onPress={onPress}
       hitSlop={hitSlop ?? { top: 8, bottom: 8, left: 8, right: 8 }}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       style={{
         backgroundColor: containerColor, borderRadius, padding,
         alignItems: 'center', justifyContent: 'center',

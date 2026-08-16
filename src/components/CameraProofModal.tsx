@@ -83,7 +83,7 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
     haptic('light');
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         quality: 0.7,
         allowsEditing: false,
       });
