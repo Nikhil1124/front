@@ -114,7 +114,7 @@ export function StaffDashboardScreen() {
   const rsvpsForActive = activeMeal ? allRSVPs.filter((r) => r.notificationId === activeMeal.id) : [];
   const reqCount = rsvpsForActive.filter((r) => r.choice === 'REQUIRED').length;
   const notReqCount = rsvpsForActive.filter((r) => r.choice === 'NOT_REQUIRED').length;
-  const noResponse = guests.length - reqCount - notReqCount;
+  const noResponse = Math.max(0, guests.length - reqCount - notReqCount);
 
   const toggleDish = (dish: string) => {
     setSelectedDishes((cur) => cur.includes(dish) ? cur.filter((d) => d !== dish) : [...cur, dish]);

@@ -78,12 +78,13 @@ const TAB_INDEX = {
 
 export function PGowApp() {
   const currentScreen = usePGowStore((s) => s.currentScreen);
-  const init = usePGowStore((s) => s.init);
   const popScreen = usePGowStore((s) => s.popScreen);
 
-  useEffect(() => {
-    init();
-  }, [init]);
+  // NOTE: `init()` is called from `app/_layout.tsx`, sequenced after
+  // `hydrateFromStorage()` resolves. Calling it again here would race ahead
+  // of hydration (child effects run before parent effects on mount), see
+  // it with no token yet, and permanently mark the store `_initialized`
+  // before the real token is available — silently breaking session restore.
 
   // Hardware back-button handling — Android only. iOS swipe-back gesture is
   // not applicable here because we don't use a Navigator; the visible header
@@ -179,7 +180,9 @@ export function PGowApp() {
         // the complaints list. We grab the most recent one for now — a full
         // implementation would push the ticket id onto the stack too.
         const complaints = usePGowStore.getState().currentFeedbackComplaints;
-        const ticket: FeedbackComplaintEntity | undefined = complaints[0];
+        const ticket: FeedbackComplaintEntity | undefined = [...complaints].sort(
+          (a, b) => b.timestamp - a.timestamp
+        )[0];
         if (!ticket) {
           return (
             <RoleGuard allowedRoles={['tenant', 'manager', 'owner']}>

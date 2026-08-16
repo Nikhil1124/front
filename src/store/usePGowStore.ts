@@ -33,6 +33,7 @@ import * as requestsApi from '@/features/requests/useComplaints';
 import * as rewardsApi from '@/features/rewards/useRewards';
 import * as staffApi from '@/features/staff/useStaff';
 import { useAuthStore, type Membership } from '@/store/authStore';
+import { parseTime } from '@/utils/format';
 import type {
   AppScreen,
   UserRole,
@@ -537,7 +538,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
           (await cachedFetch(qk.meals.list(pgId), () => mealsApi.listMeals(pgId, { limit: 50 }))).items
         ),
         safeList('notifications', async () =>
-          (await cachedFetch(qk.notifications.list(), () => notificationsApi.listNotifications({ pgId, limit: 100 }))).items
+          (await cachedFetch(qk.notifications.list(pgId), () => notificationsApi.listNotifications({ pgId, limit: 100 }))).items
         ),
         // Owner/manager only — this carries staff salaries, so a 403 for anyone else is the
         // correct answer and `safeList` turns it into an empty log.
@@ -1186,9 +1187,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   /** The one notification a person writes; the rest are consequences the server posts. */
   sendRoleNotification: async (targetRole, title, message, category = 'ANNOUNCEMENT', priority = 'MEDIUM') => {
     const pgId = useAuthStore.getState().activePgId || get().loggedInOwner?.id || (get().allPGsState[0]?.id);
-    const newNotifItem: RoleNotificationEntity = {
-      id: Date.now(),
-      pgId: pgId ? Number(pgId) || 1 : 1,
+    const newNotifItem: AppRoleNotificationEntity = {
+      id: localId(),
+      pgId: pgId ?? '',
       targetRole: targetRole.toUpperCase(),
       title,
       message,
@@ -1196,6 +1197,8 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       priority: priority.toUpperCase(),
       timestamp: Date.now(),
       isRead: false,
+      actionLabel: null,
+      actionType: null,
     };
 
     // Always update local state immediately so user sees the announcement
@@ -1328,22 +1331,30 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       formatted_address: address.trim() || 'Bangalore, Karnataka',
     };
 
-    const newPgId = Date.now();
+    const newPgId = localId();
     const newPgEntity: PGOwnerEntity = {
       id: newPgId,
       ownerName: get().loggedInOwner?.ownerName || 'Property Owner',
+      email: get().loggedInOwner?.email || '',
+      phone: get().loggedInOwner?.phone || '',
+      securityCode: '',
+      subscriptionActive: false,
+      subscriptionExpiry: 0,
+      qrCodeUrl: newPgId,
       pgName: pgName.trim() || 'New PG Property',
       address: address.trim() || 'Main Road, City',
       totalBeds: totalBeds > 0 ? totalBeds : 30,
-      occupiedBeds: 0,
+      subscriptionMode: 'FIXED_LIMIT',
+      phonePeNumber: '',
       managerName: managerName.trim() || 'Assigned Manager',
       managerPhone: managerPhone.trim() || '',
       managerPin: managerPin.trim() || '1234',
       upiId: upiId.trim() || 'pgowowner@ybl',
       joinCode: `JOIN-${Math.floor(1000 + Math.random() * 9000)}`,
-      latitude: finalLocation.latitude,
-      longitude: finalLocation.longitude,
+      latitude: String(finalLocation.latitude),
+      longitude: String(finalLocation.longitude),
       formattedAddress: address.trim() || finalLocation.formatted_address || '',
+      defaultRentAmount: 0,
     };
 
     try {
@@ -2064,10 +2075,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!s.menuItemsInput.trim()) return { ok: false, error: 'Please enter food items.' };
     try {
       // "HH:mm" is today's service time in this phone's timezone; the API wants an instant.
-      const { hour, minute } = (() => {
-        const [h, m] = s.serviceTimeInput.split(':');
-        return { hour: parseInt(h, 10) || 13, minute: parseInt(m, 10) || 0 };
-      })();
+      const { hour, minute } = parseTime(s.serviceTimeInput);
       const serviceAt = new Date();
       serviceAt.setHours(hour, minute, 0, 0);
 

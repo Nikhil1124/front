@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { API } from "../../config";
 import { useApi } from "../../hooks/useApi";
@@ -65,6 +65,11 @@ export function usePlaces() {
 
   /** Call once the user picks a suggestion, to clear the dropdown. */
   const endSession = useCallback(() => setSuggestions([]), []);
+
+  // A pending debounce must not fire setState after the screen using this hook has unmounted.
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
 
   return { suggestions, searching, search, endSession };
 }

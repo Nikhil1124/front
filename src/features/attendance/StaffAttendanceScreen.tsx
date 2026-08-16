@@ -28,13 +28,15 @@ import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
-import { formatLongDate, formatTime12h } from '@/utils/format';
+import { formatLongDate, formatTime12h, todayLocalISO } from '@/utils/format';
+import { useDeviceLocation } from '@/features/places/useDeviceLocation';
 import {
   useMyTodayShift,
   usePunches,
   usePunchIn,
   usePunchOut,
   useWeeklySchedule,
+  type WeeklyScheduleDay,
 } from '@/features/attendance/useAttendance';
 import type { AttendancePunch, StaffShift } from '@/types';
 
@@ -45,18 +47,19 @@ export function StaffAttendanceScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);
   const user = useAuthStore((s) => s.user);
   const staffMembershipId =
-    user?.memberships.find((m) => m.role === 'chef' || m.role === 'kitchen_staff' || m.role === 'maintenance' || m.role === 'manager')?.membership_id ?? null;
+    user?.memberships.find((m) => m.pg_id === activePgId && (m.role === 'chef' || m.role === 'kitchen_staff' || m.role === 'maintenance' || m.role === 'manager'))?.membership_id ?? null;
   const toast = useToast();
   const { refreshing, onRefresh } = usePullToRefresh();
+  const { requestPermission } = useDeviceLocation();
 
   const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
+  const todayIso = todayLocalISO(today);
 
   // This week's Sunday as the week-start date (server expects YYYY-MM-DD).
   const weekStart = useMemo(() => {
     const d = new Date(today);
     d.setDate(d.getDate() - d.getDay()); // back to Sunday
-    return d.toISOString().slice(0, 10);
+    return todayLocalISO(d);
   }, [today]);
 
   const { data: todayShifts = [] } = useMyTodayShift(activePgId, staffMembershipId);
@@ -67,7 +70,7 @@ export function StaffAttendanceScreen() {
   const weekAgo = useMemo(() => {
     const d = new Date(today);
     d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
+    return todayLocalISO(d);
   }, [today]);
   const { data: punches = [] } = usePunches(activePgId, staffMembershipId, weekAgo, todayIso);
 
@@ -76,13 +79,10 @@ export function StaffAttendanceScreen() {
 
   // Find today's punch (if any).
   const todayPunch = useMemo(() => {
-    return punches.find((p: AttendancePunch) => {
-      const d = new Date(p.punchInAt);
-      return d.toISOString().slice(0, 10) === todayIso;
-    }) ?? null;
+    return punches.find((p: AttendancePunch) => todayLocalISO(new Date(p.punchInAt)) === todayIso) ?? null;
   }, [punches, todayIso]);
 
-  const isOffDay = todayShift?.isOffDay ?? (todayShift == null);
+  const isOffDay = todayShift?.isOffDay ?? false;
   const isCompleted = todayPunch?.status === 'completed';
 
   // Geofence punch-in: ask for foreground location, take a fix, post.
@@ -92,11 +92,15 @@ export function StaffAttendanceScreen() {
       toast('error', 'No shift today', 'You have no scheduled shift for today.');
       return;
     }
+    if (todayShift.isOffDay) {
+      hapticError();
+      toast('error', 'Off day', "Today is marked as your day off — there's no shift to clock into.");
+      return;
+    }
     try {
-      const perm = await Location.requestForegroundPermissionsAsync();
-      if (!perm.granted) {
+      const granted = await requestPermission();
+      if (!granted) {
         hapticError();
-        toast('error', 'Location required', 'Grant location permission to use geofence check-in.');
         return;
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
@@ -118,10 +122,9 @@ export function StaffAttendanceScreen() {
   const doGeofencePunchOut = async () => {
     if (!todayPunch) return;
     try {
-      const perm = await Location.requestForegroundPermissionsAsync();
-      if (!perm.granted) {
+      const granted = await requestPermission();
+      if (!granted) {
         hapticError();
-        toast('error', 'Location required', 'Grant location permission to use geofence check-out.');
         return;
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
@@ -185,7 +188,12 @@ export function StaffAttendanceScreen() {
 
         {/* Punch action card */}
         <Card containerColor={Colors.surface} borderRadius={Radii.huge} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-          {!todayPunch ? (
+          {isOffDay ? (
+            <Col align="center" gap={8}>
+              <Ionicons name="moon-outline" size={22} color={Colors.textMuted} />
+              <Txt size={13} weight="800" color={Colors.textMuted}>Off day — no shift to clock into</Txt>
+            </Col>
+          ) : !todayPunch ? (
             <Col align="center" gap={12}>
               <Row gap={6} align="center">
                 <Txt size={16} weight="900" color={Colors.textPrimary}>Punch In</Txt>
@@ -240,7 +248,7 @@ export function StaffAttendanceScreen() {
         {/* Weekly schedule */}
         <Txt size={15} weight="900" color={Colors.textPrimary}>This Week</Txt>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {(weekly?.days ?? []).map((day: any) => {
+          {(weekly?.days ?? []).map((day: WeeklyScheduleDay) => {
             const d = new Date(day.date);
             const isToday = day.date === todayIso;
             const isOff = !day.shift || day.shift.isOffDay;

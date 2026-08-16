@@ -11,6 +11,7 @@ import { API } from "../../config";
 import { apiFetch } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
 import { toAttendancePunch, toStaffShift } from "../../data/mappers";
+import { todayLocalISO } from "../../utils/format";
 import type { AttendancePunch, StaffShift } from "../../types";
 
 // ─── Plain functions ─────────────────────────────────────────────────────────
@@ -113,9 +114,9 @@ export async function fetchWeeklySchedule(
 
 /** Today's shift for the signed-in staff member (or any staffMembershipId). */
 export function useMyTodayShift(pgId: string | null, staffMembershipId?: string | null) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalISO();
   return useQuery({
-    queryKey: qk.attendance.shifts(pgId ?? "", staffMembershipId ?? null),
+    queryKey: [...qk.attendance.shifts(pgId ?? "", staffMembershipId ?? null), today],
     queryFn: () => listMyShifts(pgId!, { staffMembershipId: staffMembershipId ?? undefined, shiftDate: today }),
     enabled: !!pgId,
   });
@@ -145,7 +146,7 @@ export function useWeeklySchedule(
   weekStartDate: string | null,
 ) {
   return useQuery({
-    queryKey: ["attendance", "weekly", pgId ?? "", staffMembershipId ?? "", weekStartDate ?? ""],
+    queryKey: qk.attendance.weekly(pgId ?? "", staffMembershipId ?? "", weekStartDate ?? ""),
     queryFn: () => fetchWeeklySchedule(pgId!, staffMembershipId!, weekStartDate!),
     enabled: !!pgId && !!staffMembershipId && !!weekStartDate,
   });

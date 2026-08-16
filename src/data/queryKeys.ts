@@ -122,9 +122,9 @@ export const qk = {
   },
 
   notifications: {
-    all: () => ["notifications"] as const,
-    list: () => ["notifications", "list"] as const,
-    unreadCount: () => ["notifications", "unread"] as const,
+    all: (pgId: string) => ["notifications", pgId] as const,
+    list: (pgId: string) => ["notifications", pgId, "list"] as const,
+    unreadCount: (pgId: string) => ["notifications", pgId, "unread"] as const,
   },
 
   // ── Task 7 — new module keys ──────────────────────────────────────────────
@@ -157,5 +157,7 @@ export const qk = {
     // serve one another's cached rows.
     punches: (pgId: string, staffId?: string | null, start?: string | null, end?: string | null) =>
       ["attendance", "punches", pgId, staffId ?? null, start ?? null, end ?? null] as const,
+    weekly: (pgId: string, staffId: string, weekStartDate: string) =>
+      ["attendance", "weekly", pgId, staffId, weekStartDate] as const,
   },
 } as const;

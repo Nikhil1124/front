@@ -44,13 +44,28 @@ export function formatLongDate(timestamp: number): string {
 
 /** Parse "HH:mm" 24h into {hour, minute}. */
 export function parseTime(time: string): { hour: number; minute: number } {
-  try {
-    const parts = time.split(':');
-    if (parts.length === 2) {
-      return { hour: parseInt(parts[0], 10) || 13, minute: parseInt(parts[1], 10) || 30 };
+  const parts = time.split(':');
+  if (parts.length === 2) {
+    const hour = parseInt(parts[0], 10);
+    const minute = parseInt(parts[1], 10);
+    if (!Number.isNaN(hour) && !Number.isNaN(minute)) {
+      return { hour, minute };
     }
-  } catch (e) { /* noop */ }
+  }
   return { hour: 13, minute: 30 };
+}
+
+/**
+ * "YYYY-MM-DD" in the device's local calendar day — NOT `toISOString().slice(0, 10)`,
+ * which reports the UTC day. For IST (UTC+5:30), anything before 05:30 local time would
+ * silently resolve to yesterday's date with the UTC form — wrong day for "today's shift"
+ * lookups, attendance windows, etc.
+ */
+export function todayLocalISO(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const d = date.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 /** Format hour+minute to "HH:mm" 24h. */

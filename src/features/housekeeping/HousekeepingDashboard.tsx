@@ -74,7 +74,13 @@ export function HousekeepingDashboard() {
   const staff = usePGowStore((s) => s.loggedInStaff);
   const complaints = usePGowStore((s) => s.currentFeedbackComplaints);
   const refreshAll = usePGowStore((s) => s.refreshAll);
-  const activeMembership = useAuthStore((s) => s.user?.memberships.find((m) => m.role === 'maintenance' || m.role === 'kitchen_staff' || m.role === 'chef')?.membership_id ?? null);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const activeMembership = useAuthStore(
+    (s) =>
+      s.user?.memberships.find(
+        (m) => m.pg_id === activePgId && (m.role === 'maintenance' || m.role === 'kitchen_staff' || m.role === 'chef')
+      )?.membership_id ?? null
+  );
   const toast = useToast();
   const { refreshing, onRefresh } = usePullToRefresh();
 
@@ -171,7 +177,9 @@ export function HousekeepingDashboard() {
       // 1. Resolve the ticket server-side.
       await resolveComplaint(ticket.id, note);
 
-      // 2. Upload the two photos as attachments (best-effort).
+      // 2. Upload the two photos as attachments (best-effort — the resolve above already
+      // succeeded either way, but the user still needs to know if their proof didn't make it).
+      let failedUploads = 0;
       for (const [label, uri] of [['before', state.beforeUri], ['after', state.afterUri]] as const) {
         try {
           const up = await getAttachmentUploadUrl(ticket.id, 'image/jpeg');
@@ -181,13 +189,21 @@ export function HousekeepingDashboard() {
             content_type: 'image/jpeg',
           });
         } catch (attachErr) {
-          // Attachments are best-effort — the resolve already succeeded.
-          console.warn('[housekeeping] attachment upload failed', attachErr);
+          failedUploads += 1;
+          console.warn(`[housekeeping] ${label} photo upload failed`, attachErr);
         }
       }
 
       hapticSuccess();
-      toast('success', 'Ticket resolved', `${ticket.title} marked resolved with proof.`);
+      if (failedUploads > 0) {
+        toast(
+          'success',
+          'Ticket resolved',
+          `${ticket.title} marked resolved, but ${failedUploads} photo${failedUploads > 1 ? 's' : ''} failed to upload.`
+        );
+      } else {
+        toast('success', 'Ticket resolved', `${ticket.title} marked resolved with proof.`);
+      }
       await refreshAll();
     } catch (err: any) {
       hapticError();
