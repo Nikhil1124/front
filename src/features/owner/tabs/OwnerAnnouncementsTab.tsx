@@ -86,7 +86,7 @@ export function OwnerAnnouncementsTab() {
     >
       {/* Header */}
       <Row justify="space-between" align="center">
-        <Txt size={18} weight="900" color={Colors.textPrimary}>Announcements & Approvals</Txt>
+        <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Announcements & Approvals</Txt>
         <Btn
           onPress={() => { hapticSelect(); setShowBroadcastModal(true); }}
           containerColor={Colors.primary}
@@ -96,7 +96,7 @@ export function OwnerAnnouncementsTab() {
           contentStyle={{ paddingHorizontal: 12 }}
         >
           <Ionicons name="megaphone" size={14} color={Colors.textInverse} />
-          <Txt size={11} weight="800" color={Colors.textInverse} style={{ marginLeft: 4 }}>+ New Notice</Txt>
+          <Txt variant="caption" weight="800" color={Colors.textInverse} style={{ marginLeft: 4 }}>+ New Notice</Txt>
         </Btn>
       </Row>
 
@@ -118,10 +118,10 @@ export function OwnerAnnouncementsTab() {
               />
             </View>
             <Col>
-              <Txt size={14} weight="900" color={Colors.textPrimary}>
+              <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>
                 {managerApprovals.length} Pending Manager Approval{managerApprovals.length === 1 ? '' : 's'}
               </Txt>
-              <Txt size={11} color={Colors.textMuted}>
+              <Txt variant="caption" color={Colors.textMuted}>
                 {managerApprovals.length > 0
                   ? 'Manager submitted supply/salary requests requiring your review'
                   : 'All manager requests are reviewed and up to date'}
@@ -154,7 +154,7 @@ export function OwnerAnnouncementsTab() {
       {displayedList.length === 0 ? (
         <Card containerColor={Colors.surface} borderRadius={16} padding={[28, 20]} style={{ alignItems: 'center' }}>
           <Ionicons name="notifications-off-outline" size={36} color={Colors.textMuted} />
-          <Txt size={13} weight="700" color={Colors.textMuted} style={{ marginTop: 8 }}>
+          <Txt variant="body" weight="700" color={Colors.textMuted} style={{ marginTop: 8 }}>
             No notices or approvals in this category
           </Txt>
         </Card>
@@ -180,7 +180,7 @@ export function OwnerAnnouncementsTab() {
                 <Row justify="space-between" align="center">
                   <Row gap={6} align="center">
                     <View style={[styles.dot, { backgroundColor: isApproval ? '#16A34A' : Colors.primary }]} />
-                    <Txt size={9} weight="900" color={isApproval ? '#166534' : Colors.primaryDark}>
+                    <Txt variant="labelSmall" weight="900" color={isApproval ? '#166534' : Colors.primaryDark}>
                       {isApproval ? 'MANAGER APPROVAL REQUEST' : (item.category || 'ANNOUNCEMENT').replace(/_/g, ' ')}
                     </Txt>
                   </Row>
@@ -191,16 +191,16 @@ export function OwnerAnnouncementsTab() {
                 </Row>
 
                 <Spacer size={6} />
-                <Txt size={13} weight="800" color={Colors.textPrimary}>{item.title}</Txt>
+                <Txt variant="body" weight="800" color={Colors.textPrimary}>{item.title}</Txt>
                 <Spacer size={3} />
-                <Txt size={11} color={Colors.textSecondary} style={{ lineHeight: 16 }}>{item.message}</Txt>
+                <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 16 }}>{item.message}</Txt>
 
                 {isApproval && (
                   <View style={styles.managerActionBox}>
                     <Row justify="space-between" align="center">
                       <Row gap={6} align="center">
                         <Ionicons name="person-circle" size={16} color={Colors.primary} />
-                        <Txt size={11} weight="700" color={Colors.textPrimary}>
+                        <Txt variant="caption" weight="700" color={Colors.textPrimary}>
                           Manager: {owner?.managerName || 'Assigned Manager'}
                         </Txt>
                       </Row>
@@ -223,7 +223,7 @@ export function OwnerAnnouncementsTab() {
                         height={32}
                         style={{ flex: 1 }}
                       >
-                        <Txt size={11} weight="800" color={Colors.textInverse}>Approve ✓</Txt>
+                        <Txt variant="caption" weight="800" color={Colors.textInverse}>Approve ✓</Txt>
                       </Btn>
                       <OutlinedBtn
                         onPress={() => handleReject(item.id, item.title)}
@@ -233,7 +233,7 @@ export function OwnerAnnouncementsTab() {
                         height={32}
                         style={{ flex: 1 }}
                       >
-                        <Txt size={11} weight="800" color="#B91C1C">Reject / Notes</Txt>
+                        <Txt variant="caption" weight="800" color="#B91C1C">Reject / Notes</Txt>
                       </OutlinedBtn>
                     </Row>
                   </View>

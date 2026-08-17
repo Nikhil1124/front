@@ -130,11 +130,11 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
           {/* Header */}
           <Row align="center" justify="space-between" style={styles.header}>
             <Col style={{ flex: 1 }}>
-              <Txt size={17} weight="800" color={Colors.IvoryWhiteText} numberOfLines={1}>
+              <Txt variant="screenTitle" color={Colors.IvoryWhiteText} numberOfLines={1}>
                 {title}
               </Txt>
               {subtitle ? (
-                <Txt size={11} color={Colors.SlateMutedText} numberOfLines={2}>
+                <Txt variant="caption" color={Colors.SlateMutedText} numberOfLines={2}>
                   {subtitle}
                 </Txt>
               ) : null}
@@ -176,12 +176,12 @@ function CaptureBody({ onCapture }: { onCapture: () => void }) {
       >
         <Row align="center" gap={10}>
           <MaterialCommunityIcons name="camera-iris" size={20} color={Colors.CyberGreen} />
-          <Txt size={12} color={Colors.IvoryWhiteText} weight="600">
+          <Txt variant="caption" color={Colors.IvoryWhiteText} weight="600">
             Frame the area clearly
           </Txt>
         </Row>
         <Spacer size={4} />
-        <Txt size={11} color={Colors.SlateMutedText}>
+        <Txt variant="caption" color={Colors.SlateMutedText}>
           Ensure good lighting. This photo is the proof that completes the task.
         </Txt>
       </Card>
@@ -198,7 +198,7 @@ function CaptureBody({ onCapture }: { onCapture: () => void }) {
       >
         <MaterialCommunityIcons name="camera" size={32} color={Colors.CyberGreen} />
       </Pressable>
-      <Txt size={11} color={Colors.SlateMutedText}>Tap to capture</Txt>
+      <Txt variant="caption" color={Colors.SlateMutedText}>Tap to capture</Txt>
     </Col>
   );
 }
@@ -235,7 +235,7 @@ function PreviewBody({
         <Card containerColor={Palette.SurfaceInk} borderRadius={Radii.lg} borderColor={Palette.BorderMid} padding={[14, 14]}>
           <Row align="center" justify="center" gap={10}>
             <ActivityIndicator color={Colors.CyberGreen} />
-            <Txt size={12} weight="600" color={Colors.IvoryWhiteText}>Uploading proof…</Txt>
+            <Txt variant="caption" weight="600" color={Colors.IvoryWhiteText}>Uploading proof…</Txt>
           </Row>
         </Card>
       ) : (
@@ -249,7 +249,7 @@ function PreviewBody({
             testID="camera-proof-retake"
           >
             <MaterialCommunityIcons name="camera-retake" size={18} color={Colors.IvoryWhiteText} />
-            <Txt size={12} weight="700" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Retake</Txt>
+            <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Retake</Txt>
           </OutlinedBtn>
           <Btn
             onPress={onSubmit}
@@ -260,7 +260,7 @@ function PreviewBody({
             testID="camera-proof-submit"
           >
             <MaterialCommunityIcons name="check-circle" size={18} color={Colors.LuxuryPureBlack} />
-            <Txt size={12} weight="700" color={Colors.LuxuryPureBlack} style={{ marginLeft: 6 }}>Submit</Txt>
+            <Txt variant="caption" weight="700" color={Colors.LuxuryPureBlack} style={{ marginLeft: 6 }}>Submit</Txt>
           </Btn>
         </Row>
       )}
@@ -275,10 +275,10 @@ function PermissionDeniedCard({ onRequest }: { onRequest: () => void }) {
       <View style={[styles.deniedIcon, { backgroundColor: `${Palette.StatusRed}22` }]}>
         <MaterialCommunityIcons name="camera-off" size={36} color={Palette.StatusRed} />
       </View>
-      <Txt size={15} weight="700" color={Colors.IvoryWhiteText} align="center">
+      <Txt variant="cardTitle" color={Colors.IvoryWhiteText} align="center">
         Camera permission required
       </Txt>
-      <Txt size={12} color={Colors.SlateMutedText} align="center" style={{ paddingHorizontal: 24 }}>
+      <Txt variant="caption" color={Colors.SlateMutedText} align="center" style={{ paddingHorizontal: 24 }}>
         PGow needs camera access to capture proof-of-work photos. Grant access in settings to continue.
       </Txt>
       <Row gap={10}>

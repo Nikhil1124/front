@@ -155,7 +155,7 @@ export function GuestRSVPsTab() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
     >
       <Row gap={6} align="center">
-        <Txt size={20} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Daily Portion RSVP</Txt>
+        <Txt variant="screenTitle" weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Daily Portion RSVP</Txt>
         <InfoTip text="Chefs prepare meals based on precise responses. Tap a meal card to view nutrition details & RSVP!" />
       </Row>
 
@@ -172,7 +172,7 @@ export function GuestRSVPsTab() {
       <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={16} borderWidth={1} borderColor={Colors.LuxuryCardBorder} padding={[14, 14]}>
         <Row gap={6} align="center">
           <Ionicons name="restaurant" size={16} color={Colors.CyberGreen} />
-          <Txt size={14} weight="800" color={Colors.IvoryWhiteText}>My Daily Meal Preferences</Txt>
+          <Txt variant="cardTitle" weight="800" color={Colors.IvoryWhiteText}>My Daily Meal Preferences</Txt>
           <InfoTip text="Toggle each meal on/off for today. The kitchen sees your default opt-in and pre-reserves a portion." />
         </Row>
         <Spacer size={10} />
@@ -185,7 +185,7 @@ export function GuestRSVPsTab() {
       </Card>
 
       <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={16} borderWidth={1} borderColor={Colors.LuxuryCardBorder} padding={[16, 16]}>
-        <Txt size={16} weight="800" color={Colors.IvoryWhiteText}>📅 Daily RSVP Status Planner</Txt>
+        <Txt variant="sectionTitle" weight="800" color={Colors.IvoryWhiteText}>📅 Daily RSVP Status Planner</Txt>
         <Spacer size={12} />
         <Row gap={10}>
           {mealSlots.map((slot) => {
@@ -216,8 +216,8 @@ export function GuestRSVPsTab() {
                   <Col align="center">
                     <Ionicons name={slot.icon} size={20} color={statusColor} />
                     <Spacer size={4} />
-                    <Txt size={11} weight="700" color={isFilterSelected ? Colors.CyberPink : Colors.IvoryWhiteText}>{slot.name}</Txt>
-                    <Txt size={10} weight="800" color={statusColor}>{statusText}</Txt>
+                    <Txt variant="caption" weight="700" color={isFilterSelected ? Colors.CyberPink : Colors.IvoryWhiteText}>{slot.name}</Txt>
+                    <Txt variant="labelSmall" weight="800" color={statusColor}>{statusText}</Txt>
                   </Col>
                 </View>
               </AnimatedPress>
@@ -226,8 +226,8 @@ export function GuestRSVPsTab() {
         </Row>
         <Spacer size={16} />
         <Row justify="space-between" align="center">
-          <Txt size={12} weight="700" color={Colors.IvoryWhiteText}>Meal Selection Progress</Txt>
-          <Txt size={12} weight="800" color={progressPercent === 1 ? '#10B981' : Colors.CyberPink}>
+          <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Meal Selection Progress</Txt>
+          <Txt variant="caption" weight="800" color={progressPercent === 1 ? '#10B981' : Colors.CyberPink}>
             {answeredMealsCount} of {totalMealsCount} Decisions Made ({Math.round(progressPercent * 100)}%)
           </Txt>
         </Row>
@@ -237,7 +237,7 @@ export function GuestRSVPsTab() {
       </Card>
 
       <Col>
-        <Txt size={13} weight="700" color={Colors.IvoryWhiteText}>Quick-Action Filter by Menu</Txt>
+        <Txt variant="body" weight="700" color={Colors.IvoryWhiteText}>Quick-Action Filter by Menu</Txt>
         <Row gap={8} style={{ marginTop: 8 }}>
           {[
             { key: 'ALL', label: 'All Menus 🍽️' },
@@ -286,32 +286,32 @@ export function GuestRSVPsTab() {
                     <View style={styles.mealIconBox}>
                       <Ionicons name={notif.mealType === 'Breakfast' ? 'sunny' : notif.mealType === 'Dinner' ? 'moon' : 'restaurant'} size={18} color={Colors.CyberGreen} />
                     </View>
-                    <Txt size={16} weight="800" color={Colors.IvoryWhiteText}>{notif.mealType}</Txt>
+                    <Txt variant="sectionTitle" weight="800" color={Colors.IvoryWhiteText}>{notif.mealType}</Txt>
                   </Row>
                   <Row gap={6} align="center">
-                    <Txt size={12} weight="700" color={Colors.textMuted}>{formatTime12h(notif.timestamp)}</Txt>
+                    <Txt variant="caption" weight="700" color={Colors.textMuted}>{formatTime12h(notif.timestamp)}</Txt>
                     <Ionicons name="chevron-forward" size={14} color={Colors.SlateMutedText} />
                   </Row>
                 </Row>
                 <Spacer size={10} />
                 <View style={styles.serviceBox}>
                   <Col style={{ flex: 1 }}>
-                    <Txt size={12} weight="700" color={Colors.CyberGreen}>🕒 Meal Service: {formatServiceTime12h(notif.serviceTime)}</Txt>
+                    <Txt variant="caption" weight="700" color={Colors.CyberGreen}>🕒 Meal Service: {formatServiceTime12h(notif.serviceTime)}</Txt>
                     <Txt size={10} weight="500" color={notif.isAlertSent ? '#02E0A5' : '#9CA3AF'}>
                       {notif.isAlertSent ? '🔔 Interactive RSVP status notification sent' : `🔔 Status bar RSVP alert triggers at ${getAlertTriggerTime(notif.serviceTime)}`}
                     </Txt>
                   </Col>
                 </View>
                 <Spacer size={12} />
-                <Txt size={15} weight="800" color={Colors.IvoryWhiteText}>{notif.menuItems}</Txt>
+                <Txt variant="cardTitle" weight="800" color={Colors.IvoryWhiteText}>{notif.menuItems}</Txt>
                 {notif.chefNote ? (
                   <>
                     <Spacer size={6} />
-                    <View style={styles.chefNoteBox}><Txt size={12} weight="700" color={Colors.IvoryWhiteText}>Chef Note: "{notif.chefNote}"</Txt></View>
+                    <View style={styles.chefNoteBox}><Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Chef Note: "{notif.chefNote}"</Txt></View>
                   </>
                 ) : null}
                 <Spacer size={12} />
-                <Txt size={10} color={Colors.CyberPurple} weight="700">👆 Tap card to view nutrition, allergens & RSVP details</Txt>
+                <Txt variant="labelSmall" color={Colors.CyberPurple} weight="700">👆 Tap card to view nutrition, allergens & RSVP details</Txt>
                 <Spacer size={16} />
                 <Row gap={10}>
                   <Btn
@@ -324,7 +324,7 @@ export function GuestRSVPsTab() {
                     testID="rsvp_required_button"
                   >
                     <Ionicons name="checkmark" size={18} color={isEating ? '#FFFFFF' : '#10B981'} />
-                    <Txt size={14} weight="900" color={isEating ? '#FFFFFF' : '#10B981'} style={{ marginLeft: 6 }}>Eating</Txt>
+                    <Txt variant="cardTitle" weight="900" color={isEating ? '#FFFFFF' : '#10B981'} style={{ marginLeft: 6 }}>Eating</Txt>
                   </Btn>
                   <Btn
                     onPress={() => handleRSVP(notif.id, 'NOT_REQUIRED')}
@@ -336,7 +336,7 @@ export function GuestRSVPsTab() {
                     testID="rsvp_skip_button"
                   >
                     <Ionicons name="close" size={18} color={isSkipping ? '#FFFFFF' : '#EF4444'} />
-                    <Txt size={14} weight="900" color={isSkipping ? '#FFFFFF' : '#EF4444'} style={{ marginLeft: 6 }}>Skipping</Txt>
+                    <Txt variant="cardTitle" weight="900" color={isSkipping ? '#FFFFFF' : '#EF4444'} style={{ marginLeft: 6 }}>Skipping</Txt>
                   </Btn>
                 </Row>
               </Card>
@@ -390,11 +390,11 @@ export function GuestRSVPsTab() {
                 <Txt size={12} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: 1 }}>MENU DETAILS</Txt>
               </Row>
               <Spacer size={8} />
-              <Txt size={15} weight="800" color={Colors.IvoryWhiteText}>{detailMeal.menuItems}</Txt>
+              <Txt variant="cardTitle" weight="800" color={Colors.IvoryWhiteText}>{detailMeal.menuItems}</Txt>
               {detailMeal.chefNote ? (
                 <>
                   <Spacer size={8} />
-                  <View style={styles.chefNoteBox}><Txt size={12} weight="700" color={Colors.IvoryWhiteText}>👨‍🍳 Chef Note: "{detailMeal.chefNote}"</Txt></View>
+                  <View style={styles.chefNoteBox}><Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>👨‍🍳 Chef Note: "{detailMeal.chefNote}"</Txt></View>
                 </>
               ) : null}
             </Card>
@@ -404,17 +404,17 @@ export function GuestRSVPsTab() {
             <Spacer size={6} />
             <View style={styles.timelineRow}>
               <Ionicons name="time" size={14} color={Colors.SlateMutedText} />
-              <Txt size={12} color={Colors.IvoryWhiteText}>Service time: {formatServiceTime12h(detailMeal.serviceTime)}</Txt>
+              <Txt variant="caption" color={Colors.IvoryWhiteText}>Service time: {formatServiceTime12h(detailMeal.serviceTime)}</Txt>
             </View>
             <View style={styles.timelineRow}>
               <Ionicons name={detailMeal.isAlertSent ? 'notifications' : 'notifications-outline'} size={14} color={detailMeal.isAlertSent ? Colors.CyberGreen : Colors.SlateMutedText} />
-              <Txt size={12} color={detailMeal.isAlertSent ? Colors.CyberGreen : Colors.SlateMutedText}>
+              <Txt variant="caption" color={detailMeal.isAlertSent ? Colors.CyberGreen : Colors.SlateMutedText}>
                 {detailMeal.isAlertSent ? 'RSVP alert sent — your response is being counted' : `Alert triggers at ${getAlertTriggerTime(detailMeal.serviceTime)}`}
               </Txt>
             </View>
             <View style={styles.timelineRow}>
               <Ionicons name="calendar" size={14} color={Colors.SlateMutedText} />
-              <Txt size={12} color={Colors.SlateMutedText}>Posted {formatTime12h(detailMeal.timestamp)}</Txt>
+              <Txt variant="caption" color={Colors.SlateMutedText}>Posted {formatTime12h(detailMeal.timestamp)}</Txt>
             </View>
 
             <Spacer size={14} />
@@ -425,7 +425,7 @@ export function GuestRSVPsTab() {
             <Spacer size={10} />
             <Row gap={8}>
               {['Dairy-free', 'Gluten-free', 'Vegan option'].map((tag) => (
-                <View key={tag} style={styles.allergenChip}><Txt size={10} weight="700" color={Colors.CyberGreen}>{tag}</Txt></View>
+                <View key={tag} style={styles.allergenChip}><Txt variant="labelSmall" color={Colors.CyberGreen}>{tag}</Txt></View>
               ))}
             </Row>
 
@@ -438,7 +438,7 @@ export function GuestRSVPsTab() {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10B981' }]}>
                     <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                    <Txt size={12} weight="800" color="#10B981" style={{ marginLeft: 8 }}>You're eating! Your portion is reserved.</Txt>
+                    <Txt variant="caption" weight="800" color="#10B981" style={{ marginLeft: 8 }}>You're eating! Your portion is reserved.</Txt>
                   </View>
                 );
               }
@@ -446,14 +446,14 @@ export function GuestRSVPsTab() {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(239,68,68,0.15)', borderColor: '#EF4444' }]}>
                     <Ionicons name="close-circle" size={18} color="#EF4444" />
-                    <Txt size={12} weight="800" color="#EF4444" style={{ marginLeft: 8 }}>You're skipping. Thank you for helping reduce waste!</Txt>
+                    <Txt variant="caption" weight="800" color="#EF4444" style={{ marginLeft: 8 }}>You're skipping. Thank you for helping reduce waste!</Txt>
                   </View>
                 );
               }
               return (
                 <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(255,184,0,0.15)', borderColor: '#FFB800' }]}>
                   <Ionicons name="hourglass" size={18} color="#FFB800" />
-                  <Txt size={12} weight="800" color="#FFB800" style={{ marginLeft: 8 }}>Pending — pick Eating or Skip below.</Txt>
+                  <Txt variant="caption" weight="800" color="#FFB800" style={{ marginLeft: 8 }}>Pending — pick Eating or Skip below.</Txt>
                 </View>
               );
             })()}

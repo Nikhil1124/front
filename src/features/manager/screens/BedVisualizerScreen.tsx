@@ -173,11 +173,11 @@ export function BedVisualizerScreen() {
         <Row gap={10}>
           <View style={[styles.statBox, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
             <Txt size={14} weight="900" color="#047857">{totalOccupiedBeds} Occupied</Txt>
-            <Txt size={10} color="#065F46">Assigned Beds</Txt>
+            <Txt variant="labelSmall" weight="400" color="#065F46">Assigned Beds</Txt>
           </View>
           <View style={[styles.statBox, { backgroundColor: '#F0FDF9', borderColor: '#CCFBF1' }]}>
             <Txt size={14} weight="900" color={Colors.primaryDark}>{totalVacantBeds} Vacant</Txt>
-            <Txt size={10} color={Colors.primaryDark}>Available Beds</Txt>
+            <Txt variant="labelSmall" weight="400" color={Colors.primaryDark}>Available Beds</Txt>
           </View>
         </Row>
       </Card>
@@ -370,7 +370,7 @@ export function BedVisualizerScreen() {
                                     </Txt>
                                   </View>
                                 </Row>
-                                <Txt size={10} color={Colors.textMuted} style={{ marginTop: 1 }}>
+                                <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 1 }}>
                                   {occupant ? `${occupant.name} • ${occupant.phone}` : 'Available for new resident check-in'}
                                 </Txt>
                               </Col>

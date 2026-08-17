@@ -31,7 +31,7 @@ export function InfoTip({ text, size = 15 }: Props) {
             padding={[14, 14]}
             style={{ maxWidth: 300 }}
           >
-            <Txt size={12} color={Colors.textPrimary}>{text}</Txt>
+            <Txt variant="caption" color={Colors.textPrimary}>{text}</Txt>
           </Card>
         </Pressable>
       </Modal>

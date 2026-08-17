@@ -131,7 +131,7 @@ export function OwnerSubscriptionScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scroll} style={styles.root}>
       <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
-        <Txt size={18} weight="700" color={Colors.IvoryWhiteText}>
+        <Txt variant="sectionTitle" color={Colors.IvoryWhiteText}>
           {active ? 'Subscription & Billing' : 'Secure PG Portal Activation'}
         </Txt>
         <IconBtn
@@ -157,27 +157,27 @@ export function OwnerSubscriptionScreen() {
               <Ionicons name="checkmark-circle" size={18} color="#10B981" />
             </Row>
             <Spacer size={8} />
-            <Txt size={22} weight="900" color={Colors.IvoryWhiteText}>{active.plan_name}</Txt>
+            <Txt variant="statValue" weight="900" color={Colors.IvoryWhiteText}>{active.plan_name}</Txt>
             <Spacer size={4} />
-            <Txt size={12} color="rgba(234,242,243,0.9)">
+            <Txt variant="caption" color="rgba(234,242,243,0.9)">
               {Number(active.price) > 0
                 ? `${money(active.price)} paid at activation`
                 : 'No upfront cost — billed as residents are added'}
             </Txt>
-            <Txt size={12} color="rgba(234,242,243,0.9)">
+            <Txt variant="caption" color="rgba(234,242,243,0.9)">
               Active since {active.current_period_start}
             </Txt>
           </Card>
 
           <Spacer size={20} />
-          <Txt size={16} weight="800" color={Colors.IvoryWhiteText}>Invoices</Txt>
+          <Txt variant="sectionTitle" weight="800" color={Colors.IvoryWhiteText}>Invoices</Txt>
           <Spacer size={10} />
 
           {invoices.isLoading ? (
-            <Txt size={12} color={Colors.SlateMutedText}>Loading…</Txt>
+            <Txt variant="caption" color={Colors.SlateMutedText}>Loading…</Txt>
           ) : !invoices.data?.length ? (
             <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={12} borderWidth={1} borderColor={Colors.LuxuryCardBorder} padding={[16, 16]}>
-              <Txt size={12} color={Colors.SlateMutedText} align="center">
+              <Txt variant="caption" color={Colors.SlateMutedText} align="center">
                 Nothing billed yet.
               </Txt>
             </Card>
@@ -194,8 +194,8 @@ export function OwnerSubscriptionScreen() {
               >
                 <Row justify="space-between" align="center">
                   <Col>
-                    <Txt size={16} weight="900" color={Colors.IvoryWhiteText}>{money(inv.amount)}</Txt>
-                    <Txt size={11} color={Colors.SlateMutedText}>Period {inv.period}</Txt>
+                    <Txt variant="sectionTitle" weight="900" color={Colors.IvoryWhiteText}>{money(inv.amount)}</Txt>
+                    <Txt variant="caption" color={Colors.SlateMutedText}>Period {inv.period}</Txt>
                   </Col>
                   <Txt
                     size={11}
@@ -216,7 +216,7 @@ export function OwnerSubscriptionScreen() {
                       height={38}
                       testID={`invoice_pay_${inv.id}`}
                     >
-                      <Txt size={12} weight="700" color={Colors.LuxuryPureBlack}>I've paid this</Txt>
+                      <Txt variant="caption" weight="700" color={Colors.LuxuryPureBlack}>I've paid this</Txt>
                     </Btn>
                   </>
                 )}
@@ -228,15 +228,15 @@ export function OwnerSubscriptionScreen() {
         <>
           {/* ── Not subscribed: pick a plan ── */}
           <Row gap={6} align="center" style={{ marginBottom: 16 }}>
-            <Txt size={20} weight="900" color={Colors.CyberGreen}>Step 1: Select Billing Model</Txt>
+            <Txt variant="screenTitle" weight="900" color={Colors.CyberGreen}>Step 1: Select Billing Model</Txt>
             <InfoTip text="Choose how you want to subscribe to the co-living management features. Pay a fixed upfront cost, or pay-as-you-grow based on residents actually added." />
           </Row>
 
           {plans.isLoading && (
-            <Txt size={12} color={Colors.SlateMutedText}>Loading plans…</Txt>
+            <Txt variant="caption" color={Colors.SlateMutedText}>Loading plans…</Txt>
           )}
           {plans.isError && (
-            <Txt size={12} color={Colors.CyberPink}>
+            <Txt variant="caption" color={Colors.CyberPink}>
               Could not load plans. Pull back and try again.
             </Txt>
           )}
@@ -256,11 +256,11 @@ export function OwnerSubscriptionScreen() {
                   testID={`plan_${plan.code}`}
                 >
                   <View style={[styles.planTag, { backgroundColor: accent.tagBg }]}>
-                    <Txt size={9} weight="700" color={accent.colour}>{accent.tag}</Txt>
+                    <Txt variant="labelSmall" color={accent.colour}>{accent.tag}</Txt>
                   </View>
                   <Spacer size={8} />
-                  <Txt size={14} weight="900" color={Colors.IvoryWhiteText}>{plan.name}</Txt>
-                  <Txt size={11} color="#94A3B8" style={{ lineHeight: 14, marginTop: 4 }}>
+                  <Txt variant="cardTitle" weight="900" color={Colors.IvoryWhiteText}>{plan.name}</Txt>
+                  <Txt variant="caption" color="#94A3B8" style={{ lineHeight: 14, marginTop: 4 }}>
                     {plan.billing_period === 'one_time'
                       ? `Pay ${money(plan.unit_price ?? 0)} per bed upfront. Add residents up to your limit with ₹0 extra.`
                       : plan.billing_period === 'usage'
@@ -274,7 +274,7 @@ export function OwnerSubscriptionScreen() {
 
           {selected && (
             <>
-              <Txt size={16} weight="800" color={Colors.IvoryWhiteText} style={{ marginBottom: 12 }}>
+              <Txt variant="sectionTitle" weight="800" color={Colors.IvoryWhiteText} style={{ marginBottom: 12 }}>
                 {isOneTime
                   ? 'Step 2: Enter PG Bed Capacity'
                   : `Step 2: Starting Seat Size (${selected.included_units} Free Included)`}
@@ -282,7 +282,7 @@ export function OwnerSubscriptionScreen() {
 
               <Card containerColor="#1D1F27" borderRadius={16} borderWidth={1} borderColor="#2C2F3A" padding={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col align="center">
-                  <Txt size={11} weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 0.5 }}>
+                  <Txt variant="caption" weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 0.5 }}>
                     {isOneTime ? 'TOTAL ACTIVE SEATS / BEDS' : 'INITIAL SEAT ALLOCATION'}
                   </Txt>
                   <Spacer size={12} />
@@ -298,23 +298,23 @@ export function OwnerSubscriptionScreen() {
                       <Spacer size={20} />
                       <Row gap={8}>
                         <Btn onPress={() => setBedsCount((c) => (c > 10 ? c - 10 : c > 1 ? 1 : c))} containerColor="#2C2F3A" textColor={Colors.IvoryWhiteText} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>-10</Txt>
+                          <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>-10</Txt>
                         </Btn>
                         <Btn onPress={() => setBedsCount((c) => (c > 1 ? c - 1 : c))} containerColor="#2C2F3A" textColor={Colors.IvoryWhiteText} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>-1</Txt>
+                          <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>-1</Txt>
                         </Btn>
                         <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor="#10B981" textColor={Colors.LuxuryPureBlack} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt size={14} weight="700" color={Colors.LuxuryPureBlack}>+1</Txt>
+                          <Txt variant="cardTitle" color={Colors.LuxuryPureBlack}>+1</Txt>
                         </Btn>
                         <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor="#10B981" textColor={Colors.LuxuryPureBlack} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt size={14} weight="700" color={Colors.LuxuryPureBlack}>+10</Txt>
+                          <Txt variant="cardTitle" color={Colors.LuxuryPureBlack}>+10</Txt>
                         </Btn>
                       </Row>
                     </>
                   ) : (
                     <>
                       <Spacer size={12} />
-                      <Txt size={11} color="#A78BFA" align="center" style={{ paddingHorizontal: 12, lineHeight: 16 }}>
+                      <Txt variant="caption" color="#A78BFA" align="center" style={{ paddingHorizontal: 12, lineHeight: 16 }}>
                         🌱 Scalable plan: your first {selected.included_units} seats are free. From the
                         next resident onwards, {money(selected.unit_price ?? 0)} is added to that
                         month's invoice.
@@ -332,17 +332,17 @@ export function OwnerSubscriptionScreen() {
                   <Ionicons name="checkmark-circle" size={18} color={accentFor(selected).colour} />
                 </Row>
                 <Spacer size={8} />
-                <Txt size={20} weight="900" color={Colors.IvoryWhiteText}>
+                <Txt variant="screenTitle" weight="900" color={Colors.IvoryWhiteText}>
                   {previewAmount > 0 ? `${money(previewAmount)} DUE NOW` : '₹0 FREE ACTIVATION'}
                 </Txt>
                 <Spacer size={8} />
                 {/* The server's own words for why that number, so the screen and the invoice
                     can never tell different stories. */}
                 {quote.data && (
-                  <Txt size={12} color="rgba(234,242,243,0.9)">✔ {quote.data.explanation}</Txt>
+                  <Txt variant="caption" color="rgba(234,242,243,0.9)">✔ {quote.data.explanation}</Txt>
                 )}
-                <Txt size={12} color="rgba(234,242,243,0.9)">✔ Real-time portions optimizer to eliminate kitchen food waste</Txt>
-                <Txt size={12} color="rgba(234,242,243,0.9)">✔ Staff registration portal for your kitchen chefs & supervisors</Txt>
+                <Txt variant="caption" color="rgba(234,242,243,0.9)">✔ Real-time portions optimizer to eliminate kitchen food waste</Txt>
+                <Txt variant="caption" color="rgba(234,242,243,0.9)">✔ Staff registration portal for your kitchen chefs & supervisors</Txt>
               </Card>
 
               <Spacer size={28} />
@@ -357,7 +357,7 @@ export function OwnerSubscriptionScreen() {
                 height={54}
                 testID="subscription_submit_button"
               >
-                <Txt size={16} weight="900" color={isUsage ? Colors.IvoryWhiteText : Colors.LuxuryPureBlack}>
+                <Txt variant="sectionTitle" weight="900" color={isUsage ? Colors.IvoryWhiteText : Colors.LuxuryPureBlack}>
                   {subscribe.isPending
                     ? 'Activating...'
                     : previewAmount > 0

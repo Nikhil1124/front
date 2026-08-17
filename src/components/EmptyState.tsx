@@ -39,13 +39,13 @@ export function EmptyState({
           <Ionicons name={icon} size={36} color={accent} />
         </View>
         <Spacer size={12} />
-        <Txt size={14} weight="700" color={Colors.IvoryWhiteText} align="center">
+        <Txt variant="cardTitle" color={Colors.IvoryWhiteText} align="center">
           {title}
         </Txt>
         {subtitle ? (
           <>
             <Spacer size={6} />
-            <Txt size={12} color={Colors.SlateMutedText} align="center" style={{ lineHeight: 17 }}>
+            <Txt variant="caption" color={Colors.SlateMutedText} align="center" style={{ lineHeight: 17 }}>
               {subtitle}
             </Txt>
           </>

@@ -161,14 +161,14 @@ export function GuestPaymentsTab() {
 
       <View style={styles.tabBar}>
         <TouchableOpacity onPress={() => setActiveSubTab(0)} style={[styles.subTab, { backgroundColor: activeSubTab === 0 ? Colors.primary : 'transparent' }]}>
-          <Txt size={12} weight="700" color={activeSubTab === 0 ? Colors.textInverse : Colors.SlateMutedText}>Pay Rent</Txt>
+          <Txt variant="caption" weight="700" color={activeSubTab === 0 ? Colors.textInverse : Colors.SlateMutedText}>Pay Rent</Txt>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setActiveSubTab(1)} style={[styles.subTab, { backgroundColor: activeSubTab === 1 ? Colors.primary : 'transparent' }]}>
-          <Txt size={12} weight="700" color={activeSubTab === 1 ? Colors.textInverse : Colors.SlateMutedText}>Payment History</Txt>
+          <Txt variant="caption" weight="700" color={activeSubTab === 1 ? Colors.textInverse : Colors.SlateMutedText}>Payment History</Txt>
         </TouchableOpacity>
         {/* Task 8: third sub-tab for tenant invoices */}
         <TouchableOpacity onPress={() => setActiveSubTab(2)} style={[styles.subTab, { backgroundColor: activeSubTab === 2 ? Colors.primary : 'transparent' }]}>
-          <Txt size={12} weight="700" color={activeSubTab === 2 ? Colors.textInverse : Colors.SlateMutedText}>Invoices</Txt>
+          <Txt variant="caption" weight="700" color={activeSubTab === 2 ? Colors.textInverse : Colors.SlateMutedText}>Invoices</Txt>
         </TouchableOpacity>
       </View>
 
@@ -180,12 +180,12 @@ export function GuestPaymentsTab() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
         >
           <Row gap={6} align="center">
-            <Txt size={13} weight="800" color={Colors.IvoryWhiteText}>Your Monthly Invoices</Txt>
+            <Txt variant="body" weight="800" color={Colors.IvoryWhiteText}>Your Monthly Invoices</Txt>
             <InfoTip text="Server-generated monthly rent invoices. Pay online or download a PDF copy." />
           </Row>
           <Spacer size={6} />
           {invoicesLoading ? (
-            <Txt size={12} color={Colors.SlateMutedText}>Loading invoices…</Txt>
+            <Txt variant="caption" color={Colors.SlateMutedText}>Loading invoices…</Txt>
           ) : invoices.length === 0 ? (
             <EmptyState
               icon="receipt-outline"
@@ -203,16 +203,16 @@ export function GuestPaymentsTab() {
                 <Card key={inv.id} containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={`${tint}66`} padding={[12, 12]}>
                   <Row justify="space-between" align="center">
                     <Col style={{ flex: 1 }}>
-                      <Txt size={13} weight="700" color={Colors.IvoryWhiteText}>{monthYear} Invoice</Txt>
-                      <Txt size={10} color={Colors.SlateMutedText}>Due {inv.dueDate}</Txt>
+                      <Txt variant="body" weight="700" color={Colors.IvoryWhiteText}>{monthYear} Invoice</Txt>
+                      <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Due {inv.dueDate}</Txt>
                     </Col>
                     <View style={[styles.statusPill, { backgroundColor: `${tint}26` }]}>
-                      <Txt size={10} weight="800" color={tint}>{inv.status.toUpperCase()}</Txt>
+                      <Txt variant="labelSmall" weight="800" color={tint}>{inv.status.toUpperCase()}</Txt>
                     </View>
                   </Row>
                   <Spacer size={8} />
                   <Row justify="space-between" align="center">
-                    <Txt size={16} weight="900" color={tint}>₹{Math.round(inv.totalAmount).toLocaleString('en-IN')}</Txt>
+                    <Txt variant="sectionTitle" weight="900" color={tint}>₹{Math.round(inv.totalAmount).toLocaleString('en-IN')}</Txt>
                     <Row gap={6} align="center">
                       {!isPaid && (
                         <Btn
@@ -225,7 +225,7 @@ export function GuestPaymentsTab() {
                           contentStyle={{ paddingHorizontal: 10 }}
                           testID={`invoice_pay_${inv.id}`}
                         >
-                          <Txt size={11} weight="800" color={Colors.LuxuryPureBlack}>Pay Now</Txt>
+                          <Txt variant="caption" weight="800" color={Colors.LuxuryPureBlack}>Pay Now</Txt>
                         </Btn>
                       )}
                       <Btn
@@ -239,7 +239,7 @@ export function GuestPaymentsTab() {
                         testID={`invoice_pdf_${inv.id}`}
                       >
                         <Ionicons name="download" size={12} color={Colors.primary} />
-                        <Txt size={11} weight="700" color={Colors.primary} style={{ marginLeft: 4 }}>PDF</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.primary} style={{ marginLeft: 4 }}>PDF</Txt>
                       </Btn>
                     </Row>
                   </Row>
@@ -258,12 +258,12 @@ export function GuestPaymentsTab() {
         >
           <Row gap={8} style={{ marginBottom: 12 }}>
             <Card containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor="rgba(20,226,177,0.4)" padding={[12, 12]} style={{ flex: 1 }}>
-              <Txt size={9} weight="700" color={Colors.SlateMutedText}>TOTAL PAID</Txt>
-              <Txt size={18} weight="900" color={Colors.CyberGreen}>₹{Math.round(totalPaid)}</Txt>
+              <Txt variant="labelSmall" color={Colors.SlateMutedText}>TOTAL PAID</Txt>
+              <Txt variant="sectionTitle" weight="900" color={Colors.CyberGreen}>₹{Math.round(totalPaid)}</Txt>
             </Card>
             <Card containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor="rgba(255,167,38,0.4)" padding={[12, 12]} style={{ flex: 1 }}>
-              <Txt size={9} weight="700" color={Colors.SlateMutedText}>PENDING</Txt>
-              <Txt size={18} weight="900" color={Colors.CyberAmber}>₹{Math.round(pendingAmount)}</Txt>
+              <Txt variant="labelSmall" color={Colors.SlateMutedText}>PENDING</Txt>
+              <Txt variant="sectionTitle" weight="900" color={Colors.CyberAmber}>₹{Math.round(pendingAmount)}</Txt>
             </Card>
           </Row>
           <Row gap={6} style={{ marginBottom: 12 }}>
@@ -293,18 +293,18 @@ export function GuestPaymentsTab() {
                   <Card containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={`${statusColor}66`} padding={[12, 12]}>
                     <Row justify="space-between" align="center">
                       <Col style={{ flex: 1 }}>
-                        <Txt size={13} weight="700" color={Colors.IvoryWhiteText}>{p.monthYear} • {p.paymentType.replace(/_/g, ' ')}</Txt>
-                        <Txt size={10} color={Colors.SlateMutedText}>Ref: {p.transactionRef} • {p.paymentMode.replace(/_/g, ' ')}</Txt>
+                        <Txt variant="body" weight="700" color={Colors.IvoryWhiteText}>{p.monthYear} • {p.paymentType.replace(/_/g, ' ')}</Txt>
+                        <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Ref: {p.transactionRef} • {p.paymentMode.replace(/_/g, ' ')}</Txt>
                       </Col>
                       <View style={[styles.statusPill, { backgroundColor: `${statusColor}26` }]}>
-                        <Txt size={10} weight="800" color={statusColor}>{isVerified ? 'VERIFIED ✅' : isPending ? 'PENDING ⏳' : 'REJECTED ❌'}</Txt>
+                        <Txt variant="labelSmall" weight="800" color={statusColor}>{isVerified ? 'VERIFIED ✅' : isPending ? 'PENDING ⏳' : 'REJECTED ❌'}</Txt>
                       </View>
                     </Row>
                     <Spacer size={8} />
                     <Row justify="space-between" align="center">
-                      <Txt size={16} weight="900" color={statusColor}>₹{Math.round(p.amount)}</Txt>
+                      <Txt variant="sectionTitle" weight="900" color={statusColor}>₹{Math.round(p.amount)}</Txt>
                       <Row gap={6} align="center">
-                        <Txt size={10} weight="700" color={Colors.CyberPurple}>Tap to view receipt</Txt>
+                        <Txt variant="labelSmall" color={Colors.CyberPurple}>Tap to view receipt</Txt>
                         <Ionicons name="chevron-forward" size={12} color={Colors.CyberPurple} />
                       </Row>
                     </Row>
@@ -320,22 +320,22 @@ export function GuestPaymentsTab() {
           <View style={styles.residentCard}>
             <Col style={{ flex: 1, justifyContent: 'space-between' }}>
               <Row justify="space-between" align="center">
-                <Txt size={11} weight="800" color={Colors.textInverse} style={{ letterSpacing: 1 }}>PGOW RESIDENT CARD</Txt>
+                <Txt variant="caption" weight="800" color={Colors.textInverse} style={{ letterSpacing: 1 }}>PGOW RESIDENT CARD</Txt>
                 <Ionicons name="card" size={22} color={Colors.textInverse} />
               </Row>
-              <Txt size={16} weight="700" color={Colors.textInverse}>PGOW-RESIDENT-ID: #{guest?.id ?? 101}</Txt>
+              <Txt variant="sectionTitle" color={Colors.textInverse}>PGOW-RESIDENT-ID: #{guest?.id ?? 101}</Txt>
               <Row justify="space-between">
                 <Col>
                   <Txt size={8} color="rgba(255,255,255,0.75)">RESIDENT</Txt>
-                  <Txt size={12} weight="700" color={Colors.textInverse}>{(guest?.name ?? 'PG RESIDENT').toUpperCase()}</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textInverse}>{(guest?.name ?? 'PG RESIDENT').toUpperCase()}</Txt>
                 </Col>
                 <Col align="center">
                   <Txt size={8} color="rgba(255,255,255,0.75)">REWARDS</Txt>
-                  <Txt size={12} weight="800" color="#FDE68A">{guest?.rewardPoints ?? 0} PTS</Txt>
+                  <Txt variant="caption" weight="800" color="#FDE68A">{guest?.rewardPoints ?? 0} PTS</Txt>
                 </Col>
                 <Col align="flex-end">
                   <Txt size={8} color="rgba(255,255,255,0.75)">ROOM</Txt>
-                  <Txt size={12} weight="700" color={Colors.textInverse}>{guest?.roomNo ?? '101'}</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textInverse}>{guest?.roomNo ?? '101'}</Txt>
                 </Col>
               </Row>
             </Col>
@@ -346,12 +346,12 @@ export function GuestPaymentsTab() {
             <Row justify="space-between" align="center">
               <Row gap={6}>
                 <Ionicons name="notifications" size={18} color={Colors.CyberPurple} />
-                <Txt size={12} weight="700" color={Colors.IvoryWhiteText}>Fee Push Notifications</Txt>
+                <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Fee Push Notifications</Txt>
               </Row>
-              <Txt size={9} weight="900" color={Colors.CyberGreen}>ACTIVE 🟢</Txt>
+              <Txt variant="labelSmall" weight="900" color={Colors.CyberGreen}>ACTIVE 🟢</Txt>
             </Row>
             <Spacer size={6} />
-            <Txt size={10} color={Colors.SlateMutedText}>
+            <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>
               You will be notified here when rent is due and when a payment is verified.
             </Txt>
           </Card>
@@ -360,30 +360,30 @@ export function GuestPaymentsTab() {
           <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={20} borderWidth={1} borderColor={Colors.LuxuryCardBorder} padding={[18, 18]}>
             <Row justify="space-between" align="center">
               <Col>
-                <Txt size={15} weight="800" color={Colors.IvoryWhiteText}>{currentMonthYear} Monthly Rent Dues</Txt>
+                <Txt variant="cardTitle" weight="800" color={Colors.IvoryWhiteText}>{currentMonthYear} Monthly Rent Dues</Txt>
               </Col>
               <View style={[styles.billPill, { backgroundColor: isBillPaid ? 'rgba(20,226,177,0.15)' : 'rgba(255,167,38,0.15)' }]}>
-                <Txt size={10} weight="800" color={isBillPaid ? Colors.CyberGreen : Colors.CyberAmber}>{isBillPaid ? 'SETTLED ✅' : 'UNPAID ⏳'}</Txt>
+                <Txt variant="labelSmall" weight="800" color={isBillPaid ? Colors.CyberGreen : Colors.CyberAmber}>{isBillPaid ? 'SETTLED ✅' : 'UNPAID ⏳'}</Txt>
               </View>
             </Row>
             <Spacer size={12} />
             <View style={styles.breakdownBox}>
-              <Row justify="space-between"><Txt size={11} color={Colors.SlateMutedText}>Base Monthly Rent Dues</Txt><Txt size={11} weight="700" color={Colors.IvoryWhiteText}>₹{Math.round(baseRent).toLocaleString('en-IN')}</Txt></Row>
-              {isOnTime && <Row justify="space-between"><Txt size={11} color={Colors.CyberGreen}>⚡ On-Time Discount (Before 5th)</Txt><Txt size={11} weight="700" color={Colors.CyberGreen}>-₹50</Txt></Row>}
-              {isWinner && <Row justify="space-between"><Txt size={11} color={Colors.CyberPink}>🏆 30th Winner Champion Incentive</Txt><Txt size={11} weight="700" color={Colors.CyberPink}>-₹100</Txt></Row>}
+              <Row justify="space-between"><Txt variant="caption" color={Colors.SlateMutedText}>Base Monthly Rent Dues</Txt><Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>₹{Math.round(baseRent).toLocaleString('en-IN')}</Txt></Row>
+              {isOnTime && <Row justify="space-between"><Txt variant="caption" color={Colors.CyberGreen}>⚡ On-Time Discount (Before 5th)</Txt><Txt variant="caption" weight="700" color={Colors.CyberGreen}>-₹50</Txt></Row>}
+              {isWinner && <Row justify="space-between"><Txt variant="caption" color={Colors.CyberPink}>🏆 30th Winner Champion Incentive</Txt><Txt variant="caption" weight="700" color={Colors.CyberPink}>-₹100</Txt></Row>}
               <View style={{ height: 1, backgroundColor: Colors.LuxuryCardBorder, marginVertical: 6 }} />
-              <Row justify="space-between"><Txt size={12} weight="700" color={Colors.IvoryWhiteText}>Net Payable Amount</Txt><Txt size={16} weight="900" color={Colors.CyberGreen}>₹{Math.round(rentAmount)}</Txt></Row>
+              <Row justify="space-between"><Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Net Payable Amount</Txt><Txt variant="sectionTitle" weight="900" color={Colors.CyberGreen}>₹{Math.round(rentAmount)}</Txt></Row>
             </View>
 
             {isBillPaid ? (
               <View style={[styles.paidBanner, { backgroundColor: 'rgba(20,226,177,0.15)' }]}>
                 <Ionicons name="checkmark-circle" size={20} color={Colors.CyberGreen} />
-                <Txt size={12} weight="700" color={Colors.CyberGreen}>August Rent Settled & Verified! View digital receipt below.</Txt>
+                <Txt variant="caption" weight="700" color={Colors.CyberGreen}>August Rent Settled & Verified! View digital receipt below.</Txt>
               </View>
             ) : (
               <>
                 <Spacer size={16} />
-                <Txt size={12} weight="700" color={Colors.IvoryWhiteText} style={{ letterSpacing: 0.5 }}>SELECT PAYMENT METHOD</Txt>
+                <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText} style={{ letterSpacing: 0.5 }}>SELECT PAYMENT METHOD</Txt>
                 <Spacer size={8} />
                 <Row gap={6}>
                   <Chip label="⚡ 1. 1-Tap UPI Launch" selected={payMode === 'ONLINE_PHONEPE'} onPress={() => setPayMode('ONLINE_PHONEPE')} selectedColor={Colors.CyberPurple} size={10} />
@@ -396,25 +396,25 @@ export function GuestPaymentsTab() {
                   {payMode === 'ONLINE_PHONEPE' && (
                     <Card containerColor={Colors.LuxuryPureBlack} borderRadius={12} borderWidth={1} borderColor={Colors.CyberPink} padding={[12, 12]} style={{ flex: 1, justifyContent: 'space-between' }}>
                       <View>
-                        <Txt size={12} weight="700" color={Colors.CyberPink}>📱 1. Direct Phone Number / UPI ID Pay</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.CyberPink}>📱 1. Direct Phone Number / UPI ID Pay</Txt>
                         <Spacer size={10} />
                         <Row justify="space-between" align="center" style={{ backgroundColor: Colors.surface, borderRadius: 8, padding: 8 }}>
                           <Col style={{ flex: 1 }}>
-                            <Txt size={11} weight="700" color={Colors.IvoryWhiteText}>Owner Phone Number: +91 {ownerPhone}</Txt>
-                            <Txt size={11} weight="700" color={Colors.CyberPurple}>Owner UPI VPA ID: {ownerUpi}</Txt>
+                            <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Owner Phone Number: +91 {ownerPhone}</Txt>
+                            <Txt variant="caption" weight="700" color={Colors.CyberPurple}>Owner UPI VPA ID: {ownerUpi}</Txt>
                           </Col>
                           <IconBtn onPress={() => { Clipboard.setStringAsync(ownerUpi); Alert.alert('Copied', `Copied UPI VPA: ${ownerUpi}`); }} icon="copy" size={20} tint={Colors.CyberPink} />
                         </Row>
                         <Spacer size={10} />
                         <OutlinedBtn onPress={handleUpiLaunch} borderColor={Colors.CyberPink} textColor={Colors.CyberPink} borderRadius={8} height={36}>
                           <Ionicons name="open" size={14} color={Colors.CyberPink} />
-                          <Txt size={11} weight="700" color={Colors.CyberPink} style={{ marginLeft: 6 }}>Launch PhonePe / UPI App Directly</Txt>
+                          <Txt variant="caption" weight="700" color={Colors.CyberPink} style={{ marginLeft: 6 }}>Launch PhonePe / UPI App Directly</Txt>
                         </OutlinedBtn>
                         <Spacer size={10} />
                         <OutlinedTextField label="Enter 12-Digit UTR Transaction Ref" placeholder="421980341209" value={utrNumber} onChangeText={setUtrNumber} testID="phone_upi_utr_input" focusedBorderColor={Colors.CyberPink} borderRadius={10} style={{ marginBottom: 10 }} />
                       </View>
                       <Btn onPress={() => handleSubmit('ONLINE_PHONEPE')} disabled={!utrNumber.trim()} containerColor={Colors.CyberPink} textColor={Colors.IvoryWhiteText} borderRadius={10} height={40} testID="submit_phone_utr_btn">
-                        <Txt size={12} weight="700" color={Colors.IvoryWhiteText}>Submit UTR for Owner Verification</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Submit UTR for Owner Verification</Txt>
                       </Btn>
                     </Card>
                   )}
@@ -422,19 +422,19 @@ export function GuestPaymentsTab() {
                   {payMode === 'SCAN_QR' && (
                     <Card containerColor={Colors.LuxuryPureBlack} borderRadius={12} borderWidth={1} borderColor={Colors.CyberAmber} padding={[12, 12]} style={{ flex: 1, justifyContent: 'space-between' }}>
                       <View>
-                        <Txt size={12} weight="700" color={Colors.CyberAmber}>📷 2. Scan Owner PhonePe / UPI QR Code</Txt>
-                        <Txt size={11} weight="700" color={Colors.IvoryWhiteText}>Scan & Pay to Owner UPI VPA: {ownerUpi}</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.CyberAmber}>📷 2. Scan Owner PhonePe / UPI QR Code</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Scan & Pay to Owner UPI VPA: {ownerUpi}</Txt>
                         <Spacer size={6} />
                         <View style={styles.qrBox}>
                           <Ionicons name="qr-code-sharp" size={54} color="#000000" />
-                          <Txt size={9} weight="700" color="#000000" align="center">{ownerUpi}</Txt>
+                          <Txt variant="labelSmall" color="#000000" align="center">{ownerUpi}</Txt>
                           <Txt size={8} color="#6B7280">PhonePe / Paytm / GPay</Txt>
                         </View>
                         <Spacer size={6} />
                         <OutlinedTextField label="Enter 12-Digit PhonePe / UPI UTR Ref" placeholder="421980341209" value={utrNumber} onChangeText={setUtrNumber} testID="qr_utr_input" focusedBorderColor={Colors.CyberAmber} borderRadius={10} style={{ marginBottom: 8 }} />
                       </View>
                       <Btn onPress={() => handleSubmit('SCAN_QR')} disabled={!utrNumber.trim()} containerColor={Colors.CyberAmber} textColor={Colors.LuxuryPureBlack} borderRadius={10} height={40} testID="submit_qr_utr_btn">
-                        <Txt size={12} weight="700" color={Colors.LuxuryPureBlack}>Submit UTR for Owner Verification</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.LuxuryPureBlack}>Submit UTR for Owner Verification</Txt>
                       </Btn>
                     </Card>
                   )}
@@ -442,14 +442,14 @@ export function GuestPaymentsTab() {
                   {payMode === 'CASH_HANDOVER' && (
                     <Card containerColor={Colors.LuxuryPureBlack} borderRadius={12} borderWidth={1} borderColor={Colors.CyberGreen} padding={[12, 12]} style={{ flex: 1, justifyContent: 'space-between' }}>
                       <View>
-                        <Txt size={12} weight="700" color={Colors.CyberGreen}>💵 3. Cash Handover Request</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.CyberGreen}>💵 3. Cash Handover Request</Txt>
                         <Spacer size={12} />
-                        <Txt size={11} color={Colors.SlateMutedText}>
+                        <Txt variant="caption" color={Colors.SlateMutedText}>
                           Handover physical cash (₹{Math.round(rentAmount)}) directly to your PG Manager ({ownerPhone}). A cash verification request will be sent to the owner dashboard.
                         </Txt>
                       </View>
                       <Btn onPress={() => handleSubmit('CASH_HANDOVER')} containerColor={Colors.CyberGreen} textColor={Colors.LuxuryPureBlack} borderRadius={10} height={42} testID="cash_handover_btn">
-                        <Txt size={12} weight="700" color={Colors.LuxuryPureBlack}>Create Cash Handover Request (₹{Math.round(rentAmount)})</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.LuxuryPureBlack}>Create Cash Handover Request (₹{Math.round(rentAmount)})</Txt>
                       </Btn>
                     </Card>
                   )}

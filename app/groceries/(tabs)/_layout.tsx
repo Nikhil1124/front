@@ -1,22 +1,24 @@
 /**
- * Groceries mini-app tabs shell — the same PillDock bottom nav Owner and Guest use (see
+ * Groceries mini-app tabs shell — the same flat bottom Dock Owner and Guest use (see
  * HeadlessDockTabButton.tsx). Keeps the mini-app visually consistent with the rest of
  * PGow instead of looking like a bolted-on separate product.
  */
 import { View, StyleSheet } from 'react-native';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 
-import { HeadlessDockTabButton, PillDock } from '@/components/HeadlessDockTabButton';
+import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
 import { Colors } from '@/theme';
 
 export default function GroceriesTabsLayout() {
+  const { dockStyle, contentPaddingBottom } = useDock();
+
   return (
     <Tabs style={styles.root}>
-      <View style={{ flex: 1, paddingBottom: 76 }}>
+      <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
         <TabSlot />
       </View>
 
-      <PillDock>
+      <Dock style={dockStyle}>
         <TabTrigger name="index" href="/groceries" asChild>
           <HeadlessDockTabButton icon="home" label="Home" />
         </TabTrigger>
@@ -32,7 +34,7 @@ export default function GroceriesTabsLayout() {
         <TabTrigger name="profile" href="/groceries/profile" asChild>
           <HeadlessDockTabButton icon="person" label="Profile" />
         </TabTrigger>
-      </PillDock>
+      </Dock>
     </Tabs>
   );
 }

@@ -128,10 +128,10 @@ function MealRow({ mealType, state, onToggle }: MealRowProps) {
             <MaterialCommunityIcons name={meta.icon} size={22} color={meta.tint} />
           </View>
           <Col style={{ flex: 1 }}>
-            <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>
+            <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>
               {meta.label}
             </Txt>
-            <Txt size={11} color={Colors.SlateMutedText} numberOfLines={1}>
+            <Txt variant="caption" color={Colors.SlateMutedText} numberOfLines={1}>
               {state.menuSummary || 'Menu not posted'}
             </Txt>
           </Col>
@@ -181,7 +181,7 @@ function CountdownLine({ state, countdown }: { state: MealToggleState; countdown
   // No upcoming cutoff → render nothing, not a "0h 00m" tease.
   if (state.nextCutoffMs == null) {
     return (
-      <Txt size={11} color={Colors.SlateMutedText}>
+      <Txt variant="caption" color={Colors.SlateMutedText}>
         No cutoff scheduled
       </Txt>
     );
@@ -191,7 +191,7 @@ function CountdownLine({ state, countdown }: { state: MealToggleState; countdown
     return (
       <Row align="center" gap={6}>
         <MaterialCommunityIcons name="clock-outline" size={13} color={Colors.SlateMutedText} />
-        <Txt size={11} color={Colors.SlateMutedText}>
+        <Txt variant="caption" color={Colors.SlateMutedText}>
           Cutoff passed — skipped
         </Txt>
       </Row>
@@ -215,10 +215,10 @@ function CountdownLine({ state, countdown }: { state: MealToggleState; countdown
   return (
     <Row align="center" gap={6}>
       <MaterialCommunityIcons name="timer-sand" size={13} color={tint} />
-      <Txt size={11} weight="600" color={tint}>
+      <Txt variant="caption" weight="600" color={tint}>
         {label}
       </Txt>
-      <Txt size={10} color={Colors.SlateMutedText}>
+      <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>
         · {state.cutoffTime}
       </Txt>
     </Row>

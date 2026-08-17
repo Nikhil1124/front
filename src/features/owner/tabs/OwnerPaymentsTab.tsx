@@ -87,8 +87,8 @@ export function OwnerPaymentsTab() {
             <View style={{ gap: 4 }}>
               <Row justify="space-between" align="center">
                 <Col style={{ flex: 1 }}>
-                  <Txt size={16} weight="900" color={Colors.textPrimary}>Verified Collections Ledger</Txt>
-                  <Txt size={11} color={Colors.textMuted}>
+                  <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Verified Collections Ledger</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>
                     {payments.filter((p) => p.status === 'VERIFIED').length} Verified Receipts Recorded
                   </Txt>
                 </Col>
@@ -140,22 +140,22 @@ export function OwnerPaymentsTab() {
                     </View>
                     <Col style={{ flex: 1 }}>
                       <Row align="center" gap={6}>
-                        <Txt size={14} weight="800" color={Colors.textPrimary}>{p.payerName}</Txt>
+                        <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>{p.payerName}</Txt>
                         <View style={styles.verifiedBadge}>
-                          <Txt size={9} weight="800" color="#047857">VERIFIED ✓</Txt>
+                          <Txt variant="labelSmall" weight="800" color="#047857">VERIFIED ✓</Txt>
                         </View>
                       </Row>
-                      <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>
+                      <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>
                         {p.paymentType} • Mode: {p.paymentMode.replace(/_/g, ' ')}
                       </Txt>
                       {p.utrRef ? (
-                        <Txt size={10} weight="700" color="#047857">UTR: {p.utrRef}</Txt>
+                        <Txt variant="labelSmall" color="#047857">UTR: {p.utrRef}</Txt>
                       ) : null}
                       <Txt size={9} color={Colors.textMuted}>Tap to view digital tax invoice ({p.receiptId})</Txt>
                     </Col>
                   </Row>
                   <Col align="flex-end">
-                    <Txt size={16} weight="900" color="#16A34A">
+                    <Txt variant="sectionTitle" weight="900" color="#16A34A">
                       +₹{Math.round(p.amount).toLocaleString('en-IN')}
                     </Txt>
                     <Txt size={9} color={Colors.textMuted} style={{ marginTop: 2 }}>

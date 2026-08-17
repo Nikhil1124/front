@@ -93,7 +93,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
           {/* Top Drag Handle & Quick Back Bar */}
           <TouchableOpacity onPress={onDismiss} activeOpacity={0.8} style={styles.topHandleBar}>
             <View style={styles.dragHandlePill} />
-            <Txt size={11} weight="700" color={Colors.SlateMutedText} style={{ marginTop: 4 }}>
+            <Txt variant="caption" weight="700" color={Colors.SlateMutedText} style={{ marginTop: 4 }}>
               ▼ Tap or Swipe Down to Close
             </Txt>
           </TouchableOpacity>
@@ -107,16 +107,16 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                 </View>
                 <Col style={{ flex: 1 }}>
                   <Row align="center">
-                    <Txt size={14} weight="900" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>
+                    <Txt variant="cardTitle" weight="900" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>
                       {roleTitle} NOTIFICATIONS
                     </Txt>
                     {unreadCount > 0 && (
                       <View style={styles.unreadPill}>
-                        <Txt size={9} weight="900" color={Colors.textInverse}>{unreadCount} New</Txt>
+                        <Txt variant="labelSmall" weight="900" color={Colors.textInverse}>{unreadCount} New</Txt>
                       </View>
                     )}
                   </Row>
-                  <Txt size={11} color={Colors.textMuted}>Real-time updates & alerts for your PG role</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Real-time updates & alerts for your PG role</Txt>
                 </Col>
               </Row>
 
@@ -132,7 +132,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                 )}
                 {unreadCount > 0 && (
                   <TouchableOpacity onPress={() => markAllRead(roleTitle)}>
-                    <Txt size={11} weight="700" color={Colors.primary}>Mark All Read</Txt>
+                    <Txt variant="caption" weight="700" color={Colors.primary}>Mark All Read</Txt>
                   </TouchableOpacity>
                 )}
                 {/* Prominent Back/Close Button */}
@@ -143,7 +143,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                   testID="close_notifications_sheet_button"
                 >
                   <Ionicons name="close" size={16} color={Colors.textPrimary} />
-                  <Txt size={12} weight="800" color={Colors.textPrimary}>Close</Txt>
+                  <Txt variant="caption" weight="800" color={Colors.textPrimary}>Close</Txt>
                 </TouchableOpacity>
               </Row>
             </Row>
@@ -175,7 +175,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
             {filtered.length === 0 ? (
               <View style={styles.emptyBox}>
                 <Ionicons name="notifications-off-outline" size={36} color={Colors.textMuted} />
-                <Txt size={13} color={Colors.textMuted} weight="600" style={{ marginTop: 8 }}>
+                <Txt variant="body" color={Colors.textMuted} weight="600" style={{ marginTop: 8 }}>
                   No notifications found
                 </Txt>
               </View>
@@ -195,7 +195,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                       <Row justify="space-between" align="center">
                         <Row gap={6} align="center">
                           <View style={[styles.dot, { backgroundColor: notif.isRead ? Colors.borderSubtle : Colors.primary }]} />
-                          <Txt size={9} weight="900" color={Colors.primaryDark}>{notif.category.replace(/_/g, ' ')}</Txt>
+                          <Txt variant="labelSmall" weight="900" color={Colors.primaryDark}>{notif.category.replace(/_/g, ' ')}</Txt>
                           {notif.priority === 'HIGH' && (
                             <View style={styles.highPill}>
                               <Txt size={8} weight="800" color="#B91C1C">HIGH PRIORITY</Txt>
@@ -208,16 +208,16 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                         </Row>
                       </Row>
                       <Spacer size={6} />
-                      <Txt size={13} weight="800" color={Colors.textPrimary}>{notif.title}</Txt>
+                      <Txt variant="body" weight="800" color={Colors.textPrimary}>{notif.title}</Txt>
                       <Spacer size={4} />
-                      <Txt size={11} color={Colors.textSecondary} style={{ lineHeight: 16 }}>{notif.message}</Txt>
+                      <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 16 }}>{notif.message}</Txt>
                       <Spacer size={10} />
                       <Row justify="space-between" align="center">
                         {notif.isRead ? (
                           <Txt size={9} color={Colors.textMuted}>✓ Read</Txt>
                         ) : (
                           <TouchableOpacity onPress={() => markRead(notif.id)}>
-                            <Txt size={10} weight="800" color={Colors.primary}>Mark as Read ✓</Txt>
+                            <Txt variant="labelSmall" weight="800" color={Colors.primary}>Mark as Read ✓</Txt>
                           </TouchableOpacity>
                         )}
                         {notif.actionLabel && (
@@ -229,7 +229,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                             height={28}
                             contentStyle={{ paddingHorizontal: 10 }}
                           >
-                            <Txt size={10} weight="800" color={Colors.textInverse}>{notif.actionLabel}</Txt>
+                            <Txt variant="labelSmall" weight="800" color={Colors.textInverse}>{notif.actionLabel}</Txt>
                           </Btn>
                         )}
                       </Row>
@@ -244,7 +244,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
             {/* Bottom Explicit Dismiss / Back Button */}
             <TouchableOpacity onPress={onDismiss} style={styles.bottomCloseButton}>
               <Ionicons name="checkmark-circle-outline" size={18} color={Colors.textPrimary} />
-              <Txt size={13} weight="800" color={Colors.textPrimary}>Done / Close Center</Txt>
+              <Txt variant="body" weight="800" color={Colors.textPrimary}>Done / Close Center</Txt>
             </TouchableOpacity>
           </ScrollView>
         </View>

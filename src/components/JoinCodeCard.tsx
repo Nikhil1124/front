@@ -115,12 +115,12 @@ export function JoinCodeCard() {
     >
       <Row align="center" gap={8}>
         <Ionicons name="qr-code" size={18} color={Colors.CyberGreen} />
-        <Txt size={14} weight="700" color={Colors.CyberGreen}>
+        <Txt variant="cardTitle" color={Colors.CyberGreen}>
           Resident Self Sign-Up
         </Txt>
       </Row>
       <Spacer size={4} />
-      <Txt size={11} color={Colors.SlateMutedText}>
+      <Txt variant="caption" color={Colors.SlateMutedText}>
         {code
           ? 'Residents who enter this code create their own account. You still verify their KYC before they can do anything.'
           : 'Share one code instead of typing every resident in yourself. Off until you turn it on.'}
@@ -131,10 +131,10 @@ export function JoinCodeCard() {
           <Spacer size={12} />
           <TouchableOpacity onPress={handleCopy} activeOpacity={0.7} style={styles.codeBox}>
             <Col>
-              <Txt size={9} weight="700" color={Colors.SlateMutedText} style={styles.label}>
+              <Txt variant="labelSmall" color={Colors.SlateMutedText} style={styles.label}>
                 PROPERTY CODE
               </Txt>
-              <Txt size={26} weight="900" color={Colors.IvoryWhiteText} style={styles.code}>
+              <Txt variant="statValue" size={26} weight="900" color={Colors.IvoryWhiteText} style={styles.code}>
                 {code}
               </Txt>
             </Col>
@@ -144,7 +144,7 @@ export function JoinCodeCard() {
           {rentMissing && (
             <>
               <Spacer size={8} />
-              <Txt size={11} weight="700" color={Colors.CyberAmber}>
+              <Txt variant="caption" weight="700" color={Colors.CyberAmber}>
                 ⚠️ Set a monthly rent below — sign-ups are refused until you do.
               </Txt>
             </>
@@ -152,10 +152,10 @@ export function JoinCodeCard() {
 
           <Spacer size={10} />
           <Row align="center" justify="space-between">
-            <Txt size={11} color={Colors.SlateMutedText}>
+            <Txt variant="caption" color={Colors.SlateMutedText}>
               New residents start on
             </Txt>
-            <Txt size={13} weight="700" color={Colors.IvoryWhiteText}>
+            <Txt variant="body" weight="700" color={Colors.IvoryWhiteText}>
               {rent > 0 ? `₹${rent.toLocaleString('en-IN')} / month` : 'Not set'}
             </Txt>
           </Row>
@@ -180,7 +180,7 @@ export function JoinCodeCard() {
                   height={48}
                   style={{ width: 88 }}
                 >
-                  <Txt size={12} weight="700" color={Colors.CyberGreen}>
+                  <Txt variant="caption" weight="700" color={Colors.CyberGreen}>
                     Save
                   </Txt>
                 </OutlinedBtn>
@@ -200,7 +200,7 @@ export function JoinCodeCard() {
               testID="join_code_share_btn"
             >
               <Ionicons name="share-social" size={15} color={Colors.LuxuryPureBlack} />
-              <Txt size={12} weight="700" color={Colors.LuxuryPureBlack} style={{ marginLeft: 6 }}>
+              <Txt variant="caption" weight="700" color={Colors.LuxuryPureBlack} style={{ marginLeft: 6 }}>
                 Share
               </Txt>
             </Btn>
@@ -214,7 +214,7 @@ export function JoinCodeCard() {
                 style={{ flex: 1 }}
                 testID="join_code_rotate_btn"
               >
-                <Txt size={12} weight="700" color={Colors.SlateMutedText}>
+                <Txt variant="caption" weight="700" color={Colors.SlateMutedText}>
                   New code
                 </Txt>
               </OutlinedBtn>
@@ -225,7 +225,7 @@ export function JoinCodeCard() {
             <>
               <Spacer size={8} />
               <TouchableOpacity onPress={handleDisable} testID="join_code_disable_btn">
-                <Txt size={11} weight="700" color={Colors.CyberPink} align="center">
+                <Txt variant="caption" weight="700" color={Colors.CyberPink} align="center">
                   Turn off self sign-up
                 </Txt>
               </TouchableOpacity>
@@ -254,7 +254,7 @@ export function JoinCodeCard() {
               testID="join_code_enable_btn"
             >
               <Ionicons name="key" size={16} color={Colors.LuxuryPureBlack} />
-              <Txt size={13} weight="700" color={Colors.LuxuryPureBlack} style={{ marginLeft: 8 }}>
+              <Txt variant="body" weight="700" color={Colors.LuxuryPureBlack} style={{ marginLeft: 8 }}>
                 Turn on self sign-up
               </Txt>
             </Btn>
@@ -265,7 +265,7 @@ export function JoinCodeCard() {
       {isManagerMode && !code && (
         <>
           <Spacer size={8} />
-          <Txt size={11} color={Colors.SlateMutedText}>
+          <Txt variant="caption" color={Colors.SlateMutedText}>
             Only the owner can turn this on.
           </Txt>
         </>

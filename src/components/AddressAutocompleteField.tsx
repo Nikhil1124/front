@@ -57,7 +57,7 @@ export function AddressAutocompleteField({ label, value, onChangeText, testID, s
       {open && (searching || suggestions.length > 0) && (
         <View style={styles.dropdown}>
           {searching && suggestions.length === 0 ? (
-            <Txt size={11} color={Colors.SlateMutedText} style={styles.searching}>
+            <Txt variant="caption" color={Colors.SlateMutedText} style={styles.searching}>
               Searching…
             </Txt>
           ) : (
@@ -70,11 +70,11 @@ export function AddressAutocompleteField({ label, value, onChangeText, testID, s
               >
                 <Ionicons name="location-outline" size={16} color={Colors.SlateMutedText} />
                 <View style={styles.rowText}>
-                  <Txt size={12} weight="700" color={Colors.IvoryWhiteText} numberOfLines={1}>
+                  <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText} numberOfLines={1}>
                     {s.primary}
                   </Txt>
                   {s.secondary ? (
-                    <Txt size={10} color={Colors.SlateMutedText} numberOfLines={1}>
+                    <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText} numberOfLines={1}>
                       {s.secondary}
                     </Txt>
                   ) : null}

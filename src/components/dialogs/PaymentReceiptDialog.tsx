@@ -143,8 +143,8 @@ export function PaymentReceiptDialog({
                 <Row gap={8}>
                   <Ionicons name="receipt" size={28} color={isVerified ? Colors.primary : Colors.warning} />
                   <Col>
-                    <Txt size={15} weight="900" color={Colors.textPrimary}>PGOW DIGITAL RECEIPT</Txt>
-                    <Txt size={10} color={Colors.textMuted}>Official Co-Living Verified Tax Invoice</Txt>
+                    <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>PGOW DIGITAL RECEIPT</Txt>
+                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Official Co-Living Verified Tax Invoice</Txt>
                   </Col>
                 </Row>
                 {/* A second inline close icon for accessibility — redundant with the sticky
@@ -178,7 +178,7 @@ export function PaymentReceiptDialog({
                     <Txt size={13} weight="900" color={isVerified ? Colors.primary : Colors.tertiary}>
                       {isVerified ? 'STATUS: PAID & VERIFIED' : 'STATUS: VERIFICATION PENDING'}
                     </Txt>
-                    <Txt size={11} color={Colors.textSecondary}>
+                    <Txt variant="caption" color={Colors.textSecondary}>
                       {isVerified
                         ? `Receipt ID: ${payment.receiptId}`
                         : 'Slip unlocks automatically once the owner verifies your payment.'}
@@ -195,12 +195,12 @@ export function PaymentReceiptDialog({
               <Spacer size={16} />
               {/* Invoice body */}
               <View style={styles.invoiceBox}>
-                <Txt size={10} weight="700" color={Colors.primary} style={{ letterSpacing: 1 }}>
+                <Txt variant="labelSmall" color={Colors.primary} style={{ letterSpacing: 1 }}>
                   RESIDENT / PAYER DETAILS
                 </Txt>
                 <Spacer size={4} />
-                <Txt size={16} weight="700" color={Colors.textPrimary}>{payment.payerName}</Txt>
-                <Txt size={11} color={Colors.textMuted}>
+                <Txt variant="sectionTitle" color={Colors.textPrimary}>{payment.payerName}</Txt>
+                <Txt variant="caption" color={Colors.textMuted}>
                   PG ID: {payment.pgId} • Resident ID: {payment.payerId}
                 </Txt>
 
@@ -208,42 +208,42 @@ export function PaymentReceiptDialog({
                 <View style={{ height: 1, backgroundColor: Colors.borderMuted }} />
                 <Spacer size={12} />
 
-                <Txt size={10} weight="700" color={Colors.primary} style={{ letterSpacing: 1 }}>
+                <Txt variant="labelSmall" color={Colors.primary} style={{ letterSpacing: 1 }}>
                   BILLING & TRANSACTION SUMMARY
                 </Txt>
                 <Spacer size={8} />
                 <Row justify="space-between">
-                  <Txt size={12} color={Colors.textMuted}>Billing Period</Txt>
-                  <Txt size={12} weight="700" color={Colors.textPrimary}>
+                  <Txt variant="caption" color={Colors.textMuted}>Billing Period</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textPrimary}>
                     {payment.monthYear || periodToMonthYear(currentPeriod(new Date(payment.timestamp || Date.now())))}
                   </Txt>
                 </Row>
                 <Row justify="space-between" style={{ marginTop: 6 }}>
-                  <Txt size={12} color={Colors.textMuted}>Payment Type</Txt>
-                  <Txt size={12} color={Colors.textPrimary}>{payment.paymentType}</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Payment Type</Txt>
+                  <Txt variant="caption" color={Colors.textPrimary}>{payment.paymentType}</Txt>
                 </Row>
                 <Row justify="space-between" style={{ marginTop: 6 }}>
-                  <Txt size={12} color={Colors.textMuted}>Payment Mode</Txt>
-                  <Txt size={12} weight="700" color={Colors.primary}>{modeLabel}</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Payment Mode</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.primary}>{modeLabel}</Txt>
                 </Row>
                 <Row justify="space-between" style={{ marginTop: 6 }}>
-                  <Txt size={12} color={Colors.textMuted}>Transaction Ref</Txt>
-                  <Txt size={11} weight="700" color={Colors.textPrimary}>{payment.transactionRef}</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Transaction Ref</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textPrimary}>{payment.transactionRef}</Txt>
                 </Row>
                 {payment.utrRef ? (
                   <Row justify="space-between" style={{ marginTop: 6 }}>
-                    <Txt size={12} color={Colors.textMuted}>12-Digit UTR Ref</Txt>
-                    <Txt size={11} weight="700" color={Colors.tertiary}>{payment.utrRef}</Txt>
+                    <Txt variant="caption" color={Colors.textMuted}>12-Digit UTR Ref</Txt>
+                    <Txt variant="caption" weight="700" color={Colors.tertiary}>{payment.utrRef}</Txt>
                   </Row>
                 ) : null}
                 <Row justify="space-between" style={{ marginTop: 6 }}>
-                  <Txt size={12} color={Colors.textMuted}>Date</Txt>
-                  <Txt size={11} color={Colors.textPrimary}>{formatDateTime(payment.timestamp)}</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Date</Txt>
+                  <Txt variant="caption" color={Colors.textPrimary}>{formatDateTime(payment.timestamp)}</Txt>
                 </Row>
                 {payment.verificationDate ? (
                   <Row justify="space-between" style={{ marginTop: 6 }}>
-                    <Txt size={12} color={Colors.textMuted}>Verified Timestamp</Txt>
-                    <Txt size={11} weight="700" color={Colors.primary}>
+                    <Txt variant="caption" color={Colors.textMuted}>Verified Timestamp</Txt>
+                    <Txt variant="caption" weight="700" color={Colors.primary}>
                       {formatDateTime(payment.verificationDate)}
                     </Txt>
                   </Row>
@@ -255,7 +255,7 @@ export function PaymentReceiptDialog({
 
                 <Row justify="space-between" align="center">
                   <Txt size={13} weight="900" color={Colors.textPrimary}>TOTAL AMOUNT PAID</Txt>
-                  <Txt size={22} weight="900" color={Colors.primary}>
+                  <Txt variant="statValue" weight="900" color={Colors.primary}>
                     ₹{Math.round(payment.amount)}.00
                   </Txt>
                 </Row>
@@ -278,7 +278,7 @@ export function PaymentReceiptDialog({
                     testID="download_pdf_invoice_btn"
                   >
                     <Ionicons name="download" size={18} color={Colors.textInverse} />
-                    <Txt size={14} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
+                    <Txt variant="cardTitle" weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
                       {downloadLabel}
                     </Txt>
                   </Btn>
@@ -293,7 +293,7 @@ export function PaymentReceiptDialog({
                     testID="receipt_locked_close_btn"
                   >
                     <Ionicons name="lock-closed" size={16} color={Colors.tertiary} />
-                    <Txt size={13} weight="700" color={Colors.tertiary} style={{ marginLeft: 6 }}>
+                    <Txt variant="body" weight="700" color={Colors.tertiary} style={{ marginLeft: 6 }}>
                       Close (Receipt Locked Until Owner Approval)
                     </Txt>
                   </OutlinedBtn>
@@ -306,7 +306,7 @@ export function PaymentReceiptDialog({
                   height={48}
                   testID="receipt_done_btn"
                 >
-                  <Txt size={13} weight="700" color={Colors.textSecondary}>Done</Txt>
+                  <Txt variant="body" weight="700" color={Colors.textSecondary}>Done</Txt>
                 </OutlinedBtn>
               </Row>
             </Card>

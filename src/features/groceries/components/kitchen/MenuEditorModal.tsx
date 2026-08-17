@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 import { mockProducts, EnrichedProduct } from '../../data/mockProducts';
 import { FormScroll } from '@/components/ui/FormScroll';
 
@@ -64,7 +64,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
               <Text style={styles.subtitle}>Customize recipe schedule details</Text>
             </View>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={AppColors.textPrimary} />
+              <Ionicons name="close" size={24} color={Colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -80,7 +80,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                   placeholder="Enter dish name..."
                 />
                 <TouchableOpacity style={styles.removeDishBtn} onPress={() => onRemoveDish(index)}>
-                  <Ionicons name="trash-outline" size={16} color={AppColors.error} />
+                  <Ionicons name="trash-outline" size={16} color={Colors.danger} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -89,17 +89,17 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
             <Text style={styles.listHeading}>Add New Dish</Text>
             <View style={styles.addDishRow}>
               <View style={styles.searchBarWrapper}>
-                <Ionicons name="search" size={16} color={AppColors.textSecondary} style={styles.searchIcon} />
+                <Ionicons name="search" size={16} color={Colors.textSecondary} style={styles.searchIcon} />
                 <TextInput
                   style={styles.dishSearchInput}
                   value={newDishText}
                   onChangeText={onNewDishTextChange}
                   placeholder="Search/Type dish or ingredient..."
-                  placeholderTextColor={AppColors.textMuted}
+                  placeholderTextColor={Colors.textMuted}
                 />
               </View>
               <TouchableOpacity style={styles.addDishBtn} onPress={onAddDish} activeOpacity={0.8}>
-                <Ionicons name="add" size={20} color={AppColors.surface} />
+                <Ionicons name="add" size={20} color={Colors.surface} />
               </TouchableOpacity>
             </View>
 
@@ -133,7 +133,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                     </View>
                     <Text style={styles.relatedName} numberOfLines={1}>{prod.name}</Text>
                     <View style={[styles.relatedAddBadge, isAdded && styles.relatedAddBadgeAdded]}>
-                      <Ionicons name={isAdded ? 'checkmark' : 'add'} size={10} color={AppColors.surface} />
+                      <Ionicons name={isAdded ? 'checkmark' : 'add'} size={10} color={Colors.surface} />
                     </View>
                   </TouchableOpacity>
                 );
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   content: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
@@ -182,17 +182,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
+    borderBottomColor: Colors.borderSubtle,
     paddingBottom: 12,
   },
-  title: { fontSize: 18, fontFamily: AppFonts.bold, color: AppColors.textPrimary },
-  subtitle: { fontSize: 11, color: AppColors.textSecondary, marginTop: 2 },
+  subtitle: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
   scroll: { marginVertical: 14 },
 
   listHeading: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginTop: 10,
     marginBottom: 8,
     textTransform: 'uppercase',
@@ -201,26 +199,25 @@ const styles = StyleSheet.create({
   dishRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
   dishInput: {
     flex: 1,
-    backgroundColor: AppColors.surfaceAlt,
+    backgroundColor: Colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 12,
-    color: AppColors.textPrimary,
-    fontFamily: AppFonts.semiBold,
+    color: Colors.textPrimary,
   },
-  removeDishBtn: { padding: 8, backgroundColor: AppColors.errorLight, borderRadius: 8 },
+  removeDishBtn: { padding: 8, backgroundColor: '#FEF2F2', borderRadius: 8 },
 
   addDishRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   searchBarWrapper: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 10,
     paddingHorizontal: 10,
   },
@@ -229,12 +226,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 38,
     fontSize: 12,
-    color: AppColors.textPrimary,
-    fontFamily: AppFonts.semiBold,
+    color: Colors.textPrimary,
     paddingVertical: 0,
   },
   addDishBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     width: 36,
     height: 36,
     borderRadius: 8,
@@ -244,8 +240,7 @@ const styles = StyleSheet.create({
 
   relatedHeading: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginTop: 14,
     marginBottom: 6,
     textTransform: 'uppercase',
@@ -254,26 +249,25 @@ const styles = StyleSheet.create({
   relatedScroll: { gap: 8, paddingVertical: 4, paddingRight: 10 },
   relatedCard: {
     width: 90,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 12,
     padding: 8,
     alignItems: 'center',
     position: 'relative',
   },
-  relatedCardAdded: { borderColor: AppColors.primary, borderWidth: 1.5 },
+  relatedCardAdded: { borderColor: Colors.primary, borderWidth: 1.5 },
   relatedImageWrapper: {
     width: 44,
     height: 44,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
   },
   relatedImage: { width: '85%', height: '85%' },
-  relatedName: { fontSize: 9, fontFamily: AppFonts.bold, color: AppColors.textPrimary, textAlign: 'center' },
   relatedAddBadge: {
     position: 'absolute',
     top: 4,
@@ -281,22 +275,24 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: AppColors.textMuted,
+    backgroundColor: Colors.textMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  relatedAddBadgeAdded: { backgroundColor: AppColors.primary },
+  relatedAddBadgeAdded: { backgroundColor: Colors.primary },
 
   footer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    borderTopColor: Colors.borderSubtle,
     paddingTop: 12,
   },
   cancelBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
-  cancelText: { color: AppColors.textSecondary, fontSize: 12, fontFamily: AppFonts.bold },
-  saveBtn: { backgroundColor: AppColors.primary, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8 },
-  saveText: { color: AppColors.surface, fontSize: 12, fontFamily: AppFonts.bold },
+  saveBtn: { backgroundColor: Colors.primary, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8 },
+  title: { fontSize: 18, fontWeight: '700' as const, color: Colors.textPrimary },
+  relatedName: { fontSize: 9, fontWeight: '700' as const, color: Colors.textPrimary, textAlign: 'center' as const },
+  cancelText: { color: Colors.textSecondary, fontSize: 12, fontWeight: '700' as const },
+  saveText: { color: Colors.surface, fontSize: 12, fontWeight: '700' as const },
 });

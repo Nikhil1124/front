@@ -9,7 +9,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors, AppFonts, AppRadius } from '../../theme/AppColors';
+import { Colors, Radii } from '@/theme';
 
 export type ProductSort = 'popular' | 'price-asc' | 'price-desc' | 'name';
 
@@ -73,7 +73,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Sort & Filter</Text>
                 <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                  <Ionicons name="close" size={22} color={AppColors.textPrimary} />
+                  <Ionicons name="close" size={22} color={Colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
@@ -96,7 +96,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                         <Ionicons
                           name={selected ? 'radio-button-on' : 'radio-button-off'}
                           size={20}
-                          color={selected ? AppColors.primary : AppColors.textMuted}
+                          color={selected ? Colors.primary : Colors.textMuted}
                         />
                       </TouchableOpacity>
                     );
@@ -161,7 +161,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                   <Ionicons
                     name="pricetag"
                     size={14}
-                    color={draft.onDealOnly ? '#fff' : AppColors.primary}
+                    color={draft.onDealOnly ? '#fff' : Colors.primary}
                     style={{ marginRight: 6 }}
                   />
                   <Text style={[styles.chipText, draft.onDealOnly && styles.activeChipText]}>
@@ -204,9 +204,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: AppColors.surface,
-    borderTopLeftRadius: AppRadius.xl,
-    borderTopRightRadius: AppRadius.xl,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: Radii.huge,
+    borderTopRightRadius: Radii.huge,
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 24,
@@ -218,12 +218,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.divider,
+    borderBottomColor: Colors.borderSubtle,
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   closeBtn: {
     padding: 4,
@@ -233,8 +232,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginTop: 14,
     marginBottom: 10,
   },
@@ -249,12 +247,10 @@ const styles = StyleSheet.create({
   },
   sortLabel: {
     fontSize: 14,
-    fontFamily: AppFonts.medium,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   selectedSortLabel: {
-    color: AppColors.primary,
-    fontFamily: AppFonts.bold,
+    color: Colors.primary,
   },
   chipRow: {
     flexDirection: 'row',
@@ -266,23 +262,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: AppRadius.pill,
-    backgroundColor: AppColors.surfaceAlt,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
   },
   activeChip: {
-    backgroundColor: AppColors.primary,
-    borderColor: AppColors.primary,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   chipText: {
     fontSize: 13,
-    fontFamily: AppFonts.semiBold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   activeChipText: {
     color: '#fff',
-    fontFamily: AppFonts.bold,
   },
   footer: {
     flexDirection: 'row',
@@ -290,31 +284,29 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: AppColors.divider,
+    borderTopColor: Colors.borderSubtle,
   },
   resetBtn: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: AppRadius.pill,
+    borderRadius: Radii.pill,
     borderWidth: 1.5,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
     alignItems: 'center',
   },
   resetText: {
-    color: AppColors.primary,
-    fontFamily: AppFonts.bold,
+    color: Colors.primary,
     fontSize: 15,
   },
   applyBtn: {
     flex: 2,
     paddingVertical: 14,
-    borderRadius: AppRadius.pill,
-    backgroundColor: AppColors.primary,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
   },
   applyText: {
     color: '#fff',
-    fontFamily: AppFonts.extraBold,
     fontSize: 15,
   },
 });

@@ -10,7 +10,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface BannerConfig {
@@ -216,7 +216,6 @@ const styles = StyleSheet.create({
   },
   ctaOverlayText: {
     fontSize: 10,
-    fontFamily: AppFonts.bold,
     color: '#0C2E4E',
   },
   paginationContainer: {
@@ -230,10 +229,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: AppColors.border,
+    backgroundColor: Colors.borderSubtle,
   },
   activeDot: {
     width: 14,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
   },
 });

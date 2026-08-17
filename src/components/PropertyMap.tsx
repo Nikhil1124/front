@@ -98,12 +98,12 @@ export default function PropertyMap({
         )}
       </View>
       <TouchableOpacity style={styles.footer} onPress={openInMaps} activeOpacity={0.8}>
-        <Txt size={12} color={Colors.SlateMutedText} style={styles.address} numberOfLines={1}>
+        <Txt variant="caption" color={Colors.SlateMutedText} style={styles.address} numberOfLines={1}>
           {formattedAddress || 'Location'}
         </Txt>
         <View style={styles.open}>
           <Ionicons name="open-outline" size={14} color={Colors.CyberGreen} />
-          <Txt size={12} weight="600" color={Colors.CyberGreen}>
+          <Txt variant="caption" weight="600" color={Colors.CyberGreen}>
             Open
           </Txt>
         </View>

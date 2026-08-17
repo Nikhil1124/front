@@ -57,12 +57,12 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
               <Ionicons name="megaphone" size={20} color={Colors.primary} />
             </View>
             <Col>
-              <Txt size={17} weight="900" color={Colors.textPrimary}>Broadcast Announcement</Txt>
-              <Txt size={11} color={Colors.textMuted}>Deliver notice to residents, staff or managers</Txt>
+              <Txt variant="screenTitle" weight="900" color={Colors.textPrimary}>Broadcast Announcement</Txt>
+              <Txt variant="caption" color={Colors.textMuted}>Deliver notice to residents, staff or managers</Txt>
             </Col>
           </Row>
 
-          <Txt size={11} weight="800" color={Colors.textMuted}>Target Audience:</Txt>
+          <Txt variant="caption" weight="800" color={Colors.textMuted}>Target Audience:</Txt>
           <Spacer size={6} />
           <Row gap={6} style={{ flexWrap: 'wrap' }}>
             {ROLES.map(([role, label]) => (
@@ -106,7 +106,7 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
               height={44}
               style={{ flex: 1 }}
             >
-              <Txt size={13} weight="800" color={Colors.textInverse}>Send Alert 🚀</Txt>
+              <Txt variant="body" weight="800" color={Colors.textInverse}>Send Alert 🚀</Txt>
             </Btn>
             <OutlinedBtn
               onPress={onDismiss}
@@ -116,7 +116,7 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
               height={44}
               style={{ flex: 1 }}
             >
-              <Txt size={13} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+              <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
             </OutlinedBtn>
           </Row>
         </Card>

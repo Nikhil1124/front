@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
+import { Colors, Layout, Radii } from '@/theme';
 
 export function GroceryWishlistScreen() {
   const mode = useShoppingModeStore((s) => s.mode);
@@ -30,14 +30,14 @@ export function GroceryWishlistScreen() {
   if (items.length === 0) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Wishlist</Text>
           </View>
           <View style={styles.emptyContainer}>
             <View style={styles.iconCircle}>
-              <Ionicons name="heart" size={60} color={AppColors.error} />
+              <Ionicons name="heart" size={60} color={Colors.danger} />
             </View>
             <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
             <Text style={styles.emptySub}>
@@ -58,7 +58,7 @@ export function GroceryWishlistScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Wishlist</Text>
@@ -118,7 +118,7 @@ export function GroceryWishlistScreen() {
                   onPress={() => toggleItem(item)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="heart" size={20} color={AppColors.error} />
+                  <Ionicons name="heart" size={20} color={Colors.danger} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );
@@ -132,7 +132,7 @@ export function GroceryWishlistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   safeArea: {
     flex: 1,
@@ -144,18 +144,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.divider,
-    backgroundColor: AppColors.surface,
+    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   headerCount: {
     fontSize: 13,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
   },
   listContent: {
     padding: 16,
@@ -163,22 +161,22 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: AppColors.surface,
-    borderRadius: AppRadius.lg,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
     alignItems: 'center',
     position: 'relative',
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   cardImage: {
     width: 80,
     height: 80,
-    borderRadius: AppRadius.md,
+    borderRadius: Radii.xl,
     resizeMode: 'contain',
-    backgroundColor: AppColors.surfaceAlt,
+    backgroundColor: Colors.surfaceMuted,
   },
   cardInfo: {
     flex: 1,
@@ -186,14 +184,12 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   cardUnit: {
     fontSize: 11,
-    color: AppColors.textMuted,
-    fontFamily: AppFonts.semiBold,
+    color: Colors.textMuted,
     marginBottom: 8,
   },
   cardBottom: {
@@ -203,30 +199,27 @@ const styles = StyleSheet.create({
   },
   cardPrice: {
     fontSize: 16,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   cardMRP: {
     fontSize: 11,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     textDecorationLine: 'line-through',
-    fontFamily: AppFonts.medium,
   },
   addBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: AppRadius.pill,
+    borderRadius: Radii.pill,
     borderWidth: 1.5,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
   },
   addBtnFilled: {
-    backgroundColor: AppColors.primary,
-    borderColor: AppColors.primary,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   addBtnText: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   addBtnTextFilled: {
     color: '#fff',
@@ -247,11 +240,11 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: AppColors.errorLight,
+    backgroundColor: '#FEF2F2',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-    shadowColor: AppColors.error,
+    shadowColor: Colors.danger,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -259,28 +252,25 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySub: {
     fontSize: 14,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 32,
   },
   shopBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: AppRadius.pill,
+    borderRadius: Radii.pill,
   },
   shopBtnText: {
     color: '#fff',
-    fontFamily: AppFonts.extraBold,
     fontSize: 15,
   },
 });

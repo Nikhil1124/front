@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Txt, Col } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
+import { useDock } from '@/components/HeadlessDockTabButton';
+import { TabHeader } from '@/components/TabHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSuccess } from '@/utils/haptics';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
@@ -42,21 +44,20 @@ export default function StaffTabsLayout() {
   const logout = usePGowStore((s) => s.logout);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
+  // Shares the flat-bar geometry and safe-area inset with the other roles' docks; only the
+  // buttons inside stay bespoke (two-line labels, filled active state).
+  const { dockStyle, contentPaddingBottom } = useDock();
 
   return (
     <Tabs style={styles.root}>
       {/* Header — its own surface, separate from the scrollable body below,
           so it reads as fixed chrome rather than the first card in the list. */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={styles.chefIcon}><Txt size={24}>👨‍🍳</Txt></View>
-            <Col>
-              <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>CHEF DASHBOARD</Txt>
-              <Txt size={11} color={Colors.textMuted}>Chef: {staff?.name ?? 'Ramesh Kumar'} (PG: {owner?.pgName ?? 'Co-Living'})</Txt>
-            </Col>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+      <TabHeader
+        leading={
+          <View style={styles.chefIcon}><Txt size={24}>👨‍🍳</Txt></View>
+        }
+        actions={
+          <>
             <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
               <View style={styles.bellBtn}>
                 <Ionicons name="notifications" size={20} color={Colors.primary} />
@@ -68,11 +69,16 @@ export default function StaffTabsLayout() {
                 <Ionicons name="exit" size={20} color={Colors.danger} />
               </View>
             </AnimatedPress>
-          </View>
-        </View>
-      </View>
+          </>
+        }
+      >
+        <Col style={{ marginLeft: 12 }}>
+          <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>CHEF DASHBOARD</Txt>
+          <Txt size={11} color={Colors.textMuted}>Chef: {staff?.name ?? 'Ramesh Kumar'} (PG: {owner?.pgName ?? 'Co-Living'})</Txt>
+        </Col>
+      </TabHeader>
 
-      <View style={{ flex: 1, paddingBottom: 76 }}>
+      <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
         <TabSlot />
       </View>
 
@@ -82,7 +88,7 @@ export default function StaffTabsLayout() {
           (confirmed by reading expo-router/ui's Tabs.js). So the previous two-layer dock
           (translucent outer strip + white inner pill) is one layer here too, same as the
           Owner/Guest tabs — dockWrap and dock are merged onto TabList directly. */}
-      <TabList style={[styles.dockWrap, styles.dock]}>
+      <TabList style={[dockStyle, styles.dock]}>
         <TabTrigger name="eaters" href="/eaters" asChild style={{ flex: 1 }}>
           <StaffDockButton emoji="📊" label="Eaters" sub="RSVP List" />
         </TabTrigger>
@@ -101,21 +107,12 @@ export default function StaffTabsLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
-  header: {
-    paddingHorizontal: 18, paddingVertical: 14,
-    backgroundColor: Colors.surfaceElevated,
-    borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-  },
+
   chefIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   bellBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   unreadDot: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.danger },
-  // Was two nested elements (translucent mint outer strip + white rounded pill) — collapsed
-  // into one, since TabList can't sit inside a wrapping View (see the comment above its use).
-  dockWrap: { position: 'absolute', bottom: 8, left: 10, right: 10 },
-  dock: {
-    flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 20,
-    borderWidth: 1, borderColor: Colors.borderSubtle, padding: 4, gap: 4,
-    shadowColor: '#0D9488', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 6,
-  },
+  // Geometry (flush flat bar, border, shadow, safe-area inset) comes from `useDock`; this
+  // only adds the gap between this dock's three wider buttons.
+  dock: { gap: 4 },
   dockBtn: { borderRadius: 12, padding: 6, alignItems: 'center', justifyContent: 'center' },
 });

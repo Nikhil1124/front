@@ -33,7 +33,7 @@ function kycPill(status: KycStatus): KycPillConfig {
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <Row justify="space-between" align="center" style={styles.fieldRow}>
-      <Txt size={12} color={Colors.textMuted}>{label}</Txt>
+      <Txt variant="caption" color={Colors.textMuted}>{label}</Txt>
       <Txt size={13} weight="600" color={Colors.textPrimary} style={mono ? styles.monoValue : undefined}>
         {value || '—'}
       </Txt>
@@ -53,7 +53,7 @@ export function GuestSecurityTab() {
   return (
     <FormScroll contentContainerStyle={{ padding: 16, gap: 16 }}>
       {/* Section title */}
-      <Txt size={18} weight="800" color={Colors.textPrimary}>Profile & KYC Verification</Txt>
+      <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Profile & KYC Verification</Txt>
 
       {/* Resident details card with KYC pill */}
       <Card
@@ -64,14 +64,14 @@ export function GuestSecurityTab() {
         padding={[16, 16]}
       >
         <Row justify="space-between" align="center">
-          <Txt size={15} weight="800" color={Colors.textPrimary}>Resident Details</Txt>
+          <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>Resident Details</Txt>
           <View style={[styles.kycPill, { backgroundColor: pill.bg }]}>
             <Ionicons
               name={kycStatus === 'VERIFIED' ? 'shield-checkmark' : kycStatus === 'PENDING' ? 'hourglass' : kycStatus === 'REJECTED' ? 'warning' : 'card'}
               size={11}
               color={pill.color}
             />
-            <Txt size={10} weight="800" color={pill.color} style={{ marginLeft: 4 }}>{pill.label}</Txt>
+            <Txt variant="labelSmall" weight="800" color={pill.color} style={{ marginLeft: 4 }}>{pill.label}</Txt>
           </View>
         </Row>
         <Spacer size={12} />
@@ -93,7 +93,7 @@ export function GuestSecurityTab() {
           <View style={styles.kycHeaderIcon}>
             <Ionicons name="ribbon" size={18} color={Colors.primary} />
           </View>
-          <Txt size={16} weight="800" color={Colors.textPrimary}>Identity Document (KYC)</Txt>
+          <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Identity Document (KYC)</Txt>
         </Row>
         <Spacer size={12} />
         <GuestKycVerificationTab scrollable={false} />
@@ -109,7 +109,7 @@ export function GuestSecurityTab() {
       >
         <Row gap={8} align="center">
           <Ionicons name="lock-closed" size={18} color={Colors.primary} />
-          <Txt size={15} weight="800" color={Colors.textPrimary}>Change Login Passcode</Txt>
+          <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>Change Login Passcode</Txt>
         </Row>
         <Spacer size={10} />
         {/* The server will not change a password without proof of the current one — that is
@@ -148,7 +148,7 @@ export function GuestSecurityTab() {
           testID="guest_change_password_btn"
         >
           <Ionicons name="key" size={16} color={Colors.textInverse} />
-          <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Update Passcode</Txt>
+          <Txt variant="body" weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Update Passcode</Txt>
         </Btn>
       </Card>
     </FormScroll>

@@ -228,7 +228,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
         <View style={styles.dialogBackdrop}>
           <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '88%' }}>
             <Row gap={6} align="center" style={{ marginBottom: 16 }}>
-              <Txt size={18} weight="900" color={Colors.primary}>🔒 Set New Password</Txt>
+              <Txt variant="sectionTitle" weight="900" color={Colors.primary}>🔒 Set New Password</Txt>
               <InfoTip text="Your account was created with a temporary password. Please set your own secret password (min 8 characters) to continue." />
             </Row>
             <OutlinedTextField
@@ -249,10 +249,10 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
             />
             <Row gap={8}>
               <Btn onPress={handleFirstTimePasswordSubmit} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={44} style={{ flex: 1 }}>
-                <Txt size={13} weight="800" color={Colors.textInverse}>Set Password & Log In</Txt>
+                <Txt variant="body" weight="800" color={Colors.textInverse}>Set Password & Log In</Txt>
               </Btn>
               <OutlinedBtn onPress={() => setShowFirstTimePasswordModal(false)} borderColor={Colors.borderSubtle} textColor={Colors.textMuted} borderRadius={10} height={44} style={{ flex: 1 }}>
-                <Txt size={13} weight="700" color={Colors.textMuted}>Cancel</Txt>
+                <Txt variant="body" weight="700" color={Colors.textMuted}>Cancel</Txt>
               </OutlinedBtn>
             </Row>
           </Card>
@@ -263,16 +263,16 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       <Modal visible={showResetDialog} transparent animationType="fade">
         <View style={styles.dialogBackdrop}>
           <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '88%' }}>
-            <Txt size={18} weight="800" color={Colors.textPrimary} style={{ marginBottom: 12 }}>Reset Guest Passcode</Txt>
+            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary} style={{ marginBottom: 12 }}>Reset Guest Passcode</Txt>
             <OutlinedTextField label="Registered Email" value={resetEmail} onChangeText={setResetEmail} testID="reset_email_input" style={{ marginBottom: 10 }} />
             <OutlinedTextField label="Registered Room No" value={resetRoom} onChangeText={setResetRoom} testID="reset_room_input" style={{ marginBottom: 10 }} />
             <OutlinedTextField label="New Passcode / Password" value={resetNewPassword} onChangeText={setResetNewPassword} secureTextEntry testID="reset_new_password_input" style={{ marginBottom: 16 }} />
             <Row gap={8}>
               <Btn onPress={handleReset} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="700" color={Colors.textInverse}>Update Passcode</Txt>
+                <Txt variant="body" weight="700" color={Colors.textInverse}>Update Passcode</Txt>
               </Btn>
               <OutlinedBtn onPress={() => setShowResetDialog(false)} borderColor={Colors.borderSubtle} textColor={Colors.textMuted} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="700" color={Colors.textMuted}>Cancel</Txt>
+                <Txt variant="body" weight="700" color={Colors.textMuted}>Cancel</Txt>
               </OutlinedBtn>
             </Row>
           </Card>
@@ -283,9 +283,9 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       <Modal visible={isScanningSimulated} transparent animationType="fade">
         <View style={styles.dialogBackdrop}>
           <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '88%' }}>
-            <Txt size={20} weight="900" color={Colors.textPrimary} style={{ marginBottom: 12 }}>Lobby QR Code Scanner</Txt>
+            <Txt variant="screenTitle" weight="900" color={Colors.textPrimary} style={{ marginBottom: 12 }}>Lobby QR Code Scanner</Txt>
             <View style={styles.scannerFrame}>
-              <Txt size={12} color={Colors.textMuted}>[ simulated camera frame ]</Txt>
+              <Txt variant="caption" color={Colors.textMuted}>[ simulated camera frame ]</Txt>
             </View>
             <Spacer size={16} />
             <OutlinedTextField
@@ -298,10 +298,10 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
             />
             <Row gap={8}>
               <Btn onPress={() => { setIsScanningSimulated(false); handleJoin(); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="700" color={Colors.textInverse}>Verify & Link PG</Txt>
+                <Txt variant="body" weight="700" color={Colors.textInverse}>Verify & Link PG</Txt>
               </Btn>
               <OutlinedBtn onPress={() => setIsScanningSimulated(false)} borderColor={Colors.borderSubtle} textColor={Colors.textMuted} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="700" color={Colors.textMuted}>Cancel</Txt>
+                <Txt variant="body" weight="700" color={Colors.textMuted}>Cancel</Txt>
               </OutlinedBtn>
             </Row>
           </Card>
@@ -311,7 +311,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       {/* Header */}
       <Row align="center" style={{ marginVertical: 8 }}>
         <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
-        <Txt size={22} weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>PG Portal Login</Txt>
+        <Txt variant="statValue" weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>PG Portal Login</Txt>
       </Row>
 
       {/* Smooth Sliding Segmented Tab Bar */}
@@ -355,14 +355,14 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
         {/* Tab 0: Owner Login */}
         {selectedTab === 0 && (
           <View>
-            <Txt size={18} weight="800" color={Colors.textPrimary}>Owner Login</Txt>
+            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Owner Login</Txt>
             <Spacer size={16} />
             <OutlinedTextField label="Phone Number" value={phoneInput} onChangeText={setPhoneInput} leadingIcon="call" keyboardType="phone-pad" testID="owner_login_phone" style={{ marginBottom: 14 }} />
             <OutlinedTextField label="Password" value={passwordInput} onChangeText={setPasswordInput} leadingIcon="lock-closed" secureTextEntry testID="owner_login_password" style={{ marginBottom: 10 }} />
-            <Txt size={12} color={Colors.textMuted}>Use the phone number and password you registered with.</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Use the phone number and password you registered with.</Txt>
             <Spacer size={20} />
             <Btn onPress={handleOwnerLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={50} testID="owner_login_button">
-              <Txt size={15} weight="700" color={Colors.textInverse}>Log In as Owner</Txt>
+              <Txt variant="cardTitle" color={Colors.textInverse}>Log In as Owner</Txt>
             </Btn>
           </View>
         )}
@@ -370,7 +370,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
         {/* Tab 1: Manager Login */}
         {selectedTab === 1 && (
           <View>
-            <Txt size={18} weight="800" color={Colors.textPrimary}>PG Manager Login (Individual Branch)</Txt>
+            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>PG Manager Login (Individual Branch)</Txt>
             <Spacer size={16} />
             <OutlinedTextField
               label="Manager Phone Number"
@@ -392,10 +392,10 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
               testID="manager_login_pin_input"
               style={{ marginBottom: 10 }}
             />
-            <Txt size={12} color={Colors.textMuted}>Your PG owner sets this PIN when they add you.</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Your PG owner sets this PIN when they add you.</Txt>
             <Spacer size={20} />
             <Btn onPress={handleManagerLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={50} testID="manager_login_button">
-              <Txt size={15} weight="700" color={Colors.textInverse}>Log In as PG Manager</Txt>
+              <Txt variant="cardTitle" color={Colors.textInverse}>Log In as PG Manager</Txt>
             </Btn>
           </View>
         )}
@@ -403,7 +403,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
         {/* Tab 2: Kitchen & Staff */}
         {selectedTab === 2 && (
           <View>
-            <Txt size={18} weight="800" color={Colors.textPrimary}>Kitchen & Maintenance Staff Login</Txt>
+            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Kitchen & Maintenance Staff Login</Txt>
             <Spacer size={16} />
             <OutlinedTextField
               label="Your Phone Number"
@@ -424,10 +424,10 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
               testID="staff_login_pin"
               style={{ marginBottom: 10 }}
             />
-            <Txt size={12} color={Colors.textMuted}>Your PG owner sets this PIN when they add you.</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Your PG owner sets this PIN when they add you.</Txt>
             <Spacer size={20} />
             <Btn onPress={handleStaffLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={50} testID="staff_login_submit">
-              <Txt size={15} weight="700" color={Colors.textInverse}>Access Staff Dashboard</Txt>
+              <Txt variant="cardTitle" color={Colors.textInverse}>Access Staff Dashboard</Txt>
             </Btn>
           </View>
         )}
@@ -444,7 +444,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 height={40}
                 style={{ flex: 1, borderWidth: 1, borderColor: guestMode === 'LOGIN' ? Colors.primary : Colors.borderSubtle }}
               >
-                <Txt size={13} weight="700" color={guestMode === 'LOGIN' ? Colors.textInverse : Colors.textSecondary}>Guest Login</Txt>
+                <Txt variant="body" weight="700" color={guestMode === 'LOGIN' ? Colors.textInverse : Colors.textSecondary}>Guest Login</Txt>
               </Btn>
               <Btn
                 onPress={() => setGuestMode('JOIN')}
@@ -454,29 +454,29 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 height={40}
                 style={{ flex: 1, borderWidth: 1, borderColor: guestMode === 'JOIN' ? Colors.primary : Colors.borderSubtle }}
               >
-                <Txt size={13} weight="700" color={guestMode === 'JOIN' ? Colors.textInverse : Colors.textSecondary}>Join PG via QR</Txt>
+                <Txt variant="body" weight="700" color={guestMode === 'JOIN' ? Colors.textInverse : Colors.textSecondary}>Join PG via QR</Txt>
               </Btn>
             </Row>
 
             {guestMode === 'LOGIN' ? (
               <View>
-                <Txt size={18} weight="800" color={Colors.textPrimary} style={{ marginBottom: 20 }}>Access Resident Profile</Txt>
+                <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary} style={{ marginBottom: 20 }}>Access Resident Profile</Txt>
                 <OutlinedTextField label="Registered Phone Number" value={guestPhoneInputForLogin} onChangeText={setGuestPhoneInputForLogin} leadingIcon="call" keyboardType="phone-pad" testID="guest_login_phone" style={{ marginBottom: 16 }} />
                 <OutlinedTextField label="Password" value={guestPasswordInputForLogin} onChangeText={setGuestPasswordInputForLogin} leadingIcon="lock-closed" secureTextEntry testID="guest_login_password" style={{ marginBottom: 12 }} />
                 <Row justify="space-between">
                   <TouchableOpacity onPress={() => setShowResetDialog(true)} style={{ paddingVertical: 4 }}>
-                    <Txt size={13} weight="700" color={Colors.primary}>Forgot Phone / Pass?</Txt>
+                    <Txt variant="body" weight="700" color={Colors.primary}>Forgot Phone / Pass?</Txt>
                   </TouchableOpacity>
-                  <Txt size={12} color={Colors.textMuted}>Your PG owner sets these for you.</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Your PG owner sets these for you.</Txt>
                 </Row>
                 <Spacer size={24} />
                 <Btn onPress={handleGuestLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={52} testID="guest_login_button">
-                  <Txt size={16} weight="700" color={Colors.textInverse}>Access Guest Account</Txt>
+                  <Txt variant="sectionTitle" color={Colors.textInverse}>Access Guest Account</Txt>
                 </Btn>
               </View>
             ) : (
               <View>
-                <Txt size={18} weight="800" color={Colors.textPrimary} style={{ marginBottom: 20 }}>Register with QR Code</Txt>
+                <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary} style={{ marginBottom: 20 }}>Register with QR Code</Txt>
                 <OutlinedTextField label="Guest Name *" value={guestNameInput} onChangeText={(v) => set('guestNameInput', v)} leadingIcon="person" testID="guest_register_name" style={{ marginBottom: 12 }} />
                 <OutlinedTextField label="Email Address *" value={guestEmailInput} onChangeText={(v) => set('guestEmailInput', v)} leadingIcon="mail" keyboardType="email-address" testID="guest_register_email" style={{ marginBottom: 12 }} />
                 <Row gap={8}>
@@ -487,7 +487,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 <OutlinedTextField label="Choose a Password * (min 8 characters)" value={guestPasswordInput} onChangeText={(v) => set('guestPasswordInput', v)} leadingIcon="lock-closed" secureTextEntry testID="guest_join_password_input" style={{ marginBottom: 12 }} />
                 <OutlinedTextField label="PG Code (from the lobby poster) *" placeholder="DZQP9899" value={guestScanCodeInput} onChangeText={(v) => set('guestScanCodeInput', v.toUpperCase())} leadingIcon="qr-code" testID="guest_join_code_input" style={{ marginBottom: 12 }} />
                 <Btn onPress={handleJoin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={48} testID="guest_join_submit">
-                  <Txt size={14} weight="700" color={Colors.textInverse}>Join This PG</Txt>
+                  <Txt variant="cardTitle" color={Colors.textInverse}>Join This PG</Txt>
                 </Btn>
                 <Spacer size={20} />
                 <TouchableOpacity
@@ -499,10 +499,10 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 >
                   <Col align="center">
                     <Ionicons name="qr-code-sharp" size={44} color={Colors.primary} />
-                    <Txt size={14} weight="700" color={Colors.textPrimary} style={{ marginTop: 8 }}>
+                    <Txt variant="cardTitle" color={Colors.textPrimary} style={{ marginTop: 8 }}>
                       {guestScanCodeInput ? `Code ${guestScanCodeInput} ✅` : 'Enter PG Lobby Code'}
                     </Txt>
-                    <Txt size={11} color={Colors.textMuted} align="center">Simulates instant lens capture & security verification</Txt>
+                    <Txt variant="caption" color={Colors.textMuted} align="center">Simulates instant lens capture & security verification</Txt>
                   </Col>
                 </TouchableOpacity>
               </View>

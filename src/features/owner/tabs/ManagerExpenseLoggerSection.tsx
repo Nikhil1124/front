@@ -79,7 +79,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
                   EXPENSES & BALANCE SHEET
                 </Txt>
               </Row>
-              <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
+              <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 2 }}>
                 {isManager ? `Logged by Branch Manager: ${owner?.managerName ?? 'Manager'}` : 'Property Financial Audit & Balance Sheet'}
               </Txt>
             </Col>
@@ -99,7 +99,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
             <Row justify="space-between" align="center">
               <Txt size={11} weight="900" color={Colors.textPrimary}>📊 COMPLETE BALANCE SHEET</Txt>
               <View style={[styles.profitPill, { backgroundColor: netRevenue >= 0 ? '#ECFDF5' : '#FEF2F2' }]}>
-                <Txt size={9} weight="800" color={netRevenue >= 0 ? '#047857' : '#B91C1C'}>
+                <Txt variant="labelSmall" weight="800" color={netRevenue >= 0 ? '#047857' : '#B91C1C'}>
                   {netRevenue >= 0 ? 'PROFITABLE' : 'DEFICIT'}
                 </Txt>
               </View>
@@ -108,27 +108,27 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
             <Row justify="space-between" align="center">
               <Row gap={6} align="center">
                 <Ionicons name="trending-up" size={14} color="#16A34A" />
-                <Txt size={11} weight="700" color={Colors.textPrimary}>1. Total Verified Collections</Txt>
+                <Txt variant="caption" weight="700" color={Colors.textPrimary}>1. Total Verified Collections</Txt>
               </Row>
               <Txt size={12} weight="900" color="#16A34A">₹{Math.round(verifiedRevenue).toLocaleString('en-IN')}</Txt>
             </Row>
             <Spacer size={6} /><View style={{ height: 1, backgroundColor: Colors.borderSubtle }} /><Spacer size={6} />
-            <Txt size={10} weight="800" color={Colors.textMuted}>2. Expenses & Outflows Breakdown:</Txt>
+            <Txt variant="labelSmall" weight="800" color={Colors.textMuted}>2. Expenses & Outflows Breakdown:</Txt>
             <Spacer size={4} />
-            <Row justify="space-between"><Txt size={11} color={Colors.textSecondary}>   • 👷 Staff Salaries</Txt><Txt size={11} weight="700" color="#B45309">₹{Math.round(totalSalaries).toLocaleString('en-IN')}</Txt></Row>
-            <Row justify="space-between"><Txt size={11} color={Colors.textSecondary}>   • ⚡ Utility Bills (Power/Water)</Txt><Txt size={11} weight="700" color="#4338CA">₹{Math.round(totalUtility).toLocaleString('en-IN')}</Txt></Row>
-            <Row justify="space-between"><Txt size={11} color={Colors.textSecondary}>   • 🛒 Mess Groceries & Food</Txt><Txt size={11} weight="700" color="#166534">₹{Math.round(totalGroceries).toLocaleString('en-IN')}</Txt></Row>
-            <Row justify="space-between"><Txt size={11} color={Colors.textSecondary}>   • 🛠️ Maintenance & Repairs</Txt><Txt size={11} weight="700" color="#BE185D">₹{Math.round(totalMaintenance).toLocaleString('en-IN')}</Txt></Row>
-            <Row justify="space-between"><Txt size={11} color={Colors.textSecondary}>   • 📶 Wi-Fi & Other Operations</Txt><Txt size={11} weight="700" color={Colors.textPrimary}>₹{Math.round(totalWifi).toLocaleString('en-IN')}</Txt></Row>
+            <Row justify="space-between"><Txt variant="caption" color={Colors.textSecondary}>   • 👷 Staff Salaries</Txt><Txt variant="caption" weight="700" color="#B45309">₹{Math.round(totalSalaries).toLocaleString('en-IN')}</Txt></Row>
+            <Row justify="space-between"><Txt variant="caption" color={Colors.textSecondary}>   • ⚡ Utility Bills (Power/Water)</Txt><Txt variant="caption" weight="700" color="#4338CA">₹{Math.round(totalUtility).toLocaleString('en-IN')}</Txt></Row>
+            <Row justify="space-between"><Txt variant="caption" color={Colors.textSecondary}>   • 🛒 Mess Groceries & Food</Txt><Txt variant="caption" weight="700" color="#166534">₹{Math.round(totalGroceries).toLocaleString('en-IN')}</Txt></Row>
+            <Row justify="space-between"><Txt variant="caption" color={Colors.textSecondary}>   • 🛠️ Maintenance & Repairs</Txt><Txt variant="caption" weight="700" color="#BE185D">₹{Math.round(totalMaintenance).toLocaleString('en-IN')}</Txt></Row>
+            <Row justify="space-between"><Txt variant="caption" color={Colors.textSecondary}>   • 📶 Wi-Fi & Other Operations</Txt><Txt variant="caption" weight="700" color={Colors.textPrimary}>₹{Math.round(totalWifi).toLocaleString('en-IN')}</Txt></Row>
             <Spacer size={4} />
-            <Row justify="space-between"><Txt size={11} weight="800" color={Colors.textPrimary}>   Total All Expenses & Outflows:</Txt><Txt size={12} weight="900" color="#B91C1C">₹{Math.round(totalExpenses).toLocaleString('en-IN')}</Txt></Row>
+            <Row justify="space-between"><Txt variant="caption" weight="800" color={Colors.textPrimary}>   Total All Expenses & Outflows:</Txt><Txt size={12} weight="900" color="#B91C1C">₹{Math.round(totalExpenses).toLocaleString('en-IN')}</Txt></Row>
             <Spacer size={8} /><View style={{ height: 1, backgroundColor: Colors.borderSubtle }} /><Spacer size={8} />
             <View style={[styles.netBox, { backgroundColor: netRevenue >= 0 ? '#F0FDF4' : '#FEF2F2', borderColor: netRevenue >= 0 ? '#86EFAC' : '#FCA5A5', borderWidth: 1 }]}>
               <Row justify="space-between" align="center">
                 <Col>
                   <Txt size={11} weight="900" color={netRevenue >= 0 ? '#166534' : '#991B1B'}>NET PROFIT</Txt>
                 </Col>
-                <Txt size={16} weight="900" color={netRevenue >= 0 ? '#16A34A' : '#DC2626'}>
+                <Txt variant="sectionTitle" weight="900" color={netRevenue >= 0 ? '#16A34A' : '#DC2626'}>
                   ₹{Math.round(netRevenue).toLocaleString('en-IN')}
                 </Txt>
               </Row>
@@ -144,9 +144,9 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
           {/* Form is only shown to Managers who record the daily logs */}
           {isManager ? (
             <>
-              <Txt size={14} weight="900" color={Colors.textPrimary}>➕ Log Daily Expense or Staff Salary</Txt>
+              <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>➕ Log Daily Expense or Staff Salary</Txt>
               <Spacer size={8} />
-              <Txt size={10} weight="800" color={Colors.textMuted}>Quick Presets:</Txt>
+              <Txt variant="labelSmall" weight="800" color={Colors.textMuted}>Quick Presets:</Txt>
               <Spacer size={4} />
               <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                 <Chip label="👨‍🍳 Chef Salary ₹15k" selected={false} onPress={() => { setExpenseTitle('Chef Monthly Salary - Ramesh'); setExpenseCategory('Staff Salary'); setExpenseAmount('15000'); setRecipientName('Ramesh Kumar (Head Cook)'); setPaymentMode('Bank Transfer'); setNotes('Monthly salary paid for July 2026'); }} />
@@ -154,7 +154,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
                 <Chip label="⚡ Electricity Bill ₹6.8k" selected={false} onPress={() => { setExpenseTitle('PG Electricity & Power Bill'); setExpenseCategory('Utility Bills'); setExpenseAmount('6800'); setRecipientName('State Electricity Board'); setPaymentMode('UPI'); setNotes('Monthly power bill & generator diesel'); }} />
               </FormScroll>
               <Spacer size={10} />
-              <Txt size={11} weight="800" color={Colors.textMuted}>Category:</Txt>
+              <Txt variant="caption" weight="800" color={Colors.textMuted}>Category:</Txt>
               <Spacer size={4} />
               <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                 <Chip label="All" selected={filter === 'All'} onPress={() => setFilter('All')} />
@@ -170,7 +170,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
               </Row>
               <Spacer size={8} />
               <Row gap={6} align="center">
-                <Txt size={11} weight="800" color={Colors.textMuted}>Mode:</Txt>
+                <Txt variant="caption" weight="800" color={Colors.textMuted}>Mode:</Txt>
                 {['UPI', 'Cash Handover', 'Bank Transfer'].map((mode) => (
                   <Chip key={mode} label={mode} selected={paymentMode === mode} onPress={() => setPaymentMode(mode)} />
                 ))}
@@ -188,7 +188,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
                 testID="submit_expense_log_button"
               >
                 <Ionicons name="cloud-upload" size={16} color={Colors.textInverse} />
-                <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>{isSubmitting ? 'Saving…' : 'Log Expense Entry'}</Txt>
+                <Txt variant="body" weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>{isSubmitting ? 'Saving…' : 'Log Expense Entry'}</Txt>
               </Btn>
               <Spacer size={18} />
             </>
@@ -196,9 +196,9 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
 
           {/* Logged Outflows Transactions Ledger */}
           <Row justify="space-between" align="center">
-            <Txt size={14} weight="900" color={Colors.textPrimary}>💸 Logged Outflow Transactions ({expenses.length})</Txt>
+            <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>💸 Logged Outflow Transactions ({expenses.length})</Txt>
             <View style={styles.totalPill}>
-              <Txt size={10} weight="800" color="#B91C1C">Outflow: -₹{Math.round(totalExpenses).toLocaleString('en-IN')}</Txt>
+              <Txt variant="labelSmall" weight="800" color="#B91C1C">Outflow: -₹{Math.round(totalExpenses).toLocaleString('en-IN')}</Txt>
             </View>
           </Row>
           <Spacer size={8} />
@@ -212,7 +212,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
           {filtered.length === 0 ? (
             <View style={styles.emptyBox}>
               <Ionicons name="receipt-outline" size={32} color={Colors.textMuted} />
-              <Txt size={12} weight="700" color={Colors.textMuted}>No expense outflow transactions logged yet.</Txt>
+              <Txt variant="caption" weight="700" color={Colors.textMuted}>No expense outflow transactions logged yet.</Txt>
             </View>
           ) : (
             filtered.map((e) => (
@@ -224,16 +224,16 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
                     </View>
                     <Col style={{ flex: 1 }}>
                       <Row align="center" gap={6}>
-                        <Txt size={13} weight="800" color={Colors.textPrimary}>{e.title}</Txt>
-                        <View style={styles.catPill}><Txt size={9} weight="700" color={Colors.primaryDark}>{e.category}</Txt></View>
+                        <Txt variant="body" weight="800" color={Colors.textPrimary}>{e.title}</Txt>
+                        <View style={styles.catPill}><Txt variant="labelSmall" color={Colors.primaryDark}>{e.category}</Txt></View>
                       </Row>
-                      {e.recipientName ? <Txt size={11} weight="600" color={Colors.textSecondary}>Payee: {e.recipientName}</Txt> : null}
-                      <Txt size={10} color={Colors.textMuted}>Logged by {e.loggedByRole} {e.loggedByName} • {e.paymentMode}</Txt>
+                      {e.recipientName ? <Txt variant="caption" weight="600" color={Colors.textSecondary}>Payee: {e.recipientName}</Txt> : null}
+                      <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Logged by {e.loggedByRole} {e.loggedByName} • {e.paymentMode}</Txt>
                       {e.notes ? <Txt size={9} color={Colors.textMuted} numberOfLines={1}>{e.notes}</Txt> : null}
                     </Col>
                   </Row>
                   <Col align="flex-end">
-                    <Txt size={15} weight="900" color="#DC2626">-₹{Math.round(e.amount).toLocaleString('en-IN')}</Txt>
+                    <Txt variant="cardTitle" weight="900" color="#DC2626">-₹{Math.round(e.amount).toLocaleString('en-IN')}</Txt>
                     {isManager && (
                       <IconBtn onPress={() => deleteExpense(e)} icon="trash-outline" size={16} tint="#EF4444" containerColor="transparent" />
                     )}

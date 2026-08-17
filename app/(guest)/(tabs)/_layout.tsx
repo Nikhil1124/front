@@ -10,7 +10,8 @@ import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { HeadlessDockTabButton, PillDock } from '@/components/HeadlessDockTabButton';
+import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
+import { TabHeader } from '@/components/TabHeader';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSuccess } from '@/utils/haptics';
@@ -27,43 +28,29 @@ export default function GuestTabsLayout() {
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
   const paid = guest?.isBillPaid ?? false;
+  const { dockStyle, contentPaddingBottom } = useDock();
 
   return (
     <Tabs style={styles.root}>
-      <View style={{ flex: 1, paddingBottom: 76 }}>
+      <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
         {/* ── Header — own surface, separate from the scrollable body below ── */}
-        <View style={styles.header}>
-          <Row justify="space-between" align="center">
-            <Row gap={12} style={{ flex: 1 }}>
-              <AnimatedPress scale={0.9} hapticPattern="light" onPress={() => setShowProfilePhotoDialog(true)}>
-                <View style={styles.avatarWrap}>
-                  <View style={styles.avatar}>
-                    {guest?.profilePhotoUri ? (
-                      <Txt size={12}>📷</Txt>
-                    ) : (
-                      <Ionicons name="person" size={28} color={Colors.primary} />
-                    )}
-                  </View>
-                  <View style={styles.cameraBadge}><Ionicons name="camera" size={10} color={Colors.primaryDark} /></View>
+        <TabHeader
+          leading={
+            <AnimatedPress scale={0.9} hapticPattern="light" onPress={() => setShowProfilePhotoDialog(true)}>
+              <View style={styles.avatarWrap}>
+                <View style={styles.avatar}>
+                  {guest?.profilePhotoUri ? (
+                    <Txt variant="caption">📷</Txt>
+                  ) : (
+                    <Ionicons name="person" size={28} color={Colors.primary} />
+                  )}
                 </View>
-              </AnimatedPress>
-              <Col style={{ flex: 1 }}>
-                <Row gap={6} align="center">
-                  <View style={[styles.dot, { backgroundColor: Colors.success }]} />
-                  <Txt size={18} weight="800" color={Colors.primaryDark} numberOfLines={1}>Hello, {guest?.name ?? 'Guest'}</Txt>
-                </Row>
-                <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginTop: 1 }}>
-                  Room {guest?.roomNo ?? 'N/A'} • Premium Resident
-                </Txt>
-                <View style={[styles.billPill, { backgroundColor: paid ? '#ECFDF5' : '#FFFBEB', borderWidth: 1, borderColor: paid ? '#A7F3D0' : '#FDE68A' }]}>
-                  <Ionicons name={paid ? 'checkmark-circle' : 'information-circle'} size={11} color={paid ? '#059669' : '#B45309'} />
-                  <Txt size={10} weight="800" color={paid ? '#047857' : '#B45309'} style={{ marginLeft: 4 }}>
-                    {paid ? 'Rent Paid' : 'Rent Pending'}
-                  </Txt>
-                </View>
-              </Col>
-            </Row>
-            <Row gap={8}>
+                <View style={styles.cameraBadge}><Ionicons name="camera" size={10} color={Colors.primaryDark} /></View>
+              </View>
+            </AnimatedPress>
+          }
+          actions={
+            <>
               <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
                 <View style={styles.bellBtn}>
                   <Ionicons name="notifications" size={18} color={Colors.primary} />
@@ -75,9 +62,25 @@ export default function GuestTabsLayout() {
                   <Ionicons name="exit" size={18} color={Colors.danger} />
                 </View>
               </AnimatedPress>
+            </>
+          }
+        >
+          <Col style={{ flex: 1, marginLeft: 12 }}>
+            <Row gap={6} align="center">
+              <View style={[styles.dot, { backgroundColor: Colors.success }]} />
+              <Txt size={18} weight="800" color={Colors.primaryDark} numberOfLines={1}>Hello, {guest?.name ?? 'Guest'}</Txt>
             </Row>
-          </Row>
-        </View>
+            <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginTop: 1 }}>
+              Room {guest?.roomNo ?? 'N/A'} • Premium Resident
+            </Txt>
+            <View style={[styles.billPill, { backgroundColor: paid ? '#ECFDF5' : '#FFFBEB', borderWidth: 1, borderColor: paid ? '#A7F3D0' : '#FDE68A' }]}>
+              <Ionicons name={paid ? 'checkmark-circle' : 'information-circle'} size={11} color={paid ? '#059669' : '#B45309'} />
+              <Txt size={10} weight="800" color={paid ? '#047857' : '#B45309'} style={{ marginLeft: 4 }}>
+                {paid ? 'Rent Paid' : 'Rent Pending'}
+              </Txt>
+            </View>
+          </Col>
+        </TabHeader>
 
         {/* ── Active tab content ─────────────────────────────────────────── */}
         <View style={{ flex: 1 }}>
@@ -85,8 +88,8 @@ export default function GuestTabsLayout() {
         </View>
       </View>
 
-      {/* Sticky bottom dock — see PillDock in HeadlessDockTabButton.tsx */}
-      <PillDock>
+      {/* Sticky bottom dock — see Dock/useDock in HeadlessDockTabButton.tsx */}
+      <Dock style={dockStyle}>
         <TabTrigger name="home" href="/home" asChild>
           <HeadlessDockTabButton icon="home" label="Home" />
         </TabTrigger>
@@ -102,7 +105,7 @@ export default function GuestTabsLayout() {
         <TabTrigger name="profile" href="/profile" asChild>
           <HeadlessDockTabButton icon="ribbon" label="Profile" />
         </TabTrigger>
-      </PillDock>
+      </Dock>
 
       {showNotif && <RoleNotificationsCenterSheet roleTitle="RESIDENT" onDismiss={() => setShowNotif(false)} />}
 
@@ -163,11 +166,7 @@ export default function GuestTabsLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
-  header: {
-    paddingHorizontal: 18, paddingVertical: 14,
-    backgroundColor: Colors.surfaceElevated,
-    borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-  },
+
   avatarWrap: { position: 'relative' },
   avatar: {
     width: 50, height: 50, borderRadius: 25,

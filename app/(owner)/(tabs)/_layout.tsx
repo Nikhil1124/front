@@ -11,7 +11,8 @@ import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { HeadlessDockTabButton, PillDock } from '@/components/HeadlessDockTabButton';
+import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
+import { TabHeader } from '@/components/TabHeader';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSuccess } from '@/utils/haptics';
@@ -30,37 +31,15 @@ export default function OwnerTabsLayout() {
   const logout = usePGowStore((s) => s.logout);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
+  const { dockStyle, contentPaddingBottom } = useDock();
 
   return (
     <Tabs style={styles.root}>
-      <View style={{ flex: 1, paddingBottom: 76 }}>
+      <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
         {/* ── Header ───────────────────────────────────────────────────────── */}
-        <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            {/* Tap the profile area for account-switcher-style actions — add /
-                manage properties (owner only) and settings, same affordance
-                as tapping your avatar in Google apps. */}
-            <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => setShowProfileMenu(true)} style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={[styles.dot, { backgroundColor: isManager ? Colors.tertiary : Colors.primary }]} />
-                <Txt size={16} weight="800" color={Colors.primaryDark} style={{ marginLeft: 6 }} numberOfLines={1}>
-                  {owner?.pgName ?? 'Select PG'}
-                </Txt>
-                {isManager && (
-                  <View style={styles.managerBadge}>
-                    <Txt size={9} weight="900" color={Colors.tertiary}>MANAGER</Txt>
-                  </View>
-                )}
-                <Ionicons name="chevron-down" size={14} color={Colors.textMuted} style={{ marginLeft: 4 }} />
-              </View>
-              <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginLeft: 14, marginTop: 2 }}>
-                {isManager
-                  ? `Manager: ${owner?.managerName ?? 'You'}`
-                  : `Owner: ${owner?.ownerName ?? 'You'} • ${allPGs.length} PG${allPGs.length === 1 ? '' : 's'}`}
-              </Txt>
-            </AnimatedPress>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <TabHeader
+          actions={
+            <>
               <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotificationCenter(isManager ? 'MANAGER' : 'OWNER')}>
                 <View style={styles.bellBtn}>
                   <Ionicons name="notifications" size={18} color={Colors.primary} />
@@ -72,9 +51,29 @@ export default function OwnerTabsLayout() {
                   <Ionicons name="exit" size={18} color={Colors.danger} />
                 </View>
               </AnimatedPress>
+            </>
+          }
+        >
+          <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => setShowProfileMenu(true)} style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={[styles.dot, { backgroundColor: isManager ? Colors.tertiary : Colors.primary }]} />
+              <Txt size={16} weight="800" color={Colors.primaryDark} style={{ marginLeft: 6 }} numberOfLines={1}>
+                {owner?.pgName ?? 'Select PG'}
+              </Txt>
+              {isManager && (
+                <View style={styles.managerBadge}>
+                  <Txt size={9} weight="900" color={Colors.tertiary}>MANAGER</Txt>
+                </View>
+              )}
+              <Ionicons name="chevron-down" size={14} color={Colors.textMuted} style={{ marginLeft: 4 }} />
             </View>
-          </View>
-        </View>
+            <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginLeft: 14, marginTop: 2 }}>
+              {isManager
+                ? `Manager: ${owner?.managerName ?? 'You'}`
+                : `Owner: ${owner?.ownerName ?? 'You'} • ${allPGs.length} PG${allPGs.length === 1 ? '' : 's'}`}
+            </Txt>
+          </AnimatedPress>
+        </TabHeader>
 
         {/* ── Active tab content ───────────────────────────────────────────── */}
         <View style={{ flex: 1 }}>
@@ -82,8 +81,8 @@ export default function OwnerTabsLayout() {
         </View>
       </View>
 
-      {/* ── Sticky bottom dock — see PillDock in HeadlessDockTabButton.tsx ──────── */}
-      <PillDock>
+      {/* ── Sticky bottom dock — see Dock/useDock in HeadlessDockTabButton.tsx ──── */}
+      <Dock style={dockStyle}>
         <TabTrigger name="overview" href="/overview" asChild>
           <HeadlessDockTabButton icon="grid" label="Overview" />
         </TabTrigger>
@@ -102,7 +101,7 @@ export default function OwnerTabsLayout() {
         <TabTrigger name="reviews" href="/reviews" asChild>
           <HeadlessDockTabButton icon="star" label="Reviews" />
         </TabTrigger>
-      </PillDock>
+      </Dock>
 
       {/* Modals */}
       {showNotificationCenter && (
@@ -171,11 +170,7 @@ export default function OwnerTabsLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
-  header: {
-    paddingHorizontal: 18, paddingVertical: 14,
-    backgroundColor: Colors.surfaceElevated,
-    borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
-  },
+
   dot: { width: 8, height: 8, borderRadius: 4 },
   managerBadge: {
     marginLeft: 6, paddingHorizontal: 6, paddingVertical: 2,

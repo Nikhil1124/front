@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 export interface ProductImageGalleryProps {
   images: any[];
@@ -25,7 +25,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
       {/* Discount badge */}
       {discountPercent > 0 && (
         <View style={styles.discountBadge}>
-          <Ionicons name="pricetag" size={10} color={AppColors.surface} style={{ marginRight: 3 }} />
+          <Ionicons name="pricetag" size={10} color={Colors.surface} style={{ marginRight: 3 }} />
           <Ionicons name="text" size={0} />
         </View>
       )}
@@ -39,7 +39,7 @@ export const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         <Ionicons
           name={isWishlisted ? 'heart' : 'heart-outline'}
           size={18}
-          color={isWishlisted ? AppColors.error : AppColors.textSecondary}
+          color={isWishlisted ? Colors.danger : Colors.textSecondary}
         />
       </TouchableOpacity>
 
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     top: 8,
     left: 8,
     zIndex: 5,
-    backgroundColor: AppColors.error,
+    backgroundColor: Colors.danger,
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 3,
@@ -98,10 +98,10 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -133,10 +133,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: AppColors.border,
+    backgroundColor: Colors.borderSubtle,
   },
   activeDot: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     width: 14,
     borderRadius: 3,
   },

@@ -84,9 +84,9 @@ export function HubScreenWrapper({
         </AnimatedPress>
 
         <View style={styles.titleWrap}>
-          <Txt size={17} weight="800" color={Colors.textPrimary} numberOfLines={1}>{title}</Txt>
+          <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1}>{title}</Txt>
           {subtitle ? (
-            <Txt size={11} color={Colors.textMuted} numberOfLines={1} style={{ marginTop: 1 }}>
+            <Txt variant="caption" color={Colors.textMuted} numberOfLines={1} style={{ marginTop: 1 }}>
               {subtitle}
             </Txt>
           ) : null}

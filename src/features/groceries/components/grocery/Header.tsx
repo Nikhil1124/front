@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 interface HeaderProps {
   /** Static "delivering to" line — groceries always ship to the PG's own
@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-        <Ionicons name="arrow-back" size={22} color={AppColors.textPrimary} />
+        <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
       </TouchableOpacity>
       <View style={styles.headerLeft}>
         <View style={styles.deliveryContainer}>
@@ -54,9 +54,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 4 : 8,
     paddingBottom: 10,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.divider,
+    borderBottomColor: Colors.borderSubtle,
   },
   backBtn: {
     padding: 4,
@@ -73,14 +73,14 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   deliveryBadge: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
     gap: 3,
-    shadowColor: AppColors.primary,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -89,13 +89,11 @@ const styles = StyleSheet.create({
   deliveryBadgeText: {
     color: '#fff',
     fontSize: 10,
-    fontFamily: AppFonts.extraBold,
     letterSpacing: 0.3,
   },
   deliveryText: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.semiBold,
+    color: Colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -105,8 +103,7 @@ const styles = StyleSheet.create({
   },
   locationTitle: {
     fontSize: 14,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginRight: 2,
     maxWidth: '85%',
   },
@@ -117,12 +114,12 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: AppColors.primaryLight,
-    shadowColor: AppColors.primary,
+    borderColor: Colors.surfaceElevated,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -131,6 +128,5 @@ const styles = StyleSheet.create({
   profileAvatarText: {
     color: '#fff',
     fontSize: 16,
-    fontFamily: AppFonts.extraBold,
   },
 });

@@ -100,7 +100,7 @@ export function PnLChart({ data, interval, onIntervalChange, currency = '₹' }:
 
       {/* ── Chart ─────────────────────────────────────────────────────────── */}
       {data.monthly.length === 0 ? (
-        <Txt size={12} color={Colors.SlateMutedText} align="center" style={{ paddingVertical: 32 }}>
+        <Txt variant="caption" color={Colors.SlateMutedText} align="center" style={{ paddingVertical: 32 }}>
           No P&amp;L data for this period.
         </Txt>
       ) : (
@@ -112,11 +112,11 @@ export function PnLChart({ data, interval, onIntervalChange, currency = '₹' }:
       <Row gap={16} justify="center">
         <Row gap={6}>
           <View style={[styles.legendDot, { backgroundColor: Colors.CyberGreen }]} />
-          <Txt size={10} color={Colors.SlateMutedText}>Revenue</Txt>
+          <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Revenue</Txt>
         </Row>
         <Row gap={6}>
           <View style={[styles.legendDot, { backgroundColor: Palette.StatusRed }]} />
-          <Txt size={10} color={Colors.SlateMutedText}>Expenses</Txt>
+          <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Expenses</Txt>
         </Row>
       </Row>
     </Card>

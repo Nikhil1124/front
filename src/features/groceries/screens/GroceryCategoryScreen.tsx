@@ -8,7 +8,7 @@ import { mockCategories, mockProducts, getProductsByCategory, Category } from '.
 import { ProductCard } from '../components/grocery/ProductCard';
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
+import { Colors, Layout, Radii } from '@/theme';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 // Section Grouping Definition
@@ -147,7 +147,7 @@ export function GroceryCategoryScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
 
       <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
@@ -165,25 +165,25 @@ export function GroceryCategoryScreen() {
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={22} color={AppColors.textPrimary} />
+              <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </TouchableOpacity>
           ) : null}
 
           <View style={styles.searchBarContainer}>
-            <Ionicons name="search" size={20} color={AppColors.primary} />
+            <Ionicons name="search" size={20} color={Colors.primary} />
             <TextInput
               style={styles.headerSearchInput}
               placeholder={showProductList ? "Search products in category..." : 'Search "eggs", "milk", "rice"...'}
-              placeholderTextColor={AppColors.textMuted}
+              placeholderTextColor={Colors.textMuted}
               value={search}
               onChangeText={setSearch}
             />
             {!showProductList && (
-              <Ionicons name="mic-outline" size={20} color={AppColors.textSecondary} />
+              <Ionicons name="mic-outline" size={20} color={Colors.textSecondary} />
             )}
             {search.length > 0 && showProductList && (
               <TouchableOpacity onPress={() => setSearch('')}>
-                <Ionicons name="close-circle" size={18} color={AppColors.textMuted} />
+                <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -195,7 +195,7 @@ export function GroceryCategoryScreen() {
             <View style={styles.activeChip}>
               <Text style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
               <TouchableOpacity onPress={() => setActiveCategory(null)}>
-                <Ionicons name="close" size={14} color={AppColors.primary} />
+                <Ionicons name="close" size={14} color={Colors.primary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -301,7 +301,7 @@ export function GroceryCategoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   topHeader: {
     flexDirection: 'row',
@@ -314,29 +314,28 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    ...AppShadow.card,
+    ...Layout.shadowCard,
   },
   searchBarContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.surface,
-    borderRadius: AppRadius.pill,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.pill,
     paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 8,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   headerSearchInput: {
     flex: 1,
     fontSize: 14,
-    fontFamily: AppFonts.medium,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     padding: 0,
   },
   chipRow: {
@@ -347,18 +346,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: AppColors.primaryLight,
-    borderRadius: AppRadius.pill,
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Radii.pill,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
     gap: 6,
   },
   activeChipText: {
-    fontFamily: AppFonts.bold,
     fontSize: 12,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   activeCategoryHeader: {
     paddingHorizontal: 16,
@@ -367,13 +365,11 @@ const styles = StyleSheet.create({
   },
   activeCategoryTitle: {
     fontSize: 20,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   activeCategorySub: {
     fontSize: 12,
-    fontFamily: AppFonts.medium,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   sectionsScrollContent: {
@@ -386,8 +382,7 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 18,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 14,
     letterSpacing: -0.2,
   },
@@ -405,7 +400,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
@@ -417,8 +412,7 @@ const styles = StyleSheet.create({
   },
   catTitle: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     textAlign: 'center',
     marginTop: 6,
     lineHeight: 14,
@@ -440,15 +434,14 @@ const styles = StyleSheet.create({
   },
   emptyIcon: { fontSize: 40 },
   emptyText: {
-    fontFamily: AppFonts.semiBold,
     fontSize: 15,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
   },
   floatingCartContainer: {
     position: 'absolute',
     alignSelf: 'center',
     width: '85%',
-    ...AppShadow.modal,
+    ...Layout.shadowFloatingBar,
   },
   floatingCart: {
     backgroundColor: 'rgba(255,255,255,0.6)',
@@ -467,29 +460,26 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cartTotal: {
-    fontFamily: AppFonts.extraBold,
     fontSize: 14,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   cartSub: {
-    fontFamily: AppFonts.medium,
     fontSize: 11,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   viewCartBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 24,
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
   viewCartText: {
     color: '#fff',
-    fontFamily: AppFonts.extraBold,
     fontSize: 12,
   },
 });

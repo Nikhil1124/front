@@ -7,7 +7,7 @@ import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { ReplacementPicker } from '../components/grocery/ReplacementPicker';
 import { mockProducts } from '../data/mockProducts';
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors, AppFonts } from '../theme/AppColors';
+import { Colors } from '@/theme';
 import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -90,17 +90,17 @@ export function GroceryCartScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
       {/* 2. Cart Header */}
       <View style={[styles.header, { paddingTop: 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="close" size={20} color={AppColors.textPrimary} />
+          <Ionicons name="close" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Cart ({cartItemCount})</Text>
         {items.length > 0 ? (
           <TouchableOpacity onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
-            <Ionicons name="trash-outline" size={16} color={AppColors.error} />
+            <Ionicons name="trash-outline" size={16} color={Colors.danger} />
             <Text style={styles.clearText}>Clear</Text>
           </TouchableOpacity>
         ) : (
@@ -112,7 +112,7 @@ export function GroceryCartScreen() {
         /* 18. Empty Cart State */
         <View style={styles.emptyCart}>
           <View style={styles.emptyIconWrapper}>
-            <Ionicons name="cart-outline" size={64} color={AppColors.primary} />
+            <Ionicons name="cart-outline" size={64} color={Colors.primary} />
           </View>
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
           <Text style={styles.emptySubtitle}>
@@ -129,11 +129,11 @@ export function GroceryCartScreen() {
             <TouchableOpacity style={styles.deliveryCard} onPress={handleUpdateAddress} activeOpacity={0.9}>
               <View style={styles.deliveryLeft}>
                 <View style={styles.deliveryHeaderRow}>
-                  <Ionicons name="location-outline" size={16} color={AppColors.info} style={styles.locationIcon} />
+                  <Ionicons name="location-outline" size={16} color={Colors.info} style={styles.locationIcon} />
                   <Text style={styles.deliveryTitle}>Deliver to</Text>
                 </View>
                 <Text style={styles.deliveryAddress} numberOfLines={1}>
-                  {deliveryAddress} <Ionicons name="chevron-down" size={11} color={AppColors.textSecondary} />
+                  {deliveryAddress} <Ionicons name="chevron-down" size={11} color={Colors.textSecondary} />
                 </Text>
               </View>
               <View style={styles.deliveryRight}>
@@ -144,7 +144,7 @@ export function GroceryCartScreen() {
 
             {/* 4. Free Delivery Progress Box — delivery is free on every checkout slot for now. */}
             <View style={styles.freeDeliveryCard}>
-              <Ionicons name="checkmark-circle" size={18} color={AppColors.primary} />
+              <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
               <Text style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
             </View>
 
@@ -198,7 +198,7 @@ export function GroceryCartScreen() {
                           onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : handleRemoveItem(item.id, item.name)}
                           activeOpacity={0.7}
                         >
-                          <Ionicons name="remove" size={14} color={AppColors.primary} />
+                          <Ionicons name="remove" size={14} color={Colors.primary} />
                         </TouchableOpacity>
                         <Text style={styles.qtyText}>{item.quantity}</Text>
                         <TouchableOpacity
@@ -206,7 +206,7 @@ export function GroceryCartScreen() {
                           onPress={() => updateQuantity(item.id, item.quantity + 1)}
                           activeOpacity={0.7}
                         >
-                          <Ionicons name="add" size={14} color={AppColors.primary} />
+                          <Ionicons name="add" size={14} color={Colors.primary} />
                         </TouchableOpacity>
                       </View>
 
@@ -215,7 +215,7 @@ export function GroceryCartScreen() {
                         onPress={() => handleRemoveItem(item.id, item.name)}
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="trash-outline" size={12} color={AppColors.error} />
+                        <Ionicons name="trash-outline" size={12} color={Colors.danger} />
                         <Text style={styles.removeActionText}>Remove</Text>
                       </TouchableOpacity>
                     </View>
@@ -231,7 +231,7 @@ export function GroceryCartScreen() {
                     <Ionicons
                       name={isEditingReplacement ? 'chevron-up' : 'chevron-down'}
                       size={14}
-                      color={AppColors.primary}
+                      color={Colors.primary}
                     />
                   </TouchableOpacity>
 
@@ -276,7 +276,7 @@ export function GroceryCartScreen() {
               {totalSavings > 0 && (
                 <View style={styles.billRow}>
                   <Text style={styles.billLabel}>Discount</Text>
-                  <Text style={[styles.billValue, { color: AppColors.error }]}>-₹{totalSavings}</Text>
+                  <Text style={[styles.billValue, { color: Colors.danger }]}>-₹{totalSavings}</Text>
                 </View>
               )}
 
@@ -292,7 +292,7 @@ export function GroceryCartScreen() {
 
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>Delivery Fee</Text>
-                <Text style={[styles.billValue, { color: AppColors.primary }]}>FREE</Text>
+                <Text style={[styles.billValue, { color: Colors.primary }]}>FREE</Text>
               </View>
 
               <View style={[styles.billRow, styles.totalRow]}>
@@ -327,15 +327,15 @@ export function GroceryCartScreen() {
             {/* 15. Trust / Quality Reassurance strip */}
             <View style={styles.reassuranceStrip}>
               <View style={styles.reassuranceItem}>
-                <Ionicons name="checkmark-circle" size={14} color={AppColors.primary} />
+                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
                 <Text style={styles.reassuranceText}>Quality Checked</Text>
               </View>
               <View style={styles.reassuranceItem}>
-                <Ionicons name="checkmark-circle" size={14} color={AppColors.primary} />
+                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
                 <Text style={styles.reassuranceText}>Hygienically Packed</Text>
               </View>
               <View style={styles.reassuranceItem}>
-                <Ionicons name="checkmark-circle" size={14} color={AppColors.primary} />
+                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
                 <Text style={styles.reassuranceText}>Easy Replacement</Text>
               </View>
             </View>
@@ -356,7 +356,7 @@ export function GroceryCartScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.checkoutBtnText}>{isChef ? 'Request via Manager' : 'Proceed to Checkout'}</Text>
-              <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={AppColors.surface} style={{ marginLeft: 4 }} />
+              <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
         </>
@@ -369,7 +369,7 @@ export function GroceryCartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   header: {
     flexDirection: 'row',
@@ -378,19 +378,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-    backgroundColor: AppColors.surface,
+    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
   },
   backBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
@@ -398,8 +398,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   clearBtn: {
     flexDirection: 'row',
@@ -410,8 +409,7 @@ const styles = StyleSheet.create({
   },
   clearText: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.error,
+    color: Colors.danger,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -421,11 +419,11 @@ const styles = StyleSheet.create({
   // Delivery layout (Split Row)
   deliveryCard: {
     flexDirection: 'row',
-    backgroundColor: AppColors.infoLight,
+    backgroundColor: '#EFF6FF',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     marginBottom: 16,
   },
   deliveryLeft: {
@@ -443,39 +441,35 @@ const styles = StyleSheet.create({
   },
   deliveryTitle: {
     fontSize: 10,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textSecondary,
   },
   deliveryAddress: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   deliveryRight: {
     flex: 1,
     paddingLeft: 12,
     borderLeftWidth: 1,
-    borderLeftColor: AppColors.border,
+    borderLeftColor: Colors.borderSubtle,
     justifyContent: 'center',
   },
   deliveryRightLabel: {
     fontSize: 10,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textSecondary,
     marginBottom: 2,
   },
   deliveryTimeText: {
-    color: AppColors.info,
-    fontFamily: AppFonts.bold,
+    color: Colors.info,
     fontSize: 12,
   },
   // Free delivery tag
   freeDeliveryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -483,25 +477,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   freeDeliveryText: {
-    color: AppColors.primaryDark,
+    color: Colors.primaryDark,
     fontSize: 12,
-    fontFamily: AppFonts.bold,
   },
   sectionHeading: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   // Cart Card Layout
   cartCard: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 14,
     padding: 14,
     marginBottom: 12,
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 2,
@@ -515,8 +507,8 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    backgroundColor: AppColors.surface,
+    borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -532,20 +524,17 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     lineHeight: 18,
     marginBottom: 2,
   },
   itemUnit: {
     fontSize: 12,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
   },
   unitRateText: {
     fontSize: 10,
-    color: AppColors.textMuted,
-    fontFamily: AppFonts.regular,
+    color: Colors.textMuted,
     marginTop: 2,
   },
   priceRow: {
@@ -556,19 +545,16 @@ const styles = StyleSheet.create({
   },
   itemPrice: {
     fontSize: 15,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   strikePrice: {
     fontSize: 11,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     textDecorationLine: 'line-through',
-    fontFamily: AppFonts.regular,
   },
   itemSavingsText: {
     fontSize: 10,
-    color: AppColors.primary,
-    fontFamily: AppFonts.bold,
+    color: Colors.primary,
     marginTop: 2,
   },
   actionsContainer: {
@@ -579,9 +565,9 @@ const styles = StyleSheet.create({
   quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
     borderRadius: 8,
     height: 32,
     paddingHorizontal: 2,
@@ -591,14 +577,13 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 4,
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
   qtyText: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     minWidth: 14,
     textAlign: 'center',
   },
@@ -610,8 +595,7 @@ const styles = StyleSheet.create({
   },
   removeActionText: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.error,
+    color: Colors.danger,
   },
   replacementToggle: {
     flexDirection: 'row',
@@ -620,7 +604,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    borderTopColor: Colors.borderSubtle,
   },
   replacementPickerWrapper: {
     marginTop: 8,
@@ -629,9 +613,9 @@ const styles = StyleSheet.create({
   savingsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
     borderRadius: 14,
     padding: 12,
     marginBottom: 16,
@@ -645,39 +629,35 @@ const styles = StyleSheet.create({
   },
   savingsCardTitle: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   savingsCardSubtitle: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     marginTop: 1,
   },
   savingsBadge: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 3,
   },
   savingsBadgeText: {
-    color: AppColors.surface,
+    color: Colors.surface,
     fontSize: 10,
-    fontFamily: AppFonts.bold,
   },
   // Bill Details card
   billCard: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     marginBottom: 16,
   },
   billTitle: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   billRow: {
@@ -687,34 +667,30 @@ const styles = StyleSheet.create({
   },
   billLabel: {
     fontSize: 12,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textSecondary,
   },
   billValue: {
     fontSize: 12,
-    color: AppColors.textPrimary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textPrimary,
   },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    borderTopColor: Colors.borderSubtle,
     paddingTop: 10,
     marginTop: 6,
     marginBottom: 0,
   },
   totalLabel: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   totalValue: {
     fontSize: 16,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   billFootnote: {
     fontSize: 10.5,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginTop: 6,
   },
   // You May Also Need Section
@@ -729,22 +705,20 @@ const styles = StyleSheet.create({
   },
   recTitle: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   recSeeAllText: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   recScrollContent: {
     gap: 8,
   },
   recCard: {
     width: 125,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 14,
     padding: 10,
     position: 'relative',
@@ -754,16 +728,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     left: 6,
-    backgroundColor: AppColors.error,
+    backgroundColor: Colors.danger,
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
     zIndex: 2,
   },
   recDiscountText: {
-    color: AppColors.surface,
+    color: Colors.surface,
     fontSize: 8,
-    fontFamily: AppFonts.bold,
   },
   recImageContainer: {
     height: 70,
@@ -771,7 +744,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 4,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
   },
   recImage: {
     width: '80%',
@@ -780,14 +753,12 @@ const styles = StyleSheet.create({
   },
   recName: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginTop: 4,
   },
   recUnit: {
     fontSize: 9,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     marginBottom: 4,
   },
   recPriceRow: {
@@ -798,38 +769,35 @@ const styles = StyleSheet.create({
   },
   recPrice: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   recStrikePrice: {
     fontSize: 9,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     textDecorationLine: 'line-through',
-    fontFamily: AppFonts.regular,
   },
   recAddBtn: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
     borderRadius: 6,
     paddingVertical: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   recAddBtnText: {
-    color: AppColors.primary,
+    color: Colors.primary,
     fontSize: 11,
-    fontFamily: AppFonts.bold,
   },
   // Reassurance strip
   reassuranceStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 10,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     marginBottom: 10,
   },
   reassuranceItem: {
@@ -839,8 +807,7 @@ const styles = StyleSheet.create({
   },
   reassuranceText: {
     fontSize: 9,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   // Sticky Bottom Checkout
   stickyCheckoutBar: {
@@ -849,14 +816,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    borderTopColor: Colors.borderSubtle,
     paddingHorizontal: 16,
     paddingTop: 10,
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -867,17 +834,15 @@ const styles = StyleSheet.create({
   },
   checkoutPrice: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   checkoutInfoText: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     marginTop: 1,
   },
   checkoutBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 18,
@@ -887,8 +852,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   checkoutBtnText: {
-    color: AppColors.surface,
-    fontFamily: AppFonts.bold,
+    color: Colors.surface,
     fontSize: 13,
   },
   // Empty state stylings
@@ -897,48 +861,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   emptyIconWrapper: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
     borderWidth: 1.5,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
   },
   emptyTitle: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 13,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 24,
   },
   shopBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 32,
-    shadowColor: AppColors.primary,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 3,
   },
   shopBtnText: {
-    color: AppColors.surface,
-    fontFamily: AppFonts.bold,
+    color: Colors.surface,
     fontSize: 14,
   },
 });

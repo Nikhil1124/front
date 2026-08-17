@@ -17,13 +17,13 @@ export function WelcomeScreen() {
             PGow
           </Txt>
           <View style={styles.taglineBadge}>
-            <Txt size={11} weight="800" color={Colors.primaryDark} align="center" style={styles.tagline}>
+            <Txt variant="caption" weight="800" color={Colors.primaryDark} align="center" style={styles.tagline}>
               SMART CO-LIVING & PG MANAGEMENT
             </Txt>
           </View>
         </View>
 
-        <Txt size={13} weight="800" color={Colors.textSecondary} align="center" style={styles.portalHeading}>
+        <Txt variant="body" weight="800" color={Colors.textSecondary} align="center" style={styles.portalHeading}>
           CHOOSE YOUR PORTAL
         </Txt>
       </View>
@@ -48,7 +48,7 @@ export function WelcomeScreen() {
               <View style={[styles.iconCircle, { backgroundColor: 'rgba(13, 148, 136, 0.12)' }]}>
                 <Ionicons name="business" size={20} color={Colors.primary} />
               </View>
-              <Txt size={15} weight="800" color={Colors.textPrimary}>
+              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
                 PG Owner / Admin
               </Txt>
             </Row>
@@ -63,7 +63,7 @@ export function WelcomeScreen() {
                 style={{ flex: 1.1 }}
                 testID="welcome_register_button"
               >
-                <Txt size={13} weight="700" color={Colors.textInverse}>Register PG</Txt>
+                <Txt variant="body" weight="700" color={Colors.textInverse}>Register PG</Txt>
               </Btn>
               <OutlinedBtn
                 onPress={() => { hapticSelect(); router.push('/owner-login'); }}
@@ -74,7 +74,7 @@ export function WelcomeScreen() {
                 style={{ flex: 1 }}
                 testID="welcome_login_button"
               >
-                <Txt size={13} weight="700" color={Colors.primary}>Owner Login</Txt>
+                <Txt variant="body" weight="700" color={Colors.primary}>Owner Login</Txt>
               </OutlinedBtn>
             </Row>
           </Card>
@@ -98,7 +98,7 @@ export function WelcomeScreen() {
               <View style={[styles.iconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
                 <Ionicons name="home" size={20} color={Colors.success} />
               </View>
-              <Txt size={15} weight="800" color={Colors.textPrimary}>
+              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
                 Resident / Guest
               </Txt>
             </Row>
@@ -111,7 +111,7 @@ export function WelcomeScreen() {
               height={44}
             >
               <Ionicons name="log-in-outline" size={18} color={Colors.textInverse} style={{ marginRight: 6 }} />
-              <Txt size={13} weight="800" color={Colors.textInverse}>
+              <Txt variant="body" weight="800" color={Colors.textInverse}>
                 Resident Login / Join
               </Txt>
             </Btn>
@@ -136,7 +136,7 @@ export function WelcomeScreen() {
               <View style={[styles.iconCircle, { backgroundColor: '#f0f0f0ff' }]}>
                 <Ionicons name="restaurant" size={20} color={Colors.CyberAmber} />
               </View>
-              <Txt size={15} weight="800" color={Colors.textPrimary}>
+              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
                 Kitchen Staff & Chefs Portal
               </Txt>
             </Row>
@@ -149,7 +149,7 @@ export function WelcomeScreen() {
               height={44}
             >
               <Ionicons name="restaurant" size={18} color={Colors.CyberAmber} style={{ marginRight: 6 }} />
-              <Txt size={13} weight="700" color={Colors.CyberAmber}>
+              <Txt variant="body" weight="700" color={Colors.CyberAmber}>
                 Open Staff Dashboard
               </Txt>
             </Btn>
@@ -159,7 +159,7 @@ export function WelcomeScreen() {
 
       {/* Clean Bottom Note */}
       <View style={styles.footer}>
-        <Txt size={11} weight="600" color={Colors.textMuted} align="center">
+        <Txt variant="caption" weight="600" color={Colors.textMuted} align="center">
           Secure-Smart Living Experience
         </Txt>
       </View>

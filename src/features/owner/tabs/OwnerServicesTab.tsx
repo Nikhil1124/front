@@ -52,7 +52,7 @@ export function OwnerServicesTab() {
             </View>
             <Col style={{ flex: 1 }}>
               <Txt size={13} weight="900" color={Colors.textPrimary}>Procurement</Txt>
-              <Txt size={11} color={Colors.textSecondary}>
+              <Txt variant="caption" color={Colors.textSecondary}>
                 {isManagerMode
                   ? 'Submit carts for owner approval'
                   : `${pendingCount} order${pendingCount === 1 ? '' : 's'} awaiting your approval`}
@@ -75,47 +75,47 @@ export function OwnerServicesTab() {
           testID="services_open_procurement_btn"
         >
           <Ionicons name={isManagerMode ? 'cart' : 'checkmark-done'} size={16} color={Colors.textInverse} />
-          <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
+          <Txt variant="caption" weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
             {isManagerMode ? 'Open Procurement Catalog' : 'Open Approval Queue'}
           </Txt>
         </Btn>
       </Card>
 
-      <Txt size={16} weight="900" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>PG SERVICES</Txt>
+      <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>PG SERVICES</Txt>
 
       <Card containerColor={Colors.surfaceElevated} borderRadius={14} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 12]}>
         <Row gap={10} align="center">
           <Txt size={24}>🛠️</Txt>
           <Col>
             <Txt size={13} weight="900" color={Colors.textPrimary}>Pronto On-Demand PG Repairs</Txt>
-            <Txt size={11} color={Colors.tertiary}>15-Min Express doorstep arrival for Plumbing, Electricals, Locks & ACs</Txt>
+            <Txt variant="caption" color={Colors.tertiary}>15-Min Express doorstep arrival for Plumbing, Electricals, Locks & ACs</Txt>
           </Col>
         </Row>
       </Card>
       <Row justify="space-between" align="center">
-        <Txt size={13} weight="700" color={Colors.textPrimary}>Active & Past PG Repairs</Txt>
+        <Txt variant="body" weight="700" color={Colors.textPrimary}>Active & Past PG Repairs</Txt>
         <Btn onPress={() => setShowBookRepair(true)} containerColor={Colors.tertiary} textColor={Colors.textInverse} borderRadius={8} height={32} contentStyle={{ paddingHorizontal: 10 }}>
           <Ionicons name="build" size={14} color={Colors.textInverse} />
-          <Txt size={11} weight="700" color={Colors.textInverse} style={{ marginLeft: 4 }}>Book Technician</Txt>
+          <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 4 }}>Book Technician</Txt>
         </Btn>
       </Row>
       {repairs.length === 0 ? (
         <Card containerColor={Colors.surface} borderRadius={12} padding={[16, 16]}>
-          <Txt size={11} color={Colors.textMuted}>No repair requests logged.{'\n'}Click 'Book Technician' to dispatch a certified PG repair expert!</Txt>
+          <Txt variant="caption" color={Colors.textMuted}>No repair requests logged.{'\n'}Click 'Book Technician' to dispatch a certified PG repair expert!</Txt>
         </Card>
       ) : (
         repairs.map((rep) => (
           <Card key={rep.id} containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row justify="space-between" align="center">
               <Txt size={13} weight="900" color={Colors.tertiary}>{rep.category} • {rep.urgency}</Txt>
-              <View style={[styles.statusPill, { backgroundColor: '#FFFBEB' }]}><Txt size={10} weight="700" color={Colors.tertiary}>{rep.status}</Txt></View>
+              <View style={[styles.statusPill, { backgroundColor: '#FFFBEB' }]}><Txt variant="labelSmall" color={Colors.tertiary}>{rep.status}</Txt></View>
             </Row>
             <Spacer size={6} />
-            <Txt size={12} weight="700" color={Colors.textPrimary}>{rep.issueTitle}</Txt>
+            <Txt variant="caption" weight="700" color={Colors.textPrimary}>{rep.issueTitle}</Txt>
             <View style={styles.techBox}>
               <Col style={{ flex: 1 }}>
-                <Txt size={11} weight="700" color={Colors.textPrimary}>Technician: {rep.assignedTechnicianName}</Txt>
-                <Txt size={10} color={Colors.textMuted}>Phone: {rep.technicianPhone} • Rating: ★{rep.technicianRating}</Txt>
+                <Txt variant="caption" weight="700" color={Colors.textPrimary}>Technician: {rep.assignedTechnicianName}</Txt>
+                <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Phone: {rep.technicianPhone} • Rating: ★{rep.technicianRating}</Txt>
               </Col>
               <Txt size={11} weight="900" color={Colors.primary}>ETA: {rep.etaMinutes}m</Txt>
             </View>

@@ -8,7 +8,7 @@ import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { mockProducts, EnrichedProduct } from '../data/mockProducts';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { AppColors, AppFonts } from '../theme/AppColors';
+import { Colors } from '@/theme';
 
 // Extracted shared components
 import { MiniProductCard } from '../components/ui/MiniProductCard';
@@ -101,9 +101,9 @@ export function GroceryProductScreen() {
   if (!product || options.length === 0) {
     return (
       <View style={styles.errorContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
         <View style={styles.errorState}>
-          <Ionicons name="alert-circle-outline" size={48} color={AppColors.textSecondary} />
+          <Ionicons name="alert-circle-outline" size={48} color={Colors.textSecondary} />
           <Text style={styles.errorText}>Product not found</Text>
           <TouchableOpacity style={styles.backBtnError} onPress={() => router.back()}>
             <Text style={styles.backBtnText}>Go Back</Text>
@@ -146,22 +146,22 @@ export function GroceryProductScreen() {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
       {/* Floating top header */}
       <View style={[styles.floatingHeader, { paddingTop: 8 }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
+          <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerBtn} onPress={handleShare} activeOpacity={0.7}>
-            <Ionicons name="share-social-outline" size={18} color={AppColors.textPrimary} />
+            <Ionicons name="share-social-outline" size={18} color={Colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/groceries/categories')} activeOpacity={0.7}>
-            <Ionicons name="search" size={18} color={AppColors.textPrimary} />
+            <Ionicons name="search" size={18} color={Colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/groceries/cart')} activeOpacity={0.7}>
-            <Ionicons name="cart-outline" size={18} color={AppColors.textPrimary} />
+            <Ionicons name="cart-outline" size={18} color={Colors.textPrimary} />
             {cartItemCount > 0 && (
               <View style={styles.headerCartBadge}>
                 <Text style={styles.headerCartBadgeText}>{cartItemCount}</Text>
@@ -191,7 +191,7 @@ export function GroceryProductScreen() {
               <Ionicons
                 name={isWishlisted ? 'heart' : 'heart-outline'}
                 size={18}
-                color={isWishlisted ? AppColors.error : AppColors.textSecondary}
+                color={isWishlisted ? Colors.danger : Colors.textSecondary}
               />
             </TouchableOpacity>
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
@@ -224,7 +224,7 @@ export function GroceryProductScreen() {
               {product.name.toLowerCase().includes('rice') ? 'Extra Long Grain • Premium Quality' : 'Hygienically Sorted • Best Fresh Quality'}
             </Text>
             <View style={styles.ratingsRow}>
-              <Ionicons name="star" size={12} color={AppColors.rating} />
+              <Ionicons name="star" size={12} color={Colors.warning} />
               <Text style={styles.ratingScore}>{product.rating || 4.7}</Text>
               <Text style={styles.ratingTotal}> | 1K+ ratings</Text>
             </View>
@@ -296,7 +296,7 @@ export function GroceryProductScreen() {
           <View style={styles.deliveryCard}>
             <View style={styles.deliveryLeft}>
               <View style={styles.deliveryHeaderRow}>
-                <Ionicons name="bicycle" size={16} color={AppColors.info} />
+                <Ionicons name="bicycle" size={16} color={Colors.info} />
                 <Text style={styles.deliveryTitle}>Delivery to</Text>
               </View>
               <Text style={styles.deliveryAddress} numberOfLines={1}>
@@ -313,7 +313,7 @@ export function GroceryProductScreen() {
           <View style={styles.reassuranceStrip}>
             {['Quality Checked', 'Hygienically Packed', 'Easy Replacement'].map((item) => (
               <View key={item} style={styles.reassuranceItem}>
-                <Ionicons name="checkmark-circle" size={14} color={AppColors.primary} />
+                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
                 <Text style={styles.reassuranceText}>{item}</Text>
               </View>
             ))}
@@ -330,7 +330,7 @@ export function GroceryProductScreen() {
               <Ionicons
                 name={isDetailsExpanded ? 'chevron-up' : 'chevron-down'}
                 size={18}
-                color={AppColors.textPrimary}
+                color={Colors.textPrimary}
               />
             </TouchableOpacity>
             {isDetailsExpanded && (
@@ -376,19 +376,19 @@ export function GroceryProductScreen() {
 
         {cartItemCount > 0 && (
           <TouchableOpacity style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
-            <Ionicons name="cart-outline" size={14} color={AppColors.primary} />
+            <Ionicons name="cart-outline" size={14} color={Colors.primary} />
             <Text style={styles.stickyCartText}>View Cart ({cartItemCount})</Text>
           </TouchableOpacity>
         )}
 
         {quantity > 0 ? (
           <TouchableOpacity style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
-            <Ionicons name="checkmark-circle-outline" size={16} color={AppColors.surface} style={{ marginRight: 4 }} />
+            <Ionicons name="checkmark-circle-outline" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
             <Text style={styles.stickyAddBtnText}>Added ✓</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.stickyAddBtn} onPress={handleAdd} activeOpacity={0.8}>
-            <Ionicons name="cart" size={16} color={AppColors.surface} style={{ marginRight: 4 }} />
+            <Ionicons name="cart" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
             <Text style={styles.stickyAddBtnText}>Add to Cart</Text>
           </TouchableOpacity>
         )}
@@ -399,94 +399,94 @@ export function GroceryProductScreen() {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: AppColors.background },
+  container: { flex: 1, backgroundColor: Colors.canvas },
   scrollContent: { paddingBottom: 110 },
-  errorContainer: { flex: 1, backgroundColor: AppColors.surface },
+  errorContainer: { flex: 1, backgroundColor: Colors.surface },
   errorState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, gap: 12 },
-  errorText: { fontSize: 16, color: AppColors.textSecondary, fontFamily: AppFonts.bold },
-  backBtnError: { backgroundColor: AppColors.primary, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8 },
-  backBtnText: { color: AppColors.surface, fontFamily: AppFonts.bold, fontSize: 13 },
+  backBtnError: { backgroundColor: Colors.primary, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8 },
 
   floatingHeader: { position: 'absolute', left: 0, right: 0, top: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerRight: { flexDirection: 'row', gap: 8 },
-  headerBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: AppColors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: AppColors.textPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3, position: 'relative' },
-  headerCartBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: AppColors.primary, borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
-  headerCartBadgeText: { color: AppColors.surface, fontSize: 9, fontFamily: AppFonts.bold },
+  headerBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3, position: 'relative' },
+  headerCartBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: Colors.primary, borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
 
-  topRowSection: { flexDirection: 'row', backgroundColor: AppColors.surface, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: AppColors.border, gap: 14 },
-  leftImageColumn: { width: '44%', height: 170, justifyContent: 'center', alignItems: 'center', position: 'relative', backgroundColor: AppColors.surface },
-  discountBadge: { position: 'absolute', top: 2, left: 2, backgroundColor: AppColors.error, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, zIndex: 3 },
-  discountBadgeText: { color: AppColors.surface, fontSize: 9, fontFamily: AppFonts.bold },
-  wishlistBtn: { position: 'absolute', top: 2, right: 2, width: 28, height: 28, borderRadius: 14, backgroundColor: AppColors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: AppColors.textPrimary, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 2, zIndex: 3 },
+  topRowSection: { flexDirection: 'row', backgroundColor: Colors.surface, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, gap: 14 },
+  leftImageColumn: { width: '44%', height: 170, justifyContent: 'center', alignItems: 'center', position: 'relative', backgroundColor: Colors.surface },
+  discountBadge: { position: 'absolute', top: 2, left: 2, backgroundColor: Colors.danger, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, zIndex: 3 },
+  wishlistBtn: { position: 'absolute', top: 2, right: 2, width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 2, zIndex: 3 },
   imageScroll: { width: '100%' },
   mainImageWrapper: { width: 140, height: 140, justifyContent: 'center', alignItems: 'center' },
   mainImage: { width: '90%', height: '90%', resizeMode: 'contain' },
   paginationRow: { flexDirection: 'row', gap: 3, position: 'absolute', bottom: -6, alignSelf: 'center' },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: AppColors.border },
-  activeDot: { width: 10, backgroundColor: AppColors.primary },
+  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.borderSubtle },
+  activeDot: { width: 10, backgroundColor: Colors.primary },
 
   rightInfoColumn: { width: '52%', justifyContent: 'center' },
-  statusBadge: { alignSelf: 'flex-start', backgroundColor: AppColors.softGreen, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 6 },
-  statusBadgeText: { color: AppColors.primary, fontSize: 8, fontFamily: AppFonts.bold },
-  productTitle: { fontSize: 18, fontFamily: AppFonts.bold, color: AppColors.textPrimary, marginBottom: 2 },
-  productSubtitle: { fontSize: 12, color: AppColors.textSecondary, fontFamily: AppFonts.regular, marginBottom: 8 },
+  statusBadge: { alignSelf: 'flex-start', backgroundColor: '#DCFCE7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 6 },
   ratingsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  ratingScore: { fontSize: 12, fontFamily: AppFonts.bold, color: AppColors.textPrimary, marginLeft: 3 },
-  ratingTotal: { fontSize: 11, color: AppColors.textSecondary, fontFamily: AppFonts.regular },
-  currentPrice: { fontSize: 20, fontFamily: AppFonts.bold, color: AppColors.primary, marginBottom: 4 },
   mrpRow: { flexDirection: 'row', alignItems: 'center' },
-  mrpText: { fontSize: 11, color: AppColors.textMuted, textDecorationLine: 'line-through', fontFamily: AppFonts.regular },
-  savingsAmountText: { fontSize: 11, color: AppColors.error, fontFamily: AppFonts.bold },
-  miniWholesaleCard: { backgroundColor: AppColors.primaryLight, borderWidth: 1, borderColor: AppColors.softGreen, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 6 },
-  miniWholesaleText: { fontSize: 10, fontFamily: AppFonts.bold, color: AppColors.primary, lineHeight: 14 },
-  greenBold: { color: AppColors.primary, fontFamily: AppFonts.extraBold },
+  miniWholesaleCard: { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 6 },
 
   bodyContent: { paddingHorizontal: 16, paddingTop: 16 },
 
-  packQtyCard: { flexDirection: 'row', backgroundColor: AppColors.surface, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: AppColors.border, marginBottom: 16, alignItems: 'center' },
+  packQtyCard: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16, alignItems: 'center' },
   packLeftSection: { flex: 1, paddingRight: 8 },
-  sectionHeading: { fontSize: 12, fontFamily: AppFonts.bold, color: AppColors.textPrimary, marginBottom: 6 },
   packSizesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  packTab: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 6, borderWidth: 1.2, borderColor: AppColors.border, backgroundColor: AppColors.surface },
-  selectedPackTab: { borderColor: AppColors.primary, backgroundColor: AppColors.primaryLight },
-  packText: { fontSize: 11, color: AppColors.textSecondary, fontFamily: AppFonts.bold },
-  selectedPackText: { color: AppColors.primary },
-  qtyRightSection: { width: 100, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: AppColors.border, paddingLeft: 8 },
-  quantityLabel: { fontSize: 11, fontFamily: AppFonts.bold, color: AppColors.textPrimary, marginBottom: 6 },
-  inlineAddBtn: { backgroundColor: AppColors.primary, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
-  inlineAddText: { color: AppColors.surface, fontSize: 11, fontFamily: AppFonts.bold },
+  packTab: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 6, borderWidth: 1.2, borderColor: Colors.borderSubtle, backgroundColor: Colors.surface },
+  selectedPackTab: { borderColor: Colors.primary, backgroundColor: Colors.surfaceElevated },
+  selectedPackText: { color: Colors.primary },
+  qtyRightSection: { width: 100, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: Colors.borderSubtle, paddingLeft: 8 },
+  inlineAddBtn: { backgroundColor: Colors.primary, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
 
-  deliveryCard: { flexDirection: 'row', backgroundColor: AppColors.infoLight, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: AppColors.border, marginBottom: 16 },
+  deliveryCard: { flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
   deliveryLeft: { flex: 1.2, justifyContent: 'center' },
   deliveryHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
-  deliveryTitle: { fontSize: 10, color: AppColors.textSecondary, fontFamily: AppFonts.bold },
-  deliveryAddress: { fontSize: 12, fontFamily: AppFonts.bold, color: AppColors.textPrimary },
-  deliveryRight: { flex: 1, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: AppColors.border, justifyContent: 'center' },
-  deliveryRightLabel: { fontSize: 10, color: AppColors.textSecondary, fontFamily: AppFonts.bold, marginBottom: 2 },
-  deliveryTimeText: { color: AppColors.info, fontFamily: AppFonts.bold, fontSize: 12 },
+  deliveryRight: { flex: 1, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: Colors.borderSubtle, justifyContent: 'center' },
 
-  reassuranceStrip: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: AppColors.surface, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: AppColors.border, marginBottom: 16 },
+  reassuranceStrip: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: Colors.surface, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
   reassuranceItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  reassuranceText: { fontSize: 9, fontFamily: AppFonts.bold, color: AppColors.textPrimary },
 
-  detailsAccordionCard: { backgroundColor: AppColors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: AppColors.border, marginBottom: 20 },
+  detailsAccordionCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 20 },
   accordionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  accordionHeading: { fontSize: 14, fontFamily: AppFonts.bold, color: AppColors.textPrimary },
-  accordionContent: { marginTop: 10, borderTopWidth: 1, borderTopColor: AppColors.border, paddingTop: 6 },
-  accordionRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: AppColors.background },
-  accordionLabel: { fontSize: 12, color: AppColors.textSecondary, fontFamily: AppFonts.bold },
-  accordionValue: { fontSize: 12, color: AppColors.textPrimary, fontFamily: AppFonts.bold },
+  accordionContent: { marginTop: 10, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, paddingTop: 6 },
+  accordionRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.canvas },
 
   relatedSection: { marginBottom: 10 },
   relatedScrollContent: { gap: 8 },
 
-  stickyPurchaseBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: AppColors.surface, borderTopWidth: 1, borderTopColor: AppColors.border, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center', justifyContent: 'space-between', shadowColor: AppColors.textPrimary, shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 8 },
+  stickyPurchaseBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center', justifyContent: 'space-between', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 8 },
   stickyBarLeft: { justifyContent: 'center' },
-  stickyPrice: { fontSize: 18, fontFamily: AppFonts.bold, color: AppColors.primary },
-  stickyInfoText: { fontSize: 11, color: AppColors.textSecondary, fontFamily: AppFonts.regular, marginTop: 1 },
   stickyBarMiddle: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  stickyCartText: { color: AppColors.primary, fontSize: 11, fontFamily: AppFonts.bold },
-  stickyAddBtn: { backgroundColor: AppColors.primary, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 18, minWidth: 120, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-  addedBtn: { backgroundColor: AppColors.primaryDark },
-  stickyAddBtnText: { color: AppColors.surface, fontFamily: AppFonts.bold, fontSize: 13 },
+  stickyAddBtn: { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 18, minWidth: 120, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+  addedBtn: { backgroundColor: Colors.primaryDark },
+  errorText: { fontSize: 16, color: Colors.textSecondary, fontWeight: '700' as const },
+  backBtnText: { color: Colors.surface, fontWeight: '700' as const, fontSize: 13 },
+  headerCartBadgeText: { color: Colors.surface, fontSize: 9, fontWeight: '700' as const },
+  discountBadgeText: { color: Colors.surface, fontSize: 9, fontWeight: '700' as const },
+  statusBadgeText: { color: Colors.primary, fontSize: 8, fontWeight: '700' as const },
+  productTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.textPrimary, marginBottom: 2 },
+  productSubtitle: { fontSize: 12, color: Colors.textSecondary, fontWeight: '400' as const, marginBottom: 8 },
+  ratingScore: { fontSize: 12, fontWeight: '700' as const, color: Colors.textPrimary, marginLeft: 3 },
+  ratingTotal: { fontSize: 11, color: Colors.textSecondary, fontWeight: '400' as const },
+  currentPrice: { fontSize: 20, fontWeight: '700' as const, color: Colors.primary, marginBottom: 4 },
+  mrpText: { fontSize: 11, color: Colors.textMuted, textDecorationLine: 'line-through' as const, fontWeight: '400' as const },
+  savingsAmountText: { fontSize: 11, color: Colors.danger, fontWeight: '700' as const },
+  miniWholesaleText: { fontSize: 10, fontWeight: '700' as const, color: Colors.primary, lineHeight: 14 },
+  greenBold: { color: Colors.primary, fontWeight: '800' as const },
+  sectionHeading: { fontSize: 12, fontWeight: '700' as const, color: Colors.textPrimary, marginBottom: 6 },
+  packText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '700' as const },
+  quantityLabel: { fontSize: 11, fontWeight: '700' as const, color: Colors.textPrimary, marginBottom: 6 },
+  inlineAddText: { color: Colors.surface, fontSize: 11, fontWeight: '700' as const },
+  deliveryTitle: { fontSize: 10, color: Colors.textSecondary, fontWeight: '700' as const },
+  deliveryAddress: { fontSize: 12, fontWeight: '700' as const, color: Colors.textPrimary },
+  deliveryRightLabel: { fontSize: 10, color: Colors.textSecondary, fontWeight: '700' as const, marginBottom: 2 },
+  deliveryTimeText: { color: Colors.info, fontWeight: '700' as const, fontSize: 12 },
+  reassuranceText: { fontSize: 9, fontWeight: '700' as const, color: Colors.textPrimary },
+  accordionHeading: { fontSize: 14, fontWeight: '700' as const, color: Colors.textPrimary },
+  accordionLabel: { fontSize: 12, color: Colors.textSecondary, fontWeight: '700' as const },
+  accordionValue: { fontSize: 12, color: Colors.textPrimary, fontWeight: '700' as const },
+  stickyPrice: { fontSize: 18, fontWeight: '700' as const, color: Colors.primary },
+  stickyInfoText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '400' as const, marginTop: 1 },
+  stickyCartText: { color: Colors.primary, fontSize: 11, fontWeight: '700' as const },
+  stickyAddBtnText: { color: Colors.surface, fontWeight: '700' as const, fontSize: 13 },
 });

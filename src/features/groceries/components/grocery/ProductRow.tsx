@@ -3,7 +3,7 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View
 import { EnrichedProduct } from '../../data/mockProducts';
 import { ProductCard } from './ProductCard';
 
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 interface ProductRowProps {
   title: string;
@@ -67,12 +67,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
     color: '#17201A',
   },
   seeAllText: {
     fontSize: 13,
-    fontFamily: AppFonts.semiBold,
     color: '#15803D',
   },
   listContent: {

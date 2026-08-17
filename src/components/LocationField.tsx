@@ -43,7 +43,7 @@ export function LocationField({ value, onPress, placeholder }: Props) {
         color={picked ? Colors.CyberGreen : Colors.SlateMutedText}
       />
       <View style={styles.text}>
-        <Txt size={9} weight="700" color={Colors.SlateMutedText} style={styles.label}>
+        <Txt variant="labelSmall" color={Colors.SlateMutedText} style={styles.label}>
           PROPERTY LOCATION
         </Txt>
         <Txt
@@ -54,7 +54,7 @@ export function LocationField({ value, onPress, placeholder }: Props) {
           {summary}
         </Txt>
       </View>
-      <Txt size={11} weight="700" color={Colors.CyberGreen}>
+      <Txt variant="caption" weight="700" color={Colors.CyberGreen}>
         {picked ? 'Change' : 'Pick'}
       </Txt>
     </TouchableOpacity>

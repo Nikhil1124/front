@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
+import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 
@@ -48,11 +48,11 @@ export function GroceryProfileScreen() {
               <TouchableOpacity style={styles.menuItem}>
                 <View style={styles.menuLeft}>
                   <View style={styles.menuIconContainer}>
-                    <Ionicons name={item.icon} size={20} color={AppColors.textSecondary} />
+                    <Ionicons name={item.icon} size={20} color={Colors.textSecondary} />
                   </View>
                   <Text style={styles.menuTitle}>{item.title}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={AppColors.textMuted} />
+                <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
               {index < MENU_ITEMS.length - 1 && <View style={styles.divider} />}
             </View>
@@ -70,37 +70,36 @@ export function GroceryProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   header: {
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'android' ? 40 : 16,
     paddingBottom: 16,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.divider,
+    borderBottomColor: Colors.borderSubtle,
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     marginTop: 16,
     marginBottom: 24,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: AppColors.divider,
+    borderColor: Colors.borderSubtle,
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -108,27 +107,24 @@ const styles = StyleSheet.create({
   avatarText: {
     color: '#fff',
     fontSize: 22,
-    fontFamily: AppFonts.extraBold,
   },
   userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   userPhone: {
     fontSize: 14,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
   },
   menuContainer: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: AppColors.divider,
+    borderColor: Colors.borderSubtle,
     paddingHorizontal: 20,
   },
   menuItem: {
@@ -146,34 +142,32 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: AppColors.surfaceAlt,
+    backgroundColor: Colors.surfaceMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuTitle: {
     fontSize: 16,
-    color: AppColors.textPrimary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textPrimary,
   },
   divider: {
     height: 1,
-    backgroundColor: AppColors.divider,
+    backgroundColor: Colors.borderSubtle,
     marginLeft: 48,
   },
   logoutBtn: {
     marginHorizontal: 20,
     marginTop: 32,
     marginBottom: 110,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     paddingVertical: 16,
-    borderRadius: AppRadius.md,
+    borderRadius: Radii.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: AppColors.error,
+    borderColor: Colors.danger,
   },
   logoutText: {
-    color: AppColors.error,
-    fontFamily: AppFonts.bold,
+    color: Colors.danger,
     fontSize: 16,
   },
 });

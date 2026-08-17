@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 export type AlertType = 'success' | 'info' | 'error';
 
@@ -19,8 +19,8 @@ interface CustomAlertModalProps {
 
 const ICON_CONFIG: Record<AlertType, { name: 'checkmark-circle' | 'alert-circle' | 'information-circle'; color: string; bg: string }> = {
   success: { name: 'checkmark-circle', color: '#2E7D32', bg: '#E8F5E9' },
-  error: { name: 'alert-circle', color: AppColors.error, bg: AppColors.errorLight },
-  info: { name: 'information-circle', color: AppColors.info, bg: AppColors.infoLight },
+  error: { name: 'alert-circle', color: Colors.danger, bg: '#FEF2F2' },
+  info: { name: 'information-circle', color: Colors.info, bg: '#EFF6FF' },
 };
 
 /**
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
@@ -85,28 +85,25 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   message: {
     fontSize: 13,
-    fontFamily: AppFonts.regular,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 19,
     marginBottom: 20,
   },
   confirmBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 40,
   },
   confirmText: {
-    color: AppColors.surface,
-    fontFamily: AppFonts.bold,
+    color: Colors.surface,
     fontSize: 14,
   },
 });

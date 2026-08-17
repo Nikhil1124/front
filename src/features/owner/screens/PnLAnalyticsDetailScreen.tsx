@@ -77,8 +77,8 @@ export function PnLAnalyticsDetailScreen() {
           style={{ marginTop: 12 }}
         >
           <Row justify="space-between" align="center">
-            <Txt size={12} weight="800" color={Colors.textPrimary}>📅 Custom Date Window</Txt>
-            <Txt size={10} color={Colors.primaryDark} weight="700">Live Period Filter</Txt>
+            <Txt variant="caption" weight="800" color={Colors.textPrimary}>📅 Custom Date Window</Txt>
+            <Txt variant="labelSmall" color={Colors.primaryDark} weight="700">Live Period Filter</Txt>
           </Row>
           <Spacer size={8} />
           <Row gap={8}>
@@ -111,15 +111,15 @@ export function PnLAnalyticsDetailScreen() {
       {/* Stat tiles — revenue / expenses / net / margin */}
       {isLoading ? (
         <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} padding={[20, 20]}>
-          <Txt size={13} color={Colors.textMuted} align="center">Loading analytics…</Txt>
+          <Txt variant="body" color={Colors.textMuted} align="center">Loading analytics…</Txt>
         </Card>
       ) : isError ? (
         <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} padding={[20, 20]}>
           <Row gap={8} align="center">
             <Ionicons name="cloud-offline" size={20} color={Colors.danger} />
             <Col style={{ flex: 1 }}>
-              <Txt size={13} weight="700" color={Colors.danger}>Couldn't load P&L data</Txt>
-              <Txt size={11} color={Colors.textMuted}>{(error as Error)?.message ?? 'Please try again later.'}</Txt>
+              <Txt variant="body" weight="700" color={Colors.danger}>Couldn't load P&L data</Txt>
+              <Txt variant="caption" color={Colors.textMuted}>{(error as Error)?.message ?? 'Please try again later.'}</Txt>
             </Col>
           </Row>
         </Card>
@@ -158,8 +158,8 @@ export function PnLAnalyticsDetailScreen() {
                 padding={[16, 16]}
               >
                 <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
-                  <Txt size={13} weight="800" color={Colors.textPrimary}>📅 Monthly Breakdown</Txt>
-                  <Txt size={10} weight="700" color={Colors.primaryDark}>{data.monthly.length} Months</Txt>
+                  <Txt variant="body" weight="800" color={Colors.textPrimary}>📅 Monthly Breakdown</Txt>
+                  <Txt variant="labelSmall" color={Colors.primaryDark}>{data.monthly.length} Months</Txt>
                 </Row>
                 <Col gap={10}>
                   {data.monthly.map((m, idx) => {
@@ -176,7 +176,7 @@ export function PnLAnalyticsDetailScreen() {
                         }}
                       >
                         <Row justify="space-between" align="center">
-                          <Txt size={12} weight="800" color={Colors.textPrimary}>
+                          <Txt variant="caption" weight="800" color={Colors.textPrimary}>
                             {m.period}
                           </Txt>
                           <View
@@ -189,18 +189,18 @@ export function PnLAnalyticsDetailScreen() {
                               borderColor: isProfit ? '#CCFBF1' : '#FECACA',
                             }}
                           >
-                            <Txt size={11} weight="800" color={isProfit ? Colors.primaryDark : Colors.danger}>
+                            <Txt variant="caption" weight="800" color={isProfit ? Colors.primaryDark : Colors.danger}>
                               Net: {formatMoney(m.net ?? 0)}
                             </Txt>
                           </View>
                         </Row>
                         <Spacer size={6} />
                         <Row justify="space-between">
-                          <Txt size={11} color={Colors.textSecondary}>
-                            Rev: <Txt size={11} weight="700" color={Colors.success}>{formatMoney(m.revenue ?? 0)}</Txt>
+                          <Txt variant="caption" color={Colors.textSecondary}>
+                            Rev: <Txt variant="caption" weight="700" color={Colors.success}>{formatMoney(m.revenue ?? 0)}</Txt>
                           </Txt>
-                          <Txt size={11} color={Colors.textSecondary}>
-                            Exp: <Txt size={11} weight="700" color={Colors.danger}>{formatMoney(m.expenses ?? 0)}</Txt>
+                          <Txt variant="caption" color={Colors.textSecondary}>
+                            Exp: <Txt variant="caption" weight="700" color={Colors.danger}>{formatMoney(m.expenses ?? 0)}</Txt>
                           </Txt>
                         </Row>
                       </View>
@@ -231,8 +231,8 @@ export function PnLAnalyticsDetailScreen() {
         <Row gap={10} align="flex-start">
           <Ionicons name="bulb" size={18} color={Colors.primary} />
           <Col style={{ flex: 1 }}>
-            <Txt size={12} weight="700" color={Colors.textPrimary}>Insight</Txt>
-            <Txt size={11} color={Colors.textSecondary} style={{ lineHeight: 16, marginTop: 2 }}>
+            <Txt variant="caption" weight="700" color={Colors.textPrimary}>Insight</Txt>
+            <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 16, marginTop: 2 }}>
               Margin is calculated as (Revenue − Expenses) ÷ Revenue for the selected window. A margin below 20% suggests reviewing food & procurement costs.
             </Txt>
           </Col>
@@ -255,8 +255,8 @@ function StatTile({
       <View style={[styles.statIcon, { backgroundColor: `${tint}1A` }]}>
         <Ionicons name={icon} size={14} color={tint} />
       </View>
-      <Txt size={10} weight="700" color={Colors.textMuted} style={{ marginTop: 6, letterSpacing: 0.5 }}>{label.toUpperCase()}</Txt>
-      <Txt size={14} weight="800" color={tint} style={{ marginTop: 2 }}>{value}</Txt>
+      <Txt variant="labelSmall" color={Colors.textMuted} style={{ marginTop: 6, letterSpacing: 0.5 }}>{label.toUpperCase()}</Txt>
+      <Txt variant="cardTitle" weight="800" color={tint} style={{ marginTop: 2 }}>{value}</Txt>
     </View>
   );
 }

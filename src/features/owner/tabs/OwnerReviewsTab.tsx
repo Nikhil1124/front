@@ -144,12 +144,12 @@ export function OwnerReviewsTab() {
         <Row justify="space-between" align="flex-start">
           <Col style={{ flex: 1 }}>
             <Row align="center" gap={6}>
-              <Txt size={13} weight="800" color={Colors.textPrimary}>{item.guestName}</Txt>
+              <Txt variant="body" weight="800" color={Colors.textPrimary}>{item.guestName}</Txt>
               <View style={styles.roomPill}>
-                <Txt size={9} weight="800" color={Colors.primaryDark}>Room {item.roomNo || 'N/A'}</Txt>
+                <Txt variant="labelSmall" weight="800" color={Colors.primaryDark}>Room {item.roomNo || 'N/A'}</Txt>
               </View>
             </Row>
-            <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>
+            <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>
               {item.category || 'Feedback'} • {new Date(item.timestamp).toLocaleDateString('en-IN')}
             </Txt>
           </Col>
@@ -166,21 +166,21 @@ export function OwnerReviewsTab() {
         </Row>
 
         <Spacer size={8} />
-        <Txt size={12} color={Colors.textPrimary} style={{ lineHeight: 16 }}>
+        <Txt variant="caption" color={Colors.textPrimary} style={{ lineHeight: 16 }}>
           "{item.description || 'Everything is great!'}"
         </Txt>
 
         {item.adminResponse ? (
           <View style={styles.responseBox}>
-            <Txt size={9} weight="800" color={Colors.primaryDark}>Official Response:</Txt>
-            <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2 }}>{item.adminResponse}</Txt>
+            <Txt variant="labelSmall" weight="800" color={Colors.primaryDark}>Official Response:</Txt>
+            <Txt variant="labelSmall" weight="400" color={Colors.textSecondary} style={{ marginTop: 2 }}>{item.adminResponse}</Txt>
           </View>
         ) : null}
 
         <Spacer size={8} />
         <Row justify="space-between" align="center">
           <View style={[styles.statusBadge, { backgroundColor: item.status === 'Resolved' ? '#ECFDF5' : '#FEF2F2' }]}>
-            <Txt size={9} weight="800" color={item.status === 'Resolved' ? '#047857' : '#B91C1C'}>
+            <Txt variant="labelSmall" weight="800" color={item.status === 'Resolved' ? '#047857' : '#B91C1C'}>
               {item.status}
             </Txt>
           </View>
@@ -193,7 +193,7 @@ export function OwnerReviewsTab() {
             height={28}
             contentStyle={{ paddingHorizontal: 10 }}
           >
-            <Txt size={10} weight="800" color={Colors.textPrimary}>
+            <Txt variant="labelSmall" weight="800" color={Colors.textPrimary}>
               {item.adminResponse ? 'Edit Reply' : 'Respond / Action'}
             </Txt>
           </Btn>
@@ -228,10 +228,10 @@ export function OwnerReviewsTab() {
     >
       {/* Header */}
       <Row justify="space-between" align="center">
-        <Txt size={18} weight="900" color={Colors.textPrimary}>Staff Performance & Reviews</Txt>
+        <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Staff Performance & Reviews</Txt>
         <View style={styles.scoreBadge}>
           <Txt size={14}>★</Txt>
-          <Txt size={14} weight="900" color={Colors.primaryDark} style={{ marginLeft: 3 }}>
+          <Txt variant="cardTitle" weight="900" color={Colors.primaryDark} style={{ marginLeft: 3 }}>
             {avgOverall.toFixed(1)}
           </Txt>
         </View>
@@ -273,7 +273,7 @@ export function OwnerReviewsTab() {
                   <Txt size={13} weight="900" color="#B45309">
                     {overdueIssues.length} Unresolved Issue{overdueIssues.length === 1 ? '' : 's'} &gt; 1 Month Old
                   </Txt>
-                  <Txt size={10} color="#92400E" style={{ marginTop: 2 }}>
+                  <Txt variant="labelSmall" weight="400" color="#92400E" style={{ marginTop: 2 }}>
                     Tap to review escalated tenant complaints ›
                   </Txt>
                 </Col>
@@ -287,12 +287,12 @@ export function OwnerReviewsTab() {
       {/* Guest Complaints — the actual inbox, front and center instead of buried
           behind a staff-member drill-down. Unresolved + oldest first. */}
       <Row justify="space-between" align="center" style={{ marginTop: 4 }}>
-        <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+        <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
           GUEST COMPLAINTS ({guestComplaints.length})
         </Txt>
         {unresolvedComplaintCount > 0 && (
           <View style={styles.unresolvedBadge}>
-            <Txt size={10} weight="800" color="#B91C1C">{unresolvedComplaintCount} unresolved</Txt>
+            <Txt variant="labelSmall" weight="800" color="#B91C1C">{unresolvedComplaintCount} unresolved</Txt>
           </View>
         )}
       </Row>
@@ -301,7 +301,7 @@ export function OwnerReviewsTab() {
       {guestComplaints.length === 0 ? (
         <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[18, 16]} style={{ alignItems: 'center' }}>
           <Ionicons name="checkmark-circle" size={32} color={Colors.success} />
-          <Txt size={12} weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>
+          <Txt variant="caption" weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>
             No guest complaints right now.
           </Txt>
         </Card>
@@ -312,7 +312,7 @@ export function OwnerReviewsTab() {
       )}
 
       {/* Staff Profile Roster Cards */}
-      <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 4 }}>
+      <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 4 }}>
         STAFF MEMBERS & RATINGS ({staffProfiles.length})
       </Txt>
 
@@ -338,10 +338,10 @@ export function OwnerReviewsTab() {
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Row align="center" gap={6}>
-                      <Txt size={14} weight="900" color={Colors.textPrimary}>{staff.name}</Txt>
+                      <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{staff.name}</Txt>
                     </Row>
-                    <Txt size={11} weight="700" color={staff.tint} style={{ marginTop: 2 }}>{staff.title}</Txt>
-                    <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }} numberOfLines={1}>
+                    <Txt variant="caption" weight="700" color={staff.tint} style={{ marginTop: 2 }}>{staff.title}</Txt>
+                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }} numberOfLines={1}>
                       {staff.subtitle}
                     </Txt>
                   </Col>
@@ -382,8 +382,8 @@ export function OwnerReviewsTab() {
                     <Ionicons name={selectedStaff.avatarIcon} size={22} color={selectedStaff.tint} />
                   </View>
                   <Col style={{ flex: 1 }}>
-                    <Txt size={15} weight="900" color={Colors.textPrimary}>{selectedStaff.name}</Txt>
-                    <Txt size={11} color={selectedStaff.tint} weight="700">
+                    <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{selectedStaff.name}</Txt>
+                    <Txt variant="caption" color={selectedStaff.tint} weight="700">
                       {selectedStaff.title}{selectedStaff.reviewCount > 0 ? ` • ★ ${selectedStaff.rating.toFixed(1)}` : ' • No reviews yet'}
                     </Txt>
                   </Col>
@@ -392,14 +392,14 @@ export function OwnerReviewsTab() {
               </Row>
 
               <Spacer size={14} />
-              <Txt size={12} weight="800" color={Colors.textMuted}>TENANT FEEDBACK & MESSAGES</Txt>
+              <Txt variant="caption" weight="800" color={Colors.textMuted}>TENANT FEEDBACK & MESSAGES</Txt>
               <Spacer size={8} />
 
               <FormScroll showsVerticalScrollIndicator={false} style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 10 }}>
                 {getFilteredReviewsForStaff(selectedStaff).length === 0 ? (
                   <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[18, 16]} style={{ alignItems: 'center' }}>
                     <Ionicons name="chatbox-ellipses-outline" size={32} color={Colors.textMuted} />
-                    <Txt size={12} weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>
+                    <Txt variant="caption" weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>
                       No reviews logged specifically for this role yet.
                     </Txt>
                   </Card>
@@ -425,8 +425,8 @@ export function OwnerReviewsTab() {
               padding={[20, 20]}
               style={{ width: '90%', zIndex: 3 }}
             >
-              <Txt size={16} weight="900" color={Colors.textPrimary}>Review Response & Triage</Txt>
-              <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
+              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Review Response & Triage</Txt>
+              <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 2 }}>
                 Tenant: {activeItem.guestName} (Room {activeItem.roomNo})
               </Txt>
 
@@ -443,7 +443,7 @@ export function OwnerReviewsTab() {
               />
 
               <Spacer size={10} />
-              <Txt size={11} weight="800" color={Colors.textMuted}>Set Status:</Txt>
+              <Txt variant="caption" weight="800" color={Colors.textMuted}>Set Status:</Txt>
               <Row gap={6} style={{ marginTop: 6 }}>
                 {['Open', 'In Progress', 'Resolved'].map((st) => (
                   <Chip
@@ -465,7 +465,7 @@ export function OwnerReviewsTab() {
                   height={44}
                   style={{ flex: 1 }}
                 >
-                  <Txt size={13} weight="800" color={Colors.textInverse}>Save & Notify</Txt>
+                  <Txt variant="body" weight="800" color={Colors.textInverse}>Save & Notify</Txt>
                 </Btn>
                 <OutlinedBtn
                   onPress={() => setActiveItem(null)}
@@ -475,7 +475,7 @@ export function OwnerReviewsTab() {
                   height={44}
                   style={{ flex: 1 }}
                 >
-                  <Txt size={13} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+                  <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
                 </OutlinedBtn>
               </Row>
             </Card>

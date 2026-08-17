@@ -65,20 +65,20 @@ export function GuestFeedbackComplaintsTab() {
   return (
     <FormScroll contentContainerStyle={{ padding: 16, gap: 16 }}>
       <Row gap={6} align="center">
-        <Txt size={20} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance & Review Portal</Txt>
+        <Txt variant="screenTitle" weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance & Review Portal</Txt>
         <InfoTip text="File official complaints or share constructive feedback. Upload videos or photos of issues for immediate staff resolution." />
       </Row>
 
       <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-        <Txt size={10} weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 1 }}>NEW GRIEVANCE OR APPRECIATION</Txt>
+        <Txt variant="labelSmall" weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 1 }}>NEW GRIEVANCE OR APPRECIATION</Txt>
         <Spacer size={14} />
         <Row gap={8}>
-          <Btn onPress={() => setSubmissionType('COMPLAINT')} containerColor={submissionType === 'COMPLAINT' ? '#FEF2F2' : Colors.surfaceMuted} textColor={submissionType === 'COMPLAINT' ? '#EF4444' : Colors.SlateMutedText} borderRadius={10} height={40} style={{ flex: 1 }} borderWidth={submissionType === 'COMPLAINT' ? 1 : 0} borderColor={Colors.danger}><Txt size={12} weight="700" color={submissionType === 'COMPLAINT' ? '#EF4444' : Colors.SlateMutedText}>🚨 Raise Complaint</Txt></Btn>
-          <Btn onPress={() => setSubmissionType('FEEDBACK')} containerColor={submissionType === 'FEEDBACK' ? Colors.surfaceElevated : Colors.surfaceMuted} textColor={submissionType === 'FEEDBACK' ? Colors.primary : Colors.SlateMutedText} borderRadius={10} height={40} style={{ flex: 1 }} borderWidth={submissionType === 'FEEDBACK' ? 1 : 0} borderColor={Colors.primary}><Txt size={12} weight="700" color={submissionType === 'FEEDBACK' ? Colors.primary : Colors.SlateMutedText}>🌟 Write Feedback</Txt></Btn>
+          <Btn onPress={() => setSubmissionType('COMPLAINT')} containerColor={submissionType === 'COMPLAINT' ? '#FEF2F2' : Colors.surfaceMuted} textColor={submissionType === 'COMPLAINT' ? '#EF4444' : Colors.SlateMutedText} borderRadius={10} height={40} style={{ flex: 1 }} borderWidth={submissionType === 'COMPLAINT' ? 1 : 0} borderColor={Colors.danger}><Txt variant="caption" weight="700" color={submissionType === 'COMPLAINT' ? '#EF4444' : Colors.SlateMutedText}>🚨 Raise Complaint</Txt></Btn>
+          <Btn onPress={() => setSubmissionType('FEEDBACK')} containerColor={submissionType === 'FEEDBACK' ? Colors.surfaceElevated : Colors.surfaceMuted} textColor={submissionType === 'FEEDBACK' ? Colors.primary : Colors.SlateMutedText} borderRadius={10} height={40} style={{ flex: 1 }} borderWidth={submissionType === 'FEEDBACK' ? 1 : 0} borderColor={Colors.primary}><Txt variant="caption" weight="700" color={submissionType === 'FEEDBACK' ? Colors.primary : Colors.SlateMutedText}>🌟 Write Feedback</Txt></Btn>
         </Row>
 
         <Spacer size={14} />
-        <Txt size={11} weight="700" color={Colors.SlateMutedText}>Select Category</Txt>
+        <Txt variant="caption" weight="700" color={Colors.SlateMutedText}>Select Category</Txt>
         <Spacer size={6} />
         <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
           {CATEGORIES.map((c) => (
@@ -87,7 +87,7 @@ export function GuestFeedbackComplaintsTab() {
         </FormScroll>
 
         <Spacer size={14} />
-        <Txt size={11} weight="700" color={Colors.SlateMutedText}>Rate PG Experience & Service Categories</Txt>
+        <Txt variant="caption" weight="700" color={Colors.SlateMutedText}>Rate PG Experience & Service Categories</Txt>
         <Spacer size={8} />
         <CategoryRatingSelector title="Daily Meals (Mess)" icon="🍛" rating={mealRating} onChange={setMealRating} />
         <CategoryRatingSelector title="Service & Cleanliness" icon="🧹" rating={cleanRating} onChange={setCleanRating} />
@@ -96,7 +96,7 @@ export function GuestFeedbackComplaintsTab() {
         <CategoryRatingSelector title="Others & Facilities" icon="⚙️" rating={otherRating} onChange={setOtherRating} />
 
         <View style={styles.overallBox}>
-          <Row gap={6}><Txt size={16}>⭐</Txt><Txt size={11} weight="700" color={Colors.IvoryWhiteText}>Calculated PG Rating Score:</Txt></Row>
+          <Row gap={6}><Txt size={16}>⭐</Txt><Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Calculated PG Rating Score:</Txt></Row>
           <Txt size={13} weight="900" color={Colors.CyberGreen}>{calculatedOverall.toFixed(1)} / 5.0 ★</Txt>
         </View>
 
@@ -105,26 +105,26 @@ export function GuestFeedbackComplaintsTab() {
         <OutlinedTextField label="Detailed Description (Write complain/feedback)..." value={description} onChangeText={setDescription} testID="complaint_desc_input" multiline numberOfLines={4} borderRadius={10} style={{ marginBottom: 6, minHeight: 100 }} />
 
         <Spacer size={14} />
-        <Txt size={11} weight="700" color={Colors.SlateMutedText}>Attach Photo or Video Evidence</Txt>
+        <Txt variant="caption" weight="700" color={Colors.SlateMutedText}>Attach Photo or Video Evidence</Txt>
         <Row gap={8} style={{ marginTop: 6 }}>
-          <OutlinedBtn onPress={() => { setMediaUri(`mock_media_photo_${Date.now()}`); setMediaIsVideo(false); setMediaName('Gallery Photo'); }} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="camera" size={16} color={Colors.IvoryWhiteText} /><Txt size={11} color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Photo</Txt></OutlinedBtn>
-          <OutlinedBtn onPress={() => { setMediaUri(`mock_media_video_${Date.now()}`); setMediaIsVideo(true); setMediaName('Device Video (Gallery)'); }} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="videocam" size={16} color={Colors.IvoryWhiteText} /><Txt size={11} color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Video</Txt></OutlinedBtn>
+          <OutlinedBtn onPress={() => { setMediaUri(`mock_media_photo_${Date.now()}`); setMediaIsVideo(false); setMediaName('Gallery Photo'); }} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="camera" size={16} color={Colors.IvoryWhiteText} /><Txt variant="caption" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Photo</Txt></OutlinedBtn>
+          <OutlinedBtn onPress={() => { setMediaUri(`mock_media_video_${Date.now()}`); setMediaIsVideo(true); setMediaName('Device Video (Gallery)'); }} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="videocam" size={16} color={Colors.IvoryWhiteText} /><Txt variant="caption" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Video</Txt></OutlinedBtn>
         </Row>
         <Spacer size={10} />
-        <Txt size={10} color={Colors.SlateMutedText}>Or Select Sandbox Simulated Media Assets:</Txt>
+        <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Or Select Sandbox Simulated Media Assets:</Txt>
         <Spacer size={4} />
         <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
           {mockMedia.map((m) => (
             <TouchableOpacity key={m.id} onPress={() => { setMediaUri(`mock_media_${m.id}`); setMediaIsVideo(m.isVideo); setMediaName(m.name); if (!title) setTitle(m.name); if (!description) setDescription(m.textRepresentation); }} style={styles.mockMediaChip}>
-              <Row gap={4}><Txt size={12}>{m.mockIcon}</Txt><Txt size={10} color={Colors.IvoryWhiteText}>{m.name}</Txt></Row>
+              <Row gap={4}><Txt variant="caption">{m.mockIcon}</Txt><Txt variant="labelSmall" weight="400" color={Colors.IvoryWhiteText}>{m.name}</Txt></Row>
             </TouchableOpacity>
           ))}
         </FormScroll>
         {mediaUri && (
           <View style={styles.mediaBanner}>
             <Row gap={6} style={{ flex: 1 }}>
-              <Txt size={13}>{mediaIsVideo ? '🎥' : '📷'}</Txt>
-              <Txt size={11} weight="700" color={Colors.primaryDark}>{mediaName ?? 'Attached Asset'}</Txt>
+              <Txt variant="body">{mediaIsVideo ? '🎥' : '📷'}</Txt>
+              <Txt variant="caption" weight="700" color={Colors.primaryDark}>{mediaName ?? 'Attached Asset'}</Txt>
             </Row>
             <IconBtn onPress={() => { setMediaUri(null); setMediaName(null); }} icon="close" size={14} tint="#EF4444" containerColor="transparent" />
           </View>
@@ -132,38 +132,38 @@ export function GuestFeedbackComplaintsTab() {
 
         <Spacer size={16} />
         <Btn onPress={handleSubmit} containerColor={submissionType === 'COMPLAINT' ? '#EF4444' : Colors.CyberGreen} textColor={submissionType === 'COMPLAINT' ? '#FFFFFF' : Colors.LuxuryPureBlack} borderRadius={12} height={44} testID="submit_complaint_button">
-          <Txt size={13} weight="700" color={submissionType === 'COMPLAINT' ? '#FFFFFF' : Colors.LuxuryPureBlack}>{submissionType === 'COMPLAINT' ? 'Broadcast Official Complaint' : 'Send Constructive Review'}</Txt>
+          <Txt variant="body" weight="700" color={submissionType === 'COMPLAINT' ? '#FFFFFF' : Colors.LuxuryPureBlack}>{submissionType === 'COMPLAINT' ? 'Broadcast Official Complaint' : 'Send Constructive Review'}</Txt>
         </Btn>
       </Card>
 
-      <Txt size={11} weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 1 }}>MY RECENT SUBMISSIONS</Txt>
+      <Txt variant="caption" weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 1 }}>MY RECENT SUBMISSIONS</Txt>
       {submissions.length === 0 ? (
-        <View style={styles.emptyBox}><Txt size={12} color={Colors.SlateMutedText}>No reports or reviews submitted yet.</Txt></View>
+        <View style={styles.emptyBox}><Txt variant="caption" color={Colors.SlateMutedText}>No reports or reviews submitted yet.</Txt></View>
       ) : (
         submissions.map((item) => (
           <Card key={item.id} containerColor={Colors.surface} borderRadius={14} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row justify="space-between" align="center">
-              <Txt size={10} weight="700" color={Colors.CyberPurple}>{item.category.toUpperCase()}</Txt>
+              <Txt variant="labelSmall" color={Colors.CyberPurple}>{item.category.toUpperCase()}</Txt>
               <View style={[styles.statusPill, { backgroundColor: item.status === 'Resolved' ? '#ECFDF5' : item.status === 'In Progress' ? '#FFFBEB' : '#FEF2F2' }]}>
-                <Txt size={9} weight="700" color={item.status === 'Resolved' ? '#10B981' : item.status === 'In Progress' ? '#F59E0B' : '#EF4444'}>{item.status.toUpperCase()}</Txt>
+                <Txt variant="labelSmall" color={item.status === 'Resolved' ? '#10B981' : item.status === 'In Progress' ? '#F59E0B' : '#EF4444'}>{item.status.toUpperCase()}</Txt>
               </View>
             </Row>
             <Spacer size={6} />
-            <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>{item.type === 'COMPLAINT' ? '🚨' : '🌟'} {item.title}</Txt>
-            <Txt size={12} color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{item.description}</Txt>
+            <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>{item.type === 'COMPLAINT' ? '🚨' : '🌟'} {item.title}</Txt>
+            <Txt variant="caption" color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{item.description}</Txt>
             {item.mediaUri && (
               <TouchableOpacity onPress={() => setPreview(item)} style={styles.mediaLink}>
                 <Row gap={8} style={{ flex: 1 }}>
                   <Txt size={14}>{item.isVideo ? '🎥' : '📷'}</Txt>
-                  <Txt size={11} weight="700" color={Colors.CyberGreen}>{item.isVideo ? 'Tap to Play Video Attachment' : 'Tap to View Photo Attachment'}</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.CyberGreen}>{item.isVideo ? 'Tap to Play Video Attachment' : 'Tap to View Photo Attachment'}</Txt>
                 </Row>
-                <Txt size={9} weight="700" color={Colors.SlateMutedText}>VIEW 🔍</Txt>
+                <Txt variant="labelSmall" color={Colors.SlateMutedText}>VIEW 🔍</Txt>
               </TouchableOpacity>
             )}
             {item.adminResponse && (
               <View style={styles.adminReplyBox}>
-                <Txt size={9} weight="800" color={Colors.CyberGreen} style={{ letterSpacing: 1 }}>ADMINISTRATOR WORKFLOW REPLY</Txt>
-                <Txt size={11} color={Colors.IvoryWhiteText} style={{ lineHeight: 15 }}>{item.adminResponse}</Txt>
+                <Txt variant="labelSmall" weight="800" color={Colors.CyberGreen} style={{ letterSpacing: 1 }}>ADMINISTRATOR WORKFLOW REPLY</Txt>
+                <Txt variant="caption" color={Colors.IvoryWhiteText} style={{ lineHeight: 15 }}>{item.adminResponse}</Txt>
               </View>
             )}
           </Card>
@@ -177,7 +177,7 @@ export function GuestFeedbackComplaintsTab() {
             {preview && (
               <>
                 <Row justify="space-between" align="center">
-                  <Txt size={10} weight="800" color={Colors.SlateMutedText}>{preview.isVideo ? 'VIDEO CONTROLLER PREVIEW' : 'PHOTO ATTACHMENT VIEW'}</Txt>
+                  <Txt variant="labelSmall" weight="800" color={Colors.SlateMutedText}>{preview.isVideo ? 'VIDEO CONTROLLER PREVIEW' : 'PHOTO ATTACHMENT VIEW'}</Txt>
                   <IconBtn onPress={() => setPreview(null)} icon="close" size={20} tint={Colors.textPrimary} />
                 </Row>
                 <Spacer size={12} />
@@ -186,20 +186,20 @@ export function GuestFeedbackComplaintsTab() {
                     <Col align="center">
                       <View style={styles.playBtn}><Ionicons name="play" size={32} color={Colors.CyberGreen} /></View>
                       <Spacer size={12} />
-                      <Txt size={11} color={Colors.IvoryWhiteText}>Playing Video Attachment Stream...</Txt>
+                      <Txt variant="caption" color={Colors.IvoryWhiteText}>Playing Video Attachment Stream...</Txt>
                       <Txt size={9} color={Colors.SlateMutedText}>Simulated 30fps Sandbox Frame</Txt>
                     </Col>
                   ) : (
                     <Col align="center">
                       <View style={styles.photoIcon}><Txt size={32}>{preview.category === 'Food Quality' ? '🫓' : preview.category === 'Wi-Fi & Internet' ? '📶' : '🛠️'}</Txt></View>
                       <Spacer size={12} />
-                      <Txt size={12} weight="700" color={Colors.IvoryWhiteText}>{preview.title}</Txt>
-                      <Txt size={10} color={Colors.SlateMutedText}>Attached sandbox evidence snapshot.</Txt>
+                      <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>{preview.title}</Txt>
+                      <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Attached sandbox evidence snapshot.</Txt>
                     </Col>
                   )}
                 </View>
                 <Spacer size={16} />
-                <Txt size={11} color={Colors.SlateMutedText}>Category: {preview.category} • File: {preview.isVideo ? 'evidence_video.mp4' : 'evidence_photo.jpg'}</Txt>
+                <Txt variant="caption" color={Colors.SlateMutedText}>Category: {preview.category} • File: {preview.isVideo ? 'evidence_video.mp4' : 'evidence_photo.jpg'}</Txt>
               </>
             )}
           </Card>
@@ -221,7 +221,7 @@ function CategoryRatingSelector({ title, icon, rating, onChange }: RatingProps) 
     <View style={styles.ratingRow}>
       <Row gap={8} style={{ flex: 1 }}>
         <Txt size={16}>{icon}</Txt>
-        <Txt size={12} weight="600" color={Colors.IvoryWhiteText}>{title}</Txt>
+        <Txt variant="caption" weight="600" color={Colors.IvoryWhiteText}>{title}</Txt>
       </Row>
       <Row gap={4}>
         {[1, 2, 3, 4, 5].map((s) => (
@@ -229,7 +229,7 @@ function CategoryRatingSelector({ title, icon, rating, onChange }: RatingProps) 
             <Txt size={15} color={s <= rating ? '#FFB800' : Colors.SlateMutedText}>{s <= rating ? '★' : '☆'}</Txt>
           </TouchableOpacity>
         ))}
-        <Txt size={11} weight="700" color="#FFB800" style={{ marginLeft: 4 }}>{rating.toFixed(1)}</Txt>
+        <Txt variant="caption" weight="700" color="#FFB800" style={{ marginLeft: 4 }}>{rating.toFixed(1)}</Txt>
       </Row>
     </View>
   );

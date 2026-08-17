@@ -234,15 +234,15 @@ export function HousekeepingDashboard() {
                   padding={8}
                 />
                 <Col>
-                  <Txt size={20} weight="900" color={Colors.primaryDark}>Housekeeping</Txt>
-                  <Txt size={12} color={Colors.textMuted}>{staff?.name ?? 'Staff'} · {formatLongDate(today.getTime())}</Txt>
+                  <Txt variant="screenTitle" weight="900" color={Colors.primaryDark}>Housekeeping</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>{staff?.name ?? 'Staff'} · {formatLongDate(today.getTime())}</Txt>
                 </Col>
               </Row>
               <View style={styles.headerIcon}><Ionicons name="sparkles" size={24} color={Colors.primary} /></View>
             </Row>
             <Spacer size={14} />
             <Row justify="space-between" align="center">
-              <Txt size={12} weight="700" color={Colors.textSecondary}>Today's Progress</Txt>
+              <Txt variant="caption" weight="700" color={Colors.textSecondary}>Today's Progress</Txt>
               <Txt size={12} weight="900" color={progressPct === 100 ? Colors.success : Colors.primary}>
                 {completedTasks} of {totalTasks} ({progressPct}%)
               </Txt>
@@ -254,7 +254,7 @@ export function HousekeepingDashboard() {
           </Card>
 
           {/* Recurring checklist */}
-          <Txt size={15} weight="900" color={Colors.textPrimary}>Daily Checklist</Txt>
+          <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>Daily Checklist</Txt>
           <Card containerColor={Colors.surface} borderRadius={Radii.xxl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Col gap={6}>
               {RECURRING_TASKS.map((task) => {
@@ -272,7 +272,7 @@ export function HousekeepingDashboard() {
                       </View>
                       <Col style={{ flex: 1 }}>
                         <Txt size={14} weight={done ? '800' : '700'} color={done ? '#15803D' : Colors.textPrimary}>{task.label}</Txt>
-                        <Txt size={11} color={Colors.textMuted}>{done ? 'Completed' : 'Tap to mark complete'}</Txt>
+                        <Txt variant="caption" color={Colors.textMuted}>{done ? 'Completed' : 'Tap to mark complete'}</Txt>
                       </Col>
                     </View>
                   </AnimatedPress>
@@ -283,8 +283,8 @@ export function HousekeepingDashboard() {
 
           {/* Assigned maintenance tickets */}
           <Row justify="space-between" align="center">
-            <Txt size={15} weight="900" color={Colors.textPrimary}>Assigned Tickets</Txt>
-            <Txt size={11} weight="700" color={Colors.textMuted}>{myTickets.length} open</Txt>
+            <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>Assigned Tickets</Txt>
+            <Txt variant="caption" weight="700" color={Colors.textMuted}>{myTickets.length} open</Txt>
           </Row>
 
           {myTickets.length === 0 ? (
@@ -308,12 +308,12 @@ export function HousekeepingDashboard() {
                         <Ionicons name={catIcon} size={20} color={Colors.primary} />
                       </View>
                       <Col style={{ flex: 1 }}>
-                        <Txt size={15} weight="800" color={Colors.textPrimary} numberOfLines={1}>{ticket.title}</Txt>
-                        <Txt size={11} color={Colors.textMuted}>Room {ticket.guestId ? ticket.guestName : '—'} · {ticket.category}</Txt>
+                        <Txt variant="cardTitle" weight="800" color={Colors.textPrimary} numberOfLines={1}>{ticket.title}</Txt>
+                        <Txt variant="caption" color={Colors.textMuted}>Room {ticket.guestId ? ticket.guestName : '—'} · {ticket.category}</Txt>
                       </Col>
                     </Row>
                     <View style={[styles.statusPill, { backgroundColor: '#FFFBEB', borderColor: '#FEF3C7', borderWidth: 1 }]}>
-                      <Txt size={10} weight="800" color="#B45309">{ticket.status}</Txt>
+                      <Txt variant="labelSmall" weight="800" color="#B45309">{ticket.status}</Txt>
                     </View>
                   </Row>
 
@@ -329,7 +329,7 @@ export function HousekeepingDashboard() {
                         testID={`hk_start_${ticket.id}`}
                       >
                         <Ionicons name="play-circle" size={18} color="#FFFFFF" />
-                        <Txt size={14} weight="800" color="#FFFFFF" style={{ marginLeft: 6 }}>Start Job</Txt>
+                        <Txt variant="cardTitle" weight="800" color="#FFFFFF" style={{ marginLeft: 6 }}>Start Job</Txt>
                       </Btn>
                     </>
                   ) : (
@@ -342,7 +342,7 @@ export function HousekeepingDashboard() {
                         <PhotoThumb label="AFTER" tint={Colors.success} uri={state?.afterUri ?? null} onPress={() => openCameraFor(ticket.id, 'after')} />
                       </Row>
                       <Spacer size={10} />
-                      <Txt size={11} weight="700" color={Colors.textSecondary}>Resolution note (optional):</Txt>
+                      <Txt variant="caption" weight="700" color={Colors.textSecondary}>Resolution note (optional):</Txt>
                       <View style={styles.noteBox}>
                         <TxtInput
                           value={resolutionNote[ticket.id] ?? ''}
@@ -362,7 +362,7 @@ export function HousekeepingDashboard() {
                         testID={`hk_resolve_${ticket.id}`}
                       >
                         <Ionicons name="checkmark-circle" size={18} color={hasBoth ? '#FFFFFF' : Colors.textMuted} />
-                        <Txt size={14} weight="800" color={hasBoth ? '#FFFFFF' : Colors.textMuted} style={{ marginLeft: 6 }}>
+                        <Txt variant="cardTitle" weight="800" color={hasBoth ? '#FFFFFF' : Colors.textMuted} style={{ marginLeft: 6 }}>
                           {hasBoth ? 'Mark Resolved' : 'Capture both photos first'}
                         </Txt>
                       </Btn>
@@ -414,13 +414,13 @@ function PhotoThumb({ label, tint, uri, onPress }: { label: string; tint: string
         {uri ? (
           <>
             <Ionicons name="checkmark-circle" size={24} color={tint} />
-            <Txt size={11} weight="800" color={Colors.textPrimary}>Captured</Txt>
+            <Txt variant="caption" weight="800" color={Colors.textPrimary}>Captured</Txt>
             <Txt size={9} color={Colors.textMuted}>Tap to retake</Txt>
           </>
         ) : (
           <>
             <Ionicons name="camera" size={24} color={tint} />
-            <Txt size={10} weight="800" color={tint}>{label} · Tap</Txt>
+            <Txt variant="labelSmall" weight="800" color={tint}>{label} · Tap</Txt>
           </>
         )}
       </View>

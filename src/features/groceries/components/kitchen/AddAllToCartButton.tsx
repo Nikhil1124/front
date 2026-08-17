@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 interface AddAllToCartButtonProps {
   totalItems: number;
@@ -45,7 +45,6 @@ const styles = StyleSheet.create({
   text: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontFamily: AppFonts.semiBold,
   },
 });
 

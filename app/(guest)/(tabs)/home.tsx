@@ -239,7 +239,7 @@ export default function GuestHomeTab() {
                   <Ionicons name={tile.icon} size={20} color={tile.tint} />
                 </View>
                 <Txt size={13} weight="800" color={Colors.textPrimary} style={{ marginTop: 10 }}>{tile.label}</Txt>
-                <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
+                <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
               </Card>
             </AnimatedPress>
           ))}
@@ -272,7 +272,7 @@ export default function GuestHomeTab() {
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={12} weight="800" color={Colors.textPrimary} numberOfLines={1}>{n.title}</Txt>
-                    <Txt size={10} color={Colors.textMuted} numberOfLines={1}>{n.message}</Txt>
+                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted} numberOfLines={1}>{n.message}</Txt>
                   </Col>
                 </Row>
               </Card>

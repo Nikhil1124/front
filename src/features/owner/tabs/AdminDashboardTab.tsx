@@ -95,12 +95,12 @@ export function AdminDashboardTab({ onAddPg }: Props) {
                 <Ionicons name="people-circle" size={20} color={Colors.CyberAmber} />
               </View>
               <Col>
-                <Txt size={10} weight="900" color={Colors.CyberAmber} style={{ letterSpacing: 0.5 }}>MANAGER VIEW</Txt>
-                <Txt size={16} weight="700" color={Colors.IvoryWhiteText}>{owner?.pgName ?? 'PG Branch'}</Txt>
+                <Txt variant="labelSmall" weight="900" color={Colors.CyberAmber} style={{ letterSpacing: 0.5 }}>MANAGER VIEW</Txt>
+                <Txt variant="sectionTitle" color={Colors.IvoryWhiteText}>{owner?.pgName ?? 'PG Branch'}</Txt>
               </Col>
             </Row>
             <View style={styles.branchBadge}>
-              <Txt size={9} weight="900" color={Colors.CyberPurple}>BRANCH SCOPE</Txt>
+              <Txt variant="labelSmall" weight="900" color={Colors.CyberPurple}>BRANCH SCOPE</Txt>
             </View>
           </Row>
           <Spacer size={12} />
@@ -126,20 +126,20 @@ export function AdminDashboardTab({ onAddPg }: Props) {
               <Ionicons name="business" size={18} color={Colors.CyberPurple} />
               <Txt size={11} weight="900" color={Colors.CyberPurple} style={{ letterSpacing: 1 }}>PORTFOLIO HUB</Txt>
             </Row>
-            <Txt size={15} weight="700" color={Colors.IvoryWhiteText}>{allPGs.length} PG Branches</Txt>
+            <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>{allPGs.length} PG Branches</Txt>
           </View>
           <Spacer size={12} />
           <Row gap={8}>
             <View style={styles.miniStatBox}>
-              <Txt size={10} color={Colors.SlateMutedText}>Branches</Txt>
+              <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Branches</Txt>
               <Txt size={13} weight="900" color={Colors.IvoryWhiteText}>{allPGs.length}</Txt>
             </View>
             <View style={styles.miniStatBox}>
-              <Txt size={10} color={Colors.SlateMutedText}>Capacity</Txt>
+              <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Capacity</Txt>
               <Txt size={13} weight="900" color={Colors.CyberGreen}>{allGuests.length} Beds</Txt>
             </View>
             <View style={styles.miniStatBox}>
-              <Txt size={10} color={Colors.SlateMutedText}>Revenue</Txt>
+              <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Revenue</Txt>
               <Txt size={13} weight="900" color={Colors.CyberGreen}>₹{Math.round(allPayments.filter((p) => p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0)).toLocaleString('en-IN')}</Txt>
             </View>
           </Row>
@@ -160,7 +160,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
             <TouchableOpacity onPress={onAddPg} testID="admin_add_pg_chip">
               <View style={styles.addPgChip}>
                 <Ionicons name="add" size={14} color={Colors.CyberGreen} />
-                <Txt size={11} weight="700" color={Colors.CyberGreen} style={{ marginLeft: 4 }}>Add PG</Txt>
+                <Txt variant="caption" weight="700" color={Colors.CyberGreen} style={{ marginLeft: 4 }}>Add PG</Txt>
               </View>
             </TouchableOpacity>
           </FormScroll>
@@ -175,7 +175,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
             <Txt size={11} weight="900" color="#DCD7FC" style={{ letterSpacing: 1.8 }}>ESTIMATED SAVINGS FROM SKIPPED PORTIONS</Txt>
           </Row>
           <View style={styles.livePill}>
-            <Txt size={9} weight="800" color={Colors.CyberPink} style={{ letterSpacing: 0.5 }}>ESTIMATE</Txt>
+            <Txt variant="labelSmall" weight="800" color={Colors.CyberPink} style={{ letterSpacing: 0.5 }}>ESTIMATE</Txt>
           </View>
         </Row>
         <Spacer size={14} />
@@ -206,11 +206,11 @@ export function AdminDashboardTab({ onAddPg }: Props) {
         <Row justify="space-between" align="center">
           <Row gap={8}>
             <View style={[styles.dot, { backgroundColor: Colors.CyberPurple }]} />
-            <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>Select Dining Schedule</Txt>
+            <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>Select Dining Schedule</Txt>
           </Row>
           {selectedNotification && (
             <View style={styles.mealBadge}>
-              <Txt size={10} weight="800" color={Colors.IvoryWhiteText}>{selectedNotification.mealType}</Txt>
+              <Txt variant="labelSmall" weight="800" color={Colors.IvoryWhiteText}>{selectedNotification.mealType}</Txt>
             </View>
           )}
         </Row>
@@ -218,7 +218,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
         {notifications.length === 0 ? (
           <View style={styles.emptySchedule}>
             <Ionicons name="restaurant" size={24} color="#9CA3AF" />
-            <Txt size={12} color="#9CA3AF">No meal schedules published yet.</Txt>
+            <Txt variant="caption" color="#9CA3AF">No meal schedules published yet.</Txt>
           </View>
         ) : (
           <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
@@ -235,7 +235,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
         {selectedNotification && (
           <View style={styles.scheduleDetail}>
             <View style={{ flex: 1 }}>
-              <Txt size={12} weight="700" color={Colors.IvoryWhiteText} numberOfLines={1}>
+              <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText} numberOfLines={1}>
                 🕒 Service: {formatServiceTime12h(selectedNotification.serviceTime)} (Menu: {selectedNotification.menuItems})
               </Txt>
               <Row gap={4} style={{ marginTop: 2 }}>
@@ -244,7 +244,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
                   size={12}
                   color={selectedNotification.isAlertSent ? '#02E0A5' : '#FFB800'}
                 />
-                <Txt size={10} weight="700" color={selectedNotification.isAlertSent ? '#02E0A5' : Colors.SlateMutedText}>
+                <Txt variant="labelSmall" color={selectedNotification.isAlertSent ? '#02E0A5' : Colors.SlateMutedText}>
                   {selectedNotification.isAlertSent ? 'Broadcasting active' : `Auto-alert at ${getAlertTriggerTime(selectedNotification.serviceTime)}`}
                 </Txt>
               </Row>
@@ -262,7 +262,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
                 height={28}
                 contentStyle={{ paddingHorizontal: 10 }}
               >
-                <Txt size={10} weight="700" color={Colors.IvoryWhiteText}>⚡ Alert Now</Txt>
+                <Txt variant="labelSmall" color={Colors.IvoryWhiteText}>⚡ Alert Now</Txt>
               </Btn>
             )}
           </View>
@@ -273,22 +273,22 @@ export function AdminDashboardTab({ onAddPg }: Props) {
       {selectedNotification && (
         <Card containerColor="#140E2D" borderRadius={16} borderWidth={1} borderColor="#2C2250" padding={[16, 16]}>
           <Row justify="space-between" align="center">
-            <Txt size={13} weight="700" color={Colors.SlateMutedText}>Current RSVP Status Summary</Txt>
+            <Txt variant="body" weight="700" color={Colors.SlateMutedText}>Current RSVP Status Summary</Txt>
             <Txt size={11} weight="900" color={Colors.CyberGreen}>{reqCount + notReqCount} Registered</Txt>
           </Row>
           <Spacer size={12} />
           <Row gap={8}>
             <View style={[styles.rsvpStatBox, { borderColor: '#1E2E25' }]}>
-              <Txt size={10} weight="700" color="#10B981">Going</Txt>
-              <Txt size={18} weight="900" color="#FFFFFF">{reqCount}</Txt>
+              <Txt variant="labelSmall" color="#10B981">Going</Txt>
+              <Txt variant="sectionTitle" weight="900" color="#FFFFFF">{reqCount}</Txt>
             </View>
             <View style={[styles.rsvpStatBox, { borderColor: '#2E1E1E' }]}>
-              <Txt size={10} weight="700" color="#EF4444">Skipping</Txt>
-              <Txt size={18} weight="900" color="#FFFFFF">{notReqCount}</Txt>
+              <Txt variant="labelSmall" color="#EF4444">Skipping</Txt>
+              <Txt variant="sectionTitle" weight="900" color="#FFFFFF">{notReqCount}</Txt>
             </View>
             <View style={[styles.rsvpStatBox, { borderColor: '#2E271E' }]}>
-              <Txt size={10} weight="700" color="#FFB800">Pending</Txt>
-              <Txt size={18} weight="900" color="#FFFFFF">{pendingCount}</Txt>
+              <Txt variant="labelSmall" color="#FFB800">Pending</Txt>
+              <Txt variant="sectionTitle" weight="900" color="#FFFFFF">{pendingCount}</Txt>
             </View>
           </Row>
         </Card>
@@ -297,8 +297,8 @@ export function AdminDashboardTab({ onAddPg }: Props) {
       {/* Search & Filter */}
       <Card containerColor="#140E2D" borderRadius={16} borderWidth={1} borderColor="#2C2250" padding={[14, 14]}>
         <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
-          <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>Filters & Directory Search</Txt>
-          <Txt size={11} color={Colors.SlateMutedText}>{filteredGuests.length} Matching</Txt>
+          <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>Filters & Directory Search</Txt>
+          <Txt variant="caption" color={Colors.SlateMutedText}>{filteredGuests.length} Matching</Txt>
         </Row>
         <OutlinedTextField
           placeholder="Search Name, Room or Email..."
@@ -308,7 +308,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
           testID="directory_search_input"
           style={{ marginBottom: 10 }}
         />
-        <Txt size={11} weight="700" color={Colors.SlateMutedText}>RSVP Choice Filter</Txt>
+        <Txt variant="caption" weight="700" color={Colors.SlateMutedText}>RSVP Choice Filter</Txt>
         <Spacer size={4} />
         <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
           {['All', 'Eating', 'Skipping', 'Pending'].map((opt) => (
@@ -324,7 +324,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
 
       {filteredGuests.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Txt size={13} color="#9CA3AF">No resident matching filter query.</Txt>
+          <Txt variant="body" color="#9CA3AF">No resident matching filter query.</Txt>
         </View>
       ) : (
         filteredGuests.map((guest) => {
@@ -343,15 +343,15 @@ export function AdminDashboardTab({ onAddPg }: Props) {
               <Row justify="space-between" align="center">
                 <Row gap={10} style={{ flex: 1 }}>
                   <View style={[styles.avatarBox, { backgroundColor: '#251C47' }]}>
-                    <Txt size={14} weight="900" color="#FFFFFF">{guest.name.charAt(0).toUpperCase()}</Txt>
+                    <Txt variant="cardTitle" weight="900" color="#FFFFFF">{guest.name.charAt(0).toUpperCase()}</Txt>
                   </View>
                   <Col style={{ flex: 1 }}>
-                    <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>{guest.name}</Txt>
-                    <Txt size={11} color={Colors.SlateMutedText} numberOfLines={1}>Room {guest.roomNo} • {guest.email}</Txt>
+                    <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>{guest.name}</Txt>
+                    <Txt variant="caption" color={Colors.SlateMutedText} numberOfLines={1}>Room {guest.roomNo} • {guest.email}</Txt>
                   </Col>
                 </Row>
                 <View style={[styles.choicePill, { backgroundColor: `${choiceColor}26`, borderColor: choiceColor }]}>
-                  <Txt size={10} weight="900" color={choiceColor}>{choiceText}</Txt>
+                  <Txt variant="labelSmall" weight="900" color={choiceColor}>{choiceText}</Txt>
                 </View>
               </Row>
               <Spacer size={10} />

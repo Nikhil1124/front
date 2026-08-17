@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Category } from '../../data/mockProducts';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 const gap = 10;
 const totalPadding = 32;
@@ -101,12 +101,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
     color: '#17201A',
   },
   seeAllText: {
     fontSize: 13,
-    fontFamily: AppFonts.semiBold,
     color: '#15803D',
   },
   grid: {
@@ -132,7 +130,6 @@ const styles = StyleSheet.create({
   },
   cardText: {
     fontSize: 11,
-    fontFamily: AppFonts.semiBold,
     color: '#17201A',
     textAlign: 'center',
     lineHeight: 14,

@@ -181,7 +181,7 @@ export function OwnerGuestsManagementTab() {
 
           <Row gap={8} align="center">
             <View style={styles.divider} />
-            <Txt size={10} weight="800" color={Colors.textMuted}>OR REGISTER MANUALLY</Txt>
+            <Txt variant="labelSmall" weight="800" color={Colors.textMuted}>OR REGISTER MANUALLY</Txt>
             <View style={styles.divider} />
           </Row>
 
@@ -196,7 +196,7 @@ export function OwnerGuestsManagementTab() {
           <OutlinedTextField label="Login Passcode / Password *" placeholder="At least 8 characters" value={guestPassword} onChangeText={setGuestPassword} secureTextEntry containerColor={Colors.surfaceMuted} testID="owner_guest_password_input" style={{ marginBottom: 14 }} />
           <Btn onPress={handleCreate} loading={isCreating} disabled={isCreating} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={44} testID="owner_guest_submit_btn">
             <Ionicons name="person-add" size={16} color={Colors.textInverse} />
-            <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>Register Resident ID & Password</Txt>
+            <Txt variant="body" weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>Register Resident ID & Password</Txt>
           </Btn>
         </FormScroll>
       ) : (
@@ -212,14 +212,14 @@ export function OwnerGuestsManagementTab() {
             <View style={{ gap: 14 }}>
               {roomOccupancy.length > 0 && (
                 <View>
-                  <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 8 }}>
+                  <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 8 }}>
                     ROOM OCCUPANCY
                   </Txt>
                   <View style={styles.roomGrid}>
                     {roomOccupancy.map(([room, count]) => (
                       <View key={room} style={styles.roomChip}>
-                        <Txt size={12} weight="800" color={Colors.textPrimary}>Room {room}</Txt>
-                        <Txt size={10} color={Colors.textMuted}>{count} resident{count === 1 ? '' : 's'}</Txt>
+                        <Txt variant="caption" weight="800" color={Colors.textPrimary}>Room {room}</Txt>
+                        <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{count} resident{count === 1 ? '' : 's'}</Txt>
                       </View>
                     ))}
                   </View>
@@ -237,21 +237,21 @@ export function OwnerGuestsManagementTab() {
                     <Card key={g.id} containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 12]} style={{ marginBottom: 8 }}>
                       <Row justify="space-between" align="center">
                         <Col style={{ flex: 1 }}>
-                          <Txt size={13} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
-                          <Txt size={11} color={Colors.textMuted}>Room {g.roomNo} • ID: {g.idProofType}</Txt>
-                          {g.idProofNumber ? <Txt size={10} color={Colors.textMuted}>No: {g.idProofNumber}</Txt> : null}
+                          <Txt variant="body" weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                          <Txt variant="caption" color={Colors.textMuted}>Room {g.roomNo} • ID: {g.idProofType}</Txt>
+                          {g.idProofNumber ? <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>No: {g.idProofNumber}</Txt> : null}
                         </Col>
                         <Btn onPress={() => setReviewing(g)} containerColor={Colors.surfaceElevated} textColor={Colors.primaryDark} borderRadius={8} height={32} contentStyle={{ paddingHorizontal: 10 }}>
-                          <Txt size={11} weight="800" color={Colors.primaryDark}>Review Docs</Txt>
+                          <Txt variant="caption" weight="800" color={Colors.primaryDark}>Review Docs</Txt>
                         </Btn>
                       </Row>
                       <Spacer size={8} />
                       <Row gap={8}>
                         <Btn onPress={() => handleApprove(g)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={8} height={34} style={{ flex: 1 }}>
-                          <Txt size={11} weight="800" color={Colors.textInverse}>✅ Approve</Txt>
+                          <Txt variant="caption" weight="800" color={Colors.textInverse}>✅ Approve</Txt>
                         </Btn>
                         <Btn onPress={() => setRejecting(g)} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={8} height={34} style={{ flex: 1 }}>
-                          <Txt size={11} weight="800" color={Colors.textInverse}>❌ Reject</Txt>
+                          <Txt variant="caption" weight="800" color={Colors.textInverse}>❌ Reject</Txt>
                         </Btn>
                       </Row>
                     </Card>
@@ -260,9 +260,9 @@ export function OwnerGuestsManagementTab() {
               )}
 
               <Row justify="space-between" align="center">
-                <Txt size={14} weight="900" color={Colors.textPrimary}>Registered Residents</Txt>
+                <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>Registered Residents</Txt>
                 <View style={styles.countBadge}>
-                  <Txt size={11} weight="800" color={Colors.primaryDark}>{guests.length} Guests</Txt>
+                  <Txt variant="caption" weight="800" color={Colors.primaryDark}>{guests.length} Guests</Txt>
                 </View>
               </Row>
 
@@ -270,8 +270,8 @@ export function OwnerGuestsManagementTab() {
                 <TouchableOpacity onPress={() => setShowEditProperty(true)} activeOpacity={0.7}>
                   <Row gap={6} align="center">
                     <Ionicons name="bed-outline" size={14} color={Colors.textMuted} />
-                    <Txt size={11} color={Colors.textMuted}>{owner?.totalBeds ?? 0} total beds</Txt>
-                    <Txt size={11} weight="800" color={Colors.primary}>Edit ›</Txt>
+                    <Txt variant="caption" color={Colors.textMuted}>{owner?.totalBeds ?? 0} total beds</Txt>
+                    <Txt variant="caption" weight="800" color={Colors.primary}>Edit ›</Txt>
                   </Row>
                 </TouchableOpacity>
               )}
@@ -293,18 +293,18 @@ export function OwnerGuestsManagementTab() {
                   <Row justify="space-between" align="center">
                     <Row gap={12} style={{ flex: 1 }}>
                       <View style={styles.avatar}>
-                        <Txt size={17} weight="900" color={Colors.primaryDark}>{g.name.charAt(0).toUpperCase()}</Txt>
+                        <Txt variant="screenTitle" weight="900" color={Colors.primaryDark}>{g.name.charAt(0).toUpperCase()}</Txt>
                       </View>
                       <Col style={{ flex: 1 }}>
-                        <Txt size={14} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
-                        <Txt size={11} color={Colors.textMuted}>Room {g.roomNo} • {g.email}</Txt>
-                        <Txt size={11} weight="700" color={Colors.primaryDark}>₹{Math.round(g.rentAmount)}/mo</Txt>
+                        <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                        <Txt variant="caption" color={Colors.textMuted}>Room {g.roomNo} • {g.email}</Txt>
+                        <Txt variant="caption" weight="700" color={Colors.primaryDark}>₹{Math.round(g.rentAmount)}/mo</Txt>
                         <Row gap={6} style={{ marginTop: 4 }}>
                           <View style={[styles.pill, { backgroundColor: kyc.bg, borderColor: kyc.border }]}>
-                            <Txt size={9} weight="800" color={kyc.text}>{kyc.label}</Txt>
+                            <Txt variant="labelSmall" weight="800" color={kyc.text}>{kyc.label}</Txt>
                           </View>
                           <View style={[styles.pill, { backgroundColor: g.isBillPaid ? '#ECFDF5' : '#FFFBEB', borderColor: g.isBillPaid ? '#A7F3D0' : '#FDE68A' }]}>
-                            <Txt size={9} weight="800" color={g.isBillPaid ? '#047857' : '#B45309'}>{g.isBillPaid ? '💵 Paid' : '⏳ Due'}</Txt>
+                            <Txt variant="labelSmall" weight="800" color={g.isBillPaid ? '#047857' : '#B45309'}>{g.isBillPaid ? '💵 Paid' : '⏳ Due'}</Txt>
                           </View>
                         </Row>
                       </Col>
@@ -339,17 +339,17 @@ export function OwnerGuestsManagementTab() {
             <Row gap={8}>
               <Btn onPress={() => { openEdit(detailGuest); setDetailGuest(null); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
                 <Ionicons name="create" size={16} color={Colors.textInverse} />
-                <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Edit</Txt>
+                <Txt variant="caption" weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Edit</Txt>
               </Btn>
               {detailGuest.kycStatus === 'PENDING' && (
                 <Btn onPress={() => { setReviewing(detailGuest); setDetailGuest(null); }} containerColor="#D97706" textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
                   <Ionicons name="shield-checkmark" size={16} color={Colors.textInverse} />
-                  <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Review KYC</Txt>
+                  <Txt variant="caption" weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Review KYC</Txt>
                 </Btn>
               )}
               <Btn onPress={() => { confirmDeleteGuest(detailGuest); setDetailGuest(null); }} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
                 <Ionicons name="trash" size={16} color={Colors.textInverse} />
-                <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Delete</Txt>
+                <Txt variant="caption" weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>Delete</Txt>
               </Btn>
             </Row>
           ) : null
@@ -360,12 +360,12 @@ export function OwnerGuestsManagementTab() {
             <Card containerColor={Colors.surfaceElevated} borderRadius={12} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
               <Row align="center" gap={12}>
                 <View style={[styles.avatar, { width: 56, height: 56, borderRadius: 28 }]}>
-                  <Txt size={22} weight="900" color={Colors.primaryDark}>{detailGuest.name.charAt(0).toUpperCase()}</Txt>
+                  <Txt variant="statValue" weight="900" color={Colors.primaryDark}>{detailGuest.name.charAt(0).toUpperCase()}</Txt>
                 </View>
                 <Col style={{ flex: 1 }}>
-                  <Txt size={16} weight="800" color={Colors.textPrimary}>{detailGuest.name}</Txt>
-                  <Txt size={11} color={Colors.textMuted}>Resident ID: {detailGuest.id}</Txt>
-                  <Txt size={11} color={Colors.textMuted}>Joined {formatDateTime(detailGuest.registrationDate)}</Txt>
+                  <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>{detailGuest.name}</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Resident ID: {detailGuest.id}</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Joined {formatDateTime(detailGuest.registrationDate)}</Txt>
                 </Col>
               </Row>
             </Card>
@@ -375,15 +375,15 @@ export function OwnerGuestsManagementTab() {
             <Spacer size={6} />
             <View style={styles.detailRow}>
               <Ionicons name="home" size={14} color={Colors.textMuted} />
-              <Txt size={12} color={Colors.textPrimary}>Room {detailGuest.roomNo}</Txt>
+              <Txt variant="caption" color={Colors.textPrimary}>Room {detailGuest.roomNo}</Txt>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="call" size={14} color={Colors.textMuted} />
-              <Txt size={12} color={Colors.textPrimary}>{detailGuest.phone || '—'}</Txt>
+              <Txt variant="caption" color={Colors.textPrimary}>{detailGuest.phone || '—'}</Txt>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="mail" size={14} color={Colors.textMuted} />
-              <Txt size={12} color={Colors.textPrimary}>{detailGuest.email}</Txt>
+              <Txt variant="caption" color={Colors.textPrimary}>{detailGuest.email}</Txt>
             </View>
 
             <Spacer size={14} />
@@ -391,17 +391,17 @@ export function OwnerGuestsManagementTab() {
             <Spacer size={6} />
             <View style={styles.detailRow}>
               <Ionicons name="cash" size={14} color="#059669" />
-              <Txt size={12} color={Colors.textPrimary}>Monthly Rent: ₹{Math.round(detailGuest.rentAmount)}</Txt>
+              <Txt variant="caption" color={Colors.textPrimary}>Monthly Rent: ₹{Math.round(detailGuest.rentAmount)}</Txt>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name={detailGuest.isBillPaid ? 'checkmark-circle' : 'alert-circle'} size={14} color={detailGuest.isBillPaid ? '#059669' : '#B45309'} />
-              <Txt size={12} color={detailGuest.isBillPaid ? '#059669' : '#B45309'}>
+              <Txt variant="caption" color={detailGuest.isBillPaid ? '#059669' : '#B45309'}>
                 {detailGuest.isBillPaid ? 'Rent paid this cycle' : 'Rent pending for this cycle'}
               </Txt>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="star" size={14} color="#D97706" />
-              <Txt size={12} color={Colors.textPrimary}>Reward points: {detailGuest.rewardPoints}</Txt>
+              <Txt variant="caption" color={Colors.textPrimary}>Reward points: {detailGuest.rewardPoints}</Txt>
             </View>
 
             <Spacer size={14} />
@@ -413,30 +413,30 @@ export function OwnerGuestsManagementTab() {
                 detailGuest.kycStatus === 'PENDING' ? '#B45309' :
                 detailGuest.kycStatus === 'REJECTED' ? Colors.danger : Colors.textMuted
               } />
-              <Txt size={12} color={Colors.textPrimary}>Status: {detailGuest.kycStatus}</Txt>
+              <Txt variant="caption" color={Colors.textPrimary}>Status: {detailGuest.kycStatus}</Txt>
             </View>
             {detailGuest.idProofType ? (
               <View style={styles.detailRow}>
                 <Ionicons name="card" size={14} color={Colors.textMuted} />
-                <Txt size={12} color={Colors.textPrimary}>ID: {detailGuest.idProofType} {detailGuest.idProofNumber ? `• ${detailGuest.idProofNumber}` : ''}</Txt>
+                <Txt variant="caption" color={Colors.textPrimary}>ID: {detailGuest.idProofType} {detailGuest.idProofNumber ? `• ${detailGuest.idProofNumber}` : ''}</Txt>
               </View>
             ) : null}
             <View style={styles.detailRow}>
               <Ionicons name="camera" size={14} color={detailGuest.profilePhotoUri ? '#059669' : Colors.textMuted} />
-              <Txt size={12} color={detailGuest.profilePhotoUri ? '#059669' : Colors.textMuted}>
+              <Txt variant="caption" color={detailGuest.profilePhotoUri ? '#059669' : Colors.textMuted}>
                 {detailGuest.profilePhotoUri ? 'Profile photo on file' : 'No profile photo'}
               </Txt>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="document-text" size={14} color={detailGuest.idProofPhotoUri ? '#059669' : Colors.textMuted} />
-              <Txt size={12} color={detailGuest.idProofPhotoUri ? '#059669' : Colors.textMuted}>
+              <Txt variant="caption" color={detailGuest.idProofPhotoUri ? '#059669' : Colors.textMuted}>
                 {detailGuest.idProofPhotoUri ? 'ID document photo on file' : 'No ID document photo'}
               </Txt>
             </View>
             {detailGuest.kycRejectReason ? (
               <View style={styles.rejectReasonBox}>
                 <Ionicons name="warning" size={14} color={Colors.danger} />
-                <Txt size={11} color="#B91C1C" style={{ flex: 1 }}>Rejection reason: {detailGuest.kycRejectReason}</Txt>
+                <Txt variant="caption" color="#B91C1C" style={{ flex: 1 }}>Rejection reason: {detailGuest.kycRejectReason}</Txt>
               </View>
             ) : null}
           </View>
@@ -447,7 +447,7 @@ export function OwnerGuestsManagementTab() {
       <Modal visible={editing != null} transparent animationType="fade">
         <View style={styles.backdrop}>
           <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ width: '92%' }}>
-            <Txt size={16} weight="800" color={Colors.textPrimary}>Edit Resident Profile & Monthly Fee</Txt>
+            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Edit Resident Profile & Monthly Fee</Txt>
             <Spacer size={12} />
             <OutlinedTextField label="Resident Full Name *" value={editName} onChangeText={setEditName} containerColor={Colors.surfaceMuted} testID="edit_guest_name_input" style={{ marginBottom: 8 }} />
             <OutlinedTextField label="Room No *" value={editRoom} onChangeText={setEditRoom} containerColor={Colors.surfaceMuted} testID="edit_guest_room_input" style={{ marginBottom: 8 }} />
@@ -458,10 +458,10 @@ export function OwnerGuestsManagementTab() {
                 everywhere and they choose their own on the next login. */}
             <Row gap={8}>
               <Btn onPress={handleUpdate} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="800" color={Colors.textInverse}>Save Changes</Txt>
+                <Txt variant="body" weight="800" color={Colors.textInverse}>Save Changes</Txt>
               </Btn>
               <OutlinedBtn onPress={() => setEditing(null)} borderColor={Colors.borderSubtle} textColor={Colors.textPrimary} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+                <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
               </OutlinedBtn>
             </Row>
           </Card>
@@ -473,42 +473,42 @@ export function OwnerGuestsManagementTab() {
         <View style={styles.backdrop}>
           <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '92%' }}>
             <Row justify="space-between" align="center">
-              <Txt size={16} weight="800" color={Colors.textPrimary}>Resident KYC Document Review</Txt>
+              <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Resident KYC Document Review</Txt>
               <IconBtn onPress={() => setReviewing(null)} icon="close" size={20} tint={Colors.textMuted} />
             </Row>
             <Spacer size={12} />
             {reviewing && (
               <Col>
-                <Txt size={14} weight="800" color={Colors.textPrimary}>Resident: {reviewing.name} (Room {reviewing.roomNo})</Txt>
-                <Txt size={11} color={Colors.textMuted}>Email: {reviewing.email} • Phone: {reviewing.phone}</Txt>
+                <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>Resident: {reviewing.name} (Room {reviewing.roomNo})</Txt>
+                <Txt variant="caption" color={Colors.textMuted}>Email: {reviewing.email} • Phone: {reviewing.phone}</Txt>
                 <Spacer size={16} />
-                <Txt size={12} weight="800" color={Colors.primaryDark}>ID Document: {reviewing.idProofType}</Txt>
-                <Txt size={13} weight="700" color={Colors.textPrimary}>ID Number: {reviewing.idProofNumber || 'Not provided'}</Txt>
+                <Txt variant="caption" weight="800" color={Colors.primaryDark}>ID Document: {reviewing.idProofType}</Txt>
+                <Txt variant="body" weight="700" color={Colors.textPrimary}>ID Number: {reviewing.idProofNumber || 'Not provided'}</Txt>
                 <Spacer size={12} />
-                <Txt size={12} weight="700" color={Colors.textMuted}>Profile Photo / Selfie</Txt>
+                <Txt variant="caption" weight="700" color={Colors.textMuted}>Profile Photo / Selfie</Txt>
                 <View style={styles.photoBox}>
                   {reviewing.profilePhotoUri ? (
-                    <Txt size={12} color={Colors.primaryDark}>📷 Photo on file</Txt>
+                    <Txt variant="caption" color={Colors.primaryDark}>📷 Photo on file</Txt>
                   ) : (
-                    <Txt size={12} color={Colors.textMuted}>No Selfie Provided</Txt>
+                    <Txt variant="caption" color={Colors.textMuted}>No Selfie Provided</Txt>
                   )}
                 </View>
                 <Spacer size={12} />
-                <Txt size={12} weight="700" color={Colors.textMuted}>Document Front Scan / Photo</Txt>
+                <Txt variant="caption" weight="700" color={Colors.textMuted}>Document Front Scan / Photo</Txt>
                 <View style={styles.photoBox}>
                   {reviewing.idProofPhotoUri ? (
-                    <Txt size={12} color={Colors.primaryDark}>📷 Document on file</Txt>
+                    <Txt variant="caption" color={Colors.primaryDark}>📷 Document on file</Txt>
                   ) : (
-                    <Txt size={12} color={Colors.textMuted}>No Document Image Provided</Txt>
+                    <Txt variant="caption" color={Colors.textMuted}>No Document Image Provided</Txt>
                   )}
                 </View>
                 <Spacer size={20} />
                 <Row gap={8}>
                   <Btn onPress={() => handleApprove(reviewing)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                    <Txt size={12} weight="800" color={Colors.textInverse}>Approve KYC</Txt>
+                    <Txt variant="caption" weight="800" color={Colors.textInverse}>Approve KYC</Txt>
                   </Btn>
                   <Btn onPress={() => { setRejecting(reviewing); setReviewing(null); }} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                    <Txt size={12} weight="800" color={Colors.textInverse}>Reject KYC</Txt>
+                    <Txt variant="caption" weight="800" color={Colors.textInverse}>Reject KYC</Txt>
                   </Btn>
                 </Row>
               </Col>
@@ -521,9 +521,9 @@ export function OwnerGuestsManagementTab() {
       <Modal visible={rejecting != null} transparent animationType="fade">
         <View style={styles.backdrop}>
           <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ width: '92%' }}>
-            <Txt size={16} weight="800" color={Colors.danger}>Reject KYC for {rejecting?.name}</Txt>
+            <Txt variant="sectionTitle" weight="800" color={Colors.danger}>Reject KYC for {rejecting?.name}</Txt>
             <Spacer size={12} />
-            <Txt size={12} color={Colors.textMuted}>Provide a reason so the resident can re-upload clear documents:</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Provide a reason so the resident can re-upload clear documents:</Txt>
             <Spacer size={8} />
             <OutlinedTextField
               label="Rejection Reason"
@@ -536,10 +536,10 @@ export function OwnerGuestsManagementTab() {
             />
             <Row gap={8}>
               <Btn onPress={handleReject} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="800" color={Colors.textInverse}>Reject & Notify</Txt>
+                <Txt variant="body" weight="800" color={Colors.textInverse}>Reject & Notify</Txt>
               </Btn>
               <OutlinedBtn onPress={() => setRejecting(null)} borderColor={Colors.borderSubtle} textColor={Colors.textPrimary} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt size={13} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+                <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
               </OutlinedBtn>
             </Row>
           </Card>

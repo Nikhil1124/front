@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, ActivityIndicator } from 'react-native';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 export interface ActionButtonProps {
   label: string;
@@ -44,7 +44,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' || variant === 'ghost' ? AppColors.primary : AppColors.surface}
+          color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.surface}
         />
       ) : (
         <Text style={[styles.label, styles[`label_${size}`], styles[`label_${variant}`]]}>
@@ -65,25 +65,25 @@ const styles = StyleSheet.create({
   base_md: { paddingVertical: 10, paddingHorizontal: 20 },
   base_lg: { paddingVertical: 14, paddingHorizontal: 28 },
 
-  variant_primary: { backgroundColor: AppColors.primary },
+  variant_primary: { backgroundColor: Colors.primary },
   variant_outline: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
   },
   variant_ghost: { backgroundColor: 'transparent' },
-  variant_danger: { backgroundColor: AppColors.error },
+  variant_danger: { backgroundColor: Colors.danger },
 
   fullWidth: { width: '100%' },
   disabled: { opacity: 0.5 },
 
-  label: { fontFamily: AppFonts.bold },
   label_sm: { fontSize: 12 },
   label_md: { fontSize: 14 },
   label_lg: { fontSize: 16 },
 
-  label_primary: { color: AppColors.surface },
-  label_outline: { color: AppColors.primary },
-  label_ghost: { color: AppColors.primary },
-  label_danger: { color: AppColors.surface },
+  label_primary: { color: Colors.surface },
+  label_outline: { color: Colors.primary },
+  label_ghost: { color: Colors.primary },
+  label_danger: { color: Colors.surface },
+  label: { fontWeight: '700' as const },
 });

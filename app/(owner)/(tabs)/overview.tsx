@@ -167,7 +167,7 @@ export default function OwnerOverviewTab() {
                   <Ionicons name={tile.icon} size={20} color={tile.tint} />
                 </View>
                 <Txt size={13} weight="800" color={Colors.textPrimary} style={{ marginTop: 10 }}>{tile.label}</Txt>
-                <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
+                <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
               </Card>
             </AnimatedPress>
           ))}
@@ -193,7 +193,7 @@ export default function OwnerOverviewTab() {
                   }]} />
                   <Col style={{ flex: 1 }}>
                     <Txt size={12} weight="700" color={Colors.textPrimary}>{n.title}</Txt>
-                    <Txt size={10} color={Colors.textMuted}>{n.message}</Txt>
+                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{n.message}</Txt>
                   </Col>
                 </Row>
               ))}
@@ -256,7 +256,7 @@ export default function OwnerOverviewTab() {
                               <Txt size={9} weight="800" color={Colors.primaryDark}>Room {g.roomNo}</Txt>
                             </View>
                           </Row>
-                          <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>
+                          <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>
                             Phone: {g.phone || 'N/A'} • Due since 1st
                           </Txt>
                         </Col>

@@ -82,7 +82,7 @@ export function StaffManagementTab() {
       {subTab === 0 ? (
         <FormScroll contentContainerStyle={{ paddingTop: 14, gap: 14, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             <Row gap={6} align="center">
-              <Txt size={15} weight="900" color={Colors.textPrimary}>{!isManager ? 'Appoint Manager / Staff' : 'Add Staff Member'}</Txt>
+              <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{!isManager ? 'Appoint Manager / Staff' : 'Add Staff Member'}</Txt>
               <InfoTip
                 text={!isManager
                   ? 'Appoint managers or staff for this property. Staff are added to the property you are currently signed in to.'
@@ -100,7 +100,7 @@ export function StaffManagementTab() {
               style={{ marginBottom: 8 }}
             />
 
-            <Txt size={11} weight="800" color={Colors.textMuted}>Designation / Role</Txt>
+            <Txt variant="caption" weight="800" color={Colors.textMuted}>Designation / Role</Txt>
             <Spacer size={4} />
             <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
               {availableRoles.map((role) => (
@@ -168,7 +168,7 @@ export function StaffManagementTab() {
               height={44}
             >
               <Ionicons name="person-add" size={16} color={Colors.textInverse} />
-              <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
+              <Txt variant="body" weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
                 {!isManager ? 'Appoint & Provision Member' : 'Register Staff Member'}
               </Txt>
             </Btn>
@@ -185,9 +185,9 @@ export function StaffManagementTab() {
           ListHeaderComponent={
             <View>
               <Row justify="space-between" align="center">
-                <Txt size={14} weight="900" color={Colors.textPrimary}>Registered Staff & Managers</Txt>
+                <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>Registered Staff & Managers</Txt>
                 <View style={styles.countBadge}>
-                  <Txt size={11} weight="800" color={Colors.primaryDark}>{staffList.length} Active</Txt>
+                  <Txt variant="caption" weight="800" color={Colors.primaryDark}>{staffList.length} Active</Txt>
                 </View>
               </Row>
               <Spacer size={10} />
@@ -196,7 +196,7 @@ export function StaffManagementTab() {
           ListEmptyComponent={
             <Card containerColor={Colors.surface} borderRadius={14} padding={[20, 16]} style={{ alignItems: 'center' }}>
               <Ionicons name="people-outline" size={32} color={Colors.textMuted} />
-              <Txt size={12} weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>No staff registered yet.</Txt>
+              <Txt variant="caption" weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>No staff registered yet.</Txt>
             </Card>
           }
           renderItem={({ item: staff }) => {
@@ -222,18 +222,18 @@ export function StaffManagementTab() {
                     </View>
                     <Col style={{ flex: 1 }}>
                       <Row align="center" gap={6}>
-                        <Txt size={14} weight="800" color={Colors.textPrimary}>{staff.name}</Txt>
+                        <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>{staff.name}</Txt>
                         <View style={[styles.rolePill, { backgroundColor: isMgr ? '#BBF7D0' : '#E0F2FE' }]}>
-                          <Txt size={9} weight="800" color={isMgr ? '#166534' : '#0369A1'}>{staff.role}</Txt>
+                          <Txt variant="labelSmall" weight="800" color={isMgr ? '#166534' : '#0369A1'}>{staff.role}</Txt>
                         </View>
                       </Row>
-                      <Txt size={11} weight="700" color={Colors.primaryDark} style={{ marginTop: 2 }}>
+                      <Txt variant="caption" weight="700" color={Colors.primaryDark} style={{ marginTop: 2 }}>
                         🏢 {branchName}
                       </Txt>
-                      <Txt size={10} color={Colors.textMuted}>
+                      <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>
                         📞 {staff.phone} • PIN: {staff.loginPin}
                       </Txt>
-                      <Txt size={10} weight="700" color={Colors.textSecondary}>
+                      <Txt variant="labelSmall" color={Colors.textSecondary}>
                         {staff.shiftTime ? `${staff.shiftTime} • ` : ''}₹{Math.round(staff.monthlySalary).toLocaleString('en-IN')}/mo
                       </Txt>
                     </Col>

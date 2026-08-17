@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 export interface QuantityStepperProps {
   quantity: number;
@@ -28,7 +28,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         onPress={onDecrease}
         activeOpacity={0.7}
       >
-        <Ionicons name="remove" size={compact ? 12 : 14} color={AppColors.primary} />
+        <Ionicons name="remove" size={compact ? 12 : 14} color={Colors.primary} />
       </TouchableOpacity>
 
       <Text style={[styles.qty, compact && styles.compactQty]}>{quantity}</Text>
@@ -38,7 +38,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         onPress={onIncrease}
         activeOpacity={0.7}
       >
-        <Ionicons name="add" size={compact ? 12 : 14} color={AppColors.primary} />
+        <Ionicons name="add" size={compact ? 12 : 14} color={Colors.primary} />
       </TouchableOpacity>
     </View>
   );
@@ -48,9 +48,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
     borderRadius: 8,
     height: 36,
     paddingHorizontal: 4,
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 5,
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -76,8 +76,7 @@ const styles = StyleSheet.create({
   },
   qty: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     minWidth: 16,
     textAlign: 'center',
   },

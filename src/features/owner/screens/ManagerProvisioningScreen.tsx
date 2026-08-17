@@ -44,16 +44,16 @@ export function ManagerProvisioningScreen() {
         padding={[14, 14]}
       >
         <Row justify="space-between" align="center">
-          <Txt size={13} weight="800" color={Colors.textPrimary}>Active Managers</Txt>
+          <Txt variant="body" weight="800" color={Colors.textPrimary}>Active Managers</Txt>
           <View style={styles.countPill}>
-            <Txt size={11} weight="800" color={Colors.primaryDark}>{managers.length}</Txt>
+            <Txt variant="caption" weight="800" color={Colors.primaryDark}>{managers.length}</Txt>
           </View>
         </Row>
         <Spacer size={10} />
         {managers.length === 0 ? (
           <Row gap={8} align="center">
             <Ionicons name="information-circle" size={16} color={Colors.textMuted} />
-            <Txt size={12} color={Colors.textMuted}>No managers provisioned yet. Use the form below to invite one.</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>No managers provisioned yet. Use the form below to invite one.</Txt>
           </Row>
         ) : (
           <View style={{ gap: 8 }}>
@@ -65,12 +65,12 @@ export function ManagerProvisioningScreen() {
                     <Ionicons name="person" size={18} color={Colors.primary} />
                   </View>
                   <Col style={{ flex: 1 }}>
-                    <Txt size={13} weight="700" color={Colors.textPrimary}>{m.name}</Txt>
-                    <Txt size={11} color={Colors.textMuted}>{m.phone}</Txt>
+                    <Txt variant="body" weight="700" color={Colors.textPrimary}>{m.name}</Txt>
+                    <Txt variant="caption" color={Colors.textMuted}>{m.phone}</Txt>
                   </Col>
                   {pg ? (
                     <View style={styles.pgPill}>
-                      <Txt size={10} weight="700" color={Colors.primaryDark} numberOfLines={1}>{pg.pgName}</Txt>
+                      <Txt variant="labelSmall" color={Colors.primaryDark} numberOfLines={1}>{pg.pgName}</Txt>
                     </View>
                   ) : null}
                 </Row>

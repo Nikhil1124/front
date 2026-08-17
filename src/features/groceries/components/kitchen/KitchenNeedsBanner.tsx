@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { DayMenuConfig } from '../../data/WeeklyMenuTypes';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 interface KitchenNeedsBannerProps {
   config: DayMenuConfig;
@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
     color: '#647067',
     letterSpacing: 1,
   },
@@ -92,20 +91,17 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontFamily: AppFonts.bold,
   },
   menuContainer: {
     marginVertical: 8,
   },
   dishesText: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
     lineHeight: 22,
     marginBottom: 4,
   },
   supportingText: {
     fontSize: 12,
-    fontFamily: AppFonts.regular,
     color: '#647067',
   },
   footerRow: {
@@ -120,7 +116,6 @@ const styles = StyleSheet.create({
   viewMenuText: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontFamily: AppFonts.bold,
   },
 });
 

@@ -5,7 +5,7 @@ import { EnrichedProduct } from '../../data/mockProducts';
 import { useCartStore } from '../../store/useCartStore';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 interface ProductCardProps {
   product: EnrichedProduct;
@@ -211,7 +211,6 @@ const styles = StyleSheet.create({
   discountBadgeText: {
     color: '#E53935',
     fontSize: 9,
-    fontFamily: AppFonts.bold,
   },
   wishlistBtn: {
     padding: 2,
@@ -248,12 +247,10 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 14,
-    fontFamily: AppFonts.semiBold,
     color: '#17201A',
   },
   unitText: {
     fontSize: 11,
-    fontFamily: AppFonts.regular,
     color: '#647067',
     marginTop: 2,
   },
@@ -270,12 +267,10 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 15,
-    fontFamily: AppFonts.bold,
     color: '#15803D',
   },
   strikePrice: {
     fontSize: 11,
-    fontFamily: AppFonts.regular,
     color: '#98A39B',
     textDecorationLine: 'line-through',
   },
@@ -290,7 +285,6 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 10,
-    fontFamily: AppFonts.bold,
     color: '#F59E0B',
   },
   optionsWrapper: {
@@ -313,7 +307,6 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 9,
-    fontFamily: AppFonts.bold,
     color: '#647067',
   },
   selectedOptionText: {
@@ -332,7 +325,6 @@ const styles = StyleSheet.create({
   addBtnText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontFamily: AppFonts.bold,
   },
   qtyControl: {
     flexDirection: 'row',
@@ -348,7 +340,6 @@ const styles = StyleSheet.create({
   },
   qtyText: {
     color: '#FFFFFF',
-    fontFamily: AppFonts.bold,
     fontSize: 13,
   },
 
@@ -382,12 +373,10 @@ const styles = StyleSheet.create({
   },
   simpleName: {
     fontSize: 12,
-    fontFamily: AppFonts.semiBold,
     color: '#17201A',
   },
   simpleUnit: {
     fontSize: 10,
-    fontFamily: AppFonts.regular,
     color: '#647067',
   },
   simpleBottomRow: {
@@ -398,12 +387,10 @@ const styles = StyleSheet.create({
   },
   simplePrice: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
     color: '#15803D',
   },
   simpleStrikePrice: {
     fontSize: 9,
-    fontFamily: AppFonts.regular,
     color: '#98A39B',
     textDecorationLine: 'line-through',
   },
@@ -430,7 +417,6 @@ const styles = StyleSheet.create({
   simpleQtyText: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontFamily: AppFonts.bold,
     minWidth: 12,
     textAlign: 'center',
   },

@@ -20,6 +20,13 @@
 
 export const PG_ID = "pg_demo_1";
 const PG_NAME = "Sunrise Residency PG";
+// Two more dummy properties for the same owner — enough guests/payments/expenses on each
+// to give the multi-PG Portfolio screen (see usePortfolioDetail) real numbers to roll up,
+// not just zeros.
+const PG2_ID = "pg_demo_2";
+const PG2_NAME = "Lakeview PG";
+const PG3_ID = "pg_demo_3";
+const PG3_NAME = "Hillside Homes";
 
 let seq = 1;
 export function genId(prefix: string): string {
@@ -66,6 +73,38 @@ export const pgs: MockPg[] = [
     map_image_url: null,
     join_code: "SUNR2026",
     default_rent_amount: "8500.00",
+    subscription_active: true,
+  },
+  {
+    id: PG2_ID,
+    name: PG2_NAME,
+    address: "14-6-22, Lake Vista Road",
+    total_beds: 18,
+    area_id: null,
+    roles: ["owner"],
+    active_upi_vpa: "lakeviewpg@okhdfcbank",
+    latitude: "17.412578",
+    longitude: "78.443298",
+    formatted_address: "Lakeview PG, Hussain Sagar, Hyderabad, Telangana 500080",
+    map_image_url: null,
+    join_code: "LAKE2026",
+    default_rent_amount: "8000.00",
+    subscription_active: true,
+  },
+  {
+    id: PG3_ID,
+    name: PG3_NAME,
+    address: "7-1-58, Hillside Colony",
+    total_beds: 20,
+    area_id: null,
+    roles: ["owner"],
+    active_upi_vpa: "hillsidehomes@okaxis",
+    latitude: "17.396789",
+    longitude: "78.469821",
+    formatted_address: "Hillside Homes, Banjara Hills, Hyderabad, Telangana 500034",
+    map_image_url: null,
+    join_code: "HILL2026",
+    default_rent_amount: "7500.00",
     subscription_active: true,
   },
 ];
@@ -119,7 +158,11 @@ addUser({
   email: "rajesh.owner@pgow.demo",
   must_change_password: false,
   avatar_url: null,
-  memberships: [{ pg_id: PG_ID, pg_name: PG_NAME, role: "owner", membership_id: "mem_owner_1", room_no: null }],
+  memberships: [
+    { pg_id: PG_ID, pg_name: PG_NAME, role: "owner", membership_id: "mem_owner_1", room_no: null },
+    { pg_id: PG2_ID, pg_name: PG2_NAME, role: "owner", membership_id: "mem_owner_2", room_no: null },
+    { pg_id: PG3_ID, pg_name: PG3_NAME, role: "owner", membership_id: "mem_owner_3", room_no: null },
+  ],
   platform_roles: [],
   gate: null,
 });
@@ -203,6 +246,15 @@ export const guests: MockGuest[] = [
   { membership_id: "mem_guest_4", user_id: "user_guest_4", pg_id: PG_ID, name: "Karthik Reddy", phone: "+919000000014", email: "karthik.reddy@example.com", room_no: "104", rent_amount: "8500.00", started_at: nowIso(-30 * DAY), ended_at: null },
   { membership_id: "mem_guest_5", user_id: "user_guest_5", pg_id: PG_ID, name: "Sneha Iyer", phone: "+919000000015", email: "sneha.iyer@example.com", room_no: "201", rent_amount: "9500.00", started_at: nowIso(-400 * DAY), ended_at: null },
   { membership_id: "mem_guest_6", user_id: "user_guest_6", pg_id: PG_ID, name: "Arjun Mehta", phone: "+919000000016", email: "arjun.mehta@example.com", room_no: "202", rent_amount: "8500.00", started_at: nowIso(-15 * DAY), ended_at: null },
+  // Lakeview PG (PG2)
+  { membership_id: "mem_guest_7", user_id: "user_guest_7", pg_id: PG2_ID, name: "Vikram Rao", phone: "+919000000020", email: "vikram.rao@example.com", room_no: "101", rent_amount: "8000.00", started_at: nowIso(-180 * DAY), ended_at: null },
+  { membership_id: "mem_guest_8", user_id: "user_guest_8", pg_id: PG2_ID, name: "Divya Menon", phone: "+919000000021", email: "divya.menon@example.com", room_no: "102", rent_amount: "8000.00", started_at: nowIso(-90 * DAY), ended_at: null },
+  { membership_id: "mem_guest_9", user_id: "user_guest_9", pg_id: PG2_ID, name: "Arjun Kapoor", phone: "+919000000022", email: "arjun.kapoor@example.com", room_no: "103", rent_amount: "8500.00", started_at: nowIso(-40 * DAY), ended_at: null },
+  // Hillside Homes (PG3)
+  { membership_id: "mem_guest_10", user_id: "user_guest_10", pg_id: PG3_ID, name: "Neha Joshi", phone: "+919000000023", email: "neha.joshi@example.com", room_no: "101", rent_amount: "7500.00", started_at: nowIso(-220 * DAY), ended_at: null },
+  { membership_id: "mem_guest_11", user_id: "user_guest_11", pg_id: PG3_ID, name: "Rahul Nair", phone: "+919000000024", email: "rahul.nair@example.com", room_no: "102", rent_amount: "7500.00", started_at: nowIso(-100 * DAY), ended_at: null },
+  { membership_id: "mem_guest_12", user_id: "user_guest_12", pg_id: PG3_ID, name: "Ayesha Khan", phone: "+919000000025", email: "ayesha.khan@example.com", room_no: "103", rent_amount: "8000.00", started_at: nowIso(-70 * DAY), ended_at: null },
+  { membership_id: "mem_guest_13", user_id: "user_guest_13", pg_id: PG3_ID, name: "Manoj Pillai", phone: "+919000000026", email: "manoj.pillai@example.com", room_no: "104", rent_amount: "7500.00", started_at: nowIso(-10 * DAY), ended_at: null },
 ];
 
 function gateForGuest(membershipId: string): MockUser["gate"] {
@@ -304,6 +356,13 @@ export const payments: MockPayment[] = [
   { id: "pay_5", pg_id: PG_ID, membership_id: "mem_guest_5", guest_name: "Sneha Iyer", room_no: "201", period: periodStr(1), purpose: "rent", amount: "9500.00", status: "verified", method: "upi_manual", upi_ref: "UPI2026070677213", rejection_reason: null, verified_at: nowIso(-31 * DAY), created_at: nowIso(-32 * DAY) },
   { id: "pay_6", pg_id: PG_ID, membership_id: "mem_guest_6", guest_name: "Arjun Mehta", room_no: "202", period: periodStr(1), purpose: "rent", amount: "8500.00", status: "verified", method: "cash", upi_ref: null, rejection_reason: null, verified_at: nowIso(-30 * DAY), created_at: nowIso(-31 * DAY) },
   { id: "pay_7", pg_id: PG_ID, membership_id: "mem_guest_1", guest_name: "Ananya Sharma", room_no: "101", period: periodStr(0), purpose: "food", amount: "1200.00", status: "verified", method: "upi_intent", upi_ref: "UPI2026081200331", rejection_reason: null, verified_at: nowIso(-1 * DAY), created_at: nowIso(-1 * DAY) },
+  // Lakeview PG (PG2) — mem_guest_9 has no payment this cycle, i.e. rent is due.
+  { id: "pay_8", pg_id: PG2_ID, membership_id: "mem_guest_7", guest_name: "Vikram Rao", room_no: "101", period: periodStr(0), purpose: "rent", amount: "8000.00", status: "verified", method: "upi_intent", upi_ref: "UPI2026080422101", rejection_reason: null, verified_at: nowIso(-3 * DAY), created_at: nowIso(-4 * DAY) },
+  { id: "pay_9", pg_id: PG2_ID, membership_id: "mem_guest_8", guest_name: "Divya Menon", room_no: "102", period: periodStr(0), purpose: "rent", amount: "8000.00", status: "verified", method: "upi_manual", upi_ref: "UPI2026080577310", rejection_reason: null, verified_at: nowIso(-5 * DAY), created_at: nowIso(-6 * DAY) },
+  // Hillside Homes (PG3) — mem_guest_13 has no payment this cycle, i.e. rent is due.
+  { id: "pay_10", pg_id: PG3_ID, membership_id: "mem_guest_10", guest_name: "Neha Joshi", room_no: "101", period: periodStr(0), purpose: "rent", amount: "7500.00", status: "verified", method: "upi_intent", upi_ref: "UPI2026080699442", rejection_reason: null, verified_at: nowIso(-2 * DAY), created_at: nowIso(-3 * DAY) },
+  { id: "pay_11", pg_id: PG3_ID, membership_id: "mem_guest_11", guest_name: "Rahul Nair", room_no: "102", period: periodStr(0), purpose: "rent", amount: "7500.00", status: "verified", method: "cash", upi_ref: null, rejection_reason: null, verified_at: nowIso(-7 * DAY), created_at: nowIso(-8 * DAY) },
+  { id: "pay_12", pg_id: PG3_ID, membership_id: "mem_guest_12", guest_name: "Ayesha Khan", room_no: "103", period: periodStr(0), purpose: "rent", amount: "8000.00", status: "verified", method: "upi_intent", upi_ref: "UPI2026081133556", rejection_reason: null, verified_at: nowIso(-1 * DAY), created_at: nowIso(-2 * DAY) },
 ];
 
 // ─── Meals ───────────────────────────────────────────────────────────────────
@@ -550,6 +609,12 @@ export const expenses: MockExpense[] = [
   { id: "exp_3", pg_id: PG_ID, logged_by: "mem_manager_1", logged_by_name: "Deepika Rao", logged_by_role: "manager", title: "Electricity bill", category: "utilities", amount: "9840.00", period: periodStr(0), spent_on: nowIso(-6 * DAY), method: "upi", paid_to_membership_id: null, paid_to_name: null, recipient_name: "TSSPDCL", request_id: null, reverses_expense_id: null, reversed_by_expense_id: null, notes: "", created_at: nowIso(-6 * DAY) },
   { id: "exp_4", pg_id: PG_ID, logged_by: "mem_manager_1", logged_by_name: "Deepika Rao", logged_by_role: "manager", title: "Plumbing repair — 2nd floor tap", category: "maintenance", amount: "350.00", period: periodStr(0), spent_on: nowIso(-0.5 * DAY), method: "cash", paid_to_membership_id: "mem_maint_1", paid_to_name: "Ibrahim Sheikh", recipient_name: "Ibrahim Sheikh", request_id: "req_6", reverses_expense_id: null, reversed_by_expense_id: null, notes: "Washer replacement", created_at: nowIso(-0.5 * DAY) },
   { id: "exp_5", pg_id: PG_ID, logged_by: "mem_owner_1", logged_by_name: "Rajesh Kumar", logged_by_role: "owner", title: "Broadband — WiFi router plan", category: "internet", amount: "1499.00", period: periodStr(0), spent_on: nowIso(-8 * DAY), method: "upi", paid_to_membership_id: null, paid_to_name: null, recipient_name: "ACT Fibernet", request_id: null, reverses_expense_id: null, reversed_by_expense_id: null, notes: "", created_at: nowIso(-8 * DAY) },
+  // Lakeview PG (PG2)
+  { id: "exp_6", pg_id: PG2_ID, logged_by: "mem_owner_2", logged_by_name: "Rajesh Kumar", logged_by_role: "owner", title: "Weekly grocery run", category: "groceries", amount: "4200.00", period: periodStr(0), spent_on: nowIso(-3 * DAY), method: "upi", paid_to_membership_id: null, paid_to_name: null, recipient_name: "Lakeview Kirana Store", request_id: null, reverses_expense_id: null, reversed_by_expense_id: null, notes: "", created_at: nowIso(-3 * DAY) },
+  { id: "exp_7", pg_id: PG2_ID, logged_by: "mem_owner_2", logged_by_name: "Rajesh Kumar", logged_by_role: "owner", title: "Electricity bill", category: "utilities", amount: "6100.00", period: periodStr(0), spent_on: nowIso(-5 * DAY), method: "upi", paid_to_membership_id: null, paid_to_name: null, recipient_name: "TSSPDCL", request_id: null, reverses_expense_id: null, reversed_by_expense_id: null, notes: "", created_at: nowIso(-5 * DAY) },
+  // Hillside Homes (PG3)
+  { id: "exp_8", pg_id: PG3_ID, logged_by: "mem_owner_3", logged_by_name: "Rajesh Kumar", logged_by_role: "owner", title: "Housekeeping salary", category: "staff_salary", amount: "15000.00", period: periodStr(0), spent_on: nowIso(-6 * DAY), method: "bank_transfer", paid_to_membership_id: null, paid_to_name: null, recipient_name: "Housekeeping Staff", request_id: null, reverses_expense_id: null, reversed_by_expense_id: null, notes: "", created_at: nowIso(-6 * DAY) },
+  { id: "exp_9", pg_id: PG3_ID, logged_by: "mem_owner_3", logged_by_name: "Rajesh Kumar", logged_by_role: "owner", title: "Bathroom fitting repair", category: "maintenance", amount: "800.00", period: periodStr(0), spent_on: nowIso(-1 * DAY), method: "cash", paid_to_membership_id: null, paid_to_name: null, recipient_name: "Local plumber", request_id: null, reverses_expense_id: null, reversed_by_expense_id: null, notes: "", created_at: nowIso(-1 * DAY) },
 ];
 
 // ─── Procurement ────────────────────────────────────────────────────────────

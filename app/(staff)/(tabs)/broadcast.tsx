@@ -178,7 +178,7 @@ export default function ChefBroadcastTab() {
               <Txt size={18}>⚙️</Txt>
               <View>
                 <Txt size={13} weight="900" color={Colors.textPrimary}>Automation Settings</Txt>
-                <Txt size={10} color={Colors.textMuted}>3 daily alarms • follow-up {autoFollowup ? 'ON' : 'OFF'}</Txt>
+                <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>3 daily alarms • follow-up {autoFollowup ? 'ON' : 'OFF'}</Txt>
               </View>
             </Row>
             <Txt size={16} color={Colors.textMuted}>{showAutomation ? '▲' : '▼'}</Txt>
@@ -203,7 +203,7 @@ export default function ChefBroadcastTab() {
                   <Txt size={18}>⏰</Txt>
                   <View style={{ flex: 1 }}>
                     <Txt size={12} weight="800" color={Colors.textPrimary}>{a.time}</Txt>
-                    <Txt size={10} color={Colors.textMuted}>{a.label}</Txt>
+                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{a.label}</Txt>
                   </View>
                 </Row>
                 <Row gap={10} align="center">
@@ -225,7 +225,7 @@ export default function ChefBroadcastTab() {
                     <Txt size={12} weight="800" color={Colors.textPrimary}>15-Min Follow-up</Txt>
                     <InfoTip text="Every 15 minutes, residents who haven't responded to the active meal get an automatic reminder. Responded residents stop receiving them." />
                   </Row>
-                  <Txt size={10} color={Colors.textMuted}>{noResponse} not responded</Txt>
+                  <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{noResponse} not responded</Txt>
                 </View>
               </Row>
               <TouchableOpacity onPress={() => set('auto15MinFollowupEnabled', !autoFollowup)} style={[styles.switchTrack, { backgroundColor: autoFollowup ? Colors.primary : '#CBD5E1', justifyContent: autoFollowup ? 'flex-end' : 'flex-start' }]}>

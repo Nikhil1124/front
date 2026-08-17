@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 export interface SectionHeaderProps {
   title: string;
@@ -38,12 +38,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 15,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   action: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
 });

@@ -62,7 +62,7 @@ export function OutlinedTextField({
       )}
       <View style={{ flex: 1 }}>
         {label && (
-          <Txt size={11} color={focused ? Colors.primary : Colors.textMuted} weight="600" style={{ marginBottom: 2, letterSpacing: 0.4 }}>
+          <Txt variant="caption" color={focused ? Colors.primary : Colors.textMuted} weight="600" style={{ marginBottom: 2, letterSpacing: 0.4 }}>
             {label}
           </Txt>
         )}

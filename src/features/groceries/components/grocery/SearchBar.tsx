@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../../theme/AppColors';
+import { Colors, Layout } from '@/theme';
 
 const EXAMPLE_ITEMS = [
   "Search  'Tomato Puree'",
@@ -64,7 +64,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <View style={styles.wrapper}>
       {/* Main pill search bar */}
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color={AppColors.primary} />
+        <Ionicons name="search" size={20} color={Colors.primary} />
 
         <View style={styles.inputWrapper}>
           {value.length === 0 && (
@@ -89,12 +89,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
         {onFilterPress ? (
           <TouchableOpacity activeOpacity={0.7} style={styles.scanBtn} onPress={onFilterPress}>
-            <Ionicons name="options-outline" size={22} color={hasActiveFilters ? AppColors.primary : AppColors.textSecondary} />
+            <Ionicons name="options-outline" size={22} color={hasActiveFilters ? Colors.primary : Colors.textSecondary} />
             {hasActiveFilters && <View style={styles.filterDot} />}
           </TouchableOpacity>
         ) : (
           <TouchableOpacity activeOpacity={0.7} style={styles.scanBtn}>
-            <MaterialCommunityIcons name="line-scan" size={22} color={AppColors.primary} />
+            <MaterialCommunityIcons name="line-scan" size={22} color={Colors.primary} />
           </TouchableOpacity>
         )}
       </View>
@@ -105,7 +105,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         activeOpacity={0.8}
         onPress={onCartPress}
       >
-        <Ionicons name="cart-outline" size={22} color={AppColors.textPrimary} />
+        <Ionicons name="cart-outline" size={22} color={Colors.textPrimary} />
       </TouchableOpacity>
     </View>
   );
@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 50,
     paddingHorizontal: 16,
     height: 50,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   inputWrapper: {
     flex: 1,
@@ -140,23 +140,21 @@ const styles = StyleSheet.create({
   animatedPlaceholder: {
     position: 'absolute',
     fontSize: 13,
-    color: AppColors.textMuted,
-    fontFamily: AppFonts.medium,
+    color: Colors.textMuted,
   },
   searchInput: {
     fontSize: 13,
-    color: AppColors.textPrimary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textPrimary,
     height: 50,
     padding: 0,
   },
   inputActive: {
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   divider: {
     width: 1,
     height: 22,
-    backgroundColor: AppColors.divider,
+    backgroundColor: Colors.borderSubtle,
     marginHorizontal: 10,
   },
   scanBtn: {
@@ -171,17 +169,17 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
   },
   cartBtn: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
 });

@@ -5,7 +5,7 @@ import { EnrichedProduct } from '../../data/mockProducts';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { useCartStore } from '../../store/useCartStore';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 import { PriceDisplay } from './PriceDisplay';
 
 export interface MiniProductCardProps {
@@ -77,7 +77,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
           <Ionicons
             name={isWishlisted ? 'heart' : 'heart-outline'}
             size={13}
-            color={isWishlisted ? AppColors.error : AppColors.textMuted}
+            color={isWishlisted ? Colors.danger : Colors.textMuted}
           />
         </TouchableOpacity>
       )}
@@ -98,7 +98,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       {/* Rating */}
       {showRating && (
         <View style={styles.ratingRow}>
-          <Ionicons name="star" size={9} color={AppColors.rating} />
+          <Ionicons name="star" size={9} color={Colors.warning} />
           <Text style={styles.ratingText}>{product.rating || 4.5}</Text>
         </View>
       )}
@@ -123,9 +123,9 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     width: 128,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 14,
     padding: 10,
     marginRight: 8,
@@ -135,16 +135,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     left: 6,
-    backgroundColor: AppColors.error,
+    backgroundColor: Colors.danger,
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
     zIndex: 2,
   },
   discountText: {
-    color: AppColors.surface,
+    color: Colors.surface,
     fontSize: 8,
-    fontFamily: AppFonts.bold,
   },
   wishlistBtn: {
     position: 'absolute',
@@ -166,15 +165,13 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginTop: 4,
     lineHeight: 14,
   },
   unit: {
     fontSize: 9,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     marginBottom: 4,
   },
   ratingRow: {
@@ -185,28 +182,26 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 9,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   addBtn: {
     marginTop: 8,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
     borderRadius: 6,
     paddingVertical: 5,
     alignItems: 'center',
   },
   addedBtn: {
-    backgroundColor: AppColors.primaryLight,
-    borderColor: AppColors.softGreen,
+    backgroundColor: Colors.surfaceElevated,
+    borderColor: '#DCFCE7',
   },
   addBtnText: {
-    color: AppColors.primary,
+    color: Colors.primary,
     fontSize: 11,
-    fontFamily: AppFonts.bold,
   },
   addedBtnText: {
-    color: AppColors.primaryDark,
+    color: Colors.primaryDark,
   },
 });

@@ -26,6 +26,7 @@ export const Radii = {
   huge: 20,
   round: 24,
   mega: 28,
+  pill: 999,
 } as const;
 
 export { Colors, Palette, Theme, Layout };

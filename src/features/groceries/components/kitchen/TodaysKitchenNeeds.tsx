@@ -8,7 +8,7 @@ import { KitchenNeedsBanner } from './KitchenNeedsBanner';
 import { ProductCard } from '../grocery/ProductCard';
 import { AddAllToCartButton } from './AddAllToCartButton';
 import { DayMenuConfig, MenuIngredient } from '../../data/WeeklyMenuTypes';
-import { AppColors, AppFonts, AppShadow } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 // Extracted modal components
 import { CustomAlertModal, CustomAlertState } from './CustomAlertModal';
@@ -306,7 +306,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
                 <Text style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Text>
               </View>
               <TouchableOpacity onPress={() => setIsSeeAllOpen(false)} style={{ padding: 4 }}>
-                <Ionicons name="close" size={24} color={AppColors.textPrimary} />
+                <Ionicons name="close" size={24} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.bottomSheetScroll} showsVerticalScrollIndicator={false}>
@@ -353,15 +353,11 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
 const styles = StyleSheet.create({
   container: { marginVertical: 12 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 },
-  title: { fontSize: 20, fontFamily: AppFonts.extraBold, color: AppColors.textPrimary },
-  subtitle: { fontSize: 12, color: AppColors.textSecondary, fontFamily: AppFonts.medium, marginTop: 2 },
-  seeAllText: { fontSize: 13, fontFamily: AppFonts.extraBold, color: AppColors.primary },
 
-  tabContainer: { flexDirection: 'row', marginHorizontal: 16, backgroundColor: AppColors.primaryLight, borderRadius: 10, padding: 3, marginVertical: 6 },
+  tabContainer: { flexDirection: 'row', marginHorizontal: 16, backgroundColor: Colors.surfaceElevated, borderRadius: 10, padding: 3, marginVertical: 6 },
   tabButton: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-  activeTabButton: { backgroundColor: AppColors.primary, shadowColor: AppColors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-  tabButtonText: { fontSize: 12, fontFamily: AppFonts.extraBold, color: AppColors.textSecondary },
-  activeTabButtonText: { color: AppColors.surface },
+  activeTabButton: { backgroundColor: Colors.primary, shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+  activeTabButtonText: { color: Colors.surface },
 
   bannerScrollContainer: { paddingLeft: 16, paddingRight: 6, alignItems: 'center' },
   bannerWrapper: { width: 320, marginRight: 10 },
@@ -369,15 +365,19 @@ const styles = StyleSheet.create({
   bottomSheetBackdrop: { flex: 1, backgroundColor: 'rgba(12,46,78,0.55)', justifyContent: 'flex-end' },
   bottomSheetContainer: { height: '65%', backgroundColor: '#F3F4F6', borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 10, overflow: 'hidden' },
   grabHandle: { width: 40, height: 5, backgroundColor: '#D1D5DB', borderRadius: 2.5, alignSelf: 'center', marginTop: 8, marginBottom: 4 },
-  bottomSheetHeader: { backgroundColor: AppColors.surface, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: AppColors.border },
-  bottomSheetTitle: { color: AppColors.textPrimary, fontSize: 18, fontFamily: AppFonts.extraBold },
-  bottomSheetSubtitle: { color: AppColors.textSecondary, fontSize: 11, marginTop: 2, fontFamily: AppFonts.medium },
+  bottomSheetHeader: { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   bottomSheetScroll: { flex: 1, padding: 16 },
   categorySection: { marginBottom: 20 },
-  categoryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: AppColors.divider, paddingBottom: 6 },
-  categoryName: { fontSize: 14, fontFamily: AppFonts.extraBold, color: AppColors.textPrimary },
+  categoryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, paddingBottom: 6 },
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
   gridCardWrapper: { width: '48%', marginBottom: 8 },
+  title: { fontSize: 20, fontWeight: '800' as const, color: Colors.textPrimary },
+  subtitle: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' as const, marginTop: 2 },
+  seeAllText: { fontSize: 13, fontWeight: '800' as const, color: Colors.primary },
+  tabButtonText: { fontSize: 12, fontWeight: '800' as const, color: Colors.textSecondary },
+  bottomSheetTitle: { color: Colors.textPrimary, fontSize: 18, fontWeight: '800' as const },
+  bottomSheetSubtitle: { color: Colors.textSecondary, fontSize: 11, marginTop: 2, fontWeight: '500' as const },
+  categoryName: { fontSize: 14, fontWeight: '800' as const, color: Colors.textPrimary },
 });
 
 export default TodaysKitchenNeeds;

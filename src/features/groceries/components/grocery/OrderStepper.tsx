@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { ORDER_STATUS_SEQUENCE, OrderStatus } from '../../services/orderEngine';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 const STEP_META: Record<OrderStatus, { label: string; icon: keyof typeof Ionicons.glyphMap; hint: string }> = {
   received: { label: 'Order Received', icon: 'receipt-outline', hint: 'Store accepted your order' },
@@ -45,7 +45,7 @@ export function OrderStepper({ status }: OrderStepperProps) {
                   <Ionicons
                     name={done ? 'checkmark' : meta.icon}
                     size={16}
-                    color={done || active ? '#fff' : AppColors.textMuted}
+                    color={done || active ? '#fff' : Colors.textMuted}
                   />
                 </View>
               </View>
@@ -114,10 +114,10 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   activeNode: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
   },
   inactiveNode: {
-    backgroundColor: AppColors.divider,
+    backgroundColor: Colors.borderSubtle,
   },
   line: {
     width: 2,
@@ -125,17 +125,17 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   activeLine: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
   },
   inactiveLine: {
-    backgroundColor: AppColors.divider,
+    backgroundColor: Colors.borderSubtle,
   },
   pulseRing: {
     position: 'absolute',
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     zIndex: 1,
   },
   textColumn: {
@@ -148,18 +148,16 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 15,
-    fontFamily: AppFonts.bold,
   },
   activeText: {
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   inactiveText: {
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
   },
   stepHint: {
     fontSize: 12,
-    fontFamily: AppFonts.medium,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
 });

@@ -62,7 +62,7 @@ export function TicketDetailScreen({ ticket }: Props) {
         borderColor={Colors.borderSubtle}
         padding={[16, 14]}
       >
-        <Txt size={12} weight="800" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>
+        <Txt variant="caption" weight="800" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>
           STATUS TRACKER
         </Txt>
         <Spacer size={12} />
@@ -112,7 +112,7 @@ export function TicketDetailScreen({ ticket }: Props) {
         padding={[16, 16]}
       >
         <Row justify="space-between" align="center">
-          <Txt size={13} weight="800" color={Colors.textPrimary}>Ticket Details</Txt>
+          <Txt variant="body" weight="800" color={Colors.textPrimary}>Ticket Details</Txt>
           <Pill
             label={ticket.category || 'General'}
             color={Colors.primaryDark}
@@ -120,18 +120,18 @@ export function TicketDetailScreen({ ticket }: Props) {
           />
         </Row>
         <Spacer size={10} />
-        <Txt size={13} color={Colors.textSecondary} style={{ lineHeight: 19 }}>
+        <Txt variant="body" color={Colors.textSecondary} style={{ lineHeight: 19 }}>
           {ticket.description || 'No description provided.'}
         </Txt>
         <Spacer size={10} />
         <Row gap={16}>
           <Row gap={6} align="center">
             <Ionicons name="person" size={12} color={Colors.textMuted} />
-            <Txt size={11} color={Colors.textMuted}>{ticket.guestName || 'You'}</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>{ticket.guestName || 'You'}</Txt>
           </Row>
           <Row gap={6} align="center">
             <Ionicons name="time" size={12} color={Colors.textMuted} />
-            <Txt size={11} color={Colors.textMuted}>{formatDateTime(ticket.timestamp)}</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>{formatDateTime(ticket.timestamp)}</Txt>
           </Row>
         </Row>
       </Card>
@@ -143,12 +143,12 @@ export function TicketDetailScreen({ ticket }: Props) {
           <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row gap={8} align="center">
               <Ionicons name="attach" size={16} color={Colors.primary} />
-              <Txt size={13} weight="700" color={Colors.textPrimary}>Photo attachment</Txt>
+              <Txt variant="body" weight="700" color={Colors.textPrimary}>Photo attachment</Txt>
             </Row>
             <Spacer size={8} />
             <View style={styles.attachmentBox}>
               <Ionicons name="image" size={32} color={Colors.textMuted} />
-              <Txt size={11} color={Colors.textMuted} style={{ marginTop: 6 }}>Attachment on file</Txt>
+              <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 6 }}>Attachment on file</Txt>
             </View>
           </Card>
         </>
@@ -161,10 +161,10 @@ export function TicketDetailScreen({ ticket }: Props) {
           <Card containerColor={Colors.surfaceElevated} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row gap={8} align="center">
               <Ionicons name="chatbubble-ellipses" size={16} color={Colors.primary} />
-              <Txt size={13} weight="700" color={Colors.textPrimary}>Manager response</Txt>
+              <Txt variant="body" weight="700" color={Colors.textPrimary}>Manager response</Txt>
             </Row>
             <Spacer size={8} />
-            <Txt size={12} color={Colors.textSecondary} style={{ lineHeight: 17 }}>
+            <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 17 }}>
               {ticket.adminResponse}
             </Txt>
           </Card>
@@ -183,8 +183,8 @@ export function TicketDetailScreen({ ticket }: Props) {
         <Row gap={10} align="flex-start">
           <Ionicons name="information-circle" size={18} color={Colors.info} />
           <Col style={{ flex: 1 }}>
-            <Txt size={12} weight="700" color={Colors.textPrimary}>What happens next?</Txt>
-            <Txt size={11} color={Colors.textMuted} style={{ lineHeight: 16, marginTop: 2 }}>
+            <Txt variant="caption" weight="700" color={Colors.textPrimary}>What happens next?</Txt>
+            <Txt variant="caption" color={Colors.textMuted} style={{ lineHeight: 16, marginTop: 2 }}>
               Your ticket has been routed to the property manager. You will receive a notification when a staff member is assigned and again when the issue is resolved.
             </Txt>
           </Col>

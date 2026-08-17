@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 import { PricingOption } from '../../data/mockProducts';
 import { getPerUnitRateLabel, parseUnitQuantity } from '../../utils/pricing';
 
@@ -78,17 +78,16 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
     padding: 14,
     marginBottom: 14,
   },
   heading: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primaryDark,
+    color: Colors.primaryDark,
     marginBottom: 12,
   },
   gridRow: {
@@ -104,77 +103,69 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     minWidth: 60,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     padding: 8,
     alignItems: 'center',
     gap: 3,
   },
   selectedColumn: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.softGreen,
+    borderColor: Colors.primary,
+    backgroundColor: '#DCFCE7',
   },
   columnUnit: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   columnPrice: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   columnRate: {
     fontSize: 10,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
   },
   bestValueTag: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 4,
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
   bestValueTagText: {
-    color: AppColors.surface,
+    color: Colors.surface,
     fontSize: 8,
-    fontFamily: AppFonts.bold,
   },
   savingsTag: {
-    backgroundColor: AppColors.error,
+    backgroundColor: Colors.danger,
     borderRadius: 4,
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
   savingsTagText: {
-    color: AppColors.surface,
+    color: Colors.surface,
     fontSize: 8,
-    fontFamily: AppFonts.bold,
   },
   savingsBlock: {
     width: 72,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 10,
     padding: 8,
   },
   savingsTitle: {
     fontSize: 10,
-    color: AppColors.softGreen,
-    fontFamily: AppFonts.regular,
+    color: '#DCFCE7',
   },
   savingsPrice: {
     fontSize: 20,
-    fontFamily: AppFonts.bold,
-    color: AppColors.surface,
+    color: Colors.surface,
   },
   savingsSubtitle: {
     fontSize: 8,
-    color: AppColors.softGreen,
-    fontFamily: AppFonts.regular,
+    color: '#DCFCE7',
     textAlign: 'center',
     marginTop: 2,
   },

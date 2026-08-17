@@ -51,20 +51,20 @@ export function ManagePropertiesScreen() {
       >
         <Row gap={6}>
           <View style={[styles.statBox, { backgroundColor: '#F0FDF9' }]}>
-            <Txt size={9} weight="700" color={Colors.primaryDark}>Total PGs</Txt>
-            <Txt size={15} weight="900" color={Colors.primaryDark}>{allPGs.length}</Txt>
+            <Txt variant="labelSmall" color={Colors.primaryDark}>Total PGs</Txt>
+            <Txt variant="cardTitle" weight="900" color={Colors.primaryDark}>{allPGs.length}</Txt>
           </View>
           <View style={[styles.statBox, { backgroundColor: '#ECFDF5' }]}>
-            <Txt size={9} weight="700" color="#047857">Occupancy</Txt>
-            <Txt size={15} weight="900" color="#047857">{totalGuests}/{totalBeds}</Txt>
+            <Txt variant="labelSmall" color="#047857">Occupancy</Txt>
+            <Txt variant="cardTitle" weight="900" color="#047857">{totalGuests}/{totalBeds}</Txt>
           </View>
           <View style={[styles.statBox, { backgroundColor: '#FFFBEB' }]}>
-            <Txt size={9} weight="700" color="#B45309">Revenue</Txt>
-            <Txt size={15} weight="900" color="#B45309">₹{Math.round(totalRevenue).toLocaleString('en-IN')}</Txt>
+            <Txt variant="labelSmall" color="#B45309">Revenue</Txt>
+            <Txt variant="cardTitle" weight="900" color="#B45309">₹{Math.round(totalRevenue).toLocaleString('en-IN')}</Txt>
           </View>
           <View style={[styles.statBox, { backgroundColor: '#FEF2F2' }]}>
-            <Txt size={9} weight="700" color="#B91C1C">Open Issues</Txt>
-            <Txt size={15} weight="900" color="#B91C1C">{totalComplaints}</Txt>
+            <Txt variant="labelSmall" color="#B91C1C">Open Issues</Txt>
+            <Txt variant="cardTitle" weight="900" color="#B91C1C">{totalComplaints}</Txt>
           </View>
         </Row>
 
@@ -100,14 +100,14 @@ export function ManagePropertiesScreen() {
                 <Row justify="space-between" align="center">
                   <View style={{ flex: 1 }}>
                     <Row align="center">
-                      <Txt size={15} weight="900" color={Colors.textPrimary}>{pg.pgName}</Txt>
+                      <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{pg.pgName}</Txt>
                       {isCurrent && (
                         <View style={styles.activeBadge}>
-                          <Txt size={9} weight="800" color={Colors.primaryDark}>Active Context</Txt>
+                          <Txt variant="labelSmall" weight="800" color={Colors.primaryDark}>Active Context</Txt>
                         </View>
                       )}
                     </Row>
-                    <Txt size={11} color={Colors.textMuted} numberOfLines={1}>📍 {pg.address}</Txt>
+                    <Txt variant="caption" color={Colors.textMuted} numberOfLines={1}>📍 {pg.address}</Txt>
                   </View>
                   <IconBtn onPress={() => setEditingPg(pg)} icon="create-outline" size={20} tint={Colors.primary} />
                 </Row>
@@ -118,8 +118,8 @@ export function ManagePropertiesScreen() {
                     <Row gap={8} align="center">
                       <Ionicons name="people-circle" size={20} color={Colors.primary} />
                       <Col>
-                        <Txt size={12} weight="800" color={Colors.textPrimary}>Manager: {pg.managerName || 'Not Assigned'}</Txt>
-                        <Txt size={10} color={Colors.textMuted}>📞 {pg.managerPhone || 'N/A'} • PIN: {pg.managerPin || '1234'}</Txt>
+                        <Txt variant="caption" weight="800" color={Colors.textPrimary}>Manager: {pg.managerName || 'Not Assigned'}</Txt>
+                        <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>📞 {pg.managerPhone || 'N/A'} • PIN: {pg.managerPin || '1234'}</Txt>
                       </Col>
                     </Row>
                     {pg.managerPhone && (
@@ -135,8 +135,8 @@ export function ManagePropertiesScreen() {
 
                 <Spacer size={10} />
                 <Row justify="space-between">
-                  <Txt size={11} weight="700" color={Colors.textPrimary}>Beds Occupancy: {pgGuests.length} / {pg.totalBeds}</Txt>
-                  <Txt size={11} weight="800" color={Colors.primaryDark}>{Math.round(occupancyPct * 100)}% Filled</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textPrimary}>Beds Occupancy: {pgGuests.length} / {pg.totalBeds}</Txt>
+                  <Txt variant="caption" weight="800" color={Colors.primaryDark}>{Math.round(occupancyPct * 100)}% Filled</Txt>
                 </Row>
                 <View style={styles.progressBar}>
                   <View style={[styles.progressFill, { width: `${occupancyPct * 100}%` }]} />
@@ -144,7 +144,7 @@ export function ManagePropertiesScreen() {
 
                 <Spacer size={10} />
                 <Row justify="space-between" align="center">
-                  <Txt size={11} weight="800" color={Colors.primaryDark}>Collected: ₹{Math.round(pgRevenue).toLocaleString('en-IN')}</Txt>
+                  <Txt variant="caption" weight="800" color={Colors.primaryDark}>Collected: ₹{Math.round(pgRevenue).toLocaleString('en-IN')}</Txt>
                   <Btn
                     onPress={async () => { await switchPG(pg); router.back(); }}
                     containerColor={isCurrent ? Colors.primary : Colors.surfaceMuted}
@@ -153,7 +153,7 @@ export function ManagePropertiesScreen() {
                     height={32}
                     contentStyle={{ paddingHorizontal: 12 }}
                   >
-                    <Txt size={11} weight="800" color={isCurrent ? Colors.textInverse : Colors.textPrimary}>
+                    <Txt variant="caption" weight="800" color={isCurrent ? Colors.textInverse : Colors.textPrimary}>
                       {isCurrent ? 'Managing Now' : 'Switch Property'}
                     </Txt>
                   </Btn>

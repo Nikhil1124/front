@@ -79,38 +79,38 @@ export function OwnerComplaintsTab() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.CyberGreen} colors={[Colors.CyberGreen]} />}
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
-            <Txt size={20} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance Management System</Txt>
+            <Txt variant="screenTitle" weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance Management System</Txt>
 
             <Row gap={8}>
               <View style={styles.metricBox}>
-                <Txt size={10} weight="700" color={Colors.SlateMutedText}>TOTAL REVIEWS</Txt>
-                <Txt size={24} weight="900" color={Colors.IvoryWhiteText}>{totalReviews}</Txt>
+                <Txt variant="labelSmall" color={Colors.SlateMutedText}>TOTAL REVIEWS</Txt>
+                <Txt variant="statValue" weight="900" color={Colors.IvoryWhiteText}>{totalReviews}</Txt>
               </View>
               <View style={styles.metricBox}>
-                <Txt size={10} weight="700" color={Colors.SlateMutedText}>OPEN/PENDING</Txt>
-                <Txt size={24} weight="900" color="#EF4444">{openCount}</Txt>
+                <Txt variant="labelSmall" color={Colors.SlateMutedText}>OPEN/PENDING</Txt>
+                <Txt variant="statValue" weight="900" color="#EF4444">{openCount}</Txt>
               </View>
               <View style={styles.metricBox}>
-                <Txt size={10} weight="700" color={Colors.SlateMutedText}>RESOLVED</Txt>
-                <Txt size={24} weight="900" color="#10B981">{resolvedCount}</Txt>
+                <Txt variant="labelSmall" color={Colors.SlateMutedText}>RESOLVED</Txt>
+                <Txt variant="statValue" weight="900" color="#10B981">{resolvedCount}</Txt>
               </View>
             </Row>
 
             <Card containerColor="#111723" borderRadius={18} borderWidth={1} borderColor="#283244" padding={[16, 16]}>
               <Row justify="space-between" align="center">
                 <Col>
-                  <Txt size={10} weight="900" color={Colors.CyberGreen} style={{ letterSpacing: 1 }}>PG SERVICE QUALITY SCORECARD</Txt>
-                  <Txt size={11} color={Colors.SlateMutedText}>Calculated PG Ratings & Category Metrics</Txt>
+                  <Txt variant="labelSmall" weight="900" color={Colors.CyberGreen} style={{ letterSpacing: 1 }}>PG SERVICE QUALITY SCORECARD</Txt>
+                  <Txt variant="caption" color={Colors.SlateMutedText}>Calculated PG Ratings & Category Metrics</Txt>
                 </Col>
                 <View style={styles.starBox}>
                   <Txt size={16}>★</Txt>
-                  <Txt size={16} weight="900" color="#FFB800">{totalReviews === 0 ? '—' : avgOverall.toFixed(1)}</Txt>
-                  <Txt size={10} color={Colors.SlateMutedText}> / 5.0</Txt>
+                  <Txt variant="sectionTitle" weight="900" color="#FFB800">{totalReviews === 0 ? '—' : avgOverall.toFixed(1)}</Txt>
+                  <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}> / 5.0</Txt>
                 </View>
               </Row>
               <Spacer size={14} />
               {totalReviews === 0 ? (
-                <Txt size={12} color={Colors.SlateMutedText} style={{ paddingVertical: 8 }}>
+                <Txt variant="caption" color={Colors.SlateMutedText} style={{ paddingVertical: 8 }}>
                   No ratings yet — scores will appear once residents submit feedback.
                 </Txt>
               ) : (
@@ -126,8 +126,8 @@ export function OwnerComplaintsTab() {
                   return (
                     <View key={label as string} style={{ marginVertical: 4 }}>
                       <Row justify="space-between" align="center">
-                        <Row gap={6}><Txt size={12}>{icon as string}</Txt><Txt size={11} weight="500" color={Colors.IvoryWhiteText}>{label as string}</Txt></Row>
-                        <Txt size={11} weight="700" color="#FFB800">{s.toFixed(1)} ★</Txt>
+                        <Row gap={6}><Txt variant="caption">{icon as string}</Txt><Txt size={11} weight="500" color={Colors.IvoryWhiteText}>{label as string}</Txt></Row>
+                        <Txt variant="caption" weight="700" color="#FFB800">{s.toFixed(1)} ★</Txt>
                       </Row>
                       <View style={styles.progressTrack}>
                         <View style={[styles.progressFill, { width: `${(s / 5) * 100}%`, backgroundColor: color }]} />
@@ -155,33 +155,33 @@ export function OwnerComplaintsTab() {
           >
             <Card containerColor="#111218" borderRadius={14} borderWidth={1} borderColor="#22242D" padding={[16, 16]}>
               <Row justify="space-between" align="center">
-                <Txt size={11} weight="700" color={Colors.CyberGreen}>Guest: {item.guestName}</Txt>
+                <Txt variant="caption" weight="700" color={Colors.CyberGreen}>Guest: {item.guestName}</Txt>
                 <View style={[styles.typePill, { backgroundColor: item.type === 'COMPLAINT' ? '#351A1A' : '#1A2A35' }]}>
                   <Txt size={8} weight="700" color={item.type === 'COMPLAINT' ? '#FF5555' : '#38BDF8'}>{item.type}</Txt>
                 </View>
               </Row>
               <Spacer size={8} />
-              <Txt size={15} weight="700" color={Colors.IvoryWhiteText}>{item.type === 'COMPLAINT' ? '🚨' : '🌟'} {item.title}</Txt>
-              <Txt size={12} color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{item.description}</Txt>
+              <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>{item.type === 'COMPLAINT' ? '🚨' : '🌟'} {item.title}</Txt>
+              <Txt variant="caption" color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{item.description}</Txt>
               <Spacer size={8} />
               <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                <View style={styles.ratingPill}><Txt size={10} weight="700" color="#FFB800">⭐ Overall: {item.overallRating.toFixed(1)}★</Txt></View>
-                <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>🍛 Meals: {item.mealRating.toFixed(0)}★</Txt></View>
-                <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>🧹 Cleanliness: {item.cleanlinessRating.toFixed(0)}★</Txt></View>
-                <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>💼 Manager: {item.managerRating.toFixed(0)}★</Txt></View>
-                <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>👨‍🍳 Staff: {item.staffRating.toFixed(0)}★</Txt></View>
-                <View style={styles.ratingPillAlt}><Txt size={9} weight="700" color={Colors.IvoryWhiteText}>⚙️ Others: {item.otherRating.toFixed(0)}★</Txt></View>
+                <View style={styles.ratingPill}><Txt variant="labelSmall" color="#FFB800">⭐ Overall: {item.overallRating.toFixed(1)}★</Txt></View>
+                <View style={styles.ratingPillAlt}><Txt variant="labelSmall" color={Colors.IvoryWhiteText}>🍛 Meals: {item.mealRating.toFixed(0)}★</Txt></View>
+                <View style={styles.ratingPillAlt}><Txt variant="labelSmall" color={Colors.IvoryWhiteText}>🧹 Cleanliness: {item.cleanlinessRating.toFixed(0)}★</Txt></View>
+                <View style={styles.ratingPillAlt}><Txt variant="labelSmall" color={Colors.IvoryWhiteText}>💼 Manager: {item.managerRating.toFixed(0)}★</Txt></View>
+                <View style={styles.ratingPillAlt}><Txt variant="labelSmall" color={Colors.IvoryWhiteText}>👨‍🍳 Staff: {item.staffRating.toFixed(0)}★</Txt></View>
+                <View style={styles.ratingPillAlt}><Txt variant="labelSmall" color={Colors.IvoryWhiteText}>⚙️ Others: {item.otherRating.toFixed(0)}★</Txt></View>
               </FormScroll>
               <Spacer size={10} />
               <Row justify="space-between" align="center">
                 <Row gap={6}>
                   <View style={[styles.statusDot, { backgroundColor: item.status === 'Resolved' ? '#10B981' : item.status === 'In Progress' ? '#F59E0B' : '#EF4444' }]} />
-                  <Txt size={11} weight="700" color={item.status === 'Resolved' ? '#10B981' : item.status === 'In Progress' ? '#F59E0B' : '#EF4444'}>Status: {item.status}</Txt>
+                  <Txt variant="caption" weight="700" color={item.status === 'Resolved' ? '#10B981' : item.status === 'In Progress' ? '#F59E0B' : '#EF4444'}>Status: {item.status}</Txt>
                 </Row>
                 <Row gap={4} align="center">
-                  <Txt size={10} weight="700" color={Colors.CyberGreen}>Tap to respond</Txt>
+                  <Txt variant="labelSmall" color={Colors.CyberGreen}>Tap to respond</Txt>
                   <Btn onPress={() => openResponse(item)} containerColor="#1D1F27" textColor={Colors.IvoryWhiteText} borderRadius={8} height={30}>
-                    <Txt size={10} weight="700" color={Colors.IvoryWhiteText}>Respond ✍️</Txt>
+                    <Txt variant="labelSmall" color={Colors.IvoryWhiteText}>Respond ✍️</Txt>
                   </Btn>
                 </Row>
               </Row>
@@ -195,16 +195,16 @@ export function OwnerComplaintsTab() {
         <View style={styles.backdrop}>
           <Card containerColor="#0C0D12" borderRadius={16} borderWidth={1} borderColor="#2D2E38" padding={[16, 16]} style={{ width: '92%' }}>
             <Row justify="space-between" align="center">
-              <Txt size={10} weight="800" color={Colors.SlateMutedText}>RESPOND TO GUEST SUBMISSION</Txt>
+              <Txt variant="labelSmall" weight="800" color={Colors.SlateMutedText}>RESPOND TO GUEST SUBMISSION</Txt>
               <IconBtn onPress={() => setActive(null)} icon="close" size={20} tint="#FFFFFF" />
             </Row>
             <Spacer size={10} />
             {active && (
               <>
-                <Txt size={14} weight="700" color={Colors.IvoryWhiteText}>{active.title}</Txt>
-                <Txt size={11} color={Colors.SlateMutedText}>Submitted by {active.guestName} ({active.category})</Txt>
+                <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>{active.title}</Txt>
+                <Txt variant="caption" color={Colors.SlateMutedText}>Submitted by {active.guestName} ({active.category})</Txt>
                 <Spacer size={10} />
-                <Txt size={11} weight="700" color={Colors.SlateMutedText}>Flow Resolution Status</Txt>
+                <Txt variant="caption" weight="700" color={Colors.SlateMutedText}>Flow Resolution Status</Txt>
                 <Row gap={6} style={{ marginTop: 6 }}>
                   {['Open', 'In Progress', 'Resolved'].map((s) => (
                     <Chip key={s} label={s} selected={responseStatus === s} onPress={() => setResponseStatus(s)} selectedColor={Colors.CyberGreen} />
@@ -214,8 +214,8 @@ export function OwnerComplaintsTab() {
                 <OutlinedTextField label="Write reply note (e.g. Electrician scheduled)" value={responseText} onChangeText={setResponseText} testID="admin_reply_input" multiline numberOfLines={3} style={{ marginBottom: 8, minHeight: 90 }} />
                 <Spacer size={16} />
                 <Row gap={8}>
-                  <OutlinedBtn onPress={() => setActive(null)} borderColor="transparent" textColor={Colors.IvoryWhiteText} borderRadius={12} height={42} style={{ flex: 1 }}><Txt size={13} weight="700" color={Colors.IvoryWhiteText}>Cancel</Txt></OutlinedBtn>
-                  <Btn onPress={handleSave} containerColor={Colors.CyberGreen} textColor={Colors.LuxuryPureBlack} borderRadius={12} height={42} style={{ flex: 1.5 }} testID="submit_reply_button"><Txt size={13} weight="700" color={Colors.LuxuryPureBlack}>Save & Inform Guest</Txt></Btn>
+                  <OutlinedBtn onPress={() => setActive(null)} borderColor="transparent" textColor={Colors.IvoryWhiteText} borderRadius={12} height={42} style={{ flex: 1 }}><Txt variant="body" weight="700" color={Colors.IvoryWhiteText}>Cancel</Txt></OutlinedBtn>
+                  <Btn onPress={handleSave} containerColor={Colors.CyberGreen} textColor={Colors.LuxuryPureBlack} borderRadius={12} height={42} style={{ flex: 1.5 }} testID="submit_reply_button"><Txt variant="body" weight="700" color={Colors.LuxuryPureBlack}>Save & Inform Guest</Txt></Btn>
                 </Row>
               </>
             )}

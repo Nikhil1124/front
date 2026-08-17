@@ -6,7 +6,7 @@ import { useCartStore } from '../store/useCartStore';
 import { OrderStepper } from '../components/grocery/OrderStepper';
 import { orderEngine, DetailedOrder, OrderItemUpdate } from '../services/orderEngine';
 import { mockProducts } from '../data/mockProducts';
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
+import { Colors, Layout, Radii } from '@/theme';
 
 const STATUS_HERO: Record<string, string> = {
   received: 'Order Received',
@@ -23,9 +23,9 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 const KIND_BADGE: Record<string, { bg: string; text: string }> = {
-  found: { bg: AppColors.primaryLight, text: AppColors.primary },
+  found: { bg: Colors.surfaceElevated, text: Colors.primary },
   replaced: { bg: '#FFF3E0', text: '#E65100' },
-  refunded: { bg: AppColors.errorLight, text: AppColors.error },
+  refunded: { bg: '#FEF2F2', text: Colors.danger },
 };
 
 export function GroceryOrderDetailScreen() {
@@ -61,13 +61,13 @@ export function GroceryOrderDetailScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={AppColors.textPrimary} />
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Order Tracking</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.emptyBox}>
-          <Ionicons name="receipt-outline" size={64} color={AppColors.textMuted} />
+          <Ionicons name="receipt-outline" size={64} color={Colors.textMuted} />
           <Text style={styles.emptyText}>Order not found</Text>
         </View>
       </View>
@@ -100,7 +100,7 @@ export function GroceryOrderDetailScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={AppColors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order #{order.id.slice(-6)}</Text>
         <View style={{ width: 24 }} />
@@ -121,19 +121,19 @@ export function GroceryOrderDetailScreen() {
           {!isDelivered ? (
             <View style={styles.timerRow}>
               <View style={styles.timerBox}>
-                <Ionicons name="time-outline" size={16} color={AppColors.primary} />
+                <Ionicons name="time-outline" size={16} color={Colors.primary} />
                 <Text style={styles.timerLabel}>Elapsed: </Text>
                 <Text style={styles.timerValue}>{formatTime(elapsedMs)}</Text>
               </View>
               <View style={styles.timerBox}>
-                <Ionicons name="hourglass-outline" size={16} color={AppColors.primary} />
+                <Ionicons name="hourglass-outline" size={16} color={Colors.primary} />
                 <Text style={styles.timerLabel}>ETA: </Text>
                 <Text style={styles.timerValue}>{formatTime(remainingMs)}</Text>
               </View>
             </View>
           ) : (
             <View style={styles.deliveredBadgeRow}>
-              <Ionicons name="checkmark-circle" size={18} color={AppColors.primary} />
+              <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
               <Text style={styles.deliveredText}>Order Completed Successfully 🎉</Text>
             </View>
           )}
@@ -236,7 +236,7 @@ export function GroceryOrderDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   header: {
     flexDirection: 'row',
@@ -245,13 +245,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.divider,
-    backgroundColor: AppColors.surface,
+    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
   },
   headerTitle: {
     fontSize: 16,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   emptyBox: {
     flex: 1,
@@ -261,31 +260,28 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: AppFonts.semiBold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   content: {
     padding: 16,
     paddingBottom: 40,
   },
   statusHeroCard: {
-    backgroundColor: AppColors.surface,
-    borderRadius: AppRadius.lg,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   statusHeroTitle: {
     fontSize: 20,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   statusHeroSub: {
     fontSize: 13,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
     marginTop: 2,
     marginBottom: 16,
   },
@@ -295,7 +291,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: AppColors.divider,
+    borderTopColor: Colors.borderSubtle,
   },
   timerBox: {
     flexDirection: 'row',
@@ -304,13 +300,11 @@ const styles = StyleSheet.create({
   },
   timerLabel: {
     fontSize: 12,
-    fontFamily: AppFonts.medium,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   timerValue: {
     fontSize: 13,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   deliveredBadgeRow: {
     flexDirection: 'row',
@@ -319,34 +313,31 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: AppColors.divider,
+    borderTopColor: Colors.borderSubtle,
   },
   deliveredText: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
     flex: 1,
   },
   sectionCard: {
-    backgroundColor: AppColors.surface,
-    borderRadius: AppRadius.lg,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   sectionTitle: {
     fontSize: 16,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   noUpdatesText: {
     fontSize: 13,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     fontStyle: 'italic',
-    fontFamily: AppFonts.regular,
   },
   updatesList: {
     gap: 8,
@@ -354,22 +345,20 @@ const styles = StyleSheet.create({
   updateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.surfaceAlt,
+    backgroundColor: Colors.surfaceMuted,
     padding: 10,
-    borderRadius: AppRadius.md,
+    borderRadius: Radii.xl,
     gap: 10,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
   },
   updateProductName: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   updateNote: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
     marginTop: 1,
   },
   kindBadge: {
@@ -379,17 +368,15 @@ const styles = StyleSheet.create({
   },
   kindBadgeText: {
     fontSize: 11,
-    fontFamily: AppFonts.extraBold,
   },
   summaryMeta: {
     fontSize: 12,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
     marginBottom: 4,
   },
   divider: {
     height: 1,
-    backgroundColor: AppColors.divider,
+    backgroundColor: Colors.borderSubtle,
     marginVertical: 10,
   },
   lineItem: {
@@ -400,13 +387,11 @@ const styles = StyleSheet.create({
   lineName: {
     flex: 1,
     fontSize: 13,
-    fontFamily: AppFonts.semiBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   linePrice: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   billRow: {
     flexDirection: 'row',
@@ -415,37 +400,32 @@ const styles = StyleSheet.create({
   },
   billLabel: {
     fontSize: 13,
-    fontFamily: AppFonts.medium,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   billVal: {
     fontSize: 13,
-    fontFamily: AppFonts.semiBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   totalLabel: {
     fontSize: 15,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   totalVal: {
     fontSize: 16,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   buyAgainBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     paddingVertical: 14,
-    borderRadius: AppRadius.pill,
+    borderRadius: Radii.pill,
     gap: 8,
     marginTop: 8,
   },
   buyAgainText: {
     color: '#fff',
-    fontFamily: AppFonts.extraBold,
     fontSize: 15,
   },
 });

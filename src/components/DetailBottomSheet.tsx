@@ -83,11 +83,11 @@ export function DetailBottomSheet({
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
-                  <Txt size={17} weight="800" color={Colors.IvoryWhiteText} numberOfLines={1}>
+                  <Txt variant="screenTitle" color={Colors.IvoryWhiteText} numberOfLines={1}>
                     {title}
                   </Txt>
                   {subtitle ? (
-                    <Txt size={11} color={Colors.SlateMutedText} numberOfLines={2}>
+                    <Txt variant="caption" color={Colors.SlateMutedText} numberOfLines={2}>
                       {subtitle}
                     </Txt>
                   ) : null}

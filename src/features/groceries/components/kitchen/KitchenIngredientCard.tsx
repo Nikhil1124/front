@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuIngredient } from '../../data/WeeklyMenuTypes';
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../../theme/AppColors';
+import { Colors, Layout, Radii } from '@/theme';
 
 interface KitchenIngredientCardProps {
   ingredient: MenuIngredient;
@@ -81,7 +81,7 @@ export const KitchenIngredientCard: React.FC<KitchenIngredientCardProps> = ({
               onPress={onAddPress}
               activeOpacity={0.7}
             >
-              <Ionicons name="add" size={14} color={AppColors.primary} />
+              <Ionicons name="add" size={14} color={Colors.primary} />
             </TouchableOpacity>
           )}
         </View>
@@ -93,22 +93,22 @@ export const KitchenIngredientCard: React.FC<KitchenIngredientCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     width: 135,
-    backgroundColor: AppColors.surface,
-    borderRadius: AppRadius.lg,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
     overflow: 'hidden',
     padding: 10,
     marginRight: 12,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   imageContainer: {
     width: '100%',
     height: 95,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: AppColors.surfaceAlt,
-    borderRadius: AppRadius.md,
+    backgroundColor: Colors.surfaceMuted,
+    borderRadius: Radii.xl,
     position: 'relative',
   },
   image: {
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 6,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     width: 18,
     height: 18,
     borderRadius: 9,
@@ -130,20 +130,17 @@ const styles = StyleSheet.create({
   cartBadgeText: {
     color: '#FFF',
     fontSize: 9,
-    fontFamily: AppFonts.extraBold,
   },
   info: {
     marginTop: 8,
   },
   name: {
     fontSize: 12,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   quantity: {
     fontSize: 10,
-    fontFamily: AppFonts.semiBold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   footerRow: {
@@ -154,17 +151,15 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 12,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   originalPrice: {
     fontSize: 10,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     textDecorationLine: 'line-through',
-    fontFamily: AppFonts.medium,
   },
   addBtn: {
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     width: 26,
     height: 26,
     borderRadius: 8,
@@ -174,7 +169,7 @@ const styles = StyleSheet.create({
   quantityControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 8,
     paddingHorizontal: 4,
     paddingVertical: 2,
@@ -186,6 +181,5 @@ const styles = StyleSheet.create({
   qtyText: {
     color: '#FFF',
     fontSize: 11,
-    fontFamily: AppFonts.extraBold,
   },
 });

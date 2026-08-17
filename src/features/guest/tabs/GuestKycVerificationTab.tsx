@@ -112,7 +112,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
       {/* Section title */}
       <Row justify="space-between" align="center">
         <Col style={{ flex: 1 }}>
-          <Txt size={18} weight="800" color={Colors.textPrimary}>Identity Verification (KYC)</Txt>
+          <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Identity Verification (KYC)</Txt>
         </Col>
         <View style={[styles.statusIconBubble, { backgroundColor: `${banner.iconColor}1A` }]}>
           <Ionicons name={banner.icon as any} size={26} color={banner.iconColor} />
@@ -130,14 +130,14 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
         <Row gap={12} align="flex-start">
           <Ionicons name={banner.icon as any} size={24} color={banner.iconColor} />
           <Col style={{ flex: 1 }}>
-            <Txt size={14} weight="800" color={banner.iconColor}>{banner.title}</Txt>
-            <Txt size={12} color={Colors.textSecondary} style={{ lineHeight: 18, marginTop: 4 }}>
+            <Txt variant="cardTitle" weight="800" color={banner.iconColor}>{banner.title}</Txt>
+            <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 18, marginTop: 4 }}>
               {banner.message}
             </Txt>
             {kycStatus === 'VERIFIED' && guest?.kycVerificationDate ? (
               <Row gap={6} align="center" style={{ marginTop: 8 }}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
-                <Txt size={11} weight="700" color={Colors.success}>
+                <Txt variant="caption" weight="700" color={Colors.success}>
                   Verified on {new Date(guest.kycVerificationDate).toLocaleDateString()}
                 </Txt>
               </Row>
@@ -145,7 +145,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
             {kycStatus === 'PENDING' && guest?.kycSubmissionDate ? (
               <Row gap={6} align="center" style={{ marginTop: 8 }}>
                 <Ionicons name="time" size={14} color={Colors.warning} />
-                <Txt size={11} weight="700" color={Colors.warning}>
+                <Txt variant="caption" weight="700" color={Colors.warning}>
                   Submitted {new Date(guest.kycSubmissionDate).toLocaleDateString()}
                 </Txt>
               </Row>
@@ -164,7 +164,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
           padding={[16, 16]}
         >
           <Row gap={6} align="center">
-            <Txt size={15} weight="700" color={Colors.textPrimary}>
+            <Txt variant="cardTitle" color={Colors.textPrimary}>
               {kycStatus === 'REJECTED' ? 'Re-upload Your Documents' : 'Submit Your Documents'}
             </Txt>
             <InfoTip
@@ -183,7 +183,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
             testID="kyc_open_upload_btn"
           >
             <Ionicons name={kycStatus === 'REJECTED' ? 'refresh-circle' : 'cloud-upload'} size={18} color={Colors.textInverse} />
-            <Txt size={14} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
+            <Txt variant="cardTitle" weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
               {kycStatus === 'REJECTED' ? 'Re-upload Documents' : 'Start KYC Submission'}
             </Txt>
           </Btn>
@@ -201,8 +201,8 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
         <Row gap={10} align="flex-start">
           <Ionicons name="information-circle" size={18} color={Colors.info} />
           <Col style={{ flex: 1 }}>
-            <Txt size={12} weight="700" color={Colors.textPrimary}>Need help with verification?</Txt>
-            <Txt size={11} color={Colors.textMuted} style={{ lineHeight: 16, marginTop: 2 }}>
+            <Txt variant="caption" weight="700" color={Colors.textPrimary}>Need help with verification?</Txt>
+            <Txt variant="caption" color={Colors.textMuted} style={{ lineHeight: 16, marginTop: 2 }}>
               If your documents have been pending for over 24 hours or you believe a rejection was in error, please contact your property manager directly through the support tab.
             </Txt>
           </Col>

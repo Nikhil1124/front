@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Palette, Radii, Layout } from '@/theme';
+import { Typography, type TypographyKey } from '@/theme/typography';
 import type { FontWeight } from '@/theme/typography';
 
 type RNFontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
@@ -77,6 +78,9 @@ export function Card({
 
 export interface TxtProps {
   children: React.ReactNode;
+  /** Named scale token (see theme/typography.ts) — sets size/weight/lineHeight/letterSpacing
+   *  together. Individual props below still override a single field when passed. */
+  variant?: TypographyKey;
   size?: number;
   weight?: FontWeight;
   color?: string;
@@ -89,18 +93,23 @@ export interface TxtProps {
 }
 
 export function Txt({
-  children, size = 13, weight = '400', color = Colors.textPrimary,
+  children, variant, size, weight, color = Colors.textPrimary,
   align = 'left', lineHeight, letterSpacing, style, numberOfLines, ellipsizeMode,
 }: TxtProps) {
+  const base = variant ? Typography[variant] : null;
+  const resolvedSize = size ?? base?.fontSize ?? 13;
+  const resolvedWeight = (weight ?? base?.fontWeight ?? '400') as RNFontWeight;
+  const resolvedLineHeight = lineHeight ?? base?.lineHeight ?? resolvedSize * 1.35;
+  const resolvedLetterSpacing = letterSpacing ?? base?.letterSpacing ?? 0;
   return (
     <Text
       style={[{
-        fontSize: size,
-        fontWeight: weight as RNFontWeight,
+        fontSize: resolvedSize,
+        fontWeight: resolvedWeight,
         color,
         textAlign: align,
-        lineHeight: lineHeight ?? size * 1.35,
-        letterSpacing: letterSpacing ?? 0,
+        lineHeight: resolvedLineHeight,
+        letterSpacing: resolvedLetterSpacing,
       }, style]}
       numberOfLines={numberOfLines}
       ellipsizeMode={ellipsizeMode}

@@ -66,10 +66,10 @@ export function OwnerRegisterScreen() {
     <FormScroll contentContainerStyle={styles.scroll} style={styles.root}>
       <Row align="center" style={{ marginBottom: 16 }}>
         <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
-        <Txt size={22} weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>Register PG Owner</Txt>
+        <Txt variant="statValue" weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>Register PG Owner</Txt>
       </Row>
 
-      <Txt size={13} color={Colors.textMuted} style={{ marginBottom: 24 }}>
+      <Txt variant="body" color={Colors.textMuted} style={{ marginBottom: 24 }}>
         Create an account to digitize your PG dining, configure kitchen staff accounts, and streamline guest management.
       </Txt>
 
@@ -135,7 +135,7 @@ export function OwnerRegisterScreen() {
         height={50}
         testID="owner_register_button"
       >
-        <Txt size={15} weight="700" color={Colors.textInverse}>Register & Configure Bed Capacity</Txt>
+        <Txt variant="cardTitle" color={Colors.textInverse}>Register & Configure Bed Capacity</Txt>
       </Btn>
     </FormScroll>
   );

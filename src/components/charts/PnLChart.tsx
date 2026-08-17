@@ -44,7 +44,7 @@ export function PnLChart({ interval, onIntervalChange }: PnLChartProps) {
       <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={20} padding={[24, 18]}>
         <View style={styles.state}>
           <ActivityIndicator color={Colors.CyberGreen} />
-          <Txt size={11} color={Colors.SlateMutedText}>Loading P&amp;L…</Txt>
+          <Txt variant="caption" color={Colors.SlateMutedText}>Loading P&amp;L…</Txt>
         </View>
       </Card>
     );
@@ -54,7 +54,7 @@ export function PnLChart({ interval, onIntervalChange }: PnLChartProps) {
     return (
       <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={20} padding={[24, 18]}>
         <View style={styles.state}>
-          <Txt size={11} color={Palette.StatusRed}>Couldn't load P&amp;L. Pull to refresh.</Txt>
+          <Txt variant="caption" color={Palette.StatusRed}>Couldn't load P&amp;L. Pull to refresh.</Txt>
         </View>
       </Card>
     );

@@ -89,7 +89,7 @@ export function UpiConfigSection() {
       <Row justify="space-between" align="center">
         <Col style={{ flex: 1 }}>
           <Row gap={6} align="center">
-            <Txt size={14} weight="900" color={Colors.textPrimary}>💳 Rent Collection UPI Handles</Txt>
+            <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>💳 Rent Collection UPI Handles</Txt>
             <InfoTip text="Payments from tenants will route to the active primary handle." />
           </Row>
         </Col>
@@ -118,8 +118,8 @@ export function UpiConfigSection() {
                     color={isPrimary ? '#059669' : Colors.textMuted}
                   />
                   <Col style={{ flex: 1 }}>
-                    <Txt size={13} weight="800" color={Colors.textPrimary}>{handle}</Txt>
-                    <Txt size={10} color={isPrimary ? '#047857' : Colors.textMuted}>
+                    <Txt variant="body" weight="800" color={Colors.textPrimary}>{handle}</Txt>
+                    <Txt variant="labelSmall" weight="400" color={isPrimary ? '#047857' : Colors.textMuted}>
                       {isPrimary ? '● ACTIVE PRIMARY HANDLE' : 'Secondary Handle'}
                     </Txt>
                   </Col>
@@ -134,7 +134,7 @@ export function UpiConfigSection() {
                       height={28}
                       contentStyle={{ paddingHorizontal: 8 }}
                     >
-                      <Txt size={10} weight="800" color={Colors.textInverse}>Set Primary</Txt>
+                      <Txt variant="labelSmall" weight="800" color={Colors.textInverse}>Set Primary</Txt>
                     </Btn>
                   )}
                   <IconBtn
@@ -168,7 +168,7 @@ export function UpiConfigSection() {
         borderRadius={10}
         height={40}
       >
-        <Txt size={11} weight="800" color={Colors.textInverse}>+ Add & Activate New UPI Handle</Txt>
+        <Txt variant="caption" weight="800" color={Colors.textInverse}>+ Add & Activate New UPI Handle</Txt>
       </Btn>
     </Card>
   );

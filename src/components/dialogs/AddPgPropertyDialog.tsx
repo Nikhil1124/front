@@ -83,8 +83,8 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               <Ionicons name="business" size={20} color={Colors.primary} />
             </View>
             <Col>
-              <Txt size={17} weight="900" color={Colors.textPrimary}>Register New Property</Txt>
-              <Txt size={11} color={Colors.textMuted}>Set up branches, floors, rooms & capacity</Txt>
+              <Txt variant="screenTitle" weight="900" color={Colors.textPrimary}>Register New Property</Txt>
+              <Txt variant="caption" color={Colors.textMuted}>Set up branches, floors, rooms & capacity</Txt>
             </Col>
           </Row>
 
@@ -121,7 +121,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             <View style={styles.sectionCard}>
               <Row align="center" gap={6} style={{ marginBottom: 6 }}>
                 <Ionicons name="people" size={16} color={Colors.primary} />
-                <Txt size={12} weight="800" color={Colors.textPrimary}>Assigned Primary Manager</Txt>
+                <Txt variant="caption" weight="800" color={Colors.textPrimary}>Assigned Primary Manager</Txt>
               </Row>
               <OutlinedTextField
                 label="Manager Name"
@@ -149,7 +149,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
                   style={{ flex: 1 }}
                 />
               </Row>
-              <Txt size={10} color={Colors.textMuted} style={{ marginTop: 4 }}>
+              <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 4 }}>
                 ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
               </Txt>
             </View>
@@ -165,7 +165,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               height={44}
               style={{ flex: 1 }}
             >
-              <Txt size={13} weight="800" color={Colors.textInverse}>Save Property</Txt>
+              <Txt variant="body" weight="800" color={Colors.textInverse}>Save Property</Txt>
             </Btn>
             <OutlinedBtn
               onPress={onDismiss}
@@ -175,7 +175,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               height={44}
               style={{ flex: 1 }}
             >
-              <Txt size={13} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+              <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
             </OutlinedBtn>
           </Row>
         </Card>

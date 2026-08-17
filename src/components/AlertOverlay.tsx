@@ -157,8 +157,8 @@ export function AlertOverlay() {
               <Ionicons name={style.icon} size={20} color={style.iconTint} />
             </View>
             <Col style={{ flex: 1 }}>
-              <Txt size={15} weight="900" color={Colors.textPrimary}>{activeAlert.title}</Txt>
-              <Txt size={9} weight="800" color={style.subtitleColor} style={{ letterSpacing: 0.5, marginTop: 1 }}>
+              <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{activeAlert.title}</Txt>
+              <Txt variant="labelSmall" weight="800" color={style.subtitleColor} style={{ letterSpacing: 0.5, marginTop: 1 }}>
                 {style.subtitle}
               </Txt>
             </Col>
@@ -168,7 +168,7 @@ export function AlertOverlay() {
           </TouchableOpacity>
         </Row>
         {activeAlert.description ? (
-          <Txt size={12} color={Colors.textSecondary} style={{ lineHeight: 17 }}>
+          <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 17 }}>
             {activeAlert.description}
           </Txt>
         ) : null}
@@ -186,7 +186,7 @@ export function AlertOverlay() {
                   style={{ flex: 1 }}
                 >
                   <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                  <Txt size={12} weight="700" color="#FFFFFF" style={{ marginLeft: 4 }}>I will Eat ✅</Txt>
+                  <Txt variant="caption" weight="700" color="#FFFFFF" style={{ marginLeft: 4 }}>I will Eat ✅</Txt>
                 </Btn>
                 <Btn
                   onPress={handleSkip}
@@ -197,13 +197,13 @@ export function AlertOverlay() {
                   style={{ flex: 1 }}
                 >
                   <Ionicons name="close" size={16} color="#FFFFFF" />
-                  <Txt size={12} weight="700" color="#FFFFFF" style={{ marginLeft: 4 }}>Skip Portion ❌</Txt>
+                  <Txt variant="caption" weight="700" color="#FFFFFF" style={{ marginLeft: 4 }}>Skip Portion ❌</Txt>
                 </Btn>
               </Row>
             ) : (
               <View style={[styles.successPill, { borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.15)' }]}>
                 <Ionicons name="star" size={18} color="#FBBF24" />
-                <Txt size={12} weight="700" color="#34D399" style={{ marginLeft: 8 }}>
+                <Txt variant="caption" weight="700" color="#34D399" style={{ marginLeft: 8 }}>
                   RSVP: {rsvpChoice} Submitted! +15 Pts Credited 🌟
                 </Txt>
               </View>
@@ -213,7 +213,7 @@ export function AlertOverlay() {
 
         {!isMealWithNotif && (
           <TouchableOpacity onPress={handleDismiss} style={{ marginTop: 10 }}>
-            <Txt size={12} weight="700" color={style.subtitleColor}>Dismiss</Txt>
+            <Txt variant="caption" weight="700" color={style.subtitleColor}>Dismiss</Txt>
           </TouchableOpacity>
         )}
       </Card>

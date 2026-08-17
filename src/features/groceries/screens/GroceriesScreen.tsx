@@ -16,7 +16,7 @@ import { TodaysKitchenNeeds } from '../components/kitchen/TodaysKitchenNeeds';
 import { getDealsProducts, mockCategories, mockProducts } from '../data/mockProducts';
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { AppFonts } from '../theme/AppColors';
+import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
@@ -266,20 +266,20 @@ const styles = StyleSheet.create({
   cartInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cartIconWrapper: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#15803D', justifyContent: 'center', alignItems: 'center', position: 'relative' },
   cartBadge: { position: 'absolute', top: -2, right: -4, backgroundColor: '#E53935', borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
-  cartBadgeText: { color: '#FFFFFF', fontSize: 9, fontFamily: AppFonts.bold },
-  cartTotalText: { color: '#17201A', fontFamily: AppFonts.bold, fontSize: 14 },
-  cartSubtext: { color: '#647067', fontSize: 10, fontFamily: AppFonts.regular, marginTop: 1 },
   checkoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 1, backgroundColor: '#15803D', paddingVertical: 7, paddingHorizontal: 12, borderRadius: 24 },
-  checkoutText: { color: '#FFFFFF', fontFamily: AppFonts.bold, fontSize: 12 },
   searchResultsWrapper: { paddingHorizontal: 16, paddingTop: 4 },
-  searchResultsTitle: { fontSize: 13, fontFamily: AppFonts.bold, color: '#647067', marginBottom: 12 },
   searchResultsList: { gap: 10 },
   noResultsBox: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  noResultsText: { fontSize: 14, color: '#98A39B', fontFamily: AppFonts.semiBold },
   sectionContainer: { marginVertical: 14 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontFamily: AppFonts.bold, color: '#17201A' },
-  sectionSubtitle: { fontSize: 12, fontFamily: AppFonts.regular, color: '#647067', marginTop: 2 },
-  seeAllText: { fontSize: 13, fontFamily: AppFonts.semiBold, color: '#15803D' },
   horizontalListContent: { paddingHorizontal: 16 },
+  cartBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' as const },
+  cartTotalText: { color: '#17201A', fontWeight: '700' as const, fontSize: 14 },
+  cartSubtext: { color: '#647067', fontSize: 10, fontWeight: '400' as const, marginTop: 1 },
+  checkoutText: { color: '#FFFFFF', fontWeight: '700' as const, fontSize: 12 },
+  searchResultsTitle: { fontSize: 13, fontWeight: '700' as const, color: '#647067', marginBottom: 12 },
+  noResultsText: { fontSize: 14, color: '#98A39B', fontWeight: '600' as const },
+  sectionTitle: { fontSize: 18, fontWeight: '700' as const, color: '#17201A' },
+  sectionSubtitle: { fontSize: 12, fontWeight: '400' as const, color: '#647067', marginTop: 2 },
+  seeAllText: { fontSize: 13, fontWeight: '600' as const, color: Colors.primary },
 });

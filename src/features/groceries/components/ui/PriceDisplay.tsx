@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { AppColors, AppFonts } from '../../theme/AppColors';
+import { Colors } from '@/theme';
 
 export interface PriceDisplayProps {
   price: number;
@@ -57,16 +57,14 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   price: {
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   price_sm: { fontSize: 12 },
   price_md: { fontSize: 15 },
   price_lg: { fontSize: 20 },
 
   strike: {
-    fontFamily: AppFonts.regular,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
     textDecorationLine: 'line-through',
   },
   strike_sm: { fontSize: 10 },
@@ -74,14 +72,13 @@ const styles = StyleSheet.create({
   strike_lg: { fontSize: 14 },
 
   badge: {
-    backgroundColor: AppColors.error,
+    backgroundColor: Colors.danger,
     borderRadius: 4,
     paddingHorizontal: 5,
     paddingVertical: 2,
   },
   badgeText: {
-    color: AppColors.surface,
+    color: Colors.surface,
     fontSize: 9,
-    fontFamily: AppFonts.bold,
   },
 });

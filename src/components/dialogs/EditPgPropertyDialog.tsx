@@ -83,8 +83,8 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               <Ionicons name="create-outline" size={20} color={Colors.primary} />
             </View>
             <Col>
-              <Txt size={17} weight="900" color={Colors.textPrimary}>Edit Property Details</Txt>
-              <Txt size={11} color={Colors.textMuted}>{pg.pgName}</Txt>
+              <Txt variant="screenTitle" weight="900" color={Colors.textPrimary}>Edit Property Details</Txt>
+              <Txt variant="caption" color={Colors.textMuted}>{pg.pgName}</Txt>
             </Col>
           </Row>
 
@@ -160,7 +160,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               height={44}
               style={{ flex: 1 }}
             >
-              <Txt size={13} weight="800" color={Colors.textInverse}>Update Branch</Txt>
+              <Txt variant="body" weight="800" color={Colors.textInverse}>Update Branch</Txt>
             </Btn>
             <OutlinedBtn
               onPress={onDismiss}
@@ -170,7 +170,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               height={44}
               style={{ flex: 1 }}
             >
-              <Txt size={13} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+              <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
             </OutlinedBtn>
           </Row>
         </Card>

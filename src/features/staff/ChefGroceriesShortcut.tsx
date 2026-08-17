@@ -20,8 +20,8 @@ export function ChefGroceriesShortcut() {
           <Row gap={10} align="center">
             <Ionicons name="nutrition" size={22} color={Colors.primary} />
             <Col>
-              <Txt size={14} weight="800" color={Colors.textPrimary}>Groceries</Txt>
-              <Txt size={11} color={Colors.textMuted}>Request kitchen supplies from the Manager</Txt>
+              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>Groceries</Txt>
+              <Txt variant="caption" color={Colors.textMuted}>Request kitchen supplies from the Manager</Txt>
             </Col>
           </Row>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />

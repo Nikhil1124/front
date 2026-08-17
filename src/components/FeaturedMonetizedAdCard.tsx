@@ -57,7 +57,7 @@ export function FeaturedMonetizedAdCard() {
       <View style={styles.sponsoredHeader}>
         <Row gap={8} align="center" style={{ flex: 1 }}>
           <View style={styles.sponsoredTag}><Txt size={8} weight="900" color="#FFD700" style={{ letterSpacing: 0.5 }}>SPONSORED PARTNER</Txt></View>
-          <Txt size={10} weight="700" color={Colors.SlateMutedText}>Monetized Channel</Txt>
+          <Txt variant="labelSmall" color={Colors.SlateMutedText}>Monetized Channel</Txt>
         </Row>
         <Row gap={4}>
           {ADS.map((ad, idx) => (
@@ -79,25 +79,25 @@ export function FeaturedMonetizedAdCard() {
         <Image source={AD_IMAGES[currentAd.imageResId]} style={{ width: '100%', height: '100%', position: 'absolute' }} resizeMode="cover" />
         <View style={styles.bannerOverlay} />
         <View style={styles.bannerPillsRow}>
-          <View style={styles.bannerPill}><Txt size={10} weight="700" color="#FFFFFF">⭐ {currentAd.rating}</Txt></View>
-          <View style={styles.bannerPill}><Txt size={10} weight="700" color="#FFFFFF">⏱️ {currentAd.deliveryTime}</Txt></View>
+          <View style={styles.bannerPill}><Txt variant="labelSmall" color="#FFFFFF">⭐ {currentAd.rating}</Txt></View>
+          <View style={styles.bannerPill}><Txt variant="labelSmall" color="#FFFFFF">⏱️ {currentAd.deliveryTime}</Txt></View>
         </View>
       </View>
 
       <View style={{ padding: 16 }}>
         <Row justify="space-between" align="center">
           <Col style={{ flex: 1 }}>
-            <Txt size={16} weight="800" color="#FFFFFF">{currentAd.brandName}</Txt>
-            <Txt size={11} weight="600" color={Colors.CyberPink}>{currentAd.tagline}</Txt>
+            <Txt variant="sectionTitle" weight="800" color="#FFFFFF">{currentAd.brandName}</Txt>
+            <Txt variant="caption" weight="600" color={Colors.CyberPink}>{currentAd.tagline}</Txt>
           </Col>
           <TouchableOpacity onPress={() => setActiveAdIdx((activeAdIdx + 1) % ADS.length)} style={styles.nextBtn}>
             <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </Row>
         <Spacer size={8} />
-        <Txt size={12} color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{currentAd.description}</Txt>
+        <Txt variant="caption" color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{currentAd.description}</Txt>
         <Spacer size={14} />
-        <Txt size={10} weight="700" color="rgba(234,242,243,0.5)">Cuisines: {currentAd.cuisines}</Txt>
+        <Txt variant="labelSmall" color="rgba(234,242,243,0.5)">Cuisines: {currentAd.cuisines}</Txt>
         <Spacer size={12} />
         <Row gap={8}>
           <Btn
@@ -125,7 +125,7 @@ export function FeaturedMonetizedAdCard() {
             height={40}
             style={{ flex: 1 }}
           >
-            <Txt size={12} weight="800" color="#FFFFFF">Order Now 🛵</Txt>
+            <Txt variant="caption" weight="800" color="#FFFFFF">Order Now 🛵</Txt>
           </Btn>
         </Row>
       </View>
@@ -137,28 +137,28 @@ export function FeaturedMonetizedAdCard() {
             <Col align="center">
               <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color="#10B981" /></View>
               <Spacer size={16} />
-              <Txt size={18} weight="900" color="#FFFFFF" align="center">{currentAd.brandName}</Txt>
-              <Txt size={11} color={Colors.SlateMutedText}>Exclusive PG Partner Integration</Txt>
+              <Txt variant="sectionTitle" weight="900" color="#FFFFFF" align="center">{currentAd.brandName}</Txt>
+              <Txt variant="caption" color={Colors.SlateMutedText}>Exclusive PG Partner Integration</Txt>
               <Spacer size={16} /><View style={{ height: 1, backgroundColor: Colors.LuxuryCardBorder, width: '100%' }} /><Spacer size={12} />
               <Row justify="space-between" style={{ width: '100%' }}>
-                <Txt size={12} color={Colors.SlateMutedText}>Resident Meal Voucher</Txt>
-                <Txt size={12} weight="700" color="#10B981">- {currentAd.discountPercent}% Off Applied</Txt>
+                <Txt variant="caption" color={Colors.SlateMutedText}>Resident Meal Voucher</Txt>
+                <Txt variant="caption" weight="700" color="#10B981">- {currentAd.discountPercent}% Off Applied</Txt>
               </Row>
               <Row justify="space-between" style={{ width: '100%', marginTop: 6 }}>
-                <Txt size={12} color={Colors.SlateMutedText}>Doorstep Delivery Fee</Txt>
-                <Txt size={12} weight="700" color="#34D399">FREE (Partner Wave)</Txt>
+                <Txt variant="caption" color={Colors.SlateMutedText}>Doorstep Delivery Fee</Txt>
+                <Txt variant="caption" weight="700" color="#34D399">FREE (Partner Wave)</Txt>
               </Row>
               <Row justify="space-between" style={{ width: '100%', marginTop: 6 }}>
-                <Txt size={12} color={Colors.SlateMutedText}>Estimated Arrival</Txt>
-                <Txt size={12} weight="700" color={Colors.IvoryWhiteText}>{currentAd.deliveryTime}</Txt>
+                <Txt variant="caption" color={Colors.SlateMutedText}>Estimated Arrival</Txt>
+                <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>{currentAd.deliveryTime}</Txt>
               </Row>
               <Spacer size={20} />
-              <Txt size={11} color={Colors.SlateMutedText} align="center">
+              <Txt variant="caption" color={Colors.SlateMutedText} align="center">
                 Voucher code '{currentAd.discountCode}' is copied and active. You can complete order on their platform.
               </Txt>
               <Spacer size={20} />
               <Btn onPress={() => setShowCheckout(false)} containerColor={Colors.CyberPink} textColor="#FFFFFF" borderRadius={12} height={44} style={{ width: '100%' }}>
-                <Txt size={13} weight="700" color="#FFFFFF">Awesome, Continue</Txt>
+                <Txt variant="body" weight="700" color="#FFFFFF">Awesome, Continue</Txt>
               </Btn>
             </Col>
           </Card>

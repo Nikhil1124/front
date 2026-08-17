@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ReplacementPreference } from '../../store/useCartStore';
-import { AppColors, AppFonts, AppRadius } from '../../theme/AppColors';
+import { Colors, Radii } from '@/theme';
 
 const OPTIONS: { value: ReplacementPreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { value: 'best-match', label: "Shopper's best match", icon: 'sparkles-outline' },
@@ -21,7 +21,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
     const current = OPTIONS.find((o) => o.value === value) || OPTIONS[0];
     return (
       <View style={styles.compactRow}>
-        <Ionicons name={current.icon} size={12} color={AppColors.primary} />
+        <Ionicons name={current.icon} size={12} color={Colors.primary} />
         <Text style={styles.compactText}>{current.label}</Text>
       </View>
     );
@@ -43,7 +43,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
               <Ionicons
                 name={opt.icon}
                 size={18}
-                color={selected ? AppColors.primary : AppColors.textSecondary}
+                color={selected ? Colors.primary : Colors.textSecondary}
               />
               <Text style={[styles.optionLabel, selected && styles.selectedLabel]}>
                 {opt.label}
@@ -51,7 +51,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
               <Ionicons
                 name={selected ? 'radio-button-on' : 'radio-button-off'}
                 size={18}
-                color={selected ? AppColors.primary : AppColors.textMuted}
+                color={selected ? Colors.primary : Colors.textMuted}
               />
             </TouchableOpacity>
           );
@@ -64,16 +64,15 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
 const styles = StyleSheet.create({
   container: {
     marginTop: 8,
-    backgroundColor: AppColors.surfaceAlt,
+    backgroundColor: Colors.surfaceMuted,
     padding: 10,
-    borderRadius: AppRadius.md,
+    borderRadius: Radii.xl,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
   },
   title: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginBottom: 6,
   },
   optionsList: {
@@ -84,25 +83,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 10,
-    borderRadius: AppRadius.sm,
-    backgroundColor: AppColors.surface,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     gap: 8,
   },
   selectedOptionCard: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.primaryLight,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surfaceElevated,
   },
   optionLabel: {
     flex: 1,
     fontSize: 13,
-    fontFamily: AppFonts.semiBold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   selectedLabel: {
-    color: AppColors.textPrimary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textPrimary,
   },
   compactRow: {
     flexDirection: 'row',
@@ -112,7 +109,6 @@ const styles = StyleSheet.create({
   },
   compactText: {
     fontSize: 11,
-    color: AppColors.primary,
-    fontFamily: AppFonts.bold,
+    color: Colors.primary,
   },
 });

@@ -22,9 +22,9 @@ export function InProgressScreen({
       <View style={styles.center}>
         <Ionicons name="construct-outline" size={48} color={Colors.textMuted} />
         <Spacer size={12} />
-        <Txt size={16} weight="800" color={Colors.textPrimary} align="center">In Progress</Txt>
+        <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary} align="center">In Progress</Txt>
         <Spacer size={6} />
-        <Txt size={13} color={Colors.textMuted} align="center" style={{ maxWidth: 280 }}>
+        <Txt variant="body" color={Colors.textMuted} align="center" style={{ maxWidth: 280 }}>
           {description}
         </Txt>
       </View>

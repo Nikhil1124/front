@@ -137,10 +137,10 @@ export function KycUploadDialog({
                   <Ionicons name="ribbon" size={22} color={Colors.primary} />
                 </View>
                 <Col>
-                  <Txt size={16} weight="800" color={Colors.textPrimary}>
+                  <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>
                     {reupload ? 'Re-upload Documents' : 'Verify Your Identity'}
                   </Txt>
-                  <Txt size={11} color={Colors.textMuted}>
+                  <Txt variant="caption" color={Colors.textMuted}>
                     {reupload ? 'Update your KYC and resubmit for review' : 'Required for resident onboarding'}
                   </Txt>
                 </Col>
@@ -165,8 +165,8 @@ export function KycUploadDialog({
                 <View style={styles.rejectedBanner}>
                   <Ionicons name="warning" size={18} color={Colors.danger} />
                   <Col style={{ flex: 1 }}>
-                    <Txt size={12} weight="800" color={Colors.danger}>Action Required</Txt>
-                    <Txt size={11} color={Colors.textSecondary}>
+                    <Txt variant="caption" weight="800" color={Colors.danger}>Action Required</Txt>
+                    <Txt variant="caption" color={Colors.textSecondary}>
                       {guest?.kycRejectReason
                         ? `Reason: ${guest.kycRejectReason}`
                         : 'Your previous submission was rejected. Please update and resubmit.'}
@@ -179,7 +179,7 @@ export function KycUploadDialog({
             <Spacer size={16} />
 
             {/* 1. Selfie / Profile photo */}
-            <Txt size={13} weight="700" color={Colors.primary}>1. Selfie / Profile Photo</Txt>
+            <Txt variant="body" weight="700" color={Colors.primary}>1. Selfie / Profile Photo</Txt>
             <Spacer size={8} />
             <Row gap={12} align="center">
               <View style={[styles.photoBox, profilePhotoUri ? styles.photoBoxFilled : null]}>
@@ -197,7 +197,7 @@ export function KycUploadDialog({
                   testID="kyc_upload_selfie_btn"
                 >
                   <Ionicons name="camera" size={16} color={Colors.textInverse} />
-                  <Txt size={12} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Take / Choose Photo</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Take / Choose Photo</Txt>
                 </Btn>
               </Col>
             </Row>
@@ -205,14 +205,14 @@ export function KycUploadDialog({
             <Spacer size={16} />
 
             {/* 2. ID type dropdown */}
-            <Txt size={13} weight="700" color={Colors.primary}>2. ID Document Type</Txt>
+            <Txt variant="body" weight="700" color={Colors.primary}>2. ID Document Type</Txt>
             <Spacer size={8} />
             <TouchableOpacity
               onPress={() => setShowDropdown(true)}
               style={styles.dropdownBox}
               testID="kyc_id_type_dropdown"
             >
-              <Txt size={13} color={Colors.textPrimary}>{selectedIdType}</Txt>
+              <Txt variant="body" color={Colors.textPrimary}>{selectedIdType}</Txt>
               <Ionicons name="chevron-down" size={18} color={Colors.textMuted} />
             </TouchableOpacity>
             {/* Dropdown modal — for clean tap-outside-to-close */}
@@ -225,7 +225,7 @@ export function KycUploadDialog({
                       onPress={() => { setSelectedIdType(t); setShowDropdown(false); hapticSelect(); }}
                       style={styles.dropdownItem}
                     >
-                      <Txt size={13} color={Colors.textPrimary}>{t}</Txt>
+                      <Txt variant="body" color={Colors.textPrimary}>{t}</Txt>
                       {selectedIdType === t && <Ionicons name="checkmark" size={16} color={Colors.primary} />}
                     </TouchableOpacity>
                   ))}
@@ -247,7 +247,7 @@ export function KycUploadDialog({
             <Spacer size={14} />
 
             {/* 4. ID photo */}
-            <Txt size={13} weight="700" color={Colors.primary}>3. ID Document Photo</Txt>
+            <Txt variant="body" weight="700" color={Colors.primary}>3. ID Document Photo</Txt>
             <Spacer size={8} />
             <Row gap={12} align="center">
               <View style={[styles.idPhotoBox, idPhotoUri ? styles.photoBoxFilled : null]}>
@@ -265,7 +265,7 @@ export function KycUploadDialog({
                   testID="kyc_upload_id_doc_btn"
                 >
                   <Ionicons name="cloud-upload" size={16} color={Colors.textInverse} />
-                  <Txt size={12} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Upload ID Image</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Upload ID Image</Txt>
                 </Btn>
               </Col>
             </Row>
@@ -285,7 +285,7 @@ export function KycUploadDialog({
                 testID="kyc_submit_btn"
               >
                 <Ionicons name="send" size={16} color={Colors.textInverse} />
-                <Txt size={14} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
+                <Txt variant="cardTitle" weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
                   {submitting ? 'Submitting…' : 'Submit for Verification'}
                 </Txt>
               </Btn>
@@ -297,7 +297,7 @@ export function KycUploadDialog({
                 height={48}
                 testID="kyc_cancel_btn"
               >
-                <Txt size={13} weight="700" color={Colors.textSecondary}>Cancel</Txt>
+                <Txt variant="body" weight="700" color={Colors.textSecondary}>Cancel</Txt>
               </OutlinedBtn>
             </Row>
           </Card>

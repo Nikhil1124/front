@@ -40,7 +40,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
           <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
             <Row gap={8} align="center">
               <Txt size={18}>🔄</Txt>
-              <Txt size={16} weight="900" color={Colors.textPrimary}>Daily Grocery Auto-Order</Txt>
+              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Daily Grocery Auto-Order</Txt>
             </Row>
             <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
           </Row>
@@ -82,7 +82,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
             borderRadius={12}
             height={44}
           >
-            <Txt size={13} weight="800" color={Colors.textInverse}>Activate Daily Subscription</Txt>
+            <Txt variant="body" weight="800" color={Colors.textInverse}>Activate Daily Subscription</Txt>
           </Btn>
         </Card>
       </View>
@@ -124,12 +124,12 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
           <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
             <Row gap={8} align="center">
               <Txt size={18}>🛠️</Txt>
-              <Txt size={16} weight="900" color={Colors.textPrimary}>Book Pronto Repair</Txt>
+              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Book Pronto Repair</Txt>
             </Row>
             <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
           </Row>
 
-          <Txt size={11} weight="800" color={Colors.textMuted}>Select Category</Txt>
+          <Txt variant="caption" weight="800" color={Colors.textMuted}>Select Category</Txt>
           <Spacer size={6} />
           <Row gap={6} style={{ flexWrap: 'wrap' }}>
             {REPAIR_CATEGORIES.map((cat) => (
@@ -151,7 +151,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
             style={{ marginBottom: 12 }}
           />
 
-          <Txt size={11} weight="800" color={Colors.textMuted}>Dispatch Urgency</Txt>
+          <Txt variant="caption" weight="800" color={Colors.textMuted}>Dispatch Urgency</Txt>
           <Spacer size={6} />
           <Row gap={8}>
             {['15-Min Express', 'Scheduled Today'].map((u) => (
@@ -164,7 +164,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
                 height={36}
                 style={{ flex: 1 }}
               >
-                <Txt size={11} weight="800" color={urgency === u ? Colors.textInverse : Colors.textPrimary}>{u}</Txt>
+                <Txt variant="caption" weight="800" color={urgency === u ? Colors.textInverse : Colors.textPrimary}>{u}</Txt>
               </Btn>
             ))}
           </Row>
@@ -177,7 +177,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
             borderRadius={12}
             height={44}
           >
-            <Txt size={13} weight="800" color={Colors.textInverse}>⚡ Dispatch Technician Now</Txt>
+            <Txt variant="body" weight="800" color={Colors.textInverse}>⚡ Dispatch Technician Now</Txt>
           </Btn>
         </Card>
       </View>
@@ -225,14 +225,14 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
           <Row justify="space-between" align="center" style={{ marginBottom: 4 }}>
             <Row gap={8} align="center">
               <Txt size={18}>🧺</Txt>
-              <Txt size={16} weight="900" color={Colors.textPrimary}>Doorstep Laundry</Txt>
+              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Doorstep Laundry</Txt>
             </Row>
             <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
           </Row>
-          <Txt size={11} weight="800" color={Colors.primaryDark}>Room {roomNo} • {guestName}</Txt>
+          <Txt variant="caption" weight="800" color={Colors.primaryDark}>Room {roomNo} • {guestName}</Txt>
           <Spacer size={12} />
 
-          <Txt size={11} weight="800" color={Colors.textMuted}>Select Service Type</Txt>
+          <Txt variant="caption" weight="800" color={Colors.textMuted}>Select Service Type</Txt>
           <Spacer size={6} />
           <View style={{ gap: 6 }}>
             {Object.entries(LAUNDRY_RATES).map(([srv, rate]) => (
@@ -248,7 +248,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
                 ]}
               >
                 <Row justify="space-between" align="center">
-                  <Txt size={12} weight="800" color={Colors.textPrimary}>{srv}</Txt>
+                  <Txt variant="caption" weight="800" color={Colors.textPrimary}>{srv}</Txt>
                   <Txt size={11} weight="900" color={Colors.primaryDark}>
                     ₹{rate}{srv.includes('Shoe') ? '/pair' : srv.includes('Dry') ? '/pc' : '/kg'}
                   </Txt>
@@ -258,7 +258,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
           </View>
           <Spacer size={12} />
 
-          <Txt size={11} weight="800" color={Colors.textMuted}>Quantity / Weight</Txt>
+          <Txt variant="caption" weight="800" color={Colors.textMuted}>Quantity / Weight</Txt>
           <Row gap={8} style={{ marginTop: 6 }}>
             {['5 kg', '10 kg', '15 kg'].map((w) => (
               <Btn
@@ -270,7 +270,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
                 height={34}
                 style={{ flex: 1 }}
               >
-                <Txt size={11} weight="800" color={weight === w ? Colors.textInverse : Colors.textPrimary}>{w}</Txt>
+                <Txt variant="caption" weight="800" color={weight === w ? Colors.textInverse : Colors.textPrimary}>{w}</Txt>
               </Btn>
             ))}
           </Row>
@@ -287,8 +287,8 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
 
           <Row justify="space-between" align="center">
             <Col>
-              <Txt size={10} color={Colors.textMuted}>Estimated Total</Txt>
-              <Txt size={18} weight="900" color={Colors.primaryDark}>₹{est}</Txt>
+              <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Estimated Total</Txt>
+              <Txt variant="sectionTitle" weight="900" color={Colors.primaryDark}>₹{est}</Txt>
             </Col>
             <Btn
               onPress={handleBook}
@@ -297,7 +297,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
               borderRadius={12}
               height={44}
             >
-              <Txt size={12} weight="800" color={Colors.textInverse}>Confirm Pickup</Txt>
+              <Txt variant="caption" weight="800" color={Colors.textInverse}>Confirm Pickup</Txt>
             </Btn>
           </Row>
         </Card>

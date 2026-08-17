@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { mockProducts } from '../data/mockProducts';
 import { useOrderStore, DetailedOrder } from '../store/useOrderStore';
 import { useCartStore } from '../store/useCartStore';
-import { AppColors, AppFonts, AppRadius, AppShadow } from '../theme/AppColors';
+import { Colors, Layout, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 export function GroceryOrdersScreen() {
@@ -66,7 +66,7 @@ export function GroceryOrdersScreen() {
       <View style={styles.orderFooter}>
         <Text style={styles.orderTotal}>₹{item.total}</Text>
         <TouchableOpacity style={styles.reorderBtn} onPress={() => handleReorder(item)}>
-          <Ionicons name="refresh" size={15} color={AppColors.primary} />
+          <Ionicons name="refresh" size={15} color={Colors.primary} />
           <Text style={styles.reorderText}>Reorder</Text>
         </TouchableOpacity>
       </View>
@@ -79,12 +79,12 @@ export function GroceryOrdersScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
+            <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Your Orders</Text>
         </View>
         <TouchableOpacity onPress={logout}>
-          <Ionicons name="log-out-outline" size={24} color={AppColors.error} />
+          <Ionicons name="log-out-outline" size={24} color={Colors.danger} />
         </TouchableOpacity>
       </View>
 
@@ -114,7 +114,7 @@ export function GroceryOrdersScreen() {
                     </Text>
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={AppColors.primary} />
+                <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
               </TouchableOpacity>
             )}
 
@@ -155,7 +155,7 @@ export function GroceryOrdersScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Ionicons name="receipt-outline" size={48} color={AppColors.textMuted} />
+            <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
             <Text style={styles.emptyText}>No orders yet</Text>
           </View>
         }
@@ -167,7 +167,7 @@ export function GroceryOrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   header: {
     flexDirection: 'row',
@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.divider,
-    backgroundColor: AppColors.surface,
+    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -188,16 +188,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   listContainer: {
     padding: 16,
@@ -207,13 +206,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: 1.5,
-    borderColor: AppColors.primary,
-    borderRadius: AppRadius.lg,
+    borderColor: Colors.primary,
+    borderRadius: 16,
     padding: 14,
     marginBottom: 16,
-    ...AppShadow.card,
+    ...Layout.shadowCard,
   },
   activeBannerLeft: {
     flexDirection: 'row',
@@ -225,23 +224,20 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
   },
   activeBannerTitle: {
     fontSize: 14,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   activeBannerSub: {
     fontSize: 12,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   sectionTitle: {
     fontSize: 16,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   buyAgainSection: {
@@ -252,54 +248,51 @@ const styles = StyleSheet.create({
   },
   buyAgainCard: {
     width: 120,
-    backgroundColor: AppColors.surface,
-    borderRadius: AppRadius.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.xl,
     padding: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   buyAgainImg: {
     width: 50,
     height: 50,
-    borderRadius: AppRadius.sm,
-    backgroundColor: AppColors.surfaceAlt,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surfaceMuted,
     marginBottom: 6,
   },
   buyAgainName: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     textAlign: 'center',
   },
   buyAgainPrice: {
     fontSize: 12,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginVertical: 4,
   },
   addAgainBtn: {
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
   },
   addAgainText: {
-    color: AppColors.primary,
-    fontFamily: AppFonts.extraBold,
+    color: Colors.primary,
     fontSize: 11,
   },
   orderCard: {
-    backgroundColor: AppColors.surface,
-    borderRadius: AppRadius.lg,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    ...AppShadow.card,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard,
   },
   orderHeader: {
     flexDirection: 'row',
@@ -309,41 +302,37 @@ const styles = StyleSheet.create({
   },
   orderId: {
     fontSize: 15,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   statusBadge: {
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   activeStatusBadge: {
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
   },
   statusText: {
     fontSize: 11,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   activeStatusText: {
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   orderDate: {
     fontSize: 12,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
     marginBottom: 8,
   },
   divider: {
     height: 1,
-    backgroundColor: AppColors.divider,
+    backgroundColor: Colors.borderSubtle,
     marginVertical: 10,
   },
   orderItems: {
     fontSize: 13,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.medium,
+    color: Colors.textSecondary,
     lineHeight: 18,
   },
   orderFooter: {
@@ -353,23 +342,21 @@ const styles = StyleSheet.create({
   },
   orderTotal: {
     fontSize: 16,
-    fontFamily: AppFonts.extraBold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   reorderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     gap: 4,
     borderWidth: 1,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
   },
   reorderText: {
-    color: AppColors.primary,
-    fontFamily: AppFonts.bold,
+    color: Colors.primary,
     fontSize: 13,
   },
   emptyBox: {
@@ -380,7 +367,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: AppFonts.medium,
-    color: AppColors.textMuted,
+    color: Colors.textMuted,
   },
 });

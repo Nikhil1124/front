@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
 import { useOrderStore } from '../store/useOrderStore';
-import { AppColors, AppFonts } from '../theme/AppColors';
+import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
@@ -109,12 +109,12 @@ export function GroceryCheckoutScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={20} color={AppColors.textPrimary} />
+          <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
         <View style={{ width: 32 }} />
@@ -143,7 +143,7 @@ export function GroceryCheckoutScreen() {
               <Ionicons
                 name="bicycle"
                 size={16}
-                color={fulfillmentMode === 'delivery' ? AppColors.primary : AppColors.textSecondary}
+                color={fulfillmentMode === 'delivery' ? Colors.primary : Colors.textSecondary}
               />
               <Text style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
                 Delivery
@@ -161,7 +161,7 @@ export function GroceryCheckoutScreen() {
               <Ionicons
                 name="basket-outline"
                 size={16}
-                color={fulfillmentMode === 'pickup' ? AppColors.primary : AppColors.textSecondary}
+                color={fulfillmentMode === 'pickup' ? Colors.primary : Colors.textSecondary}
               />
               <Text style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
                 Store Pickup
@@ -190,7 +190,7 @@ export function GroceryCheckoutScreen() {
                         <Ionicons
                           name={isSelected ? "radio-button-on" : "radio-button-off"}
                           size={18}
-                          color={isSelected ? AppColors.primary : AppColors.textMuted}
+                          color={isSelected ? Colors.primary : Colors.textMuted}
                           style={styles.radioIcon}
                         />
                         <View style={styles.slotDetails}>
@@ -231,14 +231,14 @@ export function GroceryCheckoutScreen() {
 
             {/* Location card */}
             <View style={styles.locationCard}>
-              <Ionicons name="location" size={18} color={AppColors.primary} style={styles.locationCardIcon} />
+              <Ionicons name="location" size={18} color={Colors.primary} style={styles.locationCardIcon} />
               <View style={styles.locationTextWrapper}>
                 <Text style={styles.locationCardTitle}>Deliver to</Text>
                 <Text style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Text>
               </View>
               <TouchableOpacity onPress={handleUpdateAddress} style={styles.changeBtn} activeOpacity={0.7}>
                 <Text style={styles.changeBtnText}>Change</Text>
-                <Ionicons name="chevron-forward" size={12} color={AppColors.primary} />
+                <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
               </TouchableOpacity>
             </View>
 
@@ -248,7 +248,7 @@ export function GroceryCheckoutScreen() {
               <TextInput
                 style={styles.textInput}
                 placeholder="e.g. Leave at door, call when arrived..."
-                placeholderTextColor={AppColors.textMuted}
+                placeholderTextColor={Colors.textMuted}
                 value={driverNote}
                 onChangeText={(text) => text.length <= 120 && setDriverNote(text)}
                 multiline
@@ -310,7 +310,7 @@ export function GroceryCheckoutScreen() {
                   <Ionicons
                     name={pm.icon as any}
                     size={18}
-                    color={isSelected ? AppColors.primary : AppColors.textSecondary}
+                    color={isSelected ? Colors.primary : Colors.textSecondary}
                     style={styles.paymentIcon}
                   />
                   <Text style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
@@ -319,7 +319,7 @@ export function GroceryCheckoutScreen() {
                   <Ionicons
                     name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                     size={16}
-                    color={isSelected ? AppColors.primary : AppColors.textMuted}
+                    color={isSelected ? Colors.primary : Colors.textMuted}
                   />
                 </TouchableOpacity>
               );
@@ -398,7 +398,7 @@ export function GroceryCheckoutScreen() {
           <Text style={styles.footerPrice}>₹{grandTotal.toFixed(2)}</Text>
           {totalSavings > 0 ? (
             <View style={styles.footerSavings}>
-              <Ionicons name="leaf-outline" size={10} color={AppColors.primary} />
+              <Ionicons name="leaf-outline" size={10} color={Colors.primary} />
               <Text style={styles.footerSavingsText}>You save ₹{totalSavings.toFixed(2)}</Text>
             </View>
           ) : (
@@ -413,7 +413,7 @@ export function GroceryCheckoutScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.cartIconWrapper}>
-            <Ionicons name="cart-outline" size={14} color={AppColors.primary} />
+            <Ionicons name="cart-outline" size={14} color={Colors.primary} />
             <View style={styles.cartCountBadge}>
               <Text style={styles.cartCountText}>{cartItemCount}</Text>
             </View>
@@ -427,7 +427,7 @@ export function GroceryCheckoutScreen() {
           activeOpacity={0.8}
         >
           <Text style={styles.placeOrderText}>Place Order</Text>
-          <Ionicons name="arrow-forward" size={16} color={AppColors.surface} style={{ marginLeft: 4 }} />
+          <Ionicons name="arrow-forward" size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
     </View>
@@ -437,7 +437,7 @@ export function GroceryCheckoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: Colors.canvas,
   },
   header: {
     flexDirection: 'row',
@@ -446,19 +446,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-    backgroundColor: AppColors.surface,
+    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
   },
   backBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
@@ -466,8 +466,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -475,13 +474,13 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
   },
   card: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     marginBottom: 16,
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 2,
@@ -497,19 +496,17 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepBadgeText: {
-    color: AppColors.surface,
-    fontFamily: AppFonts.bold,
+    color: Colors.surface,
     fontSize: 11,
   },
   cardTitle: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   fulfillmentContainer: {
     flexDirection: 'row',
@@ -528,22 +525,20 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   selectedFulfillmentBtn: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.primary,
+    borderColor: Colors.primary,
   },
   fulfillmentText: {
     fontSize: 12,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textSecondary,
   },
   selectedFulfillmentText: {
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   slotListLabel: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginBottom: 8,
   },
   slotList: {
@@ -555,12 +550,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 10,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 10,
   },
   selectedSlotRow: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.primaryLight,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surfaceElevated,
   },
   slotRowLeft: {
     flexDirection: 'row',
@@ -579,8 +574,7 @@ const styles = StyleSheet.create({
   },
   slotDay: {
     fontSize: 13,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   slotBadge: {
     borderRadius: 4,
@@ -588,45 +582,42 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   fastestBadge: {
-    backgroundColor: AppColors.softGreen,
+    backgroundColor: '#DCFCE7',
   },
   freeBadge: {
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
   },
   slotBadgeText: {
     fontSize: 8,
-    fontFamily: AppFonts.bold,
   },
   fastestText: {
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   freeText: {
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   slotWindow: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     marginTop: 1,
   },
   slotFeeText: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   greenFeeText: {
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   // Location Card
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.primaryLight,
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: AppColors.softGreen,
+    borderColor: '#DCFCE7',
     padding: 10,
     marginBottom: 12,
   },
@@ -638,13 +629,11 @@ const styles = StyleSheet.create({
   },
   locationCardTitle: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textSecondary,
   },
   locationCardSub: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   changeBtn: {
     flexDirection: 'row',
@@ -653,28 +642,25 @@ const styles = StyleSheet.create({
   },
   changeBtnText: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   inputLabel: {
     fontSize: 11,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
     marginBottom: 6,
   },
   inputWrapper: {
     position: 'relative',
   },
   textInput: {
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     padding: 10,
     paddingBottom: 20,
     fontSize: 12,
-    fontFamily: AppFonts.regular,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     minHeight: 56,
     textAlignVertical: 'top',
   },
@@ -683,14 +669,12 @@ const styles = StyleSheet.create({
     bottom: 6,
     right: 8,
     fontSize: 9,
-    color: AppColors.textMuted,
-    fontFamily: AppFonts.regular,
+    color: Colors.textMuted,
   },
   // Tip Layout
   tipDesc: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     marginBottom: 10,
   },
   tipChipsRow: {
@@ -699,25 +683,24 @@ const styles = StyleSheet.create({
   },
   tipChip: {
     flex: 1,
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: AppColors.border,
+    borderColor: Colors.borderSubtle,
     borderRadius: 8,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedTipChip: {
-    backgroundColor: AppColors.primary,
-    borderColor: AppColors.primary,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   tipChipText: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   selectedTipText: {
-    color: AppColors.surface,
+    color: Colors.surface,
   },
   // Payment List
   paymentList: {
@@ -729,12 +712,12 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    backgroundColor: AppColors.surface,
+    borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
   },
   selectedPaymentRow: {
-    borderColor: AppColors.softGreen,
-    backgroundColor: AppColors.primaryLight,
+    borderColor: '#DCFCE7',
+    backgroundColor: Colors.surfaceElevated,
   },
   paymentIcon: {
     marginRight: 10,
@@ -742,17 +725,15 @@ const styles = StyleSheet.create({
   paymentLabel: {
     flex: 1,
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textSecondary,
+    color: Colors.textSecondary,
   },
   selectedPaymentLabel: {
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   // Summary Details
   summaryTitle: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
     marginBottom: 10,
   },
   summaryList: {
@@ -769,31 +750,28 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: AppColors.border,
-    backgroundColor: AppColors.surface,
+    borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.surface,
   },
   summaryItemDetails: {
     flex: 1,
   },
   summaryItemName: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   summaryItemUnit: {
     fontSize: 10,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
   },
   summaryItemPrice: {
     fontSize: 12,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   // Bill Breakdown table
   billBreakdown: {
     borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    borderTopColor: Colors.borderSubtle,
     paddingTop: 10,
     gap: 6,
   },
@@ -803,32 +781,28 @@ const styles = StyleSheet.create({
   },
   billLabel: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textSecondary,
   },
   billValue: {
     fontSize: 11,
-    color: AppColors.textPrimary,
-    fontFamily: AppFonts.bold,
+    color: Colors.textPrimary,
   },
   greenText: {
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    borderTopColor: Colors.borderSubtle,
     paddingTop: 8,
     marginTop: 4,
   },
   totalLabel: {
     fontSize: 14,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   totalValue: {
     fontSize: 16,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   // Sticky Footer checkout bar
   stickyFooter: {
@@ -837,14 +811,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: AppColors.surface,
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    borderTopColor: Colors.borderSubtle,
     paddingHorizontal: 16,
     paddingTop: 10,
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: AppColors.textPrimary,
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -855,8 +829,7 @@ const styles = StyleSheet.create({
   },
   footerPrice: {
     fontSize: 18,
-    fontFamily: AppFonts.bold,
-    color: AppColors.textPrimary,
+    color: Colors.textPrimary,
   },
   footerSavings: {
     flexDirection: 'row',
@@ -866,13 +839,11 @@ const styles = StyleSheet.create({
   },
   footerSavingsText: {
     fontSize: 10,
-    fontFamily: AppFonts.bold,
-    color: AppColors.primary,
+    color: Colors.primary,
   },
   footerItemText: {
     fontSize: 11,
-    color: AppColors.textSecondary,
-    fontFamily: AppFonts.regular,
+    color: Colors.textSecondary,
     marginTop: 1,
   },
   viewCartBadgeBtn: {
@@ -891,7 +862,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -4,
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 6,
     minWidth: 12,
     height: 12,
@@ -900,17 +871,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 1.5,
   },
   cartCountText: {
-    color: AppColors.surface,
+    color: Colors.surface,
     fontSize: 7,
-    fontFamily: AppFonts.bold,
   },
   viewCartText: {
-    color: AppColors.primary,
+    color: Colors.primary,
     fontSize: 11,
-    fontFamily: AppFonts.bold,
   },
   placeOrderBtn: {
-    backgroundColor: AppColors.primary,
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 18,
@@ -920,8 +889,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   placeOrderText: {
-    color: AppColors.surface,
-    fontFamily: AppFonts.bold,
+    color: Colors.surface,
     fontSize: 13,
   },
 });

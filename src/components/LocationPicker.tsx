@@ -185,7 +185,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
       </View>
 
       <View style={styles.sheet}>
-        <Txt size={10} weight="700" color={Colors.SlateMutedText} style={styles.sheetLabel}>
+        <Txt variant="labelSmall" color={Colors.SlateMutedText} style={styles.sheetLabel}>
           SELECTED LOCATION
         </Txt>
         {/* Fixed-height box, not just fixed-height text: "Locating…" is one line and a real
@@ -203,7 +203,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
               : (address ?? 'No address here — the coordinates will still be saved')}
           </Txt>
         </View>
-        <Txt size={11} color={Colors.SlateMutedText} style={{ marginBottom: Spacing.sm }}>
+        <Txt variant="caption" color={Colors.SlateMutedText} style={{ marginBottom: Spacing.sm }}>
           {centre.latitude}, {centre.longitude}
         </Txt>
 
@@ -217,7 +217,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
             })
           }
         >
-          <Txt size={14} weight="700" color={Colors.LuxuryPureBlack}>
+          <Txt variant="cardTitle" color={Colors.LuxuryPureBlack}>
             Confirm location
           </Txt>
         </TouchableOpacity>

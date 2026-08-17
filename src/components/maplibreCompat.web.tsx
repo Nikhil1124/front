@@ -12,7 +12,7 @@ import { Colors } from '@/theme';
 export const Map = ({ children, style }: any) => (
   <View style={[styles.fallback, style]}>
     {children}
-    <Txt size={12} color={Colors.SlateMutedText} style={styles.text}>
+    <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
       Map preview unavailable on web — open the app on iOS or Android to see the live map.
     </Txt>
   </View>
