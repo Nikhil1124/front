@@ -12,7 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
-import * as Notifications from 'expo-notifications';
+import Notifications from '../src/data/notificationsCompat';
 
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
@@ -124,7 +124,7 @@ export default function RootLayout() {
     // Tapping a push (foreground, background, or the app fully closed) routes here. Background/
     // killed taps are handled by BACKGROUND_NOTIFICATION_TASK instead, which runs with no React
     // tree mounted yet — this listener only ever fires for a foreground tap.
-    const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+    const sub = Notifications.addNotificationResponseReceivedListener(async (response: any) => {
       const { actionIdentifier, notification } = response;
       const data = notification.request.content.data as
         | { actionType?: string; actionId?: string; screen?: string }
@@ -162,7 +162,7 @@ export default function RootLayout() {
     return () => sub.remove();
   }, [submitRSVP, isRouterReady]);
 
-  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance';
+  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent';
   const isOwnerRole = activeRole === 'owner' || activeRole === 'manager';
   // On a cold launch, accessToken is hydrated from SecureStore (fast) before activeRole is
   // known (a separate /v1/me round trip, slower) — a real gap, not just a render tick. If

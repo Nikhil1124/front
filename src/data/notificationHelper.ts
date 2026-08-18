@@ -3,7 +3,7 @@
  * Uses `expo-notifications` for local push notifications. In Expo Go,
  * notifications may be suppressed; we wrap every call in try/catch.
  */
-import * as Notifications from 'expo-notifications';
+import Notifications from '@/data/notificationsCompat';
 import type { MealNotificationEntity } from '@/types';
 
 let channelConfigured = false;

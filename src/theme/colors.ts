@@ -18,21 +18,21 @@
  */
 export const Colors = {
   // ── Surfaces & Canvas ─────────────────────────────────────────────────────
-  canvas: '#F0FDF9',              // Refreshing mint canvas (was #060D10)
+  canvas: '#F7F9F7',              // Groceries light background
   surface: '#FFFFFF',             // Pure white cards & dialogs
   surfaceCard: '#FFFFFF',         // Card background
-  surfaceElevated: '#E6FAF5',     // Soft highlighted tiles / active chips
+  surfaceElevated: '#F0FDF4',     // Soft highlighted tiles / active chips
   surfaceGlass: 'rgba(255, 255, 255, 0.92)', // Glassmorphism modals & floating bars
-  surfaceMuted: '#F8FAFC',        // Secondary background for text fields & disabled states
+  surfaceMuted: '#F4F6F4',        // Secondary background for text fields & disabled states
 
   // ── Brand & Accents ───────────────────────────────────────────────────────
-  primary: '#0D9488',             // Crisp Emerald Teal (PhonePe / Medical / Hostel Trust)
-  primaryDark: '#0F766E',         // Darker teal for pressed states & headers
-  primaryGlow: 'rgba(13, 148, 136, 0.18)', // Soft mint shadow glow
-  secondary: '#0F766E',           // Deep Teal for sub-headings
+  primary: '#15803D',             // Groceries crisp Green
+  primaryDark: '#166534',         // Darker green for pressed states & headers
+  primaryGlow: 'rgba(21, 128, 61, 0.18)', // Soft green shadow glow
+  secondary: '#166534',           // Deep Green for sub-headings
   tertiary: '#D97706',            // Amber Accent (Alerts, Overdue dues, Urgent notices)
   accentWarm: '#D97706',          // Warm Amber
-  accentCool: '#0D9488',          // Cool Mint Emerald
+  accentCool: '#15803D',          // Cool Green
   accentRose: '#E11D48',          // Critical / Panic / Expired badges
 
   // ── Status Colors ─────────────────────────────────────────────────────────
@@ -42,23 +42,23 @@ export const Colors = {
   info: '#0284C7',                // Notice / Info blue
 
   // ── Typography & Content ───────────────────────────────────────────────────
-  textPrimary: '#0F172A',         // Slate 900 (High contrast, razor-sharp readability)
-  textSecondary: '#334155',       // Slate 700 for subtitles & field labels
-  textMuted: '#64748B',           // Slate 500 for captions & timestamps
+  textPrimary: '#17201A',         // Groceries dark text (High contrast)
+  textSecondary: '#3F4D43',       // Groceries subtitle text
+  textMuted: '#647067',           // Groceries muted text
   textInverse: '#FFFFFF',         // White text on primary buttons
-  textAccent: '#0D9488',          // Teal text for links & active tab labels
+  textAccent: '#15803D',          // Green text for links & active tab labels
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
-  borderSubtle: '#CCFBF1',        // Soft mint border (1px default on cards)
-  borderFocus: '#0D9488',         // 2px active input focus border
-  borderGlass: 'rgba(13, 148, 136, 0.15)', // Glassmorphic borders
+  borderSubtle: '#DCFCE7',        // Soft green border (1px default on cards)
+  borderFocus: '#15803D',         // 2px active input focus border
+  borderGlass: 'rgba(21, 128, 61, 0.15)', // Glassmorphic borders
   borderMuted: '#E2E8F0',         // Divider lines
 
   // ── Gradients ─────────────────────────────────────────────────────────────
-  heroGradientStart: '#0D9488',   // Top header & key banner gradient
-  heroGradientEnd: '#14B8A6',
+  heroGradientStart: '#15803D',   // Top header & key banner gradient
+  heroGradientEnd: '#22C55E',
   cardGradientStart: '#FFFFFF',
-  cardGradientEnd: '#F0FDF9',
+  cardGradientEnd: '#F7F9F7',
   alertGradientStart: '#FFFBEB',
   alertGradientEnd: '#FEF3C7',
   panicGradientStart: '#EF4444',
@@ -72,37 +72,37 @@ export const Colors = {
   // once we are on a light canvas?" rather than a literal 1:1 hue match.
   // ──────────────────────────────────────────────────────────────────────────
   // 60% Dominant Color Token (was obsidian black) — now the mint canvas.
-  LuxuryPureBlack: '#F0FDF9',
+  LuxuryPureBlack: '#F7F9F7',
   // 30% Structural Secondary (was elevated dark glass) — now pure white surface.
   LuxurySurfaceDark: '#FFFFFF',
   // Card border (was dark teal) — now the soft mint border.
-  LuxuryCardBorder: '#CCFBF1',
+  LuxuryCardBorder: '#DCFCE7',
   // Muted slate text (was slate on dark) — now slate-500 (muted caption).
-  SlateMutedText: '#64748B',
+  SlateMutedText: '#647067',
   // Ivory white text (was near-white on dark) — now slate-900 (high-contrast body).
-  IvoryWhiteText: '#0F172A',
+  IvoryWhiteText: '#17201A',
   // CyberGreen accent (was neon mint) — now the canonical primary teal.
-  CyberGreen: '#0D9488',
+  CyberGreen: '#15803D',
   // CyberPurple (was deep teal) — now primaryDark (slightly darker teal).
-  CyberPurple: '#0F766E',
+  CyberPurple: '#166534',
   // CyberPink (was bright cyan-mint) — collapses onto primary teal so chips
   // and outlines don't fight the new single-accent system.
-  CyberPink: '#0D9488',
+  CyberPink: '#15803D',
   // CyberAmber (was orange) — now the warm amber accent.
   CyberAmber: '#D97706',
 
   // Compatibility aliases from the old Theme export block — all repointed
   // at mint equivalents so any code that reads `Colors.Teal40` etc. keeps
   // working without a hunt-and-replace.
-  Teal80: '#0D9488',
-  TealSecondary80: '#0F766E',
+  Teal80: '#15803D',
+  TealSecondary80: '#166534',
   Gold80: '#D97706',
-  Teal40: '#0F766E',
-  TealSecondary40: '#0F766E',
+  Teal40: '#166534',
+  TealSecondary40: '#166534',
   Gold40: '#B45309',
-  SlateDarkBackground: '#F0FDF9',
+  SlateDarkBackground: '#F7F9F7',
   SlateDarkSurface: '#FFFFFF',
-  LightCreamBackground: '#F0FDF9',
+  LightCreamBackground: '#F7F9F7',
   LightCreamSurface: '#FFFFFF',
 } as const;
 
@@ -121,53 +121,53 @@ export const Palette = {
   StatusAmber: '#F59E0B',
   StatusAmberDeep: '#D97706',
   StatusPink: '#E11D48',
-  StatusCyan: '#0D9488',
+  StatusCyan: '#15803D',
   StatusBlue: '#0284C7',
-  StatusPurple: '#0F766E',
+  StatusPurple: '#166534',
   StatusGold: '#D97706',
   StatusOrange: '#D97706',
 
   // Functional gradients — repointed at mint hero / panic gradients.
-  GradientStart: '#0D9488',
-  GradientEnd: '#14B8A6',
+  GradientStart: '#15803D',
+  GradientEnd: '#22C55E',
 
   // Surfaces — collapsed onto the new white / mint / muted-slate scale.
   SurfaceDeepNavy: '#FFFFFF',
-  SurfaceInkDark: '#F8FAFC',
+  SurfaceInkDark: '#F4F6F4',
   SurfaceDarkCard: '#FFFFFF',
-  SurfacePanel: '#F0FDF9',
-  SurfaceInk: '#F8FAFC',
-  SurfaceInkAlt: '#E6FAF5',
-  SurfaceInkDeep: '#E6FAF5',
+  SurfacePanel: '#F7F9F7',
+  SurfaceInk: '#F4F6F4',
+  SurfaceInkAlt: '#F0FDF4',
+  SurfaceInkDeep: '#F0FDF4',
   SurfaceMagenta: '#FFFBEB',
-  SurfaceViolet: '#E6FAF5',
-  SurfaceTeal: '#E6FAF5',
-  SurfaceVioletDeep: '#E6FAF5',
-  SurfaceVioletBright: '#E6FAF5',
+  SurfaceViolet: '#F0FDF4',
+  SurfaceTeal: '#F0FDF4',
+  SurfaceVioletDeep: '#F0FDF4',
+  SurfaceVioletBright: '#F0FDF4',
   SurfaceInkMagenta: '#FFFBEB',
   SurfaceInkAmber: '#FFFBEB',
   SurfaceInkBrown: '#FEF3C7',
-  SurfaceInkCyan: '#E6FAF5',
-  SurfaceInkGreen: '#E6FAF5',
+  SurfaceInkCyan: '#F0FDF4',
+  SurfaceInkGreen: '#F0FDF4',
   SurfaceInkPink: '#FFFBEB',
-  SurfaceInkPurple: '#E6FAF5',
+  SurfaceInkPurple: '#F0FDF4',
 
   // Background variants — all light, all mint-tinted or white.
   BgCard: '#FFFFFF',
-  BgPaper: '#F0FDF9',
-  BgTerminal: '#F0FDF9',
-  BgScrim: 'rgba(15, 23, 42, 0.55)', // modal scrim — slate-900 / 55% (was near-black)
+  BgPaper: '#F7F9F7',
+  BgTerminal: '#F7F9F7',
+  BgScrim: 'rgba(23, 32, 26, 0.55)', // modal scrim
 
   // Text tints — slate scale.
-  TextMuted: '#64748B',
-  TextMid: '#334155',
-  TextFaint: '#0D9488',
+  TextMuted: '#647067',
+  TextMid: '#3F4D43',
+  TextFaint: '#15803D',
 
   // Border variants — mint / slate hairlines.
-  BorderFaint: '#CCFBF1',
+  BorderFaint: '#DCFCE7',
   BorderMid: '#E2E8F0',
-  BorderStrong: '#0D9488',
-  BorderPurpleSoft: '#CCFBF1',
+  BorderStrong: '#15803D',
+  BorderPurpleSoft: '#DCFCE7',
   BorderAmberSoft: '#FEF3C7',
 } as const;
 
@@ -208,14 +208,14 @@ export const Layout = {
   borderRadiusButton: 10,
   borderRadiusChip: 20,
   shadowCard: {
-    shadowColor: '#0D9488',
+    shadowColor: '#15803D',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 3,
   } as const,
   shadowHero: {
-    shadowColor: '#0F766E',
+    shadowColor: '#166534',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 16,

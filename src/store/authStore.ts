@@ -6,7 +6,7 @@ import * as SecureStore from "@/utils/secureStorage";
 export interface Membership {
   pg_id: string;
   pg_name: string;
-  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest";
+  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest" | "delivery_agent";
   membership_id: string;
   /** Only a guest membership has one, so this is null for owners and staff. It is how a
    *  resident learns their own room number — the roster is the owner's and they cannot
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refreshToken: null,
   user: null,
   activePgId: null,
-  activeRole: null,
+  activeRole: 'delivery_agent',
   deviceId: null,
 
   setDeviceId: (id) => set({ deviceId: id }),

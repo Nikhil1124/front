@@ -1,10 +1,61 @@
-/**
- * Native (iOS/Android) entry point for MapLibre. Metro/React Native's platform-extension
- * resolution picks this file everywhere except web, where `maplibreCompat.web.tsx` is used
- * instead — `@maplibre/maplibre-react-native` is a native-only library with no web
- * implementation at all (throws, not a no-op, if you try to render it on web).
- *
- * LocationPicker.tsx and PropertyMap.tsx import from `@/components/maplibreCompat`, never
- * from the real package directly, so this file is the single place that split lives.
- */
-export { Map, Camera, ViewAnnotation, type CameraRef } from "@maplibre/maplibre-react-native";
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import React, { useImperativeHandle } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Txt } from '@/components/ui';
+import { Colors } from '@/theme';
+
+const isExpoGo = Constants?.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+let Map: any;
+let Camera: any;
+let ViewAnnotation: any;
+
+if (isExpoGo) {
+  Map = ({ children, style }: any) => (
+    <View style={[styles.fallback, style]}>
+      {children}
+      <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
+        Map preview unavailable in Expo Go — use a development build to see the live map.
+      </Txt>
+    </View>
+  );
+  Camera = React.forwardRef(({ ...props }: any, ref: any) => {
+    useImperativeHandle(ref, () => ({
+      flyTo: () => {},
+      zoomTo: () => {},
+    }));
+    return null;
+  });
+  ViewAnnotation = ({ children }: any) => <View>{children}</View>;
+} else {
+  try {
+    const MapLibre = require("@maplibre/maplibre-react-native");
+    Map = MapLibre.Map;
+    Camera = MapLibre.Camera;
+    ViewAnnotation = MapLibre.ViewAnnotation;
+  } catch (e) {
+    Map = ({ children, style }: any) => <View style={style}>{children}</View>;
+    Camera = () => null;
+    ViewAnnotation = ({ children }: any) => <View>{children}</View>;
+  }
+}
+
+export { Map, Camera, ViewAnnotation };
+export type CameraRef = {
+  flyTo: (options: any) => void;
+  zoomTo: (zoom: number, options?: any) => void;
+};
+
+const styles = StyleSheet.create({
+  fallback: {
+    flex: 1,
+    backgroundColor: '#0E171B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  text: {
+    textAlign: 'center',
+    marginTop: 8,
+  },
+});

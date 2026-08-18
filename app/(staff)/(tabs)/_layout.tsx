@@ -11,29 +11,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Txt, Col } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
-import { useDock } from '@/components/HeadlessDockTabButton';
+import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
 import { TabHeader } from '@/components/TabHeader';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
 import { hapticSuccess } from '@/utils/haptics';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 
-interface DockBtnProps extends PressableProps {
-  emoji: string;
-  label: string;
-  sub: string;
-  isFocused?: boolean;
-}
 
-const StaffDockButton = forwardRef<RNView, DockBtnProps>(({ emoji, label, sub, isFocused, style, ...props }, ref) => (
-  <Pressable
-    ref={ref}
-    style={[styles.dockBtn, { backgroundColor: isFocused ? Colors.primary : Colors.surfaceMuted }, style as any]}
-    {...props}
-  >
-    <Txt size={11} weight="900" color={isFocused ? '#FFFFFF' : Colors.textPrimary}>{emoji} {label}</Txt>
-    <Txt size={8} weight="700" color={isFocused ? '#CCFBF1' : Colors.textMuted}>{sub}</Txt>
-  </Pressable>
-));
 
 export default function StaffTabsLayout() {
   const [showNotif, setShowNotif] = useState(false);
@@ -42,6 +27,7 @@ export default function StaffTabsLayout() {
   const owner = usePGowStore((s) => s.loggedInOwner);
   const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
   const logout = usePGowStore((s) => s.logout);
+  const activeRole = useAuthStore((s) => s.activeRole);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
   // Shares the flat-bar geometry and safe-area inset with the other roles' docks; only the
@@ -54,7 +40,7 @@ export default function StaffTabsLayout() {
           so it reads as fixed chrome rather than the first card in the list. */}
       <TabHeader
         leading={
-          <View style={styles.chefIcon}><Txt size={24}>👨‍🍳</Txt></View>
+          <View style={styles.chefIcon}><Ionicons name={activeRole === 'delivery_agent' ? 'bicycle' : 'restaurant'} size={24} color={Colors.primary} /></View>
         }
         actions={
           <>
@@ -73,8 +59,14 @@ export default function StaffTabsLayout() {
         }
       >
         <Col style={{ marginLeft: 12 }}>
-          <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>CHEF DASHBOARD</Txt>
-          <Txt size={11} color={Colors.textMuted}>Chef: {staff?.name ?? 'Ramesh Kumar'} (PG: {owner?.pgName ?? 'Co-Living'})</Txt>
+          <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>
+            {activeRole === 'delivery_agent' ? 'Delivery Dashboard' : 'CHEF DASHBOARD'}
+          </Txt>
+          <Txt size={11} color={Colors.textMuted}>
+            {activeRole === 'delivery_agent'
+              ? `${staff?.name ?? 'Rahul Kumar'} · Delivery Agent`
+              : `Chef: ${staff?.name ?? 'Ramesh Kumar'} (PG: ${owner?.pgName ?? 'Co-Living'})`}
+          </Txt>
         </Col>
       </TabHeader>
 
@@ -88,19 +80,28 @@ export default function StaffTabsLayout() {
           (confirmed by reading expo-router/ui's Tabs.js). So the previous two-layer dock
           (translucent outer strip + white inner pill) is one layer here too, same as the
           Owner/Guest tabs — dockWrap and dock are merged onto TabList directly. */}
-      <TabList style={[dockStyle, styles.dock]}>
-        <TabTrigger name="eaters" href="/eaters" asChild style={{ flex: 1 }}>
-          <StaffDockButton emoji="📊" label="Eaters" sub="RSVP List" />
+      <Dock style={dockStyle}>
+        <TabTrigger name="eaters" href="/eaters" asChild>
+          <HeadlessDockTabButton 
+            icon={activeRole === 'delivery_agent' ? 'map' : 'people'} 
+            label={activeRole === 'delivery_agent' ? 'Route' : 'Eaters'} 
+          />
         </TabTrigger>
-        <TabTrigger name="broadcast" href="/broadcast" asChild style={{ flex: 1 }}>
-          <StaffDockButton emoji="📣" label="Menu" sub="Broadcast" />
+        <TabTrigger name="broadcast" href="/broadcast" asChild>
+          <HeadlessDockTabButton 
+            icon={activeRole === 'delivery_agent' ? 'time' : 'megaphone'} 
+            label={activeRole === 'delivery_agent' ? 'History' : 'Menu'} 
+          />
         </TabTrigger>
-        <TabTrigger name="kitchen" href="/kitchen" asChild style={{ flex: 1 }}>
-          <StaffDockButton emoji="🍳" label="Kitchen" sub="Pantry" />
+        <TabTrigger name="kitchen" href="/kitchen" asChild>
+          <HeadlessDockTabButton 
+            icon={activeRole === 'delivery_agent' ? 'person' : 'restaurant'} 
+            label={activeRole === 'delivery_agent' ? 'Profile' : 'Kitchen'} 
+          />
         </TabTrigger>
-      </TabList>
+      </Dock>
 
-      {showNotif && <RoleNotificationsCenterSheet roleTitle={staff?.role === 'Chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
+      {showNotif && <RoleNotificationsCenterSheet roleTitle={activeRole === 'delivery_agent' ? 'DELIVERY' : staff?.role === 'Chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
     </Tabs>
   );
 }
@@ -111,8 +112,4 @@ const styles = StyleSheet.create({
   chefIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   bellBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   unreadDot: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.danger },
-  // Geometry (flush flat bar, border, shadow, safe-area inset) comes from `useDock`; this
-  // only adds the gap between this dock's three wider buttons.
-  dock: { gap: 4 },
-  dockBtn: { borderRadius: 12, padding: 6, alignItems: 'center', justifyContent: 'center' },
 });

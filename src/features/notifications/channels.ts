@@ -1,4 +1,4 @@
-import * as Notifications from "expo-notifications";
+import Notifications from "../../data/notificationsCompat";
 import { Platform } from "react-native";
 import { router } from "expo-router";
 import { Colors } from "../../theme";
@@ -36,7 +36,7 @@ const CHANNELS: {
   id: string;
   name: string;
   description: string;
-  importance: Notifications.AndroidImportance;
+  importance: any;
 }[] = [
   {
     id: "tickets",

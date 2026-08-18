@@ -54,7 +54,7 @@ export interface HubScreenWrapperProps {
 export function HubScreenWrapper({
   title,
   subtitle,
-  icon = 'chevron-back',
+  icon,
   rightAction,
   children,
   scrollable = true,
@@ -80,11 +80,14 @@ export function HubScreenWrapper({
           onPress={handleBack}
           style={styles.backBtn}
         >
-          <Ionicons name={icon} size={22} color={Colors.primaryDark} />
+          <Ionicons name="chevron-back" size={22} color={Colors.primaryDark} />
         </AnimatedPress>
 
         <View style={styles.titleWrap}>
-          <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1}>{title}</Txt>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {icon && <Ionicons name={icon} size={20} color={Colors.primaryDark} />}
+            <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1} style={{ flexShrink: 1 }}>{title}</Txt>
+          </View>
           {subtitle ? (
             <Txt variant="caption" color={Colors.textMuted} numberOfLines={1} style={{ marginTop: 1 }}>
               {subtitle}

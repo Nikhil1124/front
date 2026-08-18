@@ -289,7 +289,7 @@ function PermissionDeniedCard({ onRequest }: { onRequest: () => void }) {
           height={42}
           testID="camera-proof-retry-permission"
         >
-          Retry
+          <Txt variant="body" weight="700" color={Colors.CyberGreen}>Retry</Txt>
         </OutlinedBtn>
         <Btn
           onPress={() => Linking.openSettings()}
@@ -298,7 +298,7 @@ function PermissionDeniedCard({ onRequest }: { onRequest: () => void }) {
           height={42}
           testID="camera-proof-open-settings"
         >
-          Open Settings
+          <Txt variant="body" weight="700" color={Colors.LuxuryPureBlack}>Open Settings</Txt>
         </Btn>
       </Row>
     </Col>

@@ -5,6 +5,7 @@ import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
 import { hapticSelect } from '@/utils/haptics';
+import { useAuthStore } from '@/store/authStore';
 
 export function WelcomeScreen() {
 
@@ -155,6 +156,52 @@ export function WelcomeScreen() {
             </Btn>
           </Card>
         </AnimatedPress>
+
+        {/* Development Previews */}
+        <AnimatedPress scale={0.985} hapticPattern="light" onPress={() => {}}>
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={18}
+            borderWidth={1.5}
+            borderColor={Colors.primary}
+            padding={[16, 14]}
+            style={styles.cardShadow}
+          >
+            <Row align="center" gap={10} style={styles.cardHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: 'rgba(13, 148, 136, 0.12)' }]}>
+                <Ionicons name="construct" size={20} color={Colors.primary} />
+              </View>
+              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
+                Quick Developer Previews
+              </Txt>
+            </Row>
+
+            <Row gap={10}>
+              <Btn
+                onPress={() => { hapticSelect(); useAuthStore.setState({ activeRole: 'delivery_agent', accessToken: 'mock_token' }); router.replace('/'); }}
+                containerColor={Colors.surfaceElevated}
+                textColor={Colors.textPrimary}
+                borderRadius={12}
+                height={44}
+                style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}
+              >
+                <Ionicons name="bicycle" size={16} color={Colors.textPrimary} style={{ marginRight: 4 }} />
+                <Txt variant="caption" weight="800" color={Colors.textPrimary}>Delivery Agent</Txt>
+              </Btn>
+              <Btn
+                onPress={() => { hapticSelect(); useAuthStore.setState({ activeRole: 'maintenance', accessToken: 'mock_token' }); router.replace('/'); }}
+                containerColor={Colors.surfaceElevated}
+                textColor={Colors.textPrimary}
+                borderRadius={12}
+                height={44}
+                style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}
+              >
+                <Ionicons name="hammer" size={16} color={Colors.textPrimary} style={{ marginRight: 4 }} />
+                <Txt variant="caption" weight="800" color={Colors.textPrimary}>Maintenance</Txt>
+              </Btn>
+            </Row>
+          </Card>
+        </AnimatedPress>
       </View>
 
       {/* Clean Bottom Note */}
@@ -205,7 +252,7 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     gap: 11,
-    marginTop: 100,
+    marginTop: 30,
   },
   cardHeader: {
     marginBottom: 12,

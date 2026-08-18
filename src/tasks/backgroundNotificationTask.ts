@@ -15,7 +15,7 @@
  * reaches here at all.
  */
 import * as TaskManager from "expo-task-manager";
-import * as Notifications from "expo-notifications";
+import Notifications, { Notification } from "../data/notificationsCompat";
 import * as SecureStore from "expo-secure-store";
 import { BASE_URL, API } from "../config";
 
@@ -72,7 +72,7 @@ async function submitMealResponse(mealId: string, choice: "eating" | "skipping")
   if (!res.ok) throw new Error(`RSVP submit failed: ${res.status}`);
 }
 
-async function dismissOriginal(payload: { notification?: Notifications.Notification } | undefined) {
+async function dismissOriginal(payload: { notification?: Notification } | undefined) {
   const identifier = payload?.notification?.request?.identifier;
   if (!identifier) return;
   try {
@@ -86,7 +86,7 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
   if (error) return;
 
   const payload = data as
-    | { actionIdentifier?: string; notification?: Notifications.Notification }
+    | { actionIdentifier?: string; notification?: Notification }
     | undefined;
   const actionIdentifier = payload?.actionIdentifier;
   if (actionIdentifier !== "EAT" && actionIdentifier !== "SKIP") {
