@@ -413,7 +413,7 @@ function ManagerProcurementView() {
 
             <Spacer size={14} />
 
-            <FormScroll style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false}>
+            <FormScroll style={{ flex: 0, maxHeight: 280 }} showsVerticalScrollIndicator={false}>
               <View style={{ gap: 8 }}>
                 {Object.entries(cart).map(([id, qty]) => {
                   const it = DEFAULT_SUPPLIES.find((s) => s.id === id);

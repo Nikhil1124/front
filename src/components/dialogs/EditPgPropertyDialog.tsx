@@ -88,7 +88,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
             </Col>
           </Row>
 
-          <FormScroll style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          <FormScroll style={{ flex: 0, maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             <OutlinedTextField
               label="Property / PG Name"
               value={name}

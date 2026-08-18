@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   subtitle: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  scroll: { marginVertical: 14 },
+  scroll: { flex: 0, marginVertical: 14 },
 
   listHeading: {
     fontSize: 12,
