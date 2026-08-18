@@ -5,6 +5,7 @@
  */
 import { useState } from 'react';
 import { View, StyleSheet, Alert, Modal, TouchableOpacity, RefreshControl, FlatList } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -78,16 +79,6 @@ export function OwnerGuestsManagementTab() {
   const toast = useToast();
 
   const pendingKyc = guests.filter((g) => g.kycStatus === 'PENDING');
-
-  // Which room has people, at a glance — not a bed-by-bed map, just a headcount
-  // per room number so the owner can eyeball where a new resident might fit.
-  const roomOccupancy = Object.entries(
-    guests.reduce<Record<string, number>>((acc, g) => {
-      const room = g.roomNo || 'Unassigned';
-      acc[room] = (acc[room] ?? 0) + 1;
-      return acc;
-    }, {})
-  ).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
 
   const handleCreate = async () => {
     if (isCreating) return;
@@ -210,21 +201,20 @@ export function OwnerGuestsManagementTab() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
           ListHeaderComponent={
             <View style={{ gap: 14 }}>
-              {roomOccupancy.length > 0 && (
-                <View>
-                  <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 8 }}>
-                    ROOM OCCUPANCY
-                  </Txt>
-                  <View style={styles.roomGrid}>
-                    {roomOccupancy.map(([room, count]) => (
-                      <View key={room} style={styles.roomChip}>
-                        <Txt variant="caption" weight="800" color={Colors.textPrimary}>Room {room}</Txt>
-                        <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{count} resident{count === 1 ? '' : 's'}</Txt>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
+              <TouchableOpacity onPress={() => { hapticSelect(); router.push('/bed-visualizer'); }} activeOpacity={0.7}>
+                <Card containerColor={Colors.surfaceElevated} borderRadius={14} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 14]}>
+                  <Row justify="space-between" align="center">
+                    <Row gap={10} align="center" style={{ flex: 1 }}>
+                      <Ionicons name="bed-outline" size={18} color={Colors.primary} />
+                      <Col style={{ flex: 1 }}>
+                        <Txt size={13} weight="900" color={Colors.textPrimary}>Bed Layout</Txt>
+                        <Txt variant="caption" color={Colors.textMuted}>{owner?.totalBeds ?? 0} beds • assign & vacate by room</Txt>
+                      </Col>
+                    </Row>
+                    <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                  </Row>
+                </Card>
+              </TouchableOpacity>
 
               {pendingKyc.length > 0 && (
                 <Card containerColor="#FFFBEB" borderRadius={16} borderWidth={1} borderColor="#FDE68A" padding={[14, 14]}>
@@ -573,13 +563,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 12, backgroundColor: '#F0FDF9',
     borderWidth: 1, borderColor: '#CCFBF1',
-  },
-  roomGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
-  },
-  roomChip: {
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10,
-    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle,
   },
   avatar: {
     width: 42, height: 42, borderRadius: 21,

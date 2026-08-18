@@ -1,483 +1,269 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, Modal, Pressable } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
+import { FormScroll } from '@/components/ui/FormScroll';
+import { EmptyState } from '@/components/EmptyState';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Layout } from '@/theme';
+import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { usePropertyLayout, useAssignBed, useVacateBed } from '@/features/property/usePropertyLayout';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
-import type { GuestEntity } from '@/types';
-import { FormScroll } from '@/components/ui/FormScroll';
+import type { BedResponse, RoomResponse } from '@/types';
 
-interface RoomDef {
-  roomNo: string;
-  floor: number;
-  bedsCapacity: number;
-  sharingType: string;
-  baseRent: number;
-}
-
+/**
+ * The single home for bed-level property layout — floor → room → bed, backed
+ * by the real `/v1/pgs/{id}/layout` API. Previously this screen generated a
+ * fake fixed grid (3 floors × 4 rooms × 3 beds, always) and "assign"/"vacate"
+ * created or deleted whole guest records. A second, separate room-occupancy
+ * summary also lived in the Guests tab. Both now point here.
+ */
 export function BedVisualizerScreen() {
   const owner = usePGowStore((s) => s.loggedInOwner);
   const guests = usePGowStore((s) => s.currentGuests);
+  const pgId = useAuthStore((s) => s.activePgId) ?? owner?.id ?? null;
   const toast = useToast();
 
-  const [selectedFloor, setSelectedFloor] = useState<number>(1);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-  const [assigningBed, setAssigningBed] = useState<{ roomNo: string; bedIndex: number } | null>(null);
-  const [assignGuestName, setAssignGuestName] = useState('');
-  const [assignGuestPhone, setAssignGuestPhone] = useState('');
+  const { data: layout, isLoading, isError, error } = usePropertyLayout(pgId);
+  const assignBed = useAssignBed(pgId);
+  const vacateBed = useVacateBed(pgId);
 
-  // Default floor & room architecture
-  const totalFloors = 3;
-  const roomsPerFloor = 4;
-  const defaultBedsPerRoom = 3;
+  const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
+  const [activeBed, setActiveBed] = useState<{ room: RoomResponse; bed: BedResponse } | null>(null);
 
-  // Track room capacity overrides (e.g. manager adds/removes beds in a specific room)
-  const [roomCapacityOverrides, setRoomCapacityOverrides] = useState<Record<string, number>>({});
+  const floors = layout?.floors ?? [];
+  const floor = floors.find((f) => f.floorNumber === selectedFloor) ?? floors[0] ?? null;
 
-  // Generate all rooms across floors
-  const allRooms: RoomDef[] = [];
-  for (let f = 1; f <= totalFloors; f++) {
-    for (let r = 1; r <= roomsPerFloor; r++) {
-      const roomNum = `${f}0${r}`;
-      const capacity = roomCapacityOverrides[roomNum] ?? defaultBedsPerRoom;
-      allRooms.push({
-        roomNo: roomNum,
-        floor: f,
-        bedsCapacity: capacity,
-        sharingType: `${capacity} Sharing`,
-        baseRent: 6500,
-      });
-    }
-  }
+  const allBeds = useMemo(() => floors.flatMap((f) => f.rooms.flatMap((r) => r.beds)), [floors]);
+  const totalBeds = allBeds.length;
+  const occupied = allBeds.filter((b) => b.status === 'occupied').length;
+  const vacant = totalBeds - occupied;
 
-  const floorRooms = allRooms.filter((r) => r.floor === selectedFloor);
+  // A resident counts as "unassigned" once they hold no active bed anywhere on this layout —
+  // that is who can be offered for a vacant bed, rather than letting this screen create or
+  // delete guest records the way the old fake version did.
+  const assignedMembershipIds = useMemo(
+    () => new Set(allBeds.map((b) => b.tenant?.membershipId).filter((id): id is string => !!id)),
+    [allBeds]
+  );
+  const unassignedGuests = guests.filter((g) => !assignedMembershipIds.has(g.id));
 
-  // Map guests to rooms
-  const getGuestsInRoom = (roomNo: string) => {
-    return guests.filter((g) => g.roomNo === roomNo || g.roomNo === `Room ${roomNo}` || g.roomNo.includes(roomNo));
-  };
-
-  const totalBedsInProperty = allRooms.reduce((sum, r) => sum + r.bedsCapacity, 0);
-  const totalOccupiedBeds = guests.length;
-  const totalVacantBeds = Math.max(0, totalBedsInProperty - totalOccupiedBeds);
-
-  const handleAdjustBedCount = (roomNo: string, delta: number) => {
-    const currentCap = roomCapacityOverrides[roomNo] ?? defaultBedsPerRoom;
-    const nextCap = currentCap + delta;
-    const currentOccupants = getGuestsInRoom(roomNo).length;
-
-    if (nextCap < 1) {
-      Alert.alert('Limit Reached', 'A room must contain at least 1 bed.');
-      return;
-    }
-    if (nextCap > 6) {
-      Alert.alert('Limit Reached', 'Maximum capacity per room is 6 beds.');
-      return;
-    }
-    if (nextCap < currentOccupants) {
-      Alert.alert('Cannot Remove Bed', `Room ${roomNo} currently has ${currentOccupants} residents assigned. Please vacate an occupant before removing a bed.`);
-      return;
-    }
-
-    hapticSuccess();
-    setRoomCapacityOverrides((prev) => ({ ...prev, [roomNo]: nextCap }));
-    toast('success', 'Capacity Updated', `Room ${roomNo} capacity set to ${nextCap} beds.`);
-  };
-
-  const handleVacate = (guest: GuestEntity) => {
-    Alert.alert(
-      'Vacate Bed',
-      `Are you sure you want to vacate ${guest.name} from Room ${guest.roomNo}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Vacate Bed',
-          style: 'destructive',
-          onPress: async () => {
-            await usePGowStore.getState().deleteGuest(guest.id);
-            hapticSuccess();
-            toast('info', 'Bed Vacated', `${guest.name} has been checked out.`);
-          },
-        },
-      ],
-    );
-  };
-
-  const handleAssignResident = async () => {
-    if (!assigningBed) return;
-    if (!assignGuestName.trim() || !assignGuestPhone.trim()) {
-      hapticError();
-      Alert.alert('Required Fields', 'Please enter resident name and phone number.');
-      return;
-    }
-    const res = await usePGowStore.getState().createGuestByOwner(
-      assignGuestName.trim(),
-      `${assignGuestPhone.trim()}@pgow.in`,
-      assignGuestPhone.trim(),
-      assigningBed.roomNo,
-      '1234',
-      6500,
-    );
-    if (res.ok) {
+  const handleAssign = async (membershipId: string, guestName: string) => {
+    if (!activeBed) return;
+    try {
+      await assignBed.mutateAsync({ bedId: activeBed.bed.id, tenant_membership_id: membershipId });
       hapticSuccess();
-      toast('success', 'Resident Assigned', `${assignGuestName.trim()} assigned to Room ${assigningBed.roomNo}!`);
-      setAssigningBed(null);
-      setAssignGuestName('');
-      setAssignGuestPhone('');
-    } else {
+      toast('success', 'Bed assigned', `${guestName} is now in Room ${activeBed.room.roomNumber}, Bed ${activeBed.bed.bedNumber}.`);
+      setActiveBed(null);
+    } catch (err: any) {
       hapticError();
-      Alert.alert('Assignment Failed', res.error ?? 'Could not assign resident.');
+      toast('error', 'Assign failed', err?.message ?? 'Please try again.');
+    }
+  };
+
+  const handleVacate = async () => {
+    if (!activeBed) return;
+    try {
+      await vacateBed.mutateAsync(activeBed.bed.id);
+      hapticSuccess();
+      toast('info', 'Bed vacated', `Room ${activeBed.room.roomNumber}, Bed ${activeBed.bed.bedNumber} is free.`);
+      setActiveBed(null);
+    } catch (err: any) {
+      hapticError();
+      toast('error', 'Vacate failed', err?.message ?? 'Please try again.');
     }
   };
 
   return (
     <HubScreenWrapper
-      title="Bed Layout Matrix"
-      subtitle={`${owner?.pgName ?? 'Royal PG'} • Architecture & Seat Map`}
+      title="Bed Layout"
+      subtitle={layout?.propertyName ?? owner?.pgName ?? 'Property'}
       icon="bed-outline"
     >
-      {/* Property Capacity Overview Hero Card */}
-      <Card
-        containerColor={Colors.surface}
-        borderRadius={18}
-        borderWidth={1}
-        borderColor={Colors.borderSubtle}
-        padding={[16, 16]}
-      >
-        <Row justify="space-between" align="center">
-          <Col>
-            <Txt size={11} weight="800" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>
-              TOTAL CAPACITY OVERVIEW
-            </Txt>
-            <Txt size={22} weight="900" color={Colors.textPrimary} style={{ marginTop: 2 }}>
-              {totalBedsInProperty} Total Beds
-            </Txt>
-            <Txt size={11} color={Colors.textMuted}>
-              {totalFloors} Floors • {allRooms.length} Rooms ({defaultBedsPerRoom} Sharing)
-            </Txt>
-          </Col>
-          <View style={styles.occupancyPill}>
-            <Txt size={14} weight="900" color="#047857">
-              {Math.min(100, Math.round((totalOccupiedBeds / totalBedsInProperty) * 100))}%
-            </Txt>
-            <Txt size={9} weight="700" color="#065F46">Occupied</Txt>
-          </View>
-        </Row>
-
-        <Spacer size={12} />
-        <Row gap={10}>
-          <View style={[styles.statBox, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
-            <Txt size={14} weight="900" color="#047857">{totalOccupiedBeds} Occupied</Txt>
-            <Txt variant="labelSmall" weight="400" color="#065F46">Assigned Beds</Txt>
-          </View>
-          <View style={[styles.statBox, { backgroundColor: '#F0FDF9', borderColor: '#CCFBF1' }]}>
-            <Txt size={14} weight="900" color={Colors.primaryDark}>{totalVacantBeds} Vacant</Txt>
-            <Txt variant="labelSmall" weight="400" color={Colors.primaryDark}>Available Beds</Txt>
-          </View>
-        </Row>
-      </Card>
-
-      <Spacer size={14} />
-
-      {/* Floor Selector Tabs */}
-      <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
-        SELECT FLOOR
-      </Txt>
-      <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 6 }}>
-        {[1, 2, 3].map((f) => {
-          const isSel = selectedFloor === f;
-          const roomsOnFloor = allRooms.filter((r) => r.floor === f);
-          const bedsOnFloor = roomsOnFloor.reduce((s, r) => s + r.bedsCapacity, 0);
-          const floorOccupants = roomsOnFloor.reduce((s, r) => s + getGuestsInRoom(r.roomNo).length, 0);
-
-          return (
-            <AnimatedPress
-              key={f}
-              scale={0.96}
-              hapticPattern="light"
-              onPress={() => { hapticSelect(); setSelectedFloor(f); setSelectedRoom(null); }}
-            >
-              <Card
-                containerColor={isSel ? Colors.primary : Colors.surface}
-                borderRadius={14}
-                borderWidth={1}
-                borderColor={isSel ? Colors.primary : Colors.borderSubtle}
-                padding={[10, 14]}
-                style={{ minWidth: 110 }}
-              >
-                <Txt size={13} weight="900" color={isSel ? Colors.textInverse : Colors.textPrimary}>
-                  Floor {f}
+      {isLoading ? (
+        <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>
+          <Txt variant="body" color={Colors.textMuted} align="center">Loading bed layout…</Txt>
+        </Card>
+      ) : isError ? (
+        <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>
+          <Row gap={8} align="center">
+            <Ionicons name="cloud-offline" size={20} color={Colors.danger} />
+            <Col style={{ flex: 1 }}>
+              <Txt variant="body" weight="700" color={Colors.danger}>Couldn't load the bed layout</Txt>
+              <Txt variant="caption" color={Colors.textMuted}>{(error as Error)?.message ?? 'Please try again later.'}</Txt>
+            </Col>
+          </Row>
+        </Card>
+      ) : !layout || totalBeds === 0 ? (
+        <EmptyState
+          icon="bed-outline"
+          title="No beds yet"
+          subtitle="Beds are created automatically from the property's total bed count."
+        />
+      ) : (
+        <>
+          <Card containerColor={Colors.surface} borderRadius={18} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+            <Row justify="space-between" align="center">
+              <Col>
+                <Txt size={22} weight="900" color={Colors.textPrimary}>{totalBeds} Total Beds</Txt>
+                <Txt size={11} color={Colors.textMuted}>
+                  {floors.length} Floor{floors.length === 1 ? '' : 's'}
                 </Txt>
-                <Txt size={10} weight="700" color={isSel ? 'rgba(255,255,255,0.85)' : Colors.textMuted} style={{ marginTop: 2 }}>
-                  {floorOccupants}/{bedsOnFloor} Beds Filled
-                </Txt>
-              </Card>
-            </AnimatedPress>
-          );
-        })}
-      </FormScroll>
+              </Col>
+              <View style={styles.occupancyPill}>
+                <Txt size={14} weight="900" color="#047857">{Math.round((occupied / totalBeds) * 100)}%</Txt>
+                <Txt size={9} weight="700" color="#065F46">Occupied</Txt>
+              </View>
+            </Row>
+            <Spacer size={12} />
+            <Row gap={10}>
+              <View style={[styles.statBox, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
+                <Txt size={14} weight="900" color="#047857">{occupied} Occupied</Txt>
+              </View>
+              <View style={[styles.statBox, { backgroundColor: '#F0FDF9', borderColor: '#CCFBF1' }]}>
+                <Txt size={14} weight="900" color={Colors.primaryDark}>{vacant} Vacant</Txt>
+              </View>
+            </Row>
+          </Card>
 
-      <Spacer size={14} />
+          <Spacer size={14} />
 
-      {/* Rooms on Selected Floor */}
-      <Row justify="space-between" align="center">
-        <Txt size={14} weight="900" color={Colors.textPrimary}>
-          Rooms on Floor {selectedFloor} ({floorRooms.length} Rooms)
-        </Txt>
-        <Txt size={11} color={Colors.textMuted}>Tap room to view beds</Txt>
-      </Row>
-
-      <Spacer size={8} />
-
-      <View style={{ gap: 12 }}>
-        {floorRooms.map((room) => {
-          const occupants = getGuestsInRoom(room.roomNo);
-          const filledCount = occupants.length;
-          const isFull = filledCount >= room.bedsCapacity;
-          const isVacant = filledCount === 0;
-          const isExpanded = selectedRoom === room.roomNo;
-
-          const statusColor = isFull ? '#B91C1C' : isVacant ? '#059669' : '#D97706';
-          const statusBg = isFull ? '#FEF2F2' : isVacant ? '#ECFDF5' : '#FFFBEB';
-          const statusLabel = isFull ? `${filledCount}/${room.bedsCapacity} Full` : isVacant ? `0/${room.bedsCapacity} Vacant` : `${filledCount}/${room.bedsCapacity} Filled`;
-
-          return (
-            <Card
-              key={room.roomNo}
-              containerColor={Colors.surface}
-              borderRadius={16}
-              borderWidth={1}
-              borderColor={isExpanded ? Colors.primary : Colors.borderSubtle}
-              padding={[14, 14]}
-            >
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => { hapticSelect(); setSelectedRoom(isExpanded ? null : room.roomNo); }}
-              >
-                <Row justify="space-between" align="center">
-                  <Row gap={10} align="center">
-                    <View style={[styles.roomIconBox, { backgroundColor: isExpanded ? '#F0FDF9' : Colors.surfaceElevated }]}>
-                      <Ionicons name="home" size={18} color={isExpanded ? Colors.primary : Colors.textSecondary} />
-                    </View>
-                    <Col>
-                      <Row align="center" gap={6}>
-                        <Txt size={15} weight="900" color={Colors.textPrimary}>Room {room.roomNo}</Txt>
-                        <View style={[styles.fillBadge, { backgroundColor: statusBg }]}>
-                          <Txt size={10} weight="800" color={statusColor}>{statusLabel}</Txt>
-                        </View>
-                      </Row>
-                      <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
-                        {room.bedsCapacity} Beds ({room.bedsCapacity} Sharing) • ₹{room.baseRent.toLocaleString('en-IN')}/mo
-                      </Txt>
-                    </Col>
-                  </Row>
-
-                  <Row gap={6} align="center">
-                    <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textMuted} />
-                  </Row>
-                </Row>
-              </TouchableOpacity>
-
-              {/* Bed Dots Preview */}
-              <Row gap={6} align="center" style={{ marginTop: 10 }}>
-                {Array.from({ length: room.bedsCapacity }).map((_, idx) => {
-                  const occupant = occupants[idx];
-                  return (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.bedPillMini,
-                        { backgroundColor: occupant ? '#FEF2F2' : '#ECFDF5', borderColor: occupant ? '#FCA5A5' : '#A7F3D0' },
-                      ]}
-                    >
-                      <Ionicons name="bed" size={12} color={occupant ? '#DC2626' : '#059669'} />
-                      <Txt size={9} weight="800" color={occupant ? '#DC2626' : '#059669'} style={{ marginLeft: 3 }}>
-                        Bed {String.fromCharCode(65 + idx)}
-                      </Txt>
-                    </View>
-                  );
-                })}
+          {floors.length > 1 && (
+            <>
+              <Row gap={8} style={{ flexWrap: 'wrap' }}>
+                {floors.map((f) => (
+                  <Chip
+                    key={f.floorNumber}
+                    label={`Floor ${f.floorNumber}`}
+                    selected={(floor?.floorNumber ?? floors[0].floorNumber) === f.floorNumber}
+                    onPress={() => { hapticSelect(); setSelectedFloor(f.floorNumber); }}
+                  />
+                ))}
               </Row>
+              <Spacer size={14} />
+            </>
+          )}
 
-              {/* Expanded Room Bed Details & Capacity Controls */}
-              {isExpanded && (
-                <>
-                  <Spacer size={12} />
-                  <View style={{ height: 1, backgroundColor: Colors.borderSubtle }} />
-                  <Spacer size={10} />
-
-                  {/* Bed Capacity Stepper Controls */}
-                  <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
-                    <Txt size={12} weight="800" color={Colors.textPrimary}>Room Capacity Configuration</Txt>
-                    <Row gap={6} align="center">
-                      <Btn
-                        onPress={() => handleAdjustBedCount(room.roomNo, -1)}
-                        containerColor={Colors.surfaceMuted}
-                        textColor={Colors.textPrimary}
-                        borderRadius={6}
-                        height={28}
-                        contentStyle={{ paddingHorizontal: 8 }}
+          <View style={{ gap: 12 }}>
+            {(floor?.rooms ?? []).map((room) => (
+              <Card key={room.id} containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+                <Row justify="space-between" align="center">
+                  <Txt size={14} weight="900" color={Colors.textPrimary}>Room {room.roomNumber}</Txt>
+                  <Txt size={11} color={Colors.textMuted}>
+                    {room.sharingType} Sharing{room.baseRent ? ` • ₹${room.baseRent.toLocaleString('en-IN')}/mo` : ''}
+                  </Txt>
+                </Row>
+                <Spacer size={10} />
+                <Row gap={8} style={{ flexWrap: 'wrap' }}>
+                  {room.beds.map((bed) => {
+                    const occ = bed.status === 'occupied';
+                    return (
+                      <AnimatedPress
+                        key={bed.id}
+                        scale={0.96}
+                        hapticPattern="light"
+                        onPress={() => { hapticSelect(); setActiveBed({ room, bed }); }}
                       >
-                        <Txt size={12} weight="900" color={Colors.textPrimary}>- 1 Bed</Txt>
-                      </Btn>
-                      <View style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#F0FDF9', borderRadius: 6 }}>
-                        <Txt size={11} weight="900" color={Colors.primaryDark}>{room.bedsCapacity} Beds</Txt>
-                      </View>
-                      <Btn
-                        onPress={() => handleAdjustBedCount(room.roomNo, 1)}
-                        containerColor={Colors.primary}
-                        textColor={Colors.textInverse}
-                        borderRadius={6}
-                        height={28}
-                        contentStyle={{ paddingHorizontal: 8 }}
-                      >
-                        <Txt size={12} weight="900" color={Colors.textInverse}>+ 1 Bed</Txt>
-                      </Btn>
-                    </Row>
-                  </Row>
+                        <View style={[styles.bedTile, { backgroundColor: occ ? '#FEF2F2' : '#ECFDF5', borderColor: occ ? '#FCA5A5' : '#A7F3D0' }]}>
+                          <Ionicons name="bed" size={16} color={occ ? '#DC2626' : '#059669'} />
+                          <Txt size={11} weight="800" color={occ ? '#DC2626' : '#059669'}>Bed {bed.bedNumber}</Txt>
+                          <Txt size={9} color={occ ? '#B91C1C' : '#047857'} numberOfLines={1} style={{ maxWidth: 84 }}>
+                            {occ ? (bed.tenant?.fullName ?? 'Occupied') : 'Vacant'}
+                          </Txt>
+                        </View>
+                      </AnimatedPress>
+                    );
+                  })}
+                </Row>
+              </Card>
+            ))}
+          </View>
+        </>
+      )}
 
-                  {/* Individual Beds Roster */}
-                  <View style={{ gap: 8 }}>
-                    {Array.from({ length: room.bedsCapacity }).map((_, idx) => {
-                      const occupant = occupants[idx];
-                      const bedLabel = `Bed ${room.roomNo}-${String.fromCharCode(65 + idx)}`;
-
-                      return (
-                        <Card
-                          key={idx}
-                          containerColor={occupant ? '#F8FAFC' : '#F0FDF9'}
-                          borderRadius={12}
-                          borderWidth={1}
-                          borderColor={occupant ? Colors.borderSubtle : '#A7F3D0'}
-                          padding={[10, 12]}
-                        >
-                          <Row justify="space-between" align="center">
-                            <Row gap={8} align="center" style={{ flex: 1 }}>
-                              <View style={[styles.bedIconBadge, { backgroundColor: occupant ? '#FEE2E2' : '#DCFCE7' }]}>
-                                <Ionicons name="bed" size={16} color={occupant ? '#DC2626' : '#16A34A'} />
-                              </View>
-                              <Col style={{ flex: 1 }}>
-                                <Row align="center" gap={6}>
-                                  <Txt size={12} weight="900" color={Colors.textPrimary}>{bedLabel}</Txt>
-                                  <View style={[styles.statusMiniTag, { backgroundColor: occupant ? '#FEF2F2' : '#ECFDF5' }]}>
-                                    <Txt size={8} weight="800" color={occupant ? '#B91C1C' : '#047857'}>
-                                      {occupant ? 'OCCUPIED' : 'VACANT'}
-                                    </Txt>
-                                  </View>
-                                </Row>
-                                <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 1 }}>
-                                  {occupant ? `${occupant.name} • ${occupant.phone}` : 'Available for new resident check-in'}
-                                </Txt>
-                              </Col>
-                            </Row>
-
-                            {occupant ? (
-                              <Btn
-                                onPress={() => handleVacate(occupant)}
-                                containerColor="#FEF2F2"
-                                textColor="#DC2626"
-                                borderRadius={8}
-                                height={30}
-                                contentStyle={{ paddingHorizontal: 8 }}
-                              >
-                                <Txt size={10} weight="800" color="#DC2626">Vacate</Txt>
-                              </Btn>
-                            ) : (
-                              <Btn
-                                onPress={() => {
-                                  hapticSelect();
-                                  setAssigningBed({ roomNo: room.roomNo, bedIndex: idx });
-                                }}
-                                containerColor={Colors.primary}
-                                textColor={Colors.textInverse}
-                                borderRadius={8}
-                                height={30}
-                                contentStyle={{ paddingHorizontal: 10 }}
-                              >
-                                <Txt size={10} weight="800" color={Colors.textInverse}>+ Assign</Txt>
-                              </Btn>
-                            )}
-                          </Row>
-                        </Card>
-                      );
-                    })}
-                  </View>
-                </>
-              )}
-            </Card>
-          );
-        })}
-      </View>
-
-      {/* Assign Resident Modal */}
-      {assigningBed && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setAssigningBed(null)}>
+      {/* Tap a bed → one action: assign a waiting resident, or vacate the current one. */}
+      {activeBed && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setActiveBed(null)}>
           <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setAssigningBed(null)} />
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveBed(null)} />
             <Card
               containerColor={Colors.surface}
               borderRadius={20}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[20, 20]}
-              style={{ width: '90%', zIndex: 2 }}
+              style={{ width: '90%', zIndex: 2, maxHeight: '75%' }}
             >
               <Row justify="space-between" align="center">
                 <Col>
-                  <Txt size={16} weight="900" color={Colors.textPrimary}>Assign Resident to Bed</Txt>
-                  <Txt size={11} color={Colors.textMuted}>Room {assigningBed.roomNo} • Bed {String.fromCharCode(65 + assigningBed.bedIndex)}</Txt>
+                  <Txt size={16} weight="900" color={Colors.textPrimary}>
+                    Room {activeBed.room.roomNumber} • Bed {activeBed.bed.bedNumber}
+                  </Txt>
+                  <Txt size={11} color={Colors.textMuted}>
+                    {activeBed.bed.status === 'occupied' ? 'Occupied' : 'Vacant'}
+                  </Txt>
                 </Col>
-                <IconBtn onPress={() => setAssigningBed(null)} icon="close" size={18} tint={Colors.textMuted} />
+                <IconBtn onPress={() => setActiveBed(null)} icon="close" size={18} tint={Colors.textMuted} />
               </Row>
 
               <Spacer size={14} />
 
-              <OutlinedTextField
-                label="Resident Full Name *"
-                placeholder="Rahul Sharma"
-                value={assignGuestName}
-                onChangeText={setAssignGuestName}
-                containerColor={Colors.surfaceMuted}
-                style={{ marginBottom: 10 }}
-              />
-
-              <OutlinedTextField
-                label="Resident Phone Number *"
-                placeholder="9876543210"
-                value={assignGuestPhone}
-                onChangeText={setAssignGuestPhone}
-                keyboardType="phone-pad"
-                containerColor={Colors.surfaceMuted}
-                style={{ marginBottom: 14 }}
-              />
-
-              <Row gap={8}>
-                <Btn
-                  onPress={handleAssignResident}
-                  containerColor={Colors.primary}
-                  textColor={Colors.textInverse}
-                  borderRadius={10}
-                  height={44}
-                  style={{ flex: 1 }}
-                >
-                  <Txt size={12} weight="800" color={Colors.textInverse}>Confirm Assignment</Txt>
-                </Btn>
-                <OutlinedBtn
-                  onPress={() => setAssigningBed(null)}
-                  borderColor={Colors.borderSubtle}
-                  textColor={Colors.textPrimary}
-                  borderRadius={10}
-                  height={44}
-                  style={{ flex: 1 }}
-                >
-                  <Txt size={12} weight="800" color={Colors.textPrimary}>Cancel</Txt>
-                </OutlinedBtn>
-              </Row>
+              {activeBed.bed.status === 'occupied' && activeBed.bed.tenant ? (
+                <>
+                  <Card containerColor={Colors.surfaceMuted} borderRadius={12} padding={[12, 12]}>
+                    <Txt size={13} weight="800" color={Colors.textPrimary}>{activeBed.bed.tenant.fullName}</Txt>
+                    <Txt size={11} color={Colors.textMuted}>{activeBed.bed.tenant.phone}</Txt>
+                    {activeBed.bed.tenant.checkInDate ? (
+                      <Txt size={11} color={Colors.textMuted}>Checked in {activeBed.bed.tenant.checkInDate}</Txt>
+                    ) : null}
+                  </Card>
+                  <Spacer size={14} />
+                  <Btn
+                    onPress={handleVacate}
+                    loading={vacateBed.isPending}
+                    disabled={vacateBed.isPending}
+                    containerColor={Colors.danger}
+                    textColor={Colors.textInverse}
+                    borderRadius={10}
+                    height={44}
+                  >
+                    <Txt size={12} weight="800" color={Colors.textInverse}>Vacate Bed</Txt>
+                  </Btn>
+                </>
+              ) : (
+                <>
+                  <Txt size={12} weight="700" color={Colors.textPrimary}>Assign a resident</Txt>
+                  <Spacer size={8} />
+                  {unassignedGuests.length === 0 ? (
+                    <EmptyState
+                      icon="people-outline"
+                      title="No unassigned residents"
+                      subtitle="Add a resident from the Guests tab first, then assign them here."
+                    />
+                  ) : (
+                    <FormScroll style={{ maxHeight: 280 }}>
+                      <View style={{ gap: 8 }}>
+                        {unassignedGuests.map((g) => (
+                          <TouchableOpacity
+                            key={g.id}
+                            activeOpacity={0.7}
+                            disabled={assignBed.isPending}
+                            onPress={() => handleAssign(g.id, g.name)}
+                          >
+                            <Card containerColor={Colors.surfaceMuted} borderRadius={10} padding={[10, 12]}>
+                              <Txt size={12} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                              <Txt size={11} color={Colors.textMuted}>{g.phone}</Txt>
+                            </Card>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </FormScroll>
+                  )}
+                </>
+              )}
             </Card>
           </View>
         </Modal>
@@ -501,37 +287,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
   },
-  roomIconBox: {
-    width: 36,
-    height: 36,
+  bedTile: {
+    width: 92,
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fillBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  bedPillMini: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
     borderWidth: 1,
-  },
-  bedIconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusMiniTag: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
+    gap: 2,
   },
   modalBackdrop: {
     flex: 1,
