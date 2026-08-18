@@ -40,23 +40,23 @@ export interface TypographyToken {
 
 export const Typography = {
   /** Screen's main title — top of a HubScreenWrapper / tab header */
-  screenTitle:  { fontSize: 17, lineHeight: 22, letterSpacing: -0.3, fontWeight: '800' as FontWeight },
+  screenTitle:  { fontSize: 20, lineHeight: 26, letterSpacing: -0.3, fontWeight: '800' as FontWeight },
   /** Section heading within a screen ("QUICK ACTIONS", "TOTALS") */
   sectionTitle: { fontSize: 18, lineHeight: 24, letterSpacing: 0,    fontWeight: '700' as FontWeight },
   /** A card's own title (list item name, banner heading) */
-  cardTitle:    { fontSize: 14, lineHeight: 20, letterSpacing: 0.2,  fontWeight: '700' as FontWeight },
+  cardTitle:    { fontSize: 16, lineHeight: 22, letterSpacing: 0.1,  fontWeight: '700' as FontWeight },
   /** Regular paragraph / body text */
-  body:         { fontSize: 13, lineHeight: 18, letterSpacing: 0.2,  fontWeight: '400' as FontWeight },
+  body:         { fontSize: 14, lineHeight: 20, letterSpacing: 0.2,  fontWeight: '500' as FontWeight },
   /** Secondary / muted supporting text under a title */
-  caption:      { fontSize: 11, lineHeight: 15, letterSpacing: 0.2,  fontWeight: '400' as FontWeight },
+  caption:      { fontSize: 12, lineHeight: 16, letterSpacing: 0.2,  fontWeight: '400' as FontWeight },
   /** All-caps section label (letter-spacing built for uppercase) */
   label:        { fontSize: 12, lineHeight: 16, letterSpacing: 1.0,  fontWeight: '700' as FontWeight },
   /** Tiny badge / pill / all-caps tag */
-  labelSmall:   { fontSize: 9,  lineHeight: 13, letterSpacing: 1.5,  fontWeight: '700' as FontWeight },
+  labelSmall:   { fontSize: 10, lineHeight: 14, letterSpacing: 1.2,  fontWeight: '700' as FontWeight },
   /** Big number in a stat tile / price / balance */
-  statValue:    { fontSize: 22, lineHeight: 27, letterSpacing: -0.5, fontWeight: '700' as FontWeight },
+  statValue:    { fontSize: 24, lineHeight: 30, letterSpacing: -0.5, fontWeight: '700' as FontWeight },
   /** The single biggest figure on a screen — hero card headline */
-  heroNumber:   { fontSize: 30, lineHeight: 36, letterSpacing: -1.0, fontWeight: '800' as FontWeight },
+  heroNumber:   { fontSize: 32, lineHeight: 38, letterSpacing: -1.0, fontWeight: '800' as FontWeight },
 } as const;
 
 export type TypographyKey = keyof typeof Typography;
