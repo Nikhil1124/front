@@ -395,7 +395,7 @@ export function OwnerReviewsTab() {
               <Txt variant="caption" weight="800" color={Colors.textMuted}>TENANT FEEDBACK & MESSAGES</Txt>
               <Spacer size={8} />
 
-              <FormScroll showsVerticalScrollIndicator={false} style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 10 }}>
+              <FormScroll showsVerticalScrollIndicator={false} style={{ flex: 0, maxHeight: 360 }} contentContainerStyle={{ gap: 10 }}>
                 {getFilteredReviewsForStaff(selectedStaff).length === 0 ? (
                   <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[18, 16]} style={{ alignItems: 'center' }}>
                     <Ionicons name="chatbox-ellipses-outline" size={32} color={Colors.textMuted} />
