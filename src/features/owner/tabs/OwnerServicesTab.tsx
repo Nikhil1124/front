@@ -7,11 +7,6 @@
  * screen (see src/features/groceries), reachable from its own dashboard
  * tile, so this tab is repairs-only now.
  *
- * Task 8 additions:
- *   - "Procurement" section at the top with an "Open Procurement Catalog"
- *     button that pushes PROCUREMENT_SCREEN in owner mode (approval queue).
- *   - A count badge of pending-approval orders above the button, fetched via
- *     React Query from `GET /v1/procurement/orders?status=pending_owner_approval`.
  */
 import { useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
@@ -32,9 +27,6 @@ export function OwnerServicesTab() {
   const owner = usePGowStore((s) => s.loggedInOwner);
   const isManagerMode = usePGowStore((s) => s.isManagerMode);
 
-  // Task 8: pending procurement approvals count (owner view). The manager mode
-  // sees their own orders instead — they don't approve, but seeing the count of
-  // their submitted carts is useful as a status board.
   const { data: pendingOrders = [] } = useProcurementOrders({
     pgId: owner?.id,
     status: isManagerMode ? undefined : 'pending_owner_approval',

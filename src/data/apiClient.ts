@@ -12,7 +12,7 @@
  * screen that means.
  */
 
-import { API, BASE_URL, GATE_CODES, GateCode } from "../config";
+import { API, BASE_URL, GATE_CODES, GateCode, USE_MOCK_API } from "../config";
 import { useAuthStore } from "../store/authStore";
 import { mockFetch } from "./mockBackend";
 
@@ -63,12 +63,6 @@ export type ApiFetchOptions = RequestInit & {
  */
 export const REQUEST_TIMEOUT_MS = 15_000;
 
-/**
- * There is no server behind this build — every request is answered by the in-memory mock
- * backend (`mockBackend.ts`) instead of a real `fetch`. This is the one place that decides
- * that, so the rest of the app (and the two call sites that bypass `apiFetch` and call this
- * directly — `mapStyle.ts`, `useDeviceLocation.ts`) never has to know.
- */
 export async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
@@ -77,7 +71,8 @@ export async function fetchWithTimeout(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await mockFetch(url, options);
+    const requestOptions = { ...options, signal: controller.signal };
+    return USE_MOCK_API ? await mockFetch(url, requestOptions) : await fetch(url, requestOptions);
   } catch (err: any) {
     // Airplane mode, wrong host, DNS failure and our own abort all arrive as a bare
     // TypeError, which no `instanceof PGowApiError` check catches. Status 0 means the

@@ -15,6 +15,12 @@
  */
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://pgow.zoveyacms.in";
 
+/**
+ * Mock mode is an explicit simulator switch, not the default network path. This keeps demo
+ * builds available without making a configured backend URL silently unused.
+ */
+export const USE_MOCK_API = process.env.EXPO_PUBLIC_USE_MOCK_API === "true";
+
 export const API = {
   // Auth
   REGISTER: "/v1/auth/register",
@@ -147,23 +153,20 @@ export const API = {
   EXPENSES_SUMMARY: "/v1/expenses/summary",
   EXPENSE_REVERSE: (id: string) => `/v1/expenses/${id}/reverse`,
 
-  // ── Task 7 endpoints ──────────────────────────────────────────────────────
-  // Property layout (rooms/beds/floors) — owner & manager read; assign/vacate
-  // are owner & manager write. The layout drives the BookMyShow-style seat map
-  // in `BedLayoutVisualizer`.
+  // ── Planned/future endpoints ──────────────────────────────────────────────
+  // These constants are intentionally kept even when the current backend does not implement
+  // them yet. The compatibility check reports them as gaps; removing them would hide planned
+  // frontend work instead of integrating it.
   PG_LAYOUT: (pgId: string) => `/v1/pgs/${pgId}/layout`,
   PG_BED_ASSIGN: (pgId: string, bedId: string) => `/v1/pgs/${pgId}/beds/${bedId}/assign`,
   PG_BED_VACATE: (pgId: string, bedId: string) => `/v1/pgs/${pgId}/beds/${bedId}/vacate`,
 
-  // Procurement — manager builds the cart, owner approves or rejects.
   PROCUREMENT_CATALOG: "/v1/procurement/catalog",
   PROCUREMENT_ORDERS: "/v1/procurement/orders",
   PROCUREMENT_ORDER_APPROVE: (id: string) => `/v1/procurement/orders/${id}/approve`,
   PROCUREMENT_ORDER_REJECT: (id: string) => `/v1/procurement/orders/${id}/reject`,
   PROCUREMENT_FLAG_LOW_STOCK: "/v1/procurement/flag-low-stock",
 
-  // Meal extensions — day-of-week menus, today's headcount split, feedback,
-  // and the savings analytics that compare planned-vs-served portions.
   MEAL_MENU: "/v1/meals/menu",
   MEAL_TODAY_SUMMARY: (pgId: string) => `/v1/meals/today-summary?pg_id=${pgId}`,
   MEAL_FEEDBACK: (mealId: string) => `/v1/meals/${mealId}/feedback`,
@@ -171,8 +174,7 @@ export const API = {
     `/v1/meals/analytics/savings?pg_id=${pgId}&start_date=${start}&end_date=${end}`,
 
   // Billing — tenant invoices, the property-wide ledger, P&L over 3m/6m/1y,
-  // CSV export, and the remind-unpaid fan-out. These are the screens the owner
-  // and tenant both touch, but on different routes.
+  // CSV export, and the remind-unpaid fan-out.
   BILLING_TENANT_INVOICES: "/v1/billing/tenant-invoices",
   BILLING_TENANT_INVOICE_PAY: (id: string) => `/v1/billing/tenant-invoices/${id}/pay`,
   BILLING_TENANT_INVOICE_PDF: (id: string) => `/v1/billing/tenant-invoices/${id}/pdf`,

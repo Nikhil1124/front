@@ -54,7 +54,7 @@ export function HousekeepingDashboard() {
 
   if (isMgmt) {
     return (
-      <HubScreenWrapper title="Daily Records" icon="sparkles" scrollable={true}>
+      <HubScreenWrapper title="Maintenance Progress" icon="sparkles" scrollable={true}>
         <MaintenanceStatsSummary inspections={inspections} issues={issues} />
       </HubScreenWrapper>
     );

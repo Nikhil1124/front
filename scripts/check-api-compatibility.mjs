@@ -6,15 +6,17 @@ const MARK = "__ID__";
 
 // Path params differ in name between client and spec ({pg_id} vs the value we substitute),
 // so both sides are normalised to `*` before comparing.
+const pathOnly = (p) => p.split("?")[0];
 const shape = (p) =>
-  p.split("/").map((seg) => (seg === MARK || /^\{.*\}$/.test(seg) ? "*" : seg)).join("/");
+  pathOnly(p).split("/").map((seg) => (seg === MARK || /^\{.*\}$/.test(seg) ? "*" : seg)).join("/");
 
 const clientPaths = new Map();
 for (const [name, value] of Object.entries(API)) {
   if (typeof value === "string") clientPaths.set(shape(value), name);
   else if (typeof value === "function") {
-    // Every path builder here takes 1-2 opaque ids.
-    const built = value.length >= 2 ? value(MARK, MARK) : value(MARK);
+    // Path builders take opaque ids plus occasional query values. Supplying a stable set
+    // keeps the contract check about route shape, not about JavaScript `undefined` strings.
+    const built = value(MARK, MARK, MARK);
     clientPaths.set(shape(built), name);
   }
 }
