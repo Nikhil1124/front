@@ -119,7 +119,7 @@ export function ManagePropertiesScreen() {
                       <Ionicons name="people-circle" size={20} color={Colors.primary} />
                       <Col>
                         <Txt variant="caption" weight="800" color={Colors.textPrimary}>Manager: {pg.managerName || 'Not Assigned'}</Txt>
-                        <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>📞 {pg.managerPhone || 'N/A'} • PIN: {pg.managerPin || '1234'}</Txt>
+                        <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>📞 {pg.managerPhone || 'N/A'}</Txt>
                       </Col>
                     </Row>
                     {pg.managerPhone && (

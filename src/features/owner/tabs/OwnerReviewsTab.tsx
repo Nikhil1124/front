@@ -25,8 +25,16 @@ interface StaffProfile {
   subtitle: string;
 }
 
+/** Real staff members with any of these roles, joined into a display name — or a generic
+ *  role label when nobody with that role is registered yet. Never a fabricated person name. */
+function staffNameFor(staffList: { name: string; role: string }[], roles: string[], fallback: string): string {
+  const names = staffList.filter((s) => roles.includes(s.role)).map((s) => s.name);
+  return names.length > 0 ? names.join(' & ') : fallback;
+}
+
 export function OwnerReviewsTab() {
   const owner = usePGowStore((s) => s.loggedInOwner);
+  const staffList = usePGowStore((s) => s.currentStaff);
   const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
   const respond = usePGowStore((s) => s.respondToFeedbackComplaint);
   const { refreshing, onRefresh } = usePullToRefresh();
@@ -79,7 +87,7 @@ export function OwnerReviewsTab() {
       id: 'staff_mgr',
       roleKey: 'MANAGER',
       title: 'Branch Manager',
-      name: owner?.managerName || 'Ramesh Kumar (Manager)',
+      name: owner?.managerName || 'Manager',
       avatarIcon: 'person',
       tint: Colors.primary,
       bgColor: '#F0FDF9',
@@ -91,7 +99,7 @@ export function OwnerReviewsTab() {
       id: 'staff_chef',
       roleKey: 'CHEF',
       title: 'Head Chef & Mess Team',
-      name: 'Chef Ramesh & Kitchen Staff',
+      name: staffNameFor(staffList, ['Chef', 'Kitchen Staff'], 'Kitchen Staff'),
       avatarIcon: 'restaurant',
       tint: '#D97706',
       bgColor: '#FFFBEB',
@@ -103,7 +111,7 @@ export function OwnerReviewsTab() {
       id: 'staff_clean',
       roleKey: 'STAFF',
       title: 'Housekeeping & Maintenance',
-      name: 'Suresh & Housekeeping Crew',
+      name: staffNameFor(staffList, ['Housekeeping', 'Maintenance Staff'], 'Housekeeping Staff'),
       avatarIcon: 'sparkles',
       tint: '#2563EB',
       bgColor: '#EFF6FF',
@@ -384,7 +392,7 @@ export function OwnerReviewsTab() {
                   <Col style={{ flex: 1 }}>
                     <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{selectedStaff.name}</Txt>
                     <Txt variant="caption" color={selectedStaff.tint} weight="700">
-                      {selectedStaff.title}{selectedStaff.reviewCount > 0 ? ` • ★ ${selectedStaff.rating.toFixed(1)}` : ' • No reviews yet'}
+                      {selectedStaff.title}{selectedStaff.roleKey !== 'OVERDUE' && selectedStaff.reviewCount > 0 ? ` • ★ ${selectedStaff.rating.toFixed(1)}` : ''}
                     </Txt>
                   </Col>
                 </Row>

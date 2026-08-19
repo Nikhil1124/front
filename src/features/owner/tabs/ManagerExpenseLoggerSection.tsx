@@ -141,9 +141,9 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
         <>
           {showMode === 2 && <Spacer size={16} />}
 
-          {/* Form is only shown to Managers who record the daily logs */}
-          {isManager ? (
-            <>
+          {/* Owner and manager both log expenses — the backend authorizes both roles equally
+              (`require_manage` in expense/service.py), so this was a frontend-only gap. */}
+          <>
               <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>➕ Log Daily Expense or Staff Salary</Txt>
               <Spacer size={8} />
               <Txt variant="labelSmall" weight="800" color={Colors.textMuted}>Quick Presets:</Txt>
@@ -191,8 +191,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
                 <Txt variant="body" weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>{isSubmitting ? 'Saving…' : 'Log Expense Entry'}</Txt>
               </Btn>
               <Spacer size={18} />
-            </>
-          ) : null}
+          </>
 
           {/* Logged Outflows Transactions Ledger */}
           <Row justify="space-between" align="center">
@@ -234,9 +233,7 @@ export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
                   </Row>
                   <Col align="flex-end">
                     <Txt variant="cardTitle" weight="900" color="#DC2626">-₹{Math.round(e.amount).toLocaleString('en-IN')}</Txt>
-                    {isManager && (
-                      <IconBtn onPress={() => deleteExpense(e)} icon="trash-outline" size={16} tint="#EF4444" containerColor="transparent" />
-                    )}
+                    <IconBtn onPress={() => deleteExpense(e)} icon="trash-outline" size={16} tint="#EF4444" containerColor="transparent" />
                   </Col>
                 </Row>
               </Card>

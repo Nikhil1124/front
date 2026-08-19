@@ -533,16 +533,19 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (activeProperty === null) {
       const membership = user.memberships.find((m) => m.pg_id === pgId) || user.memberships[0];
       if (membership) {
+        // Only fields the membership itself actually carries are real here — everything else
+        // stays honestly empty/zero rather than a plausible-looking fabricated value (a fake
+        // UPI ID or PIN in particular would be actively dangerous if ever rendered).
         activeProperty = {
           id: membership.pg_id,
-          pgName: membership.pg_name || 'Royal PG',
-          ownerName: 'Owner', email: '', phone: '', securityCode: '',
-          subscriptionActive: true, subscriptionExpiry: 0, qrCodeUrl: membership.pg_id,
-          address: 'Main Branch', totalBeds: 36, subscriptionMode: 'FIXED_LIMIT',
-          phonePeNumber: '', upiId: 'pgowowner@ybl',
-          managerName: user.name, managerPhone: user.phone, managerPin: '1234',
+          pgName: membership.pg_name || '',
+          ownerName: '', email: '', phone: '', securityCode: '',
+          subscriptionActive: false, subscriptionExpiry: 0, qrCodeUrl: membership.pg_id,
+          address: '', totalBeds: 0, subscriptionMode: 'FIXED_LIMIT',
+          phonePeNumber: '', upiId: '',
+          managerName: user.name, managerPhone: user.phone, managerPin: '',
           latitude: null, longitude: null, formattedAddress: '',
-          joinCode: '', defaultRentAmount: 6500,
+          joinCode: '', defaultRentAmount: 0,
         };
         if (allPGsState.length === 0) {
           allPGsState.push(activeProperty);
@@ -1200,9 +1203,11 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!(amount > 0)) return { ok: false, error: 'Amount must be greater than zero.' };
     // The UI's free-text labels, in the values the API's CHECK constraints accept.
     const categoryMap: Record<string, expensesApi.ExpenseCategory> = {
-      'Staff Salary': 'staff_salary', Salary: 'staff_salary', Groceries: 'groceries',
-      Utilities: 'utilities', Maintenance: 'maintenance', Repairs: 'maintenance',
-      Internet: 'internet', Wifi: 'internet',
+      'Staff Salary': 'staff_salary', Salary: 'staff_salary',
+      Groceries: 'groceries', 'Daily Mess Groceries': 'groceries',
+      Utilities: 'utilities', 'Utility Bills': 'utilities',
+      Maintenance: 'maintenance', Repairs: 'maintenance', 'Maintenance & Repairs': 'maintenance',
+      Internet: 'internet', Wifi: 'internet', 'Wi-Fi & Internet': 'internet',
     };
     const methodMap: Record<string, expensesApi.ExpenseMethod> = {
       UPI: 'upi', 'Online UPI': 'upi', Cash: 'cash',
@@ -1247,46 +1252,24 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   // ── Portfolio ─────────────────────────────────────────────────────────────
 
   createPGProperty: async (pgName, address, totalBeds, managerName, managerPhone, managerPin, upiId, location) => {
-    // Default fallback coordinates if user didn't open the map picker
-    const finalLocation = location || {
-      latitude: 12.9716,
-      longitude: 77.5946,
-      formatted_address: address.trim() || 'Bangalore, Karnataka',
-    };
-
-    const newPgId = localId();
-    const newPgEntity: PGOwnerEntity = {
-      id: newPgId,
-      ownerName: get().loggedInOwner?.ownerName || 'Property Owner',
-      email: get().loggedInOwner?.email || '',
-      phone: get().loggedInOwner?.phone || '',
-      securityCode: '',
-      subscriptionActive: false,
-      subscriptionExpiry: 0,
-      qrCodeUrl: newPgId,
-      pgName: pgName.trim() || 'New PG Property',
-      address: address.trim() || 'Main Road, City',
-      totalBeds: totalBeds > 0 ? totalBeds : 30,
-      subscriptionMode: 'FIXED_LIMIT',
-      phonePeNumber: '',
-      managerName: managerName.trim() || 'Assigned Manager',
-      managerPhone: managerPhone.trim() || '',
-      managerPin: managerPin.trim() || '1234',
-      upiId: upiId.trim() || 'pgowowner@ybl',
-      joinCode: `JOIN-${Math.floor(1000 + Math.random() * 9000)}`,
-      latitude: String(finalLocation.latitude),
-      longitude: String(finalLocation.longitude),
-      formattedAddress: address.trim() || finalLocation.formatted_address || '',
-      defaultRentAmount: 0,
-    };
+    // The backend requires a real name and a real location (place_id or lat/lng) to create a
+    // property — surfacing that here as a validation error is the honest failure; silently
+    // substituting a fake name or a fake Bangalore pin would create a real, permanent property
+    // record with fabricated data instead.
+    if (!pgName.trim()) {
+      return { ok: false, error: 'Enter a property name.' };
+    }
+    if (!location) {
+      return { ok: false, error: 'Pick the property’s location on the map before creating it.' };
+    }
 
     try {
       const pg = await propertiesApi.createProperty({
-        name: pgName.trim() || 'New Co-Living Branch',
+        name: pgName.trim(),
         total_beds: totalBeds > 0 ? totalBeds : 30,
         address: address.trim() || undefined,
-        latitude: finalLocation.latitude,
-        longitude: finalLocation.longitude,
+        latitude: location.latitude,
+        longitude: location.longitude,
       });
 
       if (managerName.trim() && managerPhone.trim()) {
@@ -1314,13 +1297,10 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      console.warn('[PGow] Backend property creation failed, persisting locally:', err);
-      // Ensure local state is updated even if backend fails
-      set((s) => ({
-        allPGsState: [...s.allPGsState, newPgEntity],
-        loggedInOwner: newPgEntity,
-      }));
-      return { ok: true };
+      // Report the real failure rather than faking success with a property that only exists
+      // in local state — the owner would otherwise believe they have a working listing with a
+      // real UPI ID and PIN that the server has never heard of.
+      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not create the property.' };
     }
   },
 

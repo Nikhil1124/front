@@ -56,8 +56,12 @@ export function GuestPaymentsTab() {
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
   const [filter, setFilter] = useState('ALL');
 
-  const ownerPhone = ownerForGuest?.phonePeNumber?.trim() || '9876543210';
-  const ownerUpi = ownerForGuest?.upiId?.trim() || 'pgowowner@ybl';
+  // Never a fabricated fallback here — a fake-looking UPI ID or phone number routed into a
+  // real payment/contact flow risks real rent money or a resident calling the wrong person.
+  // Empty means "not configured yet", handled explicitly below, not silently substituted.
+  const ownerUpi = ownerForGuest?.upiId?.trim() ?? '';
+  const hasUpi = ownerUpi.length > 0;
+  const contactPhone = ownerForGuest?.managerPhone?.trim() || ownerForGuest?.phonePeNumber?.trim() || '';
   const isBillPaid = guest?.isBillPaid ?? false;
 
   const guestsWithRewardPoints = allGuests.filter((g) => g.rewardPoints > 0);
@@ -77,6 +81,7 @@ export function GuestPaymentsTab() {
   const pendingAmount = guestPayments.filter((p) => p.status === 'PENDING').reduce((s, p) => s + p.amount, 0);
 
   const handleUpiLaunch = async () => {
+    if (!hasUpi) return;
     hapticSelect();
     const result = await launchUpiPayment({
       upiId: ownerUpi,
@@ -398,19 +403,31 @@ export function GuestPaymentsTab() {
                       <View>
                         <Txt variant="caption" weight="700" color={Colors.CyberPink}>📱 1. Direct Phone Number / UPI ID Pay</Txt>
                         <Spacer size={10} />
-                        <Row justify="space-between" align="center" style={{ backgroundColor: Colors.surface, borderRadius: 8, padding: 8 }}>
-                          <Col style={{ flex: 1 }}>
-                            <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Owner Phone Number: +91 {ownerPhone}</Txt>
-                            <Txt variant="caption" weight="700" color={Colors.CyberPurple}>Owner UPI VPA ID: {ownerUpi}</Txt>
-                          </Col>
-                          <IconBtn onPress={() => { Clipboard.setStringAsync(ownerUpi); Alert.alert('Copied', `Copied UPI VPA: ${ownerUpi}`); }} icon="copy" size={20} tint={Colors.CyberPink} />
-                        </Row>
-                        <Spacer size={10} />
-                        <OutlinedBtn onPress={handleUpiLaunch} borderColor={Colors.CyberPink} textColor={Colors.CyberPink} borderRadius={8} height={36}>
-                          <Ionicons name="open" size={14} color={Colors.CyberPink} />
-                          <Txt variant="caption" weight="700" color={Colors.CyberPink} style={{ marginLeft: 6 }}>Launch PhonePe / UPI App Directly</Txt>
-                        </OutlinedBtn>
-                        <Spacer size={10} />
+                        {hasUpi ? (
+                          <>
+                            <Row justify="space-between" align="center" style={{ backgroundColor: Colors.surface, borderRadius: 8, padding: 8 }}>
+                              <Col style={{ flex: 1 }}>
+                                {contactPhone ? (
+                                  <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Owner Phone Number: +91 {contactPhone}</Txt>
+                                ) : null}
+                                <Txt variant="caption" weight="700" color={Colors.CyberPurple}>Owner UPI VPA ID: {ownerUpi}</Txt>
+                              </Col>
+                              <IconBtn onPress={() => { Clipboard.setStringAsync(ownerUpi); Alert.alert('Copied', `Copied UPI VPA: ${ownerUpi}`); }} icon="copy" size={20} tint={Colors.CyberPink} />
+                            </Row>
+                            <Spacer size={10} />
+                            <OutlinedBtn onPress={handleUpiLaunch} borderColor={Colors.CyberPink} textColor={Colors.CyberPink} borderRadius={8} height={36}>
+                              <Ionicons name="open" size={14} color={Colors.CyberPink} />
+                              <Txt variant="caption" weight="700" color={Colors.CyberPink} style={{ marginLeft: 6 }}>Launch PhonePe / UPI App Directly</Txt>
+                            </OutlinedBtn>
+                            <Spacer size={10} />
+                          </>
+                        ) : (
+                          <View style={{ backgroundColor: Colors.surface, borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                            <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>
+                              The owner hasn't set up a UPI payment ID yet.{contactPhone ? ` Contact them at +91 ${contactPhone}, or ` : ' '}Use "Pay Cash" instead.
+                            </Txt>
+                          </View>
+                        )}
                         <OutlinedTextField label="Enter 12-Digit UTR Transaction Ref" placeholder="421980341209" value={utrNumber} onChangeText={setUtrNumber} testID="phone_upi_utr_input" focusedBorderColor={Colors.CyberPink} borderRadius={10} style={{ marginBottom: 10 }} />
                       </View>
                       <Btn onPress={() => handleSubmit('ONLINE_PHONEPE')} disabled={!utrNumber.trim()} containerColor={Colors.CyberPink} textColor={Colors.IvoryWhiteText} borderRadius={10} height={40} testID="submit_phone_utr_btn">
@@ -423,13 +440,21 @@ export function GuestPaymentsTab() {
                     <Card containerColor={Colors.LuxuryPureBlack} borderRadius={12} borderWidth={1} borderColor={Colors.CyberAmber} padding={[12, 12]} style={{ flex: 1, justifyContent: 'space-between' }}>
                       <View>
                         <Txt variant="caption" weight="700" color={Colors.CyberAmber}>📷 2. Scan Owner PhonePe / UPI QR Code</Txt>
-                        <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Scan & Pay to Owner UPI VPA: {ownerUpi}</Txt>
-                        <Spacer size={6} />
-                        <View style={styles.qrBox}>
-                          <Ionicons name="qr-code-sharp" size={54} color="#000000" />
-                          <Txt variant="labelSmall" color="#000000" align="center">{ownerUpi}</Txt>
-                          <Txt size={8} color="#6B7280">PhonePe / Paytm / GPay</Txt>
-                        </View>
+                        {hasUpi ? (
+                          <>
+                            <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Scan & Pay to Owner UPI VPA: {ownerUpi}</Txt>
+                            <Spacer size={6} />
+                            <View style={styles.qrBox}>
+                              <Ionicons name="qr-code-sharp" size={54} color="#000000" />
+                              <Txt variant="labelSmall" color="#000000" align="center">{ownerUpi}</Txt>
+                              <Txt size={8} color="#6B7280">PhonePe / Paytm / GPay</Txt>
+                            </View>
+                          </>
+                        ) : (
+                          <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText} style={{ marginTop: 6 }}>
+                            The owner hasn't set up a UPI payment ID yet. Use "Pay Cash" instead.
+                          </Txt>
+                        )}
                         <Spacer size={6} />
                         <OutlinedTextField label="Enter 12-Digit PhonePe / UPI UTR Ref" placeholder="421980341209" value={utrNumber} onChangeText={setUtrNumber} testID="qr_utr_input" focusedBorderColor={Colors.CyberAmber} borderRadius={10} style={{ marginBottom: 8 }} />
                       </View>
@@ -445,7 +470,7 @@ export function GuestPaymentsTab() {
                         <Txt variant="caption" weight="700" color={Colors.CyberGreen}>💵 3. Cash Handover Request</Txt>
                         <Spacer size={12} />
                         <Txt variant="caption" color={Colors.SlateMutedText}>
-                          Handover physical cash (₹{Math.round(rentAmount)}) directly to your PG Manager ({ownerPhone}). A cash verification request will be sent to the owner dashboard.
+                          Handover physical cash (₹{Math.round(rentAmount)}) directly to your PG Manager{contactPhone ? ` (${contactPhone})` : ''}. A cash verification request will be sent to the owner dashboard.
                         </Txt>
                       </View>
                       <Btn onPress={() => handleSubmit('CASH_HANDOVER')} containerColor={Colors.CyberGreen} textColor={Colors.LuxuryPureBlack} borderRadius={10} height={42} testID="cash_handover_btn">
