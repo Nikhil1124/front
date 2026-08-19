@@ -3,7 +3,20 @@
  * Ported to Cyber Mint Light Theme.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, ScrollView, TouchableOpacity, Pressable, KeyboardAvoidingView } from 'react-native';
+import {
+  Modal,
+  View,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
+  Pressable,
+  KeyboardAvoidingView,
+  Text,
+  TextInput,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { SlideInDown, FadeIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors } from '@/theme';
@@ -94,95 +107,304 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
 // ===== BookProntoRepairDialog =====
 const REPAIR_CATEGORIES = ['Plumbing', 'Electrical', 'Carpenter', 'AC Repair', 'RO Servicing', 'Pest Control'];
 
+const TIME_SLOTS = [
+  '09:00 AM - 10:30 AM',
+  '10:30 AM - 11:30 AM',
+  '11:30 AM - 12:00 PM',
+  '12:00 PM - 01:30 PM',
+  '02:00 PM - 03:30 PM',
+  '04:00 PM - 05:30 PM',
+  '06:00 PM - 07:30 PM'
+];
+
+function getNext7Days(): string[] {
+  const list: string[] = [];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    list.push(`${day} ${month} ${year}`);
+  }
+  return list;
+}
+
+const DIALOG_GREEN = '#176B3A';
+const DIALOG_BG = '#F7FAF7';
+const DIALOG_CHARCOAL = '#17201A';
+const DIALOG_MUTED = '#66736B';
+const DIALOG_BORDER = '#E6EFEA';
+const DIALOG_WHITE = '#FFFFFF';
+const DIALOG_LIGHT_GREEN = '#EEF8F1';
+
 export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
   const [category, setCategory] = useState('Plumbing');
-  const [issue, setIssue] = useState('Main Washroom Tap & Pipe Leakage Fix');
-  const [urgency, setUrgency] = useState('15-Min Express');
+  const [issue, setIssue] = useState('');
+  const [urgency, setUrgency] = useState('15-Min Express'); // Maps to backend '15-Min Express' or 'Scheduled Today'
+
+  // Scheduled date/time picker state
+  const [schedDate, setSchedDate] = useState('19 Aug 2026');
+  const [schedTime, setSchedTime] = useState('11:30 AM - 12:00 PM');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const costMap: Record<string, number> = { Plumbing: 399, Electrical: 449, 'AC Repair': 799 };
+  
   const handleDispatch = () => {
     const cost = costMap[category] ?? 499;
-    bookRepair(category, issue, urgency, cost);
+    const finalIssue = issue.trim() || `Request for ${category} service`;
+    // Pass custom schedule details inside the request summary if scheduled
+    const urgencyLabel = urgency === '15-Min Express' ? '15-Min Express' : `Scheduled for ${schedDate} at ${schedTime}`;
+    bookRepair(category, finalIssue, urgencyLabel, cost);
     Alert.alert('Success', 'Pronto Technician Dispatched!');
     onDismiss();
   };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={24}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[20, 20]}
-          style={{ width: '92%', zIndex: 2 }}
-        >
-          <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
-            <Row gap={8} align="center">
-              <Txt size={18}>🛠️</Txt>
-              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Book Pronto Repair</Txt>
-            </Row>
-            <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
-          </Row>
+    <>
+      <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <Animated.View entering={FadeIn.duration(250)} style={styles.backdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+            
+            <Animated.View
+              entering={SlideInDown.duration(180)}
+              style={styles.sheetCard}
+            >
+              {/* Handlebar */}
+              <View style={styles.handlebar} />
 
-          <Txt variant="caption" weight="800" color={Colors.textMuted}>Select Category</Txt>
-          <Spacer size={6} />
-          <Row gap={6} style={{ flexWrap: 'wrap' }}>
-            {REPAIR_CATEGORIES.map((cat) => (
-              <Chip
-                key={cat}
-                label={cat}
-                selected={category === cat}
-                onPress={() => setCategory(cat)}
-              />
-            ))}
-          </Row>
+              {/* Header */}
+              <Row justify="space-between" align="center" style={{ marginBottom: 20 }}>
+                <Row gap={12} align="center">
+                  <View style={styles.headerIconCircle}>
+                    <Ionicons name="construct-outline" size={20} color={DIALOG_GREEN} />
+                  </View>
+                  <Col>
+                    <Text style={styles.sheetTitle}>Book a Repair</Text>
+                    <Text style={styles.sheetSubtitle}>Tell us what needs fixing</Text>
+                  </Col>
+                </Row>
+                <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
+                  <Ionicons name="close" size={20} color={DIALOG_MUTED} />
+                </TouchableOpacity>
+              </Row>
 
-          <Spacer size={12} />
-          <OutlinedTextField
-            label="Issue Description"
-            value={issue}
-            onChangeText={setIssue}
-            containerColor={Colors.surfaceMuted}
-            style={{ marginBottom: 12 }}
-          />
+              {/* Step 1: What needs repair */}
+              <Text style={styles.stepTitle}>1. What needs repair?</Text>
+              <Spacer size={8} />
+              <View style={styles.chipsRow}>
+                {REPAIR_CATEGORIES.map((cat) => {
+                  const isSelected = category === cat;
+                  return (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
+                      onPress={() => setCategory(cat)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-          <Txt variant="caption" weight="800" color={Colors.textMuted}>Dispatch Urgency</Txt>
-          <Spacer size={6} />
-          <Row gap={8}>
-            {['15-Min Express', 'Scheduled Today'].map((u) => (
-              <Btn
-                key={u}
-                onPress={() => setUrgency(u)}
-                containerColor={urgency === u ? Colors.primary : Colors.surfaceMuted}
-                textColor={urgency === u ? Colors.textInverse : Colors.textPrimary}
-                borderRadius={10}
-                height={36}
-                style={{ flex: 1 }}
+              <Spacer size={16} />
+
+              {/* Step 2: What's the issue */}
+              <Text style={styles.stepTitle}>2. What's the issue?</Text>
+              <Spacer size={8} />
+              <View style={styles.textAreaContainer}>
+                <TextInput
+                  style={styles.textArea}
+                  value={issue}
+                  onChangeText={(v) => {
+                    if (v.length <= 250) setIssue(v);
+                  }}
+                  placeholder="Describe the problem briefly..."
+                  placeholderTextColor="#9EB09E"
+                  multiline
+                  numberOfLines={4}
+                  maxLength={250}
+                  textAlignVertical="top"
+                />
+                <Text style={styles.charCounter}>{issue.length}/250</Text>
+              </View>
+
+              <Spacer size={16} />
+
+              {/* Step 3: When do you need help */}
+              <Text style={styles.stepTitle}>3. When do you need help?</Text>
+              <Spacer size={8} />
+              <Row gap={10}>
+                <TouchableOpacity
+                  style={[
+                    styles.urgencyBtn,
+                    urgency === '15-Min Express' && styles.urgencyBtnActive,
+                  ]}
+                  onPress={() => setUrgency('15-Min Express')}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.urgencyBtnText,
+                      urgency === '15-Min Express' && styles.urgencyBtnTextActive,
+                    ]}
+                  >
+                    Express · 15 min
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.urgencyBtn,
+                    urgency === 'Scheduled Today' && styles.urgencyBtnActive,
+                  ]}
+                  onPress={() => setUrgency('Scheduled Today')}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.urgencyBtnText,
+                      urgency === 'Scheduled Today' && styles.urgencyBtnTextActive,
+                    ]}
+                  >
+                    Schedule
+                  </Text>
+                </TouchableOpacity>
+              </Row>
+
+              {/* Conditional Date & Time Selectors */}
+              {urgency === 'Scheduled Today' && (
+                <>
+                  <Spacer size={12} />
+                  <Row gap={10}>
+                    {/* Date Selector */}
+                    <TouchableOpacity
+                      style={styles.pickerDropdown}
+                      onPress={() => setShowDatePicker(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.pickerLabel}>Date</Text>
+                      <Row justify="space-between" align="center" style={{ flex: 1 }}>
+                        <Row gap={6} align="center">
+                          <Ionicons name="calendar-outline" size={15} color={DIALOG_GREEN} />
+                          <Text style={styles.pickerValue}>{schedDate}</Text>
+                        </Row>
+                        <Ionicons name="chevron-down" size={14} color={DIALOG_MUTED} />
+                      </Row>
+                    </TouchableOpacity>
+
+                    {/* Time Selector */}
+                    <TouchableOpacity
+                      style={styles.pickerDropdown}
+                      onPress={() => setShowTimePicker(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.pickerLabel}>Time</Text>
+                      <Row justify="space-between" align="center" style={{ flex: 1 }}>
+                        <Row gap={6} align="center">
+                          <Ionicons name="time-outline" size={15} color={DIALOG_GREEN} />
+                          <Text style={styles.pickerValue}>{schedTime}</Text>
+                        </Row>
+                        <Ionicons name="chevron-down" size={14} color={DIALOG_MUTED} />
+                      </Row>
+                    </TouchableOpacity>
+                  </Row>
+                </>
+              )}
+
+              <Spacer size={12} />
+
+              {/* Warning / ETA strip */}
+              <Row gap={8} align="center" style={styles.etaStrip}>
+                <Ionicons name={urgency === '15-Min Express' ? 'time-outline' : 'calendar-clear-outline'} size={16} color={DIALOG_GREEN} />
+                <Text style={styles.etaText}>
+                  {urgency === '15-Min Express'
+                    ? 'Technician will be at your PG in approximately 15 minutes.'
+                    : 'You can schedule up to 7 days in advance.'}
+                </Text>
+              </Row>
+
+              <Spacer size={20} />
+
+              {/* CTA Button */}
+              <TouchableOpacity
+                style={styles.sheetSubmitBtn}
+                onPress={handleDispatch}
+                activeOpacity={0.85}
               >
-                <Txt variant="caption" weight="800" color={urgency === u ? Colors.textInverse : Colors.textPrimary}>{u}</Txt>
-              </Btn>
-            ))}
-          </Row>
+                <Text style={styles.sheetSubmitBtnText}>
+                  {urgency === '15-Min Express' ? 'Request Express Repair' : 'Request Repair'}
+                </Text>
+              </TouchableOpacity>
 
-          <Spacer size={16} />
-          <Btn
-            onPress={handleDispatch}
-            containerColor={Colors.primary}
-            textColor={Colors.textInverse}
-            borderRadius={12}
-            height={44}
-          >
-            <Txt variant="body" weight="800" color={Colors.textInverse}>⚡ Dispatch Technician Now</Txt>
-          </Btn>
-        </Card>
-      </View>
-      </KeyboardAvoidingView>
-    </Modal>
+              <Spacer size={12} />
+              
+              {/* Security Disclaimer */}
+              <Row gap={6} justify="center" align="center" style={styles.securityRow}>
+                <Ionicons name="lock-closed-outline" size={12} color={DIALOG_MUTED} />
+                <Text style={styles.securityText}>Your request is secure and confidential</Text>
+              </Row>
+            </Animated.View>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Date Dropdown Popup Modal */}
+      {showDatePicker && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
+          <View style={styles.pickerPopupBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
+            <View style={styles.pickerPopupCard}>
+              <Text style={styles.pickerPopupTitle}>Select Date</Text>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 10, maxHeight: 220 }}>
+                {getNext7Days().map((d) => (
+                  <TouchableOpacity
+                    key={d}
+                    style={[styles.pickerPopupOption, schedDate === d && styles.pickerPopupOptionActive]}
+                    onPress={() => { setSchedDate(d); setShowDatePicker(false); }}
+                  >
+                    <Text style={[styles.pickerPopupOptionText, schedDate === d && styles.pickerPopupOptionTextActive]}>
+                      {d}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Time Dropdown Popup Modal */}
+      {showTimePicker && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setShowTimePicker(false)}>
+          <View style={styles.pickerPopupBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
+            <View style={styles.pickerPopupCard}>
+              <Text style={styles.pickerPopupTitle}>Select Time Slot</Text>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 10, maxHeight: 220 }}>
+                {TIME_SLOTS.map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.pickerPopupOption, schedTime === t && styles.pickerPopupOptionActive]}
+                    onPress={() => { setSchedTime(t); setShowTimePicker(false); }}
+                  >
+                    <Text style={[styles.pickerPopupOptionText, schedTime === t && styles.pickerPopupOptionTextActive]}>
+                      {t}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+    </>
   );
 }
 
@@ -310,14 +532,191 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    backgroundColor: 'rgba(10, 18, 13, 0.55)',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   laundryOpt: {
     borderRadius: 12,
     borderWidth: 1,
     padding: 10,
+  },
+
+  // Bottom Sheet
+  sheetCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 34,
+  },
+  handlebar: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E6EFEA',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  headerIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#EEF8F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetTitle: { fontSize: 17, fontWeight: '700', color: '#17201A' },
+  sheetSubtitle: { fontSize: 13, color: '#66736B', marginTop: 1 },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F7FAF7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepTitle: { fontSize: 14, fontWeight: '700', color: '#17201A' },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6EFEA',
+  },
+  categoryChipSelected: {
+    backgroundColor: '#176B3A',
+    borderColor: '#176B3A',
+  },
+  categoryChipText: { fontSize: 13, fontWeight: '600', color: '#17201A' },
+  categoryChipTextSelected: { color: '#FFFFFF', fontWeight: '700' },
+
+  // Textarea
+  textAreaContainer: {
+    borderWidth: 1,
+    borderColor: '#E6EFEA',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    minHeight: 110,
+    justifyContent: 'space-between',
+  },
+  textArea: { fontSize: 14, color: '#17201A', height: 74, paddingVertical: 0 },
+  charCounter: { fontSize: 11, color: '#66736B', textAlign: 'right' },
+
+  // Urgency selector
+  urgencyBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E6EFEA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  urgencyBtnActive: {
+    borderColor: '#176B3A',
+    backgroundColor: '#EEF8F1',
+    borderWidth: 1.5,
+  },
+  urgencyBtnText: { fontSize: 13, fontWeight: '600', color: '#66736B' },
+  urgencyBtnTextActive: { color: '#176B3A', fontWeight: '800' },
+
+  // ETA strip
+  etaStrip: {
+    backgroundColor: '#EEF8F1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  etaText: { fontSize: 12, color: '#176B3A', fontWeight: '600', flex: 1, lineHeight: 16 },
+
+  // Submit
+  sheetSubmitBtn: {
+    height: 52,
+    backgroundColor: '#176B3A',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetSubmitBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
+
+  // Security info
+  securityRow: { marginTop: 4 },
+  securityText: { fontSize: 11, color: '#66736B', marginLeft: 4 },
+
+  // Picker dropdowns
+  pickerDropdown: {
+    flex: 1,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E6EFEA',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    justifyContent: 'space-between',
+  },
+  pickerLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#66736B',
+    marginBottom: 2,
+  },
+  pickerValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#17201A',
+  },
+
+  // Picker popup modals
+  pickerPopupBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(10, 18, 13, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerPopupCard: {
+    width: '80%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E6EFEA',
+    padding: 18,
+  },
+  pickerPopupTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#17201A',
+    marginBottom: 8,
+  },
+  pickerPopupOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F7FAF7',
+  },
+  pickerPopupOptionActive: {
+    backgroundColor: '#EEF8F1',
+  },
+  pickerPopupOptionText: {
+    fontSize: 13,
+    color: '#17201A',
+    fontWeight: '500',
+  },
+  pickerPopupOptionTextActive: {
+    color: '#176B3A',
+    fontWeight: '700',
   },
 });
 

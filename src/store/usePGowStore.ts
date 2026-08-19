@@ -1585,10 +1585,10 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!s.staffPhoneInput.trim()) {
       return { ok: false, error: 'A phone number is required — it is what staff sign in with.' };
     }
-    // The UI's labels, in the roles the API accepts.
     const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance'> = {
       Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
-      'Kitchen Staff': 'kitchen_staff', Maintenance: 'maintenance', Cleaner: 'maintenance',
+      'Kitchen Staff': 'kitchen_staff', Maintenance: 'maintenance', 'Maintenance Staff': 'maintenance',
+      'Delivery Agent': 'maintenance', Cleaner: 'maintenance',
     };
     try {
       await staffApi.addStaff(pgId, {

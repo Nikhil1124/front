@@ -1,125 +1,143 @@
-import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl } from 'react-native';
+import { useState, useMemo } from 'react';
+import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors, Layout } from '@/theme';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
+import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { FeedbackComplaintEntity } from '@/types';
-import { FormScroll } from '@/components/ui/FormScroll';
 
-interface StaffProfile {
-  id: string;
-  roleKey: 'MANAGER' | 'CHEF' | 'STAFF' | 'OVERDUE';
-  title: string;
-  name: string;
-  avatarIcon: keyof typeof Ionicons.glyphMap;
-  tint: string;
-  bgColor: string;
-  rating: number;
-  reviewCount: number;
-  subtitle: string;
-}
+const GREEN = '#176B3A';
+const BG = '#F7FAF7';
+const CHARCOAL = '#17201A';
+const MUTED = '#66736B';
+const BORDER = '#DDE8E0';
+const WHITE = '#FFFFFF';
+const LIGHT_GREEN = '#EEF8F1';
+const RADIUS = 16;
 
 export function OwnerReviewsTab() {
   const owner = usePGowStore((s) => s.loggedInOwner);
   const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
+  const staffList = usePGowStore((s) => s.currentStaff);
   const respond = usePGowStore((s) => s.respondToFeedbackComplaint);
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
 
-  const [selectedStaff, setSelectedStaff] = useState<StaffProfile | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'All' | 'Highest Rated' | 'Needs Attention' | 'No Reviews'>('All');
+
+  const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
   const [activeItem, setActiveItem] = useState<FeedbackComplaintEntity | null>(null);
   const [responseText, setResponseText] = useState('');
   const [responseStatus, setResponseStatus] = useState('In Progress');
 
-  // Overdue (> 30 days)
-  const now = Date.now();
-  const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
-  const overdueIssues = submissions.filter((s) => {
-    if (s.status === 'Resolved') return false;
-    return (now - s.timestamp) > ONE_MONTH_MS;
-  });
+  // Calculations
+  const totalReviews = submissions.length;
+  
+  const avgOverall = useMemo(() => {
+    const ratings = submissions.map((s) => s.overallRating).filter((r) => r > 0);
+    return ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
+  }, [submissions]);
 
-  const avg = (key: keyof FeedbackComplaintEntity) => {
-    const vals = submissions.map((s) => Number(s[key]) || 0).filter((v) => v > 0);
-    if (vals.length === 0) return 0;
-    return vals.reduce((a, b) => a + b, 0) / vals.length;
-  };
+  const ratingSummary = useMemo(() => {
+    if (totalReviews === 0) return null;
+    const pos = submissions.filter((s) => s.overallRating >= 4).length;
+    const neu = submissions.filter((s) => s.overallRating === 3).length;
+    const neg = submissions.filter((s) => s.overallRating > 0 && s.overallRating <= 2).length;
+    return {
+      positive: { count: pos, pct: Math.round((pos / totalReviews) * 100) },
+      neutral: { count: neu, pct: Math.round((neu / totalReviews) * 100) },
+      negative: { count: neg, pct: Math.round((neg / totalReviews) * 100) },
+    };
+  }, [submissions, totalReviews]);
 
-  const avgOverall = avg('overallRating');
-  const avgMeals = avg('mealRating');
-  const avgClean = avg('cleanlinessRating');
-  const avgMgr = avg('managerRating');
+  // Guest Issues (Complaints)
+  const activeIssues = useMemo(() => {
+    return submissions.filter((s) => s.type === 'COMPLAINT' && s.status !== 'Resolved');
+  }, [submissions]);
 
-  // Priority order for the inbox below: unresolved before resolved, and within
-  // that, oldest first — a complaint sitting unanswered the longest is the one
-  // most likely to be forgotten, so it belongs at the top, not the bottom.
-  const guestComplaints = submissions
-    .filter((s) => s.type === 'COMPLAINT')
-    .slice()
-    .sort((a, b) => {
-      const aOpen = a.status !== 'Resolved';
-      const bOpen = b.status !== 'Resolved';
-      if (aOpen !== bOpen) return aOpen ? -1 : 1;
-      return a.timestamp - b.timestamp;
+  // Role feedback maps
+  const managerReviews = useMemo(() => submissions.filter((s) => (s.category || '').toLowerCase().includes('manager') || s.managerRating > 0), [submissions]);
+  const chefReviews = useMemo(() => submissions.filter((s) => (s.category || '').toLowerCase().includes('food') || (s.category || '').toLowerCase().includes('meal') || s.mealRating > 0), [submissions]);
+  const staffReviews = useMemo(() => submissions.filter((s) => (s.category || '').toLowerCase().includes('staff') || (s.category || '').toLowerCase().includes('clean') || s.staffRating > 0), [submissions]);
+
+  const avgMgr = useMemo(() => {
+    const r = managerReviews.map((s) => s.managerRating).filter((v) => v > 0);
+    return r.length > 0 ? r.reduce((a, b) => a + b, 0) / r.length : 0;
+  }, [managerReviews]);
+
+  const avgMeals = useMemo(() => {
+    const r = chefReviews.map((s) => s.mealRating).filter((v) => v > 0);
+    return r.length > 0 ? r.reduce((a, b) => a + b, 0) / r.length : 0;
+  }, [chefReviews]);
+
+  const avgClean = useMemo(() => {
+    const r = staffReviews.map((s) => s.cleanlinessRating).filter((v) => v > 0);
+    return r.length > 0 ? r.reduce((a, b) => a + b, 0) / r.length : 0;
+  }, [staffReviews]);
+
+  // Dynamic Actual Staff Performance Mapping
+  const staffPerformanceList = useMemo(() => {
+    return staffList.map((s) => {
+      const role = s.role.toLowerCase();
+      let rating = 0;
+      let reviewCount = 0;
+      let icon: keyof typeof Ionicons.glyphMap = 'person-outline';
+
+      if (role === 'manager') {
+        rating = avgMgr;
+        reviewCount = managerReviews.length;
+        icon = 'person-circle-outline';
+      } else if (role === 'chef' || role === 'kitchen_staff') {
+        rating = avgMeals;
+        reviewCount = chefReviews.length;
+        icon = 'restaurant-outline';
+      } else if (role.includes('maintenance') || role.includes('clean') || role.includes('housekeeping')) {
+        rating = avgClean;
+        reviewCount = staffReviews.length;
+        icon = 'sparkles-outline';
+      } else {
+        rating = avgOverall;
+        reviewCount = totalReviews;
+        icon = 'shield-outline';
+      }
+
+      const needsAttention = reviewCount > 0 && rating < 3.5;
+
+      return {
+        id: s.id,
+        name: s.name,
+        role: s.role,
+        rating,
+        reviewCount,
+        icon,
+        needsAttention,
+      };
     });
-  const unresolvedComplaintCount = guestComplaints.filter((s) => s.status !== 'Resolved').length;
+  }, [staffList, avgMgr, avgMeals, avgClean, avgOverall, managerReviews, chefReviews, staffReviews, totalReviews]);
 
-  const managerReviews = submissions.filter((s) => (s.category || '').toLowerCase().includes('manager') || s.managerRating > 0);
-  const chefReviews = submissions.filter((s) => (s.category || '').toLowerCase().includes('food') || (s.category || '').toLowerCase().includes('meal') || s.mealRating > 0);
-  const staffReviews = submissions.filter((s) => (s.category || '').toLowerCase().includes('staff') || (s.category || '').toLowerCase().includes('clean') || s.staffRating > 0);
+  // Filtered actual staff members
+  const displayedStaff = useMemo(() => {
+    return staffPerformanceList.filter((staff) => {
+      const matchesSearch = !searchQuery.trim() || staff.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      let matchesFilter = true;
+      if (filterType === 'Highest Rated') {
+        matchesFilter = staff.rating >= 4.0 && staff.reviewCount > 0;
+      } else if (filterType === 'Needs Attention') {
+        matchesFilter = staff.needsAttention;
+      } else if (filterType === 'No Reviews') {
+        matchesFilter = staff.reviewCount === 0;
+      }
 
-  const staffProfiles: StaffProfile[] = [
-    {
-      id: 'staff_mgr',
-      roleKey: 'MANAGER',
-      title: 'Branch Manager',
-      name: owner?.managerName || 'Ramesh Kumar (Manager)',
-      avatarIcon: 'person',
-      tint: Colors.primary,
-      bgColor: '#F0FDF9',
-      rating: avgMgr,
-      reviewCount: managerReviews.length,
-      subtitle: 'Tenant relations, operations & branch management',
-    },
-    {
-      id: 'staff_chef',
-      roleKey: 'CHEF',
-      title: 'Head Chef & Mess Team',
-      name: 'Chef Ramesh & Kitchen Staff',
-      avatarIcon: 'restaurant',
-      tint: '#D97706',
-      bgColor: '#FFFBEB',
-      rating: avgMeals,
-      reviewCount: chefReviews.length,
-      subtitle: 'Daily meals, food taste, hygiene & mess timings',
-    },
-    {
-      id: 'staff_clean',
-      roleKey: 'STAFF',
-      title: 'Housekeeping & Maintenance',
-      name: 'Suresh & Housekeeping Crew',
-      avatarIcon: 'sparkles',
-      tint: '#2563EB',
-      bgColor: '#EFF6FF',
-      rating: avgClean,
-      reviewCount: staffReviews.length,
-      subtitle: 'Room cleaning, repairs, electrical & water support',
-    },
-  ];
-
-  const getFilteredReviewsForStaff = (staff: StaffProfile) => {
-    if (staff.roleKey === 'MANAGER') return managerReviews.length > 0 ? managerReviews : submissions;
-    if (staff.roleKey === 'CHEF') return chefReviews.length > 0 ? chefReviews : submissions;
-    if (staff.roleKey === 'STAFF') return staffReviews.length > 0 ? staffReviews : submissions;
-    if (staff.roleKey === 'OVERDUE') return overdueIssues;
-    return submissions;
-  };
+      return matchesSearch && matchesFilter;
+    });
+  }, [staffPerformanceList, searchQuery, filterType]);
 
   const openReply = (item: FeedbackComplaintEntity) => {
     hapticSelect();
@@ -128,412 +146,583 @@ export function OwnerReviewsTab() {
     setResponseStatus(item.status);
   };
 
-  const renderComplaintCard = (item: FeedbackComplaintEntity) => {
-    const daysOld = Math.floor((now - item.timestamp) / (24 * 60 * 60 * 1000));
-    const isOverdue = item.status !== 'Resolved' && daysOld > 30;
-
-    return (
-      <Card
-        key={item.id}
-        containerColor={isOverdue ? '#FFFBEB' : Colors.surfaceElevated}
-        borderRadius={14}
-        borderWidth={1}
-        borderColor={isOverdue ? '#F59E0B' : Colors.borderSubtle}
-        padding={[12, 12]}
-      >
-        <Row justify="space-between" align="flex-start">
-          <Col style={{ flex: 1 }}>
-            <Row align="center" gap={6}>
-              <Txt variant="body" weight="800" color={Colors.textPrimary}>{item.guestName}</Txt>
-              <View style={styles.roomPill}>
-                <Txt variant="labelSmall" weight="800" color={Colors.primaryDark}>Room {item.roomNo || 'N/A'}</Txt>
-              </View>
-            </Row>
-            <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>
-              {item.category || 'Feedback'} • {new Date(item.timestamp).toLocaleDateString('en-IN')}
-            </Txt>
-          </Col>
-          <Row gap={2} align="center">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Ionicons
-                key={star}
-                name="star"
-                size={11}
-                color={star <= (item.overallRating || 5) ? '#F59E0B' : Colors.borderSubtle}
-              />
-            ))}
-          </Row>
-        </Row>
-
-        <Spacer size={8} />
-        <Txt variant="caption" color={Colors.textPrimary} style={{ lineHeight: 16 }}>
-          "{item.description || 'Everything is great!'}"
-        </Txt>
-
-        {item.adminResponse ? (
-          <View style={styles.responseBox}>
-            <Txt variant="labelSmall" weight="800" color={Colors.primaryDark}>Official Response:</Txt>
-            <Txt variant="labelSmall" weight="400" color={Colors.textSecondary} style={{ marginTop: 2 }}>{item.adminResponse}</Txt>
-          </View>
-        ) : null}
-
-        <Spacer size={8} />
-        <Row justify="space-between" align="center">
-          <View style={[styles.statusBadge, { backgroundColor: item.status === 'Resolved' ? '#ECFDF5' : '#FEF2F2' }]}>
-            <Txt variant="labelSmall" weight="800" color={item.status === 'Resolved' ? '#047857' : '#B91C1C'}>
-              {item.status}
-            </Txt>
-          </View>
-
-          <Btn
-            onPress={() => openReply(item)}
-            containerColor={Colors.surfaceMuted}
-            textColor={Colors.textPrimary}
-            borderRadius={8}
-            height={28}
-            contentStyle={{ paddingHorizontal: 10 }}
-          >
-            <Txt variant="labelSmall" weight="800" color={Colors.textPrimary}>
-              {item.adminResponse ? 'Edit Reply' : 'Respond / Action'}
-            </Txt>
-          </Btn>
-        </Row>
-      </Card>
-    );
-  };
-
   const handleSaveReply = async () => {
     if (!activeItem) return;
     if (!responseText.trim()) {
       hapticError();
-      Alert.alert('Validation', 'Please write a response reply');
+      Alert.alert('Validation', 'Please enter a reply.');
       return;
     }
     try {
       await respond(activeItem.id, responseText, responseStatus);
       hapticSuccess();
-      toast('success', 'Review updated', `${activeItem.guestName} has been notified of your response.`);
+      toast('success', 'Issue response saved', `Resident ${activeItem.guestName} notified.`);
       setActiveItem(null);
-    } catch (err: any) {
+    } catch {
       hapticError();
-      toast('error', 'Could not save response', err?.message ?? 'Please try again.');
+      toast('error', 'Failed to save response', 'Try again.');
     }
   };
 
+  const getFilteredReviewsForStaff = (staff: any) => {
+    const role = staff.role.toLowerCase();
+    if (role === 'manager') return managerReviews;
+    if (role === 'chef' || role === 'kitchen_staff') return chefReviews;
+    return staffReviews;
+  };
+
   return (
-    <FormScroll
-      contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 32 }}
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} colors={[GREEN]} />
+      }
     >
-      {/* Header */}
+      {/* ── Reviews Title Header ── */}
       <Row justify="space-between" align="center">
-        <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Staff Performance & Reviews</Txt>
-        <View style={styles.scoreBadge}>
-          <Txt size={14}>★</Txt>
-          <Txt variant="cardTitle" weight="900" color={Colors.primaryDark} style={{ marginLeft: 3 }}>
-            {avgOverall.toFixed(1)}
-          </Txt>
-        </View>
-      </Row>
-
-      {/* ⚠️ Overdue Unresolved Issues Card (> 1 Month) */}
-      {overdueIssues.length > 0 && (
-        <AnimatedPress
-          scale={0.98}
-          hapticPattern="light"
-          onPress={() => {
-            setSelectedStaff({
-              id: 'staff_overdue',
-              roleKey: 'OVERDUE',
-              title: 'Unresolved Issues (> 1 Mo)',
-              name: 'Escalations Pending > 30 Days',
-              avatarIcon: 'alert-circle',
-              tint: '#D97706',
-              bgColor: '#FFFBEB',
-              rating: 3.2,
-              reviewCount: overdueIssues.length,
-              subtitle: 'Tenant complaints open for more than 1 month',
-            });
-          }}
-        >
-          <Card
-            containerColor="#FFFBEB"
-            borderRadius={16}
-            borderWidth={1.5}
-            borderColor="#F59E0B"
-            padding={[14, 14]}
-          >
-            <Row justify="space-between" align="center">
-              <Row gap={10} align="center" style={{ flex: 1 }}>
-                <View style={styles.warningIconBox}>
-                  <Ionicons name="alert-circle" size={22} color="#D97706" />
-                </View>
-                <Col style={{ flex: 1 }}>
-                  <Txt size={13} weight="900" color="#B45309">
-                    {overdueIssues.length} Unresolved Issue{overdueIssues.length === 1 ? '' : 's'} &gt; 1 Month Old
-                  </Txt>
-                  <Txt variant="labelSmall" weight="400" color="#92400E" style={{ marginTop: 2 }}>
-                    Tap to review escalated tenant complaints ›
-                  </Txt>
-                </Col>
-              </Row>
-              <Ionicons name="chevron-forward" size={18} color="#D97706" />
-            </Row>
-          </Card>
-        </AnimatedPress>
-      )}
-
-      {/* Guest Complaints — the actual inbox, front and center instead of buried
-          behind a staff-member drill-down. Unresolved + oldest first. */}
-      <Row justify="space-between" align="center" style={{ marginTop: 4 }}>
-        <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
-          GUEST COMPLAINTS ({guestComplaints.length})
-        </Txt>
-        {unresolvedComplaintCount > 0 && (
-          <View style={styles.unresolvedBadge}>
-            <Txt variant="labelSmall" weight="800" color="#B91C1C">{unresolvedComplaintCount} unresolved</Txt>
+        <Col>
+          <Text style={styles.bodyTitle}>Reviews</Text>
+          <Text style={styles.bodySub}>Guest feedback and staff performance</Text>
+        </Col>
+        {totalReviews > 0 ? (
+          <View style={styles.headerRatingBox}>
+            <Text style={styles.headerRatingText}>★ {avgOverall.toFixed(1)}</Text>
+            <Text style={styles.headerRatingCount}>{totalReviews} reviews</Text>
           </View>
+        ) : (
+          <Text style={styles.noRatingText}>No rating yet</Text>
         )}
       </Row>
-      <Spacer size={8} />
 
-      {guestComplaints.length === 0 ? (
-        <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[18, 16]} style={{ alignItems: 'center' }}>
-          <Ionicons name="checkmark-circle" size={32} color={Colors.success} />
-          <Txt variant="caption" weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>
-            No guest complaints right now.
-          </Txt>
-        </Card>
+      <Spacer size={16} />
+
+      {/* ── Rating Summary Component ── */}
+      {ratingSummary ? (
+        <View style={styles.summaryBox}>
+          <Row justify="space-between" align="center" style={{ width: '100%' }}>
+            <Col style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: BORDER }}>
+              <Text style={styles.summaryValueText}>{ratingSummary.positive.pct}%</Text>
+              <Text style={[styles.summaryLabel, { color: GREEN }]}>Positive</Text>
+              <Text style={styles.summaryCountSub}>{ratingSummary.positive.count} reviews</Text>
+            </Col>
+            <Col style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: BORDER }}>
+              <Text style={styles.summaryValueText}>{ratingSummary.neutral.pct}%</Text>
+              <Text style={[styles.summaryLabel, { color: '#D97706' }]}>Neutral</Text>
+              <Text style={styles.summaryCountSub}>{ratingSummary.neutral.count} reviews</Text>
+            </Col>
+            <Col style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={styles.summaryValueText}>{ratingSummary.negative.pct}%</Text>
+              <Text style={[styles.summaryLabel, { color: '#DC2626' }]}>Negative</Text>
+              <Text style={styles.summaryCountSub}>{ratingSummary.negative.count} reviews</Text>
+            </Col>
+          </Row>
+        </View>
       ) : (
-        <View style={{ gap: 10 }}>
-          {guestComplaints.map(renderComplaintCard)}
+        <View style={styles.emptySummaryBox}>
+          <Ionicons name="chatbox-ellipses-outline" size={24} color={MUTED} />
+          <Text style={styles.emptySummaryTitle}>No reviews yet</Text>
+          <Text style={styles.emptySummaryDesc}>
+            Guest feedback will appear here once residents submit reviews.
+          </Text>
         </View>
       )}
 
-      {/* Staff Profile Roster Cards */}
-      <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 4 }}>
-        STAFF MEMBERS & RATINGS ({staffProfiles.length})
-      </Txt>
+      <Spacer size={20} />
 
-      <View style={{ gap: 12 }}>
-        {staffProfiles.map((staff) => (
-          <AnimatedPress
-            key={staff.id}
-            scale={0.98}
-            hapticPattern="light"
-            onPress={() => { hapticSelect(); setSelectedStaff(staff); }}
-          >
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={18}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[16, 16]}
-            >
-              <Row justify="space-between" align="center">
-                <Row gap={12} align="center" style={{ flex: 1 }}>
-                  <View style={[styles.avatarBox, { backgroundColor: staff.bgColor }]}>
-                    <Ionicons name={staff.avatarIcon} size={22} color={staff.tint} />
-                  </View>
-                  <Col style={{ flex: 1 }}>
-                    <Row align="center" gap={6}>
-                      <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{staff.name}</Txt>
-                    </Row>
-                    <Txt variant="caption" weight="700" color={staff.tint} style={{ marginTop: 2 }}>{staff.title}</Txt>
-                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }} numberOfLines={1}>
-                      {staff.subtitle}
-                    </Txt>
-                  </Col>
+      {/* ── Guest Issues Section ── */}
+      <Row justify="space-between" align="center">
+        <Text style={styles.sectionHeader}>Guest Issues</Text>
+        {activeIssues.length > 0 ? (
+          <View style={styles.issuesBadge}>
+            <Text style={styles.issuesBadgeText}>{activeIssues.length} open</Text>
+          </View>
+        ) : null}
+      </Row>
+      
+      <Spacer size={8} />
+
+      {activeIssues.length === 0 ? (
+        <View style={styles.noIssuesRow}>
+          <Ionicons name="checkmark-circle" size={18} color={GREEN} />
+          <Text style={styles.noIssuesText}>No open guest issues</Text>
+          <Text style={styles.noIssuesSub}>Everything looks good right now.</Text>
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          {activeIssues.map((item) => (
+            <Card key={item.id} containerColor={WHITE} borderRadius={RADIUS} borderWidth={1} borderColor={BORDER} padding={[12, 14]}>
+              <Row justify="space-between" align="flex-start">
+                <Col style={{ flex: 1 }}>
+                  <Row gap={6} align="center">
+                    {item.overallRating <= 2 && (
+                      <View style={styles.urgentDot} />
+                    )}
+                    <Text style={styles.issueTitleText}>{item.title || 'Guest Request'}</Text>
+                  </Row>
+                  <Text style={styles.issueMetaText}>
+                    Room {item.roomNo || 'N/A'} · {new Date(item.timestamp).toLocaleDateString('en-IN')}
+                  </Text>
+                </Col>
+                <View style={styles.issueStatusBadge}>
+                  <Text style={styles.issueStatusText}>{item.status}</Text>
+                </View>
+              </Row>
+              <Text style={styles.issueDescText} numberOfLines={2}>
+                "{item.description}"
+              </Text>
+              <Spacer size={8} />
+              <TouchableOpacity style={styles.viewIssueActionBtn} onPress={() => openReply(item)} activeOpacity={0.75}>
+                <Text style={styles.viewIssueActionText}>View Issue →</Text>
+              </TouchableOpacity>
+            </Card>
+          ))}
+        </View>
+      )}
+
+      <Spacer size={24} />
+
+      {/* ── Staff Performance ── */}
+      <Text style={styles.sectionHeader}>Staff Performance</Text>
+      <Spacer size={8} />
+
+      {staffPerformanceList.length > 0 ? (
+        <>
+          {/* Search & Filter */}
+          <TextInput
+            style={styles.searchBar}
+            placeholder="Search staff..."
+            placeholderTextColor={MUTED}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <Spacer size={8} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+            <Row gap={6}>
+              {(['All', 'Highest Rated', 'Needs Attention', 'No Reviews'] as const).map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.filterChip, filterType === opt && styles.filterChipActive]}
+                  onPress={() => setFilterType(opt)}
+                >
+                  <Text style={[styles.filterChipText, filterType === opt && styles.filterChipTextActive]}>
+                    {opt}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </Row>
+          </ScrollView>
+
+          {/* Actual Staff List */}
+          <View style={styles.staffListBox}>
+            {displayedStaff.map((staff) => (
+              <TouchableOpacity
+                key={staff.id}
+                style={styles.staffItemRow}
+                onPress={() => {
+                  hapticSelect();
+                  setSelectedStaff(staff);
+                }}
+                activeOpacity={0.8}
+              >
+                <Row justify="space-between" align="center" style={{ width: '100%' }}>
+                  <Row gap={12} align="center" style={{ flex: 1 }}>
+                    <View style={styles.staffAvatarCircle}>
+                      <Ionicons name={staff.icon} size={18} color={GREEN} />
+                    </View>
+                    <Col style={{ flex: 1 }}>
+                      <Text style={styles.staffNameText}>{staff.name}</Text>
+                      <Text style={styles.staffRoleSub}>{staff.role}</Text>
+                    </Col>
+                  </Row>
+
+                  <Row gap={6} align="center">
+                    {staff.needsAttention && (
+                      <View style={styles.attentionBadge}>
+                        <Text style={styles.attentionBadgeText}>Needs attention</Text>
+                      </View>
+                    )}
+                    {staff.reviewCount > 0 ? (
+                      <Text style={styles.staffRatingScore}>
+                        ★ {staff.rating.toFixed(1)} ({staff.reviewCount})
+                      </Text>
+                    ) : (
+                      <Text style={styles.staffNoReviewsText}>No reviews yet</Text>
+                    )}
+                    <Ionicons name="chevron-forward" size={16} color={MUTED} />
+                  </Row>
                 </Row>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      ) : (
+        <View style={styles.noStaffBox}>
+          <Text style={styles.noStaffText}>No staff members registered</Text>
+        </View>
+      )}
 
-                <Col align="flex-end" style={{ marginLeft: 10 }}>
-                  <View style={[styles.ratingPill, { backgroundColor: staff.bgColor }]}>
-                    <Txt size={13} weight="900" color={staff.tint}>
-                      {staff.reviewCount === 0 ? 'No reviews' : `★ ${staff.rating.toFixed(1)}`}
-                    </Txt>
-                  </View>
-                  <Txt size={10} weight="600" color={Colors.textMuted} style={{ marginTop: 4 }}>
-                    {staff.reviewCount} Reviews ›
-                  </Txt>
+      {/* ── Staff Performance Detail Modal ── */}
+      {selectedStaff && (
+        <Modal visible transparent animationType="none" onRequestClose={() => setSelectedStaff(null)}>
+          <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedStaff(null)} />
+            
+            <Animated.View entering={SlideInDown.duration(160)} style={styles.drillDownSheet}>
+              <View style={styles.sheetHandle} />
+
+              <Row gap={12} align="center" style={{ marginBottom: 16 }}>
+                <View style={styles.staffAvatarCircle}>
+                  <Ionicons name={selectedStaff.icon} size={20} color={GREEN} />
+                </View>
+                <Col>
+                  <Text style={styles.sheetStaffName}>{selectedStaff.name}</Text>
+                  <Text style={styles.sheetStaffRole}>{selectedStaff.role}</Text>
                 </Col>
               </Row>
-            </Card>
-          </AnimatedPress>
-        ))}
-      </View>
 
-      {/* Staff Review & Feedback Drill-Down Modal */}
-      {selectedStaff && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedStaff(null)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedStaff(null)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={24}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '92%', maxHeight: '85%', zIndex: 2 }}
-            >
-              <Row justify="space-between" align="center">
-                <Row gap={10} align="center" style={{ flex: 1 }}>
-                  <View style={[styles.avatarBox, { backgroundColor: selectedStaff.bgColor }]}>
-                    <Ionicons name={selectedStaff.avatarIcon} size={22} color={selectedStaff.tint} />
-                  </View>
-                  <Col style={{ flex: 1 }}>
-                    <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{selectedStaff.name}</Txt>
-                    <Txt variant="caption" color={selectedStaff.tint} weight="700">
-                      {selectedStaff.title}{selectedStaff.reviewCount > 0 ? ` • ★ ${selectedStaff.rating.toFixed(1)}` : ' • No reviews yet'}
-                    </Txt>
-                  </Col>
-                </Row>
-                <IconBtn onPress={() => setSelectedStaff(null)} icon="close" size={18} tint={Colors.textMuted} />
+              <Text style={styles.detailSecTitle}>Performance Ratings</Text>
+              
+              <Row gap={8} style={{ marginBottom: 16 }}>
+                <View style={styles.sheetKpiCard}>
+                  <Text style={styles.sheetKpiVal}>
+                    {selectedStaff.reviewCount > 0 ? `★ ${selectedStaff.rating.toFixed(1)}` : '—'}
+                  </Text>
+                  <Text style={styles.sheetKpiLabel}>Overall Rating</Text>
+                </View>
+                <View style={styles.sheetKpiCard}>
+                  <Text style={styles.sheetKpiVal}>{selectedStaff.reviewCount}</Text>
+                  <Text style={styles.sheetKpiLabel}>Reviews Count</Text>
+                </View>
               </Row>
 
-              <Spacer size={14} />
-              <Txt variant="caption" weight="800" color={Colors.textMuted}>TENANT FEEDBACK & MESSAGES</Txt>
-              <Spacer size={8} />
-
-              <FormScroll showsVerticalScrollIndicator={false} style={{ flex: 0, maxHeight: 360 }} contentContainerStyle={{ gap: 10 }}>
+              <Text style={styles.detailSecTitle}>Recent Feedback History</Text>
+              <ScrollView style={{ maxHeight: 220, marginBottom: 12 }}>
                 {getFilteredReviewsForStaff(selectedStaff).length === 0 ? (
-                  <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[18, 16]} style={{ alignItems: 'center' }}>
-                    <Ionicons name="chatbox-ellipses-outline" size={32} color={Colors.textMuted} />
-                    <Txt variant="caption" weight="700" color={Colors.textMuted} style={{ marginTop: 6 }}>
-                      No reviews logged specifically for this role yet.
-                    </Txt>
-                  </Card>
+                  <Text style={styles.noReviewsAvailableText}>No reviews available</Text>
                 ) : (
-                  getFilteredReviewsForStaff(selectedStaff).map(renderComplaintCard)
+                  getFilteredReviewsForStaff(selectedStaff).map((rev) => (
+                    <View key={rev.id} style={styles.feedbackHistoryItem}>
+                      <Row justify="space-between">
+                        <Text style={styles.revGuestName}>{rev.guestName}</Text>
+                        <Text style={styles.revRating}>★ {rev.overallRating}</Text>
+                      </Row>
+                      <Text style={styles.revDesc}>"{rev.description}"</Text>
+                    </View>
+                  ))
                 )}
-              </FormScroll>
-            </Card>
-          </View>
+              </ScrollView>
+
+              <TouchableOpacity style={styles.sheetCloseBtn} onPress={() => setSelectedStaff(null)}>
+                <Text style={styles.sheetCloseBtnText}>Close</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
         </Modal>
       )}
 
-      {/* Reply Modal */}
+      {/* ── Guest Issue Response Modal ── */}
       {activeItem && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setActiveItem(null)}>
           <View style={styles.modalBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveItem(null)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={24}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '90%', zIndex: 3 }}
-            >
-              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Review Response & Triage</Txt>
-              <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 2 }}>
-                Tenant: {activeItem.guestName} (Room {activeItem.roomNo})
-              </Txt>
+            <Card containerColor={WHITE} borderRadius={20} borderWidth={1} borderColor={BORDER} padding={[20, 20]} style={{ width: '90%' }}>
+              <Text style={styles.dialogTitle}>Review Response & Action</Text>
+              <Text style={styles.dialogSub}>
+                Resident: {activeItem.guestName} (Room {activeItem.roomNo})
+              </Text>
 
-              <Spacer size={12} />
-              <OutlinedTextField
-                label="Owner / Manager Reply"
-                placeholder="Write resolution notes or instructions to manager..."
+              <Spacer size={16} />
+              
+              <TextInput
+                style={styles.dialogInput}
+                placeholder="Write resolution notes or replies..."
+                placeholderTextColor={MUTED}
                 value={responseText}
                 onChangeText={setResponseText}
                 multiline
-                numberOfLines={3}
-                containerColor={Colors.surfaceMuted}
-                style={{ minHeight: 90 }}
+                numberOfLines={4}
               />
 
-              <Spacer size={10} />
-              <Txt variant="caption" weight="800" color={Colors.textMuted}>Set Status:</Txt>
-              <Row gap={6} style={{ marginTop: 6 }}>
+              <Spacer size={14} />
+
+              <Text style={styles.inputLabelStyle}>Set Status:</Text>
+              <Row gap={6} style={{ marginTop: 4 }}>
                 {['Open', 'In Progress', 'Resolved'].map((st) => (
-                  <Chip
+                  <TouchableOpacity
                     key={st}
-                    label={st}
-                    selected={responseStatus === st}
+                    style={[styles.smallChip, responseStatus === st && styles.smallChipActive]}
                     onPress={() => setResponseStatus(st)}
-                  />
+                  >
+                    <Text style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>
+                      {st}
+                    </Text>
+                  </TouchableOpacity>
                 ))}
               </Row>
 
-              <Spacer size={16} />
-              <Row gap={8}>
-                <Btn
-                  onPress={handleSaveReply}
-                  containerColor={Colors.primary}
-                  textColor={Colors.textInverse}
-                  borderRadius={12}
-                  height={44}
-                  style={{ flex: 1 }}
-                >
-                  <Txt variant="body" weight="800" color={Colors.textInverse}>Save & Notify</Txt>
-                </Btn>
-                <OutlinedBtn
-                  onPress={() => setActiveItem(null)}
-                  borderColor={Colors.borderSubtle}
-                  textColor={Colors.textPrimary}
-                  borderRadius={12}
-                  height={44}
-                  style={{ flex: 1 }}
-                >
-                  <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
-                </OutlinedBtn>
+              <Spacer size={20} />
+
+              <Row gap={10}>
+                <TouchableOpacity style={styles.dialogSaveBtn} onPress={handleSaveReply} activeOpacity={0.8}>
+                  <Text style={styles.dialogSaveBtnText}>Save Response</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)} activeOpacity={0.8}>
+                  <Text style={styles.dialogCancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
               </Row>
             </Card>
           </View>
         </Modal>
       )}
-    </FormScroll>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scoreBadge: {
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, backgroundColor: BG },
+  bodyTitle: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
+  bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
+
+  // Header Rating
+  headerRatingBox: { alignItems: 'flex-end' },
+  headerRatingText: { fontSize: 16, fontWeight: '800', color: GREEN },
+  headerRatingCount: { fontSize: 11, color: MUTED, marginTop: 1 },
+  noRatingText: { fontSize: 12, color: MUTED },
+
+  // Summary box
+  summaryBox: {
+    backgroundColor: WHITE,
+    borderRadius: RADIUS,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF9',
-    borderRadius: 12,
+  },
+  summaryValueText: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
+  summaryLabel: { fontSize: 11, fontWeight: '700', marginTop: 2 },
+  summaryCountSub: { fontSize: 9, color: MUTED, marginTop: 2 },
+
+  // Empty summary
+  emptySummaryBox: {
+    backgroundColor: WHITE,
+    borderRadius: RADIUS,
     borderWidth: 1,
-    borderColor: '#CCFBF1',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  warningIconBox: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarBox: {
-    width: 44, height: 44, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  ratingPill: {
-    paddingHorizontal: 8, paddingVertical: 4,
-    borderRadius: 8,
-  },
-  roomPill: {
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
-    backgroundColor: '#F0FDF9',
-  },
-  unresolvedBadge: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-    backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA',
-  },
-  statusBadge: {
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: 6,
-  },
-  responseBox: {
-    backgroundColor: '#F0FDF9',
-    borderRadius: 8,
-    padding: 8,
-    marginTop: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.primary,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    borderColor: BORDER,
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emptySummaryTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL, marginTop: 8 },
+  emptySummaryDesc: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 2, lineHeight: 16 },
+
+  // Guest Issues list
+  sectionHeader: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
+  issuesBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  issuesBadgeText: { fontSize: 10, fontWeight: '700', color: '#B91C1C' },
+  
+  // No issues row
+  noIssuesRow: {
+    height: 52,
+    backgroundColor: LIGHT_GREEN,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: BORDER,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  noIssuesText: { fontSize: 12, fontWeight: '700', color: GREEN, marginLeft: 8 },
+  noIssuesSub: { fontSize: 11, color: MUTED, marginLeft: 6 },
+
+  // Issue card items
+  urgentDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#EF4444', marginRight: 4 },
+  issueTitleText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
+  issueMetaText: { fontSize: 10, color: MUTED, marginTop: 2 },
+  issueStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: BG,
+  },
+  issueStatusText: { fontSize: 9, fontWeight: '700', color: MUTED },
+  issueDescText: { fontSize: 12, color: CHARCOAL, marginTop: 6, fontStyle: 'italic' },
+  viewIssueActionBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
+  viewIssueActionText: { fontSize: 12, fontWeight: '700', color: GREEN },
+
+  // Staff Performance items
+  searchBar: {
+    height: 44,
+    backgroundColor: WHITE,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: CHARCOAL,
+  },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  filterChipActive: {
+    backgroundColor: GREEN,
+    borderColor: GREEN,
+  },
+  filterChipText: { fontSize: 12, color: CHARCOAL, fontWeight: '600' },
+  filterChipTextActive: { color: WHITE, fontWeight: '700' },
+
+  staffListBox: {
+    backgroundColor: WHITE,
+    borderRadius: RADIUS,
+    borderWidth: 1,
+    borderColor: BORDER,
+    overflow: 'hidden',
+  },
+  staffItemRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: BG,
+  },
+  staffAvatarCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: LIGHT_GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  staffNameText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
+  staffRoleSub: { fontSize: 10, color: MUTED, marginTop: 1 },
+  staffRatingScore: { fontSize: 11, fontWeight: '700', color: CHARCOAL },
+  staffNoReviewsText: { fontSize: 10, color: MUTED },
+  attentionBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: '#FEF2F2',
+  },
+  attentionBadgeText: { fontSize: 8, fontWeight: '700', color: '#B91C1C' },
+  noStaffBox: { padding: 16, alignItems: 'center' },
+  noStaffText: { fontSize: 12, color: MUTED },
+
+  // Drill down staff profile sheet
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(10, 18, 13, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  drillDownSheet: {
+    width: '100%',
+    backgroundColor: WHITE,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 34,
+    alignSelf: 'flex-end',
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: BORDER,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetStaffName: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
+  sheetStaffRole: { fontSize: 12, color: MUTED, marginTop: 1 },
+  detailSecTitle: { fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.5, marginBottom: 8 },
+  sheetKpiCard: {
+    flex: 1,
+    backgroundColor: BG,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  sheetKpiVal: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
+  sheetKpiLabel: { fontSize: 10, color: MUTED, marginTop: 2 },
+  noReviewsAvailableText: { fontSize: 12, color: MUTED, fontStyle: 'italic', paddingVertical: 12 },
+  feedbackHistoryItem: {
+    backgroundColor: BG,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
+  },
+  revGuestName: { fontSize: 11, fontWeight: '700', color: CHARCOAL },
+  revRating: { fontSize: 11, fontWeight: '700', color: '#D97706' },
+  revDesc: { fontSize: 11, color: MUTED, marginTop: 4, fontStyle: 'italic' },
+  sheetCloseBtn: {
+    height: 44,
+    backgroundColor: BG,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetCloseBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
+
+  // Dialog styles
+  dialogTitle: { fontSize: 16, fontWeight: '800', color: CHARCOAL },
+  dialogSub: { fontSize: 12, color: MUTED, marginTop: 2 },
+  dialogInput: {
+    height: 90,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: BG,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 13,
+    color: CHARCOAL,
+    textAlignVertical: 'top',
+  },
+  inputLabelStyle: { fontSize: 11, fontWeight: '700', color: MUTED },
+  smallChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  smallChipActive: {
+    backgroundColor: GREEN,
+    borderColor: GREEN,
+  },
+  smallChipText: { fontSize: 11, color: CHARCOAL, fontWeight: '600' },
+  smallChipTextActive: { color: WHITE, fontWeight: '700' },
+
+  dialogSaveBtn: {
+    flex: 1,
+    height: 44,
+    backgroundColor: GREEN,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dialogSaveBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  dialogCancelBtn: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: WHITE,
+  },
+  dialogCancelBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
 });

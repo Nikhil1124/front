@@ -41,14 +41,14 @@ export default function OwnerTabsLayout() {
           actions={
             <>
               <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotificationCenter(isManager ? 'MANAGER' : 'OWNER')}>
-                <View style={styles.bellBtn}>
-                  <Ionicons name="notifications" size={18} color={Colors.primary} />
+                <View style={styles.headerIconBtn}>
+                  <Ionicons name="notifications-outline" size={20} color={Colors.textPrimary} />
                   {unreadCount > 0 && <View style={styles.unreadDot} />}
                 </View>
               </AnimatedPress>
               <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
-                <View style={styles.bellBtn}>
-                  <Ionicons name="exit" size={18} color={Colors.danger} />
+                <View style={styles.headerIconBtn}>
+                  <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
                 </View>
               </AnimatedPress>
             </>
@@ -56,22 +56,32 @@ export default function OwnerTabsLayout() {
         >
           <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => setShowProfileMenu(true)} style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={[styles.dot, { backgroundColor: isManager ? Colors.tertiary : Colors.primary }]} />
-              <Txt size={16} weight="800" color={Colors.primaryDark} style={{ marginLeft: 6 }} numberOfLines={1}>
-                {owner?.pgName ?? 'Select PG'}
-              </Txt>
-              {isManager && (
-                <View style={styles.managerBadge}>
-                  <Txt size={9} weight="900" color={Colors.tertiary}>MANAGER</Txt>
+              {/* Building icon */}
+              <View style={styles.buildingIcon}>
+                <Ionicons name="business" size={18} color={Colors.primary} />
+              </View>
+              <View style={{ marginLeft: 10 }}>
+                {/* PG name + chevron */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={[styles.dot, { backgroundColor: isManager ? Colors.tertiary : Colors.primary }]} />
+                  <Txt size={17} weight="700" color={Colors.textPrimary} numberOfLines={1}>
+                    {owner?.pgName ?? 'Select PG'}
+                  </Txt>
+                  {isManager && (
+                    <View style={styles.managerBadge}>
+                      <Txt size={9} weight="900" color={Colors.tertiary}>MANAGER</Txt>
+                    </View>
+                  )}
+                  <Ionicons name="chevron-down" size={13} color={Colors.textMuted} />
                 </View>
-              )}
-              <Ionicons name="chevron-down" size={14} color={Colors.textMuted} style={{ marginLeft: 4 }} />
+                {/* Sub label */}
+                <Txt size={11} weight="500" color={Colors.textMuted} style={{ marginTop: 1 }}>
+                  {isManager
+                    ? `Manager: ${owner?.managerName ?? 'You'}`
+                    : `Owner: ${owner?.ownerName ?? 'You'} · ${allPGs.length} PG${allPGs.length === 1 ? '' : 's'}`}
+                </Txt>
+              </View>
             </View>
-            <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginLeft: 14, marginTop: 2 }}>
-              {isManager
-                ? `Manager: ${owner?.managerName ?? 'You'}`
-                : `Owner: ${owner?.ownerName ?? 'You'} • ${allPGs.length} PG${allPGs.length === 1 ? '' : 's'}`}
-            </Txt>
           </AnimatedPress>
         </TabHeader>
 
@@ -171,14 +181,26 @@ export default function OwnerTabsLayout() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
 
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  dot: { width: 7, height: 7, borderRadius: 3.5 },
+  buildingIcon: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: '#EAF5EE',
+    alignItems: 'center', justifyContent: 'center',
+  },
   managerBadge: {
-    marginLeft: 6, paddingHorizontal: 6, paddingVertical: 2,
+    marginLeft: 5, paddingHorizontal: 6, paddingVertical: 2,
     borderRadius: 6, backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: Colors.borderSubtle,
   },
+  headerIconBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: Colors.surface,
+    borderWidth: 1, borderColor: Colors.borderSubtle,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  // keep for compat
   bellBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 38, height: 38, borderRadius: 19,
     backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: Colors.borderSubtle,
     alignItems: 'center', justifyContent: 'center',

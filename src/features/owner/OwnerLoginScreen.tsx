@@ -1,10 +1,24 @@
 /**
- * OwnerLoginScreen — port of Kotlin `OwnerLoginScreen(viewModel, initialTab)`.
- * Renders a 4-tab login (Owner / Manager / Staff / Resident) plus sub-toggle
- * between Guest Login and Join PG via QR.
+ * OwnerLoginScreen — Premium redesign.
+ * Compact header · clean segmented control · labelled input fields ·
+ * password toggle · forgot-password link · strong CTA · registration footer.
+ * Single flat colour system: #176B3A forest green, #F8FAF8 canvas.
  */
-import { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, Modal, TouchableOpacity, LayoutChangeEvent } from 'react-native';
+import { useState, useRef } from 'react';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  LayoutChangeEvent,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -14,162 +28,245 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
-import { InfoTip } from '@/components/ui/InfoTip';
-import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
-import { FormScroll } from '@/components/ui/FormScroll';
+import { Colors } from '@/theme';
+import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
+import { InfoTip } from '@/components/ui/InfoTip';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 
-interface Props {
-  initialTab?: number;
+// ── Design tokens ──────────────────────────────────────────────────────────────
+const GREEN   = '#176B3A';
+const BG      = '#F8FAF8';
+const CHARCOAL = '#1C2B22';
+const MUTED   = '#5A6E60';
+const BORDER  = '#D8E4DC';
+const WHITE   = '#FFFFFF';
+const FIELD_H = 56;
+const RADIUS  = 13;
+
+// ── Tab definitions ────────────────────────────────────────────────────────────
+const TABS = [
+  { label: 'Owner',    short: 'Owner' },
+  { label: 'Manager',  short: 'Manager' },
+  { label: 'Staff',    short: 'Staff' },
+  { label: 'Resident', short: 'Resident' },
+];
+
+interface Props { initialTab?: number; }
+
+// ── Reusable premium field ─────────────────────────────────────────────────────
+interface FieldProps {
+  label: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  placeholder?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  secure?: boolean;
+  keyboard?: 'default' | 'phone-pad' | 'email-address' | 'number-pad';
+  testID?: string;
+  error?: string;
+  maxLength?: number;
 }
 
-const TABS = ['PG Owner', 'PG Manager', 'Staff & Delivery', 'Resident'];
+function Field({
+  label, value, onChangeText, placeholder, icon,
+  secure = false, keyboard = 'default', testID, error, maxLength,
+}: FieldProps) {
+  const [focused, setFocused] = useState(false);
+  const [visible, setVisible] = useState(false);
 
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={[
+        styles.fieldWrap,
+        focused && styles.fieldWrapFocused,
+        !!error && styles.fieldWrapError,
+      ]}>
+        {icon && (
+          <Ionicons
+            name={icon}
+            size={18}
+            color={focused ? GREEN : MUTED}
+            style={styles.fieldIcon}
+          />
+        )}
+        <TextInput
+          style={styles.fieldInput}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#9EB09E"
+          secureTextEntry={secure && !visible}
+          keyboardType={keyboard}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          testID={testID}
+          maxLength={maxLength}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {secure && (
+          <TouchableOpacity
+            onPress={() => setVisible(v => !v)}
+            style={styles.eyeBtn}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={visible ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={MUTED}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+}
+
+// ── Main screen ────────────────────────────────────────────────────────────────
 export function OwnerLoginScreen({ initialTab = 0 }: Props) {
-  const loginOwner = usePGowStore((s) => s.loginOwner);
-  const loginManager = usePGowStore((s) => s.loginManager);
-  const loginStaff = usePGowStore((s) => s.loginStaff);
-  const loginGuest = usePGowStore((s) => s.loginGuest);
-  const resetGuestPassword = usePGowStore((s) => s.resetGuestPassword);
-  const joinPG = usePGowStore((s) => s.joinPG);
-  const guestScanCodeInput = usePGowStore((s) => s.guestScanCodeInput);
-  const set = usePGowStore((s) => s.set);
+  const loginOwner   = usePGowStore(s => s.loginOwner);
+  const loginManager = usePGowStore(s => s.loginManager);
+  const loginStaff   = usePGowStore(s => s.loginStaff);
+  const loginGuest   = usePGowStore(s => s.loginGuest);
+  const resetGuestPassword = usePGowStore(s => s.resetGuestPassword);
+  const joinPG       = usePGowStore(s => s.joinPG);
+  const guestScanCodeInput = usePGowStore(s => s.guestScanCodeInput);
+  const set          = usePGowStore(s => s.set);
+  const guestNameInput    = usePGowStore(s => s.guestNameInput);
+  const guestEmailInput   = usePGowStore(s => s.guestEmailInput);
+  const guestPhoneInput   = usePGowStore(s => s.guestPhoneInput);
+  const guestRoomInput    = usePGowStore(s => s.guestRoomInput);
+  const guestPasswordInput = usePGowStore(s => s.guestPasswordInput);
+  const completeFirstTimePasswordChange = usePGowStore(s => s.completeFirstTimePasswordChange);
   const toast = useToast();
 
-  const [selectedTab, setSelectedTab] = useState(initialTab);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const tabOffset = useSharedValue(initialTab);
+  // ── Tab state ────────────────────────────────────────────────────────────────
+  const [tab, setTab] = useState(initialTab);
+  const [containerW, setContainerW] = useState(0);
+  const offset = useSharedValue(initialTab);
 
   const handleTabPress = (idx: number) => {
     hapticSelect();
-    setSelectedTab(idx);
-    tabOffset.value = withSpring(idx, {
-      damping: 22,
-      stiffness: 220,
-      mass: 0.8,
-    });
+    setTab(idx);
+    offset.value = withSpring(idx, { damping: 22, stiffness: 220, mass: 0.8 });
   };
 
-  useEffect(() => {
-    tabOffset.value = withSpring(selectedTab, {
-      damping: 22,
-      stiffness: 220,
-      mass: 0.8,
-    });
-  }, [selectedTab]);
-
-  const pillAnimatedStyle = useAnimatedStyle(() => {
-    if (containerWidth <= 0) return { width: 0, opacity: 0 };
-    const padding = 4;
-    const usableWidth = containerWidth - padding * 2;
-    const tabWidth = usableWidth / TABS.length;
+  const pillStyle = useAnimatedStyle(() => {
+    if (containerW <= 0) return { width: 0, opacity: 0 };
+    const pad = 4;
+    const tabW = (containerW - pad * 2) / TABS.length;
     return {
-      width: tabWidth,
+      width: tabW,
       opacity: 1,
-      transform: [{ translateX: tabOffset.value * tabWidth }],
+      transform: [{ translateX: offset.value * tabW }],
     };
   });
 
-  const onTabsLayout = (e: LayoutChangeEvent) => {
-    setContainerWidth(e.nativeEvent.layout.width);
-  };
+  // ── Loading states ───────────────────────────────────────────────────────────
+  const [ownerLoading,   setOwnerLoading]   = useState(false);
+  const [managerLoading, setManagerLoading] = useState(false);
+  const [staffLoading,   setStaffLoading]   = useState(false);
+  const [guestLoading,   setGuestLoading]   = useState(false);
 
-  // Owner tab. Phone is the login identity everywhere — the API has no email sign-in.
-  const [phoneInput, setPhoneInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
+  // ── Owner fields ─────────────────────────────────────────────────────────────
+  const [phone, setPhone]       = useState('');
+  const [password, setPassword] = useState('');
 
-  // Manager tab
-  const [managerPhoneInput, setManagerPhoneInput] = useState('');
-  const [managerPinInput, setManagerPinInput] = useState('');
+  // ── Manager fields ───────────────────────────────────────────────────────────
+  const [mgrPhone, setMgrPhone] = useState('');
+  const [mgrPin,   setMgrPin]   = useState('');
 
-  // Staff tab
-  const [staffPhoneInput, setStaffPhoneInput] = useState('');
-  const [staffPinInput, setStaffPinInput] = useState('');
+  // ── Staff fields ─────────────────────────────────────────────────────────────
+  const [staffPhone, setStaffPhone] = useState('');
+  const [staffPin,   setStaffPin]   = useState('');
 
-  // Guest tab
-  const [guestMode, setGuestMode] = useState<'LOGIN' | 'JOIN'>('LOGIN');
-  const [guestPhoneInputForLogin, setGuestPhoneInputForLogin] = useState('');
-  const [guestPasswordInputForLogin, setGuestPasswordInputForLogin] = useState('');
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetRoom, setResetRoom] = useState('');
-  const [resetNewPassword, setResetNewPassword] = useState('');
+  // ── Resident fields ──────────────────────────────────────────────────────────
+  const [guestMode,    setGuestMode]    = useState<'LOGIN' | 'JOIN'>('LOGIN');
+  const [guestPhone,   setGuestPhone]   = useState('');
+  const [guestPass,    setGuestPass]    = useState('');
+  const [showReset,    setShowReset]    = useState(false);
+  const [resetEmail,   setResetEmail]   = useState('');
+  const [resetRoom,    setResetRoom]    = useState('');
+  const [resetNew,     setResetNew]     = useState('');
+  const [isScanSim,    setIsScanSim]    = useState(false);
 
-  // Local guest registration (joined with VM)
-  const guestNameInput = usePGowStore((s) => s.guestNameInput);
-  const guestEmailInput = usePGowStore((s) => s.guestEmailInput);
-  const guestPhoneInput = usePGowStore((s) => s.guestPhoneInput);
-  const guestRoomInput = usePGowStore((s) => s.guestRoomInput);
-  const guestPasswordInput = usePGowStore((s) => s.guestPasswordInput);
-  const [isScanningSimulated, setIsScanningSimulated] = useState(false);
+  // ── First-time password modal ────────────────────────────────────────────────
+  const [showFTP,     setShowFTP]     = useState(false);
+  const [tempPass,    setTempPass]    = useState('');
+  const [ftpNew,      setFtpNew]      = useState('');
+  const [ftpConfirm,  setFtpConfirm]  = useState('');
 
-  const completeFirstTimePasswordChange = usePGowStore((s) => s.completeFirstTimePasswordChange);
-
-  // First-time password change modal state
-  const [showFirstTimePasswordModal, setShowFirstTimePasswordModal] = useState(false);
-  const [tempPasswordHeld, setTempPasswordHeld] = useState('');
-  const [firstTimeNewPassword, setFirstTimeNewPassword] = useState('');
-  const [firstTimeConfirmPassword, setFirstTimeConfirmPassword] = useState('');
-
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleOwnerLogin = async () => {
-    const result = await loginOwner(phoneInput, passwordInput);
+    if (!phone.trim() || !password.trim()) return;
+    setOwnerLoading(true);
+    const result = await loginOwner(phone, password);
+    setOwnerLoading(false);
     if (result.ok) {
       hapticSuccess();
       toast('success', 'Welcome back!', 'Owner dashboard loading…');
-      // Root-level guards for the owner group and for /groceries both flip true in the
-      // same instant a token lands — an explicit target beats leaving the router to guess
-      // between two simultaneously-valid screens. "/" re-runs app/index.tsx's role redirect.
       router.replace('/');
     } else if (result.mustChangePassword) {
       hapticSelect();
-      setTempPasswordHeld(passwordInput);
-      setShowFirstTimePasswordModal(true);
+      setTempPass(password);
+      setShowFTP(true);
     } else {
       hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown');
+      Alert.alert('Login Failed', result.error ?? 'Unknown error');
+    }
+  };
+
+  const handleManagerLogin = async () => {
+    if (!mgrPhone.trim() || !mgrPin.trim()) return;
+    setManagerLoading(true);
+    const result = await loginManager(mgrPhone, mgrPin);
+    setManagerLoading(false);
+    if (result.ok) {
+      hapticSuccess();
+      toast('success', 'Welcome Manager!', 'Manager dashboard loading…');
+      router.replace('/');
+    } else {
+      hapticError();
+      Alert.alert('Login Failed', result.error ?? 'Unknown error');
+    }
+  };
+
+  const handleStaffLogin = async () => {
+    if (!staffPhone.trim() || !staffPin.trim()) return;
+    setStaffLoading(true);
+    const result = await loginStaff(staffPhone, staffPin);
+    setStaffLoading(false);
+    if (result.ok) {
+      hapticSuccess();
+      toast('success', 'Welcome!', 'Staff dashboard loading…');
+      router.replace('/');
+    } else {
+      hapticError();
+      Alert.alert('Login Failed', result.error ?? 'Unknown error');
     }
   };
 
   const handleGuestLogin = async () => {
-    const result = await loginGuest(guestPhoneInputForLogin, guestPasswordInputForLogin);
+    if (!guestPhone.trim() || !guestPass.trim()) return;
+    setGuestLoading(true);
+    const result = await loginGuest(guestPhone, guestPass);
+    setGuestLoading(false);
     if (result.ok) {
       hapticSuccess();
       toast('success', 'Welcome Resident!', 'Your resident dashboard is ready.');
       router.replace('/');
     } else if (result.mustChangePassword) {
       hapticSelect();
-      setTempPasswordHeld(guestPasswordInputForLogin);
-      setShowFirstTimePasswordModal(true);
+      setTempPass(guestPass);
+      setShowFTP(true);
     } else {
       hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown');
-    }
-  };
-
-  const handleFirstTimePasswordSubmit = async () => {
-    if (!firstTimeNewPassword.trim() || firstTimeNewPassword.length < 8) {
-      hapticError();
-      Alert.alert('Error', 'New password must be at least 8 characters long.');
-      return;
-    }
-    if (firstTimeNewPassword !== firstTimeConfirmPassword) {
-      hapticError();
-      Alert.alert('Error', 'Passwords do not match.');
-      return;
-    }
-    const result = await completeFirstTimePasswordChange(tempPasswordHeld, firstTimeNewPassword);
-    if (result.ok) {
-      hapticSuccess();
-      setShowFirstTimePasswordModal(false);
-      toast('success', 'Password updated', 'Welcome to your dashboard.');
-      router.replace('/');
-    } else {
-      hapticError();
-      Alert.alert('Password Change Failed', result.error ?? 'Could not update password');
+      Alert.alert('Login Failed', result.error ?? 'Unknown error');
     }
   };
 
@@ -181,412 +278,662 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       router.replace('/');
     } else {
       hapticError();
-      Alert.alert('Failed', result.error ?? 'Unknown');
+      Alert.alert('Failed', result.error ?? 'Unknown error');
     }
   };
 
   const handleReset = async () => {
-    const result = await resetGuestPassword(resetEmail, resetRoom, resetNewPassword);
+    const result = await resetGuestPassword(resetEmail, resetRoom, resetNew);
     if (result.ok) {
       hapticSuccess();
       toast('success', 'Passcode updated', 'You can log in now.');
-      setShowResetDialog(false);
+      setShowReset(false);
     } else {
       hapticError();
-      Alert.alert('Failed', result.error ?? 'Unknown');
+      Alert.alert('Failed', result.error ?? 'Unknown error');
     }
   };
 
-  const handleManagerLogin = async () => {
-    const result = await loginManager(managerPhoneInput, managerPinInput);
+  const handleFTPSubmit = async () => {
+    if (!ftpNew.trim() || ftpNew.length < 8) {
+      hapticError();
+      Alert.alert('Error', 'New password must be at least 8 characters.');
+      return;
+    }
+    if (ftpNew !== ftpConfirm) {
+      hapticError();
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+    const result = await completeFirstTimePasswordChange(tempPass, ftpNew);
     if (result.ok) {
       hapticSuccess();
-      toast('success', 'Welcome Manager!', 'Manager dashboard loading…');
+      setShowFTP(false);
+      toast('success', 'Password updated', 'Welcome to your dashboard.');
       router.replace('/');
     } else {
       hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown');
+      Alert.alert('Password Change Failed', result.error ?? 'Could not update password');
     }
   };
 
-  const handleStaffLogin = async () => {
-    const result = await loginStaff(staffPhoneInput, staffPinInput);
-    if (result.ok) {
-      hapticSuccess();
-      toast('success', 'Welcome Staff!', 'Staff dashboard loading…');
-      router.replace('/');
-    } else {
-      hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown');
-    }
+  // ── Role intro copy ───────────────────────────────────────────────────────────
+  const roleIntro: Record<number, { title: string; sub: string; cta: string }> = {
+    0: { title: 'Owner Login',    sub: 'Sign in to manage your PG operations and property.',   cta: 'Log In as Owner' },
+    1: { title: 'Manager Login',  sub: 'Sign in to manage your assigned branch.',               cta: 'Log In as Manager' },
+    2: { title: 'Staff Login',    sub: 'Enter your credentials. The system routes you automatically.', cta: 'Access Staff Dashboard' },
+    3: { title: 'Resident Login', sub: 'Access your resident profile and room details.',         cta: 'Access Resident Account' },
   };
+
+  const intro = roleIntro[tab];
 
   return (
-    <FormScroll contentContainerStyle={styles.scroll} style={styles.root}>
-      {/* First-Time Login: Set New Password Modal */}
-      <Modal visible={showFirstTimePasswordModal} transparent animationType="fade">
-        <View style={styles.dialogBackdrop}>
-          <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '88%' }}>
+    <View style={styles.root}>
+      {/* ── First-time password modal ─────────────────────────────────────── */}
+      <Modal visible={showFTP} transparent animationType="fade">
+        <View style={styles.backdrop}>
+          <View style={styles.modalCard}>
             <Row gap={6} align="center" style={{ marginBottom: 16 }}>
-              <Txt variant="sectionTitle" weight="900" color={Colors.primary}>🔒 Set New Password</Txt>
+              <Text style={styles.modalTitle}>🔒 Set New Password</Text>
               <InfoTip text="Your account was created with a temporary password. Please set your own secret password (min 8 characters) to continue." />
             </Row>
-            <OutlinedTextField
-              label="Set New Secret Password *"
-              value={firstTimeNewPassword}
-              onChangeText={setFirstTimeNewPassword}
-              secureTextEntry
-              testID="first_time_new_password"
-              style={{ marginBottom: 10 }}
-            />
-            <OutlinedTextField
-              label="Confirm New Secret Password *"
-              value={firstTimeConfirmPassword}
-              onChangeText={setFirstTimeConfirmPassword}
-              secureTextEntry
-              testID="first_time_confirm_password"
-              style={{ marginBottom: 16 }}
-            />
-            <Row gap={8}>
-              <Btn onPress={handleFirstTimePasswordSubmit} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={44} style={{ flex: 1 }}>
-                <Txt variant="body" weight="800" color={Colors.textInverse}>Set Password & Log In</Txt>
-              </Btn>
-              <OutlinedBtn onPress={() => setShowFirstTimePasswordModal(false)} borderColor={Colors.borderSubtle} textColor={Colors.textMuted} borderRadius={10} height={44} style={{ flex: 1 }}>
-                <Txt variant="body" weight="700" color={Colors.textMuted}>Cancel</Txt>
-              </OutlinedBtn>
-            </Row>
-          </Card>
+            <Field label="New Password *" value={ftpNew} onChangeText={setFtpNew} secure testID="first_time_new_password" />
+            <Field label="Confirm Password *" value={ftpConfirm} onChangeText={setFtpConfirm} secure testID="first_time_confirm_password" />
+            <View style={{ height: 4 }} />
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleFTPSubmit} activeOpacity={0.85}>
+              <Text style={styles.primaryBtnText}>Set Password & Log In</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.ghostBtn} onPress={() => setShowFTP(false)} activeOpacity={0.7}>
+              <Text style={styles.ghostBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
-      {/* Reset Passcode Dialog */}
-      <Modal visible={showResetDialog} transparent animationType="fade">
-        <View style={styles.dialogBackdrop}>
-          <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '88%' }}>
-            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary} style={{ marginBottom: 12 }}>Reset Guest Passcode</Txt>
-            <OutlinedTextField label="Registered Email" value={resetEmail} onChangeText={setResetEmail} testID="reset_email_input" style={{ marginBottom: 10 }} />
-            <OutlinedTextField label="Registered Room No" value={resetRoom} onChangeText={setResetRoom} testID="reset_room_input" style={{ marginBottom: 10 }} />
-            <OutlinedTextField label="New Passcode / Password" value={resetNewPassword} onChangeText={setResetNewPassword} secureTextEntry testID="reset_new_password_input" style={{ marginBottom: 16 }} />
-            <Row gap={8}>
-              <Btn onPress={handleReset} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt variant="body" weight="700" color={Colors.textInverse}>Update Passcode</Txt>
-              </Btn>
-              <OutlinedBtn onPress={() => setShowResetDialog(false)} borderColor={Colors.borderSubtle} textColor={Colors.textMuted} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt variant="body" weight="700" color={Colors.textMuted}>Cancel</Txt>
-              </OutlinedBtn>
-            </Row>
-          </Card>
+      {/* ── Reset passcode modal ──────────────────────────────────────────── */}
+      <Modal visible={showReset} transparent animationType="fade">
+        <View style={styles.backdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Reset Guest Passcode</Text>
+            <View style={{ height: 12 }} />
+            <Field label="Registered Email" value={resetEmail} onChangeText={setResetEmail} keyboard="email-address" testID="reset_email_input" />
+            <Field label="Registered Room No" value={resetRoom} onChangeText={setResetRoom} testID="reset_room_input" />
+            <Field label="New Passcode / Password" value={resetNew} onChangeText={setResetNew} secure testID="reset_new_password_input" />
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleReset} activeOpacity={0.85}>
+              <Text style={styles.primaryBtnText}>Update Passcode</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.ghostBtn} onPress={() => setShowReset(false)} activeOpacity={0.7}>
+              <Text style={styles.ghostBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
-      {/* QR Scanner Dialog */}
-      <Modal visible={isScanningSimulated} transparent animationType="fade">
-        <View style={styles.dialogBackdrop}>
-          <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '88%' }}>
-            <Txt variant="screenTitle" weight="900" color={Colors.textPrimary} style={{ marginBottom: 12 }}>Lobby QR Code Scanner</Txt>
+      {/* ── QR Scanner modal ─────────────────────────────────────────────── */}
+      <Modal visible={isScanSim} transparent animationType="fade">
+        <View style={styles.backdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Lobby QR Code Scanner</Text>
+            <View style={{ height: 12 }} />
             <View style={styles.scannerFrame}>
-              <Txt variant="caption" color={Colors.textMuted}>[ simulated camera frame ]</Txt>
+              <Text style={{ color: MUTED, fontSize: 12 }}>[ simulated camera frame ]</Text>
             </View>
-            <Spacer size={16} />
-            <OutlinedTextField
-              label="Or Type QR Code String Manually"
+            <View style={{ height: 16 }} />
+            <Field
+              label="Or Type QR Code Manually"
               placeholder="DZQP9899"
               value={guestScanCodeInput}
-              onChangeText={(v) => set('guestScanCodeInput', v)}
+              onChangeText={v => set('guestScanCodeInput', v)}
               testID="manual_qr_input"
-              style={{ marginBottom: 16 }}
             />
-            <Row gap={8}>
-              <Btn onPress={() => { setIsScanningSimulated(false); handleJoin(); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt variant="body" weight="700" color={Colors.textInverse}>Verify & Link PG</Txt>
-              </Btn>
-              <OutlinedBtn onPress={() => setIsScanningSimulated(false)} borderColor={Colors.borderSubtle} textColor={Colors.textMuted} borderRadius={10} height={42} style={{ flex: 1 }}>
-                <Txt variant="body" weight="700" color={Colors.textMuted}>Cancel</Txt>
-              </OutlinedBtn>
-            </Row>
-          </Card>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => { setIsScanSim(false); handleJoin(); }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.primaryBtnText}>Verify & Link PG</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.ghostBtn} onPress={() => setIsScanSim(false)} activeOpacity={0.7}>
+              <Text style={styles.ghostBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
-      {/* Header */}
-      <Row align="center" style={{ marginVertical: 8 }}>
-        <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
-        <Txt variant="statValue" weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>PG Portal Login</Txt>
-      </Row>
-
-      {/* Smooth Sliding Segmented Tab Bar */}
-      <View style={styles.tabContainer} onLayout={onTabsLayout}>
-        {containerWidth > 0 && (
-          <Animated.View style={[styles.slidingPill, pillAnimatedStyle]} />
-        )}
-        <Row style={styles.tabRow}>
-          {TABS.map((tab, idx) => {
-            const isSel = selectedTab === idx;
-            return (
-              <TouchableOpacity
-                key={tab}
-                activeOpacity={0.7}
-                onPress={() => handleTabPress(idx)}
-                style={styles.tab}
-              >
-                <Txt
-                  size={11.5}
-                  weight={isSel ? '800' : '600'}
-                  color={isSel ? Colors.primary : Colors.textMuted}
-                  align="center"
-                  numberOfLines={1}
-                >
-                  {tab}
-                </Txt>
-              </TouchableOpacity>
-            );
-          })}
-        </Row>
+      {/* ── Compact nav bar ───────────────────────────────────────────────── */}
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={22} color={CHARCOAL} />
+        </TouchableOpacity>
+        <Text style={styles.navTitle}>PG Portal Login</Text>
+        <View style={styles.backBtn} />
       </View>
 
-      <Spacer size={20} />
-
-      {/* Animated Tab Content Container */}
-      <Animated.View
-        key={selectedTab}
-        entering={FadeIn.duration(180)}
-        exiting={FadeOut.duration(90)}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={64}
       >
-        {/* Tab 0: Owner Login */}
-        {selectedTab === 0 && (
-          <View>
-            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Owner Login</Txt>
-            <Spacer size={16} />
-            <OutlinedTextField label="Phone Number" value={phoneInput} onChangeText={setPhoneInput} leadingIcon="call" keyboardType="phone-pad" testID="owner_login_phone" style={{ marginBottom: 14 }} />
-            <OutlinedTextField label="Password" value={passwordInput} onChangeText={setPasswordInput} leadingIcon="lock-closed" secureTextEntry testID="owner_login_password" style={{ marginBottom: 10 }} />
-            <Txt variant="caption" color={Colors.textMuted}>Use the phone number and password you registered with.</Txt>
-            <Spacer size={20} />
-            <Btn onPress={handleOwnerLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={50} testID="owner_login_button">
-              <Txt variant="cardTitle" color={Colors.textInverse}>Log In as Owner</Txt>
-            </Btn>
-          </View>
-        )}
-
-        {/* Tab 1: Manager Login */}
-        {selectedTab === 1 && (
-          <View>
-            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>PG Manager Login (Individual Branch)</Txt>
-            <Spacer size={16} />
-            <OutlinedTextField
-              label="Manager Phone Number"
-              placeholder="98765 43210"
-              value={managerPhoneInput}
-              onChangeText={setManagerPhoneInput}
-              leadingIcon="call"
-              keyboardType="phone-pad"
-              testID="manager_login_pg_input"
-              style={{ marginBottom: 14 }}
-            />
-            <OutlinedTextField
-              label="Manager 4-digit PIN"
-              value={managerPinInput}
-              onChangeText={(v) => setManagerPinInput(v.replace(/\D/g, '').slice(0, 4))}
-              leadingIcon="lock-closed"
-              keyboardType="number-pad"
-              secureTextEntry
-              testID="manager_login_pin_input"
-              style={{ marginBottom: 10 }}
-            />
-            <Txt variant="caption" color={Colors.textMuted}>Your PG owner sets this PIN when they add you.</Txt>
-            <Spacer size={20} />
-            <Btn onPress={handleManagerLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={50} testID="manager_login_button">
-              <Txt variant="cardTitle" color={Colors.textInverse}>Log In as PG Manager</Txt>
-            </Btn>
-          </View>
-        )}
-
-        {/* Tab 2: Kitchen, Maintenance & Delivery Staff */}
-        {selectedTab === 2 && (
-          <View>
-            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Staff & Delivery Agent Login</Txt>
-            <Spacer size={12} />
-            
-            <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[12, 12]} style={{ marginBottom: 14, borderWidth: 1, borderColor: Colors.borderSubtle }}>
-              <Row gap={6} align="center" style={{ marginBottom: 6 }}>
-                <Ionicons name="information-circle" size={16} color={Colors.primary} />
-                <Txt size={12} weight="800" color={Colors.primaryDark}>Unified Dynamic Routing</Txt>
-              </Row>
-              <Txt size={11} color={Colors.textSecondary}>
-                Enter your registered credentials. The portal automatically detects your role and routes you to your dashboard:
-              </Txt>
-              <Spacer size={6} />
-              <Txt size={11} color={Colors.textMuted}>🍳 Chefs & Kitchen Staff → Kitchen Dashboard</Txt>
-              <Txt size={11} color={Colors.textMuted}>🛠️ Maintenance Staff → Housekeeping Dashboard</Txt>
-              <Txt size={11} color={Colors.textMuted}>🚴 Delivery Agents → Delivery Route Dashboard</Txt>
-            </Card>
-
-            <OutlinedTextField
-              label="Your Phone Number"
-              value={staffPhoneInput}
-              onChangeText={setStaffPhoneInput}
-              leadingIcon="call"
-              keyboardType="phone-pad"
-              testID="staff_login_owner_email"
-              style={{ marginBottom: 14 }}
-            />
-            <OutlinedTextField
-              label="4-digit Staff PIN"
-              value={staffPinInput}
-              onChangeText={(v) => setStaffPinInput(v.replace(/\D/g, '').slice(0, 4))}
-              leadingIcon="lock-closed"
-              keyboardType="number-pad"
-              secureTextEntry
-              testID="staff_login_pin"
-              style={{ marginBottom: 10 }}
-            />
-            <Txt variant="caption" color={Colors.textMuted}>Your PG owner sets this PIN when they add you.</Txt>
-            <Spacer size={20} />
-            <Btn onPress={handleStaffLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={50} testID="staff_login_submit">
-              <Txt variant="cardTitle" color={Colors.textInverse}>Access Staff Dashboard</Txt>
-            </Btn>
-          </View>
-        )}
-
-        {/* Tab 3: Resident / Guest */}
-        {selectedTab === 3 && (
-          <View>
-            <Row gap={12} style={{ marginBottom: 16 }}>
-              <Btn
-                onPress={() => setGuestMode('LOGIN')}
-                containerColor={guestMode === 'LOGIN' ? Colors.primary : Colors.surfaceElevated}
-                textColor={guestMode === 'LOGIN' ? Colors.textInverse : Colors.textSecondary}
-                borderRadius={10}
-                height={40}
-                style={{ flex: 1, borderWidth: 1, borderColor: guestMode === 'LOGIN' ? Colors.primary : Colors.borderSubtle }}
-              >
-                <Txt variant="body" weight="700" color={guestMode === 'LOGIN' ? Colors.textInverse : Colors.textSecondary}>Guest Login</Txt>
-              </Btn>
-              <Btn
-                onPress={() => setGuestMode('JOIN')}
-                containerColor={guestMode === 'JOIN' ? Colors.primary : Colors.surfaceElevated}
-                textColor={guestMode === 'JOIN' ? Colors.textInverse : Colors.textSecondary}
-                borderRadius={10}
-                height={40}
-                style={{ flex: 1, borderWidth: 1, borderColor: guestMode === 'JOIN' ? Colors.primary : Colors.borderSubtle }}
-              >
-                <Txt variant="body" weight="700" color={guestMode === 'JOIN' ? Colors.textInverse : Colors.textSecondary}>Join PG via QR</Txt>
-              </Btn>
-            </Row>
-
-            {guestMode === 'LOGIN' ? (
-              <View>
-                <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary} style={{ marginBottom: 20 }}>Access Resident Profile</Txt>
-                <OutlinedTextField label="Registered Phone Number" value={guestPhoneInputForLogin} onChangeText={setGuestPhoneInputForLogin} leadingIcon="call" keyboardType="phone-pad" testID="guest_login_phone" style={{ marginBottom: 16 }} />
-                <OutlinedTextField label="Password" value={guestPasswordInputForLogin} onChangeText={setGuestPasswordInputForLogin} leadingIcon="lock-closed" secureTextEntry testID="guest_login_password" style={{ marginBottom: 12 }} />
-                <Row justify="space-between">
-                  <TouchableOpacity onPress={() => setShowResetDialog(true)} style={{ paddingVertical: 4 }}>
-                    <Txt variant="body" weight="700" color={Colors.primary}>Forgot Phone / Pass?</Txt>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Segmented tab control ──────────────────────────────────────── */}
+          <View
+            style={styles.segControl}
+            onLayout={(e: LayoutChangeEvent) => setContainerW(e.nativeEvent.layout.width)}
+          >
+            {containerW > 0 && (
+              <Animated.View style={[styles.segPill, pillStyle]} />
+            )}
+            <View style={styles.segRow}>
+              {TABS.map((t, idx) => {
+                const sel = tab === idx;
+                return (
+                  <TouchableOpacity
+                    key={t.label}
+                    style={styles.segTab}
+                    onPress={() => handleTabPress(idx)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.segLabel, sel && styles.segLabelSel]}>
+                      {t.label}
+                    </Text>
                   </TouchableOpacity>
-                  <Txt variant="caption" color={Colors.textMuted}>Your PG owner sets these for you.</Txt>
-                </Row>
-                <Spacer size={24} />
-                <Btn onPress={handleGuestLogin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={52} testID="guest_login_button">
-                  <Txt variant="sectionTitle" color={Colors.textInverse}>Access Guest Account</Txt>
-                </Btn>
-              </View>
-            ) : (
+                );
+              })}
+            </View>
+          </View>
+
+          {/* ── Role intro ────────────────────────────────────────────────── */}
+          <Animated.View
+            key={`intro-${tab}`}
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(100)}
+            style={{ marginTop: 28, marginBottom: 4 }}
+          >
+            <Text style={styles.welcomeText}>Welcome back</Text>
+            <Text style={styles.roleTitle}>{intro.title}</Text>
+            <Text style={styles.roleSub}>{intro.sub}</Text>
+          </Animated.View>
+
+          <View style={styles.divider} />
+
+          {/* ── Tab content ───────────────────────────────────────────────── */}
+          <Animated.View
+            key={`form-${tab}`}
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(100)}
+          >
+            {/* ── Tab 0: Owner ─────────────────────────────────────────── */}
+            {tab === 0 && (
               <View>
-                <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary} style={{ marginBottom: 20 }}>Register with QR Code</Txt>
-                <OutlinedTextField label="Guest Name *" value={guestNameInput} onChangeText={(v) => set('guestNameInput', v)} leadingIcon="person" testID="guest_register_name" style={{ marginBottom: 12 }} />
-                <OutlinedTextField label="Email Address *" value={guestEmailInput} onChangeText={(v) => set('guestEmailInput', v)} leadingIcon="mail" keyboardType="email-address" testID="guest_register_email" style={{ marginBottom: 12 }} />
-                <Row gap={8}>
-                  <OutlinedTextField label="Phone *" value={guestPhoneInput} onChangeText={(v) => set('guestPhoneInput', v)} leadingIcon="call" keyboardType="phone-pad" style={{ flex: 1.5, marginRight: 4 }} />
-                  <OutlinedTextField label="Room No *" value={guestRoomInput} onChangeText={(v) => set('guestRoomInput', v)} leadingIcon="home" testID="guest_register_room" style={{ flex: 1, marginLeft: 4 }} />
-                </Row>
-                <Spacer size={12} />
-                <OutlinedTextField label="Choose a Password * (min 8 characters)" value={guestPasswordInput} onChangeText={(v) => set('guestPasswordInput', v)} leadingIcon="lock-closed" secureTextEntry testID="guest_join_password_input" style={{ marginBottom: 12 }} />
-                <OutlinedTextField label="PG Code (from the lobby poster) *" placeholder="DZQP9899" value={guestScanCodeInput} onChangeText={(v) => set('guestScanCodeInput', v.toUpperCase())} leadingIcon="qr-code" testID="guest_join_code_input" style={{ marginBottom: 12 }} />
-                <Btn onPress={handleJoin} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={48} testID="guest_join_submit">
-                  <Txt variant="cardTitle" color={Colors.textInverse}>Join This PG</Txt>
-                </Btn>
-                <Spacer size={20} />
+                <Field
+                  label="Phone Number"
+                  placeholder="Enter your 10-digit mobile number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  icon="call-outline"
+                  keyboard="phone-pad"
+                  maxLength={10}
+                  testID="owner_login_phone"
+                />
+                <Field
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChangeText={setPassword}
+                  icon="lock-closed-outline"
+                  secure
+                  testID="owner_login_password"
+                />
+                <TouchableOpacity style={styles.forgotLink} activeOpacity={0.7}>
+                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                </TouchableOpacity>
+                <View style={{ height: 24 }} />
                 <TouchableOpacity
-                  onPress={() => {
-                    setIsScanningSimulated(true);
-                    Alert.alert('Enter the code', "Type the code from your PG's poster below.");
-                  }}
-                  style={styles.scannerCard}
+                  style={[styles.primaryBtn, (!phone.trim() || !password.trim()) && styles.primaryBtnDisabled]}
+                  onPress={handleOwnerLogin}
+                  activeOpacity={0.85}
+                  disabled={ownerLoading || !phone.trim() || !password.trim()}
+                  testID="owner_login_button"
                 >
-                  <Col align="center">
-                    <Ionicons name="qr-code-sharp" size={44} color={Colors.primary} />
-                    <Txt variant="cardTitle" color={Colors.textPrimary} style={{ marginTop: 8 }}>
-                      {guestScanCodeInput ? `Code ${guestScanCodeInput} ✅` : 'Enter PG Lobby Code'}
-                    </Txt>
-                    <Txt variant="caption" color={Colors.textMuted} align="center">Simulates instant lens capture & security verification</Txt>
-                  </Col>
+                  {ownerLoading
+                    ? <ActivityIndicator color={WHITE} />
+                    : <Text style={styles.primaryBtnText}>Log In as Owner</Text>
+                  }
+                </TouchableOpacity>
+                <View style={styles.registerRow}>
+                  <Text style={styles.registerText}>Don't have an account? </Text>
+                  <TouchableOpacity onPress={() => router.push('/(auth)/owner-register')} activeOpacity={0.7}>
+                    <Text style={styles.registerLink}>Register your PG</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* ── Tab 1: Manager ───────────────────────────────────────── */}
+            {tab === 1 && (
+              <View>
+                <Field
+                  label="Phone Number"
+                  placeholder="Enter your 10-digit mobile number"
+                  value={mgrPhone}
+                  onChangeText={setMgrPhone}
+                  icon="call-outline"
+                  keyboard="phone-pad"
+                  maxLength={10}
+                  testID="manager_login_pg_input"
+                />
+                <Field
+                  label="4-digit PIN"
+                  placeholder="Enter your manager PIN"
+                  value={mgrPin}
+                  onChangeText={v => setMgrPin(v.replace(/\D/g, '').slice(0, 4))}
+                  icon="lock-closed-outline"
+                  keyboard="number-pad"
+                  secure
+                  maxLength={4}
+                  testID="manager_login_pin_input"
+                />
+                <Text style={styles.hintText}>Your PG owner sets this PIN when they add you.</Text>
+                <View style={{ height: 24 }} />
+                <TouchableOpacity
+                  style={[styles.primaryBtn, (!mgrPhone.trim() || !mgrPin.trim()) && styles.primaryBtnDisabled]}
+                  onPress={handleManagerLogin}
+                  activeOpacity={0.85}
+                  disabled={managerLoading || !mgrPhone.trim() || !mgrPin.trim()}
+                  testID="manager_login_button"
+                >
+                  {managerLoading
+                    ? <ActivityIndicator color={WHITE} />
+                    : <Text style={styles.primaryBtnText}>Log In as Manager</Text>
+                  }
                 </TouchableOpacity>
               </View>
             )}
-          </View>
-        )}
-      </Animated.View>
-    </FormScroll>
+
+            {/* ── Tab 2: Staff ─────────────────────────────────────────── */}
+            {tab === 2 && (
+              <View>
+                {/* Route info — compact */}
+                <View style={styles.routeInfoBox}>
+                  <Row gap={6} align="center" style={{ marginBottom: 6 }}>
+                    <Ionicons name="information-circle-outline" size={16} color={GREEN} />
+                    <Text style={styles.routeInfoTitle}>Unified Dynamic Routing</Text>
+                  </Row>
+                  <Text style={styles.routeInfoSub}>
+                    Enter your credentials. The system automatically detects your role
+                    and routes you to the correct portal.
+                  </Text>
+                  <Row gap={6} style={{ marginTop: 12 }}>
+                    {[
+                      { icon: 'restaurant-outline' as const, label: 'Kitchen' },
+                      { icon: 'construct-outline' as const, label: 'Maintenance' },
+                      { icon: 'bicycle-outline' as const, label: 'Delivery' },
+                    ].map(item => (
+                      <View key={item.label} style={styles.routeChip}>
+                        <Ionicons name={item.icon} size={13} color={GREEN} />
+                        <Text style={styles.routeChipLabel}>{item.label}</Text>
+                      </View>
+                    ))}
+                  </Row>
+                </View>
+
+                <Field
+                  label="Phone Number"
+                  placeholder="Enter your 10-digit mobile number"
+                  value={staffPhone}
+                  onChangeText={setStaffPhone}
+                  icon="call-outline"
+                  keyboard="phone-pad"
+                  maxLength={10}
+                  testID="staff_login_owner_email"
+                />
+                <Field
+                  label="4-digit Staff PIN"
+                  placeholder="Enter your 4-digit PIN"
+                  value={staffPin}
+                  onChangeText={v => setStaffPin(v.replace(/\D/g, '').slice(0, 4))}
+                  icon="lock-closed-outline"
+                  keyboard="number-pad"
+                  secure
+                  maxLength={4}
+                  testID="staff_login_pin"
+                />
+                <Text style={styles.hintText}>Your PG owner sets this PIN when they add you.</Text>
+                <View style={{ height: 24 }} />
+                <TouchableOpacity
+                  style={[styles.primaryBtn, (!staffPhone.trim() || !staffPin.trim()) && styles.primaryBtnDisabled]}
+                  onPress={handleStaffLogin}
+                  activeOpacity={0.85}
+                  disabled={staffLoading || !staffPhone.trim() || !staffPin.trim()}
+                  testID="staff_login_submit"
+                >
+                  {staffLoading
+                    ? <ActivityIndicator color={WHITE} />
+                    : <Text style={styles.primaryBtnText}>Access Staff Dashboard</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ── Tab 3: Resident ──────────────────────────────────────── */}
+            {tab === 3 && (
+              <View>
+                {/* Login / Join sub-toggle */}
+                <View style={styles.subToggle}>
+                  <TouchableOpacity
+                    style={[styles.subToggleBtn, guestMode === 'LOGIN' && styles.subToggleBtnSel]}
+                    onPress={() => { hapticSelect(); setGuestMode('LOGIN'); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.subToggleLabel, guestMode === 'LOGIN' && styles.subToggleLabelSel]}>
+                      Resident Login
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.subToggleBtn, guestMode === 'JOIN' && styles.subToggleBtnSel]}
+                    onPress={() => { hapticSelect(); setGuestMode('JOIN'); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.subToggleLabel, guestMode === 'JOIN' && styles.subToggleLabelSel]}>
+                      Join via QR Code
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {guestMode === 'LOGIN' ? (
+                  <View style={{ marginTop: 20 }}>
+                    <Field
+                      label="Phone Number"
+                      placeholder="Enter your registered phone number"
+                      value={guestPhone}
+                      onChangeText={setGuestPhone}
+                      icon="call-outline"
+                      keyboard="phone-pad"
+                      maxLength={10}
+                      testID="guest_login_phone"
+                    />
+                    <Field
+                      label="Password"
+                      placeholder="Enter your password"
+                      value={guestPass}
+                      onChangeText={setGuestPass}
+                      icon="lock-closed-outline"
+                      secure
+                      testID="guest_login_password"
+                    />
+                    <TouchableOpacity
+                      style={styles.forgotLink}
+                      onPress={() => setShowReset(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.forgotText}>Forgot Password?</Text>
+                    </TouchableOpacity>
+                    <View style={{ height: 24 }} />
+                    <TouchableOpacity
+                      style={[styles.primaryBtn, (!guestPhone.trim() || !guestPass.trim()) && styles.primaryBtnDisabled]}
+                      onPress={handleGuestLogin}
+                      activeOpacity={0.85}
+                      disabled={guestLoading || !guestPhone.trim() || !guestPass.trim()}
+                      testID="guest_login_button"
+                    >
+                      {guestLoading
+                        ? <ActivityIndicator color={WHITE} />
+                        : <Text style={styles.primaryBtnText}>Access Resident Account</Text>
+                      }
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={{ marginTop: 20 }}>
+                    <Field label="Full Name *"       value={guestNameInput}     onChangeText={v => set('guestNameInput', v)}     icon="person-outline"  testID="guest_register_name" />
+                    <Field label="Email Address *"   value={guestEmailInput}    onChangeText={v => set('guestEmailInput', v)}    icon="mail-outline"    keyboard="email-address" testID="guest_register_email" />
+                    <Row gap={10}>
+                      <View style={{ flex: 1.6 }}>
+                        <Field label="Phone *" value={guestPhoneInput} onChangeText={v => set('guestPhoneInput', v)} icon="call-outline" keyboard="phone-pad" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Field label="Room No *" value={guestRoomInput} onChangeText={v => set('guestRoomInput', v)} icon="home-outline" testID="guest_register_room" />
+                      </View>
+                    </Row>
+                    <Field label="Password * (min 8 chars)" value={guestPasswordInput} onChangeText={v => set('guestPasswordInput', v)} icon="lock-closed-outline" secure testID="guest_join_password_input" />
+                    <Field label="PG Code (from lobby poster) *" placeholder="DZQP9899" value={guestScanCodeInput} onChangeText={v => set('guestScanCodeInput', v.toUpperCase())} icon="qr-code-outline" testID="guest_join_code_input" />
+
+                    {/* QR scan shortcut */}
+                    <TouchableOpacity
+                      style={styles.qrCard}
+                      onPress={() => {
+                        setIsScanSim(true);
+                        Alert.alert('Enter the code', "Type the code from your PG's poster below.");
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="qr-code-sharp" size={36} color={GREEN} />
+                      <View style={{ marginLeft: 14 }}>
+                        <Text style={styles.qrCardTitle}>
+                          {guestScanCodeInput ? `Code: ${guestScanCodeInput} ✅` : 'Enter PG Lobby Code'}
+                        </Text>
+                        <Text style={styles.qrCardSub}>Tap to simulate lobby code capture</Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <View style={{ height: 16 }} />
+                    <TouchableOpacity style={styles.primaryBtn} onPress={handleJoin} activeOpacity={0.85} testID="guest_join_submit">
+                      <Text style={styles.primaryBtnText}>Join This PG</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </Animated.View>
+
+          <View style={{ height: 60 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.canvas },
-  scroll: { paddingHorizontal: 24, paddingVertical: 16, paddingBottom: 100 },
-  tabContainer: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
+  root: { flex: 1, backgroundColor: BG },
+
+  // Nav bar
+  navBar: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: WHITE,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+  },
+  backBtn:  { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  navTitle: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: CHARCOAL, letterSpacing: 0.1 },
+
+  scroll: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 40 },
+
+  // Segmented control
+  segControl: {
+    backgroundColor: WHITE,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderColor: BORDER,
     padding: 4,
-    marginTop: 12,
+    height: 46,
+    justifyContent: 'center',
     position: 'relative',
-    height: 48,
-    justifyContent: 'center',
   },
-  tabRow: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-  },
-  tab: {
-    flex: 1,
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-    paddingHorizontal: 2,
-  },
-  slidingPill: {
+  segRow:   { flexDirection: 'row', height: '100%', alignItems: 'center' },
+  segTab:   { flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  segLabel: { fontSize: 12.5, fontWeight: '600', color: MUTED },
+  segLabelSel: { color: GREEN, fontWeight: '800' },
+  segPill: {
     position: 'absolute',
-    left: 4,
-    top: 4,
-    bottom: 4,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 10,
+    left: 4, top: 4, bottom: 4,
+    backgroundColor: '#EAF5EE',
+    borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: GREEN,
     zIndex: 1,
   },
-  dialogBackdrop: {
-    flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    alignItems: 'center', justifyContent: 'center',
+
+  // Role intro
+  welcomeText: { fontSize: 13, color: MUTED, fontWeight: '500', marginBottom: 4 },
+  roleTitle:   { fontSize: 24, fontWeight: '800', color: CHARCOAL, marginBottom: 6 },
+  roleSub:     { fontSize: 13.5, color: MUTED, lineHeight: 20 },
+  divider:     { height: 1, backgroundColor: BORDER, marginVertical: 20 },
+
+  // Field
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: CHARCOAL, marginBottom: 7 },
+  fieldWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: FIELD_H,
+    backgroundColor: WHITE,
+    borderRadius: RADIUS,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingHorizontal: 14,
   },
+  fieldWrapFocused: { borderColor: GREEN, borderWidth: 1.5 },
+  fieldWrapError:   { borderColor: '#DC2626' },
+  fieldIcon:        { marginRight: 10 },
+  fieldInput: {
+    flex: 1,
+    fontSize: 15,
+    color: CHARCOAL,
+    height: '100%',
+    paddingVertical: 0,
+  },
+  eyeBtn:    { padding: 6 },
+  errorText: { fontSize: 12, color: '#DC2626', marginTop: 5, marginLeft: 2 },
+
+  // Forgot password
+  forgotLink: { alignSelf: 'flex-end', marginTop: -4, paddingVertical: 4 },
+  forgotText: { fontSize: 13, fontWeight: '700', color: GREEN },
+
+  // Hint text
+  hintText: { fontSize: 12, color: MUTED, marginTop: -6, marginBottom: 4 },
+
+  // Primary button
+  primaryBtn: {
+    height: 56,
+    backgroundColor: GREEN,
+    borderRadius: RADIUS,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnDisabled: { backgroundColor: '#A8C9B6', opacity: 0.8 },
+  primaryBtnText: { fontSize: 16, fontWeight: '800', color: WHITE, letterSpacing: 0.2 },
+
+  // Ghost / cancel button
+  ghostBtn: {
+    height: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  ghostBtnText: { fontSize: 14, fontWeight: '600', color: MUTED },
+
+  // Register row
+  registerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+  registerText: { fontSize: 13.5, color: MUTED },
+  registerLink: { fontSize: 13.5, fontWeight: '700', color: GREEN },
+
+  // Modal / backdrop
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(10, 18, 13, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCard: {
+    width: '88%',
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: CHARCOAL },
+
+  // Scanner frame
   scannerFrame: {
-    width: 200, height: 200, alignSelf: 'center',
-    borderWidth: 2, borderColor: Colors.primary,
-    borderRadius: 12, backgroundColor: Colors.surfaceElevated,
+    width: 200, height: 160, alignSelf: 'center',
+    borderWidth: 2, borderColor: GREEN, borderRadius: 12,
+    backgroundColor: '#F0FDF4',
     alignItems: 'center', justifyContent: 'flex-end',
     paddingBottom: 12,
   },
-  scannerCard: {
-    borderWidth: 1.5, borderColor: Colors.borderSubtle,
-    borderRadius: 14, padding: 16,
-    backgroundColor: Colors.surfaceElevated,
-    alignItems: 'center',
+
+  // Sub-toggle (Resident: Login vs Join)
+  subToggle: {
+    flexDirection: 'row',
+    backgroundColor: WHITE,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 3,
+    overflow: 'hidden',
   },
+  subToggleBtn: {
+    flex: 1,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  subToggleBtnSel: { backgroundColor: '#EAF5EE', borderWidth: 1, borderColor: GREEN },
+  subToggleLabel:  { fontSize: 13, fontWeight: '600', color: MUTED },
+  subToggleLabelSel: { color: GREEN, fontWeight: '800' },
+
+  // Staff route info
+  routeInfoBox: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#C6E8D4',
+    padding: 14,
+    marginBottom: 20,
+  },
+  routeInfoTitle: { fontSize: 13, fontWeight: '800', color: CHARCOAL },
+  routeInfoSub:   { fontSize: 12, color: MUTED, lineHeight: 18 },
+  routeChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: WHITE,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+  },
+  routeChipLabel: { fontSize: 11, fontWeight: '700', color: GREEN },
+
+  // QR card
+  qrCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: 14,
+    padding: 16,
+    backgroundColor: WHITE,
+  },
+  qrCardTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
+  qrCardSub:   { fontSize: 12, color: MUTED, marginTop: 2 },
 });

@@ -9,7 +9,8 @@ import { UpiConfigSection } from '@/features/owner/tabs/UpiConfigSection';
 export function UpiSettingsScreen() {
   return (
     <HubScreenWrapper
-      title="Payment & UPI Configuration"
+      title="Payment & UPI"
+      subtitle="Manage rent collection"
       icon="card-outline"
     >
       <UpiConfigSection />

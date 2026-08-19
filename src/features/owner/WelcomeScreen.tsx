@@ -1,283 +1,535 @@
-import { View, StyleSheet } from 'react-native';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { Colors } from '@/theme';
 import { hapticSelect } from '@/utils/haptics';
 import { useAuthStore } from '@/store/authStore';
 
+
+// Premium Design System Tokens (Forest Green & Off-White)
+const BRAND_GREEN = '#176B3A';
+const BRAND_BG = '#F8FAF8';
+const CHARCOAL = '#1C2E24';
+const TEXT_MUTED = '#5A6E60';
+const BORDER_COLOR = '#E2EBE5';
+const CARD_BG = '#FFFFFF';
+
+// Subtle Amber Palette for Staff Card
+const AMBER_ICON = '#D97706';
+const AMBER_TEXT = '#B45309';
+const AMBER_BORDER = '#FDE68A';
+const AMBER_BG = '#FFFBEB';
+
 export function WelcomeScreen() {
-
   return (
-    <View style={styles.root}>
-      {/* Top Header Section */}
-      <View style={styles.headerSection}>
-        <View style={styles.brandContainer}>
-          <Txt size={42} weight="900" color={Colors.primary} align="center" style={styles.title}>
-            PGow
-          </Txt>
-          <View style={styles.taglineBadge}>
-            <Txt variant="caption" weight="800" color={Colors.primaryDark} align="center" style={styles.tagline}>
-              SMART CO-LIVING & PG MANAGEMENT
-            </Txt>
-          </View>
-        </View>
+    <View style={styles.outerContainer}>
+      {/* Background Watermark Decorations (pointerEvents="none" so they don't block taps) */}
+      <View style={styles.topRightCircle} pointerEvents="none" />
 
-        <Txt variant="body" weight="800" color={Colors.textSecondary} align="center" style={styles.portalHeading}>
-          CHOOSE YOUR PORTAL
-        </Txt>
+      <View style={styles.dotGrid} pointerEvents="none">
+        {[...Array(3)].map((_, i) => (
+          <Row gap={4} key={i}>
+            {[...Array(3)].map((_, j) => (
+              <View key={j} style={styles.gridDot} />
+            ))}
+          </Row>
+        ))}
       </View>
 
-      {/* Main Portal Selection Cards (No descriptions, direct action buttons) */}
-      <View style={styles.cardsContainer}>
-        {/* PG Owner / Admin Portal */}
-        <AnimatedPress
-          scale={0.985}
-          hapticPattern="light"
-          onPress={() => { hapticSelect(); router.push('/owner-login'); }}
-        >
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={18}
-            borderWidth={1.5}
-            borderColor={Colors.borderSubtle}
-            padding={[16, 14]}
-            style={styles.cardShadow}
-          >
-            <Row align="center" gap={10} style={styles.cardHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: 'rgba(13, 148, 136, 0.12)' }]}>
-                <Ionicons name="business" size={20} color={Colors.primary} />
-              </View>
-              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
-                PG Owner / Admin
-              </Txt>
-            </Row>
+      <View style={styles.bottomLeftHouse} pointerEvents="none">
+        <Ionicons name="home-outline" size={90} color="#E8EFEA" />
+      </View>
 
-            <Row gap={10}>
+      <View style={styles.bottomRightHouse} pointerEvents="none">
+        <Ionicons name="business-outline" size={100} color="#E8EFEA" />
+      </View>
+
+
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.root}>
+        {/* Centered Compact Header */}
+        <View style={styles.headerSection}>
+          <Txt size={36} weight="900" color={BRAND_GREEN} align="center" style={styles.logo}>
+            PGow
+          </Txt>
+          <Txt size={9} weight="800" color={TEXT_MUTED} align="center" style={styles.tagline}>
+            SMART CO-LIVING & PG MANAGEMENT
+          </Txt>
+
+          {/* Custom dot-divider line */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <View style={styles.dividerDot} />
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Txt size={22} weight="800" color={CHARCOAL} align="center" style={styles.heading}>
+            Choose Your Portal
+          </Txt>
+          <Txt size={12} weight="500" color={TEXT_MUTED} align="center" style={styles.subheading}>
+            One Platform. Every Role. Seamless Experience.
+          </Txt>
+        </View>
+
+        {/* Main Portal Cards */}
+        <View style={styles.cardsContainer}>
+
+          {/* Card 1: PG Owner / Admin Portal */}
+          <AnimatedPress
+            scale={0.99}
+            hapticPattern="light"
+            onPress={() => { hapticSelect(); router.push('/owner-login'); }}
+          >
+            <Card
+              containerColor={CARD_BG}
+              borderRadius={22}
+              borderWidth={1}
+              borderColor={BORDER_COLOR}
+              padding={[18, 16]}
+              style={styles.cardShadow}
+            >
+              <Row align="center" justify="space-between" style={{ width: '100%' }}>
+                <Row align="center" gap={12} style={{ flex: 1 }}>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="business" size={18} color={BRAND_GREEN} />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Txt size={15} weight="800" color={CHARCOAL}>
+                      PG Owner / Admin
+                    </Txt>
+                    <Txt size={11} color={TEXT_MUTED} style={styles.description}>
+                      Manage properties, tenants, payments and operations with ease.
+                    </Txt>
+                  </Col>
+                </Row>
+                <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
+              </Row>
+
+              <Spacer size={8} />
+              <Row gap={8}>
+                <Btn
+                  onPress={() => { hapticSelect(); router.push('/owner-register'); }}
+                  containerColor={BRAND_GREEN}
+                  textColor="#FFFFFF"
+                  borderRadius={10}
+                  height={44}
+                  style={{ flex: 1.1 }}
+                  testID="welcome_register_button"
+                >
+                  <Row align="center" gap={6}>
+                    <Ionicons name="person-add" size={16} color="#FFFFFF" />
+                    <Txt size={13} weight="800" color="#FFFFFF">Register PG</Txt>
+                  </Row>
+                </Btn>
+                <OutlinedBtn
+                  onPress={() => { hapticSelect(); router.push('/owner-login'); }}
+                  borderColor={BRAND_GREEN}
+                  textColor={BRAND_GREEN}
+                  borderRadius={10}
+                  height={44}
+                  style={{ flex: 1 }}
+                  testID="welcome_login_button"
+                >
+                  <Row align="center" gap={6}>
+                    <Ionicons name="log-in-outline" size={16} color={BRAND_GREEN} />
+                    <Txt size={13} weight="800" color={BRAND_GREEN}>Owner Login</Txt>
+                  </Row>
+                </OutlinedBtn>
+              </Row>
+            </Card>
+          </AnimatedPress>
+
+          {/* Card 2: Resident / Guest Portal */}
+          <AnimatedPress
+            scale={0.99}
+            hapticPattern="light"
+            onPress={() => { hapticSelect(); router.push('/guest-join'); }}
+          >
+            <Card
+              containerColor={CARD_BG}
+              borderRadius={22}
+              borderWidth={1}
+              borderColor={BORDER_COLOR}
+              padding={[18, 16]}
+              style={styles.cardShadow}
+            >
+              <Row align="center" justify="space-between" style={{ width: '100%' }}>
+                <Row align="center" gap={12} style={{ flex: 1 }}>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="home" size={18} color={BRAND_GREEN} />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Txt size={15} weight="800" color={CHARCOAL}>
+                      Resident / Guest
+                    </Txt>
+                    <Txt size={11} color={TEXT_MUTED} style={styles.description}>
+                      Find your home, connect with your community and enjoy hassle-free living.
+                    </Txt>
+                  </Col>
+                </Row>
+                <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
+              </Row>
+
+              <Spacer size={8} />
               <Btn
-                onPress={() => { hapticSelect(); router.push('/owner-register'); }}
-                containerColor={Colors.primary}
-                textColor={Colors.textInverse}
-                borderRadius={12}
+                onPress={() => { hapticSelect(); router.push('/guest-join'); }}
+                containerColor={BRAND_GREEN}
+                textColor="#FFFFFF"
+                borderRadius={10}
                 height={44}
-                style={{ flex: 1.1 }}
-                testID="welcome_register_button"
               >
-                <Txt variant="body" weight="700" color={Colors.textInverse}>Register PG</Txt>
+                <Row align="center" gap={6}>
+                  <Ionicons name="log-in-outline" size={16} color="#FFFFFF" />
+                  <Txt size={13} weight="800" color="#FFFFFF">
+                    Resident Login / Join
+                  </Txt>
+                </Row>
               </Btn>
+            </Card>
+          </AnimatedPress>
+
+          {/* Card 3: Staff & Operations Portal */}
+          <AnimatedPress
+            scale={0.99}
+            hapticPattern="light"
+            onPress={() => { hapticSelect(); router.push('/staff-login'); }}
+          >
+            <Card
+              containerColor={CARD_BG}
+              borderRadius={22}
+              borderWidth={1}
+              borderColor={BORDER_COLOR}
+              padding={[18, 16]}
+              style={styles.cardShadow}
+            >
+              <Row align="center" justify="space-between" style={{ width: '100%' }}>
+                <Row align="center" gap={12} style={{ flex: 1 }}>
+                  <View style={[styles.iconCircle, { backgroundColor: 'rgba(217, 119, 6, 0.08)' }]}>
+                    <Ionicons name="people" size={18} color={AMBER_ICON} />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Txt size={15} weight="800" color={CHARCOAL}>
+                      Staff & Operations Portal
+                    </Txt>
+                    <Txt size={11} color={TEXT_MUTED} style={styles.description}>
+                      For Chefs, Maintenance Crew & Delivery Agents
+                    </Txt>
+                  </Col>
+                </Row>
+                <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
+              </Row>
+
+              {/* Subtle Styled Badges */}
+              <Row gap={6} style={styles.badgeRow}>
+                <View style={styles.staffBadge}>
+                  <Row align="center" gap={4}>
+                    <Ionicons name="restaurant-outline" size={13} color={AMBER_ICON} />
+                    <Txt size={10} weight="700" color={AMBER_TEXT}>Kitchen</Txt>
+                  </Row>
+                </View>
+                <View style={styles.staffBadge}>
+                  <Row align="center" gap={4}>
+                    <Ionicons name="construct-outline" size={13} color={AMBER_ICON} />
+                    <Txt size={10} weight="700" color={AMBER_TEXT}>Maintenance</Txt>
+                  </Row>
+                </View>
+                <View style={styles.staffBadge}>
+                  <Row align="center" gap={4}>
+                    <Ionicons name="bicycle-outline" size={13} color={AMBER_ICON} />
+                    <Txt size={10} weight="700" color={AMBER_TEXT}>Delivery</Txt>
+                  </Row>
+                </View>
+              </Row>
+
+              <Spacer size={8} />
               <OutlinedBtn
-                onPress={() => { hapticSelect(); router.push('/owner-login'); }}
-                borderColor={Colors.primary}
-                textColor={Colors.primary}
-                borderRadius={12}
+                onPress={() => { hapticSelect(); router.push('/staff-login'); }}
+                borderColor={AMBER_ICON}
+                textColor={AMBER_ICON}
+                borderRadius={10}
                 height={44}
-                style={{ flex: 1 }}
-                testID="welcome_login_button"
+                style={{ backgroundColor: '#FFFFFF' }}
               >
-                <Txt variant="body" weight="700" color={Colors.primary}>Owner Login</Txt>
+                <Row align="center" gap={6}>
+                  <Ionicons name="people" size={16} color={AMBER_ICON} />
+                  <Txt size={13} weight="800" color={AMBER_ICON}>
+                    Open Staff & Operations Portal
+                  </Txt>
+                </Row>
               </OutlinedBtn>
-            </Row>
-          </Card>
-        </AnimatedPress>
+            </Card>
+          </AnimatedPress>
 
-        {/* Resident / Paying Guest Portal */}
-        <AnimatedPress
-          scale={0.985}
-          hapticPattern="light"
-          onPress={() => { hapticSelect(); router.push('/guest-join'); }}
-        >
+          {/* Card 4: Quick Developer Previews */}
           <Card
-            containerColor={Colors.surface}
-            borderRadius={18}
-            borderWidth={1.5}
-            borderColor={Colors.borderSubtle}
-            padding={[16, 14]}
+            containerColor={CARD_BG}
+            borderRadius={22}
+            borderWidth={1}
+            borderColor={BORDER_COLOR}
+            padding={[16, 16]}
             style={styles.cardShadow}
           >
-            <Row align="center" gap={10} style={styles.cardHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                <Ionicons name="home" size={20} color={Colors.success} />
-              </View>
-              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
-                Resident / Guest
-              </Txt>
+            <Row align="center" justify="space-between" style={{ width: '100%', marginBottom: 12 }}>
+              <Row align="center" gap={12} style={{ flex: 1 }}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="code-slash" size={18} color={BRAND_GREEN} />
+                </View>
+                <Col style={{ flex: 1 }}>
+                  <Txt size={14} weight="800" color={CHARCOAL}>
+                    Quick Developer Previews
+                  </Txt>
+                  <Txt size={11} color={TEXT_MUTED}>
+                    Preview interfaces for different roles
+                  </Txt>
+                </Col>
+              </Row>
+              <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
             </Row>
 
-            <Btn
-              onPress={() => { hapticSelect(); router.push('/guest-join'); }}
-              containerColor={Colors.success}
-              textColor={Colors.textInverse}
-              borderRadius={12}
-              height={44}
-            >
-              <Ionicons name="log-in-outline" size={18} color={Colors.textInverse} style={{ marginRight: 6 }} />
-              <Txt variant="body" weight="800" color={Colors.textInverse}>
-                Resident Login / Join
-              </Txt>
-            </Btn>
-          </Card>
-        </AnimatedPress>
-
-        {/* Staff & Operations Portal */}
-        <AnimatedPress
-          scale={0.985}
-          hapticPattern="light"
-          onPress={() => { hapticSelect(); router.push('/staff-login'); }}
-        >
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={18}
-            borderWidth={1.5}
-            borderColor={Colors.borderSubtle}
-            padding={[16, 14]}
-            style={styles.cardShadow}
-          >
-            <Row align="center" gap={10} style={styles.cardHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: '#f0f0f0ff' }]}>
-                <Ionicons name="people-sharp" size={20} color={Colors.CyberAmber} />
-              </View>
-              <Col>
-                <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
-                  Staff & Operations Portal
-                </Txt>
-                <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
-                  Kitchen, Maintenance & Delivery Agents
-                </Txt>
-              </Col>
-            </Row>
-
-            <Btn
-              onPress={() => { hapticSelect(); router.push('/staff-login'); }}
-              containerColor="#000000ff"
-              textColor={Colors.CyberAmber}
-              borderRadius={12}
-              height={44}
-            >
-              <Ionicons name="people" size={18} color={Colors.CyberAmber} style={{ marginRight: 6 }} />
-              <Txt variant="body" weight="700" color={Colors.CyberAmber}>
-                Open Staff & Operations Portal
-              </Txt>
-            </Btn>
-          </Card>
-        </AnimatedPress>
-
-        {/* Development Previews */}
-        <AnimatedPress scale={0.985} hapticPattern="light" onPress={() => {}}>
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={18}
-            borderWidth={1.5}
-            borderColor={Colors.primary}
-            padding={[16, 14]}
-            style={styles.cardShadow}
-          >
-            <Row align="center" gap={10} style={styles.cardHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: 'rgba(13, 148, 136, 0.12)' }]}>
-                <Ionicons name="construct" size={20} color={Colors.primary} />
-              </View>
-              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
-                Quick Developer Previews
-              </Txt>
-            </Row>
-
-            <Row gap={10}>
+            <Row gap={8}>
               <Btn
                 onPress={() => { hapticSelect(); useAuthStore.setState({ activeRole: 'delivery_agent', accessToken: 'mock_token' }); router.replace('/'); }}
-                containerColor={Colors.surfaceElevated}
-                textColor={Colors.textPrimary}
-                borderRadius={12}
-                height={44}
-                style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}
+                containerColor="#F0F6F2"
+                textColor={BRAND_GREEN}
+                borderRadius={10}
+                height={38}
+                style={{ flex: 1, borderWidth: 1, borderColor: BORDER_COLOR }}
               >
-                <Ionicons name="bicycle" size={16} color={Colors.textPrimary} style={{ marginRight: 4 }} />
-                <Txt variant="caption" weight="800" color={Colors.textPrimary}>Delivery Agent</Txt>
+                <Row align="center" gap={6}>
+                  <Ionicons name="bicycle-outline" size={14} color={BRAND_GREEN} />
+                  <Txt size={11} weight="700" color={BRAND_GREEN}>Delivery Agent</Txt>
+                </Row>
               </Btn>
               <Btn
                 onPress={() => { hapticSelect(); useAuthStore.setState({ activeRole: 'maintenance', accessToken: 'mock_token' }); router.replace('/'); }}
-                containerColor={Colors.surfaceElevated}
-                textColor={Colors.textPrimary}
-                borderRadius={12}
-                height={44}
-                style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}
+                containerColor="#F0F6F2"
+                textColor={BRAND_GREEN}
+                borderRadius={10}
+                height={38}
+                style={{ flex: 1, borderWidth: 1, borderColor: BORDER_COLOR }}
               >
-                <Ionicons name="hammer" size={16} color={Colors.textPrimary} style={{ marginRight: 4 }} />
-                <Txt variant="caption" weight="800" color={Colors.textPrimary}>Maintenance</Txt>
+                <Row align="center" gap={6}>
+                  <Ionicons name="hammer-outline" size={14} color={BRAND_GREEN} />
+                  <Txt size={11} weight="700" color={BRAND_GREEN}>Maintenance</Txt>
+                </Row>
               </Btn>
             </Row>
           </Card>
-        </AnimatedPress>
-      </View>
 
-      {/* Clean Bottom Note */}
-      <View style={styles.footer}>
-        <Txt variant="caption" weight="600" color={Colors.textMuted} align="center">
-          Secure-Smart Living Experience
-        </Txt>
-      </View>
+        </View>
+
+        {/* Structured Trust Strip Card */}
+        <View style={styles.footerSection}>
+          <Card
+            containerColor="#FFFFFF"
+            borderRadius={16}
+            borderWidth={1}
+            borderColor={BORDER_COLOR}
+            padding={[12, 10]}
+            style={styles.trustCard}
+          >
+            <Row align="center" justify="space-between" style={{ width: '100%' }}>
+              {/* Secure & Reliable */}
+              <Col align="center" style={{ flex: 1 }}>
+                <Ionicons name="shield-checkmark-outline" size={18} color={BRAND_GREEN} />
+                <Spacer size={4} />
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">Secure</Txt>
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">& Reliable</Txt>
+              </Col>
+
+              <View style={styles.verticalDivider} />
+
+              {/* Easy to Use */}
+              <Col align="center" style={{ flex: 1 }}>
+                <Ionicons name="flash-outline" size={18} color={BRAND_GREEN} />
+                <Spacer size={4} />
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">Easy</Txt>
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">to Use</Txt>
+              </Col>
+
+              <View style={styles.verticalDivider} />
+
+              {/* Real-time Updates */}
+              <Col align="center" style={{ flex: 1 }}>
+                <Ionicons name="time-outline" size={18} color={BRAND_GREEN} />
+                <Spacer size={4} />
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">Real-time</Txt>
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">Updates</Txt>
+              </Col>
+
+              <View style={styles.verticalDivider} />
+
+              {/* 24/7 Support */}
+              <Col align="center" style={{ flex: 1 }}>
+                <Ionicons name="headset-outline" size={18} color={BRAND_GREEN} />
+                <Spacer size={4} />
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">24/7</Txt>
+                <Txt size={9} weight="700" color={CHARCOAL} align="center">Support</Txt>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Heart Icon tagline at the bottom */}
+          <Row align="center" justify="center" gap={4} style={styles.footerTaglineRow}>
+            <Ionicons name="heart-outline" size={11} color={TEXT_MUTED} />
+            <Txt size={10} weight="700" color={TEXT_MUTED} align="center">
+              Building Better Co-Living Experiences
+            </Txt>
+          </Row>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  outerContainer: {
     flex: 1,
-    backgroundColor: Colors.canvas,
-    paddingHorizontal: 22,
-    paddingTop: 20,
+    backgroundColor: BRAND_BG,
+    position: 'relative',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  root: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
     paddingBottom: 24,
     justifyContent: 'space-between',
   },
   headerSection: {
     alignItems: 'center',
-    marginTop: 8,
-  },
-  brandContainer: {
-    alignItems: 'center',
     marginBottom: 16,
   },
-  title: {
-    letterSpacing: -1.2,
-  },
-  taglineBadge: {
-    backgroundColor: Colors.surfaceElevated,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    marginTop: 4,
+  logo: {
+    letterSpacing: -1,
   },
   tagline: {
-    letterSpacing: 1.2,
-  },
-  portalHeading: {
     letterSpacing: 1.5,
-    marginTop: 8,
+    marginTop: 2,
+  },
+  dividerContainer: {
+    width: 120,
+    height: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: BORDER_COLOR,
+  },
+  dividerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: BRAND_GREEN,
+    marginHorizontal: 8,
+  },
+  heading: {
+    letterSpacing: -0.2,
+  },
+  subheading: {
+    marginTop: 4,
   },
   cardsContainer: {
-    gap: 11,
-    marginTop: 30,
-  },
-  cardHeader: {
-    marginBottom: 12,
+    gap: 14,
+    marginBottom: 20,
   },
   iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(21, 128, 61, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  description: {
+    lineHeight: 16,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  badgeRow: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  staffBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: AMBER_BORDER,
+    backgroundColor: AMBER_BG,
+  },
   cardShadow: {
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowColor: BRAND_GREEN,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
-  footer: {
+  footerSection: {
     alignItems: 'center',
-    paddingVertical: 4,
+    gap: 8,
   },
+  trustCard: {
+    width: '100%',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  verticalDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: BORDER_COLOR,
+  },
+  footerTaglineRow: {
+    marginTop: 8,
+    opacity: 0.8,
+  },
+  // Background Watermarks
+  topRightCircle: {
+    position: 'absolute',
+    right: -40,
+    top: -20,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 1.5,
+    borderColor: '#E8EFEA',
+    zIndex: -1,
+  },
+  dotGrid: {
+    position: 'absolute',
+    right: 30,
+    top: 140,
+    gap: 4,
+    zIndex: -1,
+  },
+  gridDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2EBE5',
+  },
+  bottomLeftHouse: {
+    position: 'absolute',
+    left: -24,
+    bottom: 240,
+    opacity: 0.25,
+    zIndex: -1,
+  },
+  bottomRightHouse: {
+    position: 'absolute',
+    right: -24,
+    bottom: 120,
+    opacity: 0.25,
+    zIndex: -1,
+  },
+
 });

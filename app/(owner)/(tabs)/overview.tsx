@@ -1,13 +1,22 @@
 /**
- * Owner/Manager "Overview" tab — the light hub: portfolio teaser, hero savings card,
- * quick-action tile grid, recent activity. Every tile that needs more room than a tile can
- * afford pushes its own dedicated screen instead of cramming into this scroll.
+ * Owner/Manager "Overview" tab — premium redesign.
+ * Compact header · green hero savings card · 2-col quick-action grid ·
+ * property overview strip · recent activity. All existing functionality preserved.
  */
 import { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable, Linking } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  Linking,
+  Text,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Row, Col, Spacer, Btn, OutlinedBtn, IconBtn } from '@/components/ui';
+import { Card, Row, Col, Spacer, Btn, OutlinedBtn, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -16,274 +25,326 @@ import { useMealSavings } from '@/features/meals/useMealSavings';
 import { usePortfolioTeaser } from '@/features/properties/usePortfolio';
 import type { AppScreen } from '@/types';
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const GREEN    = '#176B3A';
+const BG       = '#F7FAF7';
+const CHARCOAL = '#17201A';
+const MUTED    = '#68736C';
+const BORDER   = '#DDE8DE';
+const WHITE    = '#FFFFFF';
+
 interface ActionTile {
   screen?: AppScreen;
   action?: 'NOTICES';
   label: string;
   desc: string;
   icon: keyof typeof Ionicons.glyphMap;
-  tint: string;
 }
 
-// Procurement dropped from both tile lists — OWNER_SERVICES already carries a "Procurement"
-// entry point (see OwnerServicesTab), so this was a duplicate destination, not a second
-// feature. Staff & Shifts (attendance) dropped too: the backend has no attendance endpoints
-// yet, so the tile was a dead end.
 const OWNER_TILES: ActionTile[] = [
-  { screen: 'PNL_ANALYTICS',       label: 'P&L Analytics',     desc: '3m / 6m / 1y', icon: 'stats-chart',  tint: '#0D9488' },
-  { screen: 'GROCERIES_SCREEN',    label: 'Groceries',          desc: 'Kitchen & PG supplies', icon: 'nutrition', tint: '#15803D' },
-  { screen: 'UPI_SETTINGS',        label: 'UPI Settings',       desc: 'Rent collection handles', icon: 'card', tint: '#0284C7' },
-  { screen: 'OWNER_SERVICES',      label: 'Services',           desc: 'Grocery & repairs', icon: 'storefront', tint: '#9333EA' },
+  { screen: 'PNL_ANALYTICS',    label: 'P&L Analytics', desc: '3m / 6m / 1y',              icon: 'stats-chart-outline' },
+  { screen: 'GROCERIES_SCREEN', label: 'Groceries',     desc: 'Kitchen & PG supplies',     icon: 'nutrition-outline' },
+  { screen: 'UPI_SETTINGS',     label: 'UPI Settings',  desc: 'Rent collection & payments', icon: 'card-outline' },
+  { screen: 'OWNER_SERVICES',   label: 'Services',      desc: 'Groceries & repairs',        icon: 'storefront-outline' },
 ];
 
 const MANAGER_TILES: ActionTile[] = [
-  { screen: 'BED_VISUALIZER',      label: 'Bed Layout',         desc: 'Floor → room → bed', icon: 'bed',            tint: '#0D9488' },
-  { screen: 'TENANT_LIST',         label: 'Tenant Mgmt',        desc: 'KYC decisions', icon: 'people',           tint: '#0F766E' },
-  { screen: 'GROCERIES_SCREEN',    label: 'Groceries',          desc: 'Kitchen & PG supplies', icon: 'nutrition', tint: '#15803D' },
-  { action: 'NOTICES',             label: 'Rent Reminders',     desc: 'WhatsApp / SMS', icon: 'notifications', tint: '#D97706' },
-  { screen: 'UPI_SETTINGS',        label: 'UPI Settings',       desc: 'Rent collection handles', icon: 'card', tint: '#0284C7' },
-  { screen: 'OWNER_SERVICES',      label: 'Services',           desc: 'Grocery & repairs', icon: 'storefront', tint: '#9333EA' },
+  { screen: 'BED_VISUALIZER',   label: 'Bed Layout',     desc: 'Floor → room → bed',        icon: 'bed-outline' },
+  { screen: 'TENANT_LIST',      label: 'Tenant Mgmt',    desc: 'KYC decisions',             icon: 'people-outline' },
+  { screen: 'GROCERIES_SCREEN', label: 'Groceries',      desc: 'Kitchen & PG supplies',     icon: 'nutrition-outline' },
+  { action: 'NOTICES',          label: 'Rent Reminders', desc: 'WhatsApp / SMS',            icon: 'notifications-outline' },
+  { screen: 'UPI_SETTINGS',     label: 'UPI Settings',   desc: 'Rent collection & payments', icon: 'card-outline' },
+  { screen: 'OWNER_SERVICES',   label: 'Services',       desc: 'Groceries & repairs',        icon: 'storefront-outline' },
 ];
 
-/** AppScreen values (old screenStack) → their new route paths. Every screen this tile grid
- *  can still reach has a route by this point in the migration. */
 const SCREEN_ROUTES: Partial<Record<AppScreen, string>> = {
-  PNL_ANALYTICS: '/pnl-analytics',
+  PNL_ANALYTICS:    '/pnl-analytics',
   GROCERIES_SCREEN: '/groceries',
-  UPI_SETTINGS: '/upi-settings',
-  OWNER_SERVICES: '/services',
-  BED_VISUALIZER: '/bed-visualizer',
-  TENANT_LIST: '/tenant-list',
+  UPI_SETTINGS:     '/upi-settings',
+  OWNER_SERVICES:   '/services',
+  BED_VISUALIZER:   '/bed-visualizer',
+  TENANT_LIST:      '/tenant-list',
 };
 
 export default function OwnerOverviewTab() {
   const [showOverdueModal, setShowOverdueModal] = useState(false);
 
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const isManager = usePGowStore((s) => s.isManagerMode);
-  const allPGs = usePGowStore((s) => s.allPGsState);
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
-  const guests = usePGowStore((s) => s.currentGuests);
+  const owner       = usePGowStore(s => s.loggedInOwner);
+  const isManager   = usePGowStore(s => s.isManagerMode);
+  const allPGs      = usePGowStore(s => s.allPGsState);
+  const roleNotifs  = usePGowStore(s => s.currentRoleNotifications);
+  const guests      = usePGowStore(s => s.currentGuests);
+  const complaints  = usePGowStore(s => s.currentFeedbackComplaints);
 
-  // "This month" window for the meal-savings hero tile — the 1st of the
-  // current month through today, in the same YYYY-MM-DD form the mock
-  // backend's date-range filter compares against.
-  const now = new Date();
+  const now        = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const monthEnd = now.toISOString().slice(0, 10);
+  const monthEnd   = now.toISOString().slice(0, 10);
   const { data: mealSavings } = useMealSavings(owner?.id ?? null, monthStart, monthEnd);
-  const savedThisMonth = mealSavings?.total_saved ?? 0;
-  const skippedPortions = mealSavings?.total_skipped_portions ?? 0;
+  const savedThisMonth   = mealSavings?.total_saved ?? 0;
+  const skippedPortions  = mealSavings?.total_skipped_portions ?? 0;
 
-  const overdueCount = guests.filter((g) => !g.isBillPaid).length;
-  const recentFeed = roleNotifs.slice(0, 3);
+  const overdueCount  = guests.filter(g => !g.isBillPaid).length;
+  const overdueAmount = guests
+    .filter(g => !g.isBillPaid)
+    .reduce((s, g) => s + (g.rentAmount ?? 0), 0);
+  const openRequests  = complaints.filter(c => c.status !== 'Resolved').length;
+  const totalBeds     = guests.length;
+  const recentFeed    = roleNotifs.slice(0, 3);
 
-  // Portfolio is an owner concept, not a manager one — a manager only ever holds the one
-  // property they're assigned to. The hook itself already no-ops below 2 PGs, but the
-  // `!isManager` check keeps that owner-only framing explicit here rather than incidental.
   const showPortfolio = !isManager && allPGs.length > 1;
   const { data: portfolio } = usePortfolioTeaser(showPortfolio ? allPGs : []);
-
   const tiles = isManager ? MANAGER_TILES : OWNER_TILES;
 
   const handleTilePress = (tile: ActionTile) => {
     hapticSelect();
-    if (tile.action === 'NOTICES') {
-      router.push('/notices');
-      return;
-    }
+    if (tile.action === 'NOTICES') { router.push('/notices'); return; }
     const route = tile.screen ? SCREEN_ROUTES[tile.screen] : undefined;
     if (route) router.push(route as any);
   };
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24, gap: 14 }} showsVerticalScrollIndicator={false}>
-        {/* Portfolio teaser — one compact row, never the full breakdown. The
-            stat grid and per-property chart live on their own screen (PORTFOLIO)
-            so this hub's length never grows with how many PGs the owner has. */}
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Portfolio teaser (multi-PG owners only) ───────────────────── */}
         {showPortfolio && (
           <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => router.push('/portfolio')}>
             <View style={styles.teaserCard}>
               <View style={{ flex: 1 }}>
-                <Txt size={10} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
-                  PORTFOLIO &middot; {allPGs.length} PROPERTIES
-                </Txt>
-                <Txt size={13} weight="700" color={Colors.textPrimary} style={{ marginTop: 2 }}>
-                  {portfolio ? `₹${Math.round(portfolio.totalCollected).toLocaleString('en-IN')} collected this cycle` : 'View totals across every property'}
-                </Txt>
+                <Text style={styles.teaserLabel}>
+                  PORTFOLIO · {allPGs.length} PROPERTIES
+                </Text>
+                <Text style={styles.teaserValue}>
+                  {portfolio
+                    ? `₹${Math.round(portfolio.totalCollected).toLocaleString('en-IN')} collected this cycle`
+                    : 'View totals across every property'}
+                </Text>
               </View>
               <Row gap={2} align="center">
-                <Txt size={11} weight="800" color={Colors.primaryDark}>View all</Txt>
-                <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
+                <Text style={styles.teaserLink}>View all</Text>
+                <Ionicons name="chevron-forward" size={13} color={GREEN} />
               </Row>
             </View>
           </AnimatedPress>
         )}
 
-        {/* Hero financial card */}
+        {/* ── Hero: Saved This Month ────────────────────────────────────── */}
         <View style={styles.heroCard}>
-          <Txt size={11} weight="700" color={'rgba(255,255,255,0.85)'} style={{ letterSpacing: 0.5 }}>SAVED THIS MONTH</Txt>
-          <Txt size={26} weight="900" color={Colors.textInverse} style={{ marginTop: 4 }}>
-            ₹{savedThisMonth.toLocaleString('en-IN')}
-          </Txt>
-          <Row gap={6} align="center" style={{ marginTop: 6 }}>
-            <Ionicons name="leaf" size={12} color={'rgba(255,255,255,0.85)'} />
-            <Txt size={11} color={'rgba(255,255,255,0.85)'}>{skippedPortions} portions skipped via broadcast</Txt>
+          {/* Top row: label + wallet icon */}
+          <Row justify="space-between" align="center">
+            <Text style={styles.heroLabel}>SAVED THIS MONTH</Text>
+            <View style={styles.heroIconCircle}>
+              <Ionicons name="wallet" size={20} color={WHITE} />
+            </View>
           </Row>
-          <Spacer size={10} />
+
+          {/* Big number */}
+          <Text style={styles.heroAmount}>
+            ₹{savedThisMonth.toLocaleString('en-IN')}
+          </Text>
+
+          {/* Portions skipped */}
+          <Row gap={5} align="center" style={{ marginTop: 6 }}>
+            <Ionicons name="leaf" size={13} color="rgba(255,255,255,0.80)" />
+            <Text style={styles.heroSub}>
+              {skippedPortions} portions skipped via broadcast
+            </Text>
+          </Row>
+
+          {/* Divider */}
+          <View style={styles.heroDivider} />
+
+          {/* Overdue pill */}
           <TouchableOpacity
+            style={styles.overduePill}
             onPress={() => { hapticSelect(); setShowOverdueModal(true); }}
-            style={styles.heroStat}
             activeOpacity={0.8}
           >
-            <Ionicons name="alert-circle" size={12} color={'rgba(255,255,255,0.95)'} />
-            <Txt size={11} weight="800" color={Colors.textInverse} style={{ marginLeft: 4 }}>
-              {overdueCount} overdue ›
-            </Txt>
+            <Ionicons name="alert-circle" size={13} color={WHITE} />
+            <Text style={styles.overdueText}>{overdueCount} overdue ›</Text>
           </TouchableOpacity>
         </View>
 
-        <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 4 }}>QUICK ACTIONS</Txt>
+        {/* ── Quick Actions ─────────────────────────────────────────────── */}
+        <Row justify="space-between" align="center" style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <TouchableOpacity activeOpacity={0.7}>
+            <Row gap={2} align="center">
+              <Text style={styles.viewAll}>View all</Text>
+              <Ionicons name="chevron-forward" size={13} color={GREEN} />
+            </Row>
+          </TouchableOpacity>
+        </Row>
+
         <View style={styles.tileGrid}>
-          {tiles.map((tile) => (
+          {tiles.map(tile => (
             <AnimatedPress
               key={tile.label}
               scale={0.96}
               hapticPattern="light"
               onPress={() => handleTilePress(tile)}
-              style={{ width: '48%' }}
+              style={styles.tileWrap}
             >
-              <Card
-                containerColor={Colors.surface}
-                borderRadius={Layout.borderRadiusCard}
-                borderWidth={1}
-                borderColor={Colors.borderSubtle}
-                padding={[14, 14]}
-              >
-                <View style={[styles.tileIcon, { backgroundColor: `${tile.tint}1A` }]}>
-                  <Ionicons name={tile.icon} size={20} color={tile.tint} />
+              <View style={styles.tileCard}>
+                {/* Icon */}
+                <View style={styles.tileIconBox}>
+                  <Ionicons name={tile.icon} size={22} color={GREEN} />
                 </View>
-                <Txt size={13} weight="800" color={Colors.textPrimary} style={{ marginTop: 10 }}>{tile.label}</Txt>
-                <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
-              </Card>
+                {/* Text */}
+                <View style={{ flex: 1, marginTop: 12 }}>
+                  <Text style={styles.tileLabel}>{tile.label}</Text>
+                  <Text style={styles.tileDesc}>{tile.desc}</Text>
+                </View>
+                {/* Arrow */}
+                <View style={styles.tileArrow}>
+                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
+                </View>
+              </View>
             </AnimatedPress>
           ))}
         </View>
 
-        <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 6 }}>RECENT ACTIVITY</Txt>
-        <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 12]}>
+        {/* ── Property Overview ─────────────────────────────────────────── */}
+        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Property Overview</Text>
+        <View style={styles.overviewStrip}>
+          {/* Occupancy */}
+          <View style={styles.overviewCell}>
+            <Ionicons name="bed-outline" size={18} color={GREEN} />
+            <Text style={styles.overviewValue}>—/{totalBeds}</Text>
+            <Text style={styles.overviewLabel}>Occupancy</Text>
+            <Text style={styles.overviewSub}>beds</Text>
+          </View>
+          <View style={styles.overviewDivider} />
+          {/* Pending Payments */}
+          <View style={styles.overviewCell}>
+            <Ionicons name="cash-outline" size={18} color={GREEN} />
+            <Text style={styles.overviewValue}>
+              ₹{overdueAmount > 0 ? Math.round(overdueAmount).toLocaleString('en-IN') : '0'}
+            </Text>
+            <Text style={styles.overviewLabel}>Pending</Text>
+            <Text style={styles.overviewSub}>payments</Text>
+          </View>
+          <View style={styles.overviewDivider} />
+          {/* Open Requests */}
+          <View style={styles.overviewCell}>
+            <Ionicons name="alert-circle-outline" size={18} color={GREEN} />
+            <Text style={styles.overviewValue}>{openRequests}</Text>
+            <Text style={styles.overviewLabel}>Open</Text>
+            <Text style={styles.overviewSub}>requests</Text>
+          </View>
+        </View>
+
+        {/* ── Recent Activity ───────────────────────────────────────────── */}
+        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Recent Activity</Text>
+        <View style={styles.activityCard}>
           {recentFeed.length === 0 ? (
-            <Row gap={8} align="center">
-              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-              <Txt size={12} color={Colors.textMuted}>All caught up — no recent activity.</Txt>
+            <Row gap={10} align="center">
+              <View style={styles.activityCheckCircle}>
+                <Ionicons name="checkmark" size={14} color={GREEN} />
+              </View>
+              <View>
+                <Text style={styles.activityEmpty}>All caught up!</Text>
+                <Text style={styles.activityEmptySub}>No recent activity to show.</Text>
+              </View>
             </Row>
           ) : (
-            <View style={{ gap: 10 }}>
-              {recentFeed.map((n) => (
-                <Row key={n.id} gap={10} align="flex-start">
-                  <View style={[styles.feedDot, {
-                    backgroundColor:
-                      (n.category ?? '').toUpperCase().includes('PAYMENT') ? Colors.success :
-                      (n.category ?? '').toUpperCase().includes('KYC') ? Colors.warning :
-                      (n.priority ?? '').toUpperCase() === 'HIGH' ? Colors.danger :
-                      Colors.primary,
-                  }]} />
-                  <Col style={{ flex: 1 }}>
-                    <Txt size={12} weight="700" color={Colors.textPrimary}>{n.title}</Txt>
-                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{n.message}</Txt>
-                  </Col>
-                </Row>
+            <View style={{ gap: 12 }}>
+              {recentFeed.map((n, i) => (
+                <View key={n.id}>
+                  <Row gap={10} align="flex-start">
+                    <View style={[styles.feedDot, {
+                      backgroundColor:
+                        (n.category ?? '').toUpperCase().includes('PAYMENT') ? Colors.success :
+                        (n.category ?? '').toUpperCase().includes('KYC') ? Colors.warning :
+                        (n.priority ?? '').toUpperCase() === 'HIGH' ? Colors.danger :
+                        GREEN,
+                    }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.feedTitle}>{n.title}</Text>
+                      <Text style={styles.feedSub}>{n.message}</Text>
+                    </View>
+                  </Row>
+                  {i < recentFeed.length - 1 && <View style={styles.feedDivider} />}
+                </View>
               ))}
             </View>
           )}
-        </Card>
+        </View>
+
+        <View style={{ height: 24 }} />
       </ScrollView>
 
-      {/* ⚠️ Overdue Detail Breakdown Modal */}
+      {/* ── Overdue Detail Modal ──────────────────────────────────────────── */}
       {showOverdueModal && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowOverdueModal(false)}>
           <View style={styles.modalBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOverdueModal(false)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={24}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '92%', maxHeight: '82%', zIndex: 2 }}
-            >
+            <View style={styles.modalCard}>
               <Row justify="space-between" align="center">
-                <Row gap={8} align="center">
-                  <View style={[styles.modalIconBox, { backgroundColor: '#FFFBEB' }]}>
+                <Row gap={10} align="center">
+                  <View style={styles.modalIconBox}>
                     <Ionicons name="alert-circle" size={20} color="#D97706" />
                   </View>
-                  <Col>
-                    <Txt size={16} weight="900" color={Colors.textPrimary}>Pending Rent Dues</Txt>
-                    <Txt size={11} color={Colors.textMuted}>{overdueCount} Unpaid Resident{overdueCount === 1 ? '' : 's'}</Txt>
-                  </Col>
+                  <View>
+                    <Text style={styles.modalTitle}>Pending Rent Dues</Text>
+                    <Text style={styles.modalSub}>
+                      {overdueCount} Unpaid Resident{overdueCount === 1 ? '' : 's'}
+                    </Text>
+                  </View>
                 </Row>
-                <IconBtn onPress={() => setShowOverdueModal(false)} icon="close" size={18} tint={Colors.textMuted} />
+                <TouchableOpacity onPress={() => setShowOverdueModal(false)} style={styles.closeBtn}>
+                  <Ionicons name="close" size={18} color={MUTED} />
+                </TouchableOpacity>
               </Row>
 
-              <Spacer size={14} />
+              <View style={styles.modalDivider} />
 
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 320 }}>
-                {guests.filter((g) => !g.isBillPaid).length === 0 ? (
-                  <Card containerColor="#F0FDF9" borderRadius={12} padding={[16, 16]} style={{ alignItems: 'center' }}>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 300 }}>
+                {guests.filter(g => !g.isBillPaid).length === 0 ? (
+                  <View style={styles.allPaidBox}>
                     <Ionicons name="checkmark-circle" size={32} color="#16A34A" />
-                    <Txt size={13} weight="800" color="#166534" style={{ marginTop: 6 }}>All Rent Collected!</Txt>
-                    <Txt size={11} color={Colors.textMuted}>Zero overdue residents in this property.</Txt>
-                  </Card>
+                    <Text style={styles.allPaidTitle}>All Rent Collected!</Text>
+                    <Text style={styles.allPaidSub}>Zero overdue residents in this property.</Text>
+                  </View>
                 ) : (
-                  guests.filter((g) => !g.isBillPaid).map((g) => (
-                    <Card
-                      key={g.id}
-                      containerColor="#FFFBEB"
-                      borderRadius={14}
-                      borderWidth={1}
-                      borderColor="#FDE68A"
-                      padding={[12, 12]}
-                      style={{ marginBottom: 8 }}
-                    >
-                      <Row justify="space-between" align="center">
-                        <Col style={{ flex: 1 }}>
-                          <Row align="center" gap={6}>
-                            <Txt size={13} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
-                            <View style={styles.roomPill}>
-                              <Txt size={9} weight="800" color={Colors.primaryDark}>Room {g.roomNo}</Txt>
-                            </View>
-                          </Row>
-                          <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>
-                            Phone: {g.phone || 'N/A'} • Due since 1st
-                          </Txt>
-                        </Col>
-                        <Col align="flex-end">
-                          <Txt size={14} weight="900" color="#B45309">
-                            {g.rentAmount ? `₹${Math.round(g.rentAmount)}` : '—'}
-                          </Txt>
-                          <Row gap={6} style={{ marginTop: 4 }}>
-                            {g.phone ? (
-                              <IconBtn
-                                onPress={() => Linking.openURL(`tel:${g.phone.replace(/\s+/g, '')}`)}
-                                icon="call"
-                                size={14}
-                                tint={Colors.primary}
-                                containerColor="#F0FDF9"
-                              />
-                            ) : null}
-                          </Row>
-                        </Col>
-                      </Row>
-                    </Card>
+                  guests.filter(g => !g.isBillPaid).map(g => (
+                    <View key={g.id} style={styles.overdueRow}>
+                      <View style={{ flex: 1 }}>
+                        <Row gap={8} align="center">
+                          <Text style={styles.overdueGuestName}>{g.name}</Text>
+                          <View style={styles.roomPill}>
+                            <Text style={styles.roomPillText}>Room {g.roomNo}</Text>
+                          </View>
+                        </Row>
+                        <Text style={styles.overdueGuestSub}>
+                          {g.phone || 'No phone'} · Due since 1st
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={styles.overdueAmount}>
+                          {g.rentAmount ? `₹${Math.round(g.rentAmount)}` : '—'}
+                        </Text>
+                        {g.phone && (
+                          <TouchableOpacity
+                            onPress={() => Linking.openURL(`tel:${g.phone.replace(/\s+/g, '')}`)}
+                            style={styles.callBtn}
+                          >
+                            <Ionicons name="call" size={13} color={GREEN} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
                   ))
                 )}
               </ScrollView>
 
-              <Spacer size={14} />
-
-              <Row gap={8}>
-                <Btn
+              <View style={styles.modalDivider} />
+              <Row gap={10}>
+                <TouchableOpacity
+                  style={[styles.modalPrimaryBtn, { flex: 1 }]}
                   onPress={async () => {
                     await usePGowStore.getState().dispatchAutomatedRentAlerts();
                     setShowOverdueModal(false);
@@ -294,26 +355,19 @@ export default function OwnerOverviewTab() {
                       timestamp: Date.now(),
                     });
                   }}
-                  containerColor={Colors.primary}
-                  textColor={Colors.textInverse}
-                  borderRadius={12}
-                  height={44}
-                  style={{ flex: 1 }}
+                  activeOpacity={0.85}
                 >
-                  <Txt size={12} weight="800" color={Colors.textInverse}>⚡ Remind All Unpaid</Txt>
-                </Btn>
-                <OutlinedBtn
+                  <Text style={styles.modalPrimaryBtnText}>⚡ Remind All Unpaid</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalSecondaryBtn, { flex: 1 }]}
                   onPress={() => { setShowOverdueModal(false); router.push('/guests'); }}
-                  borderColor={Colors.borderSubtle}
-                  textColor={Colors.textPrimary}
-                  borderRadius={12}
-                  height={44}
-                  style={{ flex: 1 }}
+                  activeOpacity={0.8}
                 >
-                  <Txt size={12} weight="800" color={Colors.textPrimary}>Open Ledger ›</Txt>
-                </OutlinedBtn>
+                  <Text style={styles.modalSecondaryBtnText}>Open Ledger ›</Text>
+                </TouchableOpacity>
               </Row>
-            </Card>
+            </View>
           </View>
         </Modal>
       )}
@@ -321,52 +375,182 @@ export default function OwnerOverviewTab() {
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  root:   { flex: 1, backgroundColor: BG },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, gap: 0 },
+
+  // Portfolio teaser
   teaserCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.surface, borderRadius: Layout.borderRadiusCard,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    paddingHorizontal: 14, paddingVertical: 12,
+    backgroundColor: WHITE, borderRadius: 16,
+    borderWidth: 1, borderColor: BORDER,
+    paddingHorizontal: 16, paddingVertical: 12,
+    marginBottom: 14,
   },
+  teaserLabel: { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.6, marginBottom: 2 },
+  teaserValue: { fontSize: 13, fontWeight: '600', color: CHARCOAL },
+  teaserLink:  { fontSize: 12, fontWeight: '700', color: GREEN },
+
+  // Hero card
   heroCard: {
-    backgroundColor: Colors.primary,
-    borderRadius: Layout.borderRadiusCard,
-    padding: 18,
-    // Mint-glow shadow
-    shadowColor: Layout.shadowHero.shadowColor as any,
-    shadowOffset: Layout.shadowHero.shadowOffset as any,
-    shadowOpacity: Layout.shadowHero.shadowOpacity,
-    shadowRadius: Layout.shadowHero.shadowRadius,
-    elevation: Layout.shadowHero.elevation,
+    backgroundColor: GREEN,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
   },
-  heroStat: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+  heroLabel: {
+    fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)',
+    letterSpacing: 0.6,
   },
-  tileGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    gap: 10,
-  },
-  tileIcon: {
-    width: 40, height: 40, borderRadius: 12,
+  heroIconCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center', justifyContent: 'center',
   },
-  feedDot: {
-    width: 8, height: 8, borderRadius: 4, marginTop: 4,
+  heroAmount: {
+    fontSize: 42, fontWeight: '900', color: WHITE,
+    letterSpacing: -1, marginTop: 4,
   },
+  heroSub: { fontSize: 12, color: 'rgba(255,255,255,0.80)' },
+  heroDivider: {
+    height: 1, backgroundColor: 'rgba(255,255,255,0.18)',
+    marginVertical: 14,
+  },
+  overduePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    alignSelf: 'flex-start',
+  },
+  overdueText: { fontSize: 13, fontWeight: '800', color: WHITE },
+
+  // Section headers
+  sectionHeader: { marginBottom: 12 },
+  sectionTitle:  { fontSize: 17, fontWeight: '700', color: CHARCOAL },
+  viewAll:       { fontSize: 13, fontWeight: '700', color: GREEN },
+
+  // Tile grid
+  tileGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    gap: 12, marginBottom: 24,
+  },
+  tileWrap: { width: '48%' },
+  tileCard: {
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 16,
+    minHeight: 130,
+  },
+  tileIconBox: {
+    width: 44, height: 44, borderRadius: 13,
+    backgroundColor: '#EAF5EE',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  tileLabel: { fontSize: 14, fontWeight: '700', color: CHARCOAL, marginBottom: 2 },
+  tileDesc:  { fontSize: 12, color: MUTED },
+  tileArrow: {
+    position: 'absolute', bottom: 14, right: 14,
+  },
+
+  // Property overview strip
+  overviewStrip: {
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: BORDER,
+    flexDirection: 'row',
+    paddingVertical: 16,
+    marginBottom: 24,
+  },
+  overviewCell: {
+    flex: 1, alignItems: 'center',
+  },
+  overviewDivider: {
+    width: 1, backgroundColor: BORDER,
+  },
+  overviewValue: { fontSize: 20, fontWeight: '800', color: CHARCOAL, marginTop: 8 },
+  overviewLabel: { fontSize: 12, fontWeight: '600', color: MUTED, marginTop: 2 },
+  overviewSub:   { fontSize: 11, color: MUTED },
+
+  // Activity card
+  activityCard: {
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 16,
+  },
+  activityCheckCircle: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: '#EAF5EE',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  activityEmpty:    { fontSize: 14, fontWeight: '700', color: CHARCOAL },
+  activityEmptySub: { fontSize: 12, color: MUTED, marginTop: 1 },
+  feedDot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
+  feedTitle: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
+  feedSub:   { fontSize: 12, color: MUTED, marginTop: 1 },
+  feedDivider: { height: 1, backgroundColor: BORDER, marginVertical: 8 },
+
+  // Modal
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(10, 18, 13, 0.50)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  modalCard: {
+    width: '92%', maxHeight: '84%',
+    backgroundColor: WHITE,
+    borderRadius: 24,
+    padding: 20,
+    zIndex: 2,
   },
   modalIconBox: {
     width: 40, height: 40, borderRadius: 12,
+    backgroundColor: '#FFFBEB',
     alignItems: 'center', justifyContent: 'center',
   },
-  roomPill: {
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
-    backgroundColor: '#F0FDF9',
+  modalTitle: { fontSize: 16, fontWeight: '800', color: CHARCOAL },
+  modalSub:   { fontSize: 12, color: MUTED },
+  modalDivider: { height: 1, backgroundColor: BORDER, marginVertical: 14 },
+  closeBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#F2F5F2',
+    alignItems: 'center', justifyContent: 'center',
   },
+  allPaidBox: {
+    alignItems: 'center', padding: 24,
+    backgroundColor: '#F0FDF4', borderRadius: 14, marginBottom: 8,
+  },
+  allPaidTitle: { fontSize: 14, fontWeight: '800', color: '#166534', marginTop: 8 },
+  allPaidSub:   { fontSize: 12, color: MUTED, marginTop: 2 },
+  overdueRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: BORDER,
+  },
+  overdueGuestName: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
+  overdueGuestSub:  { fontSize: 12, color: MUTED, marginTop: 2 },
+  overdueAmount: { fontSize: 15, fontWeight: '800', color: '#B45309' },
+  callBtn: {
+    marginTop: 4, width: 28, height: 28, borderRadius: 14,
+    backgroundColor: '#EAF5EE', alignItems: 'center', justifyContent: 'center',
+  },
+  roomPill: {
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 6, backgroundColor: '#EAF5EE',
+  },
+  roomPillText: { fontSize: 10, fontWeight: '700', color: GREEN },
+  modalPrimaryBtn: {
+    height: 46, backgroundColor: GREEN,
+    borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+  },
+  modalPrimaryBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  modalSecondaryBtn: {
+    height: 46,
+    borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: BORDER,
+  },
+  modalSecondaryBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
 });
