@@ -1,3 +1,4 @@
+import { SupplyItem } from '@/types';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -5,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
 import { OrderStepper } from '../components/grocery/OrderStepper';
 import { orderEngine, DetailedOrder, OrderItemUpdate } from '../services/orderEngine';
-import { mockProducts } from '../data/mockProducts';
+
 import { Colors, Layout, Radii } from '@/theme';
 
 const STATUS_HERO: Record<string, string> = {
@@ -88,7 +89,7 @@ export function GroceryOrderDetailScreen() {
 
   const handleBuyItAgain = () => {
     order.items.forEach((item) => {
-      const product = mockProducts.find(p => p.id === item.productId);
+      const product = ([] as SupplyItem[]).find(p => p.id === item.productId);
       if (product) {
         addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, item.quantity);
       }

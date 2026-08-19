@@ -39,10 +39,12 @@ function accentFor(plan: Plan): { colour: string; tag: string; tagBg: string } {
   return { colour: '#10B981', tag: 'PREPAID', tagBg: 'rgba(16,185,129,0.15)' };
 }
 
+import { useActiveProperty } from '@/features/properties/useProperties';
+
 const money = (value: string | number) => `₹${Math.round(Number(value)).toLocaleString('en-IN')}`;
 
 export function OwnerSubscriptionScreen() {
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const { activeEntity: owner } = useActiveProperty();
   const refreshAll = usePGowStore((s) => s.refreshAll);
   const logout = usePGowStore((s) => s.logout);
   const pgId = useAuthStore((s) => s.activePgId);

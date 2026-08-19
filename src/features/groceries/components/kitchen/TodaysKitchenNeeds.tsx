@@ -1,8 +1,9 @@
+import { SupplyItem } from '@/types';
 import React, { useState, useMemo, useRef } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../../store/useCartStore';
-import { getProductById, mockProducts } from '../../data/mockProducts';
+
 import { weeklyMenu } from '../../data/weeklyMenu';
 import { KitchenNeedsBanner } from './KitchenNeedsBanner';
 import { ProductCard } from '../grocery/ProductCard';
@@ -40,14 +41,16 @@ const getIngredientsForDish = (dishName: string): string[] => {
 interface TodaysKitchenNeedsProps {
   onProductPress: (productId: string) => void;
   onSeeAllCategoriesPress: () => void;
+  products?: SupplyItem[];
 }
 
-export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProductPress, onSeeAllCategoriesPress }) => {
+export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProductPress, onSeeAllCategoriesPress, products = [] }) => {
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
 
   const bannerScrollRef = useRef<ScrollView>(null);
+  const findProduct = (id: string) => products.find((p) => p.id === id);
 
   // ── Day setup ──
   const currentDayName = useMemo(() => {
@@ -119,7 +122,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
       return;
     }
 
-    const updatedIngredients: any[] = [];
+    const updatedIngredients: MenuIngredient[] = [];
     const addedProductIds = new Set<string>();
 
     // Keep ingredients still relevant to remaining dishes
@@ -142,18 +145,18 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
 
     // Add new ingredients for new dishes
     editingDishes.forEach((dish) => {
-      const directProduct = mockProducts.find((p) => p.name.toLowerCase() === dish.toLowerCase());
+      const directProduct = products.find((p) => p.name.toLowerCase() === dish.toLowerCase());
       const productIds: string[] = directProduct ? [directProduct.id] : getIngredientsForDish(dish);
 
       productIds.forEach((pId) => {
         if (addedProductIds.has(pId)) return;
         addedProductIds.add(pId);
-        const product = mockProducts.find((p) => p.id === pId);
+        const product = findProduct(pId);
         if (product) {
-          const opt = product.ownerOptions[0] || { unit: '1 unit', price: 100 };
+          const opt = { price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined };
           updatedIngredients.push({
             productId: product.id, name: product.name, quantity: opt.unit,
-            image: product.image, price: opt.price, originalPrice: opt.originalPrice, unit: opt.unit,
+            image: product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg'), price: opt.price, originalPrice: opt.originalPrice, unit: opt.unit,
           });
         }
       });
@@ -167,19 +170,19 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
     showAlert('Success', 'PG menu updated successfully!', 'success');
   };
 
-  const handleAddOne = (ing: any) => {
-    const product = getProductById(ing.productId);
+  const handleAddOne = (ing: MenuIngredient) => {
+    const product = findProduct(ing.productId);
     if (product) {
-      const option = product.ownerOptions.find((o) => o.unit === ing.unit) || { unit: ing.unit, price: ing.price, originalPrice: ing.originalPrice };
+      const option = { unit: ing.unit, price: ing.price, originalPrice: ing.originalPrice };
       addItem(product, option, 1);
     }
   };
 
-  const handleIncrement = (ing: any, currentQty: number) => {
+  const handleIncrement = (ing: MenuIngredient, currentQty: number) => {
     updateQuantity(`${ing.productId}-${ing.unit}`, currentQty + 1);
   };
 
-  const handleDecrement = (ing: any, currentQty: number) => {
+  const handleDecrement = (ing: MenuIngredient, currentQty: number) => {
     updateQuantity(`${ing.productId}-${ing.unit}`, currentQty - 1);
   };
 
@@ -188,9 +191,9 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
     targetConfig.ingredients.forEach((ing: MenuIngredient) => {
       const compoundId = `${ing.productId}-${ing.unit}`;
       if (!cartItems.find((item) => item.id === compoundId)) {
-        const product = getProductById(ing.productId);
+        const product = findProduct(ing.productId);
         if (product) {
-          const option = product.ownerOptions.find((o) => o.unit === ing.unit) || { unit: ing.unit, price: ing.price, originalPrice: ing.originalPrice };
+          const option = { unit: ing.unit, price: ing.price, originalPrice: ing.originalPrice };
           addItem(product, option, 1);
           addedCount++;
         }
@@ -293,6 +296,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
         onNewDishTextChange={setNewDishText}
         onAddDish={handleAddDish}
         onSave={handleSaveMenu}
+        products={products}
       />
 
       {/* ── See All Bottom Sheet ── */}
@@ -320,7 +324,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
                   </View>
                   <View style={styles.gridContainer}>
                     {items.map((ing: MenuIngredient) => {
-                      const productObj = getProductById(ing.productId);
+                      const productObj = findProduct(ing.productId);
                       if (!productObj) return null;
                       return (
                         <View key={ing.productId} style={styles.gridCardWrapper}>

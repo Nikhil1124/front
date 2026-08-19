@@ -1,3 +1,4 @@
+import { SupplyItem } from '@/types';
 import React, { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -5,21 +6,25 @@ import { router } from 'expo-router';
 import { useCartStore, CartItem, ReplacementPreference } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { ReplacementPicker } from '../components/grocery/ReplacementPicker';
-import { mockProducts } from '../data/mockProducts';
+import { useSupplyItems } from '../useSupply';
+import { useAuthStore } from '@/store/authStore';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
 import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
+import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { getPerUnitRateLabel } from '../utils/pricing';
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
   const mode = useShoppingModeStore((s) => s.mode);
-  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
-  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
+  const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
+  const { data: supplyItems = [] } = useSupplyItems(activePgId);
+
+  const { activeEntity: owner } = useActiveProperty();
+  const ownerForGuest = owner;
   const insets = useSafeAreaInsets();
 
   const [editingReplacementId, setEditingReplacementId] = useState<string | null>(null);
@@ -84,9 +89,8 @@ export function GroceryCartScreen() {
     router.push('/groceries/checkout');
   };
 
-  // Reusable add for recommendations
-  // Recommended products list (Section 14)
-  const recommendations = useMemo(() => mockProducts.slice(0, 6), []);
+  // Recommendations list
+  const recommendations = useMemo(() => supplyItems.slice(0, 6), [supplyItems]);
 
   return (
     <View style={styles.container}>
@@ -142,7 +146,7 @@ export function GroceryCartScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* 4. Free Delivery Progress Box — delivery is free on every checkout slot for now. */}
+            {/* 4. Free Delivery Progress Box */}
             <View style={styles.freeDeliveryCard}>
               <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
               <Text style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
@@ -164,7 +168,7 @@ export function GroceryCartScreen() {
                     {/* Left: Product Image */}
                     <View style={styles.imageContainer}>
                       <Image
-                        source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+                        source={item.image ? { uri: item.image } : require('../../../../../assets/img_app_icon.jpg')}
                         style={styles.itemImage}
                       />
                     </View>

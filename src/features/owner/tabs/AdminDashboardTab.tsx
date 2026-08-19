@@ -19,17 +19,27 @@ interface Props {
   onAddPg: () => void;
 }
 
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { usePaymentsQuery } from '@/features/payments/usePayments';
+import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
+import { useStaffQuery } from '@/features/staff/useStaff';
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { useAuthStore } from '@/store/authStore';
+import * as map from '@/data/mappers';
+import type { GuestRSVPEntity } from '@/types';
+
 export function AdminDashboardTab({ onAddPg }: Props) {
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const isManager = usePGowStore((s) => s.isManagerMode);
-  const allPGs = usePGowStore((s) => s.allPGsState);
-  const allGuests = usePGowStore((s) => s.allGuestsState);
-  const allPayments = usePGowStore((s) => s.allPaymentsState);
-  const notifications = usePGowStore((s) => s.currentPGNotifications);
-  const guests = usePGowStore((s) => s.currentGuests);
-  const staffList = usePGowStore((s) => s.currentStaff);
-  const complaints = usePGowStore((s) => s.currentFeedbackComplaints);
-  const allRSVPs = usePGowStore((s) => s.allRSVPsState);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const allGuests = guests;
+  const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);
+  const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
+  const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
   const formatServiceTime12h = usePGowStore((s) => s.formatServiceTime12h);
   const getAlertTriggerTime = usePGowStore((s) => s.getAlertTriggerTime);
   const triggerSimulated2HourAlert = usePGowStore((s) => s.triggerSimulated2HourAlert);
@@ -64,15 +74,24 @@ export function AdminDashboardTab({ onAddPg }: Props) {
     }
   }, [selectedNotification?.id]);
 
-  const skipsCount = allRSVPs.filter((r) => r.choice === 'NOT_REQUIRED').length;
+  const selectedMealId = selectedNotification?.id ?? notifications[0]?.id;
+  const { data: mealResponses = [] } = useMealResponsesQuery(selectedMealId, activePgId ?? undefined);
+  const rsvpsForSelected: GuestRSVPEntity[] = mealResponses
+    .filter((r) => r.choice !== null)
+    .map((r) => ({
+      id: `${selectedMealId}:${r.membership_id}`,
+      notificationId: selectedMealId ?? '',
+      guestId: r.membership_id,
+      guestName: r.name,
+      choice: r.choice === 'eating' ? 'REQUIRED' : 'NOT_REQUIRED',
+      timestamp: map.toMillis(r.responded_at),
+    }));
+
+  const skipsCount = rsvpsForSelected.filter((r) => r.choice === 'NOT_REQUIRED').length;
   // No per-plate cost exists in the backend — this is a stated assumption applied to a real
   // count, not a fact, so it is labelled "Estimated" below rather than "Live".
   const selectedCostPlate = 45;
   const estimatedSavings = skipsCount * selectedCostPlate;
-
-  const rsvpsForSelected = selectedNotification
-    ? allRSVPs.filter((r) => r.notificationId === selectedNotification.id)
-    : [];
   const filteredGuests = guests.filter((g) =>
     !searchQuery.trim() ||
     g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

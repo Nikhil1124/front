@@ -20,8 +20,12 @@ const WHITE = '#FFFFFF';
 const LIGHT_GREEN = '#EEF8F1';
 const RADIUS = 16;
 
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useAuthStore } from '@/store/authStore';
+
 export function OwnerAnnouncementsTab() {
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
   const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
   const owner = usePGowStore((s) => s.loggedInOwner);

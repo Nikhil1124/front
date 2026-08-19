@@ -6,13 +6,16 @@
  * too); this hook just makes it the one source of truth instead of a local mirror of it.
  */
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { useMealsQuery } from '@/features/meals/useMeals';
 import type { MealNotificationEntity } from '@/types';
 
 export function useActiveMeal(): {
   activeMeal: MealNotificationEntity | null;
   setActiveMeal: (meal: MealNotificationEntity) => void;
 } {
-  const notifications = usePGowStore((s) => s.currentPGNotifications);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
   const activeId = usePGowStore((s) => s.activeNotificationId);
   const setActiveNotificationId = usePGowStore((s) => s.setActiveNotificationId);
 

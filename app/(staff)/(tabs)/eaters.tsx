@@ -17,15 +17,31 @@ export default function ChefEatersTab() {
   return <ChefEatersView />;
 }
 
-function ChefEatersView() {
-  const notifications = usePGowStore((s) => s.currentPGNotifications);
-  const allRSVPs = usePGowStore((s) => s.allRSVPsState);
-  const guests = usePGowStore((s) => s.currentGuests);
-  const { activeMeal, setActiveMeal } = useActiveMeal();
+import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import * as map from '@/data/mappers';
+import type { GuestRSVPEntity } from '@/types';
 
-  const rsvpsForActive = activeMeal ? allRSVPs.filter((r) => r.notificationId === activeMeal.id) : [];
-  const reqCount = rsvpsForActive.filter((r) => r.choice === 'REQUIRED').length;
-  const notReqCount = rsvpsForActive.filter((r) => r.choice === 'NOT_REQUIRED').length;
+function ChefEatersView() {
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { activeMeal, setActiveMeal } = useActiveMeal();
+  const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
+
+  const rsvpsForActive: GuestRSVPEntity[] = mealResponses
+    .filter((r) => r.choice !== null)
+    .map((r) => ({
+      id: `${activeMeal?.id}:${r.membership_id}`,
+      notificationId: activeMeal?.id ?? '',
+      guestId: r.membership_id,
+      guestName: r.name,
+      choice: r.choice === 'eating' ? 'REQUIRED' : 'NOT_REQUIRED',
+      timestamp: map.toMillis(r.responded_at),
+    }));
+
+  const reqCount = mealResponses.filter((r) => r.choice === 'eating').length;
+  const notReqCount = mealResponses.filter((r) => r.choice === 'skipping').length;
   const noResponse = Math.max(0, guests.length - reqCount - notReqCount);
 
   return (
@@ -208,7 +224,7 @@ function DeliveryDashboardRoute() {
             <Col style={{ flex: 1, borderRightWidth: 1, borderColor: Colors.borderSubtle, paddingRight: 10 }}>
               <Txt size={11} weight="800" color={Colors.primaryDark}>TODAY'S ROUTE</Txt>
               <Spacer size={4} />
-              <Row align="baseline" gap={4}>
+              <Row align="center" gap={4}>
                 <Txt size={36} weight="900" color={Colors.primaryDark}>{route.length}</Txt>
                 <Txt size={14} weight="900" color={Colors.textPrimary}>PGs</Txt>
               </Row>
@@ -241,60 +257,62 @@ function DeliveryDashboardRoute() {
           <View style={[styles.progressTrack, { height: 8, backgroundColor: Colors.surfaceElevated }]}><View style={[styles.progressFill, { width: `${progressPct}%`, backgroundColor: Colors.primary, borderRadius: 4 }]} /></View>
         </Card>
 
-          <Col>
-            <Spacer size={4} />
-            <Card containerColor={Colors.primaryDark} borderRadius={Radii.xl} padding={[20, 16]} style={{ shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 6, overflow: 'hidden' }}>
-              <Ionicons name="map-outline" size={140} color="rgba(255,255,255,0.06)" style={{ position: 'absolute', right: -30, top: -20, transform: [{ rotate: '15deg' }] }} />
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
-                <Txt size={10} weight="800" color="#FFFFFF">NEXT DELIVERY</Txt>
-              </View>
-              <Spacer size={16} />
-              <Row align="center" justify="space-between">
-                <Row gap={12} align="center">
-                  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}>
-                    <Txt size={24} weight="900" color={Colors.primaryDark}>{String(route.indexOf(current) + 1).padStart(2, '0')}</Txt>
-                  </View>
-                  <Col>
-                    <Txt size={20} weight="900" color="#FFFFFF" numberOfLines={1}>{current.pgName}</Txt>
-                    <Spacer size={6} />
-                    <Row align="center" gap={6}>
-                      <Ionicons name="location-outline" size={14} color={Colors.borderSubtle} />
-                      <Txt size={13} color={Colors.borderSubtle}>{current.location.split(',').slice(-2)[0].trim()}, Bangalore</Txt>
-                    </Row>
-                    <Spacer size={2} />
-                    <Row gap={6} align="center">
-                      <Ionicons name="cube-outline" size={14} color={Colors.borderSubtle} />
-                      <Txt size={14} weight="800" color="#FFFFFF">{current.orders} Orders</Txt>
-                    </Row>
-                    <Spacer size={10} />
-                    <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 1, borderColor: '#10B981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
-                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981', marginRight: 6 }} />
-                      <Txt size={10} weight="700" color="#10B981">Ready for Delivery</Txt>
+          {current && (
+            <Col>
+              <Spacer size={4} />
+              <Card containerColor={Colors.primaryDark} borderRadius={Radii.xl} padding={[20, 16]} style={{ shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 6, overflow: 'hidden' }}>
+                <Ionicons name="map-outline" size={140} color="rgba(255,255,255,0.06)" style={{ position: 'absolute', right: -30, top: -20, transform: [{ rotate: '15deg' }] }} />
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
+                  <Txt size={10} weight="800" color="#FFFFFF">NEXT DELIVERY</Txt>
+                </View>
+                <Spacer size={16} />
+                <Row align="center" justify="space-between">
+                  <Row gap={12} align="center">
+                    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}>
+                      <Txt size={24} weight="900" color={Colors.primaryDark}>{String(route.indexOf(current) + 1).padStart(2, '0')}</Txt>
                     </View>
-                  </Col>
+                    <Col>
+                      <Txt size={20} weight="900" color="#FFFFFF" numberOfLines={1}>{current.pgName}</Txt>
+                      <Spacer size={6} />
+                      <Row align="center" gap={6}>
+                        <Ionicons name="location-outline" size={14} color={Colors.borderSubtle} />
+                        <Txt size={13} color={Colors.borderSubtle}>{current.location.split(',').slice(-2)[0].trim()}, Bangalore</Txt>
+                      </Row>
+                      <Spacer size={2} />
+                      <Row gap={6} align="center">
+                        <Ionicons name="cube-outline" size={14} color={Colors.borderSubtle} />
+                        <Txt size={14} weight="800" color="#FFFFFF">{current.orders} Orders</Txt>
+                      </Row>
+                      <Spacer size={10} />
+                      <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 1, borderColor: '#10B981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981', marginRight: 6 }} />
+                        <Txt size={10} weight="700" color="#10B981">Ready for Delivery</Txt>
+                      </View>
+                    </Col>
+                  </Row>
                 </Row>
-              </Row>
-              
-              <Spacer size={24} />
-              <Row gap={12}>
-                <Btn onPress={() => setActiveDeliveryId(current.id)} containerColor="#FFFFFF" textColor={Colors.primaryDark} borderRadius={Radii.lg} height={48} style={{ flex: 1 }}>
-                  <Ionicons name="document-text-outline" size={18} color={Colors.primaryDark} style={{ marginRight: 6 }} />
-                  <Txt size={14} weight="900" color={Colors.primaryDark}>View Delivery</Txt>
-                </Btn>
-                <Btn onPress={() => Alert.alert('Navigation', `Opening Google Maps to navigate to ${current.pgName}...`)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.lg} height={48} style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}>
-                  <Ionicons name="navigate-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Txt size={14} weight="900" color="#FFFFFF">Navigate</Txt>
-                </Btn>
-              </Row>
-            </Card>
-          </Col>
+                
+                <Spacer size={24} />
+                <Row gap={12}>
+                  <Btn onPress={() => setActiveDeliveryId(current.id)} containerColor="#FFFFFF" textColor={Colors.primaryDark} borderRadius={Radii.lg} height={48} style={{ flex: 1 }}>
+                    <Ionicons name="document-text-outline" size={18} color={Colors.primaryDark} style={{ marginRight: 6 }} />
+                    <Txt size={14} weight="900" color={Colors.primaryDark}>View Delivery</Txt>
+                  </Btn>
+                  <Btn onPress={() => Alert.alert('Navigation', `Opening Google Maps to navigate to ${current.pgName}...`)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.lg} height={48} style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}>
+                    <Ionicons name="navigate-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Txt size={14} weight="900" color="#FFFFFF">Navigate</Txt>
+                  </Btn>
+                </Row>
+              </Card>
+            </Col>
+          )}
 
         <Row justify="space-between" align="center" style={{ marginTop: 12 }}>
           <Col>
             <Txt size={14} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 1 }}>DELIVERY ROUTE</Txt>
             <Txt size={12} color={Colors.textMuted}>Largest orders first</Txt>
           </Col>
-          <OutlinedBtn onPress={() => Alert.alert('Route Map', 'Opening full delivery route map...')} borderColor={Colors.borderStrong} textColor={Colors.primaryDark} height={32} padding={[0, 12]}>
+          <OutlinedBtn onPress={() => Alert.alert('Route Map', 'Opening full delivery route map...')} borderColor={Colors.borderSubtle} textColor={Colors.primaryDark} height={32}>
             <Ionicons name="map-outline" size={14} color={Colors.primaryDark} style={{ marginRight: 6 }} />
             <Txt size={12} weight="800" color={Colors.primaryDark}>View on Map</Txt>
           </OutlinedBtn>

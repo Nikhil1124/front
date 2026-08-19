@@ -6,10 +6,14 @@
  * shape; it just hands back the same functions rather than owning a second copy of them.
  */
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
 import { useAuthStore } from "../../store/authStore";
+import * as map from "../../data/mappers";
+import type { PGOwnerEntity } from "../../types";
 
 export interface PgResponse {
   id: string;
@@ -110,6 +114,64 @@ export function disableJoinCode(pgId: string): Promise<void> {
   return apiFetch<void>(API.PG_JOIN_CODE(pgId), { method: "DELETE" });
 }
 
+export function usePropertiesQuery() {
+  return useQuery({
+    queryKey: qk.properties.list(),
+    queryFn: () => listProperties({ limit: 100 }),
+    select: (page) => page.items,
+  });
+}
+
+export function usePropertiesEntitiesQuery() {
+  const user = useAuthStore((s) => s.user);
+  return useQuery<PGOwnerEntity[]>({
+    queryKey: [...qk.properties.list(), "entities", user?.id ?? ""],
+    queryFn: async () => {
+      const res = await listProperties({ limit: 100 });
+      return res.items.map((pg) => map.toPgOwner(pg, user, null));
+    },
+  });
+}
+
+export function usePropertyQuery(pgId?: string) {
+  return useQuery({
+    queryKey: qk.properties.detail(pgId ?? ""),
+    queryFn: () => getProperty(pgId!),
+    enabled: !!pgId,
+  });
+}
+
+export function useActiveProperty() {
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const user = useAuthStore((s) => s.user);
+  const { data: properties = [] } = usePropertiesQuery();
+  const activePg = properties.find((p) => p.id === activePgId) ?? properties[0] ?? null;
+  const activeEntity = activePg ? map.toPgOwner(activePg, user, null) : null;
+  return { activePg, activeEntity, activePgId };
+}
+
+export function useCreatePropertyMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createProperty,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.properties.list() });
+      qc.invalidateQueries({ queryKey: qk.properties.all() });
+    },
+  });
+}
+
+export function useUpdatePropertyMutation(pgId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: Parameters<typeof updateProperty>[1]) => updateProperty(pgId, params),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.properties.list() });
+      qc.invalidateQueries({ queryKey: qk.properties.detail(pgId) });
+    },
+  });
+}
+
 export function useProperties() {
   const { activePgId } = useAuthStore();
   return {
@@ -160,6 +222,14 @@ export function activateUpiId(pgId: string, upiId: string): Promise<UpiIdRespons
 // here, since "why didn't this work" needs the server's actual reason.
 export function removeUpiId(pgId: string, upiId: string): Promise<void> {
   return apiFetch<void>(API.PG_UPI_ID(pgId, upiId), { method: "DELETE" });
+}
+
+export function useUpiIdsQuery(pgId?: string) {
+  return useQuery({
+    queryKey: qk.properties.upiIds(pgId ?? ""),
+    queryFn: () => listUpiIds(pgId!),
+    enabled: !!pgId,
+  });
 }
 
 export function useUpiIds() {

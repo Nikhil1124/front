@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { EnrichedProduct } from '../../data/mockProducts';
+import { SupplyItem } from '@/types';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { useCartStore } from '../../store/useCartStore';
@@ -9,7 +9,7 @@ import { Colors } from '@/theme';
 import { PriceDisplay } from './PriceDisplay';
 
 export interface MiniProductCardProps {
-  product: EnrichedProduct;
+  product: SupplyItem;
   onPress: () => void;
   /** Show wishlist heart button. Default: false */
   showWishlist?: boolean;
@@ -30,7 +30,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
   showRating = false,
 }) => {
   const mode = useShoppingModeStore((s) => s.mode);
-  const options = mode === 'owner' ? product.ownerOptions : product.guestOptions;
+  const options = [{ price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined }];
 
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
@@ -85,7 +85,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       {/* Product image */}
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.imageContainer}>
         <Image
-          source={typeof product.image === 'string' ? { uri: product.image } : product.image}
+          source={product.image_url ? { uri: product.image_url } : require('../../../../../../assets/img_app_icon.jpg')}
           style={styles.image}
           resizeMode="contain"
         />
@@ -99,7 +99,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       {showRating && (
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={9} color={Colors.warning} />
-          <Text style={styles.ratingText}>{product.rating || 4.5}</Text>
+          <Text style={styles.ratingText}>4.8</Text>
         </View>
       )}
 

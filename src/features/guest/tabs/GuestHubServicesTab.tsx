@@ -9,11 +9,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GuestLaundryBookingDialog } from '@/components/dialogs/HubDialogs';
 
 export function GuestHubServicesTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
-  const laundryRequests = usePGowStore((s) => s.guestLaundryRequestsState);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: laundryRequests = [] } = useLaundryRequestsQuery(activePgId ?? undefined);
   const [showLaundryDialog, setShowLaundryDialog] = useState(false);
 
   const myLaundry = laundryRequests.filter((r) => r.guestId === guest?.id);

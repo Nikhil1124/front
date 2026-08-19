@@ -6,12 +6,15 @@
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Txt } from '@/components/ui';
-import { usePGowStore } from '@/store/usePGowStore';
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { useAuthStore } from '@/store/authStore';
 import { TicketDetailScreen } from '@/features/guest/screens/TicketDetailScreen';
 
 export default function TicketDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const ticket = usePGowStore((s) => s.currentFeedbackComplaints.find((t) => t.id === id));
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
+  const ticket = complaints.find((t) => t.id === id);
 
   if (!ticket) {
     return (

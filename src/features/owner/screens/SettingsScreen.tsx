@@ -8,11 +8,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
+import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { UpiConfigSection } from '@/features/owner/tabs/UpiConfigSection';
 
 export function SettingsScreen() {
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const { activeEntity: owner } = useActiveProperty();
   const isManager = usePGowStore((s) => s.isManagerMode);
   const logout = usePGowStore((s) => s.logout);
 

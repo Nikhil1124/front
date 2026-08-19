@@ -24,11 +24,20 @@ const CATEGORY_LABEL: Record<string, string> = {
   other: 'Other',
 };
 
+import { useExpenseSummaryQuery } from '@/features/expenses/useExpenses';
+import { useAuthStore } from '@/store/authStore';
+
 export function OwnerFinancialSummaryChartCard() {
-  const collected = usePGowStore((s) => s.cycleCollected);
-  const spent = usePGowStore((s) => s.cycleSpent);
-  const net = usePGowStore((s) => s.cycleNet);
-  const byCategory = usePGowStore((s) => s.cycleExpensesByCategory);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: summary } = useExpenseSummaryQuery(activePgId ?? undefined);
+
+  const collected = parseFloat(summary?.collected ?? '0') || 0;
+  const spent = parseFloat(summary?.spent ?? '0') || 0;
+  const net = parseFloat(summary?.net ?? '0') || 0;
+  const byCategory = (summary?.by_category ?? []).map((c) => ({
+    category: CATEGORY_LABEL[c.category] ?? c.category,
+    amount: parseFloat(c.amount) || 0,
+  }));
 
   const profitMarginPct = collected > 0 ? (net / collected) * 100 : 0;
   const maxCategory = Math.max(1, ...byCategory.map((c) => c.amount));

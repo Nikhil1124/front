@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
+import { SupplyItem } from '@/types';
 import { Colors, Layout, Radii } from '@/theme';
 
 export function GroceryWishlistScreen() {
@@ -23,7 +24,7 @@ export function GroceryWishlistScreen() {
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
 
-  const handleAddToCart = (product: any, option: any) => {
+  const handleAddToCart = (product: SupplyItem, option: { unit: string; price: number; originalPrice?: number }) => {
     addItem(product, option);
   };
 
@@ -71,7 +72,7 @@ export function GroceryWishlistScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
-            const options = mode === 'owner' ? item.ownerOptions : item.guestOptions;
+            const options = [{ price: item.price, unit: item.unit_label, originalPrice: item.mrp ?? undefined }];
             const option = options[0];
             if (!option) return null;
             const compoundId = `${item.id}-${option.unit}`;
@@ -80,14 +81,10 @@ export function GroceryWishlistScreen() {
               <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.9}
-                onPress={() => router.push(`/groceries/product/${item.id}`)}
+                onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: item.id } })}
               >
                 <Image
-                  source={
-                    typeof item.image === 'string'
-                      ? { uri: item.image }
-                      : item.image
-                  }
+                  source={item.image_url ? { uri: item.image_url } : require('../../../../../assets/img_app_icon.jpg')}
                   style={styles.cardImage}
                 />
                 <View style={styles.cardInfo}>

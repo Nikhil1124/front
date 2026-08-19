@@ -21,9 +21,17 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+<<<<<<< HEAD
 import { useAuthStore } from '@/store/authStore';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import * as staffApi from '@/features/staff/useStaff';
+=======
+import { hapticSelect } from '@/utils/haptics';
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+import { useStaffQuery } from '@/features/staff/useStaff';
+import { useAuthStore } from '@/store/authStore';
+import { FormScroll } from '@/components/ui/FormScroll';
+>>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -46,6 +54,7 @@ const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff'
 const SHIFT_OPTIONS = ['Day Shift (8 AM - 5 PM)', 'Night Shift (8 PM - 5 AM)', 'Part Time (9 AM - 1 PM)'];
 
 export function StaffManagementTab() {
+<<<<<<< HEAD
   const [subTab, setSubTab] = useState(0); // 0: Add Staff, 1: Staff Directory
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -56,6 +65,14 @@ export function StaffManagementTab() {
   const staffList = usePGowStore((s) => s.currentStaff);
   
   // Store form inputs
+=======
+  const [subTab, setSubTab] = useState(0);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
+  const isManager = usePGowStore((s) => s.isManagerMode);
+>>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
   const staffRoleInput = usePGowStore((s) => s.staffRoleInput);
   const staffNameInput = usePGowStore((s) => s.staffNameInput);
   const staffPhoneInput = usePGowStore((s) => s.staffPhoneInput);

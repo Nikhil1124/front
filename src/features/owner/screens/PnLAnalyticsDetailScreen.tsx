@@ -41,10 +41,19 @@ const TABS = [
   { key: 'custom' as const, label: 'Custom Range 📅' },
 ];
 
+import { useActiveProperty } from '@/features/properties/useProperties';
+
 export function PnLAnalyticsDetailScreen() {
   const [interval, setInterval] = useState<AnalyticsInterval>('3m');
   const [customStart, setCustomStart] = useState('2026-06-01');
+<<<<<<< HEAD
   const [customEnd, setCustomEnd] = useState('2026-08-19');
+=======
+  const [customEnd, setCustomEnd] = useState('2026-08-11');
+  const { activeEntity: owner, activePgId } = useActiveProperty();
+  const pgId = activePgId ?? null;
+  const { data, isLoading, isError, error } = usePnL(pgId, interval === 'custom' ? '3m' : interval);
+>>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
   const owner = usePGowStore((s) => s.loggedInOwner);
   const activePgId = useAuthStore((s) => s.activePgId);

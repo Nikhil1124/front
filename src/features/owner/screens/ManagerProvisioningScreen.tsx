@@ -17,17 +17,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { useStaffQuery } from '@/features/staff/useStaff';
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { StaffManagementTab } from '@/features/owner/tabs/StaffManagementTab';
 
 export function ManagerProvisioningScreen() {
-  const staff = usePGowStore((s) => s.currentStaff);
-  const allPGs = usePGowStore((s) => s.allPGsState);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: staff = [] } = useStaffQuery(activePgId ?? undefined);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
 
   // Filter to managers — `currentStaff` carries everyone on the active
   // property's roster (cooks, housekeeping, etc.). The provisioning summary
   // is specifically about who can sign in to the Manager dashboard.
-  const managers = staff.filter((s) => s.role === 'manager');
+  const managers = staff.filter((s) => s.role.toLowerCase() === 'manager');
 
   return (
     <HubScreenWrapper

@@ -42,14 +42,20 @@ export default function ChefBroadcastTab() {
   return <ChefBroadcastView />;
 }
 
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useMealResponsesQuery } from '@/features/meals/useMeals';
+
 function ChefBroadcastView() {
   const [showManualInput, setShowManualInput] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
   const [selectedCat, setSelectedCat] = useState('All');
   const [selectedDishes, setSelectedDishes] = useState<string[]>([]);
 
-  const guests = usePGowStore((s) => s.currentGuests);
-  const allRSVPs = usePGowStore((s) => s.allRSVPsState);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { activeMeal } = useActiveMeal();
+  const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
+
   const alarm9 = usePGowStore((s) => s.chefAlarm9amEnabled);
   const alarm1 = usePGowStore((s) => s.chefAlarm1pmEnabled);
   const alarm3 = usePGowStore((s) => s.chefAlarm330pmEnabled);
@@ -62,11 +68,9 @@ function ChefBroadcastView() {
   const triggerFollowup = usePGowStore((s) => s.trigger15MinUnresponsiveFollowup);
   const sendMealNotification = usePGowStore((s) => s.sendMealNotification);
   const set = usePGowStore((s) => s.set);
-  const { activeMeal } = useActiveMeal();
 
-  const rsvpsForActive = activeMeal ? allRSVPs.filter((r) => r.notificationId === activeMeal.id) : [];
-  const reqCount = rsvpsForActive.filter((r) => r.choice === 'REQUIRED').length;
-  const notReqCount = rsvpsForActive.filter((r) => r.choice === 'NOT_REQUIRED').length;
+  const reqCount = mealResponses.filter((r) => r.choice === 'eating').length;
+  const notReqCount = mealResponses.filter((r) => r.choice === 'skipping').length;
   const noResponse = Math.max(0, guests.length - reqCount - notReqCount);
 
   const toggleDish = (dish: string) => {

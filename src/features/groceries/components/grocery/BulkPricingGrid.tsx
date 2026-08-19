@@ -1,8 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors } from '@/theme';
-import { PricingOption } from '../../data/mockProducts';
 import { getPerUnitRateLabel, parseUnitQuantity } from '../../utils/pricing';
+
+export interface PricingOption {
+  unit: string;
+  price: number;
+  originalPrice?: number;
+}
 
 interface BulkPricingGridProps {
   options: PricingOption[];

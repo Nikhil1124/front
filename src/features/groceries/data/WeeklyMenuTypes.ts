@@ -1,8 +1,8 @@
 export interface MenuIngredient {
-  productId: string; // ID of the product in mockProducts
+  productId: string; // ID of the product in []
   name: string;
   quantity: string;
-  image: any;
+  image: string | null;
   price: number;
   originalPrice?: number;
   unit: string;

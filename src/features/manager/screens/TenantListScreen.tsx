@@ -43,8 +43,12 @@ function kycPill(status: string | undefined): KycPillConfig {
   }
 }
 
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useAuthStore } from '@/store/authStore';
+
 export function TenantListScreen() {
-  const guests = usePGowStore((s) => s.currentGuests);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
 
   const [rejectGuestId, setRejectGuestId] = useState<string | null>(null);

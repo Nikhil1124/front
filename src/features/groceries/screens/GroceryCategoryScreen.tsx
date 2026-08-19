@@ -1,24 +1,27 @@
+import { SupplyCategory, SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, StatusBar, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { mockCategories, mockProducts, getProductsByCategory, Category } from '../data/mockProducts';
+
 import { ProductCard } from '../components/grocery/ProductCard';
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
+import { useSupplyCategories, useSupplyItems } from '../useSupply';
+import { useAuthStore } from '@/store/authStore';
 import { Colors, Layout, Radii } from '@/theme';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 // Section Grouping Definition
-interface CategoryGroup {
+interface SupplyCategoryGroup {
   id: string;
   title: string;
   categoryIds: string[];
 }
 
-const CATEGORY_GROUPS: CategoryGroup[] = [
+const CATEGORY_GROUPS: SupplyCategoryGroup[] = [
   {
     id: 'grocery-kitchen',
     title: 'Grocery & Kitchen',
@@ -75,19 +78,21 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNam
 };
 
 export function GroceryCategoryScreen() {
-  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
-  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { name: initialCategory } = useLocalSearchParams<{ name?: string }>();
+  const { name: initialSupplyCategory } = useLocalSearchParams<{ name?: string }>();
   const filter: string | undefined = undefined;
+
+  const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
+  const { data: supplyItems = [] } = useSupplyItems(activePgId);
+  const { data: categories = [] } = useSupplyCategories(activePgId);
 
   const mode = useShoppingModeStore((s) => s.mode);
   const getCartTotal = useCartStore((s) => s.getCartTotal);
   const cartItemCount = useCartStore((s) => s.getItemCount());
 
   // Active category state (null = show category section groups; string = show products of that category)
-  const [activeCategory, setActiveCategory] = useState<string | null>(initialCategory ?? null);
+  const [activeSupplyCategory, setActiveSupplyCategory] = useState<string | null>(initialSupplyCategory ?? null);
   const [search, setSearch] = useState('');
 
   // Determine if a section filter param exists
@@ -95,27 +100,26 @@ export function GroceryCategoryScreen() {
 
   // Products for the active category (or deals)
   const products = useMemo(() => {
-    let list = activeCategory
-      ? getProductsByCategory(activeCategory, mode)
+    let list = activeSupplyCategory
+      ? supplyItems.filter(
+          (p) =>
+            p.category_id === activeSupplyCategory ||
+            categories.find((c) => c.name === activeSupplyCategory && c.id === p.category_id) !== undefined
+        )
       : filter === 'deals'
-      ? mockProducts.filter((p) => {
-          const opts = mode === 'owner' ? p.ownerOptions : p.guestOptions;
-          return opts.some((o) => o.originalPrice && o.originalPrice > o.price);
-        })
-      : search.trim()
-      ? mockProducts
-      : [];
+      ? supplyItems.filter((p) => p.mrp && p.mrp > p.price)
+      : supplyItems;
 
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
-        (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+        (p) => p.name.toLowerCase().includes(q) || p.category_id.toLowerCase().includes(q)
       );
     }
     return list;
-  }, [activeCategory, filter, mode, search]);
+  }, [activeSupplyCategory, filter, search, supplyItems, categories]);
 
-  const showProductList = activeCategory !== null || filter === 'deals' || search.trim().length > 0;
+  const showProductList = activeSupplyCategory !== null || filter === 'deals' || search.trim().length > 0;
 
   // 4 items per row grid math matching the photo
   const cardGap = 10;
@@ -125,16 +129,16 @@ export function GroceryCategoryScreen() {
   const productCardWidth = (width - 36) / 2;
 
   // Render a single category item card in the 4-column layout
-  const renderCategoryItem = (cat: Category) => (
+  const renderSupplyCategoryItem = (cat: SupplyCategory) => (
     <TouchableOpacity
       key={cat.id}
       style={[styles.catItem, { width: itemWidth }]}
       activeOpacity={0.85}
-      onPress={() => setActiveCategory(cat.name)}
+      onPress={() => setActiveSupplyCategory(cat.name)}
     >
-      <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: cat.bgColor || '#EBF6F6' }]}>
+      <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: '#EBF6F6' }]}>
         <Image
-          source={typeof cat.image === 'string' ? { uri: cat.image } : cat.image}
+          source={require('../../../../../assets/img_app_icon.jpg')}
           style={styles.catImage}
           resizeMode="contain"
         />
@@ -156,8 +160,8 @@ export function GroceryCategoryScreen() {
             <TouchableOpacity
               style={styles.backBtn}
               onPress={() => {
-                if (activeCategory) {
-                  setActiveCategory(null);
+                if (activeSupplyCategory) {
+                  setActiveSupplyCategory(null);
                   setSearch('');
                 } else {
                   router.back();
@@ -194,7 +198,7 @@ export function GroceryCategoryScreen() {
           <View style={styles.chipRow}>
             <View style={styles.activeChip}>
               <Text style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
-              <TouchableOpacity onPress={() => setActiveCategory(null)}>
+              <TouchableOpacity onPress={() => setActiveSupplyCategory(null)}>
                 <Ionicons name="close" size={14} color={Colors.primary} />
               </TouchableOpacity>
             </View>
@@ -203,9 +207,9 @@ export function GroceryCategoryScreen() {
 
         {/* Title Banner when viewing an active category product grid */}
         {showProductList && (
-          <View style={styles.activeCategoryHeader}>
-            <Text style={styles.activeCategoryTitle}>{activeCategory || sectionFilter?.label || 'Products'}</Text>
-            <Text style={styles.activeCategorySub}>{products.length} items available</Text>
+          <View style={styles.activeSupplyCategoryHeader}>
+            <Text style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Text>
+            <Text style={styles.activeSupplyCategorySub}>{products.length} items available</Text>
           </View>
         )}
 
@@ -218,7 +222,7 @@ export function GroceryCategoryScreen() {
           >
             {CATEGORY_GROUPS.map((group) => {
               // Get categories belonging to this section
-              const groupCats = mockCategories.filter((c) => group.categoryIds.includes(c.id));
+              const groupCats = categories.filter((c) => group.categoryIds.includes(c.id));
               if (groupCats.length === 0) return null;
 
               // If a filter is applied, filter categories accordingly
@@ -232,11 +236,23 @@ export function GroceryCategoryScreen() {
                 <View key={group.id} style={styles.sectionBlock}>
                   <Text style={styles.sectionHeading}>{group.title}</Text>
                   <View style={styles.gridRow}>
-                    {filteredGroupCats.map(renderCategoryItem)}
+                    {filteredGroupCats.map(renderSupplyCategoryItem)}
                   </View>
                 </View>
               );
             })}
+
+            {/* Fallback for unclassified categories */}
+            {categories.some((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id))) && (
+              <View style={styles.sectionBlock}>
+                <Text style={styles.sectionHeading}>All Categories</Text>
+                <View style={styles.gridRow}>
+                  {categories
+                    .filter((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id)))
+                    .map(renderSupplyCategoryItem)}
+                </View>
+              </View>
+            )}
           </FormScroll>
         ) : (
           /* ── PRODUCT GRID (When a Category is Tapped) ── */
@@ -358,16 +374,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.primary,
   },
-  activeCategoryHeader: {
+  activeSupplyCategoryHeader: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginBottom: 4,
   },
-  activeCategoryTitle: {
+  activeSupplyCategoryTitle: {
     fontSize: 20,
     color: Colors.textPrimary,
   },
-  activeCategorySub: {
+  activeSupplyCategorySub: {
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,

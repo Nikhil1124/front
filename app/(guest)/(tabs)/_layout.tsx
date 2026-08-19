@@ -17,12 +17,16 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSuccess } from '@/utils/haptics';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useAuthStore } from '@/store/authStore';
+
 export default function GuestTabsLayout() {
   const [showNotif, setShowNotif] = useState(false);
   const [showProfilePhotoDialog, setShowProfilePhotoDialog] = useState(false);
 
   const guest = usePGowStore((s) => s.loggedInGuest);
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const logout = usePGowStore((s) => s.logout);
   const updateProfilePhoto = usePGowStore((s) => s.updateGuestProfilePhoto);
 

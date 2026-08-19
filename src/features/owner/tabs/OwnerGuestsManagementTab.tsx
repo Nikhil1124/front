@@ -49,13 +49,24 @@ const KYC_STYLE: Record<string, { bg: string; border: string; text: string; labe
   DEFAULT: { bg: '#F7FAF7', border: '#E6EFEA', text: '#66736B', label: '⚠️ No KYC' },
 };
 
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+
 export function OwnerGuestsManagementTab() {
+<<<<<<< HEAD
   const [subTab, setSubTab] = useState(0); // 0: Add Resident, 1: Directory
   const [showManualForm, setShowManualForm] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
 
   const owner = usePGowStore((s) => s.loggedInOwner);
   const guests = usePGowStore((s) => s.currentGuests);
+=======
+  const [subTab, setSubTab] = useState(0);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
+>>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
   const createGuestByOwner = usePGowStore((s) => s.createGuestByOwner);
   const updateGuestByOwner = usePGowStore((s) => s.updateGuestByOwner);
   const deleteGuest = usePGowStore((s) => s.deleteGuest);

@@ -37,9 +37,11 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
       Alert.alert('Location Required', 'Pin the property location on the map before saving.');
       return;
     }
+    // No UPI field on this form — leave it unset rather than fabricating a handle that would
+    // get persisted as this property's real payment account. Configure it via UPI Settings.
     const result = await createPG(
       name, address, parseInt(totalBeds, 10) || 30,
-      mgrName, mgrPhone, mgrPin, 'pgowowner@ybl', location,
+      mgrName, mgrPhone, mgrPin, '', location,
     );
     if (result.ok) {
       Alert.alert('Success', `Property created with ${totalBeds} beds capacity!`);

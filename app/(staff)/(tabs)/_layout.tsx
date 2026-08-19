@@ -20,12 +20,14 @@ import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificat
 
 
 
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+
 export default function StaffTabsLayout() {
   const [showNotif, setShowNotif] = useState(false);
 
   const staff = usePGowStore((s) => s.loggedInStaff);
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const logout = usePGowStore((s) => s.logout);
   const activeRole = useAuthStore((s) => s.activeRole);
 
@@ -65,7 +67,7 @@ export default function StaffTabsLayout() {
           <Txt size={11} color={Colors.textMuted}>
             {activeRole === 'delivery_agent'
               ? `${staff?.name ?? 'Rahul Kumar'} · Delivery Agent`
-              : `Chef: ${staff?.name ?? 'Ramesh Kumar'} (PG: ${owner?.pgName ?? 'Co-Living'})`}
+              : `Chef: ${staff?.name ?? 'Ramesh Kumar'}`}
           </Txt>
         </Col>
       </TabHeader>

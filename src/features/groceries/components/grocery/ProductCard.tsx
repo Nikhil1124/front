@@ -1,17 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { EnrichedProduct } from '../../data/mockProducts';
+import { Image, StyleProp, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
+import { SupplyItem } from '@/types';
 import { useCartStore } from '../../store/useCartStore';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { Colors } from '@/theme';
 
 interface ProductCardProps {
-  product: EnrichedProduct;
-  onPress?: (product: EnrichedProduct) => void;
+  product: SupplyItem;
+  onPress?: (product: SupplyItem) => void;
   layout?: 'deal' | 'simple';
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -30,7 +30,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const isWishlisted = useWishlistStore((s) => s.isWishlisted(product.id));
   const toggleItem = useWishlistStore((s) => s.toggleItem);
 
-  const options = mode === 'owner' ? product.ownerOptions : product.guestOptions;
+  const options = [{ price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined }];
 
   const [selectedIdx, setSelectedIdx] = useState(0);
 
@@ -101,7 +101,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Image Container */}
       <View style={styles.imageContainer}>
         <Image
-          source={typeof product.image === 'string' ? { uri: product.image } : product.image}
+          source={product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')}
           style={styles.image}
         />
         {quantity > 0 && (
@@ -131,7 +131,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           <View style={styles.ratingBadge}>
             <Ionicons name="star" size={10} color="#F59E0B" />
-            <Text style={styles.ratingText}>{product.rating || 4.5}</Text>
+            <Text style={styles.ratingText}>4.8</Text>
           </View>
         </View>
 

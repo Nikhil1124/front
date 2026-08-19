@@ -287,6 +287,7 @@ export function WelcomeScreen() {
               <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
             </Row>
 
+<<<<<<< HEAD
             <Row gap={8}>
               <Btn
                 onPress={() => { hapticSelect(); useAuthStore.setState({ activeRole: 'delivery_agent', accessToken: 'mock_token' }); router.replace('/'); }}
@@ -316,6 +317,68 @@ export function WelcomeScreen() {
               </Btn>
             </Row>
           </Card>
+=======
+            <Btn
+              onPress={() => { hapticSelect(); router.push('/guest-join'); }}
+              containerColor={Colors.success}
+              textColor={Colors.textInverse}
+              borderRadius={12}
+              height={44}
+            >
+              <Ionicons name="log-in-outline" size={18} color={Colors.textInverse} style={{ marginRight: 6 }} />
+              <Txt variant="body" weight="800" color={Colors.textInverse}>
+                Resident Login / Join
+              </Txt>
+            </Btn>
+          </Card>
+        </AnimatedPress>
+
+        {/* Staff & Operations Portal */}
+        <AnimatedPress
+          scale={0.985}
+          hapticPattern="light"
+          onPress={() => { hapticSelect(); router.push('/staff-login'); }}
+        >
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={18}
+            borderWidth={1.5}
+            borderColor={Colors.borderSubtle}
+            padding={[16, 14]}
+            style={styles.cardShadow}
+          >
+            <Row align="center" gap={10} style={styles.cardHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: '#f0f0f0ff' }]}>
+                <Ionicons name="people-sharp" size={20} color={Colors.CyberAmber} />
+              </View>
+              <Col>
+                <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
+                  Staff & Operations Portal
+                </Txt>
+                <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
+                  Kitchen, Maintenance & Delivery Agents
+                </Txt>
+              </Col>
+            </Row>
+
+            <Btn
+              onPress={() => { hapticSelect(); router.push('/staff-login'); }}
+              containerColor="#000000ff"
+              textColor={Colors.CyberAmber}
+              borderRadius={12}
+              height={44}
+            >
+              <Ionicons name="people" size={18} color={Colors.CyberAmber} style={{ marginRight: 6 }} />
+              <Txt variant="body" weight="700" color={Colors.CyberAmber}>
+                Open Staff & Operations Portal
+              </Txt>
+            </Btn>
+          </Card>
+        </AnimatedPress>
+
+
+      </View>
+>>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
         </View>
 

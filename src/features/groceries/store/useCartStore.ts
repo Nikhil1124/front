@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { EnrichedProduct } from '../data/mockProducts';
+import { SupplyItem } from '@/types';
 
 export type ReplacementPreference = 'best-match' | 'specific' | 'refund';
 
@@ -13,7 +13,7 @@ export interface CartItem {
   name: string;
   price: number;
   originalPrice?: number;
-  image: any;
+  image: string | null;
   unit: string;
   category: string;
   quantity: number;
@@ -29,7 +29,7 @@ export interface GSTDetails {
 
 interface CartState {
   items: CartItem[];
-  addItem: (product: EnrichedProduct, selectedOption: { unit: string; price: number; originalPrice?: number }, qty?: number) => void;
+  addItem: (product: SupplyItem, selectedOption: { unit: string; price: number; originalPrice?: number }, qty?: number) => void;
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   setReplacement: (cartItemId: string, preference: ReplacementPreference) => void;
@@ -66,9 +66,9 @@ export const useCartStore = create<CartState>()(
             name: product.name,
             price: option.price,
             originalPrice: option.originalPrice,
-            image: product.image,
+            image: product.image_url,
             unit: option.unit,
-            category: product.category,
+            category: product.category_id,
             quantity: qty,
             replacement: 'best-match',
           };

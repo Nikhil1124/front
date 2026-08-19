@@ -38,18 +38,23 @@ const AD_IMAGES: Record<string, any> = {
   img_premium_subscription: require('../../assets/img_premium_subscription.jpg'),
 };
 
+import { useRecordAdEventMutation } from '@/features/ads/useAds';
+import { useAuthStore } from '@/store/authStore';
+
 export function FeaturedMonetizedAdCard() {
   const [activeAdIdx, setActiveAdIdx] = useState(0);
   const [showCheckout, setShowCheckout] = useState(false);
-  const recordImpression = usePGowStore((s) => s.recordAdImpression);
-  const recordClick = usePGowStore((s) => s.recordAdClick);
-  const recordCouponCopy = usePGowStore((s) => s.recordCouponCopy);
-
-  useEffect(() => {
-    recordImpression();
-  }, [activeAdIdx, recordImpression]);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const recordEvent = useRecordAdEventMutation(activePgId ?? undefined);
 
   const currentAd = ADS[activeAdIdx];
+
+  useEffect(() => {
+    recordEvent.mutate({ eventType: 'impression', adRef: String(currentAd.id) });
+  }, [activeAdIdx, currentAd.id]);
+
+  const recordClick = () => recordEvent.mutate({ eventType: 'click', adRef: String(currentAd.id) });
+  const recordCouponCopy = () => recordEvent.mutate({ eventType: 'coupon_copy', adRef: String(currentAd.id) });
 
   return (
     <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={16} borderWidth={1} borderColor="rgba(255,215,0,0.4)" padding={[8, 8]}>

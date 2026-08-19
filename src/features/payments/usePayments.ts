@@ -1,9 +1,13 @@
 import { Linking } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type { PaymentEntity } from "../../types";
 
 export interface PaymentRecord {
   id: string;
@@ -166,19 +170,89 @@ export async function launchUpiPayment({
       await Linking.openURL(upiUri);
       return {
         success: true,
-        message: `Launching UPI App... (Copied UPI ID: ${cleanUpi})`,
+        message: "UPI app opened. VPA copied to clipboard as fallback.",
+      };
+    } else {
+      return {
+        success: false,
+        message: "No supported UPI app found. VPA copied to clipboard!",
       };
     }
   } catch {
-    // fall through to clipboard message
+    return {
+      success: false,
+      message: "Could not open UPI app. VPA copied to clipboard!",
+    };
   }
+}
 
-  return {
-    success: true,
-    message: `📋 Copied UPI ID: ${cleanUpi}! Open your UPI app (PhonePe / GPay / Paytm) and pay ₹${Math.round(
-      amount
-    )}.`,
-  };
+export function usePaymentsQuery(pgId?: string, status?: PaymentStatus) {
+  return useQuery<PaymentEntity[]>({
+    queryKey: status ? [...qk.payments.list(pgId ?? ""), status] : qk.payments.list(pgId ?? ""),
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listPayments(pgId, { status, limit: 100 });
+      return res.items.map(map.toPayment);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useRentDueQuery(pgId?: string) {
+  return useQuery<RentDueInfo>({
+    queryKey: qk.payments.due(pgId ?? ""),
+    queryFn: () => getRentDue(pgId!),
+    enabled: !!pgId,
+  });
+}
+
+export function useSubmitPaymentMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: submitPayment,
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.payments.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.payments.due(pgId) });
+        qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useVerifyPaymentMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (paymentId: string) => verifyPayment(paymentId),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.payments.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
+        qc.invalidateQueries({ queryKey: qk.guests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.expenses.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useRejectPaymentMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ paymentId, reason }: { paymentId: string; reason?: string }) =>
+      rejectPayment(paymentId, reason),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.payments.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useSendRentRemindersMutation(pgId?: string) {
+  return useMutation({
+    mutationFn: () => sendRentReminders(pgId!),
+  });
 }
 
 export function usePayments() {

@@ -9,13 +9,14 @@ import {
   useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  ImageSourcePropType,
 } from 'react-native';
 import { Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface BannerConfig {
   id: string;
-  image: any;
+  image: ImageSourcePropType;
   title: string;
   cta: string;
   route: string;

@@ -1,6 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type { StaffMemberEntity } from "../../types";
 
 export interface StaffMember {
   membership_id: string;
@@ -9,7 +13,7 @@ export interface StaffMember {
   name: string;
   phone: string;
   email: string | null;
-  role: "manager" | "chef" | "kitchen_staff" | "maintenance" | "owner";
+  role: "manager" | "chef" | "kitchen_staff" | "maintenance" | "delivery_agent" | "owner";
   // A string on the way out ("15000.00"), a number on the way in — see addStaff below.
   // Pydantic serializes Decimal to a JSON string, so arithmetic on this needs parseFloat.
   monthly_salary: string | null;
@@ -20,7 +24,7 @@ export interface StaffMember {
   ended_at: string | null;
 }
 
-export type StaffRole = "manager" | "chef" | "kitchen_staff" | "maintenance";
+export type StaffRole = "manager" | "chef" | "kitchen_staff" | "maintenance" | "delivery_agent";
 
 export interface UpdateStaffPayload {
   name?: string;
@@ -75,6 +79,58 @@ export function updateStaff(
 
 export function removeStaff(membershipId: string): Promise<StaffMember> {
   return apiFetch<StaffMember>(API.STAFF_MEMBER(membershipId), { method: "DELETE" });
+}
+
+export function useStaffQuery(pgId?: string) {
+  return useQuery<StaffMemberEntity[]>({
+    queryKey: qk.staff.list(pgId ?? ""),
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listStaff(pgId, { limit: 100 });
+      return res.items.map(map.toStaff);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useAddStaffMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: Parameters<typeof addStaff>[1]) => addStaff(pgId!, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.staff.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.staff.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useUpdateStaffMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ membershipId, params }: { membershipId: string; params: UpdateStaffPayload }) =>
+      updateStaff(membershipId, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.staff.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.staff.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useRemoveStaffMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (membershipId: string) => removeStaff(membershipId),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.staff.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.staff.all(pgId) });
+      }
+    },
+  });
 }
 
 export function useStaff() {

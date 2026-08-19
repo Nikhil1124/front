@@ -15,11 +15,7 @@
  */
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://pgow.zoveyacms.in";
 
-/**
- * Mock mode is an explicit simulator switch, not the default network path. This keeps demo
- * builds available without making a configured backend URL silently unused.
- */
-export const USE_MOCK_API = process.env.EXPO_PUBLIC_USE_MOCK_API === "true";
+
 
 export const API = {
   // Auth

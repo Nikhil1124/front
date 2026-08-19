@@ -1,4 +1,6 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
 
 export type AdEventType = "impression" | "click" | "coupon_copy";
@@ -35,6 +37,27 @@ export function getAdMetrics(pgId: string, period?: string): Promise<AdMetrics> 
   const q = new URLSearchParams({ pg_id: pgId });
   if (period) q.set("period", period);
   return apiFetch<AdMetrics>(`${API.ADS_METRICS}?${q}`);
+}
+
+export function useAdMetricsQuery(pgId?: string, period?: string) {
+  return useQuery<AdMetrics>({
+    queryKey: period ? [...qk.ads.metrics(pgId ?? ""), period] : qk.ads.metrics(pgId ?? ""),
+    queryFn: () => getAdMetrics(pgId!, period),
+    enabled: !!pgId,
+  });
+}
+
+export function useRecordAdEventMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ eventType, adRef }: { eventType: AdEventType; adRef?: string }) =>
+      recordAdEvent(pgId!, eventType, adRef),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.ads.metrics(pgId) });
+      }
+    },
+  });
 }
 
 export function useAds() {
