@@ -1,61 +1,40 @@
-import { SupplyItem } from '@/types';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useCartStore } from '../store/useCartStore';
 import { OrderStepper } from '../components/grocery/OrderStepper';
-import { orderEngine, DetailedOrder, OrderItemUpdate } from '../services/orderEngine';
-
-import { Colors, Layout, Radii } from '@/theme';
+import { useSupplyOrderDetailQuery, useSupplyTrackingQuery } from '../useSupplyOrders';
+import { Colors, Layout } from '@/theme';
 
 const STATUS_HERO: Record<string, string> = {
-  received: 'Order Received',
-  shopping: 'Shopping Your Order',
-  checkout: 'At Checkout',
-  'on-the-way': 'Out for Delivery',
-  delivered: 'Delivered',
-};
-
-const KIND_LABEL: Record<string, string> = {
-  found: 'Found',
-  replaced: 'Replaced',
-  refunded: 'Refunded',
-};
-
-const KIND_BADGE: Record<string, { bg: string; text: string }> = {
-  found: { bg: Colors.surfaceElevated, text: Colors.primary },
-  replaced: { bg: '#FFF3E0', text: '#E65100' },
-  refunded: { bg: '#FEF2F2', text: Colors.danger },
+  placed: 'Order Placed',
+  confirmed: 'Order Confirmed',
+  packed: 'Order Packed',
+  loaded: 'Loaded on Vehicle',
+  dispatched: 'Out for Delivery',
+  delivered: 'Order Delivered',
+  cancelled: 'Order Cancelled',
 };
 
 export function GroceryOrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
-  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
-  const addItem = useCartStore((state) => state.addItem);
+  const { data: order, isLoading, refetch } = useSupplyOrderDetailQuery(id as string);
+  const { data: tracking } = useSupplyTrackingQuery(id as string);
 
-  const [order, setOrder] = useState<DetailedOrder | undefined>(() =>
-    orderEngine.getOrder(id as string)
-  );
-
-  // Subscribe to live order status updates
-  useEffect(() => {
-    const unsub = orderEngine.subscribe(() => {
-      const fresh = orderEngine.getOrder(id as string);
-      if (fresh) setOrder(fresh);
-    });
-    return unsub;
-  }, [id]);
-
-  // Live timer tick for elapsed and remaining duration
-  const [now, setNow] = useState<number>(() => Date.now());
-  useEffect(() => {
-    if (order && order.status !== 'delivered') {
-      const interval = setInterval(() => setNow(Date.now()), 1000);
-      return () => clearInterval(interval);
-    }
-  }, [order?.status]);
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centerBox]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   if (!order) {
     return (
@@ -76,26 +55,7 @@ export function GroceryOrderDetailScreen() {
   }
 
   const isDelivered = order.status === 'delivered';
-  const elapsedMs = (isDelivered && order.statusTimestamps.delivered ? order.statusTimestamps.delivered : now) - order.placedAt;
-  const etaMs = order.etaMinutes * 60 * 1000;
-  const remainingMs = Math.max(0, etaMs - (now - order.placedAt));
-
-  const formatTime = (ms: number) => {
-    const sec = Math.max(0, Math.floor(ms / 1000));
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}m ${s.toString().padStart(2, '0')}s`;
-  };
-
-  const handleBuyItAgain = () => {
-    order.items.forEach((item) => {
-      const product = ([] as SupplyItem[]).find(p => p.id === item.productId);
-      if (product) {
-        addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, item.quantity);
-      }
-    });
-    router.push('/groceries/cart');
-  };
+  const isCancelled = order.status === 'cancelled';
 
   return (
     <View style={styles.container}>
@@ -103,66 +63,42 @@ export function GroceryOrderDetailScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order #{order.id.slice(-6)}</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Order #{order.order_no || order.id.slice(-6)}</Text>
+        <TouchableOpacity onPress={() => refetch()}>
+          <Ionicons name="refresh-outline" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Status Card */}
         <View style={styles.statusHeroCard}>
-          <Text style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || 'Processing'}</Text>
+          <Text style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || order.status.toUpperCase()}</Text>
           <Text style={styles.statusHeroSub}>
             {isDelivered
-              ? `Delivered at ${new Date(order.statusTimestamps.delivered || now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-              : `Arriving in approx ${Math.ceil(remainingMs / 60000)} mins`}
+              ? `Delivered on ${new Date(order.updated_at || order.created_at).toLocaleDateString()}`
+              : isCancelled
+              ? 'This order was cancelled'
+              : 'Tracking live updates from warehouse to delivery'}
           </Text>
 
           <OrderStepper status={order.status} />
 
-          {!isDelivered ? (
-            <View style={styles.timerRow}>
-              <View style={styles.timerBox}>
-                <Ionicons name="time-outline" size={16} color={Colors.primary} />
-                <Text style={styles.timerLabel}>Elapsed: </Text>
-                <Text style={styles.timerValue}>{formatTime(elapsedMs)}</Text>
-              </View>
-              <View style={styles.timerBox}>
-                <Ionicons name="hourglass-outline" size={16} color={Colors.primary} />
-                <Text style={styles.timerLabel}>ETA: </Text>
-                <Text style={styles.timerValue}>{formatTime(remainingMs)}</Text>
-              </View>
-            </View>
-          ) : (
+          {isDelivered && (
             <View style={styles.deliveredBadgeRow}>
               <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
               <Text style={styles.deliveredText}>Order Completed Successfully 🎉</Text>
             </View>
           )}
-        </View>
 
-        {/* Live Item Updates from Shopper */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Shopper Item Updates</Text>
-          {order.itemUpdates.length === 0 ? (
-            <Text style={styles.noUpdatesText}>Your shopper will log item picks & substitutions here.</Text>
-          ) : (
-            <View style={styles.updatesList}>
-              {order.itemUpdates.map((upd: OrderItemUpdate) => {
-                const badge = KIND_BADGE[upd.kind];
-                return (
-                  <View key={upd.productId} style={styles.updateRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.updateProductName}>{upd.productName}</Text>
-                      {upd.note ? <Text style={styles.updateNote}>{upd.note}</Text> : null}
-                    </View>
-                    <View style={[styles.kindBadge, { backgroundColor: badge.bg }]}>
-                      <Text style={[styles.kindBadgeText, { color: badge.text }]}>
-                        {KIND_LABEL[upd.kind]}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
+          {tracking?.trip && (
+            <View style={styles.tripInfoBox}>
+              <Ionicons name="car-outline" size={18} color={Colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.tripTitle}>Delivery Vehicle: {tracking.trip.vehicle_label}</Text>
+                <Text style={styles.tripSub}>
+                  Driver: {tracking.trip.driver_name} ({tracking.trip.driver_phone})
+                </Text>
+              </View>
             </View>
           )}
         </View>
@@ -170,19 +106,24 @@ export function GroceryOrderDetailScreen() {
         {/* Order Details & Summary */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Order Summary</Text>
-          <Text style={styles.summaryMeta}>Placed on {new Date(order.placedAt).toLocaleString()}</Text>
-          <Text style={styles.summaryMeta}>Slot: {order.slotLabel}</Text>
-          <Text style={styles.summaryMeta}>Deliver to: {order.addressLabel}</Text>
-          <Text style={styles.summaryMeta}>Payment: {order.paymentMethod}</Text>
+          <Text style={styles.summaryMeta}>Placed on {new Date(order.created_at).toLocaleString()}</Text>
+          {order.delivery_slot ? <Text style={styles.summaryMeta}>Slot: {order.delivery_slot}</Text> : null}
+          <Text style={styles.summaryMeta}>Payment Method: {order.payment_method.toUpperCase()}</Text>
+          <Text style={styles.summaryMeta}>Payment Status: {order.payment_status.toUpperCase()}</Text>
 
           <View style={styles.divider} />
 
-          {order.items.map((item) => (
+          {order.items?.map((item) => (
             <View key={item.id} style={styles.lineItem}>
-              <Text style={styles.lineName}>
-                {item.name} ({item.unit}) x {item.quantity}
-              </Text>
-              <Text style={styles.linePrice}>₹{item.price * item.quantity}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.lineName}>
+                  {item.item_name} ({item.unit_label}) x {item.quantity}
+                </Text>
+                {item.status ? (
+                  <Text style={styles.lineStatusText}>Status: {item.status}</Text>
+                ) : null}
+              </View>
+              <Text style={styles.linePrice}>₹{Number(item.total_price).toFixed(2)}</Text>
             </View>
           ))}
 
@@ -190,45 +131,25 @@ export function GroceryOrderDetailScreen() {
 
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Item Subtotal</Text>
-            <Text style={styles.billVal}>₹{order.subtotal}</Text>
+            <Text style={styles.billVal}>₹{Number(order.subtotal_amount).toFixed(2)}</Text>
           </View>
-          {order.cgst !== undefined && (
-            <>
-              <View style={styles.billRow}>
-                <Text style={styles.billLabel}>CGST (2.5%)</Text>
-                <Text style={styles.billVal}>₹{order.cgst}</Text>
-              </View>
-              <View style={styles.billRow}>
-                <Text style={styles.billLabel}>SGST (2.5%)</Text>
-                <Text style={styles.billVal}>₹{order.sgst}</Text>
-              </View>
-            </>
-          )}
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Delivery Fee</Text>
-            <Text style={styles.billVal}>{order.deliveryFee === 0 ? 'FREE' : `₹${order.deliveryFee}`}</Text>
+            <Text style={styles.billVal}>
+              {Number(order.delivery_fee) === 0 ? 'FREE' : `₹${Number(order.delivery_fee).toFixed(2)}`}
+            </Text>
           </View>
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Platform Fee</Text>
-            <Text style={styles.billVal}>₹{order.serviceFee}</Text>
-          </View>
-          {order.tip > 0 && (
+          {Number(order.discount_amount) > 0 && (
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Tip</Text>
-              <Text style={styles.billVal}>₹{order.tip}</Text>
+              <Text style={styles.billLabel}>Discount</Text>
+              <Text style={styles.billVal}>-₹{Number(order.discount_amount).toFixed(2)}</Text>
             </View>
           )}
           <View style={[styles.billRow, { marginTop: 6 }]}>
-            <Text style={styles.totalLabel}>Total Paid</Text>
-            <Text style={styles.totalVal}>₹{order.total}</Text>
+            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalVal}>₹{Number(order.total_amount).toFixed(2)}</Text>
           </View>
         </View>
-
-        {/* Buy Again Button */}
-        <TouchableOpacity style={styles.buyAgainBtn} onPress={handleBuyItAgain} activeOpacity={0.85}>
-          <Ionicons name="refresh" size={20} color="#fff" />
-          <Text style={styles.buyAgainText}>Reorder All Items</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -238,6 +159,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.canvas,
+  },
+  centerBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -251,6 +176,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   emptyBox: {
@@ -277,7 +203,8 @@ const styles = StyleSheet.create({
     ...Layout.shadowCard,
   },
   statusHeroTitle: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
   statusHeroSub: {
@@ -286,40 +213,38 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 16,
   },
-  timerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-  },
-  timerBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  timerLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  timerValue: {
-    fontSize: 13,
-    color: Colors.textPrimary,
-  },
   deliveredBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
+    gap: 6,
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 8,
   },
   deliveredText: {
-    fontSize: 14,
     color: Colors.primary,
-    flex: 1,
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  tripInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+  },
+  tripTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  tripSub: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
   sectionCard: {
     backgroundColor: Colors.surface,
@@ -328,76 +253,47 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    ...Layout.shadowCard,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.textPrimary,
-    marginBottom: 12,
-  },
-  noUpdatesText: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    fontStyle: 'italic',
-  },
-  updatesList: {
-    gap: 8,
-  },
-  updateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surfaceMuted,
-    padding: 10,
-    borderRadius: Radii.xl,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
-  updateProductName: {
-    fontSize: 13,
-    color: Colors.textPrimary,
-  },
-  updateNote: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
-  kindBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  kindBadgeText: {
-    fontSize: 11,
+    marginBottom: 8,
   },
   summaryMeta: {
     fontSize: 12,
     color: Colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   divider: {
     height: 1,
     backgroundColor: Colors.borderSubtle,
-    marginVertical: 10,
+    marginVertical: 12,
   },
   lineItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 4,
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
   lineName: {
-    flex: 1,
     fontSize: 13,
     color: Colors.textPrimary,
   },
+  lineStatusText: {
+    fontSize: 11,
+    color: Colors.primary,
+    marginTop: 2,
+  },
   linePrice: {
     fontSize: 13,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 3,
+    marginBottom: 6,
   },
   billLabel: {
     fontSize: 13,
@@ -409,24 +305,12 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 15,
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
   totalVal: {
-    fontSize: 16,
-    color: Colors.primary,
-  },
-  buyAgainBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    paddingVertical: 14,
-    borderRadius: Radii.pill,
-    gap: 8,
-    marginTop: 8,
-  },
-  buyAgainText: {
-    color: '#fff',
     fontSize: 15,
+    fontWeight: '700',
+    color: Colors.primary,
   },
 });

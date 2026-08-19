@@ -532,23 +532,8 @@ export interface MealTypeSummary {
   totalSkip: number;
 }
 
-// ─── Supply (Phase 1) ────────────────────────────────────────────────────────────
+// ─── Supply & Operations ────────────────────────────────────────────────────────────
 
-export interface SupplyCategory {
-  id: string;
-  name: string;
-  sort_order: number;
-}
+export * from './supply';
 
-export interface SupplyItem {
-  id: string;
-  category_id: string;
-  name: string;
-  description: string;
-  unit_label: string;
-  price: number;
-  mrp: number | null;
-  variant_group: string | null;
-  image_url: string | null;
-  available: boolean;
-}
+

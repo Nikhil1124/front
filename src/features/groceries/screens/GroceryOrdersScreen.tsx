@@ -1,10 +1,10 @@
-import { SupplyItem } from '@/types';
+import { SupplyItem, SupplyOrderSummary } from '@/types';
 import React from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useOrderStore, DetailedOrder } from '../store/useOrderStore';
+import { useSupplyOrdersQuery } from '../useSupplyOrders';
 import { useCartStore } from '../store/useCartStore';
 import { useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
@@ -12,41 +12,25 @@ import { Colors, Layout, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 export function GroceryOrdersScreen() {
-  const orders = useOrderStore((state) => state.orders);
   const logout = usePGowStore((s) => s.logout);
-  const addItem = useCartStore((state) => state.addItem);
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
-  const { data: supplyItems = [] } = useSupplyItems(activePgId);
+  const { data: ordersData, isLoading, refetch } = useSupplyOrdersQuery(activePgId);
+  const orders = ordersData?.items || [];
 
-  const activeOrder = orders.find((o) => o.status !== 'delivered');
-
-  // Extract unique items from past orders for "Buy It Again"
-  const buyItAgainItems = Array.from(
-    new Map(orders.flatMap((o) => o.items.map((i) => [i.id, i]))).values()
-  );
-
-  const handleReorder = (order: DetailedOrder) => {
-    order.items.forEach((item) => {
-      const product = supplyItems.find(p => p.id === item.productId);
-      if (product) {
-        addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, item.quantity);
-      }
-    });
-    router.push('/groceries/cart');
-  };
+  const activeOrder = orders.find((o) => o.status !== 'delivered' && o.status !== 'cancelled');
 
   const openOrder = (orderId: string) => {
     router.push({ pathname: '/groceries/orders/[id]', params: { id: orderId } });
   };
 
-  const renderOrder = ({ item }: { item: DetailedOrder }) => (
+  const renderOrder = ({ item }: { item: SupplyOrderSummary }) => (
     <TouchableOpacity
       style={styles.orderCard}
       onPress={() => openOrder(item.id)}
       activeOpacity={0.9}
     >
       <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>Order #{item.id}</Text>
+        <Text style={styles.orderId}>Order #{item.order_no || item.id.slice(0, 8)}</Text>
         <View style={[styles.statusBadge, item.status !== 'delivered' && styles.activeStatusBadge]}>
           <Text style={[styles.statusText, item.status !== 'delivered' && styles.activeStatusText]}>
             {item.status.toUpperCase()}
@@ -55,22 +39,16 @@ export function GroceryOrdersScreen() {
       </View>
 
       <Text style={styles.orderDate}>
-        {new Date(item.placedAt).toLocaleDateString()} · {item.slotLabel}
-      </Text>
-
-      <View style={styles.divider} />
-
-      <Text style={styles.orderItems} numberOfLines={2}>
-        {item.items.map((i) => `${i.name} (x${i.quantity})`).join(', ')}
+        {new Date(item.created_at).toLocaleDateString()} · {item.item_count} items
       </Text>
 
       <View style={styles.divider} />
 
       <View style={styles.orderFooter}>
-        <Text style={styles.orderTotal}>₹{item.total}</Text>
-        <TouchableOpacity style={styles.reorderBtn} onPress={() => handleReorder(item)}>
-          <Ionicons name="refresh" size={15} color={Colors.primary} />
-          <Text style={styles.reorderText}>Reorder</Text>
+        <Text style={styles.orderTotal}>₹{Number(item.total_amount).toFixed(2)}</Text>
+        <TouchableOpacity style={styles.reorderBtn} onPress={() => openOrder(item.id)}>
+          <Ionicons name="eye-outline" size={15} color={Colors.primary} />
+          <Text style={styles.reorderText}>View Status</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -91,81 +69,58 @@ export function GroceryOrdersScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={orders}
-        renderItem={renderOrder}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <>
-            {/* Active Order Banner */}
-            {activeOrder && (
-              <TouchableOpacity
-                style={styles.activeBanner}
-                onPress={() => openOrder(activeOrder.id)}
-                activeOpacity={0.9}
-              >
-                <View style={styles.activeBannerLeft}>
-                  <View style={styles.pulseDot} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.activeBannerTitle}>
-                      Order #{activeOrder.id} is {activeOrder.status.toUpperCase()}
-                    </Text>
-                    <Text style={styles.activeBannerSub}>
-                      Est. delivery in ~{activeOrder.etaMinutes} mins · Tap to track live
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
-              </TouchableOpacity>
-            )}
-
-            {/* Buy It Again Carousel */}
-            {buyItAgainItems.length > 0 && (
-              <View style={styles.buyAgainSection}>
-                <Text style={styles.sectionTitle}>Buy It Again</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.buyAgainList}>
-                  {buyItAgainItems.map((item) => (
-                    <View key={item.id} style={styles.buyAgainCard}>
-                      <Image
-                        source={item.image ? { uri: item.image } : require('../../../../../assets/img_app_icon.jpg')}
-                        style={styles.buyAgainImg}
-                      />
-                      <Text style={styles.buyAgainName} numberOfLines={1}>
-                        {item.name}
+      {isLoading ? (
+        <View style={styles.loadingBox}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          renderItem={renderOrder}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          onRefresh={refetch}
+          refreshing={isLoading}
+          ListHeaderComponent={
+            <>
+              {/* Active Order Banner */}
+              {activeOrder && (
+                <TouchableOpacity
+                  style={styles.activeBanner}
+                  onPress={() => openOrder(activeOrder.id)}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.activeBannerLeft}>
+                    <View style={styles.pulseDot} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.activeBannerTitle}>
+                        Order #{activeOrder.order_no || activeOrder.id.slice(0, 8)} is {activeOrder.status.toUpperCase()}
                       </Text>
-                      <Text style={styles.buyAgainPrice}>₹{item.price}</Text>
-                      <TouchableOpacity
-                        style={styles.addAgainBtn}
-                        onPress={() => {
-                          const product = supplyItems.find(p => p.id === item.productId);
-                          if (product) {
-                            addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, 1);
-                          }
-                        }}
-                      >
-                        <Text style={styles.addAgainText}>+ Add</Text>
-                      </TouchableOpacity>
+                      <Text style={styles.activeBannerSub}>
+                        Tap to track live updates
+                      </Text>
                     </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
+                </TouchableOpacity>
+              )}
 
-            <Text style={styles.sectionTitle}>Order History</Text>
-          </>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No orders yet</Text>
-          </View>
-        }
-      />
+              <Text style={styles.sectionTitle}>Order History</Text>
+            </>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>No orders yet</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -371,5 +326,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: Colors.textMuted,
+  },
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
   },
 });

@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
-import { useOrderStore } from '../store/useOrderStore';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -38,16 +37,17 @@ const PAYMENT_METHODS = [
 ];
 
 import { useActiveProperty } from '@/features/properties/useProperties';
+import { useAuthStore } from '@/store/authStore';
+import { useCreateSupplyOrderMutation } from '../useSupplyOrders';
 
 export function GroceryCheckoutScreen() {
-  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
-  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const { activeEntity: owner } = useActiveProperty();
+  const activePgId = useAuthStore((s) => s.activePgId);
   const ownerForGuest = owner;
   const insets = useSafeAreaInsets();
 
   const { items, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
-  const placeOrder = useOrderStore((state) => state.placeOrder);
+  const createOrderMutation = useCreateSupplyOrderMutation();
 
   const [fulfillmentMode, setFulfillmentMode] = useState<'delivery' | 'pickup'>('delivery');
   const [selectedSlotId, setSelectedSlotId] = useState<string>('1');
@@ -82,36 +82,41 @@ export function GroceryCheckoutScreen() {
     );
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (items.length === 0) {
       Alert.alert("Error", "Your cart is empty. Add items before placing an order.");
       return;
     }
 
-    const payload = {
-      items,
-      subtotal,
-      cgst,
-      sgst,
-      totalGst,
-      deliveryFee,
-      serviceFee: platformFee,
-      tip: selectedTip,
-      total: grandTotal,
-      mode: fulfillmentMode,
-      slotLabel: `${selectedSlot.day}, ${selectedSlot.window}`,
-      addressLabel: fulfillmentMode === 'pickup' ? 'Store Pickup counter' : deliveryAddress,
-      paymentMethod: PAYMENT_METHODS.find((p) => p.id === paymentMethod)?.label || 'UPI',
-    };
+    const targetPgId = activePgId || owner?.id;
+    if (!targetPgId) {
+      Alert.alert("Error", "No active property found to place the order.");
+      return;
+    }
 
-    const newOrder = placeOrder(payload);
-    clearCart();
-    router.push({ pathname: '/groceries/orders/[id]', params: { id: newOrder.id } });
+    try {
+      const order = await createOrderMutation.mutateAsync({
+        pg_id: targetPgId,
+        payment_method: paymentMethod === 'cod' ? 'cash' : 'upi',
+        delivery_slot: `${selectedSlot.day}, ${selectedSlot.window}`,
+        delivery_notes: driverNote || undefined,
+        items: items.map((i) => ({
+          item_id: i.id,
+          quantity: i.quantity,
+        })),
+      });
+
+      clearCart();
+      router.push({ pathname: '/groceries/orders/[id]', params: { id: order.id } });
+    } catch (err: any) {
+      Alert.alert("Order Failed", err?.message || "Could not place order. Please try again.");
+    }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
+
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: 8 }]}>

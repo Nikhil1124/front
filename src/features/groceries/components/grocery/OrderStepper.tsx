@@ -9,31 +9,54 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { ORDER_STATUS_SEQUENCE, OrderStatus } from '../../services/orderEngine';
+import { SupplyOrderStatus } from '@/types/supply';
 import { Colors } from '@/theme';
 
-const STEP_META: Record<OrderStatus, { label: string; icon: keyof typeof Ionicons.glyphMap; hint: string }> = {
-  received: { label: 'Order Received', icon: 'receipt-outline', hint: 'Store accepted your order' },
-  shopping: { label: 'Shopper Picking Items', icon: 'cart-outline', hint: 'Selecting fresh items for you' },
-  checkout: { label: 'At Checkout', icon: 'pricetags-outline', hint: 'Finalizing payment & packing' },
-  'on-the-way': { label: 'Out for Delivery', icon: 'navigate-outline', hint: 'Driver is on the way to your door' },
-  delivered: { label: 'Delivered', icon: 'checkmark-done-outline', hint: 'Order completed! Enjoy 🎉' },
+export const SUPPLY_ORDER_STATUS_SEQUENCE: SupplyOrderStatus[] = [
+  'placed',
+  'confirmed',
+  'packed',
+  'loaded',
+  'dispatched',
+  'delivered',
+];
+
+const STEP_META: Record<
+  string,
+  { label: string; icon: keyof typeof Ionicons.glyphMap; hint: string }
+> = {
+  placed: { label: 'Order Placed', icon: 'receipt-outline', hint: 'Order received by warehouse' },
+  confirmed: { label: 'Confirmed', icon: 'checkmark-circle-outline', hint: 'Stock reserved & verified' },
+  packed: { label: 'Packed', icon: 'cube-outline', hint: 'Packed and staged for dispatch' },
+  loaded: { label: 'Loaded on Vehicle', icon: 'bus-outline', hint: 'Assigned to delivery route' },
+  dispatched: { label: 'Out for Delivery', icon: 'navigate-outline', hint: 'En route to your property' },
+  delivered: { label: 'Delivered', icon: 'checkmark-done-outline', hint: 'Delivered successfully 🎉' },
+  cancelled: { label: 'Cancelled', icon: 'close-circle-outline', hint: 'This order was cancelled' },
 };
 
 export interface OrderStepperProps {
-  status: OrderStatus;
+  status: SupplyOrderStatus | string;
 }
 
 export function OrderStepper({ status }: OrderStepperProps) {
-  const currentIndex = ORDER_STATUS_SEQUENCE.indexOf(status);
+  if (status === 'cancelled') {
+    return (
+      <View style={styles.cancelledBox}>
+        <Ionicons name="close-circle" size={24} color={Colors.danger} />
+        <Text style={styles.cancelledText}>This order has been cancelled.</Text>
+      </View>
+    );
+  }
+
+  const currentIndex = SUPPLY_ORDER_STATUS_SEQUENCE.indexOf(status as SupplyOrderStatus);
 
   return (
     <View style={styles.container}>
-      {ORDER_STATUS_SEQUENCE.map((step, i) => {
-        const done = i < currentIndex;
+      {SUPPLY_ORDER_STATUS_SEQUENCE.map((step, i) => {
+        const done = currentIndex >= 0 && i < currentIndex;
         const active = i === currentIndex;
-        const meta = STEP_META[step];
-        const isLast = i === ORDER_STATUS_SEQUENCE.length - 1;
+        const meta = STEP_META[step] || { label: step, icon: 'ellipse-outline', hint: '' };
+        const isLast = i === SUPPLY_ORDER_STATUS_SEQUENCE.length - 1;
 
         return (
           <View key={step} style={styles.stepRow}>
@@ -44,7 +67,7 @@ export function OrderStepper({ status }: OrderStepperProps) {
                 <View style={[styles.node, done || active ? styles.activeNode : styles.inactiveNode]}>
                   <Ionicons
                     name={done ? 'checkmark' : meta.icon}
-                    size={16}
+                    size={14}
                     color={done || active ? '#fff' : Colors.textMuted}
                   />
                 </View>
@@ -67,20 +90,21 @@ export function OrderStepper({ status }: OrderStepperProps) {
 }
 
 function PulseRing() {
-  const pulse = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0.6);
 
   useEffect(() => {
-    pulse.value = withRepeat(
-      withTiming(1, { duration: 1400, easing: Easing.out(Easing.ease) }),
-      -1,
-      false
-    );
-    return () => cancelAnimation(pulse);
-  }, []);
+    scale.value = withRepeat(withTiming(1.6, { duration: 1200, easing: Easing.out(Easing.ease) }), -1, false);
+    opacity.value = withRepeat(withTiming(0, { duration: 1200, easing: Easing.out(Easing.ease) }), -1, false);
+    return () => {
+      cancelAnimation(scale);
+      cancelAnimation(opacity);
+    };
+  }, [scale, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + pulse.value * 0.7 }],
-    opacity: 0.5 * (1 - pulse.value),
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
   }));
 
   return <Animated.View style={[styles.pulseRing, animatedStyle]} />;
@@ -90,25 +114,37 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 8,
   },
+  cancelledBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+  },
+  cancelledText: {
+    color: Colors.danger,
+    fontSize: 14,
+    fontWeight: '500',
+  },
   stepRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   nodeColumn: {
     alignItems: 'center',
-    width: 40,
+    width: 28,
   },
   nodeWrapper: {
-    position: 'relative',
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   node: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -119,10 +155,18 @@ const styles = StyleSheet.create({
   inactiveNode: {
     backgroundColor: Colors.borderSubtle,
   },
+  pulseRing: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    zIndex: 1,
+  },
   line: {
     width: 2,
-    height: 36,
-    marginVertical: 2,
+    flex: 1,
+    minHeight: 20,
   },
   activeLine: {
     backgroundColor: Colors.primary,
@@ -130,24 +174,17 @@ const styles = StyleSheet.create({
   inactiveLine: {
     backgroundColor: Colors.borderSubtle,
   },
-  pulseRing: {
-    position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
-    zIndex: 1,
-  },
   textColumn: {
     flex: 1,
-    paddingLeft: 8,
-    paddingBottom: 20,
+    paddingLeft: 12,
+    paddingBottom: 14,
   },
   lastTextColumn: {
     paddingBottom: 0,
   },
   stepLabel: {
-    fontSize: 15,
+    fontSize: 13,
+    fontWeight: '600',
   },
   activeText: {
     color: Colors.textPrimary,
@@ -156,7 +193,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   stepHint: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textSecondary,
     marginTop: 2,
   },
