@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,7 +31,7 @@ export const KitchenIngredientCard: React.FC<KitchenIngredientCardProps> = ({
     >
       {/* Image Container */}
       <View style={styles.imageContainer}>
-        <Image source={image} style={styles.image} />
+        <Image source={image || require('../../../../../assets/img_app_icon.jpg')} style={styles.image} />
         {quantityInCart > 0 && (
           <View style={styles.cartBadge}>
             <Text style={styles.cartBadgeText}>{quantityInCart}</Text>

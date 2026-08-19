@@ -33,13 +33,17 @@ import { BASE_URL } from '@/config';
 import type { PaymentEntity, TenantInvoice } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
 
+import { usePaymentsQuery } from '@/features/payments/usePayments';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useActiveProperty } from '@/features/properties/useProperties';
+
 export function GuestPaymentsTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
-  const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
-  const allPayments = usePGowStore((s) => s.currentPayments);
-  const submitPayment = usePGowStore((s) => s.submitGuestPayment);
-  const allGuests = usePGowStore((s) => s.allGuestsState);
+  const { activeEntity: ownerForGuest } = useActiveProperty();
   const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);
+  const { data: allGuests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const submitPayment = usePGowStore((s) => s.submitGuestPayment);
   const activeMembership = useAuthStore((s) => s.user?.memberships.find((m) => m.role === 'guest')?.membership_id ?? null);
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();

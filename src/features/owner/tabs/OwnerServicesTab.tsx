@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useRepairRequestsQuery } from '@/features/requests/useComplaints';
+import { useAuthStore } from '@/store/authStore';
 import { BookProntoRepairDialog } from '@/components/dialogs/HubDialogs';
 // ── Task 8: procurement approval queue ──────────────────────────────────────
 import { useProcurementOrders } from '@/features/procurement/useProcurement';
@@ -23,12 +25,12 @@ import { hapticSelect } from '@/utils/haptics';
 export function OwnerServicesTab() {
   const [showBookRepair, setShowBookRepair] = useState(false);
 
-  const repairs = usePGowStore((s) => s.pgRepairRequestsState);
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: repairs = [] } = useRepairRequestsQuery(activePgId ?? undefined);
   const isManagerMode = usePGowStore((s) => s.isManagerMode);
 
   const { data: pendingOrders = [] } = useProcurementOrders({
-    pgId: owner?.id,
+    pgId: activePgId ?? undefined,
     status: isManagerMode ? undefined : 'pending_owner_approval',
   });
   const pendingCount = pendingOrders.length;

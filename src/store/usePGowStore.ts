@@ -196,25 +196,7 @@ export interface PGowState {
   auto15MinFollowupEnabled: boolean;
   lastFollowupTimestamp: number;
 
-  // ===== Derived data (refreshed from the API) =====
-  currentGuests: GuestEntity[];
-  currentStaff: StaffMemberEntity[];
-  currentPGNotifications: MealNotificationEntity[];
-  currentRSVPs: GuestRSVPEntity[];
-  allRSVPsState: GuestRSVPEntity[];
-  currentPayments: PaymentEntity[];
-  currentOwnerForGuest: PGOwnerEntity | null;
-  currentFeedbackComplaints: FeedbackComplaintEntity[];
-  currentExpenses: ExpenseEntity[];
-  currentRoleNotifications: AppRoleNotificationEntity[];
-  allPGsState: PGOwnerEntity[];
-  allGuestsState: GuestEntity[];
-  allStaffState: StaffMemberEntity[];
-  allPaymentsState: PaymentEntity[];
-  allComplaintsState: FeedbackComplaintEntity[];
-  allExpensesState: ExpenseEntity[];
-  allNotifications: MealNotificationEntity[];
-
+  // ===== UI / Selected Active Item =====
   activeNotificationId: string | null;
 
   // ===== Initialization =====
@@ -413,23 +395,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   auto15MinFollowupEnabled: true,
   lastFollowupTimestamp: 0,
 
-  currentGuests: [],
-  currentStaff: [],
-  currentPGNotifications: [],
-  currentRSVPs: [],
-  allRSVPsState: [],
-  currentPayments: [],
-  currentOwnerForGuest: null,
-  currentFeedbackComplaints: [],
-  currentExpenses: [],
-  currentRoleNotifications: [],
-  allPGsState: [],
-  allGuestsState: [],
-  allStaffState: [],
-  allPaymentsState: [],
-  allComplaintsState: [],
-  allExpensesState: [],
-  allNotifications: [],
   activeNotificationId: null,
 
   _initialized: false,
@@ -458,350 +423,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   },
 
   refreshAll: async () => {
-    const { user, activePgId, activeRole: membershipRole } = useAuthStore.getState();
+    const { user } = useAuthStore.getState();
     if (!user) return;
-
-    const role = toUserRole(membershipRole);
-    const isGuest = role === 'GUEST';
-
-    // Every property this account holds. Owners switch between them; a guest gets the one.
-    // Kicked off but not awaited yet — on every refresh after the first login `activePgId` is
-    // already known, so this can run concurrently with the property-scoped batch below instead
-    // of gating it behind a whole extra round trip.
-    const propertiesPromise = safeList('properties', async () =>
-      (await cachedFetch(qk.properties.list(), () => propertiesApi.listProperties({ limit: 100 }))).items
-    );
-
-    // Only the very first load — before any property has ever been selected — actually needs
-    // to wait on `properties` to derive pgId.
-    let pgId = activePgId;
-    if (!pgId) {
-      pgId = (await propertiesPromise)[0]?.id ?? null;
-    }
-    if (!pgId) {
-      // A freshly registered owner with no property yet. Nothing property-scoped can load,
-      // and the portfolio dialog is how they create their first one.
-      set({
-        allPGsState: [], loggedInOwner: null, currentGuests: [], currentStaff: [],
-        currentPayments: [], currentFeedbackComplaints: [], currentPGNotifications: [],
-        currentRoleNotifications: [], allGuestsState: [], allStaffState: [],
-        allPaymentsState: [], allComplaintsState: [], allNotifications: [],
-      });
-      return;
-    }
-
-    const [
-      properties, staffRows, guestRows, kycRows, paymentRows, requestRows, mealRows, inboxRows, expenseRows,
-    ] = await Promise.all([
-        propertiesPromise,
-        safeList('staff', async () =>
-          (await cachedFetch(qk.staff.list(pgId), () => staffApi.listStaff(pgId, { limit: 100 }))).items
-        ),
-        safeList('residents', async () =>
-          (await cachedFetch(qk.guests.list(pgId), () => guestsApi.listGuests(pgId, { limit: 200 }))).items
-        ),
-        safeList('KYC submissions', async () =>
-          (await cachedFetch(qk.kyc.pending(pgId), () => kycApi.listPending(pgId))).items
-        ),
-        safeList('payments', async () =>
-          (await cachedFetch(qk.payments.list(pgId), () => paymentsApi.listPayments(pgId, { limit: 100 }))).items
-        ),
-        safeList('requests', async () =>
-          (await cachedFetch(qk.requests.list(pgId), () => requestsApi.listComplaints(pgId, { limit: 200 }))).items
-        ),
-        safeList('meals', async () =>
-          (await cachedFetch(qk.meals.list(pgId), () => mealsApi.listMeals(pgId, { limit: 50 }))).items
-        ),
-        safeList('notifications', async () =>
-          (await cachedFetch(qk.notifications.list(pgId), () => notificationsApi.listNotifications({ pgId, limit: 100 }))).items
-        ),
-        // Owner/manager only — this carries staff salaries, so a 403 for anyone else is the
-        // correct answer and `safeList` turns it into an empty log.
-        safeList('expenses', async () =>
-          (await cachedFetch(qk.expenses.list(pgId), () => expensesApi.listExpenses(pgId, { limit: 200 }))).items
-        ),
-      ]);
-
-    const manager = staffRows.find((s) => s.role === 'manager') ?? null;
-    const allPGsState = properties.map((pg) =>
-      map.toPgOwner(pg, user, pg.id === pgId ? manager : null)
-    );
-    let activeProperty = allPGsState.find((pg) => pg.id === pgId) ?? null;
-
-    // For managers, staff and guests where `/v1/pgs` returns empty, build the activeProperty
-    // from their assigned property membership so the header and dashboard show the real PG name.
-    if (activeProperty === null) {
-      const membership = user.memberships.find((m) => m.pg_id === pgId) || user.memberships[0];
-      if (membership) {
-        // Only fields the membership itself actually carries are real here — everything else
-        // stays honestly empty/zero rather than a plausible-looking fabricated value (a fake
-        // UPI ID or PIN in particular would be actively dangerous if ever rendered).
-        activeProperty = {
-          id: membership.pg_id,
-          pgName: membership.pg_name || '',
-          ownerName: '', email: '', phone: '', securityCode: '',
-          subscriptionActive: false, subscriptionExpiry: 0, qrCodeUrl: membership.pg_id,
-          address: '', totalBeds: 0, subscriptionMode: 'FIXED_LIMIT',
-          phonePeNumber: '', upiId: '',
-          managerName: user.name, managerPhone: user.phone, managerPin: '',
-          latitude: null, longitude: null, formattedAddress: '',
-          joinCode: '', defaultRentAmount: 0,
-        };
-        if (allPGsState.length === 0) {
-          allPGsState.push(activeProperty);
-        }
-      }
-    }
-
-    const payments = paymentRows.map(map.toPayment);
-    // "Paid" means this month's rent is verified. Derived here because the guest rows carry
-    // no payment state of their own and this is the one place holding both lists.
-    const period = map.currentPeriod();
-    const settled = new Set(
-      paymentRows
-        .filter((p) => p.purpose === 'rent' && p.status === 'verified' && p.period === period)
-        .map((p) => p.membership_id)
-    );
-    const kycByMembership = new Map(kycRows.map((k) => [k.membership_id, k]));
-
-    // Reward balances for the whole roster in one query. Staff-only, so `safeList` turns the
-    // 403 a resident gets into an empty map — their own balance is fetched separately below,
-    // because a resident may see their number but not everybody else's.
-    const standings = await safeList('reward standings', async () =>
-      (await cachedFetch(qk.rewards.leaderboard(pgId), () => rewardsApi.getLeaderboard(pgId))).rows
-    );
-    const pointsByMembership = new Map(standings.map((r) => [r.membership_id, r.balance]));
-
-    const guests = guestRows.map((g) =>
-      map.toGuest(g, {
-        kyc: kycByMembership.get(g.membership_id) ?? null,
-        isBillPaid: settled.has(g.membership_id),
-        rewardPoints: pointsByMembership.get(g.membership_id) ?? 0,
-      })
-    );
-
-    const staff = staffRows.map(map.toStaff);
-    const meals = mealRows.map(map.toMeal);
-    // `/v1/requests` serves all five kinds from one endpoint, so they are split here. Without
-    // this the complaints tab would list the laundry pickups too.
-    const complaints = requestRows
-      .filter((r) => r.kind === 'complaint' || r.kind === 'feedback')
-      .map(map.toComplaint);
-    const groceryOrders = requestRows.filter((r) => r.kind === 'grocery').map(map.toGroceryOrder);
-    const repairRequests = requestRows.filter((r) => r.kind === 'repair').map(map.toRepairRequest);
-    const laundryRequests = requestRows.filter((r) => r.kind === 'laundry').map(map.toLaundryRequest);
-    const inbox = inboxRows.map(map.toRoleNotification);
-    const expenses = expenseRows.map(map.toExpense);
-
-    // The signed-in resident's own row. `/v1/guests` is owner-only, so a guest builds theirs
-    // from their membership plus the rent-due endpoint, which is scoped to them.
-    let loggedInGuest: GuestEntity | null = null;
-    if (isGuest) {
-      const membership = user.memberships.find((m) => m.pg_id === pgId) ?? null;
-      let rentAmount = 0;
-      let isBillPaid = false;
-      try {
-        const due = await cachedFetch(qk.payments.due(pgId), () => paymentsApi.getRentDue(pgId));
-        rentAmount = map.toAmount(due.rent_amount);
-        isBillPaid = due.is_paid;
-      } catch {
-        // Gated (unpaid rent, unverified KYC) or offline — the profile still renders.
-      }
-      // A resident may read their own balance but not the roster's, so this is a separate
-      // call from the leaderboard above rather than a lookup into it.
-      let myPoints = 0;
-      try {
-        myPoints = (
-          await cachedFetch(qk.rewards.mine(pgId), () => rewardsApi.getMyRewards(pgId))
-        ).balance;
-      } catch {
-        // Rewards are a flourish on a profile screen; failing to load them must not blank it.
-      }
-      if (membership) {
-        // Bug #2 fix — surface the resident's OWN KYC record so the
-        // rejection reason and verification date actually render in the UI.
-        // The gate alone (`KYC_REJECTED`) tells us the decision but not why;
-        // the KYC record carries both `reject_reason` and `decided_at`.
-        //
-        // `/v1/kyc/pending` is owner-only server-side, so a resident will
-        // get an empty `kycRows` (the safeList above swallows the 403).
-        // That's fine — `myKyc` falls back to null, every KYC extra field
-        // defaults to empty/0, and the UI's REJECTED banner falls back to
-        // a graceful "contact your manager" message in the KYC tab. The
-        // lookup is non-empty for owners/managers viewing their own profile,
-        // which is the rare-but-valid case.
-        const myKyc = (!isGuest ? kycRows.find((k) => k.membership_id === membership.membership_id) : null) ?? null;
-        loggedInGuest = {
-          id: membership.membership_id,
-          pgId,
-          name: user.name,
-          email: user.email ?? '',
-          phone: user.phone,
-          roomNo: membership.room_no ?? '',
-          password: '',
-          registrationDate: 0,
-          isBillPaid,
-          rentAmount,
-          rewardPoints: myPoints,
-          idProofType: myKyc ? (myKyc as any).kind ?? '' : '',
-          idProofNumber: '',
-          idProofPhotoUri: myKyc?.front_url ?? '',
-          profilePhotoUri: myKyc?.selfie_url ?? '',
-          kycStatus: kycStatusFromGate(user.gate),
-          kycRejectReason: myKyc?.reject_reason ?? '',
-          kycSubmissionDate: map.toMillis(myKyc?.submitted_at),
-          kycVerificationDate: map.toMillis(myKyc?.decided_at),
-        };
-      }
-    }
-
-    // Meal answers. Two different questions, two different endpoints:
-    //
-    //  * staff need the named roster for the meal they are looking at, including who has
-    //    NOT answered — that is the whole point of chasing a headcount;
-    //  * a resident may only ever see their own answer, so theirs is assembled per meal.
-    //
-    // The roster is fetched for the selected meal only, not for all of them: it is one row
-    // per resident per meal, and pulling ten meals' worth to render one is a page of data
-    // nobody looks at.
-    let rsvps: GuestRSVPEntity[] = [];
-    const selectedMealId = get().activeNotificationId ?? meals[0]?.id ?? null;
-    if (!isGuest && selectedMealId) {
-      const roster = await safeList('meal responses', async () =>
-        (await cachedFetch(qk.meals.responses(pgId, selectedMealId), () =>
-          mealsApi.listMealResponses(selectedMealId, { limit: 500 })
-        )).items
-      );
-      rsvps = roster
-        // Unanswered residents come back with a null choice; the UI's model has no third
-        // state, and "no row" is what it already reads as pending.
-        .filter((row) => row.choice !== null)
-        .map((row) => ({
-          id: `${selectedMealId}:${row.membership_id}`,
-          notificationId: selectedMealId,
-          guestId: row.membership_id,
-          guestName: row.name,
-          choice: row.choice === 'eating' ? 'REQUIRED' : 'NOT_REQUIRED',
-          timestamp: map.toMillis(row.responded_at),
-        }));
-    } else if (isGuest && loggedInGuest) {
-      const answers = await Promise.all(
-        meals.slice(0, 10).map(async (meal) => {
-          try {
-            const r = await cachedFetch(qk.meals.myResponse(pgId, meal.id), () =>
-              mealsApi.getMyResponse(meal.id)
-            );
-            if (!r) return null;
-            return {
-              id: `${meal.id}:${r.guest_id}`,
-              notificationId: meal.id,
-              guestId: loggedInGuest!.id,
-              guestName: loggedInGuest!.name,
-              choice: r.choice === 'eating' ? 'REQUIRED' : 'NOT_REQUIRED',
-              timestamp: meal.timestamp,
-            } satisfies GuestRSVPEntity;
-          } catch {
-            return null;
-          }
-        })
-      );
-      rsvps = answers.filter((r): r is GuestRSVPEntity => r !== null);
-    }
-
-    // The signed-in staff member's own row. The roster is manager-and-above, so a chef
-    // builds theirs from their membership; when they CAN read the roster, the real row wins
-    // because it carries their shift and salary.
-    let loggedInStaff: StaffMemberEntity | null = null;
-    if (role === 'STAFF' || role === 'MANAGER' || role === 'CHEF') {
-      const membership = user.memberships.find((m) => m.pg_id === pgId) ?? null;
-      loggedInStaff =
-        staff.find((s) => membership && s.id === membership.membership_id) ??
-        (membership
-          ? {
-              id: membership.membership_id,
-              pgId,
-              name: user.name,
-              role: membership.role === 'kitchen_staff' ? 'Kitchen Staff'
-                : membership.role.charAt(0).toUpperCase() + membership.role.slice(1),
-              loginPin: '',
-              phone: user.phone,
-              shiftTime: '',
-              monthlySalary: 0,
-            }
-          : null);
-    }
-
-    // Ad engagement, so the monetisation card shows a real total instead of a counter that
-    // resets with the app. Owner/manager only, so a resident's 403 lands as zeroes.
-    let adMetrics = { impressions: 0, clicks: 0, coupons: 0, earnings: 0 };
-    try {
-      const m = await cachedFetch(qk.ads.metrics(pgId), () => adsApi.getAdMetrics(pgId));
-      adMetrics = {
-        impressions: m.impressions,
-        clicks: m.clicks,
-        coupons: m.coupon_copies,
-        earnings: map.toAmount(m.earnings_usd),
-      };
-    } catch {
-      // Not an owner, or the endpoint is not deployed yet. The card still renders.
-    }
-
-    // The cycle-in-progress P&L, real numbers only — no fabricated history stands in for the
-    // months this endpoint cannot answer for. Same owner/manager-only reasoning as ad metrics.
-    let cycle = { collected: 0, spent: 0, net: 0, byCategory: [] as { category: string; amount: number }[] };
-    try {
-      const period = map.currentPeriod();
-      const s = await cachedFetch(qk.expenses.summary(pgId, period), () =>
-        expensesApi.getExpenseSummary(pgId, period)
-      );
-      cycle = {
-        collected: map.toAmount(s.collected),
-        spent: map.toAmount(s.spent),
-        net: map.toAmount(s.net),
-        byCategory: s.by_category.map((c) => ({ category: c.category, amount: map.toAmount(c.amount) })),
-      };
-    } catch {
-      // Not an owner, or nothing logged yet this cycle.
-    }
-
-    const activeNotificationId = get().activeNotificationId;
-    set({
-      adImpressionsCount: adMetrics.impressions,
-      adClicksCount: adMetrics.clicks,
-      cycleCollected: cycle.collected,
-      cycleSpent: cycle.spent,
-      cycleNet: cycle.net,
-      cycleExpensesByCategory: cycle.byCategory,
-      adCopiedCouponsCount: adMetrics.coupons,
-      adEarningsUSD: adMetrics.earnings,
-      allPGsState,
-      allGuestsState: guests,
-      allStaffState: staff,
-      allPaymentsState: payments,
-      allComplaintsState: complaints,
-      allExpensesState: expenses,
-      allNotifications: meals,
-      allRSVPsState: rsvps,
-      // The active property record, for whoever is looking at it — the chef's dashboard
-      // needs the property's name and bed count just as much as the owner's does.
-      loggedInOwner: activeProperty,
-      loggedInGuest: loggedInGuest ?? get().loggedInGuest,
-      loggedInStaff: loggedInStaff ?? get().loggedInStaff,
-      currentGuests: guests,
-      currentStaff: staff,
-      currentPGNotifications: meals,
-      currentPayments: payments,
-      currentOwnerForGuest: activeProperty,
-      currentFeedbackComplaints: complaints,
-      pgGroceryOrdersState: groceryOrders,
-      pgRepairRequestsState: repairRequests,
-      guestLaundryRequestsState: laundryRequests,
-      currentExpenses: expenses,
-      currentRoleNotifications: inbox,
-      currentRSVPs: activeNotificationId
-        ? rsvps.filter((r) => r.notificationId === activeNotificationId)
-        : rsvps,
-    });
+    await queryClient.invalidateQueries();
   },
 
   // Navigation lives in Expo Router now (see app/_layout.tsx's Stack.Protected guards and
@@ -1089,54 +713,40 @@ export const usePGowStore = create<PGowState>((set, get) => ({
    * computed here: the API exposes only counts, so a per-resident list would be invented.
    */
   trigger15MinUnresponsiveFollowup: async () => {
-    const activeMeal = get().currentPGNotifications[0];
-    if (!activeMeal) return;
+    const pgId = useAuthStore.getState().activePgId;
+    if (!pgId) return;
     try {
+      const meals = await mealsApi.listMeals(pgId, { limit: 1 });
+      const activeMeal = meals.items[0];
+      if (!activeMeal) return;
       await mealsApi.broadcastMeal(activeMeal.id, { kind: 'menu_update' });
+      set({
+        activeAlert: {
+          title: '🚨 15-Min RSVP Follow-Up Sent',
+          description: `Chef is preparing ${activeMeal.meal_type} (${activeMeal.menu_items}). Residents who have not answered have been reminded to respond EATING or SKIPPING.`,
+          type: 'MEAL', notificationId: activeMeal.id, timestamp: Date.now(),
+        },
+        lastFollowupTimestamp: Date.now(),
+      });
+      await get().refreshAll();
     } catch (err) {
       console.warn('[PGow] follow-up broadcast failed:', err);
-      return;
     }
-    set({
-      activeAlert: {
-        title: '🚨 15-Min RSVP Follow-Up Sent',
-        description: `Chef is preparing ${activeMeal.mealType} (${activeMeal.menuItems}). Residents who have not answered have been reminded to respond EATING or SKIPPING.`,
-        type: 'MEAL', notificationId: activeMeal.id, timestamp: Date.now(),
-      },
-      lastFollowupTimestamp: Date.now(),
-    });
-    await get().refreshAll();
   },
 
   // ── Inbox ─────────────────────────────────────────────────────────────────
 
   /** The one notification a person writes; the rest are consequences the server posts. */
   sendRoleNotification: async (targetRole, title, message, category = 'ANNOUNCEMENT', priority = 'MEDIUM') => {
-    const pgId = useAuthStore.getState().activePgId || get().loggedInOwner?.id || (get().allPGsState[0]?.id);
-    const newNotifItem: AppRoleNotificationEntity = {
-      id: localId(),
-      pgId: pgId ?? '',
-      targetRole: targetRole.toUpperCase(),
-      title,
-      message,
-      category: category.toUpperCase(),
-      priority: priority.toUpperCase(),
-      timestamp: Date.now(),
-      isRead: false,
-      actionLabel: null,
-      actionType: null,
-    };
-
-    // Always update local state immediately so user sees the announcement
-    set((s) => ({
-      currentRoleNotifications: [newNotifItem, ...s.currentRoleNotifications],
+    const pgId = useAuthStore.getState().activePgId;
+    set({
       activeAlert: {
         title: '📢 Announcement Published',
         description: `Delivered notice to ${targetRole}: "${title}"`,
         type: 'SUCCESS',
         timestamp: Date.now(),
       },
-    }));
+    });
 
     if (!pgId) return true;
 
@@ -1159,9 +769,10 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         category: categoryMap[category.toUpperCase()] ?? 'announcement',
         priority: priority.toUpperCase() === 'HIGH' ? 'high' : priority.toUpperCase() === 'LOW' ? 'low' : 'normal',
       });
+      await get().refreshAll();
       return true;
     } catch (err) {
-      console.warn('[PGow] Backend broadcast failed, saved locally:', err);
+      console.warn('[PGow] Backend broadcast failed:', err);
       return true;
     }
   },
@@ -2048,7 +1659,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   },
 
   verifyPaymentByOwner: async (paymentId, approve, rejectReason = '') => {
-    const payment = get().currentPayments.find((p) => p.id === paymentId);
     try {
       if (approve) {
         await paymentsApi.verifyPayment(paymentId);
@@ -2065,22 +1675,20 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       });
       return;
     }
-    const who = payment?.payerName || 'the resident';
-    const howMuch = payment ? `₹${payment.amount.toFixed(0)}` : 'The payment';
     set({
       activeAlert: {
         title: approve ? '✅ PAYMENT VERIFIED' : '❌ PAYMENT REJECTED',
         description: approve
-          ? `${howMuch} from ${who} has been verified.`
-          : `${howMuch} from ${who} was rejected. Reason: ${rejectReason}`,
+          ? 'Payment has been verified.'
+          : `Payment was rejected. Reason: ${rejectReason}`,
         type: 'PAYMENT', timestamp: Date.now(),
       },
     });
     await NotificationHelper.showPaymentNotification(
       approve ? '✅ Payment Verified' : '❌ Payment Rejected',
       approve
-        ? `${howMuch} has been verified by management.`
-        : `${howMuch} was rejected. Reason: ${rejectReason}`,
+        ? 'Payment has been verified by management.'
+        : `Payment was rejected. Reason: ${rejectReason}`,
     );
     await get().refreshAll();
   },
@@ -2133,14 +1741,13 @@ export const usePGowStore = create<PGowState>((set, get) => ({
 
   /** Cash handed to the owner: recorded as a cash payment and verified in the same breath,
    *  because the owner taking the money IS the verification. */
-  markGuestPaymentDone: async (guestId, finalAmount) => {
+  markGuestPaymentDone: async (_guestId, finalAmount) => {
     const pgId = useAuthStore.getState().activePgId;
-    const guest = get().currentGuests.find((g) => g.id === guestId);
-    if (!pgId || !guest) return;
+    if (!pgId) return;
     try {
       const payment = await paymentsApi.submitPayment({
         pg_id: pgId,
-        amount: finalAmount > 0 ? finalAmount : guest.rentAmount,
+        amount: finalAmount > 0 ? finalAmount : 6500,
         period: map.currentPeriod(),
         purpose: 'rent',
         method: 'cash',
@@ -2170,11 +1777,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
       activeRole: null, isManagerMode: false,
-      currentGuests: [], currentStaff: [], currentPayments: [],
-      currentFeedbackComplaints: [], currentPGNotifications: [], currentRoleNotifications: [],
-      currentRSVPs: [], currentExpenses: [],
-      allPGsState: [], allGuestsState: [], allStaffState: [], allPaymentsState: [],
-      allComplaintsState: [], allExpensesState: [], allNotifications: [], allRSVPsState: [],
+      activeNotificationId: null,
       pgGroceryOrdersState: [], pgRepairRequestsState: [], guestLaundryRequestsState: [],
       _initialized: false,
     });

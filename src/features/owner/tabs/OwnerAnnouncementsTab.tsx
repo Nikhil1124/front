@@ -19,8 +19,12 @@ import { useToast } from '@/hooks/useToast';
 import { formatTimeAgo } from '@/utils/format';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useAuthStore } from '@/store/authStore';
+
 export function OwnerAnnouncementsTab() {
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
   const owner = usePGowStore((s) => s.loggedInOwner);
   const { refreshing, onRefresh } = usePullToRefresh();

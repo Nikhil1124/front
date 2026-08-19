@@ -13,18 +13,24 @@ import { Card, Txt, Btn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+import { useAuthStore } from '@/store/authStore';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { usePaymentsQuery } from '@/features/payments/usePayments';
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import type { PGOwnerEntity } from '@/types';
 
 export function ManagePropertiesScreen() {
-  const allPGs = usePGowStore((s) => s.allPGsState);
-  const allGuests = usePGowStore((s) => s.allGuestsState);
-  const allPayments = usePGowStore((s) => s.allPaymentsState);
-  const allComplaints = usePGowStore((s) => s.allComplaintsState);
-  const currentOwner = usePGowStore((s) => s.loggedInOwner);
-  const switchPG = usePGowStore((s) => s.switchActivePG);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const setActivePgId = useAuthStore((s) => s.setActivePgId);
+  const { data: allGuests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);
+  const { data: allComplaints = [] } = useComplaintsQuery(activePgId ?? undefined);
+  const currentOwner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
+  const switchPG = (pgId: string) => setActivePgId(pgId);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPgModal, setShowAddPgModal] = useState(false);
@@ -146,7 +152,7 @@ export function ManagePropertiesScreen() {
                 <Row justify="space-between" align="center">
                   <Txt variant="caption" weight="800" color={Colors.primaryDark}>Collected: ₹{Math.round(pgRevenue).toLocaleString('en-IN')}</Txt>
                   <Btn
-                    onPress={async () => { await switchPG(pg); router.back(); }}
+                    onPress={async () => { await switchPG(pg.id); router.back(); }}
                     containerColor={isCurrent ? Colors.primary : Colors.surfaceMuted}
                     textColor={isCurrent ? Colors.textInverse : Colors.textPrimary}
                     borderRadius={10}

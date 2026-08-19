@@ -1,6 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type { AppRoleNotificationEntity } from "../../types";
 
 /**
  * `meal` is absent on purpose. The server never writes a meal broadcast into the inbox —
@@ -119,6 +123,75 @@ export function broadcastNotification(params: BroadcastParams): Promise<Notifica
   return apiFetch<NotificationRecord>(API.NOTIFICATIONS_BROADCAST, {
     method: "POST",
     body: JSON.stringify({ target_role: "all", ...params }),
+  });
+}
+
+export function useRoleNotificationsQuery(pgId?: string) {
+  return useQuery<AppRoleNotificationEntity[]>({
+    queryKey: qk.notifications.list(pgId ?? ""),
+    queryFn: async () => {
+      const res = await listNotifications({ pgId, limit: 100 });
+      return res.items.map(map.toRoleNotification);
+    },
+  });
+}
+
+export function useUnreadCountQuery(pgId?: string) {
+  return useQuery<{ unread: number }>({
+    queryKey: qk.notifications.unreadCount(pgId ?? ""),
+    queryFn: () => unreadCount(pgId),
+  });
+}
+
+export function useBroadcastNotificationMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: BroadcastParams) => broadcastNotification(params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.notifications.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.notifications.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useMarkNotificationReadMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => markRead(id),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.notifications.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.notifications.unreadCount(pgId) });
+      }
+    },
+  });
+}
+
+export function useMarkAllNotificationsReadMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => markAllRead(pgId),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.notifications.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.notifications.unreadCount(pgId) });
+      }
+    },
+  });
+}
+
+export function useDismissNotificationMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => dismissNotification(id),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.notifications.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.notifications.unreadCount(pgId) });
+      }
+    },
   });
 }
 

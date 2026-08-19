@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Animated, FlatList, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
@@ -6,7 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 
-import { CategoryGrid } from '../components/grocery/CategoryGrid';
+import { SupplyCategoryGrid } from '../components/grocery/CategoryGrid';
 import { ProductCard } from '../components/grocery/ProductCard';
 import { ProductRow } from '../components/grocery/ProductRow';
 import { MainBannerCarousel } from '../components/grocery/MainBannerCarousel';
@@ -14,12 +13,13 @@ import { SearchBar } from '../components/grocery/SearchBar';
 import { Header } from '../components/grocery/Header';
 import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery/FilterSheet';
 import { TodaysKitchenNeeds } from '../components/kitchen/TodaysKitchenNeeds';
-
+import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
 
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 /**
@@ -28,11 +28,13 @@ import { FormScroll } from '@/components/ui/FormScroll';
  * Manager/Chef always shop bulk "owner" stock, Guest always shops personal
  * "guest" items), so there is no toggle UI — see the mode-sync effect below.
  */
+import { useActiveProperty } from '@/features/properties/useProperties';
+
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();
   const activeRole = usePGowStore((s) => s.activeRole);
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
+  const { activeEntity: owner, activePgId } = useActiveProperty();
+  const ownerForGuest = owner;
 
   const mode = useShoppingModeStore((s) => s.mode);
   const setMode = useShoppingModeStore((s) => s.setMode);
@@ -40,6 +42,10 @@ export function GroceriesScreen() {
 
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const getCartTotal = useCartStore((s) => s.getCartTotal);
+
+  const { data: supplyItems = [] } = useSupplyItems(activePgId ?? undefined);
+  const { data: categories = [] } = useSupplyCategories(activePgId ?? undefined);
+  const { data: deals = [] } = useDeals(activePgId ?? undefined);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -59,28 +65,26 @@ export function GroceriesScreen() {
 
   const dailyEssentials = useMemo(() => {
     const keywords = ['milk', 'curd', 'bread', 'egg', 'banana', 'tomato', 'onion', 'potato', 'water', 'oil'];
-    return ([] as SupplyItem[]).filter((p) => {
-      const isVisible = mode === 'owner' ? true : true;
+    return supplyItems.filter((p) => {
       const isEssential = keywords.some((k) => p.id.toLowerCase().includes(k) || p.name.toLowerCase().includes(k));
-      return isVisible && isEssential;
+      return isEssential;
     });
-  }, [mode]);
+  }, [supplyItems]);
 
   const recommendedProducts = useMemo(
-    () => ([] as SupplyItem[]).filter((p) => (mode === 'owner' ? true : true)).slice(0, 6),
-    [mode],
+    () => supplyItems.slice(0, 6),
+    [supplyItems],
   );
   const popularProducts = useMemo(
-    () => ([] as SupplyItem[]).filter((p) => (mode === 'owner' ? true : true)).slice(6, 12),
-    [mode],
+    () => supplyItems.slice(6, 12),
+    [supplyItems],
   );
-
 
   const hasActiveFilters =
     filters.sort !== 'popular' || filters.dietary.length > 0 || filters.maxPrice !== undefined || filters.onDealOnly === true;
 
   const searchResults = useMemo(() => {
-    let list = ([] as SupplyItem[]).filter((p) => (mode === 'owner' ? true : true));
+    let list = supplyItems;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter((p) => p.name.toLowerCase().includes(q) || p.category_id.toLowerCase().includes(q));
@@ -90,13 +94,10 @@ export function GroceriesScreen() {
       return [];
     }
     if (filters.maxPrice !== undefined) {
-      list = list.filter((p) => {
-        const firstOpt = ({price: p.price, unit: p.unit_label, originalPrice: p.mrp});
-        return firstOpt ? firstOpt.price <= (filters.maxPrice as number) : true;
-      });
+      list = list.filter((p) => p.price <= (filters.maxPrice as number));
     }
     return list;
-  }, [searchQuery, filters, hasActiveFilters, mode]);
+  }, [searchQuery, filters, hasActiveFilters, supplyItems]);
 
   const isSearching = searchQuery.trim().length > 0 || hasActiveFilters;
 
@@ -180,7 +181,7 @@ export function GroceriesScreen() {
               <MainBannerCarousel onBannerPress={() => openSupplyCategory(null)} />
 
               {mode === 'owner' && (
-                <TodaysKitchenNeeds onProductPress={openProduct} onSeeAllCategoriesPress={() => openSupplyCategory(null)} />
+                <TodaysKitchenNeeds onProductPress={openProduct} onSeeAllCategoriesPress={() => openSupplyCategory(null)} products={supplyItems} />
               )}
 
               <View style={styles.sectionContainer}>
@@ -194,7 +195,7 @@ export function GroceriesScreen() {
                   </TouchableOpacity>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
-                  {(() => [])(mode).map((prod) => (
+                  {deals.map((prod) => (
                     <ProductCard key={prod.id} product={prod} layout="deal" onPress={(p) => openProduct(p.id)} />
                   ))}
                 </ScrollView>
@@ -217,7 +218,7 @@ export function GroceriesScreen() {
                 </ScrollView>
               </View>
 
-              <CategoryGrid categories={[]} onSupplyCategoryPress={(cat) => openSupplyCategory(cat.name)} onSeeAllPress={() => openSupplyCategory(null)} />
+              <SupplyCategoryGrid categories={categories} onSupplyCategoryPress={(cat) => openSupplyCategory(cat.name)} onSeeAllPress={() => openSupplyCategory(null)} />
 
               <ProductRow title="Popular in PGs" products={popularProducts} onProductPress={(p) => openProduct(p.id)} onSeeAllPress={() => openSupplyCategory(null)} />
               <ProductRow title="Recommended for You" products={recommendedProducts} onProductPress={(p) => openProduct(p.id)} onSeeAllPress={() => openSupplyCategory(null)} />

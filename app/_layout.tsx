@@ -48,11 +48,6 @@ setSessionExpiredHandler(() => {
     loggedInOwner: null,
     loggedInGuest: null,
     loggedInStaff: null,
-    currentGuests: [], currentStaff: [], currentPayments: [], currentRSVPs: [],
-    currentFeedbackComplaints: [], currentPGNotifications: [], currentRoleNotifications: [],
-    currentExpenses: [], currentOwnerForGuest: null,
-    allPGsState: [], allGuestsState: [], allStaffState: [], allPaymentsState: [],
-    allComplaintsState: [], allExpensesState: [], allNotifications: [], allRSVPsState: [],
     _initialized: false,
   });
   useAuthStore.getState().logout();

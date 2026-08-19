@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { SupplyItem } from '@/types';
 import React from 'react';
 import {
@@ -25,6 +24,7 @@ export interface MenuEditorModalProps {
   onNewDishTextChange: (text: string) => void;
   onAddDish: () => void;
   onSave: () => void;
+  products?: SupplyItem[];
 }
 
 /**
@@ -41,10 +41,11 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
   onNewDishTextChange,
   onAddDish,
   onSave,
+  products = [],
 }) => {
-  // Search suggestions filtered from []
+  // Search suggestions filtered from products
   const suggestions = React.useMemo<SupplyItem[]>(() => {
-    const visibleProducts = ([] as SupplyItem[]).filter((p) => true);
+    const visibleProducts = products;
     if (!newDishText.trim()) return visibleProducts.slice(0, 6);
     const q = newDishText.toLowerCase();
     return visibleProducts
@@ -53,7 +54,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
           p.name.toLowerCase().includes(q) || p.category_id.toLowerCase().includes(q)
       )
       .slice(0, 8);
-  }, [newDishText]);
+  }, [newDishText, products]);
 
   return (
     <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
@@ -128,7 +129,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                   >
                     <View style={styles.relatedImageWrapper}>
                       <Image
-                        source={typeof prod.image === 'string' ? { uri: prod.image } : prod.image}
+                        source={prod.image_url ? { uri: prod.image_url } : require('../../../../../assets/img_app_icon.jpg')}
                         style={styles.relatedImage}
                         resizeMode="contain"
                       />

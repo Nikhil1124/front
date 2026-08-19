@@ -1,6 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type { StaffMemberEntity } from "../../types";
 
 export interface StaffMember {
   membership_id: string;
@@ -75,6 +79,58 @@ export function updateStaff(
 
 export function removeStaff(membershipId: string): Promise<StaffMember> {
   return apiFetch<StaffMember>(API.STAFF_MEMBER(membershipId), { method: "DELETE" });
+}
+
+export function useStaffQuery(pgId?: string) {
+  return useQuery<StaffMemberEntity[]>({
+    queryKey: qk.staff.list(pgId ?? ""),
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listStaff(pgId, { limit: 100 });
+      return res.items.map(map.toStaff);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useAddStaffMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: Parameters<typeof addStaff>[1]) => addStaff(pgId!, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.staff.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.staff.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useUpdateStaffMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ membershipId, params }: { membershipId: string; params: UpdateStaffPayload }) =>
+      updateStaff(membershipId, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.staff.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.staff.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useRemoveStaffMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (membershipId: string) => removeStaff(membershipId),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.staff.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.staff.all(pgId) });
+      }
+    },
+  });
 }
 
 export function useStaff() {

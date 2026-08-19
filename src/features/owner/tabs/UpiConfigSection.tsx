@@ -22,8 +22,8 @@ import { qk } from '@/data/queryKeys';
 import { listUpiIds, addUpiId, activateUpiId, removeUpiId } from '@/features/properties/useProperties';
 
 export function UpiConfigSection() {
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const pgId = useAuthStore((s) => s.activePgId) ?? owner?.id ?? null;
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const pgId = activePgId ?? null;
   const toast = useToast();
   const qc = useQueryClient();
 

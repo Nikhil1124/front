@@ -33,10 +33,15 @@ const KYC_STYLE: Record<string, { bg: string; border: string; text: string; labe
   DEFAULT: { bg: Colors.surfaceMuted, border: Colors.borderSubtle, text: Colors.textMuted, label: '⚠️ No KYC' },
 };
 
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+
 export function OwnerGuestsManagementTab() {
   const [subTab, setSubTab] = useState(0);
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const guests = usePGowStore((s) => s.currentGuests);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const createGuestByOwner = usePGowStore((s) => s.createGuestByOwner);
   const updateGuestByOwner = usePGowStore((s) => s.updateGuestByOwner);
   const deleteGuest = usePGowStore((s) => s.deleteGuest);

@@ -21,10 +21,11 @@ import type { BedResponse, RoomResponse } from '@/types';
  * created or deleted whole guest records. A second, separate room-occupancy
  * summary also lived in the Guests tab. Both now point here.
  */
+import { useGuestsQuery } from '@/features/guests/useGuests';
+
 export function BedVisualizerScreen() {
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const guests = usePGowStore((s) => s.currentGuests);
-  const pgId = useAuthStore((s) => s.activePgId) ?? owner?.id ?? null;
+  const pgId = useAuthStore((s) => s.activePgId) ?? null;
+  const { data: guests = [] } = useGuestsQuery(pgId ?? undefined);
   const toast = useToast();
 
   const { data: layout, isLoading, isError, error } = usePropertyLayout(pgId);
@@ -80,7 +81,7 @@ export function BedVisualizerScreen() {
   return (
     <HubScreenWrapper
       title="Bed Layout"
-      subtitle={layout?.propertyName ?? owner?.pgName ?? 'Property'}
+      subtitle={layout?.propertyName ?? 'Property Layout'}
       icon="bed-outline"
     >
       {isLoading ? (

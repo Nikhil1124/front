@@ -32,10 +32,15 @@ function staffNameFor(staffList: { name: string; role: string }[], roles: string
   return names.length > 0 ? names.join(' & ') : fallback;
 }
 
+import { useStaffQuery } from '@/features/staff/useStaff';
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { useAuthStore } from '@/store/authStore';
+
 export function OwnerReviewsTab() {
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
+  const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const owner = usePGowStore((s) => s.loggedInOwner);
-  const staffList = usePGowStore((s) => s.currentStaff);
-  const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
   const respond = usePGowStore((s) => s.respondToFeedbackComplaint);
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();

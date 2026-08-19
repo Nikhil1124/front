@@ -19,15 +19,20 @@ import { hapticSuccess } from '@/utils/haptics';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useAuthStore } from '@/store/authStore';
+
 export default function OwnerTabsLayout() {
   const [showNotificationCenter, setShowNotificationCenter] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAddPgModal, setShowAddPgModal] = useState(false);
 
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const isManager = usePGowStore((s) => s.isManagerMode);
-  const allPGs = usePGowStore((s) => s.allPGsState);
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
   const logout = usePGowStore((s) => s.logout);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;

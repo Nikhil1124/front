@@ -1,6 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type { ExpenseEntity } from "../../types";
 
 export type ExpenseCategory =
   | "staff_salary"
@@ -100,6 +104,57 @@ export function getExpenseSummary(pgId: string, period?: string): Promise<Expens
   const q = new URLSearchParams({ pg_id: pgId });
   if (period) q.set("period", period);
   return apiFetch<ExpenseSummary>(`${API.EXPENSES_SUMMARY}?${q}`);
+}
+
+export function useExpensesQuery(
+  pgId?: string,
+  opts?: { category?: ExpenseCategory; period?: string }
+) {
+  return useQuery<ExpenseEntity[]>({
+    queryKey: opts ? [...qk.expenses.list(pgId ?? ""), opts] : qk.expenses.list(pgId ?? ""),
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listExpenses(pgId, { ...opts, limit: 200 });
+      return res.items.map(map.toExpense);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useExpenseSummaryQuery(pgId?: string, period?: string) {
+  const effectivePeriod = period || map.currentPeriod();
+  return useQuery<ExpenseSummary>({
+    queryKey: qk.expenses.summary(pgId ?? "", effectivePeriod),
+    queryFn: () => getExpenseSummary(pgId!, effectivePeriod),
+    enabled: !!pgId,
+  });
+}
+
+export function useLogExpenseMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: LogExpenseParams) => logExpense(pgId!, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.expenses.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.expenses.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useReverseExpenseMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ expenseId, reason }: { expenseId: string; reason?: string }) =>
+      reverseExpense(expenseId, reason),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.expenses.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.expenses.all(pgId) });
+      }
+    },
+  });
 }
 
 export function useExpenses() {

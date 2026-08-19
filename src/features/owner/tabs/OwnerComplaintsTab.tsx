@@ -12,11 +12,14 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { useAuthStore } from '@/store/authStore';
 import type { FeedbackComplaintEntity } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 export function OwnerComplaintsTab() {
-  const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const respond = usePGowStore((s) => s.respondToFeedbackComplaint);
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();

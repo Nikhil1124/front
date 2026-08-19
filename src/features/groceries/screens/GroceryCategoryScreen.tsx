@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { SupplyItem } from '@/types';
+import { SupplyCategory, SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, StatusBar, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProductCard } from '../components/grocery/ProductCard';
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
+import { useSupplyCategories, useSupplyItems } from '../useSupply';
+import { useAuthStore } from '@/store/authStore';
 import { Colors, Layout, Radii } from '@/theme';
 import { FormScroll } from '@/components/ui/FormScroll';
 
@@ -77,12 +78,14 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNam
 };
 
 export function GroceryCategoryScreen() {
-  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
-  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { name: initialSupplyCategory } = useLocalSearchParams<{ name?: string }>();
   const filter: string | undefined = undefined;
+
+  const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
+  const { data: supplyItems = [] } = useSupplyItems(activePgId);
+  const { data: categories = [] } = useSupplyCategories(activePgId);
 
   const mode = useShoppingModeStore((s) => s.mode);
   const getCartTotal = useCartStore((s) => s.getCartTotal);
@@ -98,15 +101,14 @@ export function GroceryCategoryScreen() {
   // Products for the active category (or deals)
   const products = useMemo(() => {
     let list = activeSupplyCategory
-      ? (() => [])(activeSupplyCategory, mode)
+      ? supplyItems.filter(
+          (p) =>
+            p.category_id === activeSupplyCategory ||
+            categories.find((c) => c.name === activeSupplyCategory && c.id === p.category_id) !== undefined
+        )
       : filter === 'deals'
-      ? ([] as SupplyItem[]).filter((p) => {
-          const opts = mode === 'owner' ? [{price: p.price, unit: p.unit_label, originalPrice: p.mrp}] : [{price: p.price, unit: p.unit_label, originalPrice: p.mrp}];
-          return opts.some((o) => o.originalPrice && o.originalPrice > o.price);
-        })
-      : search.trim()
-      ? []
-      : [];
+      ? supplyItems.filter((p) => p.mrp && p.mrp > p.price)
+      : supplyItems;
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -115,7 +117,7 @@ export function GroceryCategoryScreen() {
       );
     }
     return list;
-  }, [activeSupplyCategory, filter, mode, search]);
+  }, [activeSupplyCategory, filter, search, supplyItems, categories]);
 
   const showProductList = activeSupplyCategory !== null || filter === 'deals' || search.trim().length > 0;
 
@@ -134,9 +136,9 @@ export function GroceryCategoryScreen() {
       activeOpacity={0.85}
       onPress={() => setActiveSupplyCategory(cat.name)}
     >
-      <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: cat.bgColor || '#EBF6F6' }]}>
+      <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: '#EBF6F6' }]}>
         <Image
-          source={typeof cat.image === 'string' ? { uri: cat.image } : cat.image}
+          source={require('../../../../../assets/img_app_icon.jpg')}
           style={styles.catImage}
           resizeMode="contain"
         />
@@ -220,7 +222,7 @@ export function GroceryCategoryScreen() {
           >
             {CATEGORY_GROUPS.map((group) => {
               // Get categories belonging to this section
-              const groupCats = ([] as SupplyItem[]).filter((c) => group.categoryIds.includes(c.id));
+              const groupCats = categories.filter((c) => group.categoryIds.includes(c.id));
               if (groupCats.length === 0) return null;
 
               // If a filter is applied, filter categories accordingly
@@ -239,9 +241,21 @@ export function GroceryCategoryScreen() {
                 </View>
               );
             })}
+
+            {/* Fallback for unclassified categories */}
+            {categories.some((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id))) && (
+              <View style={styles.sectionBlock}>
+                <Text style={styles.sectionHeading}>All Categories</Text>
+                <View style={styles.gridRow}>
+                  {categories
+                    .filter((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id)))
+                    .map(renderSupplyCategoryItem)}
+                </View>
+              </View>
+            )}
           </FormScroll>
         ) : (
-          /* ── PRODUCT GRID (When a SupplyCategory is Tapped) ── */
+          /* ── PRODUCT GRID (When a Category is Tapped) ── */
           <FlatList
             data={products}
             keyExtractor={(item) => item.id}

@@ -47,6 +47,8 @@ const CATEGORY_TABS = [
   { key: 'hardware', label: '💡 Hardware' },
 ];
 
+import { useActiveProperty } from '@/features/properties/useProperties';
+
 export function ProcurementScreen({ mode }: ProcurementScreenProps) {
   const isManagerMode = usePGowStore((s) => s.isManagerMode);
   const effectiveMode = mode ?? (isManagerMode ? 'manager' : 'owner');
@@ -58,14 +60,13 @@ export function ProcurementScreen({ mode }: ProcurementScreenProps) {
 }
 
 function usePgId(): string | null {
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  return useAuthStore((s) => s.activePgId) ?? owner?.id ?? null;
+  return useAuthStore((s) => s.activePgId);
 }
 
 // ─── Manager View: catalog + requisition cart, submitted to the owner ────────
 
 function ManagerProcurementView() {
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const { activeEntity: owner } = useActiveProperty();
   const pgId = usePgId();
   const toast = useToast();
 
@@ -384,7 +385,7 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Owner View: real requisitions approval queue ─────────────────────────────
 
 function OwnerProcurementView() {
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const { activeEntity: owner } = useActiveProperty();
   const pgId = usePgId();
   const toast = useToast();
 

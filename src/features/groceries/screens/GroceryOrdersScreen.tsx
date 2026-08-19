@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { SupplyItem } from '@/types';
 import React from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native';
@@ -7,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useOrderStore, DetailedOrder } from '../store/useOrderStore';
 import { useCartStore } from '../store/useCartStore';
+import { useSupplyItems } from '../useSupply';
+import { useAuthStore } from '@/store/authStore';
 import { Colors, Layout, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
@@ -14,8 +15,8 @@ export function GroceryOrdersScreen() {
   const orders = useOrderStore((state) => state.orders);
   const logout = usePGowStore((s) => s.logout);
   const addItem = useCartStore((state) => state.addItem);
-  // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
-  // BackHandler listener needed, unlike the old custom screen-stack this replaced.
+  const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
+  const { data: supplyItems = [] } = useSupplyItems(activePgId);
 
   const activeOrder = orders.find((o) => o.status !== 'delivered');
 
@@ -26,7 +27,7 @@ export function GroceryOrdersScreen() {
 
   const handleReorder = (order: DetailedOrder) => {
     order.items.forEach((item) => {
-      const product = ([] as SupplyItem[]).find(p => p.id === item.productId);
+      const product = supplyItems.find(p => p.id === item.productId);
       if (product) {
         addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, item.quantity);
       }
@@ -128,7 +129,7 @@ export function GroceryOrdersScreen() {
                   {buyItAgainItems.map((item) => (
                     <View key={item.id} style={styles.buyAgainCard}>
                       <Image
-                        source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+                        source={item.image ? { uri: item.image } : require('../../../../../assets/img_app_icon.jpg')}
                         style={styles.buyAgainImg}
                       />
                       <Text style={styles.buyAgainName} numberOfLines={1}>
@@ -138,7 +139,7 @@ export function GroceryOrdersScreen() {
                       <TouchableOpacity
                         style={styles.addAgainBtn}
                         onPress={() => {
-                          const product = ([] as SupplyItem[]).find(p => p.id === item.productId);
+                          const product = supplyItems.find(p => p.id === item.productId);
                           if (product) {
                             addItem(product, { unit: item.unit, price: item.price, originalPrice: item.originalPrice }, 1);
                           }

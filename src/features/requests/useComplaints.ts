@@ -1,6 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type {
+  FeedbackComplaintEntity,
+  GuestLaundryRequest,
+  PGGroceryOrder,
+  PGRepairServiceRequest,
+} from "../../types";
 
 export interface RequestEventRecord {
   id: string;
@@ -129,6 +138,10 @@ export function getComplaint(id: string): Promise<RequestRecord> {
   return apiFetch<RequestRecord>(API.REQUEST_DETAIL(id));
 }
 
+export function deleteComplaint(id: string): Promise<void> {
+  return apiFetch<void>(API.REQUEST_DETAIL(id), { method: "DELETE" });
+}
+
 export function getAttachmentUploadUrl(
   id: string,
   contentType: string
@@ -213,11 +226,116 @@ export function cancelComplaint(id: string, reason?: string): Promise<RequestRec
   });
 }
 
+export function useComplaintsQuery(pgId?: string) {
+  return useQuery<FeedbackComplaintEntity[]>({
+    queryKey: qk.requests.list(pgId ?? ""),
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listComplaints(pgId, { limit: 200 });
+      return res.items
+        .filter((r) => r.kind === "complaint" || r.kind === "feedback")
+        .map(map.toComplaint);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useGroceryOrdersQuery(pgId?: string) {
+  return useQuery<PGGroceryOrder[]>({
+    queryKey: [...qk.requests.list(pgId ?? ""), "grocery"],
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listComplaints(pgId, { kind: "grocery", limit: 100 });
+      return res.items.map(map.toGroceryOrder);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useRepairRequestsQuery(pgId?: string) {
+  return useQuery<PGRepairServiceRequest[]>({
+    queryKey: [...qk.requests.list(pgId ?? ""), "repair"],
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listComplaints(pgId, { kind: "repair", limit: 100 });
+      return res.items.map(map.toRepairRequest);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useLaundryRequestsQuery(pgId?: string) {
+  return useQuery<GuestLaundryRequest[]>({
+    queryKey: [...qk.requests.list(pgId ?? ""), "laundry"],
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listComplaints(pgId, { kind: "laundry", limit: 100 });
+      return res.items.map(map.toLaundryRequest);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useSubmitComplaintMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: submitComplaint,
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useAddCommentMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body, toStatus }: { id: string; body: string; toStatus?: RequestStatus }) =>
+      addComment(id, body, toStatus),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useResolveComplaintMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, resolutionNote }: { id: string; resolutionNote?: string }) =>
+      resolveComplaint(id, resolutionNote),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useDeleteComplaintMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteComplaint(id),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
+      }
+    },
+  });
+}
+
 export function useComplaints() {
   return {
     submitComplaint,
     listComplaints,
     getComplaint,
+    deleteComplaint,
     getAttachmentUploadUrl,
     uploadAttachment,
     addAttachment,

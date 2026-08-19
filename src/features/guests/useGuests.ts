@@ -1,6 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type { GuestEntity } from "../../types";
 
 export interface GuestMember {
   membership_id: string;
@@ -107,6 +111,58 @@ export function joinPg(params: JoinPgParams): Promise<JoinPgResult> {
     body: JSON.stringify(params),
     // There is no session to recover — a failure here is this form's to show.
     unauthorized: "throw",
+  });
+}
+
+export function useGuestsQuery(pgId?: string) {
+  return useQuery<GuestEntity[]>({
+    queryKey: qk.guests.list(pgId ?? ""),
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listGuests(pgId, { limit: 200 });
+      return res.items.map((g) => map.toGuest(g, {}));
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useAddGuestMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: Parameters<typeof addGuest>[1]) => addGuest(pgId!, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.guests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.guests.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useUpdateGuestMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ membershipId, params }: { membershipId: string; params: UpdateGuestPayload }) =>
+      updateGuest(membershipId, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.guests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.guests.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useRemoveGuestMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (membershipId: string) => removeGuest(membershipId),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.guests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.guests.all(pgId) });
+      }
+    },
   });
 }
 

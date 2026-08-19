@@ -50,18 +50,17 @@ function countdownPill(cutoffMs: number | null): { label: string; color: string 
   return { label: `⏰ Cut-off in ${hrs}h ${remMins}m`, color: Colors.warning };
 }
 
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useMealsQuery, useMyMealResponseQuery } from '@/features/meals/useMeals';
+import { useAuthStore } from '@/store/authStore';
+
 export default function GuestHomeTab() {
   const [showKycDialog, setShowKycDialog] = useState(false);
 
   const guest = usePGowStore((s) => s.loggedInGuest);
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
-  // `currentPGNotifications` carries the MealNotificationEntity list (the
-  // store's name predates the dashboard rewrite — it's the active PG's
-  // meal broadcast notifications, not generic notifications).
-  const meals = usePGowStore((s) => s.currentPGNotifications);
-  const rsvps = usePGowStore((s) => s.currentRSVPs);
-  // The RSVP submission lives on the store — same one used by GuestRSVPsTab.
-  // Using it here lets the home card's switch stay in sync with the meals tab.
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const { data: meals = [] } = useMealsQuery(activePgId ?? undefined);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
 
   const kycStatus = guest?.kycStatus ?? 'NOT_SUBMITTED';
@@ -77,9 +76,8 @@ export default function GuestHomeTab() {
   const cutoff = upcomingMeal ? nextCutoffMs(upcomingMeal.mealType) : null;
   const cutoffPill = countdownPill(cutoff);
   const cutoffPassed = cutoff ? cutoff - Date.now() <= 0 : false;
-  // Has the resident already RSVP'd to this meal? The store carries the
-  // full RSVP list; we look for a matching notificationId+guestId pair.
-  const isAttending = !!(upcomingMeal && rsvps.find((r) => r.notificationId === upcomingMeal.id && r.guestId === guest?.id && r.choice === 'REQUIRED'));
+  const { data: myMealResponse } = useMyMealResponseQuery(upcomingMeal?.id, activePgId ?? undefined);
+  const isAttending = myMealResponse?.choice === 'eating';
 
   // Re-render every 30s so the countdown pill stays fresh without a
   // background timer. (Lightweight — the component is mounted at all times

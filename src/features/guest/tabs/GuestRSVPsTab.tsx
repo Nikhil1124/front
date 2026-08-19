@@ -43,10 +43,14 @@ const CUTOFF_HOURS: Record<'breakfast' | 'lunch' | 'dinner', number> = {
   dinner: 19,
 };
 
+import { useMealsQuery } from '@/features/meals/useMeals';
+import { useAuthStore } from '@/store/authStore';
+
 export function GuestRSVPsTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
-  const notifications = usePGowStore((s) => s.currentPGNotifications);
-  const allRSVPs = usePGowStore((s) => s.allRSVPsState);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  const [rsvpChoices, setRsvpChoices] = useState<Record<string, 'REQUIRED' | 'NOT_REQUIRED'>>({});
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
   const getAlertTriggerTime = usePGowStore((s) => s.getAlertTriggerTime);
   const formatServiceTime12h = usePGowStore((s) => s.formatServiceTime12h);
@@ -124,9 +128,7 @@ export function GuestRSVPsTab() {
   );
 
   const totalMealsCount = notifications.length;
-  const answeredMealsCount = notifications.filter((n) =>
-    allRSVPs.some((r) => r.notificationId === n.id && r.guestId === guest?.id),
-  ).length;
+  const answeredMealsCount = notifications.filter((n) => rsvpChoices[n.id] !== undefined).length;
   const progressPercent = totalMealsCount > 0 ? answeredMealsCount / totalMealsCount : 0;
 
   const mealSlots: { name: string; icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
@@ -139,6 +141,7 @@ export function GuestRSVPsTab() {
     async (notificationId: string, choice: 'REQUIRED' | 'NOT_REQUIRED') => {
       const result = await submitRSVP(notificationId, choice);
       if (result.ok) {
+        setRsvpChoices((prev) => ({ ...prev, [notificationId]: choice }));
         hapticSuccess();
         const label = choice === 'REQUIRED' ? 'Eating' : 'Skipping';
         toast('success', `RSVP: ${label}`, 'Your portion is booked.');
@@ -190,15 +193,15 @@ export function GuestRSVPsTab() {
         <Row gap={10}>
           {mealSlots.map((slot) => {
             const matchingNotif = notifications.find((n) => n.mealType.toUpperCase() === slot.key);
-            const rsvp = matchingNotif ? allRSVPs.find((r) => r.notificationId === matchingNotif.id && r.guestId === guest?.id) : null;
+            const rsvpChoice = matchingNotif ? rsvpChoices[matchingNotif.id] : null;
             const isFilterSelected = selectedMealFilter === slot.key;
             let statusBg: string = '#F8FAFC';
             let statusBorder: string = Colors.borderMuted;
             let statusColor: string = Colors.textMuted;
             let statusText = 'No Menu';
             if (matchingNotif) {
-              if (!rsvp) { statusBg = 'rgba(255,184,0,0.1)'; statusBorder = '#FFB800'; statusColor = '#FFB800'; statusText = 'Pending'; }
-              else if (rsvp.choice === 'REQUIRED') { statusBg = 'rgba(16,185,129,0.1)'; statusBorder = '#10B981'; statusColor = '#10B981'; statusText = 'Eating'; }
+              if (!rsvpChoice) { statusBg = 'rgba(255,184,0,0.1)'; statusBorder = '#FFB800'; statusColor = '#FFB800'; statusText = 'Pending'; }
+              else if (rsvpChoice === 'REQUIRED') { statusBg = 'rgba(16,185,129,0.1)'; statusBorder = '#10B981'; statusColor = '#10B981'; statusText = 'Eating'; }
               else { statusBg = 'rgba(239,68,68,0.1)'; statusBorder = '#EF4444'; statusColor = '#EF4444'; statusText = 'Skipping'; }
             }
             return (
@@ -270,7 +273,7 @@ export function GuestRSVPsTab() {
         />
       ) : (
         filteredNotifications.map((notif) => {
-          const currentChoice = allRSVPs.find((r) => r.notificationId === notif.id && r.guestId === guest?.id)?.choice;
+          const currentChoice = rsvpChoices[notif.id];
           const isEating = currentChoice === 'REQUIRED';
           const isSkipping = currentChoice === 'NOT_REQUIRED';
           return (
@@ -433,7 +436,7 @@ export function GuestRSVPsTab() {
             <Txt size={11} weight="900" color={Colors.CyberPurple} style={{ letterSpacing: 1 }}>YOUR RSVP STATUS</Txt>
             <Spacer size={6} />
             {(() => {
-              const choice = allRSVPs.find((r) => r.notificationId === detailMeal.id && r.guestId === guest?.id)?.choice;
+              const choice = detailMeal ? rsvpChoices[detailMeal.id] : null;
               if (choice === 'REQUIRED') {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10B981' }]}>

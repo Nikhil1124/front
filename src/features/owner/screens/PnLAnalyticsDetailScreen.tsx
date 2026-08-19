@@ -40,12 +40,14 @@ const INTERVALS: { key: AnalyticsInterval; label: string }[] = [
   { key: 'custom', label: 'Custom Range 📅' },
 ];
 
+import { useActiveProperty } from '@/features/properties/useProperties';
+
 export function PnLAnalyticsDetailScreen() {
   const [interval, setInterval] = useState<AnalyticsInterval>('3m');
   const [customStart, setCustomStart] = useState('2026-06-01');
   const [customEnd, setCustomEnd] = useState('2026-08-11');
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const pgId = useAuthStore((s) => s.activePgId) ?? owner?.id ?? null;
+  const { activeEntity: owner, activePgId } = useActiveProperty();
+  const pgId = activePgId ?? null;
   const { data, isLoading, isError, error } = usePnL(pgId, interval === 'custom' ? '3m' : interval);
 
   return (

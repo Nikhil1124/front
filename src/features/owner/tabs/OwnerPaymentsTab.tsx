@@ -17,13 +17,16 @@ import { hapticSelect } from '@/utils/haptics';
 import { ManagerExpenseLoggerSection } from './ManagerExpenseLoggerSection';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
 import type { PaymentEntity } from '@/types';
+import { usePaymentsQuery } from '@/features/payments/usePayments';
+import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 const SUB_TABS = ['📊 Balance Sheet', '💸 Expenses', '🧾 Collections'];
 
 export function OwnerPaymentsTab() {
   const [subTab, setSubTab] = useState(0);
-  const payments = usePGowStore((s) => s.currentPayments);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: payments = [] } = usePaymentsQuery(activePgId ?? undefined);
   const { refreshing, onRefresh } = usePullToRefresh();
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
   const [searchQuery, setSearchQuery] = useState('');

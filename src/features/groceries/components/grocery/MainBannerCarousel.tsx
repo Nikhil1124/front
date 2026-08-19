@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
@@ -10,13 +9,14 @@ import {
   useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  ImageSourcePropType,
 } from 'react-native';
 import { Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface BannerConfig {
   id: string;
-  image: string | null;
+  image: ImageSourcePropType;
   title: string;
   cta: string;
   route: string;

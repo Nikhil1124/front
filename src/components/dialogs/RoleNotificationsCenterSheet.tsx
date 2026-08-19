@@ -65,8 +65,12 @@ function roleTint(role: string): string {
   }
 }
 
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useAuthStore } from '@/store/authStore';
+
 export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const markAllRead = usePGowStore((s) => s.markAllRoleNotificationsAsRead);
   const markRead = usePGowStore((s) => s.markRoleNotificationAsRead);
   const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);

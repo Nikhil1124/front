@@ -56,14 +56,20 @@ const SCREEN_ROUTES: Partial<Record<AppScreen, string>> = {
   TENANT_LIST: '/tenant-list',
 };
 
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useAuthStore } from '@/store/authStore';
+
 export default function OwnerOverviewTab() {
   const [showOverdueModal, setShowOverdueModal] = useState(false);
 
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const isManager = usePGowStore((s) => s.isManagerMode);
-  const allPGs = usePGowStore((s) => s.allPGsState);
-  const roleNotifs = usePGowStore((s) => s.currentRoleNotifications);
-  const guests = usePGowStore((s) => s.currentGuests);
 
   // "This month" window for the meal-savings hero tile — the 1st of the
   // current month through today, in the same YYYY-MM-DD form the mock

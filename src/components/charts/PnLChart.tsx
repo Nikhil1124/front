@@ -25,7 +25,6 @@ import { Card, Txt } from '@/components/ui';
 import { PnLChart as PnLChartPresentational } from '@/components/PnLChart';
 import { usePnL } from '@/features/billing/usePnL';
 import { useAuthStore } from '@/store/authStore';
-import { usePGowStore } from '@/store/usePGowStore';
 import type { PnLInterval } from '@/types';
 
 export interface PnLChartProps {
@@ -35,8 +34,7 @@ export interface PnLChartProps {
 
 export function PnLChart({ interval, onIntervalChange }: PnLChartProps) {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const pgId = activePgId ?? owner?.id ?? null;
+  const pgId = activePgId ?? null;
   const { data, isLoading, isError } = usePnL(pgId, interval);
 
   if (isLoading) {

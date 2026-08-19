@@ -17,7 +17,7 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Txt, Row, Spacer } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { usePortfolioDetail } from '@/features/properties/usePortfolio';
 
 function formatINR(n: number): string {
@@ -28,7 +28,7 @@ function formatINR(n: number): string {
 }
 
 export function PortfolioScreen() {
-  const allPGs = usePGowStore((s) => s.allPGsState);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data, isLoading } = usePortfolioDetail(allPGs);
 
   return (

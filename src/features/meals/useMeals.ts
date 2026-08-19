@@ -1,6 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import * as map from "../../data/mappers";
+import type { MealNotificationEntity } from "../../types";
 
 export interface MealOut {
   id: string;
@@ -158,6 +162,108 @@ export function getMealSavingsAnalytics(
   endDate: string
 ): Promise<MealSavingsAnalytics> {
   return apiFetch<MealSavingsAnalytics>(API.MEAL_SAVINGS_ANALYTICS(pgId, startDate, endDate));
+}
+
+export function useMealsQuery(pgId?: string) {
+  return useQuery<MealNotificationEntity[]>({
+    queryKey: qk.meals.list(pgId ?? ""),
+    queryFn: async () => {
+      if (!pgId) return [];
+      const res = await listMeals(pgId, { limit: 50 });
+      return res.items.map(map.toMeal);
+    },
+    enabled: !!pgId,
+  });
+}
+
+export function useMealResponsesQuery(mealId?: string, pgId?: string) {
+  return useQuery<MealResponseRow[]>({
+    queryKey: qk.meals.responses(pgId ?? "", mealId ?? ""),
+    queryFn: async () => {
+      if (!mealId) return [];
+      const res = await listMealResponses(mealId, { limit: 500 });
+      return res.items;
+    },
+    enabled: !!mealId,
+  });
+}
+
+export function useMyMealResponseQuery(mealId?: string, pgId?: string) {
+  return useQuery<MealResponse | null>({
+    queryKey: qk.meals.myResponse(pgId ?? "", mealId ?? ""),
+    queryFn: async () => {
+      if (!mealId) return null;
+      return getMyResponse(mealId);
+    },
+    enabled: !!mealId,
+  });
+}
+
+export function useSubmitResponseMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ mealId, choice }: { mealId: string; choice: "eating" | "skipping" }) =>
+      submitResponse(mealId, choice),
+    onSuccess: (_, vars) => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.meals.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.meals.myResponse(pgId, vars.mealId) });
+        qc.invalidateQueries({ queryKey: qk.meals.responses(pgId, vars.mealId) });
+      }
+    },
+  });
+}
+
+export function useCreateMealMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: Parameters<typeof createMeal>[1]) => createMeal(pgId!, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.meals.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.meals.all(pgId) });
+      }
+    },
+  });
+}
+
+export function useUpdateMealMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ mealId, params }: { mealId: string; params: Parameters<typeof updateMeal>[1] }) =>
+      updateMeal(mealId, params),
+    onSuccess: (_, vars) => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.meals.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.meals.detail(pgId, vars.mealId) });
+      }
+    },
+  });
+}
+
+export function useBroadcastMealMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ mealId, params }: { mealId: string; params?: Parameters<typeof broadcastMeal>[1] }) =>
+      broadcastMeal(mealId, params),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.meals.list(pgId) });
+      }
+    },
+  });
+}
+
+export function useCloseMealMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (mealId: string) => closeMeal(mealId),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.meals.list(pgId) });
+      }
+    },
+  });
 }
 
 export function useMeals() {

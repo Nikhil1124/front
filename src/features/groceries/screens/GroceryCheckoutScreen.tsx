@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,11 +37,13 @@ const PAYMENT_METHODS = [
   { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
 ];
 
+import { useActiveProperty } from '@/features/properties/useProperties';
+
 export function GroceryCheckoutScreen() {
   // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
   // BackHandler listener needed, unlike the old custom screen-stack this replaced.
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const ownerForGuest = usePGowStore((s) => s.currentOwnerForGuest);
+  const { activeEntity: owner } = useActiveProperty();
+  const ownerForGuest = owner;
   const insets = useSafeAreaInsets();
 
   const { items, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
@@ -337,7 +338,7 @@ export function GroceryCheckoutScreen() {
             {items.map((item) => (
               <View key={item.id} style={styles.summaryItemRow}>
                 <Image
-                  source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+                  source={item.image ? { uri: item.image } : require('../../../../../assets/img_app_icon.jpg')}
                   style={styles.summaryItemImg}
                 />
                 <View style={styles.summaryItemDetails}>

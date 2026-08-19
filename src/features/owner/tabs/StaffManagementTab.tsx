@@ -12,16 +12,20 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect } from '@/utils/haptics';
+import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+import { useStaffQuery } from '@/features/staff/useStaff';
+import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 const SUB_TABS = ['➕ Add Staff', '👥 Staff Directory'];
 
 export function StaffManagementTab() {
   const [subTab, setSubTab] = useState(0);
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const isManager = usePGowStore((s) => s.isManagerMode);
-  const allPGs = usePGowStore((s) => s.allPGsState);
-  const staffList = usePGowStore((s) => s.currentStaff);
   const staffRoleInput = usePGowStore((s) => s.staffRoleInput);
   const staffNameInput = usePGowStore((s) => s.staffNameInput);
   const staffPhoneInput = usePGowStore((s) => s.staffPhoneInput);

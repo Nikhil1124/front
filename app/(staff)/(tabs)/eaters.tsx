@@ -17,15 +17,31 @@ export default function ChefEatersTab() {
   return <ChefEatersView />;
 }
 
-function ChefEatersView() {
-  const notifications = usePGowStore((s) => s.currentPGNotifications);
-  const allRSVPs = usePGowStore((s) => s.allRSVPsState);
-  const guests = usePGowStore((s) => s.currentGuests);
-  const { activeMeal, setActiveMeal } = useActiveMeal();
+import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import * as map from '@/data/mappers';
+import type { GuestRSVPEntity } from '@/types';
 
-  const rsvpsForActive = activeMeal ? allRSVPs.filter((r) => r.notificationId === activeMeal.id) : [];
-  const reqCount = rsvpsForActive.filter((r) => r.choice === 'REQUIRED').length;
-  const notReqCount = rsvpsForActive.filter((r) => r.choice === 'NOT_REQUIRED').length;
+function ChefEatersView() {
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { activeMeal, setActiveMeal } = useActiveMeal();
+  const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
+
+  const rsvpsForActive: GuestRSVPEntity[] = mealResponses
+    .filter((r) => r.choice !== null)
+    .map((r) => ({
+      id: `${activeMeal?.id}:${r.membership_id}`,
+      notificationId: activeMeal?.id ?? '',
+      guestId: r.membership_id,
+      guestName: r.name,
+      choice: r.choice === 'eating' ? 'REQUIRED' : 'NOT_REQUIRED',
+      timestamp: map.toMillis(r.responded_at),
+    }));
+
+  const reqCount = mealResponses.filter((r) => r.choice === 'eating').length;
+  const notReqCount = mealResponses.filter((r) => r.choice === 'skipping').length;
   const noResponse = Math.max(0, guests.length - reqCount - notReqCount);
 
   return (

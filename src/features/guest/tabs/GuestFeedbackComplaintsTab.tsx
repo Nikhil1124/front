@@ -27,8 +27,12 @@ const MOCK_FEEDBACK_MEDIA: SimulatedMedia[] = [
 
 const CATEGORIES = ['Food Quality', 'Room Cleanliness', 'Wi-Fi & Internet', 'Water & Electricity', 'Plumbing/Maintenance', 'Other'];
 
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { useAuthStore } from '@/store/authStore';
+
 export function GuestFeedbackComplaintsTab() {
-  const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const submit = usePGowStore((s) => s.submitFeedbackComplaint);
 
   const [submissionType, setSubmissionType] = useState<'COMPLAINT' | 'FEEDBACK'>('COMPLAINT');

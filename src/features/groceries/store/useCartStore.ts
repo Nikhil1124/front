@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -67,7 +66,7 @@ export const useCartStore = create<CartState>()(
             name: product.name,
             price: option.price,
             originalPrice: option.originalPrice,
-            image: { uri: (product as any).image_url ?? undefined },
+            image: product.image_url,
             unit: option.unit,
             category: product.category_id,
             quantity: qty,

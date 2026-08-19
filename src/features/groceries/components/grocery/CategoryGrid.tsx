@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SupplyCategory } from '@/types';
@@ -57,7 +56,7 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>Shop by SupplyCategory</Text>
+        <Text style={styles.sectionTitle}>Shop by Category</Text>
         <TouchableOpacity activeOpacity={0.7} onPress={handleSeeAllPress}>
           <Text style={styles.seeAllText}>See All →</Text>
         </TouchableOpacity>
@@ -74,7 +73,7 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
             >
               <View style={[styles.imageWrapper, { backgroundColor: bgColor, width: cardWidth, height: cardWidth }]}>
                 <Image
-                  source={typeof cat.image === 'string' ? { uri: cat.image } : cat.image}
+                  source={require('../../../../../assets/img_app_icon.jpg')}
                   style={styles.image}
                 />
               </View>

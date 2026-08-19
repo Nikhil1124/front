@@ -15,11 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
+import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { Colors } from '@/theme';
 
 export function JoinCodeCard() {
-  const pg = usePGowStore((s) => s.loggedInOwner);
+  const { activeEntity: pg } = useActiveProperty();
   const isManagerMode = usePGowStore((s) => s.isManagerMode);
   const rotateJoinCode = usePGowStore((s) => s.rotateJoinCode);
   const disableJoinCode = usePGowStore((s) => s.disableJoinCode);
