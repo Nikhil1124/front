@@ -32,7 +32,6 @@ interface ActionTile {
 const OWNER_TILES: ActionTile[] = [
   { screen: 'PNL_ANALYTICS',       label: 'P&L Analytics',     desc: '3m / 6m / 1y', icon: 'stats-chart',  tint: '#0D9488' },
   { screen: 'GROCERIES_SCREEN',    label: 'Groceries',          desc: 'Kitchen & PG supplies', icon: 'nutrition', tint: '#15803D' },
-  { screen: 'HOUSEKEEPING_DASHBOARD', label: 'Housekeeping',    desc: 'Staff work progress', icon: 'sparkles',         tint: '#E11D48' },
   { screen: 'UPI_SETTINGS',        label: 'UPI Settings',       desc: 'Rent collection handles', icon: 'card', tint: '#0284C7' },
   { screen: 'OWNER_SERVICES',      label: 'Services',           desc: 'Grocery & repairs', icon: 'storefront', tint: '#9333EA' },
 ];
@@ -43,7 +42,6 @@ const MANAGER_TILES: ActionTile[] = [
   { screen: 'GROCERIES_SCREEN',    label: 'Groceries',          desc: 'Kitchen & PG supplies', icon: 'nutrition', tint: '#15803D' },
   { action: 'NOTICES',             label: 'Rent Reminders',     desc: 'WhatsApp / SMS', icon: 'notifications', tint: '#D97706' },
   { screen: 'UPI_SETTINGS',        label: 'UPI Settings',       desc: 'Rent collection handles', icon: 'card', tint: '#0284C7' },
-  { screen: 'HOUSEKEEPING_DASHBOARD', label: 'Housekeeping',    desc: 'Staff work progress', icon: 'sparkles',         tint: '#E11D48' },
   { screen: 'OWNER_SERVICES',      label: 'Services',           desc: 'Grocery & repairs', icon: 'storefront', tint: '#9333EA' },
 ];
 
@@ -56,7 +54,6 @@ const SCREEN_ROUTES: Partial<Record<AppScreen, string>> = {
   OWNER_SERVICES: '/services',
   BED_VISUALIZER: '/bed-visualizer',
   TENANT_LIST: '/tenant-list',
-  HOUSEKEEPING_DASHBOARD: '/maintenance-progress',
 };
 
 export default function OwnerOverviewTab() {

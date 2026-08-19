@@ -27,7 +27,7 @@ interface Props {
   initialTab?: number;
 }
 
-const TABS = ['PG Owner', 'PG Manager', 'Kitchen/Staff', 'Resident'];
+const TABS = ['PG Owner', 'PG Manager', 'Staff & Delivery', 'Resident'];
 
 export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const loginOwner = usePGowStore((s) => s.loginOwner);
@@ -400,11 +400,26 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
           </View>
         )}
 
-        {/* Tab 2: Kitchen & Staff */}
+        {/* Tab 2: Kitchen, Maintenance & Delivery Staff */}
         {selectedTab === 2 && (
           <View>
-            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Kitchen & Maintenance Staff Login</Txt>
-            <Spacer size={16} />
+            <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Staff & Delivery Agent Login</Txt>
+            <Spacer size={12} />
+            
+            <Card containerColor={Colors.surfaceElevated} borderRadius={12} padding={[12, 12]} style={{ marginBottom: 14, borderWidth: 1, borderColor: Colors.borderSubtle }}>
+              <Row gap={6} align="center" style={{ marginBottom: 6 }}>
+                <Ionicons name="information-circle" size={16} color={Colors.primary} />
+                <Txt size={12} weight="800" color={Colors.primaryDark}>Unified Dynamic Routing</Txt>
+              </Row>
+              <Txt size={11} color={Colors.textSecondary}>
+                Enter your registered credentials. The portal automatically detects your role and routes you to your dashboard:
+              </Txt>
+              <Spacer size={6} />
+              <Txt size={11} color={Colors.textMuted}>🍳 Chefs & Kitchen Staff → Kitchen Dashboard</Txt>
+              <Txt size={11} color={Colors.textMuted}>🛠️ Maintenance Staff → Housekeeping Dashboard</Txt>
+              <Txt size={11} color={Colors.textMuted}>🚴 Delivery Agents → Delivery Route Dashboard</Txt>
+            </Card>
+
             <OutlinedTextField
               label="Your Phone Number"
               value={staffPhoneInput}

@@ -265,7 +265,6 @@ export type AppScreen =
   | 'STAFF_LOGIN'
   | 'STAFF_DASHBOARD'
   // ── Task 8: new screens ─────────────────────────────────────────────────
-  | 'HOUSEKEEPING_DASHBOARD'
   | 'PROCUREMENT_SCREEN'
   | 'STAFF_ATTENDANCE'
   // ── Cyber Mint hub-and-spoke drill-downs ─────────────────────────────────

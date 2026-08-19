@@ -119,7 +119,7 @@ export function WelcomeScreen() {
           </Card>
         </AnimatedPress>
 
-        {/* Kitchen Staff & Operations */}
+        {/* Staff & Operations Portal */}
         <AnimatedPress
           scale={0.985}
           hapticPattern="light"
@@ -135,11 +135,16 @@ export function WelcomeScreen() {
           >
             <Row align="center" gap={10} style={styles.cardHeader}>
               <View style={[styles.iconCircle, { backgroundColor: '#f0f0f0ff' }]}>
-                <Ionicons name="restaurant" size={20} color={Colors.CyberAmber} />
+                <Ionicons name="people-sharp" size={20} color={Colors.CyberAmber} />
               </View>
-              <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
-                Kitchen Staff & Chefs Portal
-              </Txt>
+              <Col>
+                <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
+                  Staff & Operations Portal
+                </Txt>
+                <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
+                  Kitchen, Maintenance & Delivery Agents
+                </Txt>
+              </Col>
             </Row>
 
             <Btn
@@ -149,9 +154,9 @@ export function WelcomeScreen() {
               borderRadius={12}
               height={44}
             >
-              <Ionicons name="restaurant" size={18} color={Colors.CyberAmber} style={{ marginRight: 6 }} />
+              <Ionicons name="people" size={18} color={Colors.CyberAmber} style={{ marginRight: 6 }} />
               <Txt variant="body" weight="700" color={Colors.CyberAmber}>
-                Open Staff Dashboard
+                Open Staff & Operations Portal
               </Txt>
             </Btn>
           </Card>

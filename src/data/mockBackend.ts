@@ -164,7 +164,7 @@ route("POST", "/v1/auth/login", ({ body }) => {
 route("POST", "/v1/auth/login/pin", ({ body }) => {
   const phone = String(body.phone ?? "");
   const staffUser = Array.from(db.usersByPhone.values()).find(
-    (u) => u.phone === phone && ["manager", "chef", "kitchen_staff", "maintenance"].includes(u.memberships[0]?.role ?? "")
+    (u) => u.phone === phone && ["manager", "chef", "kitchen_staff", "maintenance", "delivery_agent"].includes(u.memberships[0]?.role ?? "")
   );
   if (!staffUser) return fail(401, "UNAUTHENTICATED", "Invalid phone number or PIN.");
   return ok(issueTokens(staffUser.id));

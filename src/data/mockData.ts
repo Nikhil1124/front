@@ -125,7 +125,7 @@ export const upiIds = [
 export interface MockMembership {
   pg_id: string;
   pg_name: string;
-  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest";
+  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest" | "delivery_agent";
   membership_id: string;
   room_no: string | null;
 }
@@ -215,6 +215,18 @@ addUser({
   gate: null,
 });
 
+addUser({
+  id: "user_delivery_1",
+  name: "Rahul Kumar",
+  phone: "+919000000007",
+  email: null,
+  must_change_password: false,
+  avatar_url: null,
+  memberships: [{ pg_id: PG_ID, pg_name: PG_NAME, role: "delivery_agent", membership_id: "mem_delivery_1", room_no: null }],
+  platform_roles: [],
+  gate: null,
+});
+
 /** Staff/manager PINs — `pin_login` checks phone only (any PIN succeeds), this just
  *  records what each demo account's real PIN "is" for anyone who wants to type it. */
 export const staffPins = new Map<string, string>([
@@ -222,6 +234,7 @@ export const staffPins = new Map<string, string>([
   ["+919000000004", "1234"],
   ["+919000000005", "1234"],
   ["+919000000006", "1234"],
+  ["+919000000007", "1234"],
 ]);
 
 // Residents ───────────────────────────────────────────────────────────────────
@@ -305,7 +318,7 @@ export interface MockStaff {
   name: string;
   phone: string;
   email: string | null;
-  role: "manager" | "chef" | "kitchen_staff" | "maintenance" | "owner";
+  role: "manager" | "chef" | "kitchen_staff" | "maintenance" | "owner" | "delivery_agent";
   monthly_salary: string | null;
   shift_start: string | null;
   shift_end: string | null;
@@ -319,6 +332,7 @@ export const staff: MockStaff[] = [
   { membership_id: "mem_chef_1", user_id: "user_chef_1", pg_id: PG_ID, name: "Suresh Babu", phone: "+919000000004", email: null, role: "chef", monthly_salary: "18000.00", shift_start: "06:00:00", shift_end: "14:00:00", has_pin: true, started_at: nowIso(-250 * DAY), ended_at: null },
   { membership_id: "mem_kitchen_1", user_id: "user_kitchen_1", pg_id: PG_ID, name: "Lakshmi Devi", phone: "+919000000005", email: null, role: "kitchen_staff", monthly_salary: "14000.00", shift_start: "07:00:00", shift_end: "15:00:00", has_pin: true, started_at: nowIso(-180 * DAY), ended_at: null },
   { membership_id: "mem_maint_1", user_id: "user_maint_1", pg_id: PG_ID, name: "Ibrahim Sheikh", phone: "+919000000006", email: null, role: "maintenance", monthly_salary: "15000.00", shift_start: "10:00:00", shift_end: "19:00:00", has_pin: true, started_at: nowIso(-90 * DAY), ended_at: null },
+  { membership_id: "mem_delivery_1", user_id: "user_delivery_1", pg_id: PG_ID, name: "Rahul Kumar", phone: "+919000000007", email: null, role: "delivery_agent", monthly_salary: "12000.00", shift_start: "08:00:00", shift_end: "17:00:00", has_pin: true, started_at: nowIso(-45 * DAY), ended_at: null },
 ];
 
 // ─── Payments ────────────────────────────────────────────────────────────────
