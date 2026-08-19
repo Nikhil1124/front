@@ -1143,6 +1143,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     const audienceMap: Record<string, notificationsApi.BroadcastAudience> = {
       ALL: 'all', OWNER: 'owner', MANAGER: 'manager', RESIDENT: 'guest',
       GUEST: 'guest', CHEF: 'chef', STAFF: 'kitchen_staff', MAINTENANCE: 'maintenance',
+      DELIVERY_AGENT: 'delivery_agent', DELIVERY: 'delivery_agent',
     };
     const categoryMap: Record<string, notificationsApi.NotificationCategory> = {
       ANNOUNCEMENT: 'announcement', KYC: 'kyc', RENT: 'rent', PAYMENT: 'rent',
@@ -1566,9 +1567,10 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       return { ok: false, error: 'A phone number is required — it is what staff sign in with.' };
     }
     // The UI's labels, in the roles the API accepts.
-    const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance'> = {
+    const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance' | 'delivery_agent'> = {
       Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
       'Kitchen Staff': 'kitchen_staff', Maintenance: 'maintenance', Cleaner: 'maintenance',
+      'Delivery Agent': 'delivery_agent', Delivery: 'delivery_agent', Rider: 'delivery_agent',
     };
     try {
       await staffApi.addStaff(pgId, {

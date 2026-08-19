@@ -12,9 +12,8 @@
  * screen that means.
  */
 
-import { API, BASE_URL, GATE_CODES, GateCode, USE_MOCK_API } from "../config";
+import { API, BASE_URL, GATE_CODES, GateCode } from "../config";
 import { useAuthStore } from "../store/authStore";
-import { mockFetch } from "./mockBackend";
 
 // ─── Error shape from every endpoint ─────────────────────────────────────────
 
@@ -72,7 +71,7 @@ export async function fetchWithTimeout(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const requestOptions = { ...options, signal: controller.signal };
-    return USE_MOCK_API ? await mockFetch(url, requestOptions) : await fetch(url, requestOptions);
+    return await fetch(url, requestOptions);
   } catch (err: any) {
     // Airplane mode, wrong host, DNS failure and our own abort all arrive as a bare
     // TypeError, which no `instanceof PGowApiError` check catches. Status 0 means the

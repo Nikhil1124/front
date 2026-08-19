@@ -531,3 +531,24 @@ export interface MealTypeSummary {
   allergyCount: number;
   totalSkip: number;
 }
+
+// ─── Supply (Phase 1) ────────────────────────────────────────────────────────────
+
+export interface SupplyCategory {
+  id: string;
+  name: string;
+  sort_order: number;
+}
+
+export interface SupplyItem {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string;
+  unit_label: string;
+  price: number;
+  mrp: number | null;
+  variant_group: string | null;
+  image_url: string | null;
+  available: boolean;
+}

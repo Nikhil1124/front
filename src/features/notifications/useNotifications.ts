@@ -97,6 +97,7 @@ export type BroadcastAudience =
   | "chef"
   | "kitchen_staff"
   | "maintenance"
+  | "delivery_agent"
   | "guest";
 
 export interface BroadcastParams {

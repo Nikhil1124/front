@@ -1,18 +1,18 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { EnrichedProduct } from '../../data/mockProducts';
+import { SupplyItem } from '@/types';
 import { ProductCard } from './ProductCard';
 
 import { Colors } from '@/theme';
 
 interface ProductRowProps {
   title: string;
-  products: EnrichedProduct[];
+  products: SupplyItem[];
   cartItems?: Array<{ id: string; quantity: number }>;
-  onAdd?: (product: EnrichedProduct) => void;
+  onAdd?: (product: SupplyItem) => void;
   onIncrease?: (productId: string, currentQty: number) => void;
   onDecrease?: (productId: string, currentQty: number) => void;
-  onProductPress?: (product: EnrichedProduct) => void;
+  onProductPress?: (product: SupplyItem) => void;
   onSeeAllPress?: () => void;
 }
 

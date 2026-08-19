@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { EnrichedProduct } from '../data/mockProducts';
+import { SupplyItem } from '@/types';
 
 interface WishlistState {
-  items: EnrichedProduct[];
-  addItem: (product: EnrichedProduct) => void;
+  items: SupplyItem[];
+  addItem: (product: SupplyItem) => void;
   removeItem: (productId: string) => void;
   isWishlisted: (productId: string) => boolean;
-  toggleItem: (product: EnrichedProduct) => void;
+  toggleItem: (product: SupplyItem) => void;
 }
 
 export const useWishlistStore = create<WishlistState>()(

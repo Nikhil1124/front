@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refreshToken: null,
   user: null,
   activePgId: null,
-  activeRole: 'delivery_agent',
+  activeRole: null,
   deviceId: null,
 
   setDeviceId: (id) => set({ deviceId: id }),
