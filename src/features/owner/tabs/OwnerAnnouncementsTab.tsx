@@ -22,6 +22,8 @@ const RADIUS = 16;
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useAuthStore } from '@/store/authStore';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
 
 export function OwnerAnnouncementsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -29,8 +31,11 @@ export function OwnerAnnouncementsTab() {
   const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
   const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
   const owner = usePGowStore((s) => s.loggedInOwner);
-  const guests = usePGowStore((s) => s.currentGuests);
-  const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
+  // Real API-backed data, not usePGowStore's local state — `currentGuests` and
+  // `currentFeedbackComplaints` don't exist on the store at all (a pre-existing gap, not a
+  // merge-conflict casualty: this file was never touched by any of the conflicts).
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
   const respondComplaint = usePGowStore((s) => s.respondToFeedbackComplaint);
   const sendNotice = usePGowStore((s) => s.sendRoleNotification);

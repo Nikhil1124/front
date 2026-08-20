@@ -1177,18 +1177,14 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!s.staffPhoneInput.trim()) {
       return { ok: false, error: 'A phone number is required — it is what staff sign in with.' };
     }
-<<<<<<< HEAD
-    const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance'> = {
-      Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
-      'Kitchen Staff': 'kitchen_staff', Maintenance: 'maintenance', 'Maintenance Staff': 'maintenance',
-      'Delivery Agent': 'maintenance', Cleaner: 'maintenance',
-=======
-    // The UI's labels, in the roles the API accepts.
+    // The UI's labels, in the roles the API accepts. `delivery_agent` is a real backend
+    // role (migration 0020_add_delivery_agent_role) — mapping "Delivery Agent" to
+    // `maintenance` would misclassify delivery staff as maintenance staff server-side.
     const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance' | 'delivery_agent'> = {
       Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
-      'Kitchen Staff': 'kitchen_staff', Maintenance: 'maintenance', Cleaner: 'maintenance',
+      'Kitchen Staff': 'kitchen_staff', Maintenance: 'maintenance', 'Maintenance Staff': 'maintenance',
+      Cleaner: 'maintenance',
       'Delivery Agent': 'delivery_agent', Delivery: 'delivery_agent', Rider: 'delivery_agent',
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
     };
     try {
       await staffApi.addStaff(pgId, {

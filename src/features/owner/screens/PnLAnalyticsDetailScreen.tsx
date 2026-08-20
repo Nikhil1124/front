@@ -20,6 +20,8 @@ import { PnLChart as PnLChartPresentational } from '@/components/PnLChart';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { usePnL } from '@/features/billing/usePnL';
+import { usePaymentsQuery } from '@/features/payments/usePayments';
+import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { hapticSelect } from '@/utils/haptics';
 import type { PnLInterval } from '@/types';
 
@@ -41,27 +43,19 @@ const TABS = [
   { key: 'custom' as const, label: 'Custom Range 📅' },
 ];
 
-import { useActiveProperty } from '@/features/properties/useProperties';
-
 export function PnLAnalyticsDetailScreen() {
   const [interval, setInterval] = useState<AnalyticsInterval>('3m');
   const [customStart, setCustomStart] = useState('2026-06-01');
-<<<<<<< HEAD
   const [customEnd, setCustomEnd] = useState('2026-08-19');
-=======
-  const [customEnd, setCustomEnd] = useState('2026-08-11');
-  const { activeEntity: owner, activePgId } = useActiveProperty();
-  const pgId = activePgId ?? null;
-  const { data, isLoading, isError, error } = usePnL(pgId, interval === 'custom' ? '3m' : interval);
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
   const owner = usePGowStore((s) => s.loggedInOwner);
   const activePgId = useAuthStore((s) => s.activePgId);
   const pgId = activePgId ?? owner?.id ?? null;
 
-  // Real store data collections
-  const allPaymentsState = usePGowStore((s) => s.allPaymentsState);
-  const allExpensesState = usePGowStore((s) => s.allExpensesState);
+  // Only used for the custom-range branch below — the standard 3m/6m/1y intervals come from
+  // usePnL's server-aggregated totals instead.
+  const { data: allPaymentsState = [] } = usePaymentsQuery(pgId ?? undefined);
+  const { data: allExpensesState = [] } = useExpensesQuery(pgId ?? undefined);
 
   // Fetch standard intervals via React Query
   const { data: apiData, isLoading: isApiLoading, isError: isApiError, error: apiError } = usePnL(

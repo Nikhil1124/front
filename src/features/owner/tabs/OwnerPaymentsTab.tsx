@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -24,15 +25,12 @@ import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
-<<<<<<< HEAD
 import { EmptyState } from '@/components/EmptyState';
 import type { PaymentEntity, ExpenseEntity } from '@/types';
-=======
-import type { PaymentEntity } from '@/types';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
-import { useAuthStore } from '@/store/authStore';
-import { FormScroll } from '@/components/ui/FormScroll';
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
+import { useExpensesQuery } from '@/features/expenses/useExpenses';
+import { useGuestsQuery } from '@/features/guests/useGuests';
+import { qk } from '@/data/queryKeys';
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -68,10 +66,9 @@ function getPast12Months() {
 }
 
 export function OwnerPaymentsTab() {
-<<<<<<< HEAD
   const [subTab, setSubTab] = useState(0); // 0: Balance Sheet, 1: Expenses, 2: Collections
   const [period, setPeriod] = useState<'month' | '3m' | '6m' | '1y' | 'custom'>('month');
-  
+
   // Custom Date Range Picker states
   const [customStart, setCustomStart] = useState<Date | null>(null);
   const [customEnd, setCustomEnd] = useState<Date | null>(null);
@@ -82,23 +79,23 @@ export function OwnerPaymentsTab() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const payments = usePGowStore((s) => s.currentPayments);
-  const expenses = usePGowStore((s) => s.currentExpenses);
+  // Payments/expenses/guests: real API data, not usePGowStore's local/demo state — same
+  // reasoning as overview.tsx and StaffManagementTab.tsx. logExpense/deleteExpense stay on
+  // the store — they're mutations, not reads, and already call the real API underneath.
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: payments = [] } = usePaymentsQuery(activePgId ?? undefined);
+  const { data: expenses = [] } = useExpensesQuery(activePgId ?? undefined);
   const logExpense = usePGowStore((s) => s.logExpense);
   const deleteExpense = usePGowStore((s) => s.deleteExpense);
   const owner = usePGowStore((s) => s.loggedInOwner);
-  const guests = usePGowStore((s) => s.currentGuests);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
 
   const getPayerRoom = (payerId: string) => {
     const g = guests.find((x) => x.id === payerId);
     return g ? g.roomNo : '—';
   };
 
-=======
-  const [subTab, setSubTab] = useState(0);
-  const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: payments = [] } = usePaymentsQuery(activePgId ?? undefined);
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
+  const qc = useQueryClient();
   const { refreshing, onRefresh } = usePullToRefresh();
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
 
@@ -255,6 +252,7 @@ export function OwnerPaymentsTab() {
     );
     setIsSubmitting(false);
     if (result.ok) {
+      qc.invalidateQueries({ queryKey: qk.expenses.all(activePgId ?? '') });
       hapticSuccess();
       Alert.alert('Success', '✅ Expense logged successfully.');
       setExpenseTitle('');
@@ -755,7 +753,11 @@ export function OwnerPaymentsTab() {
                   </Text>
                   {isManager && (
                     <TouchableOpacity
-                      onPress={() => deleteExpense(e)}
+                      onPress={() =>
+                        deleteExpense(e).then(() =>
+                          qc.invalidateQueries({ queryKey: qk.expenses.all(activePgId ?? '') })
+                        )
+                      }
                       style={{ marginTop: 4 }}
                       activeOpacity={0.7}
                     >
