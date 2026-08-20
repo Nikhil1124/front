@@ -21,7 +21,7 @@ import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 
 export default function OwnerTabsLayout() {
   const [showNotificationCenter, setShowNotificationCenter] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function OwnerTabsLayout() {
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
   const logout = usePGowStore((s) => s.logout);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;

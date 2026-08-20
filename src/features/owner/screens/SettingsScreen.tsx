@@ -10,11 +10,12 @@ import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useIsManagerMode } from '@/store/authStore';
 import { UpiConfigSection } from '@/features/owner/tabs/UpiConfigSection';
 
 export function SettingsScreen() {
   const { activeEntity: owner } = useActiveProperty();
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
   const logout = usePGowStore((s) => s.logout);
 
   const confirmLogout = () => {

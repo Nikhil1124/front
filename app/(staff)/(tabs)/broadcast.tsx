@@ -13,6 +13,7 @@ import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { Ionicons } from '@expo/vector-icons';
+import { useMyTripsQuery } from '@/features/delivery/useDeliveryAgent';
 
 const PRESET_DISHES: VisualDishItem[] = [
   { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true },
@@ -263,41 +264,52 @@ function ChefBroadcastView() {
   );
 }
 
-const MOCK_HISTORY = [
-  { id: '101', pgName: 'Sunrise PG', date: 'Oct 12, 2026', time: '2:42 PM', orders: 120, status: 'Delivered' },
-  { id: '100', pgName: 'Royal Homes PG', date: 'Oct 11, 2026', time: '3:15 PM', orders: 32, status: 'Delivered' },
-  { id: '99', pgName: 'Urban Stay PG', date: 'Oct 10, 2026', time: '1:30 PM', orders: 56, status: 'Delivered' },
-  { id: '98', pgName: 'Comfort Nest PG', date: 'Oct 10, 2026', time: '11:45 AM', orders: 18, status: 'Failed' },
-];
-
 function DeliveryHistoryRoute() {
+  const { data: trips = [], isLoading } = useMyTripsQuery();
+
+  // Every completed/failed stop across every trip, newest first — the history is per
+  // delivery, not per trip, matching what the dashboard's "route" shows during the day.
+  const history = trips
+    .flatMap((t) => t.stops)
+    .filter((s) => s.status === 'delivered' || s.status === 'failed')
+    .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''));
+
   return (
     <View style={styles.root}>
       <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
         <Txt size={18} weight="900" color={Colors.primaryDark}>Delivery History</Txt>
         <Spacer size={6} />
-        {MOCK_HISTORY.map(item => (
-          <Card key={item.id} containerColor={Colors.surface} borderRadius={Radii.xl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
-            <Row justify="space-between" align="center">
-              <Row gap={12} align="center">
-                <View style={styles.historyThumbBox}>
-                  {item.status === 'Delivered' ? (
-                    <Ionicons name="image-outline" size={20} color={Colors.primary} />
-                  ) : (
-                    <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
-                  )}
-                </View>
-                <View>
-                  <Txt size={14} weight="900" color={Colors.textPrimary}>{item.pgName}</Txt>
-                  <Txt size={12} color={Colors.textMuted}>{item.date} · {item.orders} Orders</Txt>
+        {isLoading ? (
+          <Txt size={12} color={Colors.textMuted} align="center">Loading…</Txt>
+        ) : history.length === 0 ? (
+          <Txt size={12} color={Colors.textMuted} align="center">No completed deliveries yet.</Txt>
+        ) : history.map(item => {
+          const delivered = item.status === 'delivered';
+          return (
+            <Card key={item.id} containerColor={Colors.surface} borderRadius={Radii.xl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+              <Row justify="space-between" align="center">
+                <Row gap={12} align="center">
+                  <View style={styles.historyThumbBox}>
+                    {delivered ? (
+                      <Ionicons name="image-outline" size={20} color={Colors.primary} />
+                    ) : (
+                      <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
+                    )}
+                  </View>
+                  <View>
+                    <Txt size={14} weight="900" color={Colors.textPrimary}>{item.pg_name}</Txt>
+                    <Txt size={12} color={Colors.textMuted}>
+                      {item.completed_at ? new Date(item.completed_at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '—'} · {item.item_count} Items
+                    </Txt>
+                  </View>
+                </Row>
+                <View style={[styles.statusPill, { backgroundColor: delivered ? '#F0FDF4' : '#FEF2F2' }]}>
+                  <Txt size={11} weight="800" color={delivered ? '#15803D' : '#DC2626'}>{delivered ? 'Delivered' : 'Failed'}</Txt>
                 </View>
               </Row>
-              <View style={[styles.statusPill, { backgroundColor: item.status === 'Delivered' ? '#F0FDF4' : '#FEF2F2' }]}>
-                <Txt size={11} weight="800" color={item.status === 'Delivered' ? '#15803D' : '#DC2626'}>{item.status}</Txt>
-              </View>
-            </Row>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </FormScroll>
     </View>
   );

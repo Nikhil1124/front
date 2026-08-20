@@ -20,12 +20,12 @@ interface Props {
 
 import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 
 export function ManagerExpenseLoggerSection({ showMode = 2 }: Props) {
   const activePgId = useAuthStore((s) => s.activePgId);
   const owner = usePGowStore((s) => s.loggedInOwner);
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
   const { data: expenses = [] } = useExpensesQuery(activePgId ?? undefined);
   const { data: payments = [] } = usePaymentsQuery(activePgId ?? undefined);
   const logExpense = usePGowStore((s) => s.logExpense);

@@ -19,7 +19,7 @@ import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useUserRole } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 /**
@@ -32,7 +32,7 @@ import { useActiveProperty } from '@/features/properties/useProperties';
 
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();
-  const activeRole = usePGowStore((s) => s.activeRole);
+  const activeRole = useUserRole();
   const { activeEntity: owner, activePgId } = useActiveProperty();
   const ownerForGuest = owner;
 

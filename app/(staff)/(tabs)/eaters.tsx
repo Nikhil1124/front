@@ -1,15 +1,20 @@
 /** Chef dashboard "Eaters" tab or Delivery Dashboard Route */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Linking } from 'react-native';
 import { Card, Txt, Spacer, Chip, Col, Row, Btn, IconBtn, OutlinedBtn } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
+import {
+  useMyTripsQuery,
+  useCompleteStopMutation,
+  uploadStopProofPhoto,
+} from '@/features/delivery/useDeliveryAgent';
+import type { SupplyTripStop } from '@/types/supply';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -99,61 +104,83 @@ function ChefEatersView() {
   );
 }
 
-const MOCK_ROUTE = [
-  { id: '1', pgName: 'Sunrise PG', location: '12, 4th Cross, Koramangala 5th Block', orders: 120, status: 'Completed', time: '2:42 PM', recipient: 'Ravi Kumar', phone: '+91 98765 43210' },
-  { id: '2', pgName: 'Green Nest PG', location: '89, 17th Main Rd, Sector 4, HSR Layout', orders: 85, status: 'Current', time: null, recipient: 'Sneha Rao', phone: '+91 87654 32109' },
-  { id: '3', pgName: 'Urban Stay PG', location: '45, Outer Ring Rd, BTM Layout 2nd Stage', orders: 56, status: 'Pending', time: null, recipient: 'Amit Singh', phone: '+91 76543 21098' },
-  { id: '4', pgName: 'Royal Homes PG', location: '112, Neeladri Road, Electronic City Phase 1', orders: 32, status: 'Pending', time: null, recipient: 'Priya M', phone: '+91 65432 10987' },
-  { id: '5', pgName: 'Comfort Nest PG', location: '56, ITPL Main Road, Whitefield', orders: 18, status: 'Pending', time: null, recipient: 'Karthik N', phone: '+91 54321 09876' },
-];
+function _isTerminal(status: SupplyTripStop['status']) {
+  return status === 'delivered' || status === 'failed' || status === 'skipped';
+}
+
+function _openInMaps(address: string) {
+  Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`);
+}
 
 function DeliveryDashboardRoute() {
-  const staff = usePGowStore((s) => s.loggedInStaff);
-  const [route, setRoute] = useState(MOCK_ROUTE);
+  const authUser = useAuthStore((s) => s.user);
+  const { data: trips = [], isLoading } = useMyTripsQuery();
+  const completeStop = useCompleteStopMutation();
+
   const [activeDeliveryId, setActiveDeliveryId] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [proofPhotoKey, setProofPhotoKey] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  const completed = route.filter(r => r.status === 'Completed').length;
-  const pending = route.filter(r => r.status === 'Pending').length;
-  const current = route.find(r => r.status === 'Current');
-  const progressPct = Math.round((completed / route.length) * 100);
+  // The trip currently out for delivery — a delivery agent works one at a time.
+  const activeTrip = trips.find((t) => t.status === 'dispatched');
+  const route = activeTrip?.stops ?? [];
 
-  const activeDelivery = route.find(r => r.id === activeDeliveryId);
+  const completed = route.filter((s) => _isTerminal(s.status)).length;
+  const current = route.find((s) => !_isTerminal(s.status));
+  const pending = route.length - completed - (current ? 1 : 0);
+  const progressPct = route.length > 0 ? Math.round((completed / route.length) * 100) : 0;
+
+  const activeDelivery = route.find((s) => s.id === activeDeliveryId);
 
   const handleCapture = async (uri: string) => {
-    setPhotoUri(uri);
     setCameraOpen(false);
+    if (!activeTrip || !activeDelivery) return;
+    setUploadingPhoto(true);
+    try {
+      const key = await uploadStopProofPhoto(activeTrip.id, activeDelivery.order_id, uri);
+      setPhotoUri(uri);
+      setProofPhotoKey(key);
+    } catch (err) {
+      Alert.alert('Upload Failed', err instanceof Error ? err.message : 'Could not upload the photo.');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
-  const confirmDelivery = () => {
-    if (!activeDelivery) return;
-    setRoute(cur => cur.map(r => {
-      if (r.id === activeDelivery.id) return { ...r, status: 'Completed', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-      // Move next pending to current
-      if (r.status === 'Pending' && !cur.find(x => x.id === r.id && x.status === 'Current') && cur.findIndex(x => x.status === 'Pending') === cur.indexOf(r)) {
-        return { ...r, status: 'Current' };
-      }
-      return r;
-    }));
-    setActiveDeliveryId(null);
-    setPhotoUri(null);
+  const confirmDelivery = async () => {
+    if (!activeTrip || !activeDelivery || !proofPhotoKey) return;
+    try {
+      await completeStop.mutateAsync({
+        tripId: activeTrip.id,
+        orderId: activeDelivery.order_id,
+        outcome: 'delivered',
+        proofPhotoKey,
+      });
+      setActiveDeliveryId(null);
+      setPhotoUri(null);
+      setProofPhotoKey(null);
+    } catch (err) {
+      Alert.alert('Failed', err instanceof Error ? err.message : 'Could not confirm the delivery.');
+    }
   };
 
   if (activeDelivery) {
+    const isDelivered = activeDelivery.status === 'delivered';
     return (
       <View style={styles.root}>
         <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
           <Row align="center" gap={10}>
              <IconBtn onPress={() => setActiveDeliveryId(null)} icon="arrow-back" size={20} tint={Colors.primaryDark} containerColor={Colors.surfaceElevated} borderRadius={999} padding={8} />
-             <Txt variant="screenTitle" weight="900" color={Colors.primaryDark}>Delivery #{activeDelivery.id.padStart(4, '0')}</Txt>
+             <Txt variant="screenTitle" weight="900" color={Colors.primaryDark}>{activeDelivery.order_no}</Txt>
           </Row>
-          
+
           <Card containerColor={Colors.surface} borderRadius={Radii.xxl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-            <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{activeDelivery.pgName}</Txt>
-            <Txt variant="caption" color={Colors.textMuted}>{activeDelivery.location}, Bangalore</Txt>
+            <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{activeDelivery.pg_name}</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>{activeDelivery.pg_address}</Txt>
             <Spacer size={12} />
-            <Btn onPress={() => Alert.alert('Navigation', `Opening Google Maps to navigate to ${activeDelivery.pgName}...`)} containerColor={Colors.surfaceElevated} textColor={Colors.primary} borderRadius={8} height={40}>
+            <Btn onPress={() => _openInMaps(activeDelivery.pg_address)} containerColor={Colors.surfaceElevated} textColor={Colors.primary} borderRadius={8} height={40}>
               <Ionicons name="navigate" size={16} color={Colors.primary} />
               <Txt size={13} weight="800" style={{ marginLeft: 6 }}>Open in Google Maps</Txt>
             </Btn>
@@ -163,29 +190,35 @@ function DeliveryDashboardRoute() {
             <Row justify="space-between">
               <Col>
                 <Txt variant="caption" weight="700" color={Colors.textSecondary}>Recipient</Txt>
-                <Txt size={14} weight="800" color={Colors.textPrimary}>{activeDelivery.recipient}</Txt>
-                <Txt size={12} color={Colors.textMuted}>{activeDelivery.phone}</Txt>
+                <Txt size={14} weight="800" color={Colors.textPrimary}>{activeDelivery.recipient_name}</Txt>
+                <Txt size={12} color={Colors.textMuted}>{activeDelivery.recipient_phone}</Txt>
               </Col>
               <Col align="flex-end">
-                <Txt variant="caption" weight="700" color={Colors.textSecondary}>Orders</Txt>
-                <Txt size={24} weight="900" color={Colors.primary}>{activeDelivery.orders}</Txt>
+                <Txt variant="caption" weight="700" color={Colors.textSecondary}>Items</Txt>
+                <Txt size={24} weight="900" color={Colors.primary}>{activeDelivery.item_count}</Txt>
               </Col>
             </Row>
             <Spacer size={16} />
-            <View style={[styles.statusPill, { backgroundColor: activeDelivery.status === 'Completed' ? '#F0FDF4' : '#FFFBEB' }]}>
-              <Txt size={12} weight="800" color={activeDelivery.status === 'Completed' ? '#15803D' : '#B45309'}>
-                {activeDelivery.status === 'Completed' ? `✓ Delivered at ${activeDelivery.time}` : '● Out for Delivery'}
+            <View style={[styles.statusPill, { backgroundColor: isDelivered ? '#F0FDF4' : '#FFFBEB' }]}>
+              <Txt size={12} weight="800" color={isDelivered ? '#15803D' : '#B45309'}>
+                {isDelivered
+                  ? `✓ Delivered${activeDelivery.completed_at ? ` at ${new Date(activeDelivery.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`
+                  : '● Out for Delivery'}
               </Txt>
             </View>
-            
-            {activeDelivery.status !== 'Completed' && (
+
+            {!isDelivered && (
               <>
                 <Spacer size={20} />
                 <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>Proof of Delivery</Txt>
                 <Txt variant="caption" color={Colors.textMuted}>Photograph must show delivered products & recipient.</Txt>
                 <Spacer size={10} />
-                
-                {photoUri ? (
+
+                {uploadingPhoto ? (
+                  <View style={styles.photoPreviewBox}>
+                    <Txt size={12} weight="700" color={Colors.textMuted}>Uploading…</Txt>
+                  </View>
+                ) : photoUri ? (
                   <View style={styles.photoPreviewBox}>
                     <Ionicons name="image-outline" size={32} color={Colors.primary} />
                     <Txt size={12} weight="700" color={Colors.textPrimary}>Photo captured</Txt>
@@ -200,10 +233,20 @@ function DeliveryDashboardRoute() {
                     <Txt size={14} weight="800" style={{ marginLeft: 8 }}>Take Photo</Txt>
                   </Btn>
                 )}
-                
+
                 <Spacer size={16} />
-                <Btn onPress={confirmDelivery} disabled={!photoUri} containerColor={photoUri ? Colors.success : Colors.surfaceMuted} textColor={photoUri ? '#FFF' : Colors.textMuted} borderRadius={Radii.lg} height={50}>
-                  <Txt size={15} weight="900">Confirm Delivery</Txt>
+                <Btn
+                  onPress={confirmDelivery}
+                  disabled={!proofPhotoKey || completeStop.isPending}
+                  containerColor={proofPhotoKey ? Colors.success : Colors.surfaceMuted}
+                  textColor={proofPhotoKey ? '#FFF' : Colors.textMuted}
+                  borderRadius={Radii.lg}
+                  height={50}
+                >
+                  {completeStop.isPending
+                    ? <Ionicons name="hourglass-outline" size={18} color={Colors.textMuted} />
+                    : <Txt size={15} weight="900">Confirm Delivery</Txt>
+                  }
                 </Btn>
               </>
             )}
@@ -217,8 +260,18 @@ function DeliveryDashboardRoute() {
   return (
     <View style={styles.root}>
       <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 16 }}>
-        <Txt size={18} weight="900" color={Colors.primaryDark}>Good Morning, {staff?.name?.split(' ')[0] ?? 'Rahul'} 👋</Txt>
-        
+        <Txt size={18} weight="900" color={Colors.primaryDark}>Good Morning, {authUser?.name?.split(' ')[0] ?? 'there'} 👋</Txt>
+
+        {isLoading ? (
+          <View style={styles.emptyMealBox}>
+            <Txt size={12} color={Colors.textMuted} align="center">Loading your route…</Txt>
+          </View>
+        ) : !activeTrip || route.length === 0 ? (
+          <View style={styles.emptyMealBox}>
+            <Txt size={12} color={Colors.textMuted} align="center">No active trip right now. Check back once your area manager dispatches one.</Txt>
+          </View>
+        ) : (
+        <>
         <Card containerColor={Colors.surface} borderRadius={Radii.lg} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
           <Row justify="space-between" align="center">
             <Col style={{ flex: 1, borderRightWidth: 1, borderColor: Colors.borderSubtle, paddingRight: 10 }}>
@@ -272,16 +325,16 @@ function DeliveryDashboardRoute() {
                       <Txt size={24} weight="900" color={Colors.primaryDark}>{String(route.indexOf(current) + 1).padStart(2, '0')}</Txt>
                     </View>
                     <Col>
-                      <Txt size={20} weight="900" color="#FFFFFF" numberOfLines={1}>{current.pgName}</Txt>
+                      <Txt size={20} weight="900" color="#FFFFFF" numberOfLines={1}>{current.pg_name}</Txt>
                       <Spacer size={6} />
                       <Row align="center" gap={6}>
                         <Ionicons name="location-outline" size={14} color={Colors.borderSubtle} />
-                        <Txt size={13} color={Colors.borderSubtle}>{current.location.split(',').slice(-2)[0].trim()}, Bangalore</Txt>
+                        <Txt size={13} color={Colors.borderSubtle} numberOfLines={1}>{current.pg_address}</Txt>
                       </Row>
                       <Spacer size={2} />
                       <Row gap={6} align="center">
                         <Ionicons name="cube-outline" size={14} color={Colors.borderSubtle} />
-                        <Txt size={14} weight="800" color="#FFFFFF">{current.orders} Orders</Txt>
+                        <Txt size={14} weight="800" color="#FFFFFF">{current.item_count} Items</Txt>
                       </Row>
                       <Spacer size={10} />
                       <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 1, borderColor: '#10B981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
@@ -291,14 +344,14 @@ function DeliveryDashboardRoute() {
                     </Col>
                   </Row>
                 </Row>
-                
+
                 <Spacer size={24} />
                 <Row gap={12}>
                   <Btn onPress={() => setActiveDeliveryId(current.id)} containerColor="#FFFFFF" textColor={Colors.primaryDark} borderRadius={Radii.lg} height={48} style={{ flex: 1 }}>
                     <Ionicons name="document-text-outline" size={18} color={Colors.primaryDark} style={{ marginRight: 6 }} />
                     <Txt size={14} weight="900" color={Colors.primaryDark}>View Delivery</Txt>
                   </Btn>
-                  <Btn onPress={() => Alert.alert('Navigation', `Opening Google Maps to navigate to ${current.pgName}...`)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.lg} height={48} style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}>
+                  <Btn onPress={() => _openInMaps(current.pg_address)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.lg} height={48} style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}>
                     <Ionicons name="navigate-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                     <Txt size={14} weight="900" color="#FFFFFF">Navigate</Txt>
                   </Btn>
@@ -310,29 +363,24 @@ function DeliveryDashboardRoute() {
         <Row justify="space-between" align="center" style={{ marginTop: 12 }}>
           <Col>
             <Txt size={14} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 1 }}>DELIVERY ROUTE</Txt>
-            <Txt size={12} color={Colors.textMuted}>Largest orders first</Txt>
+            <Txt size={12} color={Colors.textMuted}>Stop order</Txt>
           </Col>
-          <OutlinedBtn onPress={() => Alert.alert('Route Map', 'Opening full delivery route map...')} borderColor={Colors.borderSubtle} textColor={Colors.primaryDark} height={32}>
-            <Ionicons name="map-outline" size={14} color={Colors.primaryDark} style={{ marginRight: 6 }} />
-            <Txt size={12} weight="800" color={Colors.primaryDark}>View on Map</Txt>
-          </OutlinedBtn>
         </Row>
 
         <Col gap={0} style={{ paddingLeft: 4 }}>
           {route.map((r, i) => {
-            const isCompleted = r.status === 'Completed';
-            const isCurrent = r.status === 'Current';
-            const isPending = r.status === 'Pending';
-            const area = r.location.split(',').slice(-2)[0].trim();
+            const isCompleted = _isTerminal(r.status);
+            const isCurrent = current?.id === r.id;
+            const isPending = !isCompleted && !isCurrent;
             const indexStr = String(i + 1).padStart(2, '0');
             const isLast = i === route.length - 1;
-            
+
             return (
               <Row key={r.id} style={{ minHeight: 70 }}>
                 {/* Timeline Column */}
                 <Col align="center" style={{ width: 40, position: 'relative' }}>
                   <View style={{ position: 'absolute', top: 0, bottom: 0, left: 19, width: 2, backgroundColor: isCompleted || isCurrent ? '#10B981' : '#E2E8F0', zIndex: 0, marginTop: i === 0 ? 30 : 0, marginBottom: isLast ? '50%' : 0 }} />
-                  
+
                   <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: isCompleted ? Colors.success : (isCurrent ? Colors.primaryDark : '#FFFFFF'), borderWidth: isPending ? 2 : 0, borderColor: Colors.warning, alignItems: 'center', justifyContent: 'center', zIndex: 2, marginTop: 26 }}>
                     {isCompleted && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
                     {isCurrent && <Txt size={10} weight="900" color="#FFFFFF">{indexStr}</Txt>}
@@ -347,22 +395,30 @@ function DeliveryDashboardRoute() {
                         <Row gap={12} align="center" style={{ flex: 1 }}>
                           {!isCurrent && <Txt size={16} weight="900" color={Colors.textPrimary}>{indexStr}</Txt>}
                           <Col style={{ flex: 1 }}>
-                            <Txt size={15} weight="900" color={Colors.textPrimary} numberOfLines={1}>{r.pgName}</Txt>
+                            <Txt size={15} weight="900" color={Colors.textPrimary} numberOfLines={1}>{r.pg_name}</Txt>
                             <Row align="center" gap={4} style={{ marginTop: 4 }}>
                               <Ionicons name="location-outline" size={12} color={Colors.textMuted} />
-                              <Txt size={12} color={Colors.textMuted} numberOfLines={1}>{area} · {r.orders} orders</Txt>
+                              <Txt size={12} color={Colors.textMuted} numberOfLines={1}>{r.pg_address} · {r.item_count} items</Txt>
                             </Row>
                           </Col>
                         </Row>
-                        
+
                         <Col align="flex-end" style={{ marginLeft: 10 }}>
                           {isCompleted && (
                             <>
                               <View style={{ backgroundColor: Colors.surfaceElevated, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                                <Txt size={10} weight="800" color="#059669">Completed</Txt>
+                                <Txt size={10} weight="800" color={r.status === 'delivered' ? '#059669' : '#DC2626'}>
+                                  {r.status === 'delivered' ? 'Completed' : 'Failed'}
+                                </Txt>
                               </View>
-                              <Spacer size={4} />
-                              <Txt size={10} weight="700" color={Colors.textMuted}>{r.time}</Txt>
+                              {!!r.completed_at && (
+                                <>
+                                  <Spacer size={4} />
+                                  <Txt size={10} weight="700" color={Colors.textMuted}>
+                                    {new Date(r.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </Txt>
+                                </>
+                              )}
                             </>
                           )}
                           {isCurrent && (
@@ -385,6 +441,8 @@ function DeliveryDashboardRoute() {
             );
           })}
         </Col>
+        </>
+        )}
       </FormScroll>
     </View>
   );

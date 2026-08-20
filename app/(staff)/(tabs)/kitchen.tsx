@@ -12,6 +12,7 @@ import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { Ionicons } from '@expo/vector-icons';
+import { useMyTripsQuery } from '@/features/delivery/useDeliveryAgent';
 
 const ANNOUNCEMENTS = [
   'Special Dessert today! 🍨',
@@ -107,9 +108,12 @@ function ChefKitchenView() {
 }
 
 function DeliveryProfileRoute() {
-  const staff = usePGowStore((s) => s.loggedInStaff);
+  const authUser = useAuthStore((s) => s.user);
   const logout = usePGowStore((s) => s.logout);
+  const { data: trips = [] } = useMyTripsQuery();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const activeTrip = trips.find((t) => t.status === 'dispatched');
 
   return (
     <View style={styles.root}>
@@ -119,10 +123,8 @@ function DeliveryProfileRoute() {
             <Txt size={32}>👨‍✈️</Txt>
           </View>
           <Spacer size={12} />
-          <Txt size={22} weight="900" color={Colors.primaryDark}>{staff?.name ?? 'Rahul Kumar'}</Txt>
+          <Txt size={22} weight="900" color={Colors.primaryDark}>{authUser?.name ?? 'Delivery Agent'}</Txt>
           <Txt size={14} weight="700" color={Colors.primary}>Delivery Agent</Txt>
-          <Spacer size={4} />
-          <Txt size={12} color={Colors.textMuted}>Employee ID: DA-1001</Txt>
         </Col>
 
         <Spacer size={20} />
@@ -132,10 +134,10 @@ function DeliveryProfileRoute() {
         <Card containerColor={Colors.surface} borderRadius={Radii.xl} borderWidth={1} borderColor={Colors.borderSubtle}>
           <Row justify="space-between" align="center" style={styles.profileRow}>
             <Row gap={12} align="center">
-              <View style={[styles.iconBox, { backgroundColor: '#F0FDF4' }]}><Ionicons name="radio-button-on" size={18} color={Colors.success} /></View>
-              <Txt size={14} weight="800" color={Colors.textPrimary}>Availability</Txt>
+              <View style={[styles.iconBox, { backgroundColor: activeTrip ? '#FFFBEB' : '#F0FDF4' }]}><Ionicons name="radio-button-on" size={18} color={activeTrip ? Colors.warning : Colors.success} /></View>
+              <Txt size={14} weight="800" color={Colors.textPrimary}>Status</Txt>
             </Row>
-            <Txt size={14} weight="800" color={Colors.success}>Available</Txt>
+            <Txt size={14} weight="800" color={activeTrip ? Colors.warning : Colors.success}>{activeTrip ? 'On a delivery' : 'Available'}</Txt>
           </Row>
           <View style={styles.divider} />
           <Row justify="space-between" align="center" style={styles.profileRow}>
@@ -143,7 +145,7 @@ function DeliveryProfileRoute() {
               <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="call" size={18} color={Colors.textPrimary} /></View>
               <Txt size={14} weight="800" color={Colors.textPrimary}>Phone</Txt>
             </Row>
-            <Txt size={14} weight="700" color={Colors.textMuted}>+91 98765 43210</Txt>
+            <Txt size={14} weight="700" color={Colors.textMuted}>{authUser?.phone ?? '—'}</Txt>
           </Row>
           <View style={styles.divider} />
           <Row justify="space-between" align="center" style={styles.profileRow}>
@@ -151,7 +153,7 @@ function DeliveryProfileRoute() {
               <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="bicycle" size={18} color={Colors.textPrimary} /></View>
               <Txt size={14} weight="800" color={Colors.textPrimary}>Vehicle</Txt>
             </Row>
-            <Txt size={14} weight="700" color={Colors.textMuted}>KA-01-AB-1234 (Scooter)</Txt>
+            <Txt size={14} weight="700" color={Colors.textMuted}>{activeTrip?.vehicle_label || 'Not assigned'}</Txt>
           </Row>
         </Card>
 

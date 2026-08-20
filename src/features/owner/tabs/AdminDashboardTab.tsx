@@ -25,7 +25,7 @@ import { usePaymentsQuery } from '@/features/payments/usePayments';
 import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
 import { useStaffQuery } from '@/features/staff/useStaff';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import * as map from '@/data/mappers';
 import type { GuestRSVPEntity } from '@/types';
 
@@ -33,7 +33,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const allGuests = guests;
   const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);

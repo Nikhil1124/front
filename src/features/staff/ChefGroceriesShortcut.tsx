@@ -7,10 +7,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { useUserRole } from '@/store/authStore';
 
 export function ChefGroceriesShortcut() {
-  const activeRole = usePGowStore((s) => s.activeRole);
+  const activeRole = useUserRole();
   if (activeRole !== 'CHEF') return null;
 
   return (

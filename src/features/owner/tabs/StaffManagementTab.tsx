@@ -21,7 +21,7 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import * as staffApi from '@/features/staff/useStaff';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
@@ -57,7 +57,7 @@ export function StaffManagementTab() {
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
 
   // Store form inputs
   const staffRoleInput = usePGowStore((s) => s.staffRoleInput);

@@ -80,3 +80,40 @@ export interface SupplyOrderSummary {
   created_at: string;
 }
 
+export type SupplyTripStatus = 'loading' | 'dispatched' | 'completed' | 'cancelled';
+export type SupplyTripStopStatus = 'pending' | 'arrived' | 'delivered' | 'failed' | 'skipped';
+
+export interface SupplyTripStop {
+  id: string;
+  order_id: string;
+  order_no: string;
+  sequence: number;
+  status: SupplyTripStopStatus;
+  eta_at: string | null;
+  arrived_at: string | null;
+  completed_at: string | null;
+  proof_photo_url: string | null;
+  pg_name: string;
+  pg_address: string;
+  /** Whoever placed the order — most likely to be the one at the door. */
+  recipient_name: string;
+  recipient_phone: string;
+  item_count: number;
+}
+
+export interface SupplyTrip {
+  id: string;
+  trip_no: string;
+  warehouse_id: string;
+  vehicle_label: string;
+  driver_name: string;
+  driver_phone: string;
+  driver_platform_role_assignment_id: string | null;
+  status: SupplyTripStatus;
+  planned_departure_at: string | null;
+  departed_at: string | null;
+  completed_at: string | null;
+  route_generated_at: string | null;
+  stops: SupplyTripStop[];
+}
+

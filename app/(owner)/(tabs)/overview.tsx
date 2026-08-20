@@ -70,7 +70,7 @@ import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties'
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 
 export default function OwnerOverviewTab() {
   const [showOverdueModal, setShowOverdueModal] = useState(false);
@@ -85,7 +85,7 @@ export default function OwnerOverviewTab() {
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
 
   const now        = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);

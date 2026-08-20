@@ -52,6 +52,7 @@ const TABS = [
   { label: 'Manager',  short: 'Manager' },
   { label: 'Staff',    short: 'Staff' },
   { label: 'Resident', short: 'Resident' },
+  { label: 'Delivery', short: 'Delivery' },
 ];
 
 interface Props { initialTab?: number; }
@@ -185,6 +186,13 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const [staffPhone, setStaffPhone] = useState('');
   const [staffPin,   setStaffPin]   = useState('');
 
+  // ── Delivery agent fields ────────────────────────────────────────────────────
+  // Password, not PIN: an agent holds no PG membership (they're onboarded by their area
+  // manager as a platform-level worker), and PIN login only checks Membership.login_pin_hash.
+  const [deliveryPhone,    setDeliveryPhone]    = useState('');
+  const [deliveryPassword, setDeliveryPassword] = useState('');
+  const [deliveryLoading,  setDeliveryLoading]  = useState(false);
+
   // ── Resident fields ──────────────────────────────────────────────────────────
   const [guestMode,    setGuestMode]    = useState<'LOGIN' | 'JOIN'>('LOGIN');
   const [guestPhone,   setGuestPhone]   = useState('');
@@ -214,6 +222,28 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     } else if (result.mustChangePassword) {
       hapticSelect();
       setTempPass(password);
+      setShowFTP(true);
+    } else {
+      hapticError();
+      Alert.alert('Login Failed', result.error ?? 'Unknown error');
+    }
+  };
+
+  const handleDeliveryLogin = async () => {
+    if (!deliveryPhone.trim() || !deliveryPassword.trim()) return;
+    setDeliveryLoading(true);
+    // loginOwner is role-agnostic despite the name — it's just phone+password against
+    // /v1/auth/login, and authStore.setUser now resolves activeRole from a DELIVERY_AGENT
+    // platform grant when there's no PG membership to derive it from.
+    const result = await loginOwner(deliveryPhone, deliveryPassword);
+    setDeliveryLoading(false);
+    if (result.ok) {
+      hapticSuccess();
+      toast('success', 'Welcome!', 'Delivery dashboard loading…');
+      router.replace('/');
+    } else if (result.mustChangePassword) {
+      hapticSelect();
+      setTempPass(deliveryPassword);
       setShowFTP(true);
     } else {
       hapticError();
@@ -323,6 +353,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     1: { title: 'Manager Login',  sub: 'Sign in to manage your assigned branch.',               cta: 'Log In as Manager' },
     2: { title: 'Staff Login',    sub: 'Enter your credentials. The system routes you automatically.', cta: 'Access Staff Dashboard' },
     3: { title: 'Resident Login', sub: 'Access your resident profile and room details.',         cta: 'Access Resident Account' },
+    4: { title: 'Delivery Login', sub: 'Sign in with the credentials your area manager gave you.', cta: 'Access Delivery Dashboard' },
   };
 
   const intro = roleIntro[tab];
@@ -730,6 +761,44 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                     </TouchableOpacity>
                   </View>
                 )}
+              </View>
+            )}
+
+            {/* ── Tab 4: Delivery Agent ────────────────────────────────── */}
+            {tab === 4 && (
+              <View>
+                <Field
+                  label="Phone Number"
+                  placeholder="Enter your registered phone number"
+                  value={deliveryPhone}
+                  onChangeText={setDeliveryPhone}
+                  icon="call-outline"
+                  keyboard="phone-pad"
+                  maxLength={10}
+                  testID="delivery_login_phone"
+                />
+                <Field
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={deliveryPassword}
+                  onChangeText={setDeliveryPassword}
+                  icon="lock-closed-outline"
+                  secure
+                  testID="delivery_login_password"
+                />
+                <View style={{ height: 24 }} />
+                <TouchableOpacity
+                  style={[styles.primaryBtn, (!deliveryPhone.trim() || !deliveryPassword.trim()) && styles.primaryBtnDisabled]}
+                  onPress={handleDeliveryLogin}
+                  activeOpacity={0.85}
+                  disabled={deliveryLoading || !deliveryPhone.trim() || !deliveryPassword.trim()}
+                  testID="delivery_login_button"
+                >
+                  {deliveryLoading
+                    ? <ActivityIndicator color={WHITE} />
+                    : <Text style={styles.primaryBtnText}>Access Delivery Dashboard</Text>
+                  }
+                </TouchableOpacity>
               </View>
             )}
           </Animated.View>

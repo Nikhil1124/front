@@ -26,6 +26,9 @@ export default function StaffTabsLayout() {
   const [showNotif, setShowNotif] = useState(false);
 
   const staff = usePGowStore((s) => s.loggedInStaff);
+  // A delivery agent holds no PG membership — loggedInStaff never populates for them, so
+  // their name comes from authStore's own /v1/me-backed user instead.
+  const authUser = useAuthStore((s) => s.user);
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const logout = usePGowStore((s) => s.logout);
@@ -66,7 +69,7 @@ export default function StaffTabsLayout() {
           </Txt>
           <Txt size={11} color={Colors.textMuted}>
             {activeRole === 'delivery_agent'
-              ? `${staff?.name ?? 'Rahul Kumar'} · Delivery Agent`
+              ? `${authUser?.name ?? 'Delivery Agent'} · Delivery Agent`
               : `Chef: ${staff?.name ?? 'Ramesh Kumar'}`}
           </Txt>
         </Col>

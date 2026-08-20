@@ -43,8 +43,6 @@ setSessionExpiredHandler(() => {
   // sitting in the store, and leaving them there means the next person to open the app sees
   // someone else's data behind the login screen.
   usePGowStore.getState().patch({
-    activeRole: null,
-    isManagerMode: false,
     loggedInOwner: null,
     loggedInGuest: null,
     loggedInStaff: null,

@@ -32,10 +32,9 @@ import * as propertiesApi from '@/features/properties/useProperties';
 import * as requestsApi from '@/features/requests/useComplaints';
 import * as rewardsApi from '@/features/rewards/useRewards';
 import * as staffApi from '@/features/staff/useStaff';
-import { useAuthStore, type Membership } from '@/store/authStore';
+import { useAuthStore, toUserRole } from '@/store/authStore';
 import { parseTime } from '@/utils/format';
 import type {
-  UserRole,
   PGOwnerEntity,
   GuestEntity,
   StaffMemberEntity,
@@ -89,16 +88,6 @@ async function safeList<T>(label: string, run: () => Promise<T[]>): Promise<T[]>
   }
 }
 
-/** Backend membership role → the four roles this UI knows about. */
-function toUserRole(role: Membership['role'] | null): UserRole | null {
-  if (!role) return null;
-  if (role === 'owner') return 'OWNER';
-  if (role === 'manager') return 'MANAGER';
-  if (role === 'guest') return 'GUEST';
-  if (role === 'chef') return 'CHEF';
-  return 'STAFF';
-}
-
 /** ADR-004's gate is the resident's own KYC state, which is the one piece of KYC a guest can
  *  read about themselves — `/v1/kyc/pending` is owner-only. */
 function kycStatusFromGate(gate: string | null): string {
@@ -109,13 +98,10 @@ function kycStatusFromGate(gate: string | null): string {
 }
 
 export interface PGowState {
-  activeRole: UserRole | null;
-
   // ===== Logged-in entities =====
   loggedInOwner: PGOwnerEntity | null;
   loggedInGuest: GuestEntity | null;
   loggedInStaff: StaffMemberEntity | null;
-  isManagerMode: boolean;
 
   // ===== Owner registration form =====
   pgNameInput: string;
@@ -316,12 +302,9 @@ export interface PGowState {
 }
 
 export const usePGowStore = create<PGowState>((set, get) => ({
-  activeRole: null,
-
   loggedInOwner: null,
   loggedInGuest: null,
   loggedInStaff: null,
-  isManagerMode: false,
 
   pgNameInput: '',
   ownerNameInput: '',
@@ -408,13 +391,8 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
-      const role = toUserRole(useAuthStore.getState().activeRole);
-      // Navigation reacts to activeRole/isManagerMode on its own now (see app/_layout.tsx's
-      // Stack.Protected guards) — no screen/stack to set here anymore.
-      set({
-        activeRole: role,
-        isManagerMode: role === 'MANAGER',
-      });
+      // Role/manager-mode live in authStore alone (see useUserRole/useIsManagerMode) — nothing
+      // to set here anymore.
       await get().refreshAll();
     } catch {
       // An unusable stored token: the client already cleared it on a refused refresh, so
@@ -1087,7 +1065,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       );
       if (!created.ok) return created;
       set({
-        activeRole: 'OWNER',
         // Cleared together: both are secrets or one-shot state that must not survive into
         // whatever the owner does next.
         ownerPasswordInput: '',
@@ -1115,11 +1092,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       }
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
-      const role = toUserRole(useAuthStore.getState().activeRole) ?? 'OWNER';
-      set({
-        activeRole: role,
-        isManagerMode: role === 'MANAGER',
-      });
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
@@ -1148,11 +1120,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
-      const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
-      set({
-        activeRole: role,
-        isManagerMode: role === 'MANAGER',
-      });
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
@@ -1171,7 +1138,8 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!s.staffNameInput.trim() || s.staffPinInput.length !== 4) {
       return { ok: false, error: 'Please enter name and a 4-digit PIN.' };
     }
-    if (s.isManagerMode && s.staffRoleInput === 'Manager') {
+    const isManager = toUserRole(useAuthStore.getState().activeRole) === 'MANAGER';
+    if (isManager && s.staffRoleInput === 'Manager') {
       return { ok: false, error: 'Managers cannot register other managers.' };
     }
     if (!s.staffPhoneInput.trim()) {
@@ -1247,8 +1215,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       useAuthStore.getState().setUser(await authApi.fetchMe());
       set({
-        activeRole: 'GUEST',
-        isManagerMode: false,
         // Never left sitting in the store after it has been exchanged for tokens.
         guestPasswordInput: '',
       });
@@ -1272,11 +1238,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
-      const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
-      set({
-        activeRole: role,
-        isManagerMode: role === 'MANAGER',
-      });
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
@@ -1543,11 +1504,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       if (me.memberships && me.memberships.length > 0) {
         useAuthStore.getState().setActivePgId(me.memberships[0].pg_id);
       }
-      const role = toUserRole(useAuthStore.getState().activeRole) ?? 'STAFF';
-      set({
-        activeRole: role,
-        isManagerMode: role === 'MANAGER',
-      });
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
@@ -1779,7 +1735,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     useAuthStore.getState().logout();
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
-      activeRole: null, isManagerMode: false,
       activeNotificationId: null,
       pgGroceryOrdersState: [], pgRepairRequestsState: [], guestLaundryRequestsState: [],
       _initialized: false,

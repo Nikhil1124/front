@@ -7,7 +7,7 @@ import { useCartStore, CartItem, ReplacementPreference } from '../store/useCartS
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { ReplacementPicker } from '../components/grocery/ReplacementPicker';
 import { useSupplyItems } from '../useSupply';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useUserRole } from '@/store/authStore';
 
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
@@ -74,7 +74,7 @@ export function GroceryCartScreen() {
     );
   };
 
-  const isChef = usePGowStore((s) => s.activeRole) === 'CHEF';
+  const isChef = useUserRole() === 'CHEF';
   const submitChefGroceryRequest = usePGowStore((s) => s.submitChefGroceryRequest);
 
   const handleCheckoutOrRequest = () => {

@@ -9,7 +9,7 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -50,7 +50,7 @@ const CATEGORY_TABS = [
 import { useActiveProperty } from '@/features/properties/useProperties';
 
 export function ProcurementScreen({ mode }: ProcurementScreenProps) {
-  const isManagerMode = usePGowStore((s) => s.isManagerMode);
+  const isManagerMode = useIsManagerMode();
   const effectiveMode = mode ?? (isManagerMode ? 'manager' : 'owner');
 
   if (effectiveMode === 'owner') {

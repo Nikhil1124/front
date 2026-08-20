@@ -149,6 +149,23 @@ export const API = {
   EXPENSES_SUMMARY: "/v1/expenses/summary",
   EXPENSE_REVERSE: (id: string) => `/v1/expenses/${id}/reverse`,
 
+  // Supply / groceries — the resident-facing catalog and cart flow.
+  SUPPLY_CATEGORIES: "/v1/supply/categories",
+  SUPPLY_ITEMS: "/v1/supply/items",
+  SUPPLY_ORDERS: "/v1/supply/orders",
+  SUPPLY_ORDER: (id: string) => `/v1/supply/orders/${id}`,
+  SUPPLY_ORDER_CANCEL: (id: string) => `/v1/supply/orders/${id}/cancel`,
+  SUPPLY_ORDER_TRACKING: (id: string) => `/v1/supply/orders/${id}/tracking`,
+  SUPPLY_ORDER_PAYMENT_UPI: (id: string) => `/v1/supply/orders/${id}/payment/submit-upi`,
+
+  // Supply / delivery agent — the agent's own view of their assigned trips.
+  SUPPLY_TRIPS_MINE: "/v1/supply/trips/mine",
+  SUPPLY_TRIP: (tripId: string) => `/v1/supply/trips/${tripId}`,
+  SUPPLY_TRIP_STOP_COMPLETE: (tripId: string, orderId: string) =>
+    `/v1/supply/trips/${tripId}/stops/${orderId}/complete`,
+  SUPPLY_TRIP_STOP_PHOTO_UPLOAD_URL: (tripId: string, orderId: string) =>
+    `/v1/supply/trips/${tripId}/stops/${orderId}/photo-upload-url`,
+
   // ── Planned/future endpoints ──────────────────────────────────────────────
   // These constants are intentionally kept even when the current backend does not implement
   // them yet. The compatibility check reports them as gaps; removing them would hide planned
@@ -161,7 +178,6 @@ export const API = {
   PROCUREMENT_ORDERS: "/v1/procurement/orders",
   PROCUREMENT_ORDER_APPROVE: (id: string) => `/v1/procurement/orders/${id}/approve`,
   PROCUREMENT_ORDER_REJECT: (id: string) => `/v1/procurement/orders/${id}/reject`,
-  PROCUREMENT_FLAG_LOW_STOCK: "/v1/procurement/flag-low-stock",
 
   MEAL_MENU: "/v1/meals/menu",
   MEAL_TODAY_SUMMARY: (pgId: string) => `/v1/meals/today-summary?pg_id=${pgId}`,

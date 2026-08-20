@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/data/apiClient';
+import { API } from '@/config';
 import { SupplyOrderDetail, SupplyOrderSummary } from '@/types/supply';
 
 export interface CreateOrderPayload {
@@ -19,7 +20,7 @@ export function useSupplyOrdersQuery(pgId?: string, status?: string) {
     queryFn: () => {
       const params = new URLSearchParams({ pg_id: pgId! });
       if (status) params.append('status', status);
-      return apiFetch(`/v1/supply/orders?${params.toString()}`);
+      return apiFetch(`${API.SUPPLY_ORDERS}?${params.toString()}`);
     },
     enabled: !!pgId,
   });
@@ -28,7 +29,7 @@ export function useSupplyOrdersQuery(pgId?: string, status?: string) {
 export function useSupplyOrderDetailQuery(orderId?: string) {
   return useQuery<SupplyOrderDetail>({
     queryKey: ['supply_order_detail', orderId],
-    queryFn: () => apiFetch(`/v1/supply/orders/${orderId}`),
+    queryFn: () => apiFetch(API.SUPPLY_ORDER(orderId!)),
     enabled: !!orderId,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
@@ -54,7 +55,7 @@ export interface OrderTrackingInfo {
 export function useSupplyTrackingQuery(orderId?: string) {
   return useQuery<OrderTrackingInfo>({
     queryKey: ['supply_order_tracking', orderId],
-    queryFn: () => apiFetch(`/v1/supply/orders/${orderId}/tracking`),
+    queryFn: () => apiFetch(API.SUPPLY_ORDER_TRACKING(orderId!)),
     enabled: !!orderId,
     refetchInterval: 10000,
   });
@@ -64,7 +65,7 @@ export function useCreateSupplyOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateOrderPayload) =>
-      apiFetch<SupplyOrderDetail>('/v1/supply/orders', {
+      apiFetch<SupplyOrderDetail>(API.SUPPLY_ORDERS, {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
@@ -79,7 +80,7 @@ export function useCancelSupplyOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ orderId, reason }: { orderId: string; reason: string }) =>
-      apiFetch<SupplyOrderDetail>(`/v1/supply/orders/${orderId}/cancel`, {
+      apiFetch<SupplyOrderDetail>(API.SUPPLY_ORDER_CANCEL(orderId), {
         method: 'POST',
         body: JSON.stringify({ reason }),
       }),
@@ -94,7 +95,7 @@ export function useSubmitUpiPaymentMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ orderId, upiRef }: { orderId: string; upiRef: string }) =>
-      apiFetch<SupplyOrderDetail>(`/v1/supply/orders/${orderId}/payment/submit-upi`, {
+      apiFetch<SupplyOrderDetail>(API.SUPPLY_ORDER_PAYMENT_UPI(orderId), {
         method: 'POST',
         body: JSON.stringify({ upi_ref: upiRef }),
       }),

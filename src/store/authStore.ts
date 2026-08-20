@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as SecureStore from "@/utils/secureStorage";
+import type { UserRole } from "@/types";
 
 // ─── Types (matching /v1/me response) ────────────────────────────────────────
 
@@ -16,7 +17,7 @@ export interface Membership {
 
 /** A PGow-staff role, not a property role. `area_id` is null for super_admin and support. */
 export interface PlatformGrant {
-  role: "super_admin" | "area_manager" | "support";
+  role: "super_admin" | "area_manager" | "support" | "delivery_agent";
   area_id: string | null;
 }
 
@@ -50,6 +51,26 @@ export function isPropertyOwner(user: User | null, pgId: string | null | undefin
   return !!user && !!pgId && user.memberships.some(
     (membership) => membership.pg_id === pgId && membership.role === "owner"
   );
+}
+
+/** Backend membership role → the coarser roles the UI branches on. */
+export function toUserRole(role: Membership["role"] | null): UserRole | null {
+  if (!role) return null;
+  if (role === "owner") return "OWNER";
+  if (role === "manager") return "MANAGER";
+  if (role === "guest") return "GUEST";
+  if (role === "chef") return "CHEF";
+  return "STAFF";
+}
+
+/** The single read of "what role is this session" — `activeRole` is the one place it's
+ *  written (see `setUser`/`setActivePgId` above), so nothing else needs to track it. */
+export function useUserRole(): UserRole | null {
+  return useAuthStore((s) => toUserRole(s.activeRole));
+}
+
+export function useIsManagerMode(): boolean {
+  return useUserRole() === "MANAGER";
 }
 
 // ─── Store shape ─────────────────────────────────────────────────────────────
@@ -120,9 +141,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // re-happening from memory on every subsequent load.
       SecureStore.setItemAsync(KEYS.PG_ID, membership.pg_id).catch(() => {});
     }
+    // A delivery agent holds no PG membership at all — their role comes from a platform
+    // grant instead, and there is no "active PG" for them to have.
+    const isDeliveryAgent =
+      !membership && user.platform_roles.some((g) => g.role === "delivery_agent");
     set({
       user,
-      activeRole: membership?.role ?? null,
+      activeRole: membership?.role ?? (isDeliveryAgent ? "delivery_agent" : null),
       activePgId: membership?.pg_id ?? null,
     });
   },
