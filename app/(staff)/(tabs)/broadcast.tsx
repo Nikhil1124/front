@@ -1,4 +1,4 @@
-/** Chef dashboard "Broadcast" tab or Delivery History Route */
+/** Chef dashboard "Broadcast" tab */
 import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Card, Txt, Btn, Row, Chip, IconBtn, Spacer } from '@/components/ui';
@@ -38,7 +38,6 @@ const PRESET_DISHES: VisualDishItem[] = [
 
 export default function ChefBroadcastTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
-  if (activeRole === 'delivery_agent') return <DeliveryHistoryRoute />;
   return <ChefBroadcastView />;
 }
 
@@ -263,45 +262,7 @@ function ChefBroadcastView() {
   );
 }
 
-const MOCK_HISTORY = [
-  { id: '101', pgName: 'Sunrise PG', date: 'Oct 12, 2026', time: '2:42 PM', orders: 120, status: 'Delivered' },
-  { id: '100', pgName: 'Royal Homes PG', date: 'Oct 11, 2026', time: '3:15 PM', orders: 32, status: 'Delivered' },
-  { id: '99', pgName: 'Urban Stay PG', date: 'Oct 10, 2026', time: '1:30 PM', orders: 56, status: 'Delivered' },
-  { id: '98', pgName: 'Comfort Nest PG', date: 'Oct 10, 2026', time: '11:45 AM', orders: 18, status: 'Failed' },
-];
 
-function DeliveryHistoryRoute() {
-  return (
-    <View style={styles.root}>
-      <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
-        <Txt size={18} weight="900" color={Colors.primaryDark}>Delivery History</Txt>
-        <Spacer size={6} />
-        {MOCK_HISTORY.map(item => (
-          <Card key={item.id} containerColor={Colors.surface} borderRadius={Radii.xl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
-            <Row justify="space-between" align="center">
-              <Row gap={12} align="center">
-                <View style={styles.historyThumbBox}>
-                  {item.status === 'Delivered' ? (
-                    <Ionicons name="image-outline" size={20} color={Colors.primary} />
-                  ) : (
-                    <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
-                  )}
-                </View>
-                <View>
-                  <Txt size={14} weight="900" color={Colors.textPrimary}>{item.pgName}</Txt>
-                  <Txt size={12} color={Colors.textMuted}>{item.date} · {item.orders} Orders</Txt>
-                </View>
-              </Row>
-              <View style={[styles.statusPill, { backgroundColor: item.status === 'Delivered' ? '#F0FDF4' : '#FEF2F2' }]}>
-                <Txt size={11} weight="800" color={item.status === 'Delivered' ? '#15803D' : '#DC2626'}>{item.status}</Txt>
-              </View>
-            </Row>
-          </Card>
-        ))}
-      </FormScroll>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
@@ -314,6 +275,4 @@ const styles = StyleSheet.create({
   automationDivider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 2 },
   switchTrack: { width: 44, height: 24, borderRadius: 12, padding: 2, flexDirection: 'row' },
   switchThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFFFFF' },
-  historyThumbBox: { width: 44, height: 44, borderRadius: 8, backgroundColor: Colors.surfaceMuted, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
 });

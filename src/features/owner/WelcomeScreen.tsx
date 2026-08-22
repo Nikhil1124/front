@@ -215,7 +215,7 @@ export function WelcomeScreen() {
                       Staff & Operations Portal
                     </Txt>
                     <Txt size={11} color={TEXT_MUTED} style={styles.description}>
-                      For Chefs, Maintenance Crew & Delivery Agents
+                      For Chefs & Maintenance Crew
                     </Txt>
                   </Col>
                 </Row>
@@ -234,12 +234,6 @@ export function WelcomeScreen() {
                   <Row align="center" gap={4}>
                     <Ionicons name="construct-outline" size={13} color={AMBER_ICON} />
                     <Txt size={10} weight="700" color={AMBER_TEXT}>Maintenance</Txt>
-                  </Row>
-                </View>
-                <View style={styles.staffBadge}>
-                  <Row align="center" gap={4}>
-                    <Ionicons name="bicycle-outline" size={13} color={AMBER_ICON} />
-                    <Txt size={10} weight="700" color={AMBER_TEXT}>Delivery</Txt>
                   </Row>
                 </View>
               </Row>

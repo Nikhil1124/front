@@ -157,7 +157,7 @@ export default function RootLayout() {
     return () => sub.remove();
   }, [submitRSVP, isRouterReady]);
 
-  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent';
+  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance';
   const isOwnerRole = activeRole === 'owner' || activeRole === 'manager';
   // On a cold launch, accessToken is hydrated from SecureStore (fast) before activeRole is
   // known (a separate /v1/me round trip, slower) — a real gap, not just a render tick. If
@@ -165,7 +165,7 @@ export default function RootLayout() {
   // in the Stack (every role guard below still false), so it would flash before the real
   // role-based guard caught up and corrected it. Requiring a resolved role closes the gap
   // structurally instead of racing it.
-  const hasResolvedRole = isOwnerRole || activeRole === 'guest' || isStaffRole;
+  const hasResolvedRole = isOwnerRole || activeRole === 'guest' || isStaffRole || activeRole === 'delivery_agent';
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -200,6 +200,10 @@ export default function RootLayout() {
                   role-based guard above ever got a chance to be true. */}
               <Stack.Protected guard={!!accessToken && hasResolvedRole}>
                 <Stack.Screen name="groceries" />
+              </Stack.Protected>
+
+              <Stack.Protected guard={!!accessToken && activeRole === 'delivery_agent'}>
+                <Stack.Screen name="delivery_agent_placeholder" />
               </Stack.Protected>
             </Stack>
             <AlertOverlay />
