@@ -165,7 +165,7 @@ export default function RootLayout() {
   // in the Stack (every role guard below still false), so it would flash before the real
   // role-based guard caught up and corrected it. Requiring a resolved role closes the gap
   // structurally instead of racing it.
-  const hasResolvedRole = isOwnerRole || activeRole === 'guest' || isStaffRole || activeRole === 'delivery_agent';
+  const hasResolvedRole = isOwnerRole || activeRole === 'guest' || isStaffRole;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -200,10 +200,6 @@ export default function RootLayout() {
                   role-based guard above ever got a chance to be true. */}
               <Stack.Protected guard={!!accessToken && hasResolvedRole}>
                 <Stack.Screen name="groceries" />
-              </Stack.Protected>
-
-              <Stack.Protected guard={!!accessToken && activeRole === 'delivery_agent'}>
-                <Stack.Screen name="delivery_agent_placeholder" />
               </Stack.Protected>
             </Stack>
             <AlertOverlay />

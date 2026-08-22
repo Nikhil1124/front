@@ -6,7 +6,7 @@ import * as SecureStore from "@/utils/secureStorage";
 export interface Membership {
   pg_id: string;
   pg_name: string;
-  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest" | "delivery_agent";
+  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest";
   membership_id: string;
   /** Only a guest membership has one, so this is null for owners and staff. It is how a
    *  resident learns their own room number — the roster is the owner's and they cannot

@@ -12,13 +12,20 @@ import { useAuthStore } from '@/store/authStore';
 export default function IndexRoute() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const user = useAuthStore((s) => s.user);
 
   if (!accessToken) return <Redirect href="/welcome" />;
+  
+  // If we have a token but haven't finished the initial `/v1/me` fetch,
+  // we are in the middle of session restoration. The Splash Screen is still up,
+  // so rendering nothing (or a spinner) is safe and prevents a premature redirect.
+  if (!user) return null;
+
   if (activeRole === 'owner' || activeRole === 'manager') return <Redirect href="/overview" />;
   if (activeRole === 'guest') return <Redirect href="/home" />;
   if (activeRole === 'maintenance') return <Redirect href="/housekeeping" />;
   if (activeRole === 'chef' || activeRole === 'kitchen_staff') return <Redirect href="/eaters" />;
-  if (activeRole === 'delivery_agent') return <Redirect href="/delivery_agent_placeholder" />;
+  
   // No recognized role yet (hydration still resolving, or a genuinely unknown role) —
   // welcome is always safe: if a token turns out to be valid, the role-based guards in
   // app/_layout.tsx will already keep this out of reach once activeRole is known.

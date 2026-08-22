@@ -106,6 +106,34 @@ export async function registerMealRsvpCategory(): Promise<void> {
  * and the person has to go find whatever it was about.
  */
 export function routeFromPushData(data: Record<string, unknown> | undefined): void {
-  const screen = typeof data?.screen === "string" ? data.screen : null;
-  if (screen) router.push(screen as never);
+  let screen = typeof data?.screen === "string" ? data.screen : null;
+
+  // Maintenance and Ticket routing override
+  const category = data?.category as string | undefined;
+  const actionType = data?.actionType as string | undefined;
+  const actionId = data?.actionId as string | undefined;
+
+  if (
+    category === "complaint" ||
+    category === "service" ||
+    actionType === "request"
+  ) {
+    // Dynamic import to avoid circular dependencies if any, though authStore is usually safe.
+    // We can require it inline or assume it's available since channels is top-level.
+    const { useAuthStore } = require("../../store/authStore");
+    const activeRole = useAuthStore.getState().activeRole;
+
+    if (activeRole === "guest") {
+      screen = actionId ? `/(guest)/ticket/${actionId}` : "/(guest)/(tabs)/support";
+    } else if (activeRole === "owner" || activeRole === "manager") {
+      screen = "/(owner)/services";
+    } else if (activeRole === "maintenance") {
+      screen = "/(staff)/housekeeping";
+    }
+  }
+
+  // Prevent duplicate navigation by using router.navigate instead of push
+  if (screen) {
+    router.navigate(screen as never);
+  }
 }

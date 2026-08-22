@@ -65,7 +65,7 @@ export default function StaffTabsLayout() {
             CHEF DASHBOARD
           </Txt>
           <Txt size={11} color={Colors.textMuted}>
-            Chef: {staff?.name ?? 'Ramesh Kumar'}
+            Chef: {staff?.name ?? 'Name unavailable'}
           </Txt>
         </Col>
       </TabHeader>
@@ -92,7 +92,7 @@ export default function StaffTabsLayout() {
         </TabTrigger>
       </Dock>
 
-      {showNotif && <RoleNotificationsCenterSheet roleTitle={staff?.role === 'Chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
+      {showNotif && <RoleNotificationsCenterSheet roleTitle={activeRole === 'chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
     </Tabs>
   );
 }

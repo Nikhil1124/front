@@ -12,6 +12,7 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Share,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -77,9 +78,11 @@ export function OwnerGuestsManagementTab() {
   const [guestPassword, setGuestPassword] = useState('');
   const [guestRent, setGuestRent] = useState('6500');
   const [isCreating, setIsCreating] = useState(false);
+  const [errorField, setErrorField] = useState<'email' | 'phone' | null>(null);
 
   // Edit states
   const [editing, setEditing] = useState<GuestEntity | null>(null);
+  const [isDeletingGuest, setIsDeletingGuest] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -108,15 +111,28 @@ export function OwnerGuestsManagementTab() {
   const pendingKyc = guests.filter((g) => g.kycStatus === 'PENDING');
 
   const confirmDeleteGuest = (g: GuestEntity) => {
+    if (isDeletingGuest) return;
     Alert.alert('Remove Resident', `Remove ${g.name} from this property?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => deleteGuest(g.id) },
+      { text: 'Remove', style: 'destructive', onPress: async () => {
+          setIsDeletingGuest(g.id);
+          const result = await deleteGuest(g.id);
+          setIsDeletingGuest(null);
+          if (result?.ok) {
+            hapticSuccess();
+            toast('success', 'Resident Removed', `${g.name} has been removed.`);
+          } else {
+            hapticError();
+            Alert.alert('Failed', result?.error || 'Could not remove resident.');
+          }
+      } },
     ]);
   };
 
   const handleCreate = async () => {
     if (isCreating) return;
     setIsCreating(true);
+    setErrorField(null);
     try {
       const result = await createGuestByOwner(
         guestName,
@@ -138,7 +154,21 @@ export function OwnerGuestsManagementTab() {
         setShowManualForm(false);
       } else {
         hapticError();
-        Alert.alert('Failed', result.error ?? 'Unknown');
+        let errorMsg = result.error ?? 'Unknown error occurred.';
+        const lowerError = errorMsg.toLowerCase();
+        
+        if (lowerError.includes('email')) {
+          errorMsg = 'An account with this email already exists.';
+          setErrorField('email');
+        } else if (lowerError.includes('number') || lowerError.includes('phone')) {
+          errorMsg = 'An account with this phone number already exists.';
+          setErrorField('phone');
+        } else if (lowerError.includes('already exists')) {
+          errorMsg = 'An account with these details already exists.';
+          setErrorField('phone');
+        }
+        
+        Alert.alert('Failed', errorMsg);
       }
     } finally {
       setIsCreating(false);
@@ -334,6 +364,7 @@ export function OwnerGuestsManagementTab() {
               keyboardType="email-address"
               containerColor={WHITE}
               style={{ marginBottom: 12 }}
+              unfocusedBorderColor={errorField === 'email' ? Colors.danger : undefined}
             />
             <Row gap={10}>
               <OutlinedTextField
@@ -352,6 +383,7 @@ export function OwnerGuestsManagementTab() {
                 keyboardType="phone-pad"
                 containerColor={WHITE}
                 style={{ flex: 1.2 }}
+                unfocusedBorderColor={errorField === 'phone' ? Colors.danger : undefined}
               />
             </Row>
             <Spacer size={12} />
@@ -726,7 +758,13 @@ export function OwnerGuestsManagementTab() {
                         tint={GREEN}
                         testID={`owner_edit_guest_${g.id}`}
                       />
-                      <IconBtn onPress={() => confirmDeleteGuest(g)} icon="trash-outline" size={19} tint={Colors.danger} />
+                      {isDeletingGuest === g.id ? (
+                        <View style={{ padding: 10 }}>
+                          <ActivityIndicator size="small" color={Colors.danger} />
+                        </View>
+                      ) : (
+                        <IconBtn onPress={() => confirmDeleteGuest(g)} icon="trash-outline" size={19} tint={Colors.danger} />
+                      )}
                     </Row>
                   </Row>
                 </Card>
