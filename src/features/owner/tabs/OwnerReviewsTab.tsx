@@ -36,11 +36,6 @@ export function OwnerReviewsTab() {
   const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
   const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const owner = usePGowStore((s) => s.loggedInOwner);
-<<<<<<< HEAD
-  const submissions = usePGowStore((s) => s.currentFeedbackComplaints);
-  const staffList = usePGowStore((s) => s.currentStaff);
-=======
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
   const respond = usePGowStore((s) => s.respondToFeedbackComplaint);
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
@@ -151,59 +146,9 @@ export function OwnerReviewsTab() {
       } else if (filterType === 'No Reviews') {
         matchesFilter = staff.reviewCount === 0;
       }
-
-<<<<<<< HEAD
       return matchesSearch && matchesFilter;
     });
   }, [staffPerformanceList, searchQuery, filterType]);
-=======
-  const staffProfiles: StaffProfile[] = [
-    {
-      id: 'staff_mgr',
-      roleKey: 'MANAGER',
-      title: 'Branch Manager',
-      name: owner?.managerName || 'Manager',
-      avatarIcon: 'person',
-      tint: Colors.primary,
-      bgColor: '#F0FDF9',
-      rating: avgMgr,
-      reviewCount: managerReviews.length,
-      subtitle: 'Tenant relations, operations & branch management',
-    },
-    {
-      id: 'staff_chef',
-      roleKey: 'CHEF',
-      title: 'Head Chef & Mess Team',
-      name: staffNameFor(staffList, ['Chef', 'Kitchen Staff'], 'Kitchen Staff'),
-      avatarIcon: 'restaurant',
-      tint: '#D97706',
-      bgColor: '#FFFBEB',
-      rating: avgMeals,
-      reviewCount: chefReviews.length,
-      subtitle: 'Daily meals, food taste, hygiene & mess timings',
-    },
-    {
-      id: 'staff_clean',
-      roleKey: 'STAFF',
-      title: 'Housekeeping & Maintenance',
-      name: staffNameFor(staffList, ['Housekeeping', 'Maintenance Staff'], 'Housekeeping Staff'),
-      avatarIcon: 'sparkles',
-      tint: '#2563EB',
-      bgColor: '#EFF6FF',
-      rating: avgClean,
-      reviewCount: staffReviews.length,
-      subtitle: 'Room cleaning, repairs, electrical & water support',
-    },
-  ];
-
-  const getFilteredReviewsForStaff = (staff: StaffProfile) => {
-    if (staff.roleKey === 'MANAGER') return managerReviews.length > 0 ? managerReviews : submissions;
-    if (staff.roleKey === 'CHEF') return chefReviews.length > 0 ? chefReviews : submissions;
-    if (staff.roleKey === 'STAFF') return staffReviews.length > 0 ? staffReviews : submissions;
-    if (staff.roleKey === 'OVERDUE') return overdueIssues;
-    return submissions;
-  };
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
   const openReply = (item: FeedbackComplaintEntity) => {
     hapticSelect();
@@ -447,7 +392,6 @@ export function OwnerReviewsTab() {
                 </Col>
               </Row>
 
-<<<<<<< HEAD
               <Text style={styles.detailSecTitle}>Performance Ratings</Text>
               
               <Row gap={8} style={{ marginBottom: 16 }}>
@@ -461,34 +405,6 @@ export function OwnerReviewsTab() {
                   <Text style={styles.sheetKpiVal}>{selectedStaff.reviewCount}</Text>
                   <Text style={styles.sheetKpiLabel}>Reviews Count</Text>
                 </View>
-=======
-      {/* Staff Review & Feedback Drill-Down Modal */}
-      {selectedStaff && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedStaff(null)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedStaff(null)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={24}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '92%', maxHeight: '85%', zIndex: 2 }}
-            >
-              <Row justify="space-between" align="center">
-                <Row gap={10} align="center" style={{ flex: 1 }}>
-                  <View style={[styles.avatarBox, { backgroundColor: selectedStaff.bgColor }]}>
-                    <Ionicons name={selectedStaff.avatarIcon} size={22} color={selectedStaff.tint} />
-                  </View>
-                  <Col style={{ flex: 1 }}>
-                    <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{selectedStaff.name}</Txt>
-                    <Txt variant="caption" color={selectedStaff.tint} weight="700">
-                      {selectedStaff.title}{selectedStaff.roleKey !== 'OVERDUE' && selectedStaff.reviewCount > 0 ? ` • ★ ${selectedStaff.rating.toFixed(1)}` : ''}
-                    </Txt>
-                  </Col>
-                </Row>
-                <IconBtn onPress={() => setSelectedStaff(null)} icon="close" size={18} tint={Colors.textMuted} />
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
               </Row>
 
               <Text style={styles.detailSecTitle}>Recent Feedback History</Text>

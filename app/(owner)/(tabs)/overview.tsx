@@ -69,26 +69,19 @@ const SCREEN_ROUTES: Partial<Record<AppScreen, string>> = {
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
 
 export default function OwnerOverviewTab() {
   const [showOverdueModal, setShowOverdueModal] = useState(false);
 
-<<<<<<< HEAD
-  const owner       = usePGowStore(s => s.loggedInOwner);
-  const isManager   = usePGowStore(s => s.isManagerMode);
-  const allPGs      = usePGowStore(s => s.allPGsState);
-  const roleNotifs  = usePGowStore(s => s.currentRoleNotifications);
-  const guests      = usePGowStore(s => s.currentGuests);
-  const complaints  = usePGowStore(s => s.currentFeedbackComplaints);
-=======
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const isManager = usePGowStore((s) => s.isManagerMode);
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
   const now        = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);

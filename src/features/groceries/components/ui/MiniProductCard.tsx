@@ -85,7 +85,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       {/* Product image */}
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.imageContainer}>
         <Image
-          source={product.image_url ? { uri: product.image_url } : require('../../../../../../assets/img_app_icon.jpg')}
+          source={product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')}
           style={styles.image}
           resizeMode="contain"
         />

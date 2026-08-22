@@ -175,7 +175,7 @@ export default function RootLayout() {
           {/* Single top-edge SafeAreaView for the whole app — every screen in every group
               trusts this and must not consume the top inset again itself (that was the
               cause of the double-safe-area header bugs fixed earlier). */}
-          <SafeAreaView style={styles.container} edges={['top']}>
+          <SafeAreaView style={styles.container} edges={[]}>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Protected guard={!accessToken}>
                 <Stack.Screen name="(auth)" />

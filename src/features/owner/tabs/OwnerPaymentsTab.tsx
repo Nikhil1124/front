@@ -24,15 +24,12 @@ import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
-<<<<<<< HEAD
 import { EmptyState } from '@/components/EmptyState';
-import type { PaymentEntity, ExpenseEntity } from '@/types';
-=======
-import type { PaymentEntity } from '@/types';
+import type { PaymentEntity, ExpenseEntity, GuestEntity } from '@/types';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
-import { useAuthStore } from '@/store/authStore';
+import { useExpensesQuery } from '@/features/expenses/useExpenses';
+import { useGuestsQuery } from '@/features/guests/useGuests';
 import { FormScroll } from '@/components/ui/FormScroll';
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -68,7 +65,6 @@ function getPast12Months() {
 }
 
 export function OwnerPaymentsTab() {
-<<<<<<< HEAD
   const [subTab, setSubTab] = useState(0); // 0: Balance Sheet, 1: Expenses, 2: Collections
   const [period, setPeriod] = useState<'month' | '3m' | '6m' | '1y' | 'custom'>('month');
   
@@ -82,23 +78,19 @@ export function OwnerPaymentsTab() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const payments = usePGowStore((s) => s.currentPayments);
-  const expenses = usePGowStore((s) => s.currentExpenses);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: payments = [] } = usePaymentsQuery(activePgId ?? undefined);
+  const { data: expenses = [] } = useExpensesQuery(activePgId ?? undefined);
+  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const logExpense = usePGowStore((s) => s.logExpense);
   const deleteExpense = usePGowStore((s) => s.deleteExpense);
   const owner = usePGowStore((s) => s.loggedInOwner);
-  const guests = usePGowStore((s) => s.currentGuests);
 
   const getPayerRoom = (payerId: string) => {
     const g = guests.find((x) => x.id === payerId);
     return g ? g.roomNo : '—';
   };
 
-=======
-  const [subTab, setSubTab] = useState(0);
-  const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: payments = [] } = usePaymentsQuery(activePgId ?? undefined);
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
   const { refreshing, onRefresh } = usePullToRefresh();
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
 

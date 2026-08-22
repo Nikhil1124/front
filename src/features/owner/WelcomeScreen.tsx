@@ -1,4 +1,5 @@
 import { ScrollView, View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
@@ -22,6 +23,7 @@ const AMBER_BORDER = '#FDE68A';
 const AMBER_BG = '#FFFBEB';
 
 export function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
   return (
     <View style={styles.outerContainer}>
       {/* Background Watermark Decorations (pointerEvents="none" so they don't block taps) */}
@@ -47,7 +49,7 @@ export function WelcomeScreen() {
 
 
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.root}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.root, { paddingTop: insets.top + 24 }]}>
         {/* Centered Compact Header */}
         <View style={styles.headerSection}>
           <Txt size={36} weight="900" color={BRAND_GREEN} align="center" style={styles.logo}>
@@ -261,124 +263,7 @@ export function WelcomeScreen() {
             </Card>
           </AnimatedPress>
 
-          {/* Card 4: Quick Developer Previews */}
-          <Card
-            containerColor={CARD_BG}
-            borderRadius={22}
-            borderWidth={1}
-            borderColor={BORDER_COLOR}
-            padding={[16, 16]}
-            style={styles.cardShadow}
-          >
-            <Row align="center" justify="space-between" style={{ width: '100%', marginBottom: 12 }}>
-              <Row align="center" gap={12} style={{ flex: 1 }}>
-                <View style={styles.iconCircle}>
-                  <Ionicons name="code-slash" size={18} color={BRAND_GREEN} />
-                </View>
-                <Col style={{ flex: 1 }}>
-                  <Txt size={14} weight="800" color={CHARCOAL}>
-                    Quick Developer Previews
-                  </Txt>
-                  <Txt size={11} color={TEXT_MUTED}>
-                    Preview interfaces for different roles
-                  </Txt>
-                </Col>
-              </Row>
-              <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
-            </Row>
 
-<<<<<<< HEAD
-            <Row gap={8}>
-              <Btn
-                onPress={() => { hapticSelect(); useAuthStore.setState({ activeRole: 'delivery_agent', accessToken: 'mock_token' }); router.replace('/'); }}
-                containerColor="#F0F6F2"
-                textColor={BRAND_GREEN}
-                borderRadius={10}
-                height={38}
-                style={{ flex: 1, borderWidth: 1, borderColor: BORDER_COLOR }}
-              >
-                <Row align="center" gap={6}>
-                  <Ionicons name="bicycle-outline" size={14} color={BRAND_GREEN} />
-                  <Txt size={11} weight="700" color={BRAND_GREEN}>Delivery Agent</Txt>
-                </Row>
-              </Btn>
-              <Btn
-                onPress={() => { hapticSelect(); useAuthStore.setState({ activeRole: 'maintenance', accessToken: 'mock_token' }); router.replace('/'); }}
-                containerColor="#F0F6F2"
-                textColor={BRAND_GREEN}
-                borderRadius={10}
-                height={38}
-                style={{ flex: 1, borderWidth: 1, borderColor: BORDER_COLOR }}
-              >
-                <Row align="center" gap={6}>
-                  <Ionicons name="hammer-outline" size={14} color={BRAND_GREEN} />
-                  <Txt size={11} weight="700" color={BRAND_GREEN}>Maintenance</Txt>
-                </Row>
-              </Btn>
-            </Row>
-          </Card>
-=======
-            <Btn
-              onPress={() => { hapticSelect(); router.push('/guest-join'); }}
-              containerColor={Colors.success}
-              textColor={Colors.textInverse}
-              borderRadius={12}
-              height={44}
-            >
-              <Ionicons name="log-in-outline" size={18} color={Colors.textInverse} style={{ marginRight: 6 }} />
-              <Txt variant="body" weight="800" color={Colors.textInverse}>
-                Resident Login / Join
-              </Txt>
-            </Btn>
-          </Card>
-        </AnimatedPress>
-
-        {/* Staff & Operations Portal */}
-        <AnimatedPress
-          scale={0.985}
-          hapticPattern="light"
-          onPress={() => { hapticSelect(); router.push('/staff-login'); }}
-        >
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={18}
-            borderWidth={1.5}
-            borderColor={Colors.borderSubtle}
-            padding={[16, 14]}
-            style={styles.cardShadow}
-          >
-            <Row align="center" gap={10} style={styles.cardHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: '#f0f0f0ff' }]}>
-                <Ionicons name="people-sharp" size={20} color={Colors.CyberAmber} />
-              </View>
-              <Col>
-                <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>
-                  Staff & Operations Portal
-                </Txt>
-                <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
-                  Kitchen, Maintenance & Delivery Agents
-                </Txt>
-              </Col>
-            </Row>
-
-            <Btn
-              onPress={() => { hapticSelect(); router.push('/staff-login'); }}
-              containerColor="#000000ff"
-              textColor={Colors.CyberAmber}
-              borderRadius={12}
-              height={44}
-            >
-              <Ionicons name="people" size={18} color={Colors.CyberAmber} style={{ marginRight: 6 }} />
-              <Txt variant="body" weight="700" color={Colors.CyberAmber}>
-                Open Staff & Operations Portal
-              </Txt>
-            </Btn>
-          </Card>
-        </AnimatedPress>
-
-
-      </View>
->>>>>>> 5791b7e97b3c51320a8545c43ef6ccf4ebe3ef4a
 
         </View>
 
