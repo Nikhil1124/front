@@ -163,9 +163,9 @@ export function OwnerReviewsTab() {
       hapticSuccess();
       toast('success', 'Issue response saved', `Resident ${activeItem.guestName} notified.`);
       setActiveItem(null);
-    } catch {
+    } catch (err: any) {
       hapticError();
-      toast('error', 'Failed to save response', 'Try again.');
+      toast('error', 'Failed to save response', err?.message ?? 'Please try again.');
     }
   };
 

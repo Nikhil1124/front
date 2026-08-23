@@ -730,7 +730,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                     <Field label="Email Address *"   value={guestEmailInput}    onChangeText={v => set('guestEmailInput', v)}    icon="mail-outline"    keyboard="email-address" testID="guest_register_email" />
                     <Row gap={10}>
                       <View style={{ flex: 1.6 }}>
-                        <Field label="Phone *" value={guestPhoneInput} onChangeText={v => set('guestPhoneInput', v)} icon="call-outline" keyboard="phone-pad" />
+                        <Field label="Phone *" placeholder="10-digit mobile number" value={guestPhoneInput} onChangeText={v => set('guestPhoneInput', v)} icon="call-outline" keyboard="phone-pad" maxLength={10} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Field label="Room No *" value={guestRoomInput} onChangeText={v => set('guestRoomInput', v)} icon="home-outline" testID="guest_register_room" />

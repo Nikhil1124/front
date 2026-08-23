@@ -216,8 +216,9 @@ export function OwnerAnnouncementsTab() {
         setNoticeMessage('');
         setShowBroadcastModal(false);
       }
-    } catch {
+    } catch (err: any) {
       hapticError();
+      toast('error', 'Publish Failed', err?.message ?? 'Please try again.');
     } finally {
       setIsPublishing(false);
     }

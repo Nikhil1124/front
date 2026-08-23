@@ -88,6 +88,30 @@ async function safeList<T>(label: string, run: () => Promise<T[]>): Promise<T[]>
   }
 }
 
+/**
+ * A label→value lookup that refuses to fail silently (correctness-audit.md §4).
+ *
+ * Every one of these maps used to fall back to a hardcoded default on a miss — `?? 'all'`,
+ * `?? 'kitchen_staff'` — which turns "the label list and the map drifted apart" into "the
+ * data is quietly wrong" instead of an error anyone would notice. The staff-role one was the
+ * worst: a mis-keyed role silently made someone kitchen staff, a permissions decision made by
+ * a typo. `?? 'all'` on broadcast audience meant a mis-keyed target notified *everyone* at the
+ * property instead of the intended group.
+ *
+ * In dev this throws immediately, so the drift is caught at the call site that introduced it.
+ * In production it warns and returns `undefined` — which `JSON.stringify` drops from the
+ * request body entirely, so the field goes missing rather than wrong, and the backend's own
+ * "field required" validation answers with a clean 422 instead of silently accepting bad data.
+ */
+function required<T>(map: Record<string, T>, key: string, what: string): T {
+  const v = map[key];
+  if (v === undefined) {
+    if (__DEV__) throw new Error(`[PGow] Unmapped ${what}: "${key}"`);
+    console.warn(`[PGow] unmapped ${what}: "${key}"`);
+  }
+  return v as T;
+}
+
 /** ADR-004's gate is the resident's own KYC state, which is the one piece of KYC a guest can
  *  read about themselves — `/v1/kyc/pending` is owner-only. */
 function kycStatusFromGate(gate: string | null): string {
@@ -760,10 +784,10 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       await notificationsApi.broadcastNotification({
         pg_id: pgId,
-        target_role: audienceMap[targetRole.toUpperCase()] ?? 'all',
+        target_role: required(audienceMap, targetRole.toUpperCase(), 'broadcast audience'),
         title,
         body: message,
-        category: categoryMap[category.toUpperCase()] ?? 'announcement',
+        category: required(categoryMap, category.toUpperCase(), 'notification category'),
         priority: priority.toUpperCase() === 'HIGH' ? 'high' : priority.toUpperCase() === 'LOW' ? 'low' : 'normal',
       });
       await get().refreshAll();
@@ -817,6 +841,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       Utilities: 'utilities', 'Utility Bills': 'utilities',
       Maintenance: 'maintenance', Repairs: 'maintenance', 'Maintenance & Repairs': 'maintenance',
       Internet: 'internet', Wifi: 'internet', 'Wi-Fi & Internet': 'internet',
+      // `OwnerPaymentsTab.tsx`'s EXPENSE_CATEGORIES list — this used to reach 'other' only
+      // by falling through an unconditional `?? 'other'` default, not because it was mapped.
+      Other: 'other', 'Other Operations': 'other',
     };
     const methodMap: Record<string, expensesApi.ExpenseMethod> = {
       UPI: 'upi', 'Online UPI': 'upi', Cash: 'cash',
@@ -825,9 +852,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       await expensesApi.logExpense(pgId, {
         title: title.trim() || 'Expense',
-        category: categoryMap[category] ?? 'other',
+        category: required(categoryMap, category, 'expense category'),
         amount,
-        method: methodMap[paymentMode] ?? 'cash',
+        method: required(methodMap, paymentMode, 'expense method'),
         recipient_name: recipientName,
         notes,
       });
@@ -1197,7 +1224,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await staffApi.addStaff(pgId, {
         name: s.staffNameInput.trim(),
         phone: map.toE164(s.staffPhoneInput),
-        role: roleMap[s.staffRoleInput] ?? 'kitchen_staff',
+        role: required(roleMap, s.staffRoleInput, 'staff role'),
         pin: s.staffPinInput,
         monthly_salary: parseFloat(s.staffSalaryInput) || undefined,
       });
@@ -1770,14 +1797,17 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   },
 
   logout: () => {
-    // Fire and forget: the local session is cleared either way, and nobody should be held on
-    // a dashboard waiting for a network round trip to sign out.
+    // Fire and forget the network teardown, but don't race it: `logoutEverywhere()` reads
+    // the access token fresh from authStore for its own `unregisterDevice` and
+    // `POST /v1/auth/logout` calls (in that order), and only clears the token itself once
+    // both are done. Calling `useAuthStore.getState().logout()` again here, synchronously,
+    // used to run before either of those network calls fired — wiping the token they still
+    // needed, so the outgoing logout request went out with no Authorization header, 401'd,
+    // and was silently swallowed. The server-side session was never actually revoked. Let
+    // `logoutEverywhere()` own that sequencing; it already clears authStore itself when it's
+    // safe to.
     authApi.logoutEverywhere().catch(() => {});
     queryClient.clear();
-    // The (auth) route group's guard is `!accessToken` (see app/_layout.tsx) — without
-    // clearing it here too, this action used to rely entirely on `currentScreen` to look
-    // like a sign-out while the real session token sat untouched in authStore/SecureStore.
-    useAuthStore.getState().logout();
     import('@react-native-async-storage/async-storage').then((m) => m.default.clear().catch(() => {}));
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,

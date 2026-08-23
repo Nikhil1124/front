@@ -263,9 +263,9 @@ export function StaffManagementTab() {
       hapticSuccess();
       Alert.alert('Success', 'Login PIN reset successfully.');
       setNewPin('');
-    } catch {
+    } catch (err: any) {
       hapticError();
-      Alert.alert('Error', 'Could not reset PIN.');
+      Alert.alert('Error', err?.message ?? 'Could not reset PIN.');
     } finally {
       setIsResettingPin(false);
     }
