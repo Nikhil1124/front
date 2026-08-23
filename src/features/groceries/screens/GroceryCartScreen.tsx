@@ -168,7 +168,7 @@ export function GroceryCartScreen() {
                     {/* Left: Product Image */}
                     <View style={styles.imageContainer}>
                       <Image
-                        source={item.image ? { uri: item.image } : require('../../../../../assets/img_app_icon.jpg')}
+                        source={item.image ? { uri: item.image } : require('../../../../assets/img_app_icon.jpg')}
                         style={styles.itemImage}
                       />
                     </View>

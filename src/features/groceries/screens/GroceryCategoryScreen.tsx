@@ -138,7 +138,7 @@ export function GroceryCategoryScreen() {
     >
       <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: '#EBF6F6' }]}>
         <Image
-          source={require('../../../../../assets/img_app_icon.jpg')}
+          source={require('../../../../assets/img_app_icon.jpg')}
           style={styles.catImage}
           resizeMode="contain"
         />

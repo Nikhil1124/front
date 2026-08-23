@@ -133,7 +133,7 @@ export function GroceryProductScreen() {
   const discountPercent = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
   const savingsAmount = originalPrice ? originalPrice - price : 0;
 
-  const imagesList = [product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')];
+  const imagesList = [product.image_url ? { uri: product.image_url } : require('../../../../assets/img_app_icon.jpg')];
   const productDetails = getProductDetails(product, selectedOption.unit);
 
   const relatedProducts = supplyItems.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 6);
