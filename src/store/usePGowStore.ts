@@ -261,7 +261,7 @@ export interface PGowState {
   loginOwner: (phone: string, password: string) => Promise<{ ok: boolean; error?: string; mustChangePassword?: boolean }>;
   completeFirstTimePasswordChange: (tempPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
   registerStaffMember: () => Promise<{ ok: boolean; error?: string }>;
-  deleteStaffMember: (id: string) => Promise<void>;
+  deleteStaffMember: (id: string) => Promise<{ ok: boolean; error?: string }>;
 
   // ===== Guest auth & KYC =====
   joinPG: () => Promise<{ ok: boolean; error?: string }>;
@@ -277,7 +277,7 @@ export interface PGowState {
   // the current one and therefore runs through the resident.
   updateGuestByOwner: (guest: GuestEntity, name: string, email: string, phone: string, room: string, rentAmount: number) => Promise<{ ok: boolean; error?: string }>;
   updateOwnerPaymentInfo: (phonePeNumber: string, upiId: string) => Promise<void>;
-  deleteGuest: (id: string) => Promise<void>;
+  deleteGuest: (id: string) => Promise<{ ok: boolean; error?: string }>;
 
   // ===== Staff / Manager login =====
   loginStaff: (phone: string, pin: string) => Promise<{ ok: boolean; error?: string }>;
@@ -401,8 +401,22 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   },
 
   refreshAll: async () => {
-    const { user } = useAuthStore.getState();
+    const { user, activePgId, activeRole } = useAuthStore.getState();
     if (!user) return;
+    
+    if (activePgId) {
+      const mem = user.memberships.find(m => m.pg_id === activePgId);
+      if (mem) {
+        if (activeRole === 'guest') {
+          const guest = await guestsApi.getGuest(mem.membership_id).catch(() => null);
+          if (guest) set({ loggedInGuest: map.toGuest(guest) });
+        } else if (activeRole && ['manager', 'chef', 'kitchen_staff', 'maintenance'].includes(activeRole)) {
+          const staff = await staffApi.getStaff(mem.membership_id).catch(() => null);
+          if (staff) set({ loggedInStaff: map.toStaff(staff) });
+        }
+      }
+    }
+    
     await queryClient.invalidateQueries();
   },
 
@@ -495,7 +509,13 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         // and inventing a name at booking time would put a stranger's details on screen.
         details: { urgency, eta_minutes: urgency.includes('15') ? 12 : 45 },
       })
-      .then(() => get().refreshAll())
+      .then(() => {
+        const msg = `${category} - ${issueTitle} has been booked.`;
+        get().sendRoleNotification('OWNER', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
+        get().sendRoleNotification('MANAGER', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
+        get().sendRoleNotification('MAINTENANCE', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
+        get().refreshAll();
+      })
       .catch((err) => {
         set({
           activeAlert: {
@@ -731,7 +751,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     const audienceMap: Record<string, notificationsApi.BroadcastAudience> = {
       ALL: 'all', OWNER: 'owner', MANAGER: 'manager', RESIDENT: 'guest',
       GUEST: 'guest', CHEF: 'chef', STAFF: 'kitchen_staff', MAINTENANCE: 'maintenance',
-      DELIVERY_AGENT: 'delivery_agent', DELIVERY: 'delivery_agent',
     };
     const categoryMap: Record<string, notificationsApi.NotificationCategory> = {
       ANNOUNCEMENT: 'announcement', KYC: 'kyc', RENT: 'rent', PAYMENT: 'rent',
@@ -998,6 +1017,26 @@ export const usePGowStore = create<PGowState>((set, get) => ({
           console.warn('[PGow] complaint filed but attachment failed:', err);
         }
       }
+
+      // Notify Owner, Manager, and Maintenance if this is a maintenance issue
+      if (category?.toLowerCase().includes('maintenance') || category?.toLowerCase().includes('repair') || type === 'COMPLAINT') {
+        const msg = `${title} has been reported.`;
+        get().sendRoleNotification('OWNER', '🔧 New Maintenance Issue', msg, 'COMPLAINT', 'HIGH');
+        get().sendRoleNotification('MANAGER', '🔧 New Maintenance Issue', msg, 'COMPLAINT', 'HIGH');
+        get().sendRoleNotification('MAINTENANCE', '🔧 New Maintenance Issue', msg, 'COMPLAINT', 'HIGH');
+        
+        if (toUserRole(useAuthStore.getState().activeRole) === 'GUEST') {
+          set({
+            activeAlert: {
+              title: '✅ Issue Reported',
+              description: 'The Owner, Manager, and Maintenance staff have been notified.',
+              type: 'SUCCESS',
+              timestamp: Date.now(),
+            },
+          });
+        }
+      }
+
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
@@ -1176,10 +1215,13 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   deleteStaffMember: async (id) => {
     try {
       await staffApi.removeStaff(id);
+      await get().refreshAll();
+      return { ok: true };
     } catch (err) {
       console.warn('[PGow] could not remove staff member:', err);
+      const msg = err instanceof PGowApiError ? err.message : 'Could not remove staff member.';
+      return { ok: false, error: msg };
     }
-    await get().refreshAll();
   },
 
   // ── Guest auth & KYC ──────────────────────────────────────────────────────
@@ -1486,10 +1528,13 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   deleteGuest: async (id) => {
     try {
       await guestsApi.removeGuest(id);
+      await get().refreshAll();
+      return { ok: true };
     } catch (err) {
       console.warn('[PGow] could not remove resident:', err);
+      const msg = err instanceof PGowApiError ? err.message : 'Could not remove resident.';
+      return { ok: false, error: msg };
     }
-    await get().refreshAll();
   },
 
   // ── Staff / manager sign-in ───────────────────────────────────────────────
@@ -1733,6 +1778,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     // clearing it here too, this action used to rely entirely on `currentScreen` to look
     // like a sign-out while the real session token sat untouched in authStore/SecureStore.
     useAuthStore.getState().logout();
+    import('@react-native-async-storage/async-storage').then((m) => m.default.clear().catch(() => {}));
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
       activeNotificationId: null,

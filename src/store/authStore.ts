@@ -7,7 +7,7 @@ import type { UserRole } from "@/types";
 export interface Membership {
   pg_id: string;
   pg_name: string;
-  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest" | "delivery_agent";
+  role: "owner" | "manager" | "chef" | "kitchen_staff" | "maintenance" | "guest";
   membership_id: string;
   /** Only a guest membership has one, so this is null for owners and staff. It is how a
    *  resident learns their own room number — the roster is the owner's and they cannot
@@ -53,8 +53,11 @@ export function isPropertyOwner(user: User | null, pgId: string | null | undefin
   );
 }
 
-/** Backend membership role → the coarser roles the UI branches on. */
-export function toUserRole(role: Membership["role"] | null): UserRole | null {
+/** Backend membership role → the coarser roles the UI branches on. `delivery_agent` has no
+ *  dedicated `UserRole` of its own (see `activeRole`'s comment) — like kitchen_staff and
+ *  maintenance, it falls into the "STAFF" bucket here; callers that need to distinguish it
+ *  specifically compare the raw `activeRole` string instead (see the staff tabs layout). */
+export function toUserRole(role: Membership["role"] | "delivery_agent" | null): UserRole | null {
   if (!role) return null;
   if (role === "owner") return "OWNER";
   if (role === "manager") return "MANAGER";
@@ -81,8 +84,10 @@ interface AuthState {
   user: User | null;
   activePgId: string | null;
 
-  // Derived from memberships — the role in the active PG
-  activeRole: Membership["role"] | null;
+  // Derived from memberships — the role in the active PG. `delivery_agent` is the one
+  // exception: it has no PG membership at all (see `PlatformGrant`), so it's folded in here
+  // rather than into `Membership["role"]` itself.
+  activeRole: Membership["role"] | "delivery_agent" | null;
 
   // This phone's `devices` row, once registered for push. In memory only: it is re-derived
   // on every launch by re-registering the token, so persisting it would just risk holding a

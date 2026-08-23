@@ -23,7 +23,7 @@ import { usePnL } from '@/features/billing/usePnL';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
 import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { hapticSelect } from '@/utils/haptics';
-import type { PnLInterval } from '@/types';
+import type { PnLInterval, PaymentEntity, ExpenseEntity } from '@/types';
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const GREEN = '#176B3A';
@@ -91,11 +91,11 @@ export function PnLAnalyticsDetailScreen() {
 
   // ── Dynamic calculations for Custom Range or Category Breakdown ──────────────
   const filteredPayments = allPaymentsState.filter(
-    (p) => p.status === 'VERIFIED' && p.timestamp >= startMs && p.timestamp <= endMs
+    (p: PaymentEntity) => p.status === 'VERIFIED' && p.timestamp >= startMs && p.timestamp <= endMs
   );
 
   const filteredExpenses = allExpensesState.filter(
-    (e) => e.status === 'LOGGED' && e.dateLogged >= startMs && e.dateLogged <= endMs
+    (e: ExpenseEntity) => e.status === 'LOGGED' && e.dateLogged >= startMs && e.dateLogged <= endMs
   );
 
   // Group by calendar month for table/chart
@@ -116,7 +116,7 @@ export function PnLAnalyticsDetailScreen() {
       { period: string; revenue: number; expenses: number; net: number; date: Date }
     > = {};
 
-    filteredPayments.forEach((p) => {
+    filteredPayments.forEach((p: PaymentEntity) => {
       const { key, label, date } = getMonthKey(p.timestamp);
       if (!monthsMap[key]) {
         monthsMap[key] = { period: label, revenue: 0, expenses: 0, net: 0, date };
@@ -124,7 +124,7 @@ export function PnLAnalyticsDetailScreen() {
       monthsMap[key].revenue += p.amount;
     });
 
-    filteredExpenses.forEach((e) => {
+    filteredExpenses.forEach((e: ExpenseEntity) => {
       const { key, label, date } = getMonthKey(e.dateLogged);
       if (!monthsMap[key]) {
         monthsMap[key] = { period: label, revenue: 0, expenses: 0, net: 0, date };
@@ -141,11 +141,11 @@ export function PnLAnalyticsDetailScreen() {
   const isCustomMode = interval === 'custom';
 
   const revenueVal = isCustomMode
-    ? filteredPayments.reduce((sum, p) => sum + p.amount, 0)
+    ? filteredPayments.reduce((sum: number, p: PaymentEntity) => sum + p.amount, 0)
     : apiData?.totals?.revenue ?? 0;
 
   const expensesVal = isCustomMode
-    ? filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
+    ? filteredExpenses.reduce((sum: number, e: ExpenseEntity) => sum + e.amount, 0)
     : apiData?.totals?.expenses ?? 0;
 
   const netVal = revenueVal - expensesVal;
@@ -166,22 +166,22 @@ export function PnLAnalyticsDetailScreen() {
 
     // Filter historic payments and expenses
     const prevPayments = allPaymentsState.filter(
-      (p) => p.status === 'VERIFIED' && p.timestamp >= prevStartMs && p.timestamp < prevEndMs
+      (p: PaymentEntity) => p.status === 'VERIFIED' && p.timestamp >= prevStartMs && p.timestamp < prevEndMs
     );
     const prevExpenses = allExpensesState.filter(
-      (e) => e.status === 'LOGGED' && e.dateLogged >= prevStartMs && e.dateLogged < prevEndMs
+      (e: ExpenseEntity) => e.status === 'LOGGED' && e.dateLogged >= prevStartMs && e.dateLogged < prevEndMs
     );
 
-    const prevRev = prevPayments.reduce((sum, p) => sum + p.amount, 0);
-    const prevExp = prevExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const prevRev = prevPayments.reduce((sum: number, p: PaymentEntity) => sum + p.amount, 0);
+    const prevExp = prevExpenses.reduce((sum: number, e: ExpenseEntity) => sum + e.amount, 0);
     const prevNet = prevRev - prevExp;
 
     // Verify if history is fully captured in local logs (oldest log starts before historic start)
     const oldestPaymentMs = allPaymentsState.length > 0
-      ? Math.min(...allPaymentsState.map((p) => p.timestamp))
+      ? Math.min(...allPaymentsState.map((p: PaymentEntity) => p.timestamp))
       : Date.now();
     const oldestExpenseMs = allExpensesState.length > 0
-      ? Math.min(...allExpensesState.map((e) => e.dateLogged))
+      ? Math.min(...allExpensesState.map((e: ExpenseEntity) => e.dateLogged))
       : Date.now();
     const oldestMs = Math.min(oldestPaymentMs, oldestExpenseMs);
     const isValid = oldestMs <= prevStartMs;
@@ -216,7 +216,7 @@ export function PnLAnalyticsDetailScreen() {
     other: 'Other',
   };
 
-  filteredExpenses.forEach((e) => {
+  filteredExpenses.forEach((e: ExpenseEntity) => {
     const cat = e.category.toLowerCase().replace(' ', '_');
     if (cat in categoriesMap) {
       categoriesMap[cat as keyof typeof categoriesMap] += e.amount;

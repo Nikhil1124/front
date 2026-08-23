@@ -1,4 +1,5 @@
 import { ScrollView, View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
@@ -21,6 +22,7 @@ const AMBER_BORDER = '#FDE68A';
 const AMBER_BG = '#FFFBEB';
 
 export function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
   return (
     <View style={styles.outerContainer}>
       {/* Background Watermark Decorations (pointerEvents="none" so they don't block taps) */}
@@ -46,7 +48,7 @@ export function WelcomeScreen() {
 
 
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.root}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.root, { paddingTop: insets.top + 24 }]}>
         {/* Centered Compact Header */}
         <View style={styles.headerSection}>
           <Txt size={36} weight="900" color={BRAND_GREEN} align="center" style={styles.logo}>
@@ -212,7 +214,7 @@ export function WelcomeScreen() {
                       Staff & Operations Portal
                     </Txt>
                     <Txt size={11} color={TEXT_MUTED} style={styles.description}>
-                      For Chefs, Maintenance Crew & Delivery Agents
+                      For Chefs & Maintenance Crew
                     </Txt>
                   </Col>
                 </Row>
@@ -231,12 +233,6 @@ export function WelcomeScreen() {
                   <Row align="center" gap={4}>
                     <Ionicons name="construct-outline" size={13} color={AMBER_ICON} />
                     <Txt size={10} weight="700" color={AMBER_TEXT}>Maintenance</Txt>
-                  </Row>
-                </View>
-                <View style={styles.staffBadge}>
-                  <Row align="center" gap={4}>
-                    <Ionicons name="bicycle-outline" size={13} color={AMBER_ICON} />
-                    <Txt size={10} weight="700" color={AMBER_TEXT}>Delivery</Txt>
                   </Row>
                 </View>
               </Row>

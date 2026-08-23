@@ -1,4 +1,4 @@
-/** Chef dashboard "Broadcast" tab or Delivery History Route */
+/** Chef dashboard "Broadcast" tab */
 import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Card, Txt, Btn, Row, Chip, IconBtn, Spacer } from '@/components/ui';
@@ -39,7 +39,6 @@ const PRESET_DISHES: VisualDishItem[] = [
 
 export default function ChefBroadcastTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
-  if (activeRole === 'delivery_agent') return <DeliveryHistoryRoute />;
   return <ChefBroadcastView />;
 }
 

@@ -155,7 +155,7 @@ export function GroceryCategoryScreen() {
 
       <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
-        <View style={styles.topHeader}>
+        <View style={[styles.topHeader, { paddingTop: insets.top + 10 }]}>
           {showProductList ? (
             <TouchableOpacity
               style={styles.backBtn}

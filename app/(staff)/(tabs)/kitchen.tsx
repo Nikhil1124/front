@@ -24,7 +24,6 @@ const ANNOUNCEMENTS = [
 
 export default function ChefKitchenTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
-  if (activeRole === 'delivery_agent') return <DeliveryProfileRoute />;
   return <ChefKitchenView />;
 }
 

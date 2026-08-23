@@ -19,6 +19,7 @@ import {
   Text,
   LayoutChangeEvent,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -145,6 +146,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const guestPasswordInput = usePGowStore(s => s.guestPasswordInput);
   const completeFirstTimePasswordChange = usePGowStore(s => s.completeFirstTimePasswordChange);
   const toast = useToast();
+  const insets = useSafeAreaInsets();
 
   // ── Tab state ────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState(initialTab);
@@ -432,7 +434,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       </Modal>
 
       {/* ── Compact nav bar ───────────────────────────────────────────────── */}
-      <View style={styles.navBar}>
+      <View style={[styles.navBar, { paddingTop: insets.top, height: 60 + insets.top }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}

@@ -1,9 +1,9 @@
 /**
  * UpiConfigSection — Owner's UPI handle configuration list.
  * Redesigned for minimal, consistent flat styling: #176B3A green, #F7FAF7 canvas.
- * Integrates real listUpiIds, addUpiId, activateUpiId, removeUpiId API calls.
+ * Integrates real listUpiIds, addUpiId, activateUpiId, removeUpiId API calls with React Query.
  */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   View,
@@ -14,19 +14,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Row, Col, Spacer } from '@/components/ui';
-import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
-import { useUpiIds, type UpiIdResponse } from '@/features/properties/useProperties';
 import { useToast } from '@/hooks/useToast';
 import { hapticSuccess, hapticError } from '@/utils/haptics';
-// ponytail: this section fetches with a manual useState/useEffect instead of the
-// useUpiIdsQuery/useMutation pair @/features/properties/useProperties also exports — an
-// alternate implementation existed briefly on another branch using that pattern with the
-// shared Card/Colors design system, but this file's own StyleSheet (bottom of the file) is
-// built for the local-hex-token styling below, matching every other tab in this directory.
-// Upgrade to the query-hook version if this component ever needs to share a cache with
-// another screen reading the same PG's UPI list.
+import { qk } from '@/data/queryKeys';
+import { listUpiIds, addUpiId, activateUpiId, removeUpiId } from '@/features/properties/useProperties';
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const GREEN = '#176B3A';
@@ -39,47 +33,37 @@ const LIGHT_GREEN = '#EEF8F1';
 const RADIUS = 18;
 
 export function UpiConfigSection() {
-  const owner = usePGowStore((s) => s.loggedInOwner);
   const activePgId = useAuthStore((s) => s.activePgId);
-  const pgId = activePgId ?? owner?.id ?? null;
-
+  const pgId = activePgId ?? null;
   const toast = useToast();
-  const { listUpiIds, addUpiId, activateUpiId, removeUpiId } = useUpiIds();
+  const qc = useQueryClient();
 
-  // State
-  const [upiList, setUpiList] = useState<UpiIdResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: upiList = [], isLoading, isError } = useQuery({
+    queryKey: qk.properties.upiIds(pgId ?? ''),
+    queryFn: () => listUpiIds(pgId!),
+    enabled: !!pgId,
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: qk.properties.upiIds(pgId ?? '') });
+
+  const addMutation = useMutation({
+    mutationFn: (vpa: string) => addUpiId(pgId!, vpa),
+    onSuccess: () => invalidate(),
+  });
+  const activateMutation = useMutation({
+    mutationFn: (id: string) => activateUpiId(pgId!, id),
+    onSuccess: () => invalidate(),
+  });
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => removeUpiId(pgId!, id),
+    onSuccess: () => invalidate(),
+  });
+
   const [newUpi, setNewUpi] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
 
-  // Load real data
-  const loadUpiHandles = async () => {
-    if (!pgId) {
-      setIsLoading(false);
-      return;
-    }
-    try {
-      setIsLoading(true);
-      const res = await listUpiIds(pgId);
-      setUpiList(res);
-    } catch (e) {
-      console.warn('Failed to load UPI IDs:', e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadUpiHandles();
-  }, [pgId]);
-
-  // Handlers
   const handleAddUpi = async () => {
-    if (!pgId) return;
     const trimmed = newUpi.trim();
-
-    // Inline validation
     if (!trimmed) {
       setErrorMsg('UPI ID is required.');
       return;
@@ -93,31 +77,24 @@ export function UpiConfigSection() {
       return;
     }
     setErrorMsg('');
-    setIsAdding(true);
-
     try {
-      await addUpiId(pgId, trimmed);
+      await addMutation.mutateAsync(trimmed);
       setNewUpi('');
-      await loadUpiHandles();
       hapticSuccess();
       toast('success', 'UPI Added', `"${trimmed}" was added successfully.`);
-    } catch (e: any) {
+    } catch (err: any) {
       hapticError();
-      setErrorMsg(e?.message || 'Could not add UPI handle.');
-    } finally {
-      setIsAdding(false);
+      setErrorMsg(err?.message || 'Could not add UPI handle.');
     }
   };
 
   const handleDeleteUpi = (upiId: string, handleStr: string) => {
-    if (!pgId) return;
     // At least one handle must survive — GuestPaymentsTab routes rent to whichever one is
     // active, so removing the last one would leave nothing for it to route to.
     if (upiList.length <= 1) {
       Alert.alert('Action Restricted', 'You must maintain at least one UPI handle for rent collection.');
       return;
     }
-
     Alert.alert(
       'Delete UPI handle?',
       'This handle will no longer be available for rent collection.',
@@ -128,15 +105,14 @@ export function UpiConfigSection() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await removeUpiId(pgId, upiId);
-              await loadUpiHandles();
+              await removeMutation.mutateAsync(upiId);
               hapticSuccess();
               toast('info', 'UPI Deleted', `Removed "${handleStr}" from your payment methods.`);
-            } catch (e: any) {
+            } catch (err: any) {
               hapticError();
               // The server 409s if this is still the active handle and another exists —
               // name that specifically rather than a generic failure message.
-              Alert.alert('Error', e?.message || 'Could not delete UPI handle. This may still be your active handle — activate another one first.');
+              Alert.alert('Error', err?.message || 'Could not delete UPI handle. This may still be your active handle — activate another one first.');
             }
           },
         },
@@ -145,15 +121,13 @@ export function UpiConfigSection() {
   };
 
   const handleSetPrimary = async (upiId: string, handleStr: string) => {
-    if (!pgId) return;
     try {
-      await activateUpiId(pgId, upiId);
-      await loadUpiHandles();
+      await activateMutation.mutateAsync(upiId);
       hapticSuccess();
       toast('success', 'Primary UPI Updated', `Rent collection handle set to "${handleStr}"`);
-    } catch (e: any) {
+    } catch (err: any) {
       hapticError();
-      Alert.alert('Error', e?.message || 'Could not update primary handle.');
+      Alert.alert('Error', err?.message || 'Could not update primary handle.');
     }
   };
 
@@ -264,12 +238,12 @@ export function UpiConfigSection() {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitBtn, isAdding && styles.submitBtnDisabled]}
+          style={[styles.submitBtn, addMutation.isPending && styles.submitBtnDisabled]}
           onPress={handleAddUpi}
           activeOpacity={0.85}
-          disabled={isAdding}
+          disabled={addMutation.isPending}
         >
-          {isAdding ? (
+          {addMutation.isPending ? (
             <ActivityIndicator color={WHITE} />
           ) : (
             <Text style={styles.submitBtnText}>Add UPI Handle</Text>

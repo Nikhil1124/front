@@ -78,14 +78,16 @@ export function useRoleGuard(allowedRoles: Array<GuardRole>): {
   // value, so the caller branches on `tenant`/`chief` etc. as the spec writes
   // them, not on `guest`/`chef`.
   const specRole = AUTH_TO_SPEC[authRole] ?? null;
-  const allowedAuthRoles = new Set(allowedRoles.map((r) => SPEC_TO_AUTH[r]));
+  const allowedAuthRoles = new Set<Membership['role'] | 'delivery_agent'>(
+    allowedRoles.map((r) => SPEC_TO_AUTH[r])
+  );
   return { canView: allowedAuthRoles.has(authRole), activeRole: specRole };
 }
 
-/** Inverse of `SPEC_TO_AUTH`. `kitchen_staff` has no spec alias, so it stays
- *  itself — a guard that lists `staff_housekeeping` will not match it, which is
- *  correct: housekeeping is a subset of staff, not the whole set. */
-const AUTH_TO_SPEC: Partial<Record<Membership['role'], GuardRole>> = {
+/** Inverse of `SPEC_TO_AUTH`. `kitchen_staff` and `delivery_agent` have no spec alias, so
+ *  they stay unmapped — no `RoleGuard` currently gates a delivery-agent screen; those
+ *  branch on the raw `activeRole` string directly instead (see the staff tabs layout). */
+const AUTH_TO_SPEC: Partial<Record<Membership['role'] | 'delivery_agent', GuardRole>> = {
   owner: 'owner',
   manager: 'manager',
   guest: 'tenant',

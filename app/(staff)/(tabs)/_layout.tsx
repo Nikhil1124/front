@@ -45,7 +45,7 @@ export default function StaffTabsLayout() {
           so it reads as fixed chrome rather than the first card in the list. */}
       <TabHeader
         leading={
-          <View style={styles.chefIcon}><Ionicons name={activeRole === 'delivery_agent' ? 'bicycle' : 'restaurant'} size={24} color={Colors.primary} /></View>
+          <View style={styles.chefIcon}><Ionicons name="restaurant" size={24} color={Colors.primary} /></View>
         }
         actions={
           <>
@@ -65,12 +65,12 @@ export default function StaffTabsLayout() {
       >
         <Col style={{ marginLeft: 12 }}>
           <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>
-            {activeRole === 'delivery_agent' ? 'Delivery Dashboard' : 'CHEF DASHBOARD'}
+            CHEF DASHBOARD
           </Txt>
           <Txt size={11} color={Colors.textMuted}>
             {activeRole === 'delivery_agent'
               ? `${authUser?.name ?? 'Delivery Agent'} · Delivery Agent`
-              : `Chef: ${staff?.name ?? 'Ramesh Kumar'}`}
+              : `Chef: ${staff?.name ?? 'Name unavailable'}`}
           </Txt>
         </Col>
       </TabHeader>
@@ -87,26 +87,17 @@ export default function StaffTabsLayout() {
           Owner/Guest tabs — dockWrap and dock are merged onto TabList directly. */}
       <Dock style={dockStyle}>
         <TabTrigger name="eaters" href="/eaters" asChild>
-          <HeadlessDockTabButton 
-            icon={activeRole === 'delivery_agent' ? 'map' : 'people'} 
-            label={activeRole === 'delivery_agent' ? 'Route' : 'Eaters'} 
-          />
+          <HeadlessDockTabButton icon="people" label="Eaters" />
         </TabTrigger>
         <TabTrigger name="broadcast" href="/broadcast" asChild>
-          <HeadlessDockTabButton 
-            icon={activeRole === 'delivery_agent' ? 'time' : 'megaphone'} 
-            label={activeRole === 'delivery_agent' ? 'History' : 'Menu'} 
-          />
+          <HeadlessDockTabButton icon="megaphone" label="Menu" />
         </TabTrigger>
         <TabTrigger name="kitchen" href="/kitchen" asChild>
-          <HeadlessDockTabButton 
-            icon={activeRole === 'delivery_agent' ? 'person' : 'restaurant'} 
-            label={activeRole === 'delivery_agent' ? 'Profile' : 'Kitchen'} 
-          />
+          <HeadlessDockTabButton icon="restaurant" label="Kitchen" />
         </TabTrigger>
       </Dock>
 
-      {showNotif && <RoleNotificationsCenterSheet roleTitle={activeRole === 'delivery_agent' ? 'DELIVERY' : staff?.role === 'Chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
+      {showNotif && <RoleNotificationsCenterSheet roleTitle={activeRole === 'chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
     </Tabs>
   );
 }

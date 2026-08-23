@@ -18,6 +18,10 @@
       "package": "com.pgow.app",
       "googleServicesFile": "./google-services.json"
     },
+    "androidStatusBar": {
+      "translucent": true,
+      "backgroundColor": "transparent"
+    },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"

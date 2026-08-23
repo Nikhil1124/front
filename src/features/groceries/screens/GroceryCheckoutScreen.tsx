@@ -119,7 +119,7 @@ export function GroceryCheckoutScreen() {
 
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: 8 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 8) }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>

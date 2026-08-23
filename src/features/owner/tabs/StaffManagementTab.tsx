@@ -11,6 +11,7 @@ import {
   Modal,
   Pressable,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
@@ -41,10 +42,9 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
   chef: 'Chef',
   kitchen_staff: 'Kitchen Staff',
   maintenance: 'Maintenance Staff',
-  delivery: 'Delivery Agent',
 };
 
-const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff', 'Delivery Agent'];
+const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff'];
 const SHIFT_OPTIONS = ['Day Shift (8 AM - 5 PM)', 'Night Shift (8 PM - 5 AM)', 'Part Time (9 AM - 1 PM)'];
 
 export function StaffManagementTab() {
@@ -77,6 +77,8 @@ export function StaffManagementTab() {
 
   // Deactivated state emulation
   const [deactivatedIds, setDeactivatedIds] = useState<string[]>([]);
+  const [isDeletingStaff, setIsDeletingStaff] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<'phone' | null>(null);
 
   // Action Menu States
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
@@ -121,6 +123,7 @@ export function StaffManagementTab() {
     }
 
     setIsSubmitting(true);
+    setErrorField(null);
     try {
       const result = await registerStaff();
       if (result.ok) {
@@ -134,7 +137,18 @@ export function StaffManagementTab() {
         setSubTab(1); // Go to directory
       } else {
         hapticError();
-        Alert.alert('Failed', result.error ?? 'Unknown error occurred.');
+        let errorMsg = result.error ?? 'Unknown error occurred.';
+        const lowerError = errorMsg.toLowerCase();
+        
+        if (lowerError.includes('number') || lowerError.includes('phone')) {
+          errorMsg = 'An account with this phone number already exists.';
+          setErrorField('phone');
+        } else if (lowerError.includes('already exists')) {
+          errorMsg = 'An account with these details already exists.';
+          setErrorField('phone');
+        }
+        
+        Alert.alert('Failed', errorMsg);
       }
     } finally {
       setIsSubmitting(false);
@@ -143,15 +157,24 @@ export function StaffManagementTab() {
 
   const confirmDeleteStaff = (staff: any) => {
     setShowActionMenu(false);
+    if (isDeletingStaff) return;
     setTimeout(() => {
-      Alert.alert('Delete staff member?', 'This will permanently remove the staff member from this PG.', [
+      Alert.alert('Delete staff member?', `Are you sure you want to delete ${staff.name} from this PG?`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            hapticSuccess();
-            await deleteStaff(staff.id);
+            setIsDeletingStaff(staff.id);
+            const result = await deleteStaff(staff.id);
+            setIsDeletingStaff(null);
+            if (result?.ok) {
+              hapticSuccess();
+              Alert.alert('Success', `${staff.name} has been deleted.`);
+            } else {
+              hapticError();
+              Alert.alert('Failed', result?.error || 'Could not delete staff member.');
+            }
           },
         },
       ]);
@@ -206,7 +229,6 @@ export function StaffManagementTab() {
         Chef: 'chef',
         'Kitchen Staff': 'kitchen_staff',
         'Maintenance Staff': 'maintenance',
-        'Delivery Agent': 'maintenance',
       };
       
       const payload = {
@@ -264,8 +286,6 @@ export function StaffManagementTab() {
         matchesFilter = staff.role.toLowerCase() === 'chef' || staff.role.toLowerCase() === 'kitchen_staff';
       } else if (roleFilter === 'Maintenance') {
         matchesFilter = staff.role.toLowerCase().includes('maintenance');
-      } else if (roleFilter === 'Delivery') {
-        matchesFilter = staff.role.toLowerCase() === 'delivery';
       }
 
       return matchesSearch && matchesFilter;
@@ -341,6 +361,7 @@ export function StaffManagementTab() {
               keyboardType="phone-pad"
               containerColor={WHITE}
               style={{ flex: 1 }}
+              unfocusedBorderColor={errorField === 'phone' ? Colors.danger : undefined}
             />
           </Row>
 
@@ -482,7 +503,7 @@ export function StaffManagementTab() {
               {/* Filter chips */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <Row gap={6}>
-                  {['All', 'Managers', 'Kitchen', 'Maintenance', 'Delivery'].map((filter) => (
+                  {['All', 'Managers', 'Kitchen', 'Maintenance'].map((filter) => (
                     <TouchableOpacity
                       key={filter}
                       style={[styles.filterChip, roleFilter === filter && styles.filterChipActive]}
@@ -551,8 +572,13 @@ export function StaffManagementTab() {
                       setShowActionMenu(true);
                     }}
                     style={styles.optionsBtn}
+                    disabled={isDeletingStaff === staff.id}
                   >
-                    <Ionicons name="ellipsis-vertical" size={18} color={CHARCOAL} />
+                    {isDeletingStaff === staff.id ? (
+                      <ActivityIndicator size="small" color={Colors.danger} />
+                    ) : (
+                      <Ionicons name="ellipsis-vertical" size={18} color={CHARCOAL} />
+                    )}
                   </TouchableOpacity>
                 </Row>
               </Card>

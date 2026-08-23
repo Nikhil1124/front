@@ -10,6 +10,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { formatTimeAgo } from '@/utils/format';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
+import type { GuestEntity, FeedbackComplaintEntity } from '@/types';
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -21,21 +22,21 @@ const LIGHT_GREEN = '#EEF8F1';
 const RADIUS = 16;
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
-import { useAuthStore } from '@/store/authStore';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { useAuthStore } from '@/store/authStore';
 
 export function OwnerAnnouncementsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
-  const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
-  const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
-  const owner = usePGowStore((s) => s.loggedInOwner);
   // Real API-backed data, not usePGowStore's local state — `currentGuests` and
   // `currentFeedbackComplaints` don't exist on the store at all (a pre-existing gap, not a
   // merge-conflict casualty: this file was never touched by any of the conflicts).
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
+  const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
+  const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
+  const owner = usePGowStore((s) => s.loggedInOwner);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
   const respondComplaint = usePGowStore((s) => s.respondToFeedbackComplaint);
   const sendNotice = usePGowStore((s) => s.sendRoleNotification);
@@ -61,8 +62,8 @@ export function OwnerAnnouncementsTab() {
     const items: any[] = [];
 
     // Pending KYC Reviews
-    const pendingKycGuests = guests.filter((g) => g.kycStatus === 'PENDING');
-    pendingKycGuests.forEach((g) => {
+    const pendingKycGuests = guests.filter((g: GuestEntity) => g.kycStatus === 'PENDING');
+    pendingKycGuests.forEach((g: GuestEntity) => {
       items.push({
         id: `kyc_${g.id}`,
         type: 'KYC',
@@ -77,8 +78,8 @@ export function OwnerAnnouncementsTab() {
     });
 
     // Active complaints
-    const openComplaints = submissions.filter((s) => s.type === 'COMPLAINT' && s.status !== 'Resolved');
-    openComplaints.forEach((c) => {
+    const openComplaints = submissions.filter((s: FeedbackComplaintEntity) => s.type === 'COMPLAINT' && s.status !== 'Resolved');
+    openComplaints.forEach((c: FeedbackComplaintEntity) => {
       items.push({
         id: `complaint_${c.id}`,
         type: 'COMPLAINT',

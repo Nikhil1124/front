@@ -1,4 +1,4 @@
-/** Chef dashboard "Eaters" tab or Delivery Dashboard Route */
+/** Chef dashboard "Eaters" tab */
 import { useState } from 'react';
 import { View, StyleSheet, Alert, TouchableOpacity, Linking } from 'react-native';
 import { Card, Txt, Spacer, Chip, Col, Row, Btn, IconBtn, OutlinedBtn } from '@/components/ui';
@@ -18,7 +18,6 @@ import type { SupplyTripStop } from '@/types/supply';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
-  if (activeRole === 'delivery_agent') return <DeliveryDashboardRoute />;
   return <ChefEatersView />;
 }
 

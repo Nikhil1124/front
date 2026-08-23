@@ -3,6 +3,7 @@
  */
 import { useState } from 'react';
 import { Modal, StyleSheet, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Txt, Btn, Row, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -17,6 +18,7 @@ export function OwnerRegisterScreen() {
   const registerOwner = usePGowStore((s) => s.registerOwner);
   const [picking, setPicking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Bindings
   const pgNameInput = usePGowStore((s) => s.pgNameInput);
@@ -63,7 +65,7 @@ export function OwnerRegisterScreen() {
   }
 
   return (
-    <FormScroll contentContainerStyle={styles.scroll} style={styles.root}>
+    <FormScroll contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 24 }]} style={styles.root}>
       <Row align="center" style={{ marginBottom: 16 }}>
         <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
         <Txt variant="statValue" weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>Register PG Owner</Txt>

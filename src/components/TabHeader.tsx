@@ -21,6 +21,7 @@
  */
 import { type ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/theme';
 
 export interface TabHeaderProps {
@@ -33,8 +34,9 @@ export interface TabHeaderProps {
 }
 
 export function TabHeader({ leading, children, actions }: TabHeaderProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
       <View style={styles.row}>
         {leading}
         <View style={styles.center}>{children}</View>

@@ -155,7 +155,7 @@ export default function RootLayout() {
     return () => sub.remove();
   }, [submitRSVP, isRouterReady]);
 
-  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent';
+  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance';
   const isOwnerRole = activeRole === 'owner' || activeRole === 'manager';
   // On a cold launch, accessToken is hydrated from SecureStore (fast) before activeRole is
   // known (a separate /v1/me round trip, slower) — a real gap, not just a render tick. If
@@ -173,7 +173,7 @@ export default function RootLayout() {
           {/* Single top-edge SafeAreaView for the whole app — every screen in every group
               trusts this and must not consume the top inset again itself (that was the
               cause of the double-safe-area header bugs fixed earlier). */}
-          <SafeAreaView style={styles.container} edges={['top']}>
+          <SafeAreaView style={styles.container} edges={[]}>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Protected guard={!accessToken}>
                 <Stack.Screen name="(auth)" />
