@@ -1,6 +1,6 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Radii } from '@/theme';
@@ -18,6 +18,7 @@ const MENU_ITEMS = [
  *  is shopping: owner, manager, chef, or resident), not a stand-in. Logout is the same
  *  action the rest of the app uses (`usePGowStore.logout`, see `GroceryOrdersScreen`). */
 export function GroceryProfileScreen() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const logout = usePGowStore((s) => s.logout);
 
@@ -26,8 +27,8 @@ export function GroceryProfileScreen() {
   const avatarLetter = name.trim().charAt(0).toUpperCase() || 'P';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
@@ -63,7 +64,7 @@ export function GroceryProfileScreen() {
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -74,7 +75,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 40 : 16,
     paddingBottom: 16,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,

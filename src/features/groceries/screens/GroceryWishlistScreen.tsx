@@ -4,13 +4,12 @@ import React from 'react';
 import {
   FlatList,
   Image,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
@@ -19,6 +18,7 @@ import { SupplyItem } from '@/types';
 import { Colors, Layout, Radii } from '@/theme';
 
 export function GroceryWishlistScreen() {
+  const insets = useSafeAreaInsets();
   const mode = useShoppingModeStore((s) => s.mode);
   const { items, toggleItem } = useWishlistStore();
   const addItem = useCartStore((s) => s.addItem);
@@ -31,9 +31,8 @@ export function GroceryWishlistScreen() {
   if (items.length === 0) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
+        <View style={styles.safeArea}>
+          <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
             <Text style={styles.headerTitle}>My Wishlist</Text>
           </View>
           <View style={styles.emptyContainer}>
@@ -52,16 +51,15 @@ export function GroceryWishlistScreen() {
               <Text style={styles.shopBtnText}>Start Shopping</Text>
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
+      <View style={styles.safeArea}>
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
           <Text style={styles.headerTitle}>My Wishlist</Text>
           <Text style={styles.headerCount}>{items.length} items</Text>
         </View>
@@ -121,7 +119,7 @@ export function GroceryWishlistScreen() {
             );
           }}
         />
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -139,7 +137,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
     backgroundColor: Colors.surface,

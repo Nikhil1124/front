@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { OrderStepper } from '../components/grocery/OrderStepper';
 import { useSupplyOrderDetailQuery, useSupplyTrackingQuery } from '../useSupplyOrders';
@@ -24,6 +25,7 @@ const STATUS_HERO: Record<string, string> = {
 };
 
 export function GroceryOrderDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: order, isLoading, refetch } = useSupplyOrderDetailQuery(id as string);
   const { data: tracking } = useSupplyTrackingQuery(id as string);
@@ -39,7 +41,7 @@ export function GroceryOrderDetailScreen() {
   if (!order) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
     backgroundColor: Colors.surface,

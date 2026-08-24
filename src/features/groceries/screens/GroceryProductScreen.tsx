@@ -155,7 +155,7 @@ export function GroceryProductScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
       {/* Floating top header */}
-      <View style={[styles.floatingHeader, { paddingTop: 8 }]}>
+      <View style={[styles.floatingHeader, { paddingTop: insets.top + 14 }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>

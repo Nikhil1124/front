@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
 
@@ -13,8 +14,12 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, onBack }) => {
+  // Same convention as the main app's shared TabHeader: background runs edge-to-edge behind
+  // the notch/status bar, content is pushed below it by the real inset instead of a guessed
+  // fixed value.
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
       <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
         <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
       </TouchableOpacity>
@@ -52,7 +57,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 4 : 8,
     paddingBottom: 10,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,

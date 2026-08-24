@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, StyleSheet, Alert, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn } from '@/components/ui';
@@ -44,6 +45,7 @@ import { useActiveProperty } from '@/features/properties/useProperties';
 const money = (value: string | number) => `₹${Math.round(Number(value)).toLocaleString('en-IN')}`;
 
 export function OwnerSubscriptionScreen() {
+  const insets = useSafeAreaInsets();
   const { activeEntity: owner } = useActiveProperty();
   const refreshAll = usePGowStore((s) => s.refreshAll);
   const logout = usePGowStore((s) => s.logout);
@@ -131,7 +133,7 @@ export function OwnerSubscriptionScreen() {
   const active = subscription.data;
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} style={styles.root}>
+    <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 14 }]} style={styles.root}>
       <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
         <Txt variant="sectionTitle" color={Colors.IvoryWhiteText}>
           {active ? 'Subscription & Billing' : 'Secure PG Portal Activation'}

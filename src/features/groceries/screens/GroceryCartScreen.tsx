@@ -97,7 +97,7 @@ export function GroceryCartScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
       {/* 2. Cart Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 8) }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="close" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>

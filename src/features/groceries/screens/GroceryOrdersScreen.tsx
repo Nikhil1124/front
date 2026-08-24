@@ -2,6 +2,7 @@ import { SupplyItem, SupplyOrderSummary } from '@/types';
 import React from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useSupplyOrdersQuery } from '../useSupplyOrders';
@@ -12,6 +13,7 @@ import { Colors, Layout, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 export function GroceryOrdersScreen() {
+  const insets = useSafeAreaInsets();
   const logout = usePGowStore((s) => s.logout);
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: ordersData, isLoading, refetch } = useSupplyOrdersQuery(activePgId);
@@ -57,7 +59,7 @@ export function GroceryOrdersScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
@@ -132,7 +134,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
     backgroundColor: Colors.surface,

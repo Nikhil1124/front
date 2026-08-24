@@ -1,6 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Animated, FlatList, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -130,7 +130,6 @@ export function GroceriesScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={styles.safeArea}>
         <Header deliveryLabel={deliveryLabel} onProfilePress={() => router.push('/groceries/profile')} onBack={() => router.back()} />
 

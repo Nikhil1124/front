@@ -25,6 +25,7 @@
 import { type ReactNode } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -70,10 +71,14 @@ export function HubScreenWrapper({
     else router.back();
   };
 
+  // Same convention as the shared TabHeader — background runs edge-to-edge behind the
+  // notch/status bar, content is pushed below it by the real inset, not a guessed value.
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.root} testID={testID}>
       {/* Sticky top bar — mint-tinted band with back chevron + title */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <AnimatedPress
           scale={0.9}
           hapticPattern="light"
@@ -123,7 +128,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingBottom: 14,
     backgroundColor: Colors.surfaceElevated,
     borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,
     gap: 10,

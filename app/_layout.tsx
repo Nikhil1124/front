@@ -188,7 +188,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
-          <StatusBar style="light" />
+          <StatusBar style="auto" />
           {/* Single top-edge SafeAreaView for the whole app — every screen in every group
               trusts this and must not consume the top inset again itself (that was the
               cause of the double-safe-area header bugs fixed earlier). */}
