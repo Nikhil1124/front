@@ -188,7 +188,12 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
-          <StatusBar style="auto" />
+          {/* Hardcoded, not "auto": this app has one light-only theme (no real dark palette
+              exists yet, see Colors.LuxuryPureBlack = '#F7F9F7'), so "auto" just made icon
+              visibility depend on the device's own system theme instead of this app's actual
+              background — invisible whenever a test device happened to be in system dark mode.
+              Revisit if a real dark theme is ever added. */}
+          <StatusBar style="dark" />
           {/* Single top-edge SafeAreaView for the whole app — every screen in every group
               trusts this and must not consume the top inset again itself (that was the
               cause of the double-safe-area header bugs fixed earlier). */}

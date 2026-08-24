@@ -353,7 +353,7 @@ export function GuestPaymentsTab() {
             })
           )}
         </FormScroll>
-      ) : (
+      ) : activeSubTab === 0 ? (
         <FormScroll contentContainerStyle={{ paddingTop: 12, gap: 14 }}>
           {/* PGow Resident Card */}
           <View style={styles.residentCard}>
@@ -546,7 +546,7 @@ export function GuestPaymentsTab() {
             )}
           </Card>
         </FormScroll>
-      )}
+      ) : null}
     </View>
   );
 }

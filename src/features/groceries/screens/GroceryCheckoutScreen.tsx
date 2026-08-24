@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -115,7 +115,6 @@ export function GroceryCheckoutScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
 
       {/* Header */}

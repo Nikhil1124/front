@@ -1,6 +1,6 @@
 import { SupplyCategory, SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, StatusBar, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -82,8 +82,6 @@ export function GroceryCategoryScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
-
       <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
         <View style={[styles.topHeader, { paddingTop: insets.top + 14 }]}>

@@ -1,6 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, StatusBar, Image } from 'react-native';
+import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -109,7 +109,6 @@ export function GroceryProductScreen() {
   if (!product || options.length === 0) {
     return (
       <View style={styles.errorContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
         <View style={styles.errorState}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textSecondary} />
           <Text style={styles.errorText}>Product not found</Text>
@@ -152,7 +151,6 @@ export function GroceryProductScreen() {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
       {/* Floating top header */}
       <View style={[styles.floatingHeader, { paddingTop: insets.top + 14 }]}>

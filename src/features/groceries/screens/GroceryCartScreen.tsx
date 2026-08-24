@@ -1,6 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCartStore, CartItem, ReplacementPreference } from '../store/useCartStore';
@@ -94,7 +94,6 @@ export function GroceryCartScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
       {/* 2. Cart Header */}
       <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
