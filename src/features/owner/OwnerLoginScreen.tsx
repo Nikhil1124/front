@@ -34,7 +34,6 @@ import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { Colors } from '@/theme';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { InfoTip } from '@/components/ui/InfoTip';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
@@ -144,7 +143,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const guestPhoneInput   = usePGowStore(s => s.guestPhoneInput);
   const guestRoomInput    = usePGowStore(s => s.guestRoomInput);
   const guestPasswordInput = usePGowStore(s => s.guestPasswordInput);
-  const completeFirstTimePasswordChange = usePGowStore(s => s.completeFirstTimePasswordChange);
   const toast = useToast();
   const insets = useSafeAreaInsets();
 
@@ -205,12 +203,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const [resetNew,     setResetNew]     = useState('');
   const [isScanSim,    setIsScanSim]    = useState(false);
 
-  // ── First-time password modal ────────────────────────────────────────────────
-  const [showFTP,     setShowFTP]     = useState(false);
-  const [tempPass,    setTempPass]    = useState('');
-  const [ftpNew,      setFtpNew]      = useState('');
-  const [ftpConfirm,  setFtpConfirm]  = useState('');
-
   // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleOwnerLogin = async () => {
     if (!phone.trim() || !password.trim()) return;
@@ -221,10 +213,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       hapticSuccess();
       toast('success', 'Welcome back!', 'Owner dashboard loading…');
       router.replace('/');
-    } else if (result.mustChangePassword) {
-      hapticSelect();
-      setTempPass(password);
-      setShowFTP(true);
     } else {
       hapticError();
       Alert.alert('Login Failed', result.error ?? 'Unknown error');
@@ -243,10 +231,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       hapticSuccess();
       toast('success', 'Welcome!', 'Delivery dashboard loading…');
       router.replace('/');
-    } else if (result.mustChangePassword) {
-      hapticSelect();
-      setTempPass(deliveryPassword);
-      setShowFTP(true);
     } else {
       hapticError();
       Alert.alert('Login Failed', result.error ?? 'Unknown error');
@@ -292,10 +276,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       hapticSuccess();
       toast('success', 'Welcome Resident!', 'Your resident dashboard is ready.');
       router.replace('/');
-    } else if (result.mustChangePassword) {
-      hapticSelect();
-      setTempPass(guestPass);
-      setShowFTP(true);
     } else {
       hapticError();
       Alert.alert('Login Failed', result.error ?? 'Unknown error');
@@ -326,29 +306,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
     }
   };
 
-  const handleFTPSubmit = async () => {
-    if (!ftpNew.trim() || ftpNew.length < 8) {
-      hapticError();
-      Alert.alert('Error', 'New password must be at least 8 characters.');
-      return;
-    }
-    if (ftpNew !== ftpConfirm) {
-      hapticError();
-      Alert.alert('Error', 'Passwords do not match.');
-      return;
-    }
-    const result = await completeFirstTimePasswordChange(tempPass, ftpNew);
-    if (result.ok) {
-      hapticSuccess();
-      setShowFTP(false);
-      toast('success', 'Password updated', 'Welcome to your dashboard.');
-      router.replace('/');
-    } else {
-      hapticError();
-      Alert.alert('Password Change Failed', result.error ?? 'Could not update password');
-    }
-  };
-
   // ── Role intro copy ───────────────────────────────────────────────────────────
   const roleIntro: Record<number, { title: string; sub: string; cta: string }> = {
     0: { title: 'Owner Login',    sub: 'Sign in to manage your PG operations and property.',   cta: 'Log In as Owner' },
@@ -362,27 +319,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* ── First-time password modal ─────────────────────────────────────── */}
-      <Modal visible={showFTP} transparent animationType="fade">
-        <View style={styles.backdrop}>
-          <View style={styles.modalCard}>
-            <Row gap={6} align="center" style={{ marginBottom: 16 }}>
-              <Text style={styles.modalTitle}>🔒 Set New Password</Text>
-              <InfoTip text="Your account was created with a temporary password. Please set your own secret password (min 8 characters) to continue." />
-            </Row>
-            <Field label="New Password *" value={ftpNew} onChangeText={setFtpNew} secure testID="first_time_new_password" />
-            <Field label="Confirm Password *" value={ftpConfirm} onChangeText={setFtpConfirm} secure testID="first_time_confirm_password" />
-            <View style={{ height: 4 }} />
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleFTPSubmit} activeOpacity={0.85}>
-              <Text style={styles.primaryBtnText}>Set Password & Log In</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.ghostBtn} onPress={() => setShowFTP(false)} activeOpacity={0.7}>
-              <Text style={styles.ghostBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
       {/* ── Reset passcode modal ──────────────────────────────────────────── */}
       <Modal visible={showReset} transparent animationType="fade">
         <View style={styles.backdrop}>

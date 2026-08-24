@@ -11,6 +11,18 @@ import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
+import { useToast } from '@/hooks/useToast';
+import {
+  useRepairRequestsQuery,
+  submitComplaint,
+  resolveComplaint,
+  getAttachmentUploadUrl,
+  uploadAttachment,
+  addAttachment,
+} from '@/features/requests/useComplaints';
+import { useQueryClient } from '@tanstack/react-query';
+import { qk } from '@/data/queryKeys';
+import type { PGRepairServiceRequest } from '@/types';
 
 const defaultInspections: any = {
   Electrical: [
@@ -32,25 +44,80 @@ const defaultInspections: any = {
   ]
 };
 
-const defaultIssues = [
-  { id: 1, title: 'Fan not working', location: 'Room 204 • Electrical', priority: 'High', status: 'Reported', time: '10:15 AM' },
-  { id: 2, title: 'Bathroom requires cleaning', location: 'Floor 2 • Cleanliness', priority: 'Medium', status: 'Assigned', time: '11:30 AM' },
-  { id: 3, title: 'Kitchen storage needs cleaning', location: 'Main Kitchen • Kitchen Hygiene', priority: 'Low', status: 'Resolved', time: '12:05 PM' }
-];
+// A real `requests` row (`kind='repair'`), reshaped into the display shape this file's
+// components already render — keeps that (large, already-styled) rendering code untouched
+// while the data underneath it is now real instead of a hardcoded local array. The backend
+// only has two meaningful non-scheduled priority levels, not three, so 'Low' never appears
+// here — the report form below only offers the two that actually exist.
+function toDisplayIssue(r: PGRepairServiceRequest) {
+  const isClosed = r.status === 'Completed' || r.status === 'Cancelled';
+  return {
+    id: r.id,
+    title: r.issueTitle,
+    location: r.description ? `${r.description} • ${r.category}` : r.category,
+    priority: r.priority === 'express' ? 'High' : 'Medium',
+    status: isClosed ? 'Resolved' : 'Reported',
+    time: new Date(r.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+  };
+}
 
 export function HousekeepingDashboard() {
   const staff = usePGowStore((s) => s.loggedInStaff);
   const logout = usePGowStore((s) => s.logout);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const activePgId = useAuthStore((s) => s.activePgId);
   const isMgmt = activeRole === 'owner' || activeRole === 'manager';
+  const toast = useToast();
+  const qc = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'dash' | 'check' | 'issues' | 'profile'>('dash');
   const [checkTabCategory, setCheckTabCategory] = useState('Electrical');
 
   const { dockStyle } = useDock();
 
+  // Facility Checks has no backend model yet (see the note on FacilityCheckView) — this stays
+  // a local, device-only draft. Issues (real maintenance tickets) below are the real thing.
   const [inspections, setInspections] = useState(defaultInspections);
-  const [issues, setIssues] = useState(defaultIssues);
+  const { data: repairRequests = [] } = useRepairRequestsQuery(activePgId ?? undefined);
+  const issues = repairRequests.map(toDisplayIssue);
+
+  const refreshIssues = () => {
+    if (activePgId) qc.invalidateQueries({ queryKey: qk.requests.all(activePgId) });
+  };
+
+  const handleSubmitIssue = async (params: {
+    category: string;
+    title: string;
+    description: string;
+    priority: 'normal' | 'express';
+    photoUri: string | null;
+  }) => {
+    const created = await submitComplaint({
+      pg_id: activePgId!,
+      kind: 'repair',
+      category: params.category,
+      title: params.title,
+      description: params.description,
+      priority: params.priority,
+    });
+    if (params.photoUri) {
+      // Best effort, same pattern as the guest complaint flow — a ticket that exists without
+      // its photo is far better than one the reporter believes they filed and did not.
+      try {
+        const { upload_url, object_key } = await getAttachmentUploadUrl(created.id, 'image/jpeg');
+        await uploadAttachment(upload_url, params.photoUri, 'image/jpeg');
+        await addAttachment(created.id, { object_key, content_type: 'image/jpeg' });
+      } catch (err) {
+        console.warn('[Housekeeping] issue filed but photo attachment failed:', err);
+      }
+    }
+    refreshIssues();
+  };
+
+  const handleResolveIssue = async (id: string) => {
+    await resolveComplaint(id);
+    refreshIssues();
+  };
 
   if (isMgmt) {
     return (
@@ -64,7 +131,7 @@ export function HousekeepingDashboard() {
     <View style={styles.root}>
       {activeTab === 'dash' && <MaintenanceDashView inspections={inspections} issues={issues} onGoToChecks={(cat: string) => { setCheckTabCategory(cat); setActiveTab('check'); }} />}
       {activeTab === 'check' && <FacilityCheckView inspections={inspections} setInspections={setInspections} selectedCat={checkTabCategory} setSelectedCat={setCheckTabCategory} />}
-      {activeTab === 'issues' && <IssuesSupervisionView issues={issues} setIssues={setIssues} inspections={inspections} setInspections={setInspections} />}
+      {activeTab === 'issues' && <IssuesSupervisionView issues={issues} onSubmitIssue={handleSubmitIssue} onResolveIssue={handleResolveIssue} toast={toast} />}
       {activeTab === 'profile' && <MaintenanceProfileView staff={staff} logout={logout} />}
       <View style={dockStyle as any}>
         <HeadlessDockTabButton icon="home" label="Dash" isFocused={activeTab === 'dash'} onPress={() => setActiveTab('dash')} />
@@ -311,6 +378,7 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
     <View style={{ flex: 1 }}>
       <View style={{ padding: 18, paddingBottom: 16, backgroundColor: Colors.canvas, zIndex: 10, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
         <Txt size={22} weight="900" color={Colors.primaryDark}>Facility Checks</Txt>
+        <Txt size={11} weight="700" color={Colors.textMuted} style={{ marginTop: 2 }}>Draft — saved on this device only, not visible to the owner yet</Txt>
         <Spacer size={16} />
         <Row justify="space-between" style={{ paddingHorizontal: 4 }}>
           {cats.map(c => {
@@ -427,16 +495,18 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
           <View style={{ backgroundColor: Colors.surface, borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
             <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isSyncSuccess ? '#F0FDF4' : '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={isSyncSuccess ? "checkmark" : "cloud-upload"} size={24} color={isSyncSuccess ? Colors.success : Colors.primary} />
+                <Ionicons name={isSyncSuccess ? "checkmark" : "save-outline"} size={24} color={isSyncSuccess ? Colors.success : Colors.primary} />
               </View>
               <TouchableOpacity onPress={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }} activeOpacity={0.8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </Row>
-            <Txt size={20} weight="900" color={Colors.primaryDark}>{isSyncSuccess ? 'Synced Successfully!' : 'Sync Progress?'}</Txt>
+            <Txt size={20} weight="900" color={Colors.primaryDark}>{isSyncSuccess ? 'Saved on this device' : 'Save Checklist?'}</Txt>
             <Spacer size={8} />
             <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              {isSyncSuccess ? 'Your inspection progress has been securely saved to the server.' : 'Are you ready to save and sync your inspection progress to the server?'}
+              {isSyncSuccess
+                ? 'Your inspection checklist is saved on this device. It is not sent anywhere yet — facility checks do not sync to the server.'
+                : 'This saves your checklist on this device only. It is not shared with the owner or manager yet.'}
             </Txt>
             <Spacer size={24} />
             {isSyncSuccess ? (
@@ -449,7 +519,7 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
                   <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setIsSyncSuccess(true)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight="800" color="#FFF">Sync Now</Txt>
+                  <Txt size={15} weight="800" color="#FFF">Save</Txt>
                 </TouchableOpacity>
               </Row>
             )}
@@ -460,24 +530,27 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
   );
 }
 
-function IssuesSupervisionView({ issues, setIssues, inspections, setInspections }: any) {
+function IssuesSupervisionView({ issues, onSubmitIssue, onResolveIssue, toast }: any) {
   const [showForm, setShowForm] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
-  
+
   const [newTitle, setNewTitle] = useState('');
   const [newNotes, setNewNotes] = useState('');
   const [newLoc, setNewLoc] = useState('');
   const [newLocDetail, setNewLocDetail] = useState('');
   const [newCat, setNewCat] = useState('');
-  const [newPriority, setNewPriority] = useState('Medium');
+  // The backend only has two meaningful non-scheduled priority levels — 'Low' would have
+  // nowhere real to go, so it's dropped here rather than silently collapsed into one of these.
+  const [newPriority, setNewPriority] = useState<'Medium' | 'High'>('Medium');
   const [hasPhoto, setHasPhoto] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  
+
   const [showCatPicker, setShowCatPicker] = useState(false);
   const [showLocPicker, setShowLocPicker] = useState(false);
-  
+
   const [err, setErr] = useState('');
 
   const CATS = ['Electrical', 'Cleanliness', 'Kitchen Hygiene', 'Plumbing', 'General Facilities'];
@@ -510,7 +583,7 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
         }
         
         const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           allowsEditing: true,
           quality: 0.5,
         });
@@ -524,58 +597,38 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
       }
     };
 
-    const handleAddIssue = () => {
+    const handleAddIssue = async () => {
        if (!newCat) return setErr('Please select a category.');
        if (!newLoc) return setErr('Please select a location.');
        if (!newTitle.trim()) return setErr('Please describe the issue.');
-       
+
        const fullLoc = newLocDetail.trim() ? `${newLoc} ${newLocDetail.trim()}` : newLoc;
-       
-       const newItem = {
-          id: Date.now(),
-          title: newTitle,
-          location: `${fullLoc} • ${newCat}`,
-          priority: newPriority,
-          status: 'Reported',
-          time: 'Just now'
-       };
-       setIssues([newItem, ...issues]);
+       const description = [fullLoc, newNotes.trim()].filter(Boolean).join('\n');
 
-       // Synchronize issue to the Facility Checks tab!
-       if (inspections && setInspections) {
-          const newInspections = { ...inspections };
-          const catName = newCat || 'General';
-          if (!newInspections[catName]) newInspections[catName] = [];
-          
-          let roomName = fullLoc;
-          if (!roomName) {
-            roomName = catName === 'Electrical' ? 'Room 201' : 
-                       catName === 'Cleanliness' ? 'Building Cleanliness' : 
-                       catName === 'Kitchen Hygiene' ? 'Kitchen Check' : 'General Facilities';
-          }
-
-          let roomGrp = newInspections[catName].find((r: any) => r.room === roomName);
-          if (!roomGrp) {
-             roomGrp = { room: roomName, items: [] };
-             newInspections[catName].push(roomGrp);
-          }
-          
-          roomGrp.items.push({
-             name: newTitle,
-             status: newPriority === 'Low' ? 'Working' : newPriority === 'Medium' ? 'Needs Attention' : 'Not Working'
-          });
-          setInspections(newInspections);
+       setIsSubmitting(true);
+       try {
+         await onSubmitIssue({
+           category: newCat,
+           title: newTitle.trim(),
+           description,
+           priority: newPriority === 'High' ? 'express' : 'normal',
+           photoUri,
+         });
+         setNewTitle('');
+         setNewNotes('');
+         setNewLoc('');
+         setNewLocDetail('');
+         setNewCat('');
+         setNewPriority('Medium');
+         setHasPhoto(false);
+         setPhotoUri(null);
+         setErr('');
+         setIsSuccess(true);
+       } catch (e: any) {
+         setErr(e?.message ?? 'Could not report the issue. Try again.');
+       } finally {
+         setIsSubmitting(false);
        }
-       setNewTitle('');
-       setNewNotes('');
-       setNewLoc('');
-       setNewLocDetail('');
-       setNewCat('');
-       setNewPriority('Medium');
-       setHasPhoto(false);
-       setPhotoUri(null);
-       setErr('');
-       setIsSuccess(true);
     };
 
     return (
@@ -683,17 +736,13 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
           <Txt size={14} weight="900" color={Colors.textPrimary}>Priority</Txt>
           <Spacer size={8} />
           <Row gap={10}>
-            <TouchableOpacity onPress={() => setNewPriority('Low')} activeOpacity={0.8} style={{ flex: 1, height: 46, borderRadius: 8, backgroundColor: newPriority === 'Low' ? '#F3F4F6' : Colors.surface, borderWidth: 2, borderColor: newPriority === 'Low' ? Colors.textMuted : Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
-               {newPriority === 'Low' && <Ionicons name="checkmark" size={16} color={Colors.textPrimary} />}
-               <Txt size={14} weight="900" color={Colors.textPrimary}>Low</Txt>
-            </TouchableOpacity>
             <TouchableOpacity onPress={() => setNewPriority('Medium')} activeOpacity={0.8} style={{ flex: 1, height: 46, borderRadius: 8, backgroundColor: newPriority === 'Medium' ? '#FFEDD5' : Colors.surface, borderWidth: 2, borderColor: newPriority === 'Medium' ? '#F97316' : Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
                {newPriority === 'Medium' && <Ionicons name="checkmark" size={16} color="#F97316" />}
-               <Txt size={14} weight="900" color={newPriority === 'Medium' ? '#F97316' : Colors.textPrimary}>Medium</Txt>
+               <Txt size={14} weight="900" color={newPriority === 'Medium' ? '#F97316' : Colors.textPrimary}>Normal</Txt>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setNewPriority('High')} activeOpacity={0.8} style={{ flex: 1, height: 46, borderRadius: 8, backgroundColor: newPriority === 'High' ? '#FEE2E2' : Colors.surface, borderWidth: 2, borderColor: newPriority === 'High' ? Colors.danger : Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
                {newPriority === 'High' && <Ionicons name="checkmark" size={16} color={Colors.danger} />}
-               <Txt size={14} weight="900" color={newPriority === 'High' ? Colors.danger : Colors.textPrimary}>High</Txt>
+               <Txt size={14} weight="900" color={newPriority === 'High' ? Colors.danger : Colors.textPrimary}>Urgent</Txt>
             </TouchableOpacity>
           </Row>
           
@@ -740,7 +789,7 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
 
         {/* Fixed Footer */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100, backgroundColor: Colors.canvas, borderTopWidth: 1, borderColor: Colors.borderSubtle }}>
-          <Btn containerColor={Colors.primary} textColor="#FFF" borderRadius={12} height={56} onPress={handleAddIssue}>
+          <Btn containerColor={Colors.primary} textColor="#FFF" borderRadius={12} height={56} onPress={handleAddIssue} loading={isSubmitting} disabled={isSubmitting}>
             <Txt size={16} weight="900">Report Issue</Txt>
           </Btn>
         </View>
@@ -793,7 +842,7 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
             if (iss.priority === 'Low') { color = '#EAB308'; bgColor = '#FEF9C3'; icon = "briefcase-outline"; }
 
             return (
-              <TouchableOpacity key={iss.id} activeOpacity={0.8} onPress={() => setSelectedIssue(iss)}>
+              <TouchableOpacity key={iss.id} activeOpacity={0.8} disabled={iss.status === 'Resolved'} onPress={() => setSelectedIssue(iss)}>
                 <Card containerColor={Colors.surface} borderRadius={Radii.lg} borderWidth={0} padding={[0, 0]} style={{ overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
                   <View style={{ width: 4, position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: color }} />
                   <View style={{ padding: 16, paddingLeft: 20 }}>
@@ -836,36 +885,39 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
         </TouchableOpacity>
       </View>
 
+      {/* Once resolved a ticket stays resolved — the backend treats it as closed and there is
+          no reopen transition, so this only ever offers to resolve, never to undo. */}
       <Modal transparent visible={!!selectedIssue} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <View style={{ backgroundColor: Colors.surface, borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
             <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: selectedIssue?.status === 'Resolved' ? '#FEF2F2' : '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={selectedIssue?.status === 'Resolved' ? "refresh" : "checkmark-done"} size={24} color={selectedIssue?.status === 'Resolved' ? Colors.danger : Colors.success} />
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="checkmark-done" size={24} color={Colors.success} />
               </View>
               <TouchableOpacity onPress={() => setSelectedIssue(null)} activeOpacity={0.8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </Row>
-            <Txt size={20} weight="900" color={Colors.primaryDark}>{selectedIssue?.status === 'Resolved' ? 'Reopen Issue?' : 'Mark as Resolved?'}</Txt>
+            <Txt size={20} weight="900" color={Colors.primaryDark}>Mark as Resolved?</Txt>
             <Spacer size={8} />
             <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              {selectedIssue?.status === 'Resolved' 
-                ? `Are you sure you want to reopen "${selectedIssue?.title}"?` 
-                : `Are you sure you want to mark "${selectedIssue?.title}" as resolved?`}
+              Are you sure you want to mark "{selectedIssue?.title}" as resolved? This can't be undone here.
             </Txt>
             <Spacer size={24} />
             <Row gap={12}>
               <TouchableOpacity onPress={() => setSelectedIssue(null)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => {
-                const newStatus = selectedIssue?.status === 'Resolved' ? 'Reported' : 'Resolved';
-                const newIssues = issues.map((i: any) => i.id === selectedIssue?.id ? { ...i, status: newStatus } : i);
-                setIssues(newIssues);
+              <TouchableOpacity onPress={async () => {
+                const id = selectedIssue?.id;
                 setSelectedIssue(null);
-              }} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: selectedIssue?.status === 'Resolved' ? Colors.danger : Colors.success, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt size={15} weight="800" color="#FFF">{selectedIssue?.status === 'Resolved' ? 'Reopen' : 'Resolve'}</Txt>
+                try {
+                  await onResolveIssue(id);
+                } catch (e: any) {
+                  toast?.('error', 'Could not resolve', e?.message ?? 'Please try again.');
+                }
+              }} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.success, alignItems: 'center', justifyContent: 'center' }}>
+                <Txt size={15} weight="800" color="#FFF">Resolve</Txt>
               </TouchableOpacity>
             </Row>
           </View>

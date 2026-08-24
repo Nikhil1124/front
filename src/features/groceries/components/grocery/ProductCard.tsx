@@ -68,6 +68,54 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     updateQuantity(compoundId, quantity - 1);
   };
 
+  // Compact layout — used for dense horizontal strips (e.g. Daily Essentials) where the
+  // full deal-card height would overflow the row.
+  if (layout === 'simple') {
+    return (
+      <TouchableOpacity
+        style={[styles.simpleCard, { width: cardWidth }, style]}
+        activeOpacity={0.95}
+        onPress={() => onPress?.(product)}
+      >
+        <View style={styles.simpleImageContainer}>
+          <Image
+            source={product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')}
+            style={styles.simpleImage}
+          />
+        </View>
+        <View style={styles.simpleDetails}>
+          <Text style={styles.simpleName} numberOfLines={1}>
+            {product.name}
+          </Text>
+          <Text style={styles.simpleUnit}>{selectedOption.unit}</Text>
+          <View style={styles.simpleBottomRow}>
+            <View>
+              <Text style={styles.simplePrice}>₹{price}</Text>
+              {originalPrice && (
+                <Text style={styles.simpleStrikePrice}>₹{originalPrice}</Text>
+              )}
+            </View>
+            {quantity > 0 ? (
+              <View style={styles.simpleQuantityControl}>
+                <TouchableOpacity style={styles.simpleQtyBtn} onPress={handleDecrease}>
+                  <Ionicons name="remove" size={12} color="#FFFFFF" />
+                </TouchableOpacity>
+                <Text style={styles.simpleQtyText}>{quantity}</Text>
+                <TouchableOpacity style={styles.simpleQtyBtn} onPress={handleIncrease}>
+                  <Ionicons name="add" size={12} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.simpleAddButton} onPress={handleAdd} activeOpacity={0.85}>
+                <Ionicons name="add" size={14} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   // Full Layout (Blinkit Redesign Layout)
   return (
     <TouchableOpacity

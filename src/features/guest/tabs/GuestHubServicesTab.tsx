@@ -16,10 +16,18 @@ import { GuestLaundryBookingDialog } from '@/components/dialogs/HubDialogs';
 export function GuestHubServicesTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
+  const user = useAuthStore((s) => s.user);
   const { data: laundryRequests = [] } = useLaundryRequestsQuery(activePgId ?? undefined);
   const [showLaundryDialog, setShowLaundryDialog] = useState(false);
 
   const myLaundry = laundryRequests.filter((r) => r.guestId === guest?.id);
+
+  // Room number: prefer the guest entity (loaded async), fall back to the membership
+  // in authStore (available immediately after /v1/me) — prevents sending '101' to server.
+  const membershipRoomNo = activePgId
+    ? user?.memberships.find((m) => m.pg_id === activePgId)?.room_no ?? null
+    : null;
+  const roomNo = guest?.roomNo || membershipRoomNo || '';
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
@@ -85,7 +93,7 @@ export function GuestHubServicesTab() {
       </Card>
 
       {showLaundryDialog && (
-        <GuestLaundryBookingDialog guestId={guest?.id ?? ''} guestName={guest?.name ?? 'Resident'} roomNo={guest?.roomNo ?? '101'} onDismiss={() => setShowLaundryDialog(false)} />
+        <GuestLaundryBookingDialog guestId={guest?.id ?? ''} guestName={guest?.name ?? 'Resident'} roomNo={roomNo} onDismiss={() => setShowLaundryDialog(false)} />
       )}
     </ScrollView>
   );

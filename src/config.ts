@@ -133,6 +133,7 @@ export const API = {
   // total that could drift from the entries under it.
   REWARDS: "/v1/rewards",
   REWARDS_ME: "/v1/rewards/me",
+  REWARDS_CLAIM_CHAMPION: "/v1/rewards/claim-champion",
 
   // Billing — owner → PGow, the mirror of resident rent one level up. PGow confirms these,
   // not the owner, for the same reason a resident cannot verify their own payment.

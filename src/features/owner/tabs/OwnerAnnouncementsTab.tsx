@@ -149,8 +149,13 @@ export function OwnerAnnouncementsTab() {
       deleteNotif(item.raw.id);
       toast('success', 'Request Approved', `Approval request "${item.title}" processed.`);
     } else if (item.type === 'KYC') {
-      await verifyKyc(item.raw.id, true);
-      toast('success', 'KYC Approved', `${item.raw.name} is now verified.`);
+      const result = await verifyKyc(item.raw.id, true);
+      if (result.ok) {
+        toast('success', 'KYC Approved', `${item.raw.name} is now verified.`);
+      } else {
+        hapticError();
+        toast('error', 'Failed', result.error ?? 'Could not record the decision.');
+      }
     }
     setSelectedInboxItem(null);
   };
@@ -177,9 +182,14 @@ export function OwnerAnnouncementsTab() {
           text: 'Reject',
           style: 'destructive',
           onPress: async () => {
-            await verifyKyc(item.raw.id, false, 'Documents unreadable or incomplete.');
-            toast('warning', 'KYC Rejected', 'Resident notified.');
-            setSelectedInboxItem(null);
+            const result = await verifyKyc(item.raw.id, false, 'Documents unreadable or incomplete.');
+            if (result.ok) {
+              toast('warning', 'KYC Rejected', 'Resident notified.');
+              setSelectedInboxItem(null);
+            } else {
+              hapticError();
+              toast('error', 'Failed', result.error ?? 'Could not record the decision.');
+            }
           },
         },
       ]);

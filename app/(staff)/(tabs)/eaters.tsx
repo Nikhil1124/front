@@ -1,6 +1,6 @@
 /** Chef dashboard "Eaters" tab */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity, Linking } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { Card, Txt, Spacer, Chip, Col, Row, Btn, IconBtn, OutlinedBtn } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
@@ -15,10 +15,11 @@ import {
   uploadStopProofPhoto,
 } from '@/features/delivery/useDeliveryAgent';
 import type { SupplyTripStop } from '@/types/supply';
+import { useToast } from '@/hooks/useToast';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
-  return <ChefEatersView />;
+  return activeRole === 'delivery_agent' ? <DeliveryDashboardRoute /> : <ChefEatersView />;
 }
 
 import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
@@ -113,6 +114,7 @@ function _openInMaps(address: string) {
 
 function DeliveryDashboardRoute() {
   const authUser = useAuthStore((s) => s.user);
+  const toast = useToast();
   const { data: trips = [], isLoading } = useMyTripsQuery();
   const completeStop = useCompleteStopMutation();
 
@@ -142,7 +144,7 @@ function DeliveryDashboardRoute() {
       setPhotoUri(uri);
       setProofPhotoKey(key);
     } catch (err) {
-      Alert.alert('Upload Failed', err instanceof Error ? err.message : 'Could not upload the photo.');
+      toast('error', 'Upload Failed', err instanceof Error ? err.message : 'Could not upload the photo.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -160,8 +162,9 @@ function DeliveryDashboardRoute() {
       setActiveDeliveryId(null);
       setPhotoUri(null);
       setProofPhotoKey(null);
+      toast('success', 'Delivery Confirmed', 'Marked as delivered.');
     } catch (err) {
-      Alert.alert('Failed', err instanceof Error ? err.message : 'Could not confirm the delivery.');
+      toast('error', 'Failed', err instanceof Error ? err.message : 'Could not confirm the delivery.');
     }
   };
 

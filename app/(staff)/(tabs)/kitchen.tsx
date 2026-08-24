@@ -1,6 +1,6 @@
 /** Chef dashboard "Kitchen" tab or Delivery Agent Profile */
 import { useEffect, useState } from 'react';
-import { Alert, View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, Spacer, Col } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -13,6 +13,7 @@ import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { Ionicons } from '@expo/vector-icons';
 import { useMyTripsQuery } from '@/features/delivery/useDeliveryAgent';
+import { useToast } from '@/hooks/useToast';
 
 const ANNOUNCEMENTS = [
   'Special Dessert today! 🍨',
@@ -24,7 +25,7 @@ const ANNOUNCEMENTS = [
 
 export default function ChefKitchenTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
-  return <ChefKitchenView />;
+  return activeRole === 'delivery_agent' ? <DeliveryProfileRoute /> : <ChefKitchenView />;
 }
 
 function ChefKitchenView() {
@@ -32,6 +33,7 @@ function ChefKitchenView() {
   const [chefBroadcast, setChefBroadcast] = useState('');
   const sendRoleNotification = usePGowStore((s) => s.sendRoleNotification);
   const { activeMeal } = useActiveMeal();
+  const toast = useToast();
 
   useEffect(() => {
     setPrepState('PREPPING');
@@ -39,21 +41,21 @@ function ChefKitchenView() {
 
   const broadcastToResidents = async (title: string, body: string) => {
     const ok = await sendRoleNotification('RESIDENT', title, body, 'ANNOUNCEMENT', 'HIGH');
-    if (!ok) Alert.alert('Not sent', 'The broadcast did not go out. Check your connection and try again.');
+    if (!ok) toast('error', 'Not sent', 'The broadcast did not go out. Check your connection and try again.');
     return ok;
   };
 
   const sendCustomAnnouncement = async () => {
     if (!chefBroadcast.trim()) {
       hapticError();
-      Alert.alert('Validation', 'Please enter or select a message to send.');
+      toast('warning', 'Validation', 'Please enter or select a message to send.');
       return;
     }
     const ok = await broadcastToResidents('🍳 Kitchen Update', chefBroadcast.trim());
     if (!ok) return;
     hapticSuccess();
     setChefBroadcast('');
-    Alert.alert('Success', '🔔 Announcement sent to all residents!');
+    toast('success', 'Announcement Sent', '🔔 Sent to all residents!');
   };
 
   return (
@@ -76,7 +78,7 @@ function ChefKitchenView() {
         {prepState === 'READY' && (
           <>
             <Spacer size={14} />
-            <Btn onPress={async () => { if (await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!')) Alert.alert('Success', '🔔 Alert dispatched to all residents!'); }} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={10} height={44}>
+            <Btn onPress={async () => { if (await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!')) toast('success', 'Alert Dispatched', '🔔 Sent to all residents!'); }} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={10} height={44}>
               <Txt size={12} weight="800" color="#FFFFFF">Broadcast 'Meal is Served' to Residents 📢</Txt>
             </Btn>
           </>

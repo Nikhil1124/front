@@ -21,6 +21,7 @@ import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useToast } from '@/hooks/useToast';
 
 // ===== AddPgDailySubscriptionDialog =====
 export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => void }) {
@@ -141,6 +142,8 @@ const DIALOG_LIGHT_GREEN = '#EEF8F1';
 
 export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
+  const toast = useToast();
+  const [dispatching, setDispatching] = useState(false);
   const [category, setCategory] = useState('Plumbing');
   const [issue, setIssue] = useState('');
   const [urgency, setUrgency] = useState('15-Min Express'); // Maps to backend '15-Min Express' or 'Scheduled Today'
@@ -153,14 +156,21 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
 
   const costMap: Record<string, number> = { Plumbing: 399, Electrical: 449, 'AC Repair': 799 };
   
-  const handleDispatch = () => {
+  const handleDispatch = async () => {
+    if (dispatching) return;
+    setDispatching(true);
     const cost = costMap[category] ?? 499;
     const finalIssue = issue.trim() || `Request for ${category} service`;
     // Pass custom schedule details inside the request summary if scheduled
     const urgencyLabel = urgency === '15-Min Express' ? '15-Min Express' : `Scheduled for ${schedDate} at ${schedTime}`;
-    bookRepair(category, finalIssue, urgencyLabel, cost);
-    Alert.alert('Success', 'Pronto Technician Dispatched!');
-    onDismiss();
+    const result = await bookRepair(category, finalIssue, urgencyLabel, cost);
+    setDispatching(false);
+    if (result.ok) {
+      toast('success', 'Technician Dispatched', `${category} request booked.`);
+      onDismiss();
+    } else {
+      toast('error', 'Not Booked', result.error ?? 'The booking was not saved. Try again.');
+    }
   };
 
   return (
@@ -334,12 +344,13 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
 
               {/* CTA Button */}
               <TouchableOpacity
-                style={styles.sheetSubmitBtn}
+                style={[styles.sheetSubmitBtn, dispatching && { opacity: 0.6 }]}
                 onPress={handleDispatch}
+                disabled={dispatching}
                 activeOpacity={0.85}
               >
                 <Text style={styles.sheetSubmitBtnText}>
-                  {urgency === '15-Min Express' ? 'Request Express Repair' : 'Request Repair'}
+                  {dispatching ? 'Booking…' : urgency === '15-Min Express' ? 'Request Express Repair' : 'Request Repair'}
                 </Text>
               </TouchableOpacity>
 
@@ -415,6 +426,8 @@ const LAUNDRY_RATES: Record<string, number> = {
 
 export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismiss }: { guestId: string; guestName: string; roomNo: string; onDismiss: () => void }) {
   const bookLaundry = usePGowStore((s) => s.bookGuestLaundryService);
+  const toast = useToast();
+  const [booking, setBooking] = useState(false);
   const [service, setService] = useState('Wash & Fold');
   const [weight, setWeight] = useState('5 kg');
   const [pickupPref] = useState('Room Doorstep Pickup');
@@ -425,10 +438,17 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
   const multiplier = weight.includes('10') ? 2 : weight.includes('15') ? 3 : 1;
   const est = (LAUNDRY_RATES[service] ?? 40) * multiplier;
 
-  const handleBook = () => {
-    bookLaundry(guestId, guestName, roomNo, service, weight, pickupPref, slot, notes, est, payMode);
-    Alert.alert('Success', 'Laundry Pickup Scheduled Successfully!');
-    onDismiss();
+  const handleBook = async () => {
+    if (booking) return;
+    setBooking(true);
+    const result = await bookLaundry(guestId, guestName, roomNo, service, weight, pickupPref, slot, notes, est, payMode);
+    setBooking(false);
+    if (result.ok) {
+      toast('success', 'Pickup Scheduled', 'Laundry pickup booked successfully.');
+      onDismiss();
+    } else {
+      toast('error', 'Not Scheduled', result.error ?? 'The booking was not saved. Try again.');
+    }
   };
 
   return (
@@ -514,6 +534,8 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
             </Col>
             <Btn
               onPress={handleBook}
+              loading={booking}
+              disabled={booking}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
               borderRadius={12}

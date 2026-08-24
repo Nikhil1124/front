@@ -43,13 +43,10 @@ export function register(params: {
   });
 }
 
-export function login(params: { phone: string; password: string; asGuest?: boolean }): Promise<TokenResponse> {
-  const { asGuest, ...rest } = params;
+export function login(params: { phone: string; password: string }): Promise<TokenResponse> {
   return apiFetch<TokenResponse>(API.LOGIN, {
     method: "POST",
-    // `as_guest` tells the (mock) backend not to auto-provision an owner account for an
-    // unrecognised phone — the resident tab must match an existing invited guest, full stop.
-    body: JSON.stringify(asGuest ? { ...rest, as_guest: true } : rest),
+    body: JSON.stringify(params),
     // A wrong password is this form's answer to show, not a reason to tear down the
     // session and bounce the user somewhere else.
     unauthorized: "throw",

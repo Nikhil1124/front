@@ -225,18 +225,18 @@ export interface PGowState {
   resolveChefGroceryRequest: (requestId: string, status: 'fulfilled' | 'dismissed') => void;
   addPgDailyGrocerySubscription: (title: string, itemsSummary: string, dailyDeliveryTime: string, estimatedDailyCost: number) => void;
   togglePgDailyGrocerySubscription: (subscriptionId: string, isActive: boolean) => void;
-  bookPgRepairService: (category: string, issueTitle: string, urgency: string, estimatedCost: number) => void;
+  bookPgRepairService: (category: string, issueTitle: string, urgency: string, estimatedCost: number) => Promise<{ ok: boolean; error?: string }>;
   bookGuestLaundryService: (
     guestId: string, guestName: string, roomNo: string, serviceType: string, weightOrCount: string,
     pickupPreference: string, preferredSlot: string, specialNotes: string, totalCost: number, paymentStatus: string,
-  ) => void;
+  ) => Promise<{ ok: boolean; error?: string }>;
   updateLaundryStatus: (laundryId: string, newStatus: string) => void;
 
   // ===== Meal / time helpers =====
   selectMealType: (meal: string) => void;
   getAlertTriggerTime: (serviceTime: string) => string;
   formatServiceTime12h: (serviceTime: string) => string;
-  triggerSimulated2HourAlert: (notification: MealNotificationEntity) => Promise<void>;
+  triggerSimulated2HourAlert: (notification: MealNotificationEntity) => Promise<{ ok: boolean; error?: string }>;
 
   // ===== Ad metrics =====
   recordAdImpression: () => void;
@@ -255,7 +255,7 @@ export interface PGowState {
   deleteRoleNotification: (notifId: string) => Promise<void>;
 
   // ===== Expenses =====
-  logExpense: (title: string, category: string, amount: number, recipientName: string, paymentMode: string, notes: string) => Promise<{ ok: boolean; error?: string }>;
+  logExpense: (title: string, category: string, amount: number, recipientName: string, paymentMode: string, notes: string, paidToMembershipId?: string) => Promise<{ ok: boolean; error?: string }>;
   deleteExpense: (expense: ExpenseEntity) => Promise<void>;
 
   // ===== Multi-PG portfolio =====
@@ -282,14 +282,13 @@ export interface PGowState {
 
   // ===== Owner auth & subscription =====
   registerOwner: () => Promise<{ ok: boolean; error?: string }>;
-  loginOwner: (phone: string, password: string) => Promise<{ ok: boolean; error?: string; mustChangePassword?: boolean }>;
-  completeFirstTimePasswordChange: (tempPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
+  loginOwner: (phone: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   registerStaffMember: () => Promise<{ ok: boolean; error?: string }>;
   deleteStaffMember: (id: string) => Promise<{ ok: boolean; error?: string }>;
 
   // ===== Guest auth & KYC =====
   joinPG: () => Promise<{ ok: boolean; error?: string }>;
-  loginGuest: (phone: string, password: string) => Promise<{ ok: boolean; error?: string; mustChangePassword?: boolean }>;
+  loginGuest: (phone: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   resetGuestPassword: (email: string, roomNo: string, newPass: string) => Promise<{ ok: boolean; error?: string }>;
   changeGuestPassword: (newPass: string, currentPass?: string) => Promise<{ ok: boolean; error?: string }>;
   submitGuestKyc: (idType: string, idNumber: string, idPhotoUri: string, profilePhotoUri: string) => Promise<{ ok: boolean; error?: string }>;
@@ -317,7 +316,6 @@ export interface PGowState {
   verifyPaymentByOwner: (paymentId: string, approve: boolean, rejectReason?: string) => Promise<void>;
   /** Returns how many residents were actually reminded. */
   dispatchAutomatedRentAlerts: () => Promise<number>;
-  markGuestPaymentDone: (guestId: string, finalAmount: number) => Promise<void>;
 
   // ===== Misc =====
   logout: () => void;
@@ -517,11 +515,11 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     }));
   },
 
-  bookPgRepairService: (category, issueTitle, urgency, estimatedCost) => {
+  bookPgRepairService: async (category, issueTitle, urgency, estimatedCost) => {
     const pgId = useAuthStore.getState().activePgId;
-    if (!pgId) return;
-    requestsApi
-      .submitComplaint({
+    if (!pgId) return { ok: false, error: 'No active property selected.' };
+    try {
+      await requestsApi.submitComplaint({
         pg_id: pgId,
         kind: 'repair',
         category,
@@ -532,35 +530,28 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         // No technician is named here: assigning one is the owner's action on the ticket,
         // and inventing a name at booking time would put a stranger's details on screen.
         details: { urgency, eta_minutes: urgency.includes('15') ? 12 : 45 },
-      })
-      .then(() => {
-        const msg = `${category} - ${issueTitle} has been booked.`;
-        get().sendRoleNotification('OWNER', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
-        get().sendRoleNotification('MANAGER', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
-        get().sendRoleNotification('MAINTENANCE', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
-        get().refreshAll();
-      })
-      .catch((err) => {
-        set({
-          activeAlert: {
-            title: '❌ REPAIR NOT BOOKED',
-            description: err instanceof PGowApiError ? err.message : 'The booking was not saved.',
-            type: 'ANNOUNCEMENT', timestamp: Date.now(),
-          },
-        });
       });
+      const msg = `${category} - ${issueTitle} has been booked.`;
+      get().sendRoleNotification('OWNER', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
+      get().sendRoleNotification('MANAGER', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
+      get().sendRoleNotification('MAINTENANCE', '🔧 Repair Service Booked', msg, 'COMPLAINT', 'HIGH');
+      get().refreshAll();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof PGowApiError ? err.message : 'The booking was not saved.' };
+    }
   },
 
-  bookGuestLaundryService: (
+  bookGuestLaundryService: async (
     _guestId, _guestName, _roomNo, serviceType, weightOrCount,
     pickupPreference, preferredSlot, specialNotes, totalCost, paymentStatus,
   ) => {
     const pgId = useAuthStore.getState().activePgId;
-    if (!pgId) return;
-    // The resident's name, id and room are not sent: the server takes them from whoever is
-    // authenticated, which is the only version that cannot be spoofed by a client.
-    requestsApi
-      .submitComplaint({
+    if (!pgId) return { ok: false, error: 'No active property selected.' };
+    try {
+      // The resident's name, id and room are not sent: the server takes them from whoever is
+      // authenticated, which is the only version that cannot be spoofed by a client.
+      await requestsApi.submitComplaint({
         pg_id: pgId,
         kind: 'laundry',
         title: `${serviceType} — ${weightOrCount}`,
@@ -573,17 +564,12 @@ export const usePGowStore = create<PGowState>((set, get) => ({
           preferred_slot: preferredSlot,
           payment_status: paymentStatus,
         },
-      })
-      .then(() => get().refreshAll())
-      .catch((err) => {
-        set({
-          activeAlert: {
-            title: '❌ PICKUP NOT SCHEDULED',
-            description: err instanceof PGowApiError ? err.message : 'The booking was not saved.',
-            type: 'ANNOUNCEMENT', timestamp: Date.now(),
-          },
-        });
       });
+      get().refreshAll();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof PGowApiError ? err.message : 'The booking was not saved.' };
+    }
   },
 
   /** Moves the ticket, rather than relabelling a local row. */
@@ -664,7 +650,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       await mealsApi.broadcastMeal(notification.id, { kind: 'announce' });
     } catch (err) {
-      console.warn('[PGow] meal broadcast failed:', err);
+      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not send the reminder.' };
     }
     set({
       activeAlert: {
@@ -675,6 +661,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     });
     await NotificationHelper.showRsvpNotification(notification, get().loggedInGuest?.id ?? '');
     await get().refreshAll();
+    return { ok: true };
   },
 
 
@@ -761,16 +748,11 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   /** The one notification a person writes; the rest are consequences the server posts. */
   sendRoleNotification: async (targetRole, title, message, category = 'ANNOUNCEMENT', priority = 'MEDIUM') => {
     const pgId = useAuthStore.getState().activePgId;
-    set({
-      activeAlert: {
-        title: '📢 Announcement Published',
-        description: `Delivered notice to ${targetRole}: "${title}"`,
-        type: 'SUCCESS',
-        timestamp: Date.now(),
-      },
-    });
-
-    if (!pgId) return true;
+    // This used to fire an "Announcement Published" success alert unconditionally, before the
+    // request was even attempted, then swallow any real failure and still report success — a
+    // rate-limited or invalid broadcast looked identical to a delivered one. The alert now
+    // follows the actual outcome, and the return value is honest for callers that check it.
+    if (!pgId) return false;
 
     const audienceMap: Record<string, notificationsApi.BroadcastAudience> = {
       ALL: 'all', OWNER: 'owner', MANAGER: 'manager', RESIDENT: 'guest',
@@ -790,11 +772,19 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         category: required(categoryMap, category.toUpperCase(), 'notification category'),
         priority: priority.toUpperCase() === 'HIGH' ? 'high' : priority.toUpperCase() === 'LOW' ? 'low' : 'normal',
       });
+      set({
+        activeAlert: {
+          title: '📢 Announcement Published',
+          description: `Delivered notice to ${targetRole}: "${title}"`,
+          type: 'SUCCESS',
+          timestamp: Date.now(),
+        },
+      });
       await get().refreshAll();
       return true;
     } catch (err) {
       console.warn('[PGow] Backend broadcast failed:', err);
-      return true;
+      return false;
     }
   },
 
@@ -830,7 +820,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
 
   // ── Expenses ──────────────────────────────────────────────────────────────
 
-  logExpense: async (title, category, amount, recipientName, paymentMode, notes) => {
+  logExpense: async (title, category, amount, recipientName, paymentMode, notes, paidToMembershipId) => {
     const pgId = useAuthStore.getState().activePgId;
     if (!pgId) return { ok: false, error: 'No active property.' };
     if (!(amount > 0)) return { ok: false, error: 'Amount must be greater than zero.' };
@@ -849,13 +839,21 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       UPI: 'upi', 'Online UPI': 'upi', Cash: 'cash',
       'Bank Transfer': 'bank_transfer', Bank: 'bank_transfer',
     };
+    const resolvedCategory = required(categoryMap, category, 'expense category');
+    // The API requires a real staff membership for `staff_salary` and forbids one for every
+    // other category — a free-text payee name alone (what this form used to send) 422s
+    // every single staff-salary submission, since the server has no membership to attach it to.
+    if (resolvedCategory === 'staff_salary' && !paidToMembershipId) {
+      return { ok: false, error: 'Select which staff member this salary was paid to.' };
+    }
     try {
       await expensesApi.logExpense(pgId, {
         title: title.trim() || 'Expense',
-        category: required(categoryMap, category, 'expense category'),
+        category: resolvedCategory,
         amount,
         method: required(methodMap, paymentMode, 'expense method'),
         recipient_name: recipientName,
+        paid_to_membership_id: resolvedCategory === 'staff_salary' ? paidToMembershipId : undefined,
         notes,
       });
       await get().refreshAll();
@@ -1149,25 +1147,14 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       const tokens = await authApi.login({ phone: map.toE164(phone), password });
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
-      if (tokens.must_change_password) {
-        return {
-          ok: false,
-          mustChangePassword: true,
-          error: 'FIRST_TIME_PASSWORD_CHANGE_REQUIRED',
-        };
-      }
+      // A temp password set by someone else no longer blocks sign-in (product decision:
+      // full access immediately, with a one-time reminder to change it — see app/_layout.tsx.
+      // must_change_password is still tracked and comes back on `user` for that reminder).
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      if (err instanceof PGowApiError && err.httpStatus === 403 && err.message.toLowerCase().includes('password')) {
-        return {
-          ok: false,
-          mustChangePassword: true,
-          error: 'FIRST_TIME_PASSWORD_CHANGE_REQUIRED',
-        };
-      }
       return {
         ok: false,
         error: err instanceof PGowApiError && err.httpStatus === 401
@@ -1176,26 +1163,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       };
     }
   },
-
-  completeFirstTimePasswordChange: async (tempPassword, newPassword) => {
-    if (!newPassword.trim() || newPassword.length < 8) {
-      return { ok: false, error: 'New password must be at least 8 characters long.' };
-    }
-    try {
-      const tokens = await authApi.changePassword({ current_password: tempPassword, new_password: newPassword });
-      await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
-      const user = await authApi.fetchMe();
-      useAuthStore.getState().setUser(user);
-      await get().refreshAll();
-      return { ok: true };
-    } catch (err) {
-      return {
-        ok: false,
-        error: err instanceof PGowApiError ? err.message : 'Could not update password.',
-      };
-    }
-  },
-
 
   registerStaffMember: async () => {
     const s = get();
@@ -1211,14 +1178,13 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!s.staffPhoneInput.trim()) {
       return { ok: false, error: 'A phone number is required — it is what staff sign in with.' };
     }
-    // The UI's labels, in the roles the API accepts. `delivery_agent` is a real backend
-    // role (migration 0020_add_delivery_agent_role) — mapping "Delivery Agent" to
-    // `maintenance` would misclassify delivery staff as maintenance staff server-side.
-    const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance' | 'delivery_agent'> = {
+    // The UI's labels, in the roles the API accepts. Delivery agents are onboarded by their
+    // area manager as a platform-level worker (see OwnerLoginScreen's Delivery tab), not
+    // added here — `AVAILABLE_ROLES` in StaffManagementTab.tsx never offers that option.
+    const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance'> = {
       Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
       'Kitchen Staff': 'kitchen_staff', Maintenance: 'maintenance', 'Maintenance Staff': 'maintenance',
       Cleaner: 'maintenance',
-      'Delivery Agent': 'delivery_agent', Delivery: 'delivery_agent', Rider: 'delivery_agent',
     };
     try {
       await staffApi.addStaff(pgId, {
@@ -1303,8 +1269,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       return { ok: false, error: 'Please enter your phone number and password.' };
     }
     try {
-      const tokens = await authApi.login({ phone: map.toE164(phone), password, asGuest: true });
+      const tokens = await authApi.login({ phone: map.toE164(phone), password });
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
+      // See loginOwner: a temp password no longer blocks sign-in, just gets reminded about.
       const user = await authApi.fetchMe();
       useAuthStore.getState().setUser(user);
       await get().refreshAll();
@@ -1352,6 +1319,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const tokens = await authApi.changePassword({ current_password: currentPass, new_password: newPass });
       // Both tokens are replaced — the old pair stops working the moment this returns.
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
+      // Refetch so `user.must_change_password` flips to false locally — otherwise the
+      // reminder in app/_layout.tsx would keep nagging until the next cold start.
+      useAuthStore.getState().setUser(await authApi.fetchMe());
       return { ok: true };
     } catch (err) {
       return {
@@ -1370,27 +1340,47 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!idPhotoUri || !profilePhotoUri) {
       return { ok: false, error: 'Both an ID photo and a selfie are required.' };
     }
+    // The dialog's picker shows display labels ("PAN Card"); the API's `DocumentKind` is a
+    // fixed lowercase enum ("pan") — sending the label straight through 422s every KYC
+    // submission for every document type, since none of the 5 labels match the enum as-is.
+    const idTypeMap: Record<string, string> = {
+      'Aadhaar Card': 'aadhaar', Aadhaar: 'aadhaar',
+      'PAN Card': 'pan', PAN: 'pan',
+      Passport: 'passport',
+      'Driving License': 'dl', DL: 'dl',
+      'Voter ID': 'voter_id',
+    };
     try {
+      // Resolve the document kind BEFORE requesting upload URLs: the backend's
+      // DocumentKind enum is ['aadhaar','pan','passport','dl','voter_id','selfie'].
+      // Passing 'front' (a side label, not a kind) causes an immediate 422 on the
+      // upload-url endpoint before any photo byte reaches storage.
+      const kind = idTypeMap[idType] ?? 'aadhaar';
+
       // The photos go straight to storage on presigned URLs; only the object keys reach us.
-      const upload = async (kind: string, uri: string) => {
-        const { upload_url, object_key } = await kycApi.getUploadUrl(kind, 'image/jpeg');
+      const upload = async (docKind: string, uri: string) => {
+        const { upload_url, object_key } = await kycApi.getUploadUrl(docKind, 'image/jpeg');
         await kycApi.uploadToPresignedUrl(upload_url, uri, 'image/jpeg');
         return object_key;
       };
       const [front, selfie] = await Promise.all([
-        upload('front', idPhotoUri),
-        upload('selfie', profilePhotoUri),
+        upload(kind, idPhotoUri),      // ID doc photo → kind = 'aadhaar' | 'pan' | …
+        upload('selfie', profilePhotoUri), // selfie is always 'selfie'
       ]);
+      const last4 = idNumber.trim().slice(-4);
       await kycApi.submitKyc({
         pg_id: pgId,
-        kind: idType || 'aadhaar',
+        kind,
         front_object_key: front,
         // This form captures one document photo; the server wants both faces, so the same
         // image stands in for the back rather than blocking submission on a field the UI
         // never asked for.
         back_object_key: front,
         selfie_object_key: selfie,
-        aadhaar_last4: idNumber.trim().slice(-4),
+        // The API validates this as 4 digits — only meaningful (and only ever numeric) for an
+        // actual Aadhaar number. A PAN/DL/Voter ID's last 4 characters are often letters, which
+        // would 422 the whole submission for every non-Aadhaar document type.
+        aadhaar_last4: kind === 'aadhaar' && /^\d{4}$/.test(last4) ? last4 : undefined,
       });
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.session() });
@@ -1453,12 +1443,17 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       const pending = await kycApi.listPending(pgId);
       const record = pending.items.find((k) => k.membership_id === guestId);
-      if (record) {
-        if (approve) {
-          await kycApi.verifyKyc(record.id);
-        } else {
-          await kycApi.rejectKyc(record.id, rejectReason || 'Document or selfie photo unreadable.');
-        }
+      if (!record) {
+        // Someone else already decided this one (or the UI's list was stale) — proceeding
+        // silently used to still report success and tell the resident "you're verified!"
+        // when nothing was actually recorded here.
+        await get().refreshAll();
+        return { ok: false, error: 'This KYC submission has already been decided.' };
+      }
+      if (approve) {
+        await kycApi.verifyKyc(record.id);
+      } else {
+        await kycApi.rejectKyc(record.id, rejectReason || 'Document or selfie photo unreadable.');
       }
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.guests.all(pgId) });
@@ -1572,10 +1567,14 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const tokens = await authApi.pinLogin({ phone: map.toE164(phone), pin: pin.trim() });
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       const me = await authApi.fetchMe();
+      // `setUser` already resolves the right active PG on its own: it keeps whichever
+      // membership matches the last-persisted id if this account still holds it, and only
+      // falls back to the first membership when it doesn't (including a first-ever login,
+      // where there's nothing persisted to match). Unconditionally re-picking memberships[0]
+      // here used to override that — silently switching a staff member who works at more
+      // than one property back to their first PG on every login, even after they'd last been
+      // working in a different one.
       useAuthStore.getState().setUser(me);
-      if (me.memberships && me.memberships.length > 0) {
-        useAuthStore.getState().setActivePgId(me.memberships[0].pg_id);
-      }
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
@@ -1769,32 +1768,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     }
   },
 
-
-  /** Cash handed to the owner: recorded as a cash payment and verified in the same breath,
-   *  because the owner taking the money IS the verification. */
-  markGuestPaymentDone: async (_guestId, finalAmount) => {
-    const pgId = useAuthStore.getState().activePgId;
-    if (!pgId) return;
-    try {
-      const payment = await paymentsApi.submitPayment({
-        pg_id: pgId,
-        amount: finalAmount > 0 ? finalAmount : 6500,
-        period: map.currentPeriod(),
-        purpose: 'rent',
-        method: 'cash',
-      });
-      await paymentsApi.verifyPayment(payment.id);
-    } catch (err) {
-      set({
-        activeAlert: {
-          title: '❌ COULD NOT RECORD PAYMENT',
-          description: err instanceof PGowApiError ? err.message : 'Nothing was recorded. Try again.',
-          type: 'PAYMENT', timestamp: Date.now(),
-        },
-      });
-    }
-    await get().refreshAll();
-  },
 
   logout: () => {
     // Fire and forget the network teardown, but don't race it: `logoutEverywhere()` reads

@@ -30,6 +30,7 @@ import type { PaymentEntity, ExpenseEntity } from '@/types';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
 import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useStaffQuery } from '@/features/staff/useStaff';
 import { qk } from '@/data/queryKeys';
 
 const GREEN = '#176B3A';
@@ -89,6 +90,7 @@ export function OwnerPaymentsTab() {
   const deleteExpense = usePGowStore((s) => s.deleteExpense);
   const owner = usePGowStore((s) => s.loggedInOwner);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
 
   const getPayerRoom = (payerId: string) => {
     const g = guests.find((x) => x.id === payerId);
@@ -107,6 +109,7 @@ export function OwnerPaymentsTab() {
   const [expenseCategory, setExpenseCategory] = useState('Staff Salary');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [recipientName, setRecipientName] = useState('');
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState('UPI');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -241,6 +244,10 @@ export function OwnerPaymentsTab() {
       Alert.alert('Validation', 'Please enter a valid amount.');
       return;
     }
+    if (expenseCategory === 'Staff Salary' && !selectedStaffId) {
+      Alert.alert('Validation', 'Select which staff member this salary was paid to.');
+      return;
+    }
     setIsSubmitting(true);
     const result = await logExpense(
       expenseTitle,
@@ -248,7 +255,8 @@ export function OwnerPaymentsTab() {
       amt,
       recipientName,
       paymentMode,
-      notes
+      notes,
+      expenseCategory === 'Staff Salary' ? (selectedStaffId ?? undefined) : undefined
     );
     setIsSubmitting(false);
     if (result.ok) {
@@ -258,6 +266,7 @@ export function OwnerPaymentsTab() {
       setExpenseTitle('');
       setExpenseAmount('');
       setRecipientName('');
+      setSelectedStaffId(null);
       setNotes('');
     } else {
       hapticError();
@@ -269,7 +278,11 @@ export function OwnerPaymentsTab() {
     setExpenseTitle(title);
     setExpenseCategory(category);
     setExpenseAmount(amount);
-    setRecipientName(payee);
+    // A preset can't know which real staff row "Ramesh Kumar" maps to — for Staff Salary it
+    // still requires an explicit pick below, so the payee name is only a hint, not a value
+    // that would otherwise let this submit without one.
+    setRecipientName(category === 'Staff Salary' ? '' : payee);
+    setSelectedStaffId(null);
   };
 
   return (
@@ -632,16 +645,44 @@ export function OwnerPaymentsTab() {
                       containerColor={BG}
                       style={{ flex: 1 }}
                     />
-                    <OutlinedTextField
-                      label="Payee / Staff"
-                      placeholder="Ramesh Cook"
-                      value={recipientName}
-                      onChangeText={setRecipientName}
-                      containerColor={BG}
-                      style={{ flex: 1 }}
-                    />
+                    {expenseCategory === 'Staff Salary' ? (
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.formSectionLabel}>Paid To *</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          <Row gap={6}>
+                            {staffList.length === 0 ? (
+                              <Text style={{ fontSize: 12, color: MUTED }}>No staff added yet</Text>
+                            ) : (
+                              staffList.map((s) => (
+                                <TouchableOpacity
+                                  key={s.id}
+                                  style={[styles.smallChip, selectedStaffId === s.id && styles.smallChipActive]}
+                                  onPress={() => {
+                                    setSelectedStaffId(s.id);
+                                    setRecipientName(s.name);
+                                  }}
+                                >
+                                  <Text style={[styles.smallChipText, selectedStaffId === s.id && styles.smallChipTextActive]}>
+                                    {s.name}
+                                  </Text>
+                                </TouchableOpacity>
+                              ))
+                            )}
+                          </Row>
+                        </ScrollView>
+                      </View>
+                    ) : (
+                      <OutlinedTextField
+                        label="Payee"
+                        placeholder="Wholesale Mart"
+                        value={recipientName}
+                        onChangeText={setRecipientName}
+                        containerColor={BG}
+                        style={{ flex: 1 }}
+                      />
+                    )}
                   </Row>
-                  
+
                   <Spacer size={10} />
                   
                   <Row gap={6} align="center">
@@ -652,7 +693,11 @@ export function OwnerPaymentsTab() {
                           <TouchableOpacity
                             key={cat}
                             style={[styles.smallChip, expenseCategory === cat && styles.smallChipActive]}
-                            onPress={() => setExpenseCategory(cat)}
+                            onPress={() => {
+                              setExpenseCategory(cat);
+                              setSelectedStaffId(null);
+                              setRecipientName('');
+                            }}
                           >
                             <Text style={[styles.smallChipText, expenseCategory === cat && styles.smallChipTextActive]}>
                               {cat.replace('Daily Mess ', '').replace(' Bills', '')}

@@ -1,6 +1,6 @@
 /** Chef dashboard "Broadcast" tab */
 import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Card, Txt, Btn, Row, Chip, IconBtn, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -14,6 +14,7 @@ import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { Ionicons } from '@expo/vector-icons';
 import { useMyTripsQuery } from '@/features/delivery/useDeliveryAgent';
+import { useToast } from '@/hooks/useToast';
 
 const PRESET_DISHES: VisualDishItem[] = [
   { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true },
@@ -39,7 +40,7 @@ const PRESET_DISHES: VisualDishItem[] = [
 
 export default function ChefBroadcastTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
-  return <ChefBroadcastView />;
+  return activeRole === 'delivery_agent' ? <DeliveryHistoryRoute /> : <ChefBroadcastView />;
 }
 
 import { useGuestsQuery } from '@/features/guests/useGuests';
@@ -68,6 +69,7 @@ function ChefBroadcastView() {
   const triggerFollowup = usePGowStore((s) => s.trigger15MinUnresponsiveFollowup);
   const sendMealNotification = usePGowStore((s) => s.sendMealNotification);
   const set = usePGowStore((s) => s.set);
+  const toast = useToast();
 
   const reqCount = mealResponses.filter((r) => r.choice === 'eating').length;
   const notReqCount = mealResponses.filter((r) => r.choice === 'skipping').length;
@@ -85,17 +87,17 @@ function ChefBroadcastView() {
     }
     if (!menuItemsInput.trim() && selectedDishes.length === 0) {
       hapticError();
-      Alert.alert('Validation', 'Please enter food items first!');
+      toast('warning', 'Validation', 'Please enter food items first!');
       return;
     }
     const r = await sendMealNotification();
     if (r.ok) {
       hapticSuccess();
-      Alert.alert('Success', '🔔 Menu & Food Push Alert Broadcasted to Residents!');
+      toast('success', 'Broadcast Sent', '🔔 Menu & Food Push Alert sent to residents.');
       setSelectedDishes([]);
     } else {
       hapticError();
-      Alert.alert('Failed', r.error ?? 'Unknown');
+      toast('error', 'Failed', r.error ?? 'Unknown');
     }
   };
 

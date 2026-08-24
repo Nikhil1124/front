@@ -38,6 +38,7 @@ import { Colors, Layout } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { hapticSelect } from '@/utils/haptics';
+import { useToast } from '@/hooks/useToast';
 import type { PaymentEntity } from '@/types';
 
 interface Props {
@@ -59,6 +60,7 @@ export function PaymentReceiptDialog({
   downloadUrl,
   downloadLabel = 'Download PDF Invoice',
 }: Props) {
+  const toast = useToast();
   const isVerified = payment.status === 'VERIFIED';
   const modeLabel = (() => {
     switch (payment.paymentMode) {
@@ -101,7 +103,9 @@ export function PaymentReceiptDialog({
       return;
     }
     if (downloadUrl) {
-      Linking.openURL(downloadUrl).catch(() => {/* swallow — no-op */});
+      Linking.openURL(downloadUrl).catch(() => {
+        toast('error', 'Could not open PDF', 'No app on this device can open the invoice link.');
+      });
     }
   };
 

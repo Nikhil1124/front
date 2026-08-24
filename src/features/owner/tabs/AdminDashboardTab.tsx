@@ -8,6 +8,7 @@ import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useToast } from '@/hooks/useToast';
 import { OwnerFinancialSummaryChartCard } from '@/components/charts/OwnerFinancialSummaryChartCard';
 // ── Task 8: PnL trend chart (3m / 6m / 1y) ─────────────────────────────────
 import { PnLChart } from '@/components/charts/PnLChart';
@@ -46,6 +47,7 @@ export function AdminDashboardTab({ onAddPg }: Props) {
   const deleteGuest = usePGowStore((s) => s.deleteGuest);
   const switchActivePG = usePGowStore((s) => s.switchActivePG);
   const setActiveNotificationId = usePGowStore((s) => s.setActiveNotificationId);
+  const toast = useToast();
 
   const [selectedNotification, setSelectedNotification] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -270,10 +272,14 @@ export function AdminDashboardTab({ onAddPg }: Props) {
             </View>
             {!selectedNotification.isAlertSent && (
               <Btn
-                onPress={() => {
-                  triggerSimulated2HourAlert(selectedNotification);
-                  Alert.alert('Alert Sent', 'Group alert dispatched immediately!');
-                  setSelectedNotification({ ...selectedNotification, isAlertSent: true });
+                onPress={async () => {
+                  const result = await triggerSimulated2HourAlert(selectedNotification);
+                  if (result.ok) {
+                    toast('success', 'Alert Sent', 'Group alert dispatched immediately!');
+                    setSelectedNotification({ ...selectedNotification, isAlertSent: true });
+                  } else {
+                    toast('error', 'Failed', result.error ?? 'Could not send the alert.');
+                  }
                 }}
                 containerColor={Colors.CyberPurple}
                 textColor={Colors.IvoryWhiteText}
@@ -378,13 +384,6 @@ export function AdminDashboardTab({ onAddPg }: Props) {
               <Spacer size={10} />
               <Row justify="space-between" align="center">
                 <Row gap={4}>
-                  <IconBtn
-                    onPress={() => Alert.alert('Reminder', `Reminder notification nudge sent to ${guest.name}!`)}
-                    icon="send"
-                    size={16}
-                    tint="#FFB800"
-                    containerColor="transparent"
-                  />
                   <IconBtn
                     onPress={() => Alert.alert('Remove Resident', `Remove ${guest.name} from this property?`, [
                       { text: 'Cancel', style: 'cancel' },

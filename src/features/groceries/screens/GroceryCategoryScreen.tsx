@@ -14,78 +14,14 @@ import { useAuthStore } from '@/store/authStore';
 import { Colors, Layout, Radii } from '@/theme';
 import { FormScroll } from '@/components/ui/FormScroll';
 
-// Section Grouping Definition
-interface SupplyCategoryGroup {
-  id: string;
-  title: string;
-  categoryIds: string[];
-}
-
-const CATEGORY_GROUPS: SupplyCategoryGroup[] = [
-  {
-    id: 'grocery-kitchen',
-    title: 'Grocery & Kitchen',
-    categoryIds: [
-      'cat-fruitsveg',
-      'cat-flours',
-      'cat-oils',
-      'cat-dairy',
-      'cat-bakery',
-      'cat-pulses',
-      'cat-chicken',
-      'cat-addons',
-    ],
-  },
-  {
-    id: 'snacks-drinks',
-    title: 'Snacks & Drinks',
-    categoryIds: [
-      'cat-canned',
-      'cat-sweets',
-      'cat-beverages',
-      'cat-frozen',
-      'cat-sauces',
-    ],
-  },
-  {
-    id: 'household-essentials',
-    title: 'Household & Essentials',
-    categoryIds: [
-      'cat-cleaning',
-      'cat-packaging',
-      'cat-custom',
-    ],
-  },
-];
-
-// Map section filter keys → display info
-const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNames: string[] }> = {
-  deals: {
-    label: "Today's Deals",
-    icon: '🔥',
-    categoryNames: [],
-  },
-  essentials: {
-    label: 'Daily Essentials',
-    icon: '🛒',
-    categoryNames: ['Dairy, Bread & Eggs', 'Atta, Rice & Dal', 'Oil, Ghee & Masala'],
-  },
-  kitchen: {
-    label: "Today's Kitchen Needs",
-    icon: '🍳',
-    categoryNames: ['Vegetables & Fruits', 'Oil, Ghee & Masala', 'Chicken, Meat & Fish', 'PG Kitchen Needs'],
-  },
-};
-
 export function GroceryCategoryScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { name: initialSupplyCategory } = useLocalSearchParams<{ name?: string }>();
-  const filter: string | undefined = undefined;
 
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: supplyItems = [] } = useSupplyItems(activePgId);
-  const { data: categories = [] } = useSupplyCategories(activePgId);
+  const { data: categories = [], error: categoriesError } = useSupplyCategories(activePgId);
 
   const mode = useShoppingModeStore((s) => s.mode);
   const getCartTotal = useCartStore((s) => s.getCartTotal);
@@ -95,10 +31,7 @@ export function GroceryCategoryScreen() {
   const [activeSupplyCategory, setActiveSupplyCategory] = useState<string | null>(initialSupplyCategory ?? null);
   const [search, setSearch] = useState('');
 
-  // Determine if a section filter param exists
-  const sectionFilter = filter ? SECTION_FILTERS[filter] : null;
-
-  // Products for the active category (or deals)
+  // Products for the active category
   const products = useMemo(() => {
     let list = activeSupplyCategory
       ? supplyItems.filter(
@@ -106,8 +39,6 @@ export function GroceryCategoryScreen() {
             p.category_id === activeSupplyCategory ||
             categories.find((c) => c.name === activeSupplyCategory && c.id === p.category_id) !== undefined
         )
-      : filter === 'deals'
-      ? supplyItems.filter((p) => p.mrp && p.mrp > p.price)
       : supplyItems;
 
     if (search.trim()) {
@@ -117,9 +48,9 @@ export function GroceryCategoryScreen() {
       );
     }
     return list;
-  }, [activeSupplyCategory, filter, search, supplyItems, categories]);
+  }, [activeSupplyCategory, search, supplyItems, categories]);
 
-  const showProductList = activeSupplyCategory !== null || filter === 'deals' || search.trim().length > 0;
+  const showProductList = activeSupplyCategory !== null || search.trim().length > 0;
 
   // 4 items per row grid math matching the photo
   const cardGap = 10;
@@ -193,63 +124,38 @@ export function GroceryCategoryScreen() {
           </View>
         </View>
 
-        {/* Active Filter Chip indicator */}
-        {!showProductList && sectionFilter && (
-          <View style={styles.chipRow}>
-            <View style={styles.activeChip}>
-              <Text style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
-              <TouchableOpacity onPress={() => setActiveSupplyCategory(null)}>
-                <Ionicons name="close" size={14} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
         {/* Title Banner when viewing an active category product grid */}
         {showProductList && (
           <View style={styles.activeSupplyCategoryHeader}>
-            <Text style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Text>
+            <Text style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || 'Products'}</Text>
             <Text style={styles.activeSupplyCategorySub}>{products.length} items available</Text>
           </View>
         )}
 
         {/* MAIN CONTENT AREA */}
         {!showProductList ? (
-          /* ── CATEGORY SECTION GROUPS (Blinkit Style 4-Column Layout) ── */
+          /* ── ALL CATEGORIES (flat grid) ── */
           <FormScroll
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.sectionsScrollContent}
           >
-            {CATEGORY_GROUPS.map((group) => {
-              // Get categories belonging to this section
-              const groupCats = categories.filter((c) => group.categoryIds.includes(c.id));
-              if (groupCats.length === 0) return null;
-
-              // If a filter is applied, filter categories accordingly
-              const filteredGroupCats = sectionFilter && sectionFilter.categoryNames.length > 0
-                ? groupCats.filter((c) => sectionFilter.categoryNames.includes(c.name))
-                : groupCats;
-
-              if (filteredGroupCats.length === 0) return null;
-
-              return (
-                <View key={group.id} style={styles.sectionBlock}>
-                  <Text style={styles.sectionHeading}>{group.title}</Text>
-                  <View style={styles.gridRow}>
-                    {filteredGroupCats.map(renderSupplyCategoryItem)}
-                  </View>
-                </View>
-              );
-            })}
-
-            {/* Fallback for unclassified categories */}
-            {categories.some((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id))) && (
+            {categoriesError ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyIcon}>⚠️</Text>
+                <Text style={styles.emptyText}>
+                  {categoriesError instanceof Error ? categoriesError.message : 'Could not load categories.'}
+                </Text>
+              </View>
+            ) : categories.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyIcon}>🗂️</Text>
+                <Text style={styles.emptyText}>No categories available yet</Text>
+              </View>
+            ) : (
               <View style={styles.sectionBlock}>
                 <Text style={styles.sectionHeading}>All Categories</Text>
                 <View style={styles.gridRow}>
-                  {categories
-                    .filter((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id)))
-                    .map(renderSupplyCategoryItem)}
+                  {categories.map(renderSupplyCategoryItem)}
                 </View>
               </View>
             )}

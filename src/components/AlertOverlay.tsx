@@ -112,7 +112,9 @@ export function AlertOverlay() {
       // Welcome back / login alerts slide upward automatically after 1 second
       const isWelcome = activeAlert.title?.toLowerCase().includes('welcome') || false;
       const isMealWithNotif = activeAlert.type === 'MEAL' && activeAlert.notificationId != null;
-      const durationMs = isWelcome ? 1000 : (isMealWithNotif ? 6000 : 1200);
+      // The password-change reminder carries a full sentence — worth more than a glance.
+      const isPasswordReminder = activeAlert.title?.toLowerCase().includes('password') || false;
+      const durationMs = isWelcome ? 1000 : isMealWithNotif ? 6000 : isPasswordReminder ? 7000 : 1200;
 
       const timer = setTimeout(() => {
         handleDismiss();

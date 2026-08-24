@@ -29,6 +29,7 @@ import {
 import { BACKGROUND_NOTIFICATION_TASK } from '@/tasks/backgroundNotificationTask';
 import { Colors } from '@/theme';
 import { AlertOverlay } from '@/components/AlertOverlay';
+import { useToast } from '@/hooks/useToast';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -62,8 +63,26 @@ export default function RootLayout() {
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
   const accessToken = useAuthStore((s) => s.accessToken);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const mustChangePassword = useAuthStore((s) => s.user?.must_change_password ?? false);
+  const toast = useToast();
 
   const [isHydrated, setIsHydrated] = useState(false);
+
+  // A temp password set by someone else (owner-created guest/staff/manager) no longer blocks
+  // sign-in — it's a reminder, not a gate (product decision). Nag once per app open, whether
+  // this session started with a fresh login or a cold-start restore, and stop nagging the
+  // instant the flag clears (changeGuestPassword refetches `user` for exactly that reason).
+  const remindedRef = useRef(false);
+  useEffect(() => {
+    if (isHydrated && mustChangePassword && !remindedRef.current) {
+      remindedRef.current = true;
+      toast(
+        'warning',
+        '🔐 Update your password',
+        'Your account still has the password set by whoever created it. Change it whenever you like from Settings > Security.'
+      );
+    }
+  }, [isHydrated, mustChangePassword, toast]);
 
   // Cold-start gotcha: a notification tap can fire before the Stack's navigation state has
   // actually finished initializing, even though this component has "mounted" by then — calling

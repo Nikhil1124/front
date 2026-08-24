@@ -24,12 +24,13 @@ export async function listProcurementCatalog(): Promise<ProcurementCatalogItem[]
 export interface SubmitProcurementOrderParams {
   pg_id: string;
   order_type: "grocery" | "supplies" | "emergency";
+  // Just the catalog item id and how many — the server prices, names and categorises the
+  // line itself from the live Supply catalog. Sending the name/category/unit/price the
+  // client happened to have cached is not just redundant, it 422s: `RequestModel` forbids
+  // extra fields, and none of those four exist on `ProcurementOrderItemRequest`.
   items: Array<{
-    item_name: string;
-    category: string;
+    item_id: string;
     quantity: number;
-    unit: string;
-    estimated_price: number;
   }>;
   notes?: string;
 }
@@ -47,16 +48,22 @@ export async function listProcurementOrders(
   const params = new URLSearchParams();
   if (filters.pgId) params.append("pg_id", filters.pgId);
   if (filters.status) params.append("status", filters.status);
-  if (filters.managerId) params.append("manager_id", filters.managerId);
+  if (filters.managerId) params.append("raised_by", filters.managerId);
   const qs = params.toString() ? `?${params.toString()}` : "";
   const dto = await apiFetch<{ items: any[] } | any[]>(`${API.PROCUREMENT_ORDERS}${qs}`);
   const items = Array.isArray(dto) ? dto : (dto?.items ?? []);
   return items.map(toProcurementOrder);
 }
 
-export function approveProcurementOrder(orderId: string): Promise<ProcurementOrder> {
+// Approving *is* buying it — the server places a real order on this payment method through
+// the same path any other purchase takes, so it's a required field, not a formality.
+export function approveProcurementOrder(
+  orderId: string,
+  paymentMethod: "card" | "upi" | "credit"
+): Promise<ProcurementOrder> {
   return apiFetch<any>(API.PROCUREMENT_ORDER_APPROVE(orderId), {
     method: "POST",
+    body: JSON.stringify({ payment_method: paymentMethod }),
   }).then(toProcurementOrder);
 }
 
@@ -101,7 +108,8 @@ export function useSubmitProcurementOrder() {
 export function useApproveProcurementOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => approveProcurementOrder(orderId),
+    mutationFn: (params: { orderId: string; paymentMethod: "card" | "upi" | "credit" }) =>
+      approveProcurementOrder(params.orderId, params.paymentMethod),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.procurement.ordersAll() });
     },

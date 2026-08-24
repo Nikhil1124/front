@@ -43,10 +43,49 @@ const TABS = [
   { key: 'custom' as const, label: 'Custom Range 📅' },
 ];
 
+// YYYY-MM-DD in local time — `toISOString()` would shift the date at timezones ahead of UTC.
+function toDateInputString(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Computed relative to today on every call, not baked-in literals — a "Current Month" chip
+ *  that always opens the same fixed past month stops meaning what its label says. */
+function datePresets(): Array<{ label: string; start: string; end: string }> {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+
+  const last30Start = new Date(now);
+  last30Start.setDate(last30Start.getDate() - 30);
+
+  // The most recently *completed* quarter, so it always has full data rather than an
+  // in-progress one — the same reason a "current quarter" preset would be a moving target.
+  const currentQuarter = Math.floor(month / 3);
+  const prevQuarter = currentQuarter === 0 ? 3 : currentQuarter - 1;
+  const prevQuarterYear = currentQuarter === 0 ? year - 1 : year;
+  const prevQuarterStart = new Date(prevQuarterYear, prevQuarter * 3, 1);
+  const prevQuarterEnd = new Date(prevQuarterYear, prevQuarter * 3 + 3, 0);
+
+  return [
+    { label: 'Current Month', start: toDateInputString(monthStart), end: toDateInputString(monthEnd) },
+    { label: 'Last 30 Days', start: toDateInputString(last30Start), end: toDateInputString(now) },
+    { label: `Q${prevQuarter + 1} ${prevQuarterYear}`, start: toDateInputString(prevQuarterStart), end: toDateInputString(prevQuarterEnd) },
+  ];
+}
+
 export function PnLAnalyticsDetailScreen() {
   const [interval, setInterval] = useState<AnalyticsInterval>('3m');
-  const [customStart, setCustomStart] = useState('2026-06-01');
-  const [customEnd, setCustomEnd] = useState('2026-08-19');
+  // Relative to today, not a date literal that reads as "last 30 days" forever while actually
+  // drifting further from real the longer this build ships without an update.
+  const [customStart, setCustomStart] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return toDateInputString(d);
+  });
+  const [customEnd, setCustomEnd] = useState(() => toDateInputString(new Date()));
 
   const owner = usePGowStore((s) => s.loggedInOwner);
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -356,11 +395,7 @@ export function PnLAnalyticsDetailScreen() {
           </Row>
           <Spacer size={10} />
           <Row gap={6}>
-            {[
-              { label: 'Current Month', start: '2026-08-01', end: '2026-08-31' },
-              { label: 'Last 30 Days', start: '2026-07-20', end: '2026-08-19' },
-              { label: 'Q2 2026', start: '2026-04-01', end: '2026-06-30' },
-            ].map((p) => (
+            {datePresets().map((p) => (
               <TouchableOpacity
                 key={p.label}
                 style={styles.presetChip}

@@ -426,6 +426,8 @@ export function toRepairRequest(r: RequestRecord): PGRepairServiceRequest {
     pgId: r.pg_id,
     category: r.category ?? "",
     issueTitle: r.title,
+    description: r.description ?? "",
+    priority: r.priority,
     urgency: detailStr(r, "urgency"),
     // Whoever the ticket is actually assigned to wins over whatever was guessed at booking.
     assignedTechnicianName: r.assigned_name ?? detailStr(r, "technician_name"),
@@ -569,11 +571,11 @@ export function toPropertyLayout(dto: any): PropertyLayoutResponse {
 export function toProcurementCatalogItem(dto: any): ProcurementCatalogItem {
   return {
     id: str(dto?.id),
-    pgId: dto?.pg_id != null ? str(dto.pg_id) : null,
+    categoryId: str(dto?.category_id ?? dto?.categoryId),
+    category: str(dto?.category_name ?? dto?.category, "Other"),
     itemName: str(dto?.item_name ?? dto?.itemName),
-    category: (str(dto?.category, "other") as ProcurementCatalogItem["category"]),
-    unit: str(dto?.unit),
-    defaultPrice: num(dto?.default_price ?? dto?.defaultPrice),
+    unit: str(dto?.unit_label ?? dto?.unit),
+    defaultPrice: num(dto?.price ?? dto?.default_price ?? dto?.defaultPrice),
     isActive: bool(dto?.is_active ?? dto?.isActive, true),
   };
 }
@@ -582,7 +584,7 @@ export function toProcurementOrder(dto: any): ProcurementOrder {
   return {
     id: str(dto?.id),
     pgId: str(dto?.pg_id ?? dto?.pgId),
-    managerId: str(dto?.manager_id ?? dto?.managerId),
+    raisedBy: str(dto?.raised_by ?? dto?.raisedBy),
     orderType: (str(dto?.order_type ?? dto?.orderType, "grocery") as ProcurementOrder["orderType"]),
     status: (str(dto?.status, "pending_owner_approval") as ProcurementOrder["status"]),
     totalCost: num(dto?.total_cost ?? dto?.totalCost),
@@ -594,9 +596,9 @@ export function toProcurementOrder(dto: any): ProcurementOrder {
       ? dto.items.map((it: any) => ({
           id: str(it?.id),
           itemName: str(it?.item_name ?? it?.itemName),
-          category: str(it?.category),
+          category: str(it?.category_name ?? it?.category),
           quantity: num(it?.quantity),
-          unit: str(it?.unit),
+          unit: str(it?.unit_label ?? it?.unit),
           estimatedPrice: num(it?.estimated_price ?? it?.estimatedPrice),
           lineTotal: num(it?.line_total ?? it?.lineTotal),
         }))

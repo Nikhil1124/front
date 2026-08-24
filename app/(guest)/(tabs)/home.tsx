@@ -3,25 +3,29 @@
  * toggle, quick-action tile grid, notices carousel.
  */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, Text } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Pill } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Layout } from '@/theme';
+
+// Same green token as the owner/manager overview for visual consistency.
+const GREEN = '#176B3A';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { hapticSelect } from '@/utils/haptics';
 import type { MealNotificationEntity } from '@/types';
 
-interface QuickTile { label: string; desc: string; icon: keyof typeof Ionicons.glyphMap; tint: string; href: string; }
+interface QuickTile { label: string; desc: string; icon: keyof typeof Ionicons.glyphMap; href: string; }
 const QUICK_TILES: QuickTile[] = [
-  { label: 'Rent & Receipts',  desc: 'Pay • Download PDF',    icon: 'card',            tint: '#0D9488', href: '/guest-payments' },
-  { label: 'Maintenance',      desc: 'Raise & track tickets',  icon: 'construct',       tint: '#D97706', href: '/support' },
-  { label: 'Weekly Menu',      desc: '7-day menu',            icon: 'restaurant',       tint: '#10B981', href: '/meals' },
-  { label: 'Profile & KYC',    desc: 'Verify identity',       icon: 'shield-checkmark', tint: '#0284C7', href: '/profile' },
-  { label: 'Hub Services',     desc: 'Marketplace & laundry', icon: 'storefront',       tint: '#9333EA', href: '/hub-services' },
+  { label: 'Rent & Receipts',  desc: 'Pay • Download PDF',     icon: 'card-outline',             href: '/guest-payments' },
+  { label: 'Maintenance',      desc: 'Raise & track tickets',  icon: 'construct-outline',        href: '/support' },
+  { label: 'Weekly Menu',      desc: '7-day meal menu',        icon: 'restaurant-outline',       href: '/meals' },
+  { label: 'Profile & KYC',   desc: 'Verify identity',        icon: 'shield-checkmark-outline', href: '/profile' },
+  { label: 'Hub Services',     desc: 'Marketplace & laundry',  icon: 'storefront-outline',       href: '/hub-services' },
+  { label: 'Groceries',        desc: 'Kitchen & PG supplies',  icon: 'nutrition-outline',        href: '/groceries' },
 ];
 
 // Countdown formatter — returns "⏰ Cut-off in 1h 15m" or "Closed" based on
@@ -215,8 +219,10 @@ export default function GuestHomeTab() {
           </Row>
         </Card>
 
-        {/* Quick tiles grid (2×2) */}
-        <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 4 }}>QUICK ACTIONS</Txt>
+        {/* Quick tiles grid — same design as owner/manager overview */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+        </View>
         <View style={styles.tileGrid}>
           {QUICK_TILES.map((tile) => (
             <AnimatedPress
@@ -224,21 +230,23 @@ export default function GuestHomeTab() {
               scale={0.96}
               hapticPattern="light"
               onPress={() => handleTilePress(tile)}
-              style={{ flex: 1 }}
+              style={styles.tileWrap}
             >
-              <Card
-                containerColor={Colors.surface}
-                borderRadius={Layout.borderRadiusCard}
-                borderWidth={1}
-                borderColor={Colors.borderSubtle}
-                padding={[14, 14]}
-              >
-                <View style={[styles.tileIcon, { backgroundColor: `${tile.tint}1A` }]}>
-                  <Ionicons name={tile.icon} size={20} color={tile.tint} />
+              <View style={styles.tileCard}>
+                {/* Icon box */}
+                <View style={styles.tileIconBox}>
+                  <Ionicons name={tile.icon} size={22} color={GREEN} />
                 </View>
-                <Txt size={13} weight="800" color={Colors.textPrimary} style={{ marginTop: 10 }}>{tile.label}</Txt>
-                <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
-              </Card>
+                {/* Text */}
+                <View style={{ flex: 1, marginTop: 12 }}>
+                  <Text style={styles.tileLabel}>{tile.label}</Text>
+                  <Text style={styles.tileDesc}>{tile.desc}</Text>
+                </View>
+                {/* Arrow */}
+                <View style={styles.tileArrow}>
+                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
+                </View>
+              </View>
             </AnimatedPress>
           ))}
         </View>
@@ -292,14 +300,36 @@ const styles = StyleSheet.create({
     width: 28, height: 28, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
   },
+
+  // Section header — matches owner overview
+  sectionHeader: { marginBottom: 12, marginTop: 4 },
+  sectionTitle:  { fontSize: 17, fontWeight: '700', color: '#17201A' },
+
+  // Tile grid — identical to owner tileGrid / tileWrap / tileCard
   tileGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
-    gap: 10,
+    gap: 12, marginBottom: 4,
   },
-  tileIcon: {
-    width: 40, height: 40, borderRadius: 12,
+  tileWrap: { width: '48%' },
+  tileCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#DDE8DE',
+    padding: 16,
+    minHeight: 130,
+  },
+  tileIconBox: {
+    width: 44, height: 44, borderRadius: 13,
+    backgroundColor: '#EAF5EE',
     alignItems: 'center', justifyContent: 'center',
   },
+  tileLabel: { fontSize: 14, fontWeight: '700', color: '#17201A', marginBottom: 2 },
+  tileDesc:  { fontSize: 12, color: '#68736C' },
+  tileArrow: {
+    position: 'absolute', bottom: 14, right: 14,
+  },
+
   noticeIconBubble: {
     width: 26, height: 26, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center',

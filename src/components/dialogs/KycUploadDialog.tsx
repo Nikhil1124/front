@@ -27,6 +27,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Layout } from '@/theme';
@@ -61,6 +62,71 @@ export function KycUploadDialog({
   const [idPhotoUri, setIdPhotoUri] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // ── Image picker helpers ────────────────────────────────────────────────────
+  /** Opens camera after requesting permission. Returns the picked uri or null. */
+  const pickFromCamera = async (): Promise<string | null> => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Camera Permission Required',
+        'Please allow camera access in your device settings to take a photo.',
+      );
+      return null;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+    });
+    if (result.canceled) return null;
+    return result.assets?.[0]?.uri ?? null;
+  };
+
+  /** Opens the system photo library after requesting permission. Returns the picked uri or null. */
+  const pickFromGallery = async (): Promise<string | null> => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Photo Library Permission Required',
+        'Please allow photo library access in your device settings to choose a photo.',
+      );
+      return null;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+    });
+    if (result.canceled) return null;
+    return result.assets?.[0]?.uri ?? null;
+  };
+
+  /** Shows an action sheet letting the user choose Camera or Gallery, then calls the setter. */
+  const pickPhoto = (setter: (uri: string) => void) => {
+    Alert.alert(
+      'Choose Photo',
+      'Take a new photo or choose from your gallery.',
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            const uri = await pickFromCamera();
+            if (uri) { hapticSuccess(); setter(uri); }
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: async () => {
+            const uri = await pickFromGallery();
+            if (uri) { hapticSuccess(); setter(uri); }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true },
+    );
+  };
 
   // Android hardware back: dismiss the modal rather than letting the OS
   // navigate away. Same pattern as PaymentReceiptDialog — see that file for
@@ -189,7 +255,7 @@ export function KycUploadDialog({
               </View>
               <Col style={{ flex: 1 }}>
                 <Btn
-                  onPress={() => setProfilePhotoUri(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`)}
+                  onPress={() => pickPhoto(setProfilePhotoUri)}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
                   borderRadius={Layout.borderRadiusButton}
@@ -257,7 +323,7 @@ export function KycUploadDialog({
               </View>
               <Col style={{ flex: 1 }}>
                 <Btn
-                  onPress={() => setIdPhotoUri(`sample:iddoc_${selectedIdType.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(Math.random() * 900) + 100}`)}
+                  onPress={() => pickPhoto(setIdPhotoUri)}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
                   borderRadius={Layout.borderRadiusButton}

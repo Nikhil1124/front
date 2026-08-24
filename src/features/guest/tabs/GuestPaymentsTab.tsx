@@ -34,17 +34,25 @@ import type { PaymentEntity, TenantInvoice } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 import { usePaymentsQuery } from '@/features/payments/usePayments';
-import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useActiveProperty } from '@/features/properties/useProperties';
+import { useMyRewardsQuery, useClaimChampionRewardMutation } from '@/features/rewards/useRewards';
+import { PGowApiError } from '@/data/apiClient';
 
 export function GuestPaymentsTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const { activeEntity: ownerForGuest } = useActiveProperty();
   const activePgId = useAuthStore((s) => s.activePgId);
+  const authUser = useAuthStore((s) => s.user);
   const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);
-  const { data: allGuests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: rewards } = useMyRewardsQuery(activePgId ?? undefined);
+  const claimChampionReward = useClaimChampionRewardMutation(activePgId ?? undefined);
   const submitPayment = usePGowStore((s) => s.submitGuestPayment);
-  const activeMembership = useAuthStore((s) => s.user?.memberships.find((m) => m.role === 'guest')?.membership_id ?? null);
+  // Must match by pg_id AND role — a user who has been a guest at multiple properties holds
+  // multiple 'guest' memberships. Finding by role alone returns the wrong one when activePgId
+  // is not the first membership in the list, which means invoices load for the wrong property.
+  const activeMembership = useAuthStore(
+    (s) => s.user?.memberships.find((m) => m.pg_id === (s.activePgId ?? '') && m.role === 'guest')?.membership_id ?? null
+  );
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
 
@@ -66,18 +74,40 @@ export function GuestPaymentsTab() {
   const ownerUpi = ownerForGuest?.upiId?.trim() ?? '';
   const hasUpi = ownerUpi.length > 0;
   const contactPhone = ownerForGuest?.managerPhone?.trim() || ownerForGuest?.phonePeNumber?.trim() || '';
+  // Room number: prefer the guest entity (loaded async), fall back to the membership
+  // in authStore (available immediately after /v1/me) — avoids showing '101' while loading.
+  const membershipRoomNo = activePgId
+    ? (authUser?.memberships.find((m) => m.pg_id === activePgId)?.room_no ?? null)
+    : null;
   const isBillPaid = guest?.isBillPaid ?? false;
 
-  const guestsWithRewardPoints = allGuests.filter((g) => g.rewardPoints > 0);
-  const highestReward = guestsWithRewardPoints.length > 0
-    ? guestsWithRewardPoints.reduce((a, b) => (b.rewardPoints > a.rewardPoints ? b : a))
-    : null;
-  const isWinner = highestReward !== null && highestReward.id === guest?.id;
+  // Recomputed server-side on every fetch — never derived here, since a resident's own
+  // device is not something the discount can be trusted to compute for itself.
+  const isTopEarner = rewards?.is_top_earner ?? false;
+  const now = new Date();
+  const championRewardClaimedThisCycle = (rewards?.recent ?? []).some(
+    (e) =>
+      e.ref_type === 'champion_reward' &&
+      new Date(e.created_at).getMonth() === now.getMonth() &&
+      new Date(e.created_at).getFullYear() === now.getFullYear()
+  );
   // Today's actual date — the on-time discount is a real rule, not a demo toggle.
-  const isOnTime = new Date().getDate() <= 5;
+  const isOnTime = now.getDate() <= 5;
   const baseRent = guest?.rentAmount ?? 6500;
-  const rentAmount = Math.max(1, baseRent - (isOnTime ? 50 : 0) - (isWinner ? 100 : 0));
+  const rentAmount = Math.max(1, baseRent - (isOnTime ? 50 : 0) - (championRewardClaimedThisCycle ? 100 : 0));
   const currentMonthYear = periodToMonthYear(currentPeriod());
+
+  const handleClaimChampionReward = async () => {
+    hapticSelect();
+    try {
+      await claimChampionReward.mutateAsync();
+      hapticSuccess();
+      toast('success', '🏆 Reward claimed!', "₹100 champion discount applied to this cycle's rent.");
+    } catch (err) {
+      hapticError();
+      toast('error', 'Could not claim', err instanceof PGowApiError ? err.message : 'Please try again.');
+    }
+  };
 
   const guestPayments = allPayments.filter((p) => p.payerId === guest?.id);
   const filteredPayments = filter === 'ALL' ? guestPayments : guestPayments.filter((p) => p.status === filter);
@@ -104,7 +134,7 @@ export function GuestPaymentsTab() {
       toast('success', 'Payment submitted!', isBillPaid ? 'Your payment was recorded.' : 'Awaiting owner verification.');
     } else {
       hapticError();
-      Alert.alert('Failed', r.error ?? 'Unknown');
+      toast('error', 'Failed', r.error ?? 'Unknown');
     }
   };
 
@@ -340,11 +370,13 @@ export function GuestPaymentsTab() {
                 </Col>
                 <Col align="center">
                   <Txt size={8} color="rgba(255,255,255,0.75)">REWARDS</Txt>
-                  <Txt variant="caption" weight="800" color="#FDE68A">{guest?.rewardPoints ?? 0} PTS</Txt>
+                  <Txt variant="caption" weight="800" color="#FDE68A">{rewards?.balance ?? 0} PTS</Txt>
                 </Col>
                 <Col align="flex-end">
                   <Txt size={8} color="rgba(255,255,255,0.75)">ROOM</Txt>
-                  <Txt variant="caption" weight="700" color={Colors.textInverse}>{guest?.roomNo ?? '101'}</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textInverse}>
+                    {guest?.roomNo || membershipRoomNo || '—'}
+                  </Txt>
                 </Col>
               </Row>
             </Col>
@@ -379,10 +411,37 @@ export function GuestPaymentsTab() {
             <View style={styles.breakdownBox}>
               <Row justify="space-between"><Txt variant="caption" color={Colors.SlateMutedText}>Base Monthly Rent Dues</Txt><Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>₹{Math.round(baseRent).toLocaleString('en-IN')}</Txt></Row>
               {isOnTime && <Row justify="space-between"><Txt variant="caption" color={Colors.CyberGreen}>⚡ On-Time Discount (Before 5th)</Txt><Txt variant="caption" weight="700" color={Colors.CyberGreen}>-₹50</Txt></Row>}
-              {isWinner && <Row justify="space-between"><Txt variant="caption" color={Colors.CyberPink}>🏆 30th Winner Champion Incentive</Txt><Txt variant="caption" weight="700" color={Colors.CyberPink}>-₹100</Txt></Row>}
+              {championRewardClaimedThisCycle && <Row justify="space-between"><Txt variant="caption" color={Colors.CyberPink}>🏆 Champion Reward Claimed</Txt><Txt variant="caption" weight="700" color={Colors.CyberPink}>-₹100</Txt></Row>}
               <View style={{ height: 1, backgroundColor: Colors.LuxuryCardBorder, marginVertical: 6 }} />
               <Row justify="space-between"><Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>Net Payable Amount</Txt><Txt variant="sectionTitle" weight="900" color={Colors.CyberGreen}>₹{Math.round(rentAmount)}</Txt></Row>
             </View>
+
+            {isTopEarner && !championRewardClaimedThisCycle && (
+              <>
+                <Spacer size={10} />
+                <View style={styles.championBanner}>
+                  <Row gap={8} align="center" style={{ flex: 1 }}>
+                    <Txt size={20}>🏆</Txt>
+                    <Col style={{ flex: 1 }}>
+                      <Txt variant="caption" weight="800" color={Colors.IvoryWhiteText}>You're this cycle's top earner!</Txt>
+                      <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Redeem 100 points for ₹100 off this cycle's rent.</Txt>
+                    </Col>
+                  </Row>
+                  <Btn
+                    onPress={handleClaimChampionReward}
+                    loading={claimChampionReward.isPending}
+                    containerColor={Colors.CyberPink}
+                    textColor={Colors.IvoryWhiteText}
+                    borderRadius={8}
+                    height={34}
+                    contentStyle={{ paddingHorizontal: 12 }}
+                    testID="claim_champion_reward_btn"
+                  >
+                    <Txt variant="caption" weight="800" color={Colors.IvoryWhiteText}>Claim</Txt>
+                  </Btn>
+                </View>
+              </>
+            )}
 
             {isBillPaid ? (
               <View style={[styles.paidBanner, { backgroundColor: 'rgba(20,226,177,0.15)' }]}>
@@ -416,7 +475,7 @@ export function GuestPaymentsTab() {
                                 ) : null}
                                 <Txt variant="caption" weight="700" color={Colors.CyberPurple}>Owner UPI VPA ID: {ownerUpi}</Txt>
                               </Col>
-                              <IconBtn onPress={() => { Clipboard.setStringAsync(ownerUpi); Alert.alert('Copied', `Copied UPI VPA: ${ownerUpi}`); }} icon="copy" size={20} tint={Colors.CyberPink} />
+                              <IconBtn onPress={() => { Clipboard.setStringAsync(ownerUpi); toast('success', 'Copied', `Copied UPI VPA: ${ownerUpi}`); }} icon="copy" size={20} tint={Colors.CyberPink} />
                             </Row>
                             <Spacer size={10} />
                             <OutlinedBtn onPress={handleUpiLaunch} borderColor={Colors.CyberPink} textColor={Colors.CyberPink} borderRadius={8} height={36}>
@@ -503,6 +562,7 @@ const styles = StyleSheet.create({
   billPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   breakdownBox: { backgroundColor: Colors.LuxuryPureBlack, borderRadius: 10, borderWidth: 1, borderColor: Colors.LuxuryCardBorder, padding: 12 },
   paidBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 12, marginTop: 12 },
+  championBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 12, backgroundColor: 'rgba(232,121,249,0.12)', borderWidth: 1, borderColor: 'rgba(232,121,249,0.4)' },
   vpaBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.surface, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,163,140,0.5)', padding: 8 },
   qrBox: { width: 140, height: 140, alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: Colors.CyberAmber, padding: 8, alignItems: 'center', justifyContent: 'center' },
 });

@@ -8,6 +8,7 @@ import { View, StyleSheet, Alert, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
@@ -26,6 +27,7 @@ export default function GuestTabsLayout() {
 
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
+  const user = useAuthStore((s) => s.user);
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const logout = usePGowStore((s) => s.logout);
   const updateProfilePhoto = usePGowStore((s) => s.updateGuestProfilePhoto);
@@ -33,6 +35,52 @@ export default function GuestTabsLayout() {
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
   const paid = guest?.isBillPaid ?? false;
   const { dockStyle, contentPaddingBottom } = useDock();
+
+  // Room number: prefer guest entity (loaded after full session), fall back to the
+  // membership's room_no in authStore (available immediately after /v1/me resolves).
+  const membershipRoomNo = activePgId
+    ? user?.memberships.find((m) => m.pg_id === activePgId)?.room_no ?? null
+    : null;
+  const roomNo = guest?.roomNo || membershipRoomNo || 'N/A';
+
+  // ── Profile photo picker helpers ────────────────────────────────────────────
+  const pickFromCamera = async (): Promise<string | null> => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Camera Permission Required',
+        'Please allow camera access in your device settings to take a selfie.',
+      );
+      return null;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled) return null;
+    return result.assets?.[0]?.uri ?? null;
+  };
+
+  const pickFromGallery = async (): Promise<string | null> => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Photo Library Permission Required',
+        'Please allow photo library access in your device settings to choose a photo.',
+      );
+      return null;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled) return null;
+    return result.assets?.[0]?.uri ?? null;
+  };
 
   return (
     <Tabs style={styles.root}>
@@ -75,7 +123,7 @@ export default function GuestTabsLayout() {
               <Txt size={18} weight="800" color={Colors.primaryDark} numberOfLines={1}>Hello, {guest?.name ?? 'Guest'}</Txt>
             </Row>
             <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginTop: 1 }}>
-              Room {guest?.roomNo ?? 'N/A'} • Premium Resident
+              Room {roomNo} • Premium Resident
             </Txt>
             <View style={[styles.billPill, { backgroundColor: paid ? '#ECFDF5' : '#FFFBEB', borderWidth: 1, borderColor: paid ? '#A7F3D0' : '#FDE68A' }]}>
               <Ionicons name={paid ? 'checkmark-circle' : 'information-circle'} size={11} color={paid ? '#059669' : '#B45309'} />
@@ -129,23 +177,21 @@ export default function GuestTabsLayout() {
               <Txt size={12} color={Colors.textMuted}>{guest?.profilePhotoUri ? 'Current Profile Photo' : 'No profile photo set yet'}</Txt>
             </Col>
             <Spacer size={18} />
-            <Btn onPress={() => { updateProfilePhoto(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`); Alert.alert('Success', 'Sample selfie selected!'); setShowProfilePhotoDialog(false); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={44} testID="take_camera_photo_btn">
+            <Btn onPress={async () => {
+              const uri = await pickFromCamera();
+              if (uri) { updateProfilePhoto(uri); hapticSuccess(); setShowProfilePhotoDialog(false); }
+            }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={44} testID="take_camera_photo_btn">
               <Ionicons name="camera" size={18} color={Colors.textInverse} /><Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Take Photo (Camera)</Txt>
             </Btn>
             <Spacer size={8} />
-            <OutlinedBtn onPress={() => { updateProfilePhoto(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`); Alert.alert('Success', 'Sample photo loaded!'); setShowProfilePhotoDialog(false); }} borderColor={Colors.primary} textColor={Colors.primary} borderRadius={12} height={44} testID="choose_gallery_photo_btn">
+            <OutlinedBtn onPress={async () => {
+              const uri = await pickFromGallery();
+              if (uri) { updateProfilePhoto(uri); hapticSuccess(); setShowProfilePhotoDialog(false); }
+            }} borderColor={Colors.primary} textColor={Colors.primary} borderRadius={12} height={44} testID="choose_gallery_photo_btn">
               <Ionicons name="images" size={18} color={Colors.primary} /><Txt size={13} weight="700" color={Colors.primary} style={{ marginLeft: 8 }}>Choose from Gallery</Txt>
             </OutlinedBtn>
-            <Spacer size={12} /><View style={{ height: 1, backgroundColor: Colors.borderMuted }} /><Spacer size={12} />
-            <Txt size={12} weight="700" color={Colors.textPrimary}>Or select a Preset Avatar:</Txt>
-            <Spacer size={8} />
-            <Row gap={8} justify="space-between">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <AnimatedPress key={i} scale={0.9} onPress={() => { updateProfilePhoto(`sample:avatar_preset_${i}`); Alert.alert('Success', `Avatar ${i} selected!`); setShowProfilePhotoDialog(false); }} style={styles.presetAvatar}>
-                  <Ionicons name="happy" size={24} color={Colors.primary} />
-                </AnimatedPress>
-              ))}
-            </Row>
+
+
             {guest?.profilePhotoUri ? (
               <>
                 <Spacer size={12} />

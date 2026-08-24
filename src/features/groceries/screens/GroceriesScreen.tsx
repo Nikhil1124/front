@@ -43,9 +43,14 @@ export function GroceriesScreen() {
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const getCartTotal = useCartStore((s) => s.getCartTotal);
 
-  const { data: supplyItems = [] } = useSupplyItems(activePgId ?? undefined);
-  const { data: categories = [] } = useSupplyCategories(activePgId ?? undefined);
+  const { data: supplyItems = [], error: itemsError } = useSupplyItems(activePgId ?? undefined);
+  const { data: categories = [], error: categoriesError } = useSupplyCategories(activePgId ?? undefined);
   const { data: deals = [] } = useDeals(activePgId ?? undefined);
+
+  // Any of the three catalog calls can fail the same way (no warehouse routed to this PG's
+  // area yet, catalog not seeded, etc.) — one banner naming the real reason beats three
+  // sections that just quietly render as empty with no explanation.
+  const catalogError = itemsError ?? categoriesError;
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -147,7 +152,14 @@ export function GroceriesScreen() {
 
           <FilterSheet visible={isFilterOpen} onClose={() => setIsFilterOpen(false)} value={filters} onApply={setFilters} />
 
-          {isSearching ? (
+          {catalogError ? (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={22} color="#B91C1C" />
+              <Text style={styles.errorText}>
+                {catalogError instanceof Error ? catalogError.message : 'Could not load the grocery catalog.'}
+              </Text>
+            </View>
+          ) : isSearching ? (
             <View style={styles.searchResultsWrapper}>
               <Text style={styles.searchResultsTitle}>
                 {searchResults.length > 0 ? `${searchResults.length} results for "${searchQuery}"` : `No results for "${searchQuery}"`}
@@ -270,6 +282,11 @@ const styles = StyleSheet.create({
   cartIconWrapper: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#15803D', justifyContent: 'center', alignItems: 'center', position: 'relative' },
   cartBadge: { position: 'absolute', top: -2, right: -4, backgroundColor: '#E53935', borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
   checkoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 1, backgroundColor: '#15803D', paddingVertical: 7, paddingHorizontal: 12, borderRadius: 24 },
+  errorBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 4,
+    padding: 14, borderRadius: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5',
+  },
+  errorText: { flex: 1, fontSize: 13, color: '#991B1B', fontWeight: '600' as const },
   searchResultsWrapper: { paddingHorizontal: 16, paddingTop: 4 },
   searchResultsList: { gap: 10 },
   noResultsBox: { alignItems: 'center', paddingVertical: 60, gap: 12 },

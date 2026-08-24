@@ -150,7 +150,7 @@ export function OwnerServicesTab() {
                   month: 'short',
                   year: 'numeric',
                 })
-              : '19 Aug 2026';
+              : '—';
 
             return (
               <View key={rep.id} style={styles.repairCard}>

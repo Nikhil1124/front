@@ -8,12 +8,14 @@
  *     which now renders status banners + opens <KycUploadDialog/>.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { useToast } from '@/hooks/useToast';
 import { GuestKycVerificationTab } from './GuestKycVerificationTab';
 import { FormScroll } from '@/components/ui/FormScroll';
 
@@ -44,6 +46,8 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
 export function GuestSecurityTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const changePassword = usePGowStore((s) => s.changeGuestPassword);
+  const mustChangePassword = useAuthStore((s) => s.user?.must_change_password ?? false);
+  const toast = useToast();
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
 
@@ -112,6 +116,17 @@ export function GuestSecurityTab() {
           <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>Change Login Passcode</Txt>
         </Row>
         <Spacer size={10} />
+        {mustChangePassword && (
+          <>
+            <View style={styles.tempPasswordNotice}>
+              <Ionicons name="alert-circle" size={16} color={Colors.warning} />
+              <Txt variant="caption" weight="700" color={Colors.tertiary} style={{ marginLeft: 8, flex: 1 }}>
+                This account still uses the password set by whoever created it. Set your own below whenever you're ready.
+              </Txt>
+            </View>
+            <Spacer size={12} />
+          </>
+        )}
         {/* The server will not change a password without proof of the current one — that is
             what stops an unattended phone from being locked out of its own account. */}
         <OutlinedTextField
@@ -134,11 +149,11 @@ export function GuestSecurityTab() {
           onPress={async () => {
             const r = await changePassword(newPassword, currentPassword);
             if (r.ok) {
-              Alert.alert('Success', 'Passcode updated successfully!');
+              toast('success', 'Passcode Updated', 'Your new passcode is active.');
               setNewPassword('');
               setCurrentPassword('');
             } else {
-              Alert.alert('Failed', r.error ?? 'Unknown');
+              toast('error', 'Failed', r.error ?? 'Unknown');
             }
           }}
           containerColor={Colors.primary}
@@ -177,5 +192,12 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 10,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center', justifyContent: 'center',
+  },
+  tempPasswordNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.alertGradientStart,
+    borderRadius: Layout.borderRadiusChip,
+    padding: 10,
   },
 });

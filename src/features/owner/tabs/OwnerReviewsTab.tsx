@@ -50,16 +50,21 @@ export function OwnerReviewsTab() {
   }, [submissions]);
 
   const ratingSummary = useMemo(() => {
-    if (totalReviews === 0) return null;
+    // `overallRating` is 0 (unrated, not "1 star") on every submission until a real ratings
+    // API exists — dividing by `totalReviews` (which counts unrated ones too) used to show a
+    // confident 0%/0%/0% breakdown for properties that do have real submissions, which reads
+    // as "no feedback is positive" rather than the true "no star ratings exist yet".
     const pos = submissions.filter((s) => s.overallRating >= 4).length;
     const neu = submissions.filter((s) => s.overallRating === 3).length;
     const neg = submissions.filter((s) => s.overallRating > 0 && s.overallRating <= 2).length;
+    const rated = pos + neu + neg;
+    if (rated === 0) return null;
     return {
-      positive: { count: pos, pct: Math.round((pos / totalReviews) * 100) },
-      neutral: { count: neu, pct: Math.round((neu / totalReviews) * 100) },
-      negative: { count: neg, pct: Math.round((neg / totalReviews) * 100) },
+      positive: { count: pos, pct: Math.round((pos / rated) * 100) },
+      neutral: { count: neu, pct: Math.round((neu / rated) * 100) },
+      negative: { count: neg, pct: Math.round((neg / rated) * 100) },
     };
-  }, [submissions, totalReviews]);
+  }, [submissions]);
 
   // Guest Issues (Complaints)
   const activeIssues = useMemo(() => {
@@ -94,21 +99,27 @@ export function OwnerReviewsTab() {
       let reviewCount = 0;
       let icon: keyof typeof Ionicons.glyphMap = 'person-outline';
 
+      // `reviewCount` counts only submissions that actually carry a star rating for this
+      // metric — not every category-matched complaint/feedback row, most of which have
+      // `rating === 0` (unrated, since there's no real ratings API yet, see mappers.ts).
+      // Counting those as reviews made a staff member with zero real ratings but a couple of
+      // unrelated complaints filed under their category show "★0.0 (2)" and get flagged
+      // "Needs attention" for a performance signal that doesn't exist.
       if (role === 'manager') {
         rating = avgMgr;
-        reviewCount = managerReviews.length;
+        reviewCount = managerReviews.filter((s) => s.managerRating > 0).length;
         icon = 'person-circle-outline';
       } else if (role === 'chef' || role === 'kitchen_staff') {
         rating = avgMeals;
-        reviewCount = chefReviews.length;
+        reviewCount = chefReviews.filter((s) => s.mealRating > 0).length;
         icon = 'restaurant-outline';
       } else if (role.includes('maintenance') || role.includes('clean') || role.includes('housekeeping')) {
         rating = avgClean;
-        reviewCount = staffReviews.length;
+        reviewCount = staffReviews.filter((s) => s.cleanlinessRating > 0).length;
         icon = 'sparkles-outline';
       } else {
         rating = avgOverall;
-        reviewCount = totalReviews;
+        reviewCount = submissions.filter((s) => s.overallRating > 0).length;
         icon = 'shield-outline';
       }
 

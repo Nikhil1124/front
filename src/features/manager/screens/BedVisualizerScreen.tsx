@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -245,7 +245,7 @@ export function BedVisualizerScreen() {
                       subtitle="Add a resident from the Guests tab first, then assign them here."
                     />
                   ) : (
-                    <FormScroll style={{ maxHeight: 280 }}>
+                    <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
                       <View style={{ gap: 8 }}>
                         {unassignedGuests.map((g) => (
                           <TouchableOpacity
@@ -261,7 +261,7 @@ export function BedVisualizerScreen() {
                           </TouchableOpacity>
                         ))}
                       </View>
-                    </FormScroll>
+                    </ScrollView>
                   )}
                 </>
               )}

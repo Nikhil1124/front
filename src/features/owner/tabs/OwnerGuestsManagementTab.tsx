@@ -24,6 +24,7 @@ import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { EmptyState } from '@/components/EmptyState';
 import { DetailBottomSheet } from '@/components/DetailBottomSheet';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
+import { FormScroll } from '@/components/ui/FormScroll';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -125,7 +126,7 @@ export function OwnerGuestsManagementTab() {
             toast('success', 'Resident Removed', `${g.name} has been removed.`);
           } else {
             hapticError();
-            Alert.alert('Failed', result?.error || 'Could not remove resident.');
+            toast('error', 'Failed', result?.error || 'Could not remove resident.');
           }
       } },
     ]);
@@ -170,7 +171,7 @@ export function OwnerGuestsManagementTab() {
           setErrorField('phone');
         }
         
-        Alert.alert('Failed', errorMsg);
+        toast('error', 'Failed', errorMsg);
       }
     } finally {
       setIsCreating(false);
@@ -193,21 +194,31 @@ export function OwnerGuestsManagementTab() {
       setEditing(null);
     } else {
       hapticError();
-      Alert.alert('Failed', result.error ?? 'Unknown');
+      toast('error', 'Failed', result.error ?? 'Unknown');
     }
   };
 
   const handleApprove = async (g: GuestEntity) => {
-    await verifyGuestKycByOwner(g.id, true);
-    hapticSuccess();
-    toast('success', 'KYC Approved', `Notification sent to ${g.name}.`);
-    setReviewing(null);
+    const result = await verifyGuestKycByOwner(g.id, true);
+    if (result.ok) {
+      hapticSuccess();
+      toast('success', 'KYC Approved', `Notification sent to ${g.name}.`);
+      setReviewing(null);
+    } else {
+      hapticError();
+      toast('error', 'Failed', result.error ?? 'Could not record the decision.');
+    }
   };
 
   const handleReject = async () => {
     if (!rejecting) return;
     const reason = rejectionReason.trim() || 'Document or photo unreadable.';
-    await verifyGuestKycByOwner(rejecting.id, false, reason);
+    const result = await verifyGuestKycByOwner(rejecting.id, false, reason);
+    if (!result.ok) {
+      hapticError();
+      toast('error', 'Failed', result.error ?? 'Could not record the decision.');
+      return;
+    }
     hapticError();
     toast('warning', 'KYC Rejected', 'Resident notified. They can re-upload documents.');
     setRejecting(null);
@@ -235,14 +246,14 @@ export function OwnerGuestsManagementTab() {
     setBusyJoinCode(true);
     const result = await run();
     setBusyJoinCode(false);
-    if (!result?.ok) Alert.alert('Failed', result?.error ?? 'Something went wrong.');
+    if (!result?.ok) toast('error', 'Failed', result?.error ?? 'Something went wrong.');
     return result;
   };
 
   const handleEnableJoinCode = async () => {
     const amount = parseFloat(rentInput);
     if (!(amount > 0)) {
-      Alert.alert('Set the rent first', 'Enter the monthly rent a new resident should be put on.');
+      toast('warning', 'Set the rent first', 'Enter the monthly rent a new resident should be put on.');
       return;
     }
     const saved = await guardJoinCode(() => setDefaultRent(amount));
@@ -253,7 +264,7 @@ export function OwnerGuestsManagementTab() {
   const handleCopyCode = async () => {
     if (!owner?.joinCode) return;
     await Clipboard.setStringAsync(owner.joinCode);
-    Alert.alert('Copied', `Code ${owner.joinCode} is on your clipboard.`);
+    toast('success', 'Copied', `Code ${owner.joinCode} is on your clipboard.`);
   };
 
   const handleShareCode = async () => {
@@ -339,7 +350,7 @@ export function OwnerGuestsManagementTab() {
       {subTab === 0 ? (
         showManualForm ? (
           /* Manual Registration Form UI */
-          <ScrollView
+          <FormScroll
             contentContainerStyle={styles.formScroll}
             showsVerticalScrollIndicator={false}
           >
@@ -417,7 +428,7 @@ export function OwnerGuestsManagementTab() {
               <Ionicons name="person-add" size={16} color={WHITE} style={{ marginRight: 8 }} />
               <Text style={styles.submitBtnText}>Register Resident ID & Password</Text>
             </TouchableOpacity>
-          </ScrollView>
+          </FormScroll>
         ) : (
           /* Add Resident Options Roster */
           <ScrollView
@@ -987,12 +998,19 @@ export function OwnerGuestsManagementTab() {
             borderWidth={1}
             borderColor={BORDER}
             padding={[16, 16]}
-            style={{ width: '92%' }}
+            style={{ width: '92%', maxHeight: '90%' }}
           >
             <Txt variant="sectionTitle" weight="800" color={CHARCOAL}>
               Edit Resident Profile
             </Txt>
             <Spacer size={12} />
+            {/* Plain ScrollView — FormScroll's KeyboardAvoidingView has no valid layout anchor
+                inside a Modal and causes flex:1 to overflow the card, pushing fields off-screen. */}
+            <ScrollView
+              style={{ maxHeight: 360 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
             <OutlinedTextField
               label="Resident Full Name *"
               value={editName}
@@ -1029,6 +1047,8 @@ export function OwnerGuestsManagementTab() {
               containerColor={BG}
               style={{ marginBottom: 12 }}
             />
+            </ScrollView>
+            <Spacer size={4} />
             <Row gap={8}>
               <Btn
                 onPress={handleUpdate}

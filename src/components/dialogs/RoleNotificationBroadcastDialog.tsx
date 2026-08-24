@@ -4,12 +4,13 @@
  * hardware back button support, and backdrop touch-to-dismiss.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable, KeyboardAvoidingView } from 'react-native';
+import { Modal, View, StyleSheet, Pressable, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useToast } from '@/hooks/useToast';
 
 interface Props {
   onDismiss: () => void;
@@ -24,17 +25,23 @@ const ROLES: Array<[string, string]> = [
 
 export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
   const send = usePGowStore((s) => s.sendRoleNotification);
+  const toast = useToast();
   const [titleInput, setTitleInput] = useState('');
   const [messageInput, setMessageInput] = useState('');
   const [targetRole, setTargetRole] = useState('ALL');
 
   const handleSend = async () => {
     if (!titleInput.trim() || !messageInput.trim()) {
-      Alert.alert('Validation', 'Please enter title and message.');
+      toast('warning', 'Validation', 'Please enter title and message.');
       return;
     }
-    await send(targetRole, titleInput.trim(), messageInput.trim(), 'ANNOUNCEMENT', 'MEDIUM');
-    onDismiss();
+    const ok = await send(targetRole, titleInput.trim(), messageInput.trim(), 'ANNOUNCEMENT', 'MEDIUM');
+    if (ok) {
+      toast('success', 'Announcement Sent', 'Notification dispatched.');
+      onDismiss();
+    } else {
+      toast('error', 'Failed', 'Could not send the announcement. Try again.');
+    }
   };
 
   return (

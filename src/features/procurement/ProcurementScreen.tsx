@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, RefreshControl, Pressable } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Modal, RefreshControl, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn } from '@/components/ui';
@@ -26,26 +26,22 @@ export interface ProcurementScreenProps {
   mode?: 'manager' | 'owner';
 }
 
-const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  grocery: 'nutrition',
-  produce: 'leaf',
-  dairy: 'water',
-  cleaning: 'sparkles',
-  toiletries: 'hand-left',
-  hardware: 'bulb',
-  supplies: 'cube',
-  other: 'ellipsis-horizontal-circle',
-};
-
-const CATEGORY_TABS = [
-  { key: 'all', label: 'All Items' },
-  { key: 'grocery', label: '🥫 Grocery' },
-  { key: 'produce', label: '🥬 Produce' },
-  { key: 'dairy', label: '🥛 Dairy' },
-  { key: 'cleaning', label: '🧹 Cleaning' },
-  { key: 'toiletries', label: '🧼 Toiletries' },
-  { key: 'hardware', label: '💡 Hardware' },
+// `category` is the live Supply catalog's own category name (free text, ops-curated) — not
+// a fixed set this app can enumerate ahead of time, so both the icon lookup and the tab list
+// below key off it loosely rather than assuming any particular value exists.
+const CATEGORY_ICON_KEYWORDS: Array<[string, keyof typeof Ionicons.glyphMap]> = [
+  ['produce', 'leaf'], ['vegetable', 'leaf'], ['fruit', 'leaf'],
+  ['dairy', 'water'],
+  ['clean', 'sparkles'],
+  ['toilet', 'hand-left'], ['hygiene', 'hand-left'],
+  ['hardware', 'bulb'],
+  ['grocery', 'nutrition'], ['staple', 'nutrition'], ['grain', 'nutrition'],
+  ['snack', 'cube'], ['beverage', 'cube'],
 ];
+function iconForCategory(category: string): keyof typeof Ionicons.glyphMap {
+  const lower = category.toLowerCase();
+  return CATEGORY_ICON_KEYWORDS.find(([kw]) => lower.includes(kw))?.[1] ?? 'ellipsis-horizontal-circle';
+}
 
 import { useActiveProperty } from '@/features/properties/useProperties';
 
@@ -79,6 +75,20 @@ function ManagerProcurementView() {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [showCartModal, setShowCartModal] = useState(false);
 
+  // Built from whatever categories the live catalog actually has, not a fixed guess — the
+  // catalog is a view of the real Supply categories, which are ops-curated free text.
+  const categoryTabs = useMemo(() => {
+    const seen = new Set<string>();
+    const tabs = [{ key: 'all', label: 'All Items' }];
+    for (const item of catalog) {
+      if (!seen.has(item.category)) {
+        seen.add(item.category);
+        tabs.push({ key: item.category, label: item.category });
+      }
+    }
+    return tabs;
+  }, [catalog]);
+
   const filteredItems = catalog.filter((item) => {
     const matchCat = selectedCat === 'all' || item.category === selectedCat;
     const matchSearch = search.trim() === '' || item.itemName.toLowerCase().includes(search.toLowerCase());
@@ -104,16 +114,9 @@ function ManagerProcurementView() {
 
   const handleSubmitRequisition = async () => {
     if (cartItemCount === 0 || !pgId) return;
-    const items = Object.entries(cart).map(([id, qty]) => {
-      const it = catalog.find((c) => c.id === id)!;
-      return {
-        item_name: it.itemName,
-        category: it.category,
-        quantity: qty,
-        unit: it.unit,
-        estimated_price: it.defaultPrice,
-      };
-    });
+    // The server prices, names and categorises each line itself from the live catalog — all
+    // it needs from here is which item and how many.
+    const items = Object.entries(cart).map(([id, qty]) => ({ item_id: id, quantity: qty }));
     try {
       await submitOrder.mutateAsync({ pg_id: pgId, order_type: 'supplies', items });
       hapticSuccess();
@@ -143,7 +146,7 @@ function ManagerProcurementView() {
       <Spacer size={12} />
 
       <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        {CATEGORY_TABS.map((tab) => {
+        {categoryTabs.map((tab) => {
           const isSel = selectedCat === tab.key;
           return (
             <AnimatedPress
@@ -258,7 +261,7 @@ function ManagerProcurementView() {
 
             <Spacer size={14} />
 
-            <FormScroll style={{ flex: 0, maxHeight: 280 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               <View style={{ gap: 8 }}>
                 {Object.entries(cart).map(([id, qty]) => {
                   const it = catalog.find((c) => c.id === id);
@@ -278,7 +281,7 @@ function ManagerProcurementView() {
                   );
                 })}
               </View>
-            </FormScroll>
+            </ScrollView>
 
             <Spacer size={14} />
             <View style={{ height: 1, backgroundColor: Colors.borderSubtle }} />
@@ -326,7 +329,7 @@ function CatalogRow({
       <Row justify="space-between" align="center">
         <Row gap={12} align="center" style={{ flex: 1 }}>
           <View style={[styles.itemIconWrap, { backgroundColor: qty > 0 ? '#F0FDF9' : Colors.surfaceElevated }]}>
-            <Ionicons name={CATEGORY_ICONS[item.category] ?? 'cube'} size={22} color={qty > 0 ? Colors.primary : Colors.primaryDark} />
+            <Ionicons name={iconForCategory(item.category)} size={22} color={qty > 0 ? Colors.primary : Colors.primaryDark} />
           </View>
           <Col style={{ flex: 1 }}>
             <Txt size={14} weight="800" color={Colors.textPrimary} numberOfLines={2}>{item.itemName}</Txt>
@@ -395,12 +398,18 @@ function OwnerProcurementView() {
 
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [approvePaymentMethod, setApprovePaymentMethod] = useState<'card' | 'upi' | 'credit'>('upi');
 
-  const handleApprove = async (orderId: string) => {
+  // Approving is buying: the server places a real order on whichever method is chosen here,
+  // so this asks first rather than defaulting one silently.
+  const handleApprove = async () => {
+    if (!approvingId) return;
     try {
-      await approveOrder.mutateAsync(orderId);
+      await approveOrder.mutateAsync({ orderId: approvingId, paymentMethod: approvePaymentMethod });
       hapticSuccess();
       toast('success', 'Requisition Approved', 'Manager has been notified with approval.');
+      setApprovingId(null);
     } catch (err: any) {
       hapticError();
       toast('error', 'Approve failed', err?.message ?? 'Please try again.');
@@ -490,9 +499,7 @@ function OwnerProcurementView() {
                   <Spacer size={14} />
                   <Row gap={10}>
                     <Btn
-                      onPress={() => handleApprove(req.id)}
-                      loading={approveOrder.isPending}
-                      disabled={approveOrder.isPending}
+                      onPress={() => { setApprovingId(req.id); setApprovePaymentMethod('upi'); }}
                       containerColor={Colors.success}
                       textColor={Colors.textInverse}
                       borderRadius={10}
@@ -519,6 +526,68 @@ function OwnerProcurementView() {
             </Card>
           ))}
         </View>
+      )}
+
+      {approvingId && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setApprovingId(null)}>
+          <View style={styles.modalBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setApprovingId(null)} />
+            <Card
+              containerColor={Colors.surface}
+              borderRadius={20}
+              borderWidth={1}
+              borderColor={Colors.borderSubtle}
+              padding={[20, 20]}
+              style={{ width: '90%', zIndex: 2 }}
+            >
+              <Txt size={16} weight="900" color={Colors.textPrimary}>Approve & Buy</Txt>
+              <Spacer size={6} />
+              <Txt size={12} color={Colors.textMuted}>This places a real order with the property's own money — pick how it's being paid for.</Txt>
+              <Spacer size={14} />
+              <Row gap={8}>
+                {(['upi', 'card', 'credit'] as const).map((m) => {
+                  const sel = approvePaymentMethod === m;
+                  return (
+                    <TouchableOpacity
+                      key={m}
+                      onPress={() => setApprovePaymentMethod(m)}
+                      style={[styles.catPill, sel && styles.catPillActive, { flex: 1, alignItems: 'center' }]}
+                    >
+                      <Txt size={12} weight="800" color={sel ? Colors.textInverse : Colors.textPrimary}>
+                        {m === 'upi' ? 'UPI' : m === 'card' ? 'Card' : 'Credit'}
+                      </Txt>
+                    </TouchableOpacity>
+                  );
+                })}
+              </Row>
+              <Spacer size={16} />
+              <Row gap={10}>
+                <Btn
+                  onPress={handleApprove}
+                  loading={approveOrder.isPending}
+                  disabled={approveOrder.isPending}
+                  containerColor={Colors.success}
+                  textColor={Colors.textInverse}
+                  borderRadius={10}
+                  height={44}
+                  style={{ flex: 1 }}
+                >
+                  <Txt size={12} weight="800" color={Colors.textInverse}>Confirm & Order</Txt>
+                </Btn>
+                <OutlinedBtn
+                  onPress={() => setApprovingId(null)}
+                  borderColor={Colors.borderSubtle}
+                  textColor={Colors.textPrimary}
+                  borderRadius={10}
+                  height={44}
+                  style={{ flex: 1 }}
+                >
+                  <Txt size={12} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+                </OutlinedBtn>
+              </Row>
+            </Card>
+          </View>
+        </Modal>
       )}
 
       {rejectingId && (

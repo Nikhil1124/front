@@ -2,7 +2,7 @@
  * AddPgPropertyDialog — port of Kotlin `AddPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, Alert, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -90,7 +90,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             </Col>
           </Row>
 
-          <FormScroll style={{ flex: 0, maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          <ScrollView style={{ maxHeight: 420 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             <OutlinedTextField
               label="Property / PG Name *"
               placeholder="Koramangala Executive Hub"
@@ -155,7 +155,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
                 ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
               </Txt>
             </View>
-          </FormScroll>
+          </ScrollView>
 
           <Spacer size={14} />
           <Row gap={8}>

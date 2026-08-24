@@ -11,10 +11,12 @@
  *   - Filter chips fire a selection haptic.
  *   - ScrollView has pull-to-refresh wired up via usePullToRefresh.
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { ScrollView, View, StyleSheet, Image, RefreshControl, TouchableOpacity } from 'react-native';
+import { useQueries } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { qk } from '@/data/queryKeys';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -43,14 +45,36 @@ const CUTOFF_HOURS: Record<'breakfast' | 'lunch' | 'dinner', number> = {
   dinner: 19,
 };
 
-import { useMealsQuery } from '@/features/meals/useMeals';
+import { useMealsQuery, getMyResponse } from '@/features/meals/useMeals';
 import { useAuthStore } from '@/store/authStore';
 
 export function GuestRSVPsTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  // What this resident actually answered, per the server — `GET /v1/meals` (above) doesn't
+  // carry the caller's own response, so without this a reopened app showed every meal as
+  // "Pending" again even after answering, since `rsvpChoices` below only remembers what was
+  // submitted in the current session.
+  const savedResponseQueries = useQueries({
+    queries: notifications.map((n) => ({
+      queryKey: qk.meals.myResponse(activePgId ?? '', n.id),
+      queryFn: () => getMyResponse(n.id),
+      enabled: !!activePgId,
+    })),
+  });
   const [rsvpChoices, setRsvpChoices] = useState<Record<string, 'REQUIRED' | 'NOT_REQUIRED'>>({});
+  // This session's own submissions win over the server snapshot — the query above may not
+  // have refetched yet immediately after a tap, and the optimistic local value is the freshest
+  // truth in that window.
+  const effectiveChoices = useMemo(() => {
+    const merged: Record<string, 'REQUIRED' | 'NOT_REQUIRED'> = {};
+    notifications.forEach((n, i) => {
+      const saved = savedResponseQueries[i]?.data;
+      if (saved) merged[n.id] = saved.choice === 'eating' ? 'REQUIRED' : 'NOT_REQUIRED';
+    });
+    return { ...merged, ...rsvpChoices };
+  }, [notifications, savedResponseQueries, rsvpChoices]);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
   const getAlertTriggerTime = usePGowStore((s) => s.getAlertTriggerTime);
   const formatServiceTime12h = usePGowStore((s) => s.formatServiceTime12h);
@@ -128,7 +152,7 @@ export function GuestRSVPsTab() {
   );
 
   const totalMealsCount = notifications.length;
-  const answeredMealsCount = notifications.filter((n) => rsvpChoices[n.id] !== undefined).length;
+  const answeredMealsCount = notifications.filter((n) => effectiveChoices[n.id] !== undefined).length;
   const progressPercent = totalMealsCount > 0 ? answeredMealsCount / totalMealsCount : 0;
 
   const mealSlots: { name: string; icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
@@ -193,7 +217,7 @@ export function GuestRSVPsTab() {
         <Row gap={10}>
           {mealSlots.map((slot) => {
             const matchingNotif = notifications.find((n) => n.mealType.toUpperCase() === slot.key);
-            const rsvpChoice = matchingNotif ? rsvpChoices[matchingNotif.id] : null;
+            const rsvpChoice = matchingNotif ? effectiveChoices[matchingNotif.id] : null;
             const isFilterSelected = selectedMealFilter === slot.key;
             let statusBg: string = '#F8FAFC';
             let statusBorder: string = Colors.borderMuted;
@@ -273,7 +297,7 @@ export function GuestRSVPsTab() {
         />
       ) : (
         filteredNotifications.map((notif) => {
-          const currentChoice = rsvpChoices[notif.id];
+          const currentChoice = effectiveChoices[notif.id];
           const isEating = currentChoice === 'REQUIRED';
           const isSkipping = currentChoice === 'NOT_REQUIRED';
           return (
@@ -436,7 +460,7 @@ export function GuestRSVPsTab() {
             <Txt size={11} weight="900" color={Colors.CyberPurple} style={{ letterSpacing: 1 }}>YOUR RSVP STATUS</Txt>
             <Spacer size={6} />
             {(() => {
-              const choice = detailMeal ? rsvpChoices[detailMeal.id] : null;
+              const choice = detailMeal ? effectiveChoices[detailMeal.id] : null;
               if (choice === 'REQUIRED') {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10B981' }]}>

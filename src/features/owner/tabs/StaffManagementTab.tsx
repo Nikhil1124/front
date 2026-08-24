@@ -19,6 +19,7 @@ import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
+import { FormScroll } from '@/components/ui/FormScroll';
 import { EmptyState } from '@/components/EmptyState';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -333,9 +334,8 @@ export function StaffManagementTab() {
 
       {/* ── Sub-Tab 0: Add Staff View ── */}
       {subTab === 0 && (
-        <ScrollView
+        <FormScroll
           contentContainerStyle={styles.scrollContent}
-          scrollEnabled={false}
           showsVerticalScrollIndicator={false}
         >
           <Text style={styles.bodyTitle}>Add Staff Member</Text>
@@ -471,7 +471,7 @@ export function StaffManagementTab() {
               {isSubmitting ? 'Registering...' : 'Create Staff Account'}
             </Text>
           </TouchableOpacity>
-        </ScrollView>
+        </FormScroll>
       )}
 
       {/* ── Sub-Tab 1: Staff Directory View ── */}

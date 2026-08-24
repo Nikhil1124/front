@@ -218,6 +218,8 @@ export interface PGRepairServiceRequest {
   pgId: string;
   category: string;
   issueTitle: string;
+  description: string;
+  priority: 'normal' | 'express' | 'scheduled';
   urgency: string;
   assignedTechnicianName: string;
   technicianPhone: string;
@@ -394,12 +396,14 @@ export interface MealToggleState {
   menuSummary: string;
 }
 
-/** A reusable catalog row for the procurement cart. */
+/** A reusable catalog row for the procurement cart — a live view of the real Supply
+ *  catalog, so `category` is whatever free-text name ops gave that category there, not a
+ *  fixed set of values this app can enumerate. */
 export interface ProcurementCatalogItem {
   id: string;
-  pgId: string | null;
+  categoryId: string;
+  category: string;
   itemName: string;
-  category: 'grocery' | 'supplies' | 'produce' | 'dairy' | 'cleaning' | 'toiletries' | 'hardware' | 'other';
   unit: string;
   defaultPrice: number;
   isActive: boolean;
@@ -409,7 +413,7 @@ export interface ProcurementCatalogItem {
 export interface ProcurementOrder {
   id: string;
   pgId: string;
-  managerId: string;
+  raisedBy: string;
   orderType: 'grocery' | 'supplies' | 'emergency';
   status: 'draft' | 'pending_owner_approval' | 'approved' | 'rejected' | 'ordered' | 'delivered';
   totalCost: number;
