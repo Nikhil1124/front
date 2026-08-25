@@ -64,6 +64,8 @@ const guestDto = {
   name: "Rohan Sharma", phone: "+919876543210", email: null,
   room_no: "102", rent_amount: "8500.00",
   started_at: "2026-01-05T10:00:00Z", ended_at: null,
+  kyc_status: null, kyc_reject_reason: null, kyc_submitted_at: null,
+  kyc_decided_at: null, kyc_front_url: null, kyc_selfie_url: null,
 };
 const noKyc = toGuest(guestDto);
 // The membership, not the user: every guest-scoped endpoint is addressed by membership.
@@ -75,9 +77,9 @@ assert.equal(noKyc.isBillPaid, false, "unpaid by default — never hide a bill t
 
 const rejected = toGuest(guestDto, {
   kyc: {
-    id: "k-1", pg_id: "pg-1", membership_id: "m-1", status: "rejected",
+    status: "rejected",
     reject_reason: "Selfie unreadable", submitted_at: "2026-02-01T00:00:00Z",
-    decided_at: "2026-02-02T00:00:00Z", front_url: "https://x/f", back_url: null,
+    decided_at: "2026-02-02T00:00:00Z", front_url: "https://x/f",
     selfie_url: "https://x/s",
   },
   isBillPaid: true,

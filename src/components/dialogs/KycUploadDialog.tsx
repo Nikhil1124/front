@@ -77,7 +77,7 @@ export function KycUploadDialog({
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       quality: 0.85,
-      allowsEditing: true,
+      allowsEditing: false,
     });
     if (result.canceled) return null;
     return result.assets?.[0]?.uri ?? null;
@@ -96,7 +96,7 @@ export function KycUploadDialog({
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.85,
-      allowsEditing: true,
+      allowsEditing: false,
     });
     if (result.canceled) return null;
     return result.assets?.[0]?.uri ?? null;
@@ -179,7 +179,16 @@ export function KycUploadDialog({
       onDismiss();
     } else {
       hapticError();
-      Alert.alert('Submission Failed', r.error ?? 'Please try again.');
+      const errMsg = r.error ?? 'Please try again.';
+      // 503 means the backend's S3 / document-storage integration is not yet configured.
+      const friendlyMsg = errMsg.toLowerCase().includes('not configured') || errMsg.toLowerCase().includes('document upload')
+        ? 'Document upload is not set up on this server yet. Please contact your property manager.'
+        // Raw S3 PUT failures (uploadToPresignedUrl) carry an XML error body — not
+        // something a resident can act on.
+        : errMsg.startsWith('Upload failed:')
+        ? 'We could not upload your photo. Please check your connection and try again.'
+        : errMsg;
+      Alert.alert('Submission Failed', friendlyMsg);
     }
   };
 

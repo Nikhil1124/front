@@ -20,6 +20,33 @@ export interface GuestMember {
   rent_amount: string | null;
   started_at: string;
   ended_at: string | null;
+  // The membership's current KYC decision (its most recently submitted row). Null means
+  // never submitted — see `kyc_status` on the backend's GuestResponse for why "most recent"
+  // is what "current" means here.
+  kyc_status: "pending" | "verified" | "rejected" | null;
+  kyc_reject_reason: string | null;
+  kyc_submitted_at: string | null;
+  kyc_decided_at: string | null;
+  kyc_front_url: string | null;
+  kyc_selfie_url: string | null;
+}
+
+/** Builds `toGuest`'s `kyc` extra straight off a `GuestMember` — the shape the backend now
+ *  embeds in every guest read (list and single). One place so the field list can't drift
+ *  between the roster and the single-guest refresh. */
+export function guestKycExtra(g: GuestMember) {
+  return g.kyc_status
+    ? {
+        status: g.kyc_status,
+        reject_reason: g.kyc_reject_reason,
+        // Always set once a KycVerification row exists (DB default), guaranteed whenever
+        // kyc_status is non-null.
+        submitted_at: g.kyc_submitted_at!,
+        decided_at: g.kyc_decided_at,
+        front_url: g.kyc_front_url,
+        selfie_url: g.kyc_selfie_url,
+      }
+    : null;
 }
 
 /** Money for display. One place, so the null case can't be handled in one screen and
@@ -120,7 +147,7 @@ export function useGuestsQuery(pgId?: string) {
     queryFn: async () => {
       if (!pgId) return [];
       const res = await listGuests(pgId, { limit: 200 });
-      return res.items.map((g) => map.toGuest(g, {}));
+      return res.items.map((g) => map.toGuest(g, { kyc: guestKycExtra(g) }));
     },
     enabled: !!pgId,
   });

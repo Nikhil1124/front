@@ -431,7 +431,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       if (mem) {
         if (activeRole === 'guest') {
           const guest = await guestsApi.getGuest(mem.membership_id).catch(() => null);
-          if (guest) set({ loggedInGuest: map.toGuest(guest) });
+          if (guest) set({ loggedInGuest: map.toGuest(guest, { kyc: guestsApi.guestKycExtra(guest) }) });
         } else if (activeRole && ['manager', 'chef', 'kitchen_staff', 'maintenance'].includes(activeRole)) {
           const staff = await staffApi.getStaff(mem.membership_id).catch(() => null);
           if (staff) set({ loggedInStaff: map.toStaff(staff) });
@@ -1400,7 +1400,12 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not submit KYC.' };
+      const msg = err instanceof PGowApiError
+        ? err.message
+        : err instanceof Error
+          ? err.message
+          : 'Could not submit KYC.';
+      return { ok: false, error: msg };
     }
   },
 

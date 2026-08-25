@@ -163,9 +163,14 @@ const KYC_STATUS: Record<KycRecord["status"], string> = {
   rejected: "REJECTED",
 };
 
+type GuestKycExtra = Pick<
+  KycRecord,
+  "status" | "reject_reason" | "submitted_at" | "decided_at" | "front_url" | "selfie_url"
+>;
+
 export function toGuest(
   g: GuestMember,
-  extras: { kyc?: KycRecord | null; isBillPaid?: boolean; rewardPoints?: number } = {}
+  extras: { kyc?: GuestKycExtra | null; isBillPaid?: boolean; rewardPoints?: number } = {}
 ): GuestEntity {
   const kyc = extras.kyc ?? null;
   return {
