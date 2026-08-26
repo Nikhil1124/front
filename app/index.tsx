@@ -15,17 +15,28 @@ export default function IndexRoute() {
   const user = useAuthStore((s) => s.user);
 
   if (!accessToken) return <Redirect href="/welcome" />;
-  
-  // If we have a token but haven't finished the initial `/v1/me` fetch,
-  // we are in the middle of session restoration. The Splash Screen is still up,
-  // so rendering nothing (or a spinner) is safe and prevents a premature redirect.
+
+  // If we have a token but haven't finished the initial `/v1/me` fetch, we are in the middle
+  // of session restoration. The splash screen is still up, so rendering nothing is safe and
+  // prevents a premature redirect on a role that has not resolved yet.
   if (!user) return null;
 
+  // Freshly registered owner with no PG properties yet must land on Owner Overview (onboarding state)
+  if (user.memberships.length === 0 && (activeRole === 'owner' || activeRole === null)) {
+    return <Redirect href="/overview" />;
+  }
+
   if (activeRole === 'owner' || activeRole === 'manager') return <Redirect href="/overview" />;
-  if (activeRole === 'guest') return <Redirect href="/home" />;
-  if (activeRole === 'maintenance') return <Redirect href="/housekeeping" />;
-  if (activeRole === 'chef' || activeRole === 'kitchen_staff') return <Redirect href="/eaters" />;
   
+  if (activeRole === 'guest') {
+    if (!!user && user.memberships.length === 0) {
+      return <Redirect href="/guest-join" />;
+    }
+    return <Redirect href="/home" />;
+  }
+  if (activeRole === 'maintenance') return <Redirect href="/housekeeping" />;
+  if (activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'delivery_agent') return <Redirect href="/eaters" />;
+
   // No recognized role yet (hydration still resolving, or a genuinely unknown role) —
   // welcome is always safe: if a token turns out to be valid, the role-based guards in
   // app/_layout.tsx will already keep this out of reach once activeRole is known.

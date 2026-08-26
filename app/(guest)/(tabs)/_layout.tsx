@@ -57,13 +57,13 @@ export default function GuestTabsLayout() {
             <>
               <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
                 <View style={styles.bellBtn}>
-                  <Ionicons name="notifications" size={18} color={Colors.primary} />
+                  <Ionicons name="notifications-outline" size={20} color={Colors.textPrimary} />
                   {unreadCount > 0 && <View style={styles.unreadDot} />}
                 </View>
               </AnimatedPress>
               <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
                 <View style={styles.bellBtn}>
-                  <Ionicons name="exit" size={18} color={Colors.danger} />
+                  <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
                 </View>
               </AnimatedPress>
             </>
@@ -72,14 +72,14 @@ export default function GuestTabsLayout() {
           <Col style={{ flex: 1, marginLeft: 12 }}>
             <Row gap={6} align="center">
               <View style={[styles.dot, { backgroundColor: Colors.success }]} />
-              <Txt size={18} weight="800" color={Colors.primaryDark} numberOfLines={1}>Hello, {guest?.name ?? 'Guest'}</Txt>
+              <Txt size={20} weight="700" color={Colors.textPrimary} numberOfLines={1}>Hello, {guest?.name ?? 'Guest'}</Txt>
             </Row>
-            <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginTop: 1 }}>
+            <Txt size={12} weight="500" color={Colors.textMuted} style={{ marginTop: 1 }}>
               Room {guest?.roomNo ?? 'N/A'} • Premium Resident
             </Txt>
-            <View style={[styles.billPill, { backgroundColor: paid ? '#ECFDF5' : '#FFFBEB', borderWidth: 1, borderColor: paid ? '#A7F3D0' : '#FDE68A' }]}>
-              <Ionicons name={paid ? 'checkmark-circle' : 'information-circle'} size={11} color={paid ? '#059669' : '#B45309'} />
-              <Txt size={10} weight="800" color={paid ? '#047857' : '#B45309'} style={{ marginLeft: 4 }}>
+            <View style={[styles.billPill, { backgroundColor: paid ? Colors.surfaceElevated : Colors.alertGradientStart, borderWidth: 1, borderColor: paid ? Colors.success : Colors.warning }]}>
+              <Ionicons name={paid ? 'checkmark-circle' : 'information-circle'} size={11} color={paid ? Colors.success : Colors.tertiary} />
+              <Txt size={10} weight="800" color={paid ? Colors.success : Colors.tertiary} style={{ marginLeft: 4 }}>
                 {paid ? 'Rent Paid' : 'Rent Pending'}
               </Txt>
             </View>
@@ -102,9 +102,6 @@ export default function GuestTabsLayout() {
         </TabTrigger>
         <TabTrigger name="guest-payments" href="/guest-payments" asChild>
           <HeadlessDockTabButton icon="card" label="Payments" />
-        </TabTrigger>
-        <TabTrigger name="support" href="/support" asChild>
-          <HeadlessDockTabButton icon="chatbubble-ellipses" label="Support" />
         </TabTrigger>
         <TabTrigger name="profile" href="/profile" asChild>
           <HeadlessDockTabButton icon="ribbon" label="Profile" />
@@ -190,7 +187,7 @@ const styles = StyleSheet.create({
     marginTop: 4, alignSelf: 'flex-start',
   },
   bellBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 38, height: 38, borderRadius: 19,
     backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: Colors.borderSubtle,
     alignItems: 'center', justifyContent: 'center',

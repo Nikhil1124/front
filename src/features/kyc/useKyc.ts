@@ -39,6 +39,8 @@ export async function uploadToPresignedUrl(
 ): Promise<void> {
   // Mock builds hand out a `mock://` url from getUploadUrl — nothing real to PUT to.
   if (uploadUrl.startsWith("mock://")) return;
+  // If the file URI is a mock/sample preset, skip fetching it and return success
+  if (fileUri.startsWith("sample:") || fileUri.startsWith("mock_media") || fileUri.startsWith("mock_photo")) return;
   const blob = await (await fetch(fileUri)).blob();
   const res = await fetch(uploadUrl, {
     method: "PUT",

@@ -13,7 +13,7 @@ export interface StaffMember {
   name: string;
   phone: string;
   email: string | null;
-  role: "manager" | "chef" | "kitchen_staff" | "maintenance" | "owner";
+  role: "manager" | "chef" | "kitchen_staff" | "maintenance" | "delivery_agent" | "owner";
   // A string on the way out ("15000.00"), a number on the way in — see addStaff below.
   // Pydantic serializes Decimal to a JSON string, so arithmetic on this needs parseFloat.
   monthly_salary: string | null;
@@ -24,7 +24,7 @@ export interface StaffMember {
   ended_at: string | null;
 }
 
-export type StaffRole = "manager" | "chef" | "kitchen_staff" | "maintenance";
+export type StaffRole = "manager" | "chef" | "kitchen_staff" | "maintenance" | "delivery_agent";
 
 export interface UpdateStaffPayload {
   name?: string;

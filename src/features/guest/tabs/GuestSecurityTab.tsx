@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -44,16 +44,24 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
 export function GuestSecurityTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const changePassword = usePGowStore((s) => s.changeGuestPassword);
+  const logout = usePGowStore((s) => s.logout);
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
 
   const kycStatus = (guest?.kycStatus ?? 'NOT_SUBMITTED') as KycStatus;
   const pill = kycPill(kycStatus);
 
+  const confirmLogout = () => {
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Log Out', style: 'destructive', onPress: logout },
+    ]);
+  };
+
   return (
     <FormScroll contentContainerStyle={{ padding: 16, gap: 16 }}>
-      {/* Section title */}
-      <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Profile & KYC Verification</Txt>
+      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>ACCOUNT</Txt>
+      <Spacer size={8} />
 
       {/* Resident details card with KYC pill */}
       <Card
@@ -63,8 +71,16 @@ export function GuestSecurityTab() {
         borderColor={Colors.borderSubtle}
         padding={[16, 16]}
       >
-        <Row justify="space-between" align="center">
-          <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>Resident Details</Txt>
+        <Row gap={12} align="center">
+          <Ionicons name="person-circle" size={44} color={Colors.primary} />
+          <Col style={{ flex: 1 }}>
+            <Txt size={16} weight="800" color={Colors.textPrimary}>
+              {guest?.name ?? 'Resident'}
+            </Txt>
+            <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 2 }}>
+              Premium Resident · Room {guest?.roomNo ?? 'N/A'}
+            </Txt>
+          </Col>
           <View style={[styles.kycPill, { backgroundColor: pill.bg }]}>
             <Ionicons
               name={kycStatus === 'VERIFIED' ? 'shield-checkmark' : kycStatus === 'PENDING' ? 'hourglass' : kycStatus === 'REJECTED' ? 'warning' : 'card'}
@@ -74,12 +90,33 @@ export function GuestSecurityTab() {
             <Txt variant="labelSmall" weight="800" color={pill.color} style={{ marginLeft: 4 }}>{pill.label}</Txt>
           </View>
         </Row>
-        <Spacer size={12} />
-        <Field label="Name" value={guest?.name ?? ''} />
-        <Field label="Room Number" value={guest?.roomNo ?? ''} />
-        <Field label="Email ID" value={guest?.email ?? ''} />
-        <Field label="Phone" value={guest?.phone ?? ''} />
+
+        {guest?.phone ? (
+          <>
+            <Spacer size={12} />
+            <View style={styles.divider} />
+            <Spacer size={12} />
+            <Row gap={10} align="center">
+              <Ionicons name="call" size={16} color={Colors.textMuted} />
+              <Txt variant="caption" color={Colors.textSecondary}>{guest.phone}</Txt>
+            </Row>
+          </>
+        ) : null}
+
+        {guest?.email ? (
+          <>
+            <Spacer size={10} />
+            <Row gap={10} align="center">
+              <Ionicons name="mail" size={16} color={Colors.textMuted} />
+              <Txt variant="caption" color={Colors.textSecondary}>{guest.email}</Txt>
+            </Row>
+          </>
+        ) : null}
       </Card>
+
+      <Spacer size={8} />
+      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>IDENTITY DOCUMENT (KYC)</Txt>
+      <Spacer size={8} />
 
       {/* KYC verification body — banners + dialog */}
       <Card
@@ -93,11 +130,15 @@ export function GuestSecurityTab() {
           <View style={styles.kycHeaderIcon}>
             <Ionicons name="ribbon" size={18} color={Colors.primary} />
           </View>
-          <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Identity Document (KYC)</Txt>
+          <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Verification Status</Txt>
         </Row>
         <Spacer size={12} />
         <GuestKycVerificationTab scrollable={false} />
       </Card>
+
+      <Spacer size={8} />
+      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>SECURITY</Txt>
+      <Spacer size={8} />
 
       {/* Change passcode */}
       <Card
@@ -151,6 +192,21 @@ export function GuestSecurityTab() {
           <Txt variant="body" weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Update Passcode</Txt>
         </Btn>
       </Card>
+
+      <Spacer size={16} />
+      <Btn
+        onPress={confirmLogout}
+        containerColor={Colors.surface}
+        textColor={Colors.danger}
+        borderRadius={12}
+        height={48}
+        borderWidth={1}
+        borderColor="#FECACA"
+        testID="guest_logout_btn"
+      >
+        <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
+        <Txt variant="body" weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>Log Out</Txt>
+      </Btn>
     </FormScroll>
   );
 }
@@ -177,5 +233,9 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 10,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center', justifyContent: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderMuted,
   },
 });

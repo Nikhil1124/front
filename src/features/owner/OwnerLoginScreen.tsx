@@ -17,6 +17,7 @@ import {
   Platform,
   ScrollView,
   Text,
+  LayoutChangeEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';

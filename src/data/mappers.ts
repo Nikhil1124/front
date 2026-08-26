@@ -168,6 +168,9 @@ export function toGuest(
   extras: { kyc?: KycRecord | null; isBillPaid?: boolean; rewardPoints?: number } = {}
 ): GuestEntity {
   const kyc = extras.kyc ?? null;
+  const statusRaw = kyc?.status ?? g.kyc_status ?? null;
+  const statusStr = statusRaw ? KYC_STATUS[statusRaw as keyof typeof KYC_STATUS] ?? "NOT_SUBMITTED" : "NOT_SUBMITTED";
+
   return {
     // The membership, not the user: a person can hold memberships in several properties and
     // every guest-scoped endpoint here is addressed by membership.
@@ -189,15 +192,15 @@ export function toGuest(
     // different endpoint, and fetching it per resident here would be an N+1 across the whole
     // roster.
     rewardPoints: extras.rewardPoints ?? 0,
-    idProofType: kyc ? "Aadhaar Card" : "",
+    idProofType: kyc ? "Aadhaar Card" : (g.kyc_status ? "Aadhaar Card" : ""),
     idProofNumber: "",
     // Presigned and short-lived; re-read from the KYC record rather than persisted.
-    idProofPhotoUri: kyc?.front_url ?? "",
-    profilePhotoUri: kyc?.selfie_url ?? "",
-    kycStatus: kyc ? KYC_STATUS[kyc.status] : "NOT_SUBMITTED",
-    kycRejectReason: kyc?.reject_reason ?? "",
-    kycSubmissionDate: toMillis(kyc?.submitted_at),
-    kycVerificationDate: toMillis(kyc?.decided_at),
+    idProofPhotoUri: kyc?.front_url ?? g.kyc_front_url ?? "",
+    profilePhotoUri: kyc?.selfie_url ?? g.kyc_selfie_url ?? "",
+    kycStatus: statusStr as any,
+    kycRejectReason: kyc?.reject_reason ?? g.kyc_reject_reason ?? "",
+    kycSubmissionDate: toMillis(kyc?.submitted_at ?? g.kyc_submitted_at),
+    kycVerificationDate: toMillis(kyc?.decided_at ?? g.kyc_decided_at),
   };
 }
 

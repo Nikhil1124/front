@@ -425,21 +425,63 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   refreshAll: async () => {
     const { user, activePgId, activeRole } = useAuthStore.getState();
     if (!user) return;
-    
-    if (activePgId) {
-      const mem = user.memberships.find(m => m.pg_id === activePgId);
-      if (mem) {
-        if (activeRole === 'guest') {
-          const guest = await guestsApi.getGuest(mem.membership_id).catch(() => null);
-          if (guest) set({ loggedInGuest: map.toGuest(guest) });
-        } else if (activeRole && ['manager', 'chef', 'kitchen_staff', 'maintenance'].includes(activeRole)) {
-          const staff = await staffApi.getStaff(mem.membership_id).catch(() => null);
-          if (staff) set({ loggedInStaff: map.toStaff(staff) });
-        }
-      }
-    }
-    
+
     await queryClient.invalidateQueries();
+
+    if (!activePgId) return;
+    const mem = user.memberships.find((m) => m.pg_id === activePgId);
+    if (!mem) return;
+
+    if (activeRole === 'guest') {
+      // isBillPaid is not on the guest record — it is derived from this cycle's verified
+      // payment, and /v1/payments/due is the only endpoint that knows it. Fetched alongside
+      // rather than after, since neither depends on the other.
+      const [guest, rentDue] = await Promise.all([
+        guestsApi.getGuest(mem.membership_id).catch(() => null),
+        paymentsApi.getRentDue(mem.pg_id).catch(() => null),
+      ]);
+      if (guest) {
+        set({ loggedInGuest: map.toGuest(guest, { isBillPaid: rentDue?.is_paid ?? false }) });
+      } else {
+        // The roster record did not come back (a resident reading their own membership can
+        // still 403 on some deployments). Fall back to what /v1/me already carries so the
+        // header shows a real name and room instead of "Guest · Room N/A".
+        const kycFromGate: Record<string, string> = {
+          KYC_REQUIRED: 'NOT_SUBMITTED',
+          KYC_PENDING: 'PENDING',
+          KYC_REJECTED: 'REJECTED',
+        };
+        set({
+          loggedInGuest: {
+            id: mem.membership_id,
+            pgId: mem.pg_id,
+            name: user.name,
+            email: user.email ?? '',
+            phone: user.phone,
+            roomNo: mem.room_no ?? '',
+            password: '',
+            registrationDate: 0,
+            isBillPaid: rentDue?.is_paid ?? false,
+            rentAmount: rentDue ? map.toAmount(rentDue.rent_amount) : 0,
+            rewardPoints: 0,
+            idProofType: '',
+            idProofNumber: '',
+            idProofPhotoUri: '',
+            profilePhotoUri: user.avatar_url ?? '',
+            kycStatus: (user.gate && kycFromGate[user.gate] ? kycFromGate[user.gate] : 'VERIFIED') as GuestEntity['kycStatus'],
+            kycRejectReason: '',
+            kycSubmissionDate: 0,
+            kycVerificationDate: 0,
+          },
+        });
+      }
+      return;
+    }
+
+    if (activeRole && ['manager', 'chef', 'kitchen_staff', 'maintenance', 'delivery_agent'].includes(activeRole)) {
+      const staff = await staffApi.getStaff(mem.membership_id).catch(() => null);
+      if (staff) set({ loggedInStaff: map.toStaff(staff) });
+    }
   },
 
   // Navigation lives in Expo Router now (see app/_layout.tsx's Stack.Protected guards and
@@ -773,6 +815,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     const audienceMap: Record<string, notificationsApi.BroadcastAudience> = {
       ALL: 'all', OWNER: 'owner', MANAGER: 'manager', RESIDENT: 'guest',
       GUEST: 'guest', CHEF: 'chef', STAFF: 'kitchen_staff', MAINTENANCE: 'maintenance',
+      DELIVERY_AGENT: 'delivery_agent', DELIVERY: 'delivery_agent',
     };
     const categoryMap: Record<string, notificationsApi.NotificationCategory> = {
       ANNOUNCEMENT: 'announcement', KYC: 'kyc', RENT: 'rent', PAYMENT: 'rent',
@@ -1153,7 +1196,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         };
       }
       const user = await authApi.fetchMe();
-      useAuthStore.getState().setUser(user);
+      useAuthStore.getState().setUser(user, 'owner');
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'OWNER';
       set({
         activeRole: role,
@@ -1186,7 +1229,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const tokens = await authApi.changePassword({ current_password: tempPassword, new_password: newPassword });
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       const user = await authApi.fetchMe();
-      useAuthStore.getState().setUser(user);
+      useAuthStore.getState().setUser(user, get().activeRole as any);
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
       set({
         activeRole: role,
@@ -1216,10 +1259,11 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!s.staffPhoneInput.trim()) {
       return { ok: false, error: 'A phone number is required — it is what staff sign in with.' };
     }
-    const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance'> = {
+    const roleMap: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance' | 'delivery_agent'> = {
       Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
       'Kitchen Staff': 'kitchen_staff',
       Maintenance: 'maintenance', 'Maintenance Staff': 'maintenance', Cleaner: 'maintenance',
+      'Delivery Agent': 'delivery_agent', Delivery: 'delivery_agent', Rider: 'delivery_agent',
     };
     try {
       await staffApi.addStaff(pgId, {
@@ -1309,7 +1353,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const tokens = await authApi.login({ phone: map.toE164(phone), password, asGuest: true });
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       const user = await authApi.fetchMe();
-      useAuthStore.getState().setUser(user);
+      useAuthStore.getState().setUser(user, 'guest');
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
       set({
         activeRole: role,
@@ -1378,7 +1422,15 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!idPhotoUri || !profilePhotoUri) {
       return { ok: false, error: 'Both an ID photo and a selfie are required.' };
     }
+    const kycKindMap: Record<string, string> = {
+      'Aadhaar Card': 'aadhaar',
+      'PAN Card': 'pan',
+      'Passport': 'passport',
+      'Driving License': 'dl',
+      'Voter ID': 'voter_id',
+    };
     try {
+      const mappedKind = kycKindMap[idType] || 'aadhaar';
       // The photos go straight to storage on presigned URLs; only the object keys reach us.
       const upload = async (kind: string, uri: string) => {
         const { upload_url, object_key } = await kycApi.getUploadUrl(kind, 'image/jpeg');
@@ -1386,12 +1438,12 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         return object_key;
       };
       const [front, selfie] = await Promise.all([
-        upload('front', idPhotoUri),
+        upload(mappedKind, idPhotoUri),
         upload('selfie', profilePhotoUri),
       ]);
       await kycApi.submitKyc({
         pg_id: pgId,
-        kind: idType || 'aadhaar',
+        kind: mappedKind,
         front_object_key: front,
         // This form captures one document photo; the server wants both faces, so the same
         // image stands in for the back rather than blocking submission on a field the UI
@@ -1402,13 +1454,20 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       });
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.session() });
-      useAuthStore.getState().setUser(await authApi.fetchMe());
+      useAuthStore.getState().setUser(await authApi.fetchMe(), 'guest');
       
       // Dispatch notification to Manager & Owner
       const guestName = get().loggedInGuest?.name || 'Resident';
       const guestRoom = get().loggedInGuest?.roomNo || 'N/A';
       get().sendRoleNotification(
         'MANAGER',
+        '📄 New KYC Verification Request',
+        `${guestName} (Room ${guestRoom}) uploaded identity documents. Please review and verify.`,
+        'KYC',
+        'HIGH',
+      );
+      get().sendRoleNotification(
+        'OWNER',
         '📄 New KYC Verification Request',
         `${guestName} (Room ${guestRoom}) uploaded identity documents. Please review and verify.`,
         'KYC',

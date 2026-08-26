@@ -27,6 +27,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Layout } from '@/theme';
@@ -121,6 +122,7 @@ export function KycUploadDialog({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Pressable style={styles.backdrop} onPress={onDismiss}>
+        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable onPress={() => {/* swallow tap so it doesn't bubble */}} style={styles.cardWrap}>
           <Card
             containerColor={Colors.surface}
@@ -218,6 +220,7 @@ export function KycUploadDialog({
             {/* Dropdown modal — for clean tap-outside-to-close */}
             <Modal visible={showDropdown} transparent animationType="fade" onRequestClose={() => setShowDropdown(false)}>
               <Pressable style={styles.dropdownBackdrop} onPress={() => setShowDropdown(false)}>
+                <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
                 <View style={styles.dropdownMenu}>
                   {ID_TYPES.map((t) => (
                     <TouchableOpacity

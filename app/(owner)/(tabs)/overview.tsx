@@ -82,6 +82,8 @@ export default function OwnerOverviewTab() {
   const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const isManager = usePGowStore((s) => s.isManagerMode);
+  const user = useAuthStore((s) => s.user);
+  const hasNoMemberships = !user || (user.memberships.length === 0);
 
   const now        = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
@@ -116,172 +118,215 @@ export default function OwnerOverviewTab() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Portfolio teaser (multi-PG owners only) ───────────────────── */}
-        {showPortfolio && (
-          <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => router.push('/portfolio')}>
-            <View style={styles.teaserCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.teaserLabel}>
-                  PORTFOLIO · {allPGs.length} PROPERTIES
-                </Text>
-                <Text style={styles.teaserValue}>
-                  {portfolio
-                    ? `₹${Math.round(portfolio.totalCollected).toLocaleString('en-IN')} collected this cycle`
-                    : 'View totals across every property'}
-                </Text>
-              </View>
-              <Row gap={2} align="center">
-                <Text style={styles.teaserLink}>View all</Text>
-                <Ionicons name="chevron-forward" size={13} color={GREEN} />
-              </Row>
-            </View>
-          </AnimatedPress>
-        )}
-
-        {/* ── Hero: Saved This Month ────────────────────────────────────── */}
-        <View style={styles.heroCard}>
-          {/* Top row: label + wallet icon */}
-          <Row justify="space-between" align="center">
-            <Text style={styles.heroLabel}>SAVED THIS MONTH</Text>
-            <View style={styles.heroIconCircle}>
-              <Ionicons name="wallet" size={20} color={WHITE} />
-            </View>
-          </Row>
-
-          {/* Big number */}
-          <Text style={styles.heroAmount}>
-            ₹{savedThisMonth.toLocaleString('en-IN')}
-          </Text>
-
-          {/* Portions skipped */}
-          <Row gap={5} align="center" style={{ marginTop: 6 }}>
-            <Ionicons name="leaf" size={13} color="rgba(255,255,255,0.80)" />
-            <Text style={styles.heroSub}>
-              {skippedPortions} portions skipped via broadcast
-            </Text>
-          </Row>
-
-          {/* Divider */}
-          <View style={styles.heroDivider} />
-
-          {/* Overdue pill */}
-          <TouchableOpacity
-            style={styles.overduePill}
-            onPress={() => { hapticSelect(); setShowOverdueModal(true); }}
-            activeOpacity={0.8}
+        {hasNoMemberships ? (
+          <Card
+            containerColor={WHITE}
+            borderRadius={20}
+            borderWidth={1}
+            borderColor={BORDER}
+            padding={[24, 20]}
+            style={{
+              shadowColor: GREEN,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 2,
+              marginTop: 16
+            }}
           >
-            <Ionicons name="alert-circle" size={13} color={WHITE} />
-            <Text style={styles.overdueText}>{overdueCount} overdue ›</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Quick Actions ─────────────────────────────────────────────── */}
-        <Row justify="space-between" align="center" style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Row gap={2} align="center">
-              <Text style={styles.viewAll}>View all</Text>
-              <Ionicons name="chevron-forward" size={13} color={GREEN} />
-            </Row>
-          </TouchableOpacity>
-        </Row>
-
-        <View style={styles.tileGrid}>
-          {tiles.map(tile => (
-            <AnimatedPress
-              key={tile.label}
-              scale={0.96}
-              hapticPattern="light"
-              onPress={() => handleTilePress(tile)}
-              style={styles.tileWrap}
-            >
-              <View style={styles.tileCard}>
-                {/* Icon */}
-                <View style={styles.tileIconBox}>
-                  <Ionicons name={tile.icon} size={22} color={GREEN} />
-                </View>
-                {/* Text */}
-                <View style={{ flex: 1, marginTop: 12 }}>
-                  <Text style={styles.tileLabel}>{tile.label}</Text>
-                  <Text style={styles.tileDesc}>{tile.desc}</Text>
-                </View>
-                {/* Arrow */}
-                <View style={styles.tileArrow}>
-                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
-                </View>
-              </View>
-            </AnimatedPress>
-          ))}
-        </View>
-
-        {/* ── Property Overview ─────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Property Overview</Text>
-        <View style={styles.overviewStrip}>
-          {/* Occupancy */}
-          <View style={styles.overviewCell}>
-            <Ionicons name="bed-outline" size={18} color={GREEN} />
-            <Text style={styles.overviewValue}>—/{totalBeds}</Text>
-            <Text style={styles.overviewLabel}>Occupancy</Text>
-            <Text style={styles.overviewSub}>beds</Text>
-          </View>
-          <View style={styles.overviewDivider} />
-          {/* Pending Payments */}
-          <View style={styles.overviewCell}>
-            <Ionicons name="cash-outline" size={18} color={GREEN} />
-            <Text style={styles.overviewValue}>
-              ₹{overdueAmount > 0 ? Math.round(overdueAmount).toLocaleString('en-IN') : '0'}
+            <View style={styles.tileIconBox}>
+              <Ionicons name="business" size={24} color={GREEN} />
+            </View>
+            <Spacer size={16} />
+            <Text style={{ fontSize: 20, fontWeight: '900', color: CHARCOAL }}>Get Started</Text>
+            <Spacer size={8} />
+            <Text style={{ color: MUTED, fontSize: 14, lineHeight: 20 }}>
+              Welcome to PGow! You haven't added any PG properties to your account yet. Add your first property to start managing staff, rooms, and payments.
             </Text>
-            <Text style={styles.overviewLabel}>Pending</Text>
-            <Text style={styles.overviewSub}>payments</Text>
-          </View>
-          <View style={styles.overviewDivider} />
-          {/* Open Requests */}
-          <View style={styles.overviewCell}>
-            <Ionicons name="alert-circle-outline" size={18} color={GREEN} />
-            <Text style={styles.overviewValue}>{openRequests}</Text>
-            <Text style={styles.overviewLabel}>Open</Text>
-            <Text style={styles.overviewSub}>requests</Text>
-          </View>
-        </View>
-
-        {/* ── Recent Activity ───────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Recent Activity</Text>
-        <View style={styles.activityCard}>
-          {recentFeed.length === 0 ? (
-            <Row gap={10} align="center">
-              <View style={styles.activityCheckCircle}>
-                <Ionicons name="checkmark" size={14} color={GREEN} />
-              </View>
-              <View>
-                <Text style={styles.activityEmpty}>All caught up!</Text>
-                <Text style={styles.activityEmptySub}>No recent activity to show.</Text>
-              </View>
-            </Row>
-          ) : (
-            <View style={{ gap: 12 }}>
-              {recentFeed.map((n, i) => (
-                <View key={n.id}>
-                  <Row gap={10} align="flex-start">
-                    <View style={[styles.feedDot, {
-                      backgroundColor:
-                        (n.category ?? '').toUpperCase().includes('PAYMENT') ? Colors.success :
-                        (n.category ?? '').toUpperCase().includes('KYC') ? Colors.warning :
-                        (n.priority ?? '').toUpperCase() === 'HIGH' ? Colors.danger :
-                        GREEN,
-                    }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.feedTitle}>{n.title}</Text>
-                      <Text style={styles.feedSub}>{n.message}</Text>
-                    </View>
+            <Spacer size={20} />
+            <Btn
+              onPress={() => { hapticSelect(); router.push('/manage-properties'); }}
+              containerColor={GREEN}
+              textColor={WHITE}
+              borderRadius={12}
+              height={48}
+            >
+              <Row align="center" gap={6}>
+                <Ionicons name="add-circle" size={18} color={WHITE} />
+                <Text style={{ fontSize: 14, fontWeight: '800', color: WHITE }}>Add First Property</Text>
+              </Row>
+            </Btn>
+          </Card>
+        ) : (
+          <>
+            {/* ── Portfolio teaser (multi-PG owners only) ───────────────────── */}
+            {showPortfolio && (
+              <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => router.push('/portfolio')}>
+                <View style={styles.teaserCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.teaserLabel}>
+                      PORTFOLIO · {allPGs.length} PROPERTIES
+                    </Text>
+                    <Text style={styles.teaserValue}>
+                      {portfolio
+                        ? `₹${Math.round(portfolio.totalCollected).toLocaleString('en-IN')} collected this cycle`
+                        : 'View totals across every property'}
+                    </Text>
+                  </View>
+                  <Row gap={2} align="center">
+                    <Text style={styles.teaserLink}>View all</Text>
+                    <Ionicons name="chevron-forward" size={13} color={GREEN} />
                   </Row>
-                  {i < recentFeed.length - 1 && <View style={styles.feedDivider} />}
                 </View>
+              </AnimatedPress>
+            )}
+
+            {/* ── Hero: Saved This Month ────────────────────────────────────── */}
+            <View style={styles.heroCard}>
+              {/* Top row: label + wallet icon */}
+              <Row justify="space-between" align="center">
+                <Text style={styles.heroLabel}>SAVED THIS MONTH</Text>
+                <View style={styles.heroIconCircle}>
+                  <Ionicons name="wallet" size={20} color={WHITE} />
+                </View>
+              </Row>
+
+              {/* Big number */}
+              <Text style={styles.heroAmount}>
+                ₹{savedThisMonth.toLocaleString('en-IN')}
+              </Text>
+
+              {/* Portions skipped */}
+              <Row gap={5} align="center" style={{ marginTop: 6 }}>
+                <Ionicons name="leaf" size={13} color="rgba(255,255,255,0.80)" />
+                <Text style={styles.heroSub}>
+                  {skippedPortions} portions skipped via broadcast
+                </Text>
+              </Row>
+
+              {/* Divider */}
+              <View style={styles.heroDivider} />
+
+              {/* Overdue pill */}
+              <TouchableOpacity
+                style={styles.overduePill}
+                onPress={() => { hapticSelect(); setShowOverdueModal(true); }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="alert-circle" size={13} color={WHITE} />
+                <Text style={styles.overdueText}>{overdueCount} overdue ›</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* ── Quick Actions ─────────────────────────────────────────────── */}
+            <Row justify="space-between" align="center" style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Quick Actions</Text>
+              <TouchableOpacity activeOpacity={0.7}>
+                <Row gap={2} align="center">
+                  <Text style={styles.viewAll}>View all</Text>
+                  <Ionicons name="chevron-forward" size={13} color={GREEN} />
+                </Row>
+              </TouchableOpacity>
+            </Row>
+
+            <View style={styles.tileGrid}>
+              {tiles.map(tile => (
+                <AnimatedPress
+                  key={tile.label}
+                  scale={0.96}
+                  hapticPattern="light"
+                  onPress={() => handleTilePress(tile)}
+                  style={styles.tileWrap}
+                >
+                  <View style={styles.tileCard}>
+                    {/* Icon */}
+                    <View style={styles.tileIconBox}>
+                      <Ionicons name={tile.icon} size={22} color={GREEN} />
+                    </View>
+                    {/* Text */}
+                    <View style={{ flex: 1, marginTop: 12 }}>
+                      <Text style={styles.tileLabel}>{tile.label}</Text>
+                      <Text style={styles.tileDesc}>{tile.desc}</Text>
+                    </View>
+                    {/* Arrow */}
+                    <View style={styles.tileArrow}>
+                      <Ionicons name="chevron-forward" size={14} color={GREEN} />
+                    </View>
+                  </View>
+                </AnimatedPress>
               ))}
             </View>
-          )}
-        </View>
 
-        <View style={{ height: 24 }} />
+            {/* ── Property Overview ─────────────────────────────────────────── */}
+            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Property Overview</Text>
+            <View style={styles.overviewStrip}>
+              {/* Occupancy */}
+              <View style={styles.overviewCell}>
+                <Ionicons name="bed-outline" size={18} color={GREEN} />
+                <Text style={styles.overviewValue}>—/{totalBeds}</Text>
+                <Text style={styles.overviewLabel}>Occupancy</Text>
+                <Text style={styles.overviewSub}>beds</Text>
+              </View>
+              <View style={styles.overviewDivider} />
+              {/* Pending Payments */}
+              <View style={styles.overviewCell}>
+                <Ionicons name="cash-outline" size={18} color={GREEN} />
+                <Text style={styles.overviewValue}>
+                  ₹{overdueAmount > 0 ? Math.round(overdueAmount).toLocaleString('en-IN') : '0'}
+                </Text>
+                <Text style={styles.overviewLabel}>Pending</Text>
+                <Text style={styles.overviewSub}>payments</Text>
+              </View>
+              <View style={styles.overviewDivider} />
+              {/* Open Requests */}
+              <View style={styles.overviewCell}>
+                <Ionicons name="alert-circle-outline" size={18} color={GREEN} />
+                <Text style={styles.overviewValue}>{openRequests}</Text>
+                <Text style={styles.overviewLabel}>Open</Text>
+                <Text style={styles.overviewSub}>requests</Text>
+              </View>
+            </View>
+
+            {/* ── Recent Activity ───────────────────────────────────────────── */}
+            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Recent Activity</Text>
+            <View style={styles.activityCard}>
+              {recentFeed.length === 0 ? (
+                <Row gap={10} align="center">
+                  <View style={styles.activityCheckCircle}>
+                    <Ionicons name="checkmark" size={14} color={GREEN} />
+                  </View>
+                  <View>
+                    <Text style={styles.activityEmpty}>All caught up!</Text>
+                    <Text style={styles.activityEmptySub}>No recent activity to show.</Text>
+                  </View>
+                </Row>
+              ) : (
+                <View style={{ gap: 12 }}>
+                  {recentFeed.map((n, i) => (
+                    <View key={n.id}>
+                      <Row gap={10} align="flex-start">
+                        <View style={[styles.feedDot, {
+                          backgroundColor:
+                            (n.category ?? '').toUpperCase().includes('PAYMENT') ? Colors.success :
+                            (n.category ?? '').toUpperCase().includes('KYC') ? Colors.warning :
+                            (n.priority ?? '').toUpperCase() === 'HIGH' ? Colors.danger :
+                            GREEN,
+                        }]} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.feedTitle}>{n.title}</Text>
+                          <Text style={styles.feedSub}>{n.message}</Text>
+                        </View>
+                      </Row>
+                      {i < recentFeed.length - 1 && <View style={styles.feedDivider} />}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={{ height: 24 }} />
+          </>
+        )}
       </ScrollView>
 
       {/* ── Overdue Detail Modal ──────────────────────────────────────────── */}
