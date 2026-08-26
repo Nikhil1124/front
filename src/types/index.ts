@@ -126,6 +126,12 @@ export interface FeedbackComplaintEntity {
   /** Who this ticket is assigned to, or null when unassigned. The staff-facing "my tickets"
    *  filter matches this against the signed-in staffer's own membership id. */
   assignedMembershipId: string | null;
+  /** The assignee's role: an in-house one ('maintenance', 'manager') or a PGow one
+   *  ('area_manager', 'super_admin') once the ticket has been booked out to a technician.
+   *  Null while nobody holds it. */
+  assignedRole: string | null;
+  /** The assignee's name, in-house or PGow, for "with X since" copy. */
+  assignedName: string | null;
   mealRating: number;
   cleanlinessRating: number;
   managerRating: number;
@@ -162,6 +168,10 @@ export interface AppRoleNotificationEntity {
   priority: string; // "HIGH" | "MEDIUM" | "LOW"
   actionLabel: string | null;
   actionType: string | null;
+  /** What the action opens — the ticket, payment or KYC record's id. Pairs with
+   *  `actionType`; both null means the row is read-only text. Without this the inbox knows
+   *  a notification is about *a* ticket but not *which*, so the button cannot navigate. */
+  actionId: string | null;
 }
 
 // ---- Non-Entity Data Classes ----

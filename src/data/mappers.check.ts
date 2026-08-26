@@ -19,6 +19,8 @@ import {
   toE164,
   hubStatusToServer,
   toRepairRequest,
+  toRoleNotification,
+  tradeFor,
   toGroceryOrder,
   toGuest,
   toLaundryRequest,
@@ -219,5 +221,70 @@ assert.equal(hubStatusToServer("laundry", "washing & ironing"), "in_progress");
 assert.equal(hubStatusToServer("grocery", "Cancelled"), "cancelled");
 // An unknown label must not silently resolve a ticket.
 assert.equal(hubStatusToServer("repair", "Nonsense"), "in_progress");
+
+
+// ─── "Book a technician": the label and note derive from the ticket ─────────
+// The whole point is that the owner never picks a trade — the resident already did, when
+// they chose a category. If this drifts, the button offers a plumber for a Wi-Fi fault.
+assert.equal(tradeFor("complaint", "Plumbing/Maintenance")?.action, "Book a Plumber");
+assert.equal(tradeFor("complaint", "Water & Electricity")?.action, "Book an Electrician");
+assert.equal(
+  tradeFor("complaint", "Wi-Fi & Internet")?.action,
+  "Book a Network Technician",
+  "a network fault must not summon a plumber"
+);
+assert.equal(tradeFor("complaint", "Room Cleanliness")?.action, "Book a Deep Clean");
+// Food is the kitchen's, not a trade's — it escalates, but it does not "book" anyone.
+assert.equal(tradeFor("complaint", "Food Quality")?.action, "Escalate to Area Manager");
+// Unknown and missing categories fall back rather than guessing a trade.
+assert.equal(tradeFor("complaint", "Other")?.action, "Book a Technician");
+assert.equal(tradeFor("complaint", null)?.action, "Book a Technician");
+assert.equal(tradeFor("complaint", "Something New From The Server")?.action, "Book a Technician");
+// Every branch carries a prefilled note — an empty box is the thing this exists to avoid.
+for (const category of [
+  "Plumbing/Maintenance",
+  "Water & Electricity",
+  "Wi-Fi & Internet",
+  "Room Cleanliness",
+  "Food Quality",
+  "Other",
+]) {
+  const trade = tradeFor("complaint", category);
+  assert.ok(trade && trade.note.length > 20, `${category} needs a real default note`);
+}
+// Feedback is not a work order, and a closed ticket is nobody's job — no button at all,
+// because the server answers 409/nothing useful for both.
+assert.equal(tradeFor("feedback", "Plumbing/Maintenance"), null);
+assert.equal(tradeFor("complaint", "Plumbing/Maintenance", "resolved"), null);
+assert.equal(tradeFor("complaint", "Plumbing/Maintenance", "cancelled"), null);
+assert.equal(
+  tradeFor("complaint", "Plumbing/Maintenance", "Resolved"),
+  null,
+  "the display status spelling must close the button too"
+);
+assert.ok(tradeFor("complaint", "Plumbing/Maintenance", "In Progress"));
+assert.ok(tradeFor("complaint", "Plumbing/Maintenance", "open"));
+
+// ─── Inbox: the tap target must survive the mapping ─────────────────────────
+// `action_id` is what tells the inbox WHICH ticket the button opens. Dropping it here is
+// silent — the button still renders, still says "Request", and goes nowhere.
+const inboxNote = toRoleNotification({
+  id: "n-1", pg_id: "pg-1", category: "complaint", priority: "high",
+  title: "Arranging a technician: Tap leaking",
+  body: "Your property has asked PGow support to arrange a visit.",
+  action_type: "request", action_id: "r-1", is_read: false,
+  created_at: "2026-08-26T10:00:00Z",
+});
+assert.equal(inboxNote.actionId, "r-1", "the inbox must know which ticket to open");
+assert.equal(inboxNote.actionType, "request");
+assert.equal(inboxNote.priority, "HIGH");
+// A read-only row has no target and must not pretend to have one.
+const plainNote = toRoleNotification({
+  id: "n-2", pg_id: "pg-1", category: "announcement", priority: "normal",
+  title: "Lift servicing on Sunday", body: "9am to 1pm.",
+  is_read: true, created_at: "2026-08-26T10:00:00Z",
+});
+assert.equal(plainNote.actionId, null);
+assert.equal(plainNote.actionLabel, null);
 
 console.log("mappers.check.ts — all assertions passed");

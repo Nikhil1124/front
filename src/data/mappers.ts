@@ -319,6 +319,8 @@ export function toComplaint(r: RequestRecord): FeedbackComplaintEntity {
     isVideo: !!photo?.content_type?.startsWith("video/"),
     adminResponse: r.resolution_note ?? lastComment?.body ?? null,
     assignedMembershipId: r.assigned_membership_id ?? null,
+    assignedRole: r.assigned_role ?? null,
+    assignedName: r.assigned_name ?? null,
     // Star ratings were a demo-only field on the same row. The requests API carries no
     // ratings, so these read as unrated rather than inventing a score.
     mealRating: 0,
@@ -347,6 +349,7 @@ export function toRoleNotification(n: NotificationRecord): AppRoleNotificationEn
     priority: n.priority.toUpperCase(),
     actionLabel: n.action_type ? titleCase(n.action_type) : null,
     actionType: n.action_type ?? null,
+    actionId: n.action_id ?? null,
   };
 }
 
@@ -396,6 +399,79 @@ export function hubStatusToServer(
     (status) => table[status].toLowerCase() === label.toLowerCase()
   );
   return found ?? "in_progress";
+}
+
+/**
+ * What "book a technician" means for one ticket, in the resident's own words.
+ *
+ * The owner is not choosing a trade from a dropdown — they already told us which trade when
+ * the resident picked a category. So the button says the actual job ("Book a Plumber"), and
+ * the note the area manager receives is written for them rather than left blank for the
+ * owner to retype what the ticket already says.
+ *
+ * Keyed on the exact strings `GuestFeedbackComplaintsTab`'s CATEGORIES offers, because that
+ * is what reaches `requests.category` — the API takes the label as typed, it does not map it
+ * to a code. Anything unrecognised falls through to the generic wording rather than guessing
+ * a trade, since sending a plumber to a billing dispute is worse than sending nobody.
+ */
+const TRADES: Record<string, { action: string; note: string }> = {
+  "Plumbing/Maintenance": {
+    action: "Book a Plumber",
+    note: "Plumbing issue the property cannot fix in-house. Please arrange a plumber.",
+  },
+  "Water & Electricity": {
+    action: "Book an Electrician",
+    note: "Water/electrical fault the property cannot fix in-house. Please arrange an electrician.",
+  },
+  "Wi-Fi & Internet": {
+    action: "Book a Network Technician",
+    note: "Internet fault the property cannot fix in-house. Please arrange a network technician.",
+  },
+  "Room Cleanliness": {
+    action: "Book a Deep Clean",
+    note: "Cleaning the in-house staff cannot cover. Please arrange a deep-cleaning crew.",
+  },
+};
+
+const GENERIC_TRADE = {
+  action: "Book a Technician",
+  note: "The property cannot resolve this in-house. Please arrange the right technician.",
+};
+
+export interface TradeBooking {
+  /** Button label — the actual job, not "Escalate". */
+  action: string;
+  /** Prefilled note for the area manager. Editable; the owner knows more than we do. */
+  note: string;
+}
+
+/**
+ * The booking wording for a ticket, or `null` when booking makes no sense for it.
+ *
+ * Feedback is not a work order and a closed ticket is nobody's job, so both return null and
+ * the button does not render at all — an action that always 409s is worse than no action.
+ */
+export function tradeFor(
+  kind: string | null | undefined,
+  category: string | null | undefined,
+  status?: string | null
+): TradeBooking | null {
+  if (kind === "feedback" || kind === "FEEDBACK") return null;
+  // Callers pass either the API status ("resolved"/"cancelled") or the display one the
+  // mappers derive ("Resolved" covers both), so normalise rather than listing every spelling.
+  const closed = (status ?? "").toLowerCase();
+  if (closed === "resolved" || closed === "cancelled") return null;
+  const trade = category ? TRADES[category] : undefined;
+  if (trade) return { ...trade };
+  // A food complaint has no trade to send — it is the kitchen's, and pretending otherwise
+  // would put "Book a Technician" on a curry.
+  if (category === "Food Quality") {
+    return {
+      action: "Escalate to Area Manager",
+      note: "Repeated kitchen complaint the property has not resolved. Please review.",
+    };
+  }
+  return { ...GENERIC_TRADE };
 }
 
 const detailStr = (r: RequestRecord, key: string, fallback = ""): string => {

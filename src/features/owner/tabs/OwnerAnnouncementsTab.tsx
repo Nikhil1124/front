@@ -23,7 +23,11 @@ const RADIUS = 16;
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
-import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import {
+  tradeFor,
+  useComplaintsQuery,
+  useEscalateComplaintMutation,
+} from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
 
 export function OwnerAnnouncementsTab() {
@@ -56,6 +60,11 @@ export function OwnerAnnouncementsTab() {
 
   // Resolution inputs inside detail sheet
   const [complaintReplyText, setComplaintReplyText] = useState('');
+  // Separate from the resolution note above on purpose: one says what was fixed, the
+  // other says what still needs arranging. Sharing an input would send whichever the
+  // owner last typed to whichever button they last pressed.
+  const [escalateNote, setEscalateNote] = useState('');
+  const escalate = useEscalateComplaintMutation(activePgId ?? undefined);
 
   // 1. Compile Unified Inbox Items
   const inboxItems = useMemo(() => {
@@ -237,8 +246,32 @@ export function OwnerAnnouncementsTab() {
   const handleOpenItem = (item: any) => {
     hapticSelect();
     setSelectedInboxItem(item);
+    // The category already says which trade this is, so the note the area manager receives
+    // is written before the sheet opens rather than left as an empty box the owner has to
+    // fill in with what the ticket already says. Still editable — they know the property.
+    if (item.type === 'COMPLAINT') {
+      const trade = tradeFor('complaint', item.raw?.category, item.raw?.status);
+      setEscalateNote(trade?.note ?? '');
+    }
     if (item.type === 'NOTICE' || item.type === 'APPROVAL') {
       markAsRead(item.raw.id);
+    }
+  };
+
+  /** Hand the ticket to the area manager so they can source a technician. */
+  const handleBookTechnician = async (item: any, actionLabel: string) => {
+    if (escalate.isPending) return;
+    try {
+      await escalate.mutateAsync({ id: item.raw.id, note: escalateNote });
+      hapticSuccess();
+      toast('success', actionLabel, 'Sent to your area manager to arrange.');
+      setEscalateNote('');
+      setSelectedInboxItem(null);
+    } catch (err: any) {
+      hapticError();
+      // The server's own sentence, not a generic one: "no area manager covers this property
+      // yet" and "already with PGow support" need completely different things from the owner.
+      toast('error', 'Could not book', err?.message ?? 'The request was not sent.');
     }
   };
 
@@ -477,7 +510,60 @@ export function OwnerAnnouncementsTab() {
                 </View>
               )}
 
-              {selectedInboxItem.type === 'COMPLAINT' && (
+              {selectedInboxItem.type === 'COMPLAINT' && (() => {
+                const complaint = selectedInboxItem.raw;
+                // 'area_manager' / 'super_admin' mean it is already with PGow — the server
+                // answers 409 on a second escalation, so offer the state rather than a button
+                // that cannot work.
+                const withPgow =
+                  complaint?.assignedRole === 'area_manager' ||
+                  complaint?.assignedRole === 'super_admin';
+                const trade = withPgow
+                  ? null
+                  : tradeFor('complaint', complaint?.category, complaint?.status);
+                return (
+                <>
+                {withPgow && (
+                  <View style={styles.escalatedBox}>
+                    <Ionicons name="construct-outline" size={16} color={GREEN} />
+                    <Text style={styles.escalatedText}>
+                      With {complaint?.assignedName ?? 'PGow support'} — a technician is being
+                      arranged.
+                    </Text>
+                  </View>
+                )}
+
+                {trade && (
+                  <View style={styles.actionBlockBox}>
+                    <Text style={styles.actionBlockLabel}>Cannot fix this in-house?</Text>
+                    <Text style={styles.actionBlockDesc}>
+                      Sends the ticket to your area manager, who arranges the visit.
+                    </Text>
+                    <Spacer size={6} />
+                    <TextInput
+                      style={styles.actionInput}
+                      placeholder="What should the area manager arrange?"
+                      placeholderTextColor={MUTED}
+                      value={escalateNote}
+                      onChangeText={setEscalateNote}
+                      multiline
+                    />
+                    <Spacer size={10} />
+                    <TouchableOpacity
+                      style={[styles.actionBookBtn, escalate.isPending && { opacity: 0.6 }]}
+                      disabled={escalate.isPending}
+                      onPress={() => handleBookTechnician(selectedInboxItem, trade.action)}
+                    >
+                      <Ionicons name="build-outline" size={15} color={WHITE} />
+                      <Text style={styles.actionBookText}>
+                        {escalate.isPending ? 'Sending…' : trade.action}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {trade && <Spacer size={10} />}
+
                 <View style={styles.actionBlockBox}>
                   <Text style={styles.actionBlockLabel}>Resolve Guest Issue</Text>
                   <Spacer size={6} />
@@ -497,7 +583,9 @@ export function OwnerAnnouncementsTab() {
                     <Text style={styles.actionApproveText}>Resolve Issue & Close Ticket</Text>
                   </TouchableOpacity>
                 </View>
-              )}
+                </>
+                );
+              })()}
 
               <Spacer size={10} />
               <TouchableOpacity
@@ -761,6 +849,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionRejectText: { fontSize: 12, fontWeight: '700', color: '#DC2626' },
+  actionBookBtn: {
+    flexDirection: 'row',
+    gap: 6,
+    width: '100%',
+    height: 40,
+    backgroundColor: CHARCOAL,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBookText: { fontSize: 12, fontWeight: '800', color: WHITE },
+  escalatedBox: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    backgroundColor: LIGHT_GREEN,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  escalatedText: { flex: 1, fontSize: 11, color: GREEN, fontWeight: '700' },
   actionInput: {
     height: 64,
     borderWidth: 1,

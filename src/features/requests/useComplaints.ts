@@ -4,6 +4,11 @@ import type { Page } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
 import * as map from "../../data/mappers";
+// `tradeFor` lives in `mappers.ts`, not here: it is pure, branch-heavy and the exact
+// shape `mappers.check.ts` can assert with plain node. This module cannot be imported
+// by that check — it pulls in React Query — so testable logic belongs on the other side.
+export { tradeFor } from "../../data/mappers";
+export type { TradeBooking } from "../../data/mappers";
 import type {
   FeedbackComplaintEntity,
   GuestLaundryRequest,
@@ -48,7 +53,12 @@ export interface RequestRecord {
   status: "open" | "assigned" | "in_progress" | "resolved" | "cancelled";
   priority: "normal" | "express" | "scheduled";
   assigned_membership_id?: string | null;
+  /** Set instead of `assigned_membership_id` once the ticket has been escalated to PGow
+   *  ops. The server enforces that only one of the two is ever set. */
+  assigned_platform_role_id?: string | null;
   assigned_name?: string | null;
+  /** A membership role for in-house staff, or `area_manager` / `super_admin` once
+   *  escalated — so "assigned to X (role)" renders the same either way. */
   assigned_role?: string | null;
   assigned_at?: string | null;
   amount?: number | string | null;
@@ -200,6 +210,32 @@ export function addComment(
 }
 
 // POST /v1/requests/{id}/assign
+// POST /v1/requests/{id}/escalate
+export function escalateComplaint(id: string, note?: string): Promise<RequestRecord> {
+  return apiFetch<RequestRecord>(API.REQUEST_ESCALATE(id), {
+    method: "POST",
+    body: JSON.stringify({ note: note?.trim() || undefined }),
+  });
+}
+
+// GET /v1/requests/escalated — PGow ops only; a property role gets a 403 here by design.
+export function listEscalatedComplaints(opts?: {
+  status?: RequestStatus;
+  kind?: RequestKind;
+  limit?: number;
+  cursor?: string;
+}): Promise<Page<RequestRecord>> {
+  const params = new URLSearchParams();
+  if (opts?.status) params.append("status", opts.status);
+  if (opts?.kind) params.append("kind", opts.kind);
+  if (opts?.limit) params.append("limit", opts.limit.toString());
+  if (opts?.cursor) params.append("cursor", opts.cursor);
+  const qs = params.toString();
+  return apiFetch<Page<RequestRecord>>(
+    qs ? `${API.REQUESTS_ESCALATED}?${qs}` : API.REQUESTS_ESCALATED
+  );
+}
+
 export function assignComplaint(
   id: string,
   assignedMembershipId: string
@@ -317,6 +353,20 @@ export function useResolveComplaintMutation(pgId?: string) {
   });
 }
 
+export function useEscalateComplaintMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) => escalateComplaint(id, note),
+    onSuccess: () => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
+      }
+    },
+  });
+}
+
+
 export function useDeleteComplaintMutation(pgId?: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -341,6 +391,8 @@ export function useComplaints() {
     addAttachment,
     addComment,
     assignComplaint,
+    escalateComplaint,
+    listEscalatedComplaints,
     resolveComplaint,
     cancelComplaint,
   };

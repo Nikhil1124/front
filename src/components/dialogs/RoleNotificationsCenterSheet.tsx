@@ -11,6 +11,7 @@ import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { formatTimeAgo } from '@/utils/format';
+import { routeFromPushData } from '@/features/notifications/channels';
 import { RoleNotificationBroadcastDialog } from './RoleNotificationBroadcastDialog';
 
 interface Props {
@@ -226,7 +227,22 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                         )}
                         {notif.actionLabel && (
                           <Btn
-                            onPress={() => { markRead(notif.id); onDismiss(); }}
+                            onPress={() => {
+                              markRead(notif.id);
+                              onDismiss();
+                              // The same router a tapped push goes through, rather than a
+                              // second copy of the role/category table — it already knows
+                              // that a resident's complaint opens their ticket and an
+                              // owner's opens the services queue. The sheet dismisses first
+                              // so the navigation is not competing with a closing modal.
+                              routeFromPushData({
+                                // `toRoleNotification` uppercases the category for the
+                                // filter chips; the router matches the wire value.
+                                category: notif.category?.toLowerCase(),
+                                actionType: notif.actionType ?? undefined,
+                                actionId: notif.actionId ?? undefined,
+                              });
+                            }}
                             containerColor={Colors.primary}
                             textColor={Colors.textInverse}
                             borderRadius={8}
