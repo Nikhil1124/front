@@ -70,7 +70,7 @@ interface AuthState {
 
   // Actions
   setTokens: (access: string, refresh: string) => Promise<void>;
-  setUser: (user: User) => void;
+  setUser: (user: User, roleHint?: Membership["role"] | null) => void;
   setActivePgId: (pgId: string) => Promise<void>;
   setDeviceId: (id: string | null) => void;
   logout: () => Promise<void>;
@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ accessToken: access, refreshToken: refresh });
   },
 
-  setUser: (user) => {
+  setUser: (user, roleHint = null) => {
     const { activePgId } = get();
     const held = user.memberships.find((m) => m.pg_id === activePgId);
     // Falls back to the first membership ONLY when the persisted id matches nothing this
@@ -122,7 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     set({
       user,
-      activeRole: membership?.role ?? null,
+      activeRole: membership?.role ?? roleHint ?? null,
       activePgId: membership?.pg_id ?? null,
     });
   },

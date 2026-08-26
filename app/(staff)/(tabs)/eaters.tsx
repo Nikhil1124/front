@@ -10,6 +10,7 @@ import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
+import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -99,6 +100,14 @@ function ChefEatersView() {
   );
 }
 
+import {
+  useMyTripsQuery,
+  useDepartTripMutation,
+  useCompleteStopMutation,
+  getStopPhotoUploadUrl,
+  uploadToPresignedUrl,
+} from '@/features/staff/useTrips';
+
 const MOCK_ROUTE = [
   { id: '1', pgName: 'Sunrise PG', location: '12, 4th Cross, Koramangala 5th Block', orders: 120, status: 'Completed', time: '2:42 PM', recipient: 'Ravi Kumar', phone: '+91 98765 43210' },
   { id: '2', pgName: 'Green Nest PG', location: '89, 17th Main Rd, Sector 4, HSR Layout', orders: 85, status: 'Current', time: null, recipient: 'Sneha Rao', phone: '+91 87654 32109' },
@@ -109,15 +118,51 @@ const MOCK_ROUTE = [
 
 function DeliveryDashboardRoute() {
   const staff = usePGowStore((s) => s.loggedInStaff);
-  const [route, setRoute] = useState(MOCK_ROUTE);
+  const { data: realTrips = [], refetch } = useMyTripsQuery();
+  const departTripMut = useDepartTripMutation();
+  const completeStopMut = useCompleteStopMutation();
+
   const [activeDeliveryId, setActiveDeliveryId] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+
+  // If there are no real trips, we fall back to MOCK_ROUTE
+  const hasRealTrips = realTrips.length > 0;
+  const activeTrip = hasRealTrips
+    ? (realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0])
+    : null;
+
+  const route = activeTrip
+    ? activeTrip.stops.map((stop, i) => {
+        // Map stop statuses: first pending stop in an active trip is 'Current'
+        let mappedStatus = 'Pending';
+        if (stop.status === 'completed' || stop.status === 'delivered') {
+          mappedStatus = 'Completed';
+        } else if (activeTrip.status === 'active') {
+          // If active, the first non-completed stop is 'Current'
+          const firstNonCompleted = activeTrip.stops.find(s => s.status !== 'completed' && s.status !== 'delivered');
+          if (firstNonCompleted && firstNonCompleted.id === stop.id) {
+            mappedStatus = 'Current';
+          }
+        }
+        return {
+          id: stop.order_id,
+          pgName: stop.pg_name,
+          location: stop.pg_address,
+          orders: stop.item_count,
+          status: mappedStatus,
+          time: stop.completed_at ? new Date(stop.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
+          recipient: stop.recipient_name,
+          phone: stop.recipient_phone,
+        };
+      })
+    : MOCK_ROUTE;
 
   const completed = route.filter(r => r.status === 'Completed').length;
   const pending = route.filter(r => r.status === 'Pending').length;
   const current = route.find(r => r.status === 'Current');
-  const progressPct = Math.round((completed / route.length) * 100);
+  const progressPct = route.length > 0 ? Math.round((completed / route.length) * 100) : 0;
 
   const activeDelivery = route.find(r => r.id === activeDeliveryId);
 
@@ -126,18 +171,48 @@ function DeliveryDashboardRoute() {
     setCameraOpen(false);
   };
 
-  const confirmDelivery = () => {
+  const handleDepart = async () => {
+    if (!activeTrip) return;
+    try {
+      await departTripMut.mutateAsync(activeTrip.id);
+      Alert.alert('Trip Started', 'Route is now active. Drive safely!');
+    } catch (err: any) {
+      Alert.alert('Error starting trip', err?.message || 'Could not depart.');
+    }
+  };
+
+  const confirmDelivery = async () => {
     if (!activeDelivery) return;
-    setRoute(cur => cur.map(r => {
-      if (r.id === activeDelivery.id) return { ...r, status: 'Completed', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-      // Move next pending to current
-      if (r.status === 'Pending' && !cur.find(x => x.id === r.id && x.status === 'Current') && cur.findIndex(x => x.status === 'Pending') === cur.indexOf(r)) {
-        return { ...r, status: 'Current' };
+    if (activeTrip) {
+      setConfirming(true);
+      try {
+        let proofKey: string | null = null;
+        if (photoUri) {
+          const { upload_url, object_key } = await getStopPhotoUploadUrl(activeTrip.id, activeDelivery.id);
+          await uploadToPresignedUrl(upload_url, photoUri, 'image/jpeg');
+          proofKey = object_key;
+        }
+        await completeStopMut.mutateAsync({
+          tripId: activeTrip.id,
+          orderId: activeDelivery.id,
+          params: { outcome: 'delivered', proof_photo_key: proofKey }
+        });
+        hapticSuccess();
+        Alert.alert('Delivery Confirmed', `Stop completed for ${activeDelivery.pgName}.`);
+        setActiveDeliveryId(null);
+        setPhotoUri(null);
+      } catch (err: any) {
+        hapticError();
+        Alert.alert('Failed to complete delivery', err?.message || 'Could not save.');
+      } finally {
+        setConfirming(false);
       }
-      return r;
-    }));
-    setActiveDeliveryId(null);
-    setPhotoUri(null);
+    } else {
+      // Fallback for mock route
+      setActiveDeliveryId(null);
+      setPhotoUri(null);
+      Alert.alert('Mock Success', 'Delivery confirmed mock-style.');
+    }
   };
 
   if (activeDelivery) {
@@ -146,12 +221,12 @@ function DeliveryDashboardRoute() {
         <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
           <Row align="center" gap={10}>
              <IconBtn onPress={() => setActiveDeliveryId(null)} icon="arrow-back" size={20} tint={Colors.primaryDark} containerColor={Colors.surfaceElevated} borderRadius={999} padding={8} />
-             <Txt variant="screenTitle" weight="900" color={Colors.primaryDark}>Delivery #{activeDelivery.id.padStart(4, '0')}</Txt>
+             <Txt variant="screenTitle" weight="900" color={Colors.primaryDark}>Delivery #{activeDelivery.id.slice(0, 4)}</Txt>
           </Row>
           
           <Card containerColor={Colors.surface} borderRadius={Radii.xxl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{activeDelivery.pgName}</Txt>
-            <Txt variant="caption" color={Colors.textMuted}>{activeDelivery.location}, Bangalore</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>{activeDelivery.location}</Txt>
             <Spacer size={12} />
             <Btn onPress={() => Alert.alert('Navigation', `Opening Google Maps to navigate to ${activeDelivery.pgName}...`)} containerColor={Colors.surfaceElevated} textColor={Colors.primary} borderRadius={8} height={40}>
               <Ionicons name="navigate" size={16} color={Colors.primary} />
@@ -202,7 +277,7 @@ function DeliveryDashboardRoute() {
                 )}
                 
                 <Spacer size={16} />
-                <Btn onPress={confirmDelivery} disabled={!photoUri} containerColor={photoUri ? Colors.success : Colors.surfaceMuted} textColor={photoUri ? '#FFF' : Colors.textMuted} borderRadius={Radii.lg} height={50}>
+                <Btn onPress={confirmDelivery} disabled={!photoUri || confirming} loading={confirming} containerColor={photoUri ? Colors.success : Colors.surfaceMuted} textColor={photoUri ? '#FFF' : Colors.textMuted} borderRadius={Radii.lg} height={50}>
                   <Txt size={15} weight="900">Confirm Delivery</Txt>
                 </Btn>
               </>
@@ -256,6 +331,16 @@ function DeliveryDashboardRoute() {
           <Spacer size={8} />
           <View style={[styles.progressTrack, { height: 8, backgroundColor: Colors.surfaceElevated }]}><View style={[styles.progressFill, { width: `${progressPct}%`, backgroundColor: Colors.primary, borderRadius: 4 }]} /></View>
         </Card>
+
+        {activeTrip && activeTrip.status === 'planned' && (
+          <>
+            <Spacer size={12} />
+            <Btn onPress={handleDepart} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.lg} height={48} loading={departTripMut.isPending}>
+              <Ionicons name="play" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Txt size={14} weight="900" color="#FFFFFF">Depart Warehouse &amp; Start Trip</Txt>
+            </Btn>
+          </>
+        )}
 
           {current && (
             <Col>

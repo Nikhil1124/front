@@ -20,6 +20,13 @@ export interface GuestMember {
   rent_amount: string | null;
   started_at: string;
   ended_at: string | null;
+  // KYC fields from GuestResponse
+  kyc_status?: string | null;
+  kyc_reject_reason?: string | null;
+  kyc_submitted_at?: string | null;
+  kyc_decided_at?: string | null;
+  kyc_front_url?: string | null;
+  kyc_selfie_url?: string | null;
 }
 
 /** Money for display. One place, so the null case can't be handled in one screen and

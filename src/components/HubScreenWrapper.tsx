@@ -24,6 +24,7 @@
  */
 import { type ReactNode } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Spacer } from '@/components/ui';
@@ -62,6 +63,7 @@ export function HubScreenWrapper({
   onBack,
   testID,
 }: HubScreenWrapperProps) {
+  const insets = useSafeAreaInsets();
   // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
   // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const handleBack = () => {
@@ -73,14 +75,14 @@ export function HubScreenWrapper({
   return (
     <View style={styles.root} testID={testID}>
       {/* Sticky top bar — mint-tinted band with back chevron + title */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <AnimatedPress
           scale={0.9}
           hapticPattern="light"
           onPress={handleBack}
           style={styles.backBtn}
         >
-          <Ionicons name="chevron-back" size={22} color={Colors.primaryDark} />
+          <Ionicons name="arrow-back" size={22} color={Colors.primary} />
         </AnimatedPress>
 
         <View style={styles.titleWrap}>
@@ -130,12 +132,12 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
     alignItems: 'center', justifyContent: 'center',
   },
   titleWrap: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollBody: {
     flex: 1,

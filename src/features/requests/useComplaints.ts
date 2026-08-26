@@ -159,6 +159,8 @@ export async function uploadAttachment(
 ): Promise<void> {
   // Mock builds hand out a `mock://` url from getAttachmentUploadUrl — nothing real to PUT to.
   if (uploadUrl.startsWith("mock://")) return;
+  // If the file URI is a mock/sample preset, skip fetching it and return success
+  if (uri.startsWith("sample:") || uri.startsWith("mock_media") || uri.startsWith("mock_photo")) return;
   const local = await fetch(uri);
   if (!local.ok) throw new Error("Could not read the selected photo.");
   const image = await local.blob();

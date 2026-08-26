@@ -106,10 +106,16 @@ function ChefKitchenView() {
   );
 }
 
+import { useMyTripsQuery } from '@/features/staff/useTrips';
+
 function DeliveryProfileRoute() {
   const staff = usePGowStore((s) => s.loggedInStaff);
   const logout = usePGowStore((s) => s.logout);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { data: realTrips = [] } = useMyTripsQuery();
+  
+  const activeTrip = realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0];
+  const vehicle = activeTrip?.vehicle_label ?? 'KA-01-AB-1234 (Scooter)';
 
   return (
     <View style={styles.root}>
@@ -122,7 +128,7 @@ function DeliveryProfileRoute() {
           <Txt size={22} weight="900" color={Colors.primaryDark}>{staff?.name ?? 'Rahul Kumar'}</Txt>
           <Txt size={14} weight="700" color={Colors.primary}>Delivery Agent</Txt>
           <Spacer size={4} />
-          <Txt size={12} color={Colors.textMuted}>Employee ID: DA-1001</Txt>
+          <Txt size={12} color={Colors.textMuted}>Employee ID: DA-{staff?.id ? staff.id.slice(0, 4) : '1001'}</Txt>
         </Col>
 
         <Spacer size={20} />
@@ -143,7 +149,7 @@ function DeliveryProfileRoute() {
               <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="call" size={18} color={Colors.textPrimary} /></View>
               <Txt size={14} weight="800" color={Colors.textPrimary}>Phone</Txt>
             </Row>
-            <Txt size={14} weight="700" color={Colors.textMuted}>+91 98765 43210</Txt>
+            <Txt size={14} weight="700" color={Colors.textMuted}>{staff?.phone ?? '+91 98765 43210'}</Txt>
           </Row>
           <View style={styles.divider} />
           <Row justify="space-between" align="center" style={styles.profileRow}>
@@ -151,7 +157,7 @@ function DeliveryProfileRoute() {
               <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="bicycle" size={18} color={Colors.textPrimary} /></View>
               <Txt size={14} weight="800" color={Colors.textPrimary}>Vehicle</Txt>
             </Row>
-            <Txt size={14} weight="700" color={Colors.textMuted}>KA-01-AB-1234 (Scooter)</Txt>
+            <Txt size={14} weight="700" color={Colors.textMuted}>{vehicle}</Txt>
           </Row>
         </Card>
 

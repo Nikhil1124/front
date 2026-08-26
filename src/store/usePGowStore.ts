@@ -426,6 +426,51 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     const { user } = useAuthStore.getState();
     if (!user) return;
     await queryClient.invalidateQueries();
+
+    // Re-derive and populate loggedInGuest for resident pages
+    const activeRole = useAuthStore.getState().activeRole;
+    if (activeRole === 'guest') {
+      const guestMembership = user.memberships.find(m => m.role === 'guest');
+      if (guestMembership) {
+        let rentAmount = 0;
+        let isBillPaid = false;
+        try {
+          const rentDue = await paymentsApi.getRentDue(guestMembership.pg_id);
+          rentAmount = map.toAmount(rentDue.rent_amount);
+          isBillPaid = rentDue.is_paid;
+        } catch (err) {
+          console.warn('[PGow] Failed to fetch rent due info:', err);
+        }
+
+        const kycStatusMap: Record<string, string> = {
+          KYC_REQUIRED: 'NOT_SUBMITTED',
+          KYC_PENDING: 'PENDING',
+          KYC_REJECTED: 'REJECTED',
+        };
+        const mappedGuest: GuestEntity = {
+          id: guestMembership.membership_id,
+          pgId: guestMembership.pg_id,
+          name: user.name,
+          email: user.email ?? '',
+          phone: user.phone,
+          roomNo: guestMembership.room_no ?? '',
+          password: '',
+          registrationDate: 0,
+          isBillPaid,
+          rentAmount,
+          rewardPoints: 0,
+          idProofType: '',
+          idProofNumber: '',
+          idProofPhotoUri: '',
+          profilePhotoUri: user.avatar_url ?? '',
+          kycStatus: user.gate && kycStatusMap[user.gate] ? kycStatusMap[user.gate] : 'VERIFIED',
+          kycRejectReason: '',
+          kycSubmissionDate: 0,
+          kycVerificationDate: 0,
+        };
+        set({ loggedInGuest: mappedGuest });
+      }
+    }
   },
 
   // Navigation lives in Expo Router now (see app/_layout.tsx's Stack.Protected guards and
@@ -1114,7 +1159,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         };
       }
       const user = await authApi.fetchMe();
-      useAuthStore.getState().setUser(user);
+      useAuthStore.getState().setUser(user, 'owner');
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'OWNER';
       set({
         activeRole: role,
@@ -1147,7 +1192,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const tokens = await authApi.changePassword({ current_password: tempPassword, new_password: newPassword });
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       const user = await authApi.fetchMe();
-      useAuthStore.getState().setUser(user);
+      useAuthStore.getState().setUser(user, get().activeRole as any);
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
       set({
         activeRole: role,
@@ -1268,7 +1313,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       const tokens = await authApi.login({ phone: map.toE164(phone), password, asGuest: true });
       await useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
       const user = await authApi.fetchMe();
-      useAuthStore.getState().setUser(user);
+      useAuthStore.getState().setUser(user, 'guest');
       const role = toUserRole(useAuthStore.getState().activeRole) ?? 'GUEST';
       set({
         activeRole: role,
@@ -1337,7 +1382,15 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!idPhotoUri || !profilePhotoUri) {
       return { ok: false, error: 'Both an ID photo and a selfie are required.' };
     }
+    const kycKindMap: Record<string, string> = {
+      'Aadhaar Card': 'aadhaar',
+      'PAN Card': 'pan',
+      'Passport': 'passport',
+      'Driving License': 'dl',
+      'Voter ID': 'voter_id',
+    };
     try {
+      const mappedKind = kycKindMap[idType] || 'aadhaar';
       // The photos go straight to storage on presigned URLs; only the object keys reach us.
       const upload = async (kind: string, uri: string) => {
         const { upload_url, object_key } = await kycApi.getUploadUrl(kind, 'image/jpeg');
@@ -1345,12 +1398,12 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         return object_key;
       };
       const [front, selfie] = await Promise.all([
-        upload('front', idPhotoUri),
+        upload(mappedKind, idPhotoUri),
         upload('selfie', profilePhotoUri),
       ]);
       await kycApi.submitKyc({
         pg_id: pgId,
-        kind: idType || 'aadhaar',
+        kind: mappedKind,
         front_object_key: front,
         // This form captures one document photo; the server wants both faces, so the same
         // image stands in for the back rather than blocking submission on a field the UI
@@ -1361,13 +1414,20 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       });
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.session() });
-      useAuthStore.getState().setUser(await authApi.fetchMe());
+      useAuthStore.getState().setUser(await authApi.fetchMe(), 'guest');
       
       // Dispatch notification to Manager & Owner
       const guestName = get().loggedInGuest?.name || 'Resident';
       const guestRoom = get().loggedInGuest?.roomNo || 'N/A';
       get().sendRoleNotification(
         'MANAGER',
+        '📄 New KYC Verification Request',
+        `${guestName} (Room ${guestRoom}) uploaded identity documents. Please review and verify.`,
+        'KYC',
+        'HIGH',
+      );
+      get().sendRoleNotification(
+        'OWNER',
         '📄 New KYC Verification Request',
         `${guestName} (Room ${guestRoom}) uploaded identity documents. Please review and verify.`,
         'KYC',

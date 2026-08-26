@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
@@ -443,9 +443,43 @@ export function OwnerAnnouncementsTab() {
                 <View style={styles.actionBlockBox}>
                   <Text style={styles.actionBlockLabel}>KYC Document Verification Required</Text>
                   <Text style={styles.actionBlockDesc}>
-                    Verify {selectedInboxItem.raw.name}'s ID ({selectedInboxItem.raw.idProofType}).
+                    Verify {selectedInboxItem.raw.name}'s ID ({selectedInboxItem.raw.idProofType || 'Aadhaar'}).
                   </Text>
+                  
                   <Spacer size={10} />
+                  
+                  {/* Photo Previews */}
+                  <Row gap={8} style={{ width: '100%', marginBottom: 12 }}>
+                    <Col style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, marginBottom: 4 }}>Selfie Photo</Text>
+                      {selectedInboxItem.raw.profilePhotoUri ? (
+                        <Image
+                          source={{ uri: selectedInboxItem.raw.profilePhotoUri }}
+                          style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER, alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="person-outline" size={24} color={MUTED} />
+                        </View>
+                      )}
+                    </Col>
+                    <Col style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, marginBottom: 4 }}>ID Document</Text>
+                      {selectedInboxItem.raw.idProofPhotoUri ? (
+                        <Image
+                          source={{ uri: selectedInboxItem.raw.idProofPhotoUri }}
+                          style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER, alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="card-outline" size={24} color={MUTED} />
+                        </View>
+                      )}
+                    </Col>
+                  </Row>
+
                   <Row gap={8}>
                     <TouchableOpacity
                       style={styles.actionApproveBtn}

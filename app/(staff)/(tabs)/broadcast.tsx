@@ -263,6 +263,8 @@ function ChefBroadcastView() {
   );
 }
 
+import { useMyTripsQuery } from '@/features/staff/useTrips';
+
 const MOCK_HISTORY = [
   { id: '101', pgName: 'Sunrise PG', date: 'Oct 12, 2026', time: '2:42 PM', orders: 120, status: 'Delivered' },
   { id: '100', pgName: 'Royal Homes PG', date: 'Oct 11, 2026', time: '3:15 PM', orders: 32, status: 'Delivered' },
@@ -271,12 +273,29 @@ const MOCK_HISTORY = [
 ];
 
 function DeliveryHistoryRoute() {
+  const { data: realTrips = [] } = useMyTripsQuery();
+
+  const completedStops = realTrips.flatMap(t =>
+    t.stops
+      .filter(s => s.status === 'completed' || s.status === 'delivered' || s.status === 'failed')
+      .map(s => ({
+        id: s.id,
+        pgName: s.pg_name,
+        date: s.completed_at ? new Date(s.completed_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today',
+        time: s.completed_at ? new Date(s.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        orders: s.item_count,
+        status: s.status === 'failed' ? 'Failed' : 'Delivered',
+      }))
+  );
+
+  const history = completedStops.length > 0 ? completedStops : MOCK_HISTORY;
+
   return (
     <View style={styles.root}>
       <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
         <Txt size={18} weight="900" color={Colors.primaryDark}>Delivery History</Txt>
         <Spacer size={6} />
-        {MOCK_HISTORY.map(item => (
+        {history.map(item => (
           <Card key={item.id} containerColor={Colors.surface} borderRadius={Radii.xl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row justify="space-between" align="center">
               <Row gap={12} align="center">

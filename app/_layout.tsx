@@ -64,6 +64,7 @@ export default function RootLayout() {
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
   const accessToken = useAuthStore((s) => s.accessToken);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const user = useAuthStore((s) => s.user);
 
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -158,7 +159,7 @@ export default function RootLayout() {
   }, [submitRSVP, isRouterReady]);
 
   const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent';
-  const isOwnerRole = activeRole === 'owner' || activeRole === 'manager';
+  const isOwnerRole = activeRole === 'owner' || activeRole === 'manager' || (!!user && user.memberships.length === 0);
   // On a cold launch, accessToken is hydrated from SecureStore (fast) before activeRole is
   // known (a separate /v1/me round trip, slower) — a real gap, not just a render tick. If
   // groceries' guard only checked accessToken, that gap left it as the ONLY eligible screen
@@ -176,32 +177,40 @@ export default function RootLayout() {
               trusts this and must not consume the top inset again itself (that was the
               cause of the double-safe-area header bugs fixed earlier). */}
           <SafeAreaView style={styles.container} edges={[]}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Protected guard={!accessToken}>
-                <Stack.Screen name="(auth)" />
-              </Stack.Protected>
+            {isHydrated ? (
+              <Stack screenOptions={{ headerShown: false }}>
+                {/* The root index route must be explicitly included because we are providing manual children to Stack */}
+                <Stack.Screen name="index" />
 
-              <Stack.Protected guard={!!accessToken && isOwnerRole}>
-                <Stack.Screen name="(owner)" />
-              </Stack.Protected>
+                <Stack.Protected guard={!accessToken}>
+                  <Stack.Screen name="(auth)" />
+                </Stack.Protected>
 
-              <Stack.Protected guard={!!accessToken && activeRole === 'guest'}>
-                <Stack.Screen name="(guest)" />
-              </Stack.Protected>
+                <Stack.Protected guard={!!accessToken && isOwnerRole}>
+                  <Stack.Screen name="(owner)" />
+                </Stack.Protected>
 
-              <Stack.Protected guard={!!accessToken && isStaffRole}>
-                <Stack.Screen name="(staff)" />
-              </Stack.Protected>
+                <Stack.Protected guard={!!accessToken && activeRole === 'guest'}>
+                  <Stack.Screen name="(guest)" />
+                </Stack.Protected>
 
-              {/* Shared across every signed-in role (owner/manager/chef/tenant all shop
-                  here) — guarded on "signed in AND role-resolved", not just "has a token".
-                  See hasResolvedRole above: a bare accessToken check here raced the role
-                  fetch on cold launch and could flash this screen before the real
-                  role-based guard above ever got a chance to be true. */}
-              <Stack.Protected guard={!!accessToken && hasResolvedRole}>
-                <Stack.Screen name="groceries" />
-              </Stack.Protected>
-            </Stack>
+                <Stack.Protected guard={!!accessToken && isStaffRole}>
+                  <Stack.Screen name="(staff)" />
+                </Stack.Protected>
+
+                {/* Shared across every signed-in role (owner/manager/chef/tenant all shop
+                    here) — guarded on "signed in AND role-resolved", not just "has a token".
+                    See hasResolvedRole above: a bare accessToken check here raced the role
+                    fetch on cold launch and could flash this screen before the real
+                    role-based guard above ever got a chance to be true. */}
+                <Stack.Protected guard={!!accessToken && hasResolvedRole}>
+                  <Stack.Screen name="groceries" />
+                </Stack.Protected>
+
+                {/* Diagnostic screen for unmatched routes */}
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            ) : null}
             <AlertOverlay />
           </SafeAreaView>
         </SafeAreaProvider>

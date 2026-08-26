@@ -3,7 +3,7 @@
  * toggle, quick-action tile grid, notices carousel.
  */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -17,11 +17,13 @@ import type { MealNotificationEntity } from '@/types';
 
 interface QuickTile { label: string; desc: string; icon: keyof typeof Ionicons.glyphMap; tint: string; href: string; }
 const QUICK_TILES: QuickTile[] = [
-  { label: 'Rent & Receipts',  desc: 'Pay • Download PDF',    icon: 'card',            tint: '#0D9488', href: '/guest-payments' },
-  { label: 'Maintenance',      desc: 'Raise & track tickets',  icon: 'construct',       tint: '#D97706', href: '/support' },
-  { label: 'Weekly Menu',      desc: '7-day menu',            icon: 'restaurant',       tint: '#10B981', href: '/meals' },
-  { label: 'Profile & KYC',    desc: 'Verify identity',       icon: 'shield-checkmark', tint: '#0284C7', href: '/profile' },
-  { label: 'Hub Services',     desc: 'Marketplace & laundry', icon: 'storefront',       tint: '#9333EA', href: '/hub-services' },
+  { label: 'Rent & Receipts',  desc: 'Pay & download PDF',    icon: 'card',            tint: Colors.primary, href: '/guest-payments' },
+  { label: 'Maintenance',      desc: 'Raise & track tickets',  icon: 'construct',       tint: Colors.danger,  href: '/support' },
+  { label: 'Weekly Menu',      desc: '7-day meal plan',        icon: 'restaurant',       tint: Colors.warning, href: '/meals' },
+  { label: 'Profile & KYC',    desc: 'Verify identity',        icon: 'shield-checkmark', tint: Colors.info,    href: '/profile' },
+  { label: 'Hub Services',     desc: 'Marketplace & laundry',  icon: 'storefront',       tint: '#9333EA',      href: '/hub-services' },
+  { label: 'Groceries',        desc: 'Order fresh essentials', icon: 'cart',             tint: Colors.primary, href: '/groceries' },
+  { label: 'Book a Technician', desc: 'Get help with repairs',  icon: 'hammer',           tint: Colors.warning, href: '/book-technician' },
 ];
 
 // Countdown formatter — returns "⏰ Cut-off in 1h 15m" or "Closed" based on
@@ -59,21 +61,54 @@ export default function GuestHomeTab() {
 
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
-  const { data: meals = [] } = useMealsQuery(activePgId ?? undefined);
+  const { data: roleNotifs = [], refetch: refetchNotifs } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const { data: meals = [], refetch: refetchMeals } = useMealsQuery(activePgId ?? undefined);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetchNotifs(), refetchMeals()]);
+    setRefreshing(false);
+  };
 
   const kycStatus = guest?.kycStatus ?? 'NOT_SUBMITTED';
 
-  // Pick the next upcoming meal — the first whose cutoff hasn't passed.
+  // Pick the next upcoming meal — the first whose specific cutoff hasn't passed yet.
   // Falls back to the most recent meal so the card never renders blank.
   const upcomingMeal: MealNotificationEntity | null = (() => {
-    if (meals.length === 0) return null;
-    const withCutoff = meals.map((m) => ({ m, c: nextCutoffMs(m.mealType) ?? 0 }));
-    const upcoming = withCutoff.find(({ c }) => c > Date.now());
-    return (upcoming?.m ?? meals[0]) ?? null;
+    const announced = meals.filter((m) => m.isAlertSent);
+    const targetMeals = announced.length > 0 ? announced : meals;
+    if (targetMeals.length === 0) return null;
+
+    const withCutoff = targetMeals.map((m) => {
+      const serviceDate = new Date(m.timestamp);
+      const cutoffHour = CUTOFF_HOURS[m.mealType.toUpperCase()] || 12;
+      const cutoffDate = new Date(serviceDate);
+      cutoffDate.setHours(cutoffHour, 0, 0, 0);
+      return { m, cutoffMs: cutoffDate.getTime() };
+    });
+
+    const upcoming = withCutoff.filter(({ cutoffMs }) => cutoffMs > Date.now());
+    if (upcoming.length > 0) {
+      upcoming.sort((a, b) => a.cutoffMs - b.cutoffMs);
+      return upcoming[0].m;
+    }
+
+    withCutoff.sort((a, b) => b.cutoffMs - a.cutoffMs);
+    return withCutoff[0].m;
   })();
-  const cutoff = upcomingMeal ? nextCutoffMs(upcomingMeal.mealType) : null;
+
+  const getMealCutoffMs = (m: MealNotificationEntity | null): number | null => {
+    if (!m) return null;
+    const serviceDate = new Date(m.timestamp);
+    const cutoffHour = CUTOFF_HOURS[m.mealType.toUpperCase()] || 12;
+    const cutoffDate = new Date(serviceDate);
+    cutoffDate.setHours(cutoffHour, 0, 0, 0);
+    return cutoffDate.getTime();
+  };
+
+  const cutoff = getMealCutoffMs(upcomingMeal);
   const cutoffPill = countdownPill(cutoff);
   const cutoffPassed = cutoff ? cutoff - Date.now() <= 0 : false;
   const { data: myMealResponse } = useMyMealResponseQuery(upcomingMeal?.id, activePgId ?? undefined);
@@ -107,32 +142,66 @@ export default function GuestHomeTab() {
   // Property notices carousel — top 3 notifications rendered as horizontal cards.
   const notices = roleNotifs.slice(0, 3);
 
+  const renderTile = (tile: QuickTile) => (
+    <AnimatedPress
+      key={tile.label}
+      scale={0.96}
+      hapticPattern="light"
+      onPress={() => handleTilePress(tile)}
+      style={styles.tileWrap}
+    >
+      <View style={styles.tileCard}>
+        {/* Icon */}
+        <View style={[styles.tileIconBox, { backgroundColor: `${tile.tint}1A` }]}>
+          <Ionicons name={tile.icon} size={22} color={tile.tint} />
+        </View>
+        {/* Text */}
+        <View style={{ flex: 1, marginTop: 12 }}>
+          <Txt size={14} weight="700" color={Colors.textPrimary} style={styles.tileLabel}>{tile.label}</Txt>
+          <Txt size={11} color={Colors.textMuted} style={styles.tileDesc}>{tile.desc}</Txt>
+        </View>
+        {/* Arrow */}
+        <View style={styles.tileArrow}>
+          <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+        </View>
+      </View>
+    </AnimatedPress>
+  );
+
   return (
     <>
       <Animated.ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 24, gap: 14 }}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16, paddingBottom: 32, gap: 20 }}
         showsVerticalScrollIndicator={false}
         entering={FadeIn.duration(180)}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
       >
         {/* KYC Verification Status Banner */}
         {kycStatus !== 'VERIFIED' && (
           <Card
-            containerColor={kycStatus === 'PENDING' ? '#FFFBEB' : '#FEF2F2'}
+            containerColor={kycStatus === 'PENDING' ? Colors.alertGradientStart : '#FEF2F2'}
             borderRadius={Layout.borderRadiusCard}
             borderWidth={1}
-            borderColor={kycStatus === 'PENDING' ? '#FDE68A' : '#FECACA'}
-            padding={[14, 14]}
+            borderColor={kycStatus === 'PENDING' ? Colors.warning : Colors.danger}
+            padding={[16, 16]}
           >
             <Row justify="space-between" align="center">
               <Row gap={10} align="center" style={{ flex: 1 }}>
                 <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: kycStatus === 'PENDING' ? '#FEF3C7' : '#FEE2E2', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name={kycStatus === 'PENDING' ? 'time' : 'document-text'} size={18} color={kycStatus === 'PENDING' ? '#D97706' : '#DC2626'} />
+                  <Ionicons name={kycStatus === 'PENDING' ? 'time' : 'document-text'} size={18} color={kycStatus === 'PENDING' ? Colors.warning : Colors.danger} />
                 </View>
                 <Col style={{ flex: 1 }}>
-                  <Txt size={13} weight="800" color={kycStatus === 'PENDING' ? '#B45309' : '#991B1B'}>
+                  <Txt size={16} weight="700" color={kycStatus === 'PENDING' ? Colors.tertiary : Colors.danger}>
                     {kycStatus === 'PENDING' ? 'KYC Under Review' : 'KYC Verification Required'}
                   </Txt>
-                  <Txt size={11} color={kycStatus === 'PENDING' ? '#92400E' : '#7F1D1D'} style={{ marginTop: 2 }}>
+                  <Txt size={13} color={Colors.textSecondary} style={{ marginTop: 2 }}>
                     {kycStatus === 'PENDING'
                       ? 'Your KYC documents are with the Manager for approval.'
                       : 'Upload ID proof & selfie to get full dashboard access.'}
@@ -146,7 +215,7 @@ export default function GuestHomeTab() {
                   textColor={Colors.textInverse}
                   borderRadius={8}
                   height={32}
-                  contentStyle={{ paddingHorizontal: 10 }}
+                  contentStyle={{ paddingHorizontal: 12 }}
                 >
                   <Txt size={11} weight="800" color={Colors.textInverse}>Upload</Txt>
                 </Btn>
@@ -163,28 +232,28 @@ export default function GuestHomeTab() {
           borderColor={Colors.borderSubtle}
           padding={[16, 16]}
         >
-          <Row justify="space-between" align="flex-start">
-            <Col style={{ flex: 1 }}>
-              <Row gap={6} align="center">
-                <View style={[styles.mealIconBubble, { backgroundColor: Colors.surfaceElevated }]}>
-                  <Ionicons name="restaurant" size={16} color={Colors.primary} />
-                </View>
-                <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>NEXT MEAL</Txt>
-              </Row>
-              <Txt size={16} weight="800" color={Colors.textPrimary} style={{ marginTop: 8 }}>
-                {upcomingMeal?.mealType ? `${upcomingMeal.mealType[0]}${upcomingMeal.mealType.slice(1).toLowerCase()}` : 'No meal scheduled'}
-              </Txt>
-              <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
-                {upcomingMeal?.menuItems || 'Menu not announced yet'}
-              </Txt>
-            </Col>
+          <Row justify="space-between" align="center">
+            <Row gap={8} align="center" style={{ flex: 1 }}>
+              <View style={[styles.mealIconBubble, { backgroundColor: Colors.surfaceElevated }]}>
+                <Ionicons name="restaurant" size={16} color={Colors.primary} />
+              </View>
+              <Col style={{ flex: 1 }}>
+                <Txt size={12} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>NEXT MEAL</Txt>
+                <Txt size={16} weight="700" color={Colors.textPrimary} style={{ marginTop: 4 }}>
+                  {upcomingMeal?.mealType ? `${upcomingMeal.mealType[0]}${upcomingMeal.mealType.slice(1).toLowerCase()}` : 'No meal scheduled'}
+                </Txt>
+                <Txt size={13} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
+                  {upcomingMeal?.menuItems || 'Menu not announced yet'}
+                </Txt>
+              </Col>
+            </Row>
             {/* Countdown pill — amber when approaching, red when passed */}
             {cutoff ? (
               <Pill label={cutoffPill.label} color={cutoffPill.color} bg={`${cutoffPill.color}1A`} />
             ) : null}
           </Row>
 
-          <Spacer size={14} />
+          <Spacer size={12} />
           {/* Attending toggle */}
           <Row gap={10}>
             <Btn
@@ -192,13 +261,13 @@ export default function GuestHomeTab() {
               containerColor={isAttending ? Colors.success : Colors.surfaceMuted}
               textColor={isAttending ? Colors.textInverse : Colors.textSecondary}
               borderRadius={Layout.borderRadiusButton}
-              height={42}
+              height={38}
               style={{ flex: 1 }}
               disabled={!upcomingMeal || cutoffPassed}
               testID="guest_attending_toggle"
             >
-              <Ionicons name={isAttending ? 'checkmark-circle' : 'radio-button-off'} size={16} color={isAttending ? Colors.textInverse : Colors.textSecondary} />
-              <Txt size={13} weight="700" color={isAttending ? Colors.textInverse : Colors.textSecondary} style={{ marginLeft: 6 }}>
+              <Ionicons name={isAttending ? 'checkmark-circle' : 'radio-button-off'} size={14} color={isAttending ? Colors.textInverse : Colors.textSecondary} />
+              <Txt size={12} weight="800" color={isAttending ? Colors.textInverse : Colors.textSecondary} style={{ marginLeft: 6 }}>
                 {isAttending ? 'Attending' : 'Not Attending'}
               </Txt>
             </Btn>
@@ -207,49 +276,36 @@ export default function GuestHomeTab() {
               borderColor={Colors.borderMuted}
               textColor={Colors.primary}
               borderRadius={Layout.borderRadiusButton}
-              height={42}
+              height={38}
             >
               <Ionicons name="list" size={14} color={Colors.primary} />
-              <Txt size={11} weight="700" color={Colors.primary} style={{ marginLeft: 4 }}>All Meals</Txt>
+              <Txt size={12} weight="800" color={Colors.primary} style={{ marginLeft: 4 }}>All Meals</Txt>
             </OutlinedBtn>
           </Row>
         </Card>
 
-        {/* Quick tiles grid (2×2) */}
-        <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 4 }}>QUICK ACTIONS</Txt>
+        {/* Quick actions grid (2-column layout using wrap) */}
+        <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 4 }}>Quick Actions</Txt>
         <View style={styles.tileGrid}>
-          {QUICK_TILES.map((tile) => (
-            <AnimatedPress
-              key={tile.label}
-              scale={0.96}
-              hapticPattern="light"
-              onPress={() => handleTilePress(tile)}
-              style={{ flex: 1 }}
-            >
-              <Card
-                containerColor={Colors.surface}
-                borderRadius={Layout.borderRadiusCard}
-                borderWidth={1}
-                borderColor={Colors.borderSubtle}
-                padding={[14, 14]}
-              >
-                <View style={[styles.tileIcon, { backgroundColor: `${tile.tint}1A` }]}>
-                  <Ionicons name={tile.icon} size={20} color={tile.tint} />
-                </View>
-                <Txt size={13} weight="800" color={Colors.textPrimary} style={{ marginTop: 10 }}>{tile.label}</Txt>
-                <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 2 }}>{tile.desc}</Txt>
-              </Card>
-            </AnimatedPress>
-          ))}
+          {QUICK_TILES.map((tile) => renderTile(tile))}
         </View>
 
         {/* Notices carousel */}
-        <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginTop: 6 }}>PROPERTY NOTICES</Txt>
+        <Row justify="space-between" align="center" style={{ marginTop: 4 }}>
+          <Txt size={17} weight="700" color={Colors.textPrimary}>Property Notices</Txt>
+          <AnimatedPress scale={0.95} onPress={() => router.push('/support')}>
+            <Txt size={13} weight="700" color={Colors.primary}>{"View All >"}</Txt>
+          </AnimatedPress>
+        </Row>
+        <Spacer size={2} />
         {notices.length === 0 ? (
-          <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
-            <Row gap={8} align="center">
-              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-              <Txt size={12} color={Colors.textMuted}>No new notices right now.</Txt>
+          <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+            <Row gap={10} align="center">
+              <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+              <Col style={{ flex: 1 }}>
+                <Txt size={14} weight="700" color={Colors.textPrimary}>No new notices right now.</Txt>
+                <Txt size={13} color={Colors.textSecondary} style={{ marginTop: 2 }}>We'll notify you when there's an update.</Txt>
+              </Col>
             </Row>
           </Card>
         ) : (
@@ -261,16 +317,16 @@ export default function GuestHomeTab() {
                 borderRadius={Layout.borderRadiusCard}
                 borderWidth={1}
                 borderColor={Colors.borderSubtle}
-                padding={[12, 14]}
+                padding={[16, 16]}
                 style={{ width: 260 }}
               >
-                <Row gap={8} align="center">
+                <Row gap={10} align="center">
                   <View style={[styles.noticeIconBubble, { backgroundColor: `${Colors.primary}1A` }]}>
                     <Ionicons name="megaphone" size={14} color={Colors.primary} />
                   </View>
                   <Col style={{ flex: 1 }}>
-                    <Txt size={12} weight="800" color={Colors.textPrimary} numberOfLines={1}>{n.title}</Txt>
-                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted} numberOfLines={1}>{n.message}</Txt>
+                    <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1}>{n.title}</Txt>
+                    <Txt size={13} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>{n.message}</Txt>
                   </Col>
                 </Row>
               </Card>
@@ -293,12 +349,37 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   tileGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    gap: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  tileIcon: {
-    width: 40, height: 40, borderRadius: 12,
+  tileWrap: {
+    width: '48.5%',
+    marginBottom: 12,
+  },
+  tileCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    padding: 16,
+    minHeight: 120,
+  },
+  tileIconBox: {
+    width: 44, height: 44, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center',
+    alignSelf: 'flex-start',
+  },
+  tileLabel: {
+    marginBottom: 2,
+  },
+  tileDesc: {
+    lineHeight: 15,
+  },
+  tileArrow: {
+    position: 'absolute',
+    bottom: 14,
+    right: 14,
   },
   noticeIconBubble: {
     width: 26, height: 26, borderRadius: 13,
