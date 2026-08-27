@@ -132,6 +132,14 @@ export interface FeedbackComplaintEntity {
   staffRating: number;
   otherRating: number;
   overallRating: number;
+  /** From `details.severity` — a human urgency label ("Low"/"Medium"/"High") for tickets
+   *  that carry one, e.g. maintenance-reported facility issues. The server's own `priority`
+   *  enum (normal/express/scheduled) drives push urgency and doesn't map cleanly onto this
+   *  3-way vocabulary, so it rides in `details` instead of overloading that field. */
+  priorityLabel: string | null;
+  /** From `details.location` — free-text location for a ticket raised by someone with no
+   *  room of their own to fall back to (staff, not a resident). */
+  location: string | null;
 }
 
 export interface ExpenseEntity {
@@ -162,6 +170,11 @@ export interface AppRoleNotificationEntity {
   priority: string; // "HIGH" | "MEDIUM" | "LOW"
   actionLabel: string | null;
   actionType: string | null;
+  /** What `actionType` refers to — a request id, a payment id. Was silently dropped by the
+   *  mapper even though the wire record carries it, which is why the inbox's own action
+   *  button could mark a row read and nothing else: it had a verb ("View Ticket") and
+   *  nothing to point it at. */
+  actionId: string | null;
 }
 
 // ---- Non-Entity Data Classes ----
@@ -191,17 +204,6 @@ export interface PGGroceryOrder {
 
 /** A grocery shopping list the Chef put together for the kitchen — Chef can
  *  only request, not buy; Manager/Owner review it and place the real order. */
-export interface ChefGroceryRequestEntity {
-  id: string;
-  pgId: string;
-  chefName: string;
-  itemsSummary: string;
-  itemCount: number;
-  estimatedCost: number;
-  status: 'pending' | 'fulfilled' | 'dismissed';
-  createdAt: number;
-}
-
 export interface PGDailyGrocerySubscription {
   id: string;
   pgId: string;

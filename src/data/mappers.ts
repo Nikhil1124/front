@@ -192,7 +192,10 @@ export function toGuest(
     // different endpoint, and fetching it per resident here would be an N+1 across the whole
     // roster.
     rewardPoints: extras.rewardPoints ?? 0,
-    idProofType: kyc ? "Aadhaar Card" : (g.kyc_status ? "Aadhaar Card" : ""),
+    // Empty, not "Aadhaar Card". `GuestResponse` has no `kind` field — the roster reports
+    // kyc_status and the image urls, never which document it is — so this used to label
+    // every submission Aadhaar, including a passport. Callers show the document itself now.
+    idProofType: "",
     idProofNumber: "",
     // Presigned and short-lived; re-read from the KYC record rather than persisted.
     idProofPhotoUri: kyc?.front_url ?? g.kyc_front_url ?? "",
@@ -284,15 +287,25 @@ export function toPayment(p: PaymentRecord): PaymentEntity {
 
 // ─── Complaints & feedback ───────────────────────────────────────────────────
 
-/** The UI's three-state status. `assigned` and `in_progress` are both work-in-flight, and
- *  `cancelled` is closed — a cancelled ticket left showing as Open would be chased forever. */
+/** The UI's status labels. `assigned` and `in_progress` are both work-in-flight. `cancelled`
+ *  is closed but it is NOT resolved — it used to map onto "Resolved", which told a resident
+ *  their withdrawn ticket had been dealt with and told an owner the same thing. Both are
+ *  closed for the purpose of "stop chasing this"; only one of them means the problem went
+ *  away. Anything counting open work must therefore exclude both, not just "Resolved". */
 const REQUEST_STATUS: Record<RequestRecord["status"], string> = {
   open: "Open",
   assigned: "In Progress",
   in_progress: "In Progress",
   resolved: "Resolved",
-  cancelled: "Resolved",
+  cancelled: "Cancelled",
 };
+
+/** The closed set, so callers stop hand-writing `status !== 'Resolved'` and silently
+ *  counting cancelled tickets as open work. */
+export const CLOSED_REQUEST_STATUSES = ["Resolved", "Cancelled"] as const;
+export function isRequestOpen(status: string): boolean {
+  return !CLOSED_REQUEST_STATUSES.includes(status as (typeof CLOSED_REQUEST_STATUSES)[number]);
+}
 
 export function toComplaint(r: RequestRecord): FeedbackComplaintEntity {
   const photo = r.attachments?.find((a) => a.url) ?? null;
@@ -317,14 +330,29 @@ export function toComplaint(r: RequestRecord): FeedbackComplaintEntity {
     isVideo: !!photo?.content_type?.startsWith("video/"),
     adminResponse: r.resolution_note ?? lastComment?.body ?? null,
     assignedMembershipId: r.assigned_membership_id ?? null,
-    // Star ratings were a demo-only field on the same row. The requests API carries no
-    // ratings, so these read as unrated rather than inventing a score.
-    mealRating: 0,
-    cleanlinessRating: 0,
-    managerRating: 0,
-    staffRating: 0,
-    otherRating: 0,
-    overallRating: 0,
+    // Carried in `details` by submitFeedbackComplaint — see the note there on why that is
+    // the extension point rather than a dedicated reviews endpoint. A ticket with no scores
+    // (every complaint, and any feedback filed before this shipped) reads as 0, which every
+    // consumer already treats as "unrated" and filters out.
+    mealRating: detailNum(r, "meal_rating"),
+    cleanlinessRating: detailNum(r, "cleanliness_rating"),
+    managerRating: detailNum(r, "manager_rating"),
+    staffRating: detailNum(r, "staff_rating"),
+    otherRating: detailNum(r, "other_rating"),
+    // Averaged over the scores actually given, never over silent zeros — a resident who
+    // rated only their meals must not be recorded as having given the manager a 0.
+    overallRating: (() => {
+      const given = [
+        detailNum(r, "meal_rating"),
+        detailNum(r, "cleanliness_rating"),
+        detailNum(r, "manager_rating"),
+        detailNum(r, "staff_rating"),
+        detailNum(r, "other_rating"),
+      ].filter((v) => v > 0);
+      return given.length ? given.reduce((a, b) => a + b, 0) / given.length : 0;
+    })(),
+    priorityLabel: detailStr(r, "severity") || null,
+    location: detailStr(r, "location") || null,
   };
 }
 
@@ -345,6 +373,7 @@ export function toRoleNotification(n: NotificationRecord): AppRoleNotificationEn
     priority: n.priority.toUpperCase(),
     actionLabel: n.action_type ? titleCase(n.action_type) : null,
     actionType: n.action_type ?? null,
+    actionId: n.action_id ?? null,
   };
 }
 

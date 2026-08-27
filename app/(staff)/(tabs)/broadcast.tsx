@@ -7,6 +7,7 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
+import { EmptyState } from '@/components/EmptyState';
 import { hapticSuccess, hapticError } from '@/utils/haptics';
 import type { VisualDishItem } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -265,15 +266,9 @@ function ChefBroadcastView() {
 
 import { useMyTripsQuery } from '@/features/staff/useTrips';
 
-const MOCK_HISTORY = [
-  { id: '101', pgName: 'Sunrise PG', date: 'Oct 12, 2026', time: '2:42 PM', orders: 120, status: 'Delivered' },
-  { id: '100', pgName: 'Royal Homes PG', date: 'Oct 11, 2026', time: '3:15 PM', orders: 32, status: 'Delivered' },
-  { id: '99', pgName: 'Urban Stay PG', date: 'Oct 10, 2026', time: '1:30 PM', orders: 56, status: 'Delivered' },
-  { id: '98', pgName: 'Comfort Nest PG', date: 'Oct 10, 2026', time: '11:45 AM', orders: 18, status: 'Failed' },
-];
 
 function DeliveryHistoryRoute() {
-  const { data: realTrips = [] } = useMyTripsQuery();
+  const { data: realTrips = [], refetch, isLoading: tripsLoading, error: tripsError } = useMyTripsQuery();
 
   const completedStops = realTrips.flatMap(t =>
     t.stops
@@ -288,13 +283,25 @@ function DeliveryHistoryRoute() {
       }))
   );
 
-  const history = completedStops.length > 0 ? completedStops : MOCK_HISTORY;
+  // Was `: MOCK_HISTORY` — four invented delivery records shown to an agent who had none.
+  const history = completedStops;
 
   return (
     <View style={styles.root}>
       <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
         <Txt size={18} weight="900" color={Colors.primaryDark}>Delivery History</Txt>
         <Spacer size={6} />
+        {tripsLoading || tripsError || history.length === 0 ? (
+          <EmptyState
+            icon="time-outline"
+            title="No deliveries yet"
+            subtitle="Completed and failed stops from your trips will be listed here."
+            accent={Colors.primary}
+            loading={tripsLoading}
+            error={tripsError}
+            onRetry={refetch}
+          />
+        ) : null}
         {history.map(item => (
           <Card key={item.id} containerColor={Colors.surface} borderRadius={Radii.xl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row justify="space-between" align="center">

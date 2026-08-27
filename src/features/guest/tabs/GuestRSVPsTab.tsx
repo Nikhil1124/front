@@ -49,7 +49,7 @@ import { useAuthStore } from '@/store/authStore';
 export function GuestRSVPsTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  const { data: notifications = [], isLoading: mealsLoading, error: mealsError } = useMealsQuery(activePgId ?? undefined);
   const [rsvpChoices, setRsvpChoices] = useState<Record<string, 'REQUIRED' | 'NOT_REQUIRED'>>({});
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
   const getAlertTriggerTime = usePGowStore((s) => s.getAlertTriggerTime);
@@ -270,6 +270,8 @@ export function GuestRSVPsTab() {
           title={selectedMealFilter === 'ALL' ? 'No active menus posted' : `No active ${selectedMealFilter} menu posted`}
           subtitle="Your PG's chef will broadcast a menu here when the next meal is ready. Pull down to refresh."
           accent={Colors.CyberGreen}
+          loading={mealsLoading}
+          error={mealsError}
         />
       ) : (
         filteredNotifications.map((notif) => {

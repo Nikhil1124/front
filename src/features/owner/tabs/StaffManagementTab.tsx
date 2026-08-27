@@ -22,7 +22,7 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import * as staffApi from '@/features/staff/useStaff';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
@@ -43,9 +43,10 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
   chef: 'Chef',
   kitchen_staff: 'Kitchen Staff',
   maintenance: 'Maintenance Staff',
+  delivery_agent: 'Delivery Agent',
 };
 
-const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff'];
+const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff', 'Delivery Agent'];
 const SHIFT_OPTIONS = ['Day Shift (8 AM - 5 PM)', 'Night Shift (8 PM - 5 AM)', 'Part Time (9 AM - 1 PM)'];
 
 export function StaffManagementTab() {
@@ -55,9 +56,15 @@ export function StaffManagementTab() {
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
-  const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
+  const { data: staffList = [], isLoading: staffLoading, error: staffError } = useStaffQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
+  // D-06 on the server (staff/service.py): "adding a manager is owner-only, so a manager
+  // cannot appoint their own replacement or a peer" — the same rule applies to editing an
+  // existing staffer's role to or from manager. Both role pickers below used to offer
+  // "Manager" regardless of who was looking, so a manager could select it, fill in the rest
+  // of the form, and only find out it was never possible from the 403 that came back.
+  const selectableRoles = isManager ? AVAILABLE_ROLES.filter((r) => r !== 'Manager') : AVAILABLE_ROLES;
 
   const staffRoleInput = usePGowStore((s) => s.staffRoleInput);
   const staffNameInput = usePGowStore((s) => s.staffNameInput);
@@ -74,8 +81,6 @@ export function StaffManagementTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPin, setShowPin] = useState(false);
 
-  // Deactivated state emulation
-  const [deactivatedIds, setDeactivatedIds] = useState<string[]>([]);
   const [isDeletingStaff, setIsDeletingStaff] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<'phone' | null>(null);
 
@@ -180,29 +185,6 @@ export function StaffManagementTab() {
     }, 100);
   };
 
-  const toggleDeactivateStaff = (staff: any) => {
-    setShowActionMenu(false);
-    const isDeactivated = deactivatedIds.includes(staff.id);
-    const actionText = isDeactivated ? 'Activate' : 'Deactivate';
-    setTimeout(() => {
-      Alert.alert(`${actionText} staff member?`, `Are you sure you want to ${actionText.toLowerCase()} ${staff.name}?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: actionText,
-          style: isDeactivated ? 'default' : 'destructive',
-          onPress: () => {
-            hapticSuccess();
-            if (isDeactivated) {
-              setDeactivatedIds((prev) => prev.filter((id) => id !== staff.id));
-            } else {
-              setDeactivatedIds((prev) => [...prev, staff.id]);
-            }
-          },
-        },
-      ]);
-    }, 100);
-  };
-
   const handleOpenEdit = (staff: any) => {
     setSelectedStaff(staff);
     setEditName(staff.name);
@@ -228,6 +210,10 @@ export function StaffManagementTab() {
         Chef: 'chef',
         'Kitchen Staff': 'kitchen_staff',
         'Maintenance Staff': 'maintenance',
+        // Its own role, not 'maintenance': a delivery agent gets the trips dashboard
+        // (app/(staff)/(tabs)/eaters.tsx), and mapping it onto maintenance would put them
+        // on the chef screens instead.
+        'Delivery Agent': 'delivery_agent',
       };
       
       const payload = {
@@ -291,9 +277,11 @@ export function StaffManagementTab() {
     });
   }, [staffList, searchQuery, roleFilter]);
 
-  const activeStaffCount = useMemo(() => {
-    return staffList.filter((s) => !deactivatedIds.includes(s.id)).length;
-  }, [staffList, deactivatedIds]);
+  // Every membership `useStaffQuery` returns is a currently-employed staffer — the server
+  // has no "temporarily suspended" state, only `ended_at` (a permanent employment end via
+  // Delete Staff), which already drops the row from this list. So "active" is just "on
+  // this list" now, not a separate flag layered on top of it.
+  const activeStaffCount = staffList.length;
 
   return (
     <View style={styles.root}>
@@ -370,7 +358,7 @@ export function StaffManagementTab() {
           <Text style={styles.inputLabelStyle}>Staff Role</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 42 }}>
             <Row gap={6} align="center">
-              {AVAILABLE_ROLES.map((role) => {
+              {selectableRoles.map((role) => {
                 const isSelected = staffRoleInput === role;
                 return (
                   <TouchableOpacity
@@ -523,11 +511,12 @@ export function StaffManagementTab() {
               title="No staff members yet"
               subtitle="Add your first team member to start managing PG operations."
               accent={GREEN}
+              loading={staffLoading}
+              error={staffError}
             />
           }
           renderItem={({ item: staff }) => {
             const branchName = allPGs.find((p) => p.id === staff.pgId)?.pgName ?? `PG #${staff.pgId}`;
-            const isDeactivated = deactivatedIds.includes(staff.id);
             return (
               <Card
                 containerColor={WHITE}
@@ -535,7 +524,7 @@ export function StaffManagementTab() {
                 borderWidth={1}
                 borderColor={BORDER}
                 padding={[12, 14]}
-                style={{ marginBottom: 10, opacity: isDeactivated ? 0.65 : 1 }}
+                style={{ marginBottom: 10 }}
               >
                 <Row justify="space-between" align="center">
                   <Row gap={12} style={{ flex: 1 }} align="center">
@@ -555,15 +544,9 @@ export function StaffManagementTab() {
                       <Text style={styles.staffBranch}>
                         {branchName} · {staff.shiftTime || 'Day Shift'}
                       </Text>
-                      <Row gap={4} align="center" style={{ marginTop: 4 }}>
-                        <View style={[styles.statusDot, { backgroundColor: isDeactivated ? '#EF4444' : GREEN }]} />
-                        <Text style={[styles.statusLabel, { color: isDeactivated ? '#EF4444' : GREEN }]}>
-                          {isDeactivated ? 'Inactive' : 'Active'}
-                        </Text>
-                      </Row>
                     </Col>
                   </Row>
-                  
+
                   <TouchableOpacity
                     onPress={() => {
                       hapticSelect();
@@ -619,16 +602,6 @@ export function StaffManagementTab() {
               >
                 <Ionicons name="create-outline" size={20} color={CHARCOAL} />
                 <Text style={styles.sheetOptionText}>Edit Staff</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.sheetOptionRow}
-                onPress={() => toggleDeactivateStaff(selectedStaff)}
-              >
-                <Ionicons name="power-outline" size={20} color={CHARCOAL} />
-                <Text style={styles.sheetOptionText}>
-                  {deactivatedIds.includes(selectedStaff.id) ? 'Activate Staff' : 'Deactivate Staff'}
-                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -703,9 +676,7 @@ export function StaffManagementTab() {
               <Text style={styles.detailSecLabel}>ACCOUNT ACCESS</Text>
               <Spacer size={4} />
               <Text style={styles.detailLabel}>Account Status</Text>
-              <Text style={[styles.detailValue, { color: deactivatedIds.includes(selectedStaff.id) ? '#EF4444' : GREEN }]}>
-                {deactivatedIds.includes(selectedStaff.id) ? 'Inactive' : 'Active'}
-              </Text>
+              <Text style={[styles.detailValue, { color: GREEN }]}>Active</Text>
 
               <Spacer size={14} />
 
@@ -819,7 +790,7 @@ export function StaffManagementTab() {
                 <Text style={styles.inputLabelStyle}>Role</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
                   <Row gap={6}>
-                    {AVAILABLE_ROLES.map((r) => {
+                    {selectableRoles.map((r) => {
                       const isSelected = editRole === r;
                       return (
                         <TouchableOpacity
@@ -1036,8 +1007,6 @@ const styles = StyleSheet.create({
   roleBadgeText: { fontSize: 9, fontWeight: '700', color: GREEN },
   staffPhone: { fontSize: 11, color: MUTED, marginTop: 2 },
   staffBranch: { fontSize: 10, color: MUTED, marginTop: 1 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusLabel: { fontSize: 10, fontWeight: '700' },
   optionsBtn: {
     width: 32,
     height: 32,

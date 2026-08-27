@@ -3,7 +3,7 @@ import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, 
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -25,15 +25,16 @@ import { useRoleNotificationsQuery } from '@/features/notifications/useNotificat
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
+import { isRequestOpen } from '@/data/mappers';
+import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 
 export function OwnerAnnouncementsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const { data: roleNotifs = [], isLoading: inboxLoading, error: inboxError, refetch: refetchInbox } = useRoleNotificationsQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
   const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
-  const owner = usePGowStore((s) => s.loggedInOwner);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
   const respondComplaint = usePGowStore((s) => s.respondToFeedbackComplaint);
   const sendNotice = usePGowStore((s) => s.sendRoleNotification);
@@ -75,7 +76,7 @@ export function OwnerAnnouncementsTab() {
     });
 
     // Active complaints
-    const openComplaints = submissions.filter((s: FeedbackComplaintEntity) => s.type === 'COMPLAINT' && s.status !== 'Resolved');
+    const openComplaints = submissions.filter((s: FeedbackComplaintEntity) => s.type === 'COMPLAINT' && isRequestOpen(s.status));
     openComplaints.forEach((c: FeedbackComplaintEntity) => {
       items.push({
         id: `complaint_${c.id}`,
@@ -324,7 +325,11 @@ export function OwnerAnnouncementsTab() {
       <Spacer size={12} />
 
       {/* ── Unified Inbox list ── */}
-      {displayedItems.length === 0 ? (
+      {inboxLoading ? (
+        <LoadingState label="Loading inbox…" fill={false} />
+      ) : inboxError ? (
+        <ErrorState error={inboxError} title="Could not load the inbox" onRetry={refetchInbox} fill={false} />
+      ) : displayedItems.length === 0 ? (
         <View style={styles.emptyInboxBox}>
           <Ionicons name="checkmark-circle-outline" size={32} color={MUTED} />
           <Text style={styles.emptyInboxTitle}>All caught up</Text>
@@ -443,42 +448,19 @@ export function OwnerAnnouncementsTab() {
                 <View style={styles.actionBlockBox}>
                   <Text style={styles.actionBlockLabel}>KYC Document Verification Required</Text>
                   <Text style={styles.actionBlockDesc}>
-                    Verify {selectedInboxItem.raw.name}'s ID ({selectedInboxItem.raw.idProofType || 'Aadhaar'}).
+                    Verify {selectedInboxItem.raw.name}'s identity documents.
                   </Text>
                   
                   <Spacer size={10} />
                   
-                  {/* Photo Previews */}
-                  <Row gap={8} style={{ width: '100%', marginBottom: 12 }}>
-                    <Col style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, marginBottom: 4 }}>Selfie Photo</Text>
-                      {selectedInboxItem.raw.profilePhotoUri ? (
-                        <Image
-                          source={{ uri: selectedInboxItem.raw.profilePhotoUri }}
-                          style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER }}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                          <Ionicons name="person-outline" size={24} color={MUTED} />
-                        </View>
-                      )}
-                    </Col>
-                    <Col style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: MUTED, marginBottom: 4 }}>ID Document</Text>
-                      {selectedInboxItem.raw.idProofPhotoUri ? (
-                        <Image
-                          source={{ uri: selectedInboxItem.raw.idProofPhotoUri }}
-                          style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER }}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={{ width: '100%', height: 120, borderRadius: 8, backgroundColor: BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                          <Ionicons name="card-outline" size={24} color={MUTED} />
-                        </View>
-                      )}
-                    </Col>
-                  </Row>
+                  {/* The submitted documents, via the shared card so screen capture is
+                      blocked here too — this modal is a KYC decision point like the roster's
+                      review sheet, and both show the same photos. */}
+                  <KycDocumentsCard
+                    idPhotoUri={selectedInboxItem.raw.idProofPhotoUri}
+                    selfieUri={selectedInboxItem.raw.profilePhotoUri}
+                    emptyHint="This submission has no readable images. Reject it and ask the resident to upload again."
+                  />
 
                   <Row gap={8}>
                     <TouchableOpacity

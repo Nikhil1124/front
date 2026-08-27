@@ -21,17 +21,19 @@ export default function IndexRoute() {
   // prevents a premature redirect on a role that has not resolved yet.
   if (!user) return null;
 
-  // Freshly registered owner with no PG properties yet must land on Owner Overview (onboarding state)
-  if (user.memberships.length === 0 && (activeRole === 'owner' || activeRole === null)) {
+  // Freshly registered owner with no PG properties yet must land on Owner Overview, which
+  // shows the "add your first property" card. Guests are excluded — they get /guest-join
+  // below, and the (auth) group stays mounted for exactly that case (see app/_layout.tsx).
+  if (user.memberships.length === 0 && activeRole !== 'guest') {
     return <Redirect href="/overview" />;
   }
 
   if (activeRole === 'owner' || activeRole === 'manager') return <Redirect href="/overview" />;
   
   if (activeRole === 'guest') {
-    if (!!user && user.memberships.length === 0) {
-      return <Redirect href="/guest-join" />;
-    }
+    // No property left to show a dashboard for — send them to the join screen rather than an
+    // empty /home.
+    if (user.memberships.length === 0) return <Redirect href="/guest-join" />;
     return <Redirect href="/home" />;
   }
   if (activeRole === 'maintenance') return <Redirect href="/housekeeping" />;

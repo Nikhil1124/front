@@ -39,8 +39,14 @@ export async function uploadToPresignedUrl(
 ): Promise<void> {
   // Mock builds hand out a `mock://` url from getUploadUrl — nothing real to PUT to.
   if (uploadUrl.startsWith("mock://")) return;
-  // If the file URI is a mock/sample preset, skip fetching it and return success
-  if (fileUri.startsWith("sample:") || fileUri.startsWith("mock_media") || fileUri.startsWith("mock_photo")) return;
+  // A `sample:` / `mock_photo` uri used to return here as if the upload had succeeded. That
+  // silence is what let KYC "submit" with nothing behind the object key. The placeholder
+  // pickers that produced those uris are gone (KycUploadDialog now opens the real camera and
+  // library), so anything still shaped like one is a bug that must be loud rather than a
+  // submission the owner cannot action.
+  if (/^(sample:|mock_media|mock_photo)/.test(fileUri)) {
+    throw new Error("No photo was captured. Take or choose a photo and try again.");
+  }
   const blob = await (await fetch(fileUri)).blob();
   const res = await fetch(uploadUrl, {
     method: "PUT",

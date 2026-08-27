@@ -159,7 +159,18 @@ export default function RootLayout() {
   }, [submitRSVP, isRouterReady]);
 
   const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent';
-  const isOwnerRole = activeRole === 'owner' || activeRole === 'manager' || (!!user && user.memberships.length === 0);
+  // A self-registered owner holds no membership until property #1 exists, so "signed in with
+  // nothing" has to resolve to the owner group or they land nowhere. But that must NOT
+  // swallow a resident whose membership ended: they are not an owner, they need the join
+  // screen, and claiming them here is what made /guest-join unreachable below.
+  const hasNoMemberships = !!user && user.memberships.length === 0;
+  const isOwnerRole =
+    activeRole === 'owner' || activeRole === 'manager' || (hasNoMemberships && activeRole !== 'guest');
+  // A resident with a valid token but no property left to belong to. The (auth) group owns
+  // /guest-join, so it stays mounted for them — guarding it on `!accessToken` alone meant
+  // app/index.tsx redirected them to a screen its own guard had just unmounted, and they
+  // landed on +not-found.
+  const needsPropertyJoin = !!accessToken && activeRole === 'guest' && hasNoMemberships;
   // On a cold launch, accessToken is hydrated from SecureStore (fast) before activeRole is
   // known (a separate /v1/me round trip, slower) — a real gap, not just a render tick. If
   // groceries' guard only checked accessToken, that gap left it as the ONLY eligible screen
@@ -172,7 +183,12 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={styles.container}>
         <SafeAreaProvider>
-          <StatusBar style="light" />
+          {/* "dark" means dark ICONS, which is what a light background needs. This was
+              flipped to "light" alongside userInterfaceStyle: "dark" in app.json, but the
+              palette is light-only (Colors.canvas = '#F7F9F7', textPrimary = '#17201A'), so
+              light icons rendered white-on-near-white and the status bar disappeared.
+              Revisit both together if a real dark theme is ever added. */}
+          <StatusBar style="dark" />
           {/* Single top-edge SafeAreaView for the whole app — every screen in every group
               trusts this and must not consume the top inset again itself (that was the
               cause of the double-safe-area header bugs fixed earlier). */}
@@ -182,7 +198,7 @@ export default function RootLayout() {
                 {/* The root index route must be explicitly included because we are providing manual children to Stack */}
                 <Stack.Screen name="index" />
 
-                <Stack.Protected guard={!accessToken}>
+                <Stack.Protected guard={!accessToken || needsPropertyJoin}>
                   <Stack.Screen name="(auth)" />
                 </Stack.Protected>
 
@@ -205,6 +221,22 @@ export default function RootLayout() {
                     role-based guard above ever got a chance to be true. */}
                 <Stack.Protected guard={!!accessToken && hasResolvedRole}>
                   <Stack.Screen name="groceries" />
+                </Stack.Protected>
+
+                {/* The notifications screen (replaces the old bottom-sheet inbox) — shared
+                    the same way groceries is: every signed-in, role-resolved user can reach
+                    it, the screen itself reads which role from the `role` param the bell
+                    button passes. */}
+                <Stack.Protected guard={!!accessToken && hasResolvedRole}>
+                  <Stack.Screen name="notifications" />
+                </Stack.Protected>
+
+                {/* Was under (owner) — owner/manager only. Moved here because a chef can
+                    raise a requisition too (create_order accepts OWNER/MANAGER/CHEF as
+                    raiser; list_orders scopes a chef to their own requests automatically).
+                    ProcurementScreen decides which tabs a given role actually sees. */}
+                <Stack.Protected guard={!!accessToken && hasResolvedRole}>
+                  <Stack.Screen name="procurement" />
                 </Stack.Protected>
 
                 {/* Diagnostic screen for unmatched routes */}

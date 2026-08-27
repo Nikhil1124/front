@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Row, Col, Spacer } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useRepairRequestsQuery } from '@/features/requests/useComplaints';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { BookProntoRepairDialog } from '@/components/dialogs/HubDialogs';
 import { useProcurementOrders } from '@/features/procurement/useProcurement';
 import { hapticSelect } from '@/utils/haptics';
@@ -30,7 +30,7 @@ export function OwnerServicesTab() {
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: repairs = [] } = useRepairRequestsQuery(activePgId ?? undefined);
-  const isManagerMode = usePGowStore((s) => s.isManagerMode);
+  const isManagerMode = useIsManagerMode();
 
   const { data: pendingOrders = [] } = useProcurementOrders({
     pgId: activePgId ?? undefined,

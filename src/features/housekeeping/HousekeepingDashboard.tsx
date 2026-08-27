@@ -11,37 +11,37 @@ import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
+import {
+  useComplaintsQuery,
+  useSubmitComplaintMutation,
+  useResolveComplaintMutation,
+  getAttachmentUploadUrl,
+  uploadAttachment,
+  addAttachment,
+} from '@/features/requests/useComplaints';
+import { useMaintenanceChecklist, type ChecklistItemStatus } from './useMaintenanceChecklist';
+import { formatTimeAgo } from '@/utils/format';
+import type { FeedbackComplaintEntity } from '@/types';
 
-const defaultInspections: any = {
-  Electrical: [
-    { room: 'Room 201', items: [{ name: 'Lights', status: 'Working' }, { name: 'Fan', status: 'Working' }, { name: 'Switches', status: 'Working' }] },
-    { room: 'Room 202', items: [{ name: 'Lights', status: 'Working' }, { name: 'Fan', status: 'Needs Attention' }, { name: 'Switches', status: 'Working' }] },
-    { room: 'Room 203', items: [{ name: 'Lights', status: 'Not Working' }, { name: 'Fan', status: 'Working' }, { name: 'Switches', status: 'Working' }] },
-  ],
-  Cleanliness: [
-    { room: 'Building Cleanliness', items: [{ name: 'Rooms', status: 'Working' }, { name: 'Bathrooms', status: 'Needs Attention' }, { name: 'Common Area', status: 'Working' }, { name: 'Corridors', status: 'Working' }, { name: 'Waste Disposal', status: 'Not Working' }] }
-  ],
-  'Kitchen Hygiene': [
-    { room: 'Kitchen Check', items: [{ name: 'Cooking Area', status: 'Working' }, { name: 'Utensils', status: 'Working' }, { name: 'Food Storage', status: 'Needs Attention' }, { name: 'Refrigerator', status: 'Working' }, { name: 'Waste Disposal', status: 'Not Working' }] }
-  ],
-  General: [
-    { room: 'General Facilities', items: [{ name: 'Doors & Windows', status: 'Working' }, { name: 'Pest Control', status: 'Working' }] }
-  ],
-  Plumbing: [
-    { room: 'Plumbing Checks', items: [{ name: 'Water Supply', status: 'Working' }, { name: 'Leaks', status: 'Needs Attention' }, { name: 'Drainage', status: 'Working' }] }
-  ]
-};
-
-const defaultIssues = [
-  { id: 1, title: 'Fan not working', location: 'Room 204 • Electrical', priority: 'High', status: 'Reported', time: '10:15 AM' },
-  { id: 2, title: 'Bathroom requires cleaning', location: 'Floor 2 • Cleanliness', priority: 'Medium', status: 'Assigned', time: '11:30 AM' },
-  { id: 3, title: 'Kitchen storage needs cleaning', location: 'Main Kitchen • Kitchen Hygiene', priority: 'Low', status: 'Resolved', time: '12:05 PM' }
-];
+/** `FeedbackComplaintEntity` → the shape every view in this file already renders. Keeping the
+ *  UI-facing shape unchanged means MaintenanceStatsSummary / MaintenanceDashView needed no
+ *  changes at all once the data feeding them became real. */
+function toIssueView(c: FeedbackComplaintEntity) {
+  return {
+    id: c.id,
+    title: c.title,
+    location: [c.location, c.category].filter(Boolean).join(' • ') || 'Property',
+    priority: c.priorityLabel ?? 'Medium',
+    status: c.status,
+    time: formatTimeAgo(c.timestamp),
+  };
+}
 
 export function HousekeepingDashboard() {
   const staff = usePGowStore((s) => s.loggedInStaff);
   const logout = usePGowStore((s) => s.logout);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const activePgId = useAuthStore((s) => s.activePgId);
   const isMgmt = activeRole === 'owner' || activeRole === 'manager';
 
   const [activeTab, setActiveTab] = useState<'dash' | 'check' | 'issues' | 'profile'>('dash');
@@ -49,8 +49,19 @@ export function HousekeepingDashboard() {
 
   const { dockStyle } = useDock();
 
-  const [inspections, setInspections] = useState(defaultInspections);
-  const [issues, setIssues] = useState(defaultIssues);
+  // Facility checks: real, but local to this device — see useMaintenanceChecklist for why
+  // there is no server counterpart yet.
+  const inspections = useMaintenanceChecklist((s) => s.tree);
+  const setItemStatus = useMaintenanceChecklist((s) => s.setItemStatus);
+
+  // Issues: real requests. `useComplaintsQuery` is the same query OwnerReviewsTab and
+  // OwnerAnnouncementsTab already read — a maintenance staffer is in `_QUEUE_ROLES`
+  // server-side (pg-backend request/service/crud.py), so this is the property's actual
+  // open-issue queue, not a filtered slice of it.
+  const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
+  // The query includes both complaint and feedback tickets (that split is what a resident's
+  // Support tab shows); a facility issue is only ever the former.
+  const issues = complaints.filter((c) => c.type === 'COMPLAINT').map(toIssueView);
 
   if (isMgmt) {
     return (
@@ -63,8 +74,8 @@ export function HousekeepingDashboard() {
   return (
     <View style={styles.root}>
       {activeTab === 'dash' && <MaintenanceDashView inspections={inspections} issues={issues} onGoToChecks={(cat: string) => { setCheckTabCategory(cat); setActiveTab('check'); }} />}
-      {activeTab === 'check' && <FacilityCheckView inspections={inspections} setInspections={setInspections} selectedCat={checkTabCategory} setSelectedCat={setCheckTabCategory} />}
-      {activeTab === 'issues' && <IssuesSupervisionView issues={issues} setIssues={setIssues} inspections={inspections} setInspections={setInspections} />}
+      {activeTab === 'check' && <FacilityCheckView inspections={inspections} setItemStatus={setItemStatus} selectedCat={checkTabCategory} setSelectedCat={setCheckTabCategory} />}
+      {activeTab === 'issues' && <IssuesSupervisionView issues={issues} pgId={activePgId} />}
       {activeTab === 'profile' && <MaintenanceProfileView staff={staff} logout={logout} />}
       <View style={dockStyle as any}>
         <HeadlessDockTabButton icon="home" label="Dash" isFocused={activeTab === 'dash'} onPress={() => setActiveTab('dash')} />
@@ -249,7 +260,7 @@ function MaintenanceDashView({ inspections, issues, onGoToChecks }: any) {
   );
 }
 
-function FacilityCheckView({ inspections, setInspections, selectedCat, setSelectedCat }: any) {
+function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelectedCat }: any) {
   const [activeArea, setActiveArea] = useState('All Areas');
   const [showAreaPicker, setShowAreaPicker] = useState(false);
   
@@ -295,11 +306,12 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [isSyncSuccess, setIsSyncSuccess] = useState(false);
 
-  const handleSelectStatus = (roomIdx: number, itemIdx: number, status: string) => {
-    const newInspections = { ...inspections };
-    const actualRoomIdx = currentRooms.findIndex((r: any) => r.room === displayedRooms[roomIdx].room);
-    newInspections[selectedCat][actualRoomIdx].items[itemIdx].status = status;
-    setInspections(newInspections);
+  const handleSelectStatus = (roomIdx: number, itemIdx: number, status: ChecklistItemStatus) => {
+    const room = displayedRooms[roomIdx];
+    const item = room.items[itemIdx];
+    // Writes straight into the persisted store — every toggle is saved to this device the
+    // instant it happens, not batched behind the "Save Progress" button below.
+    setItemStatus(selectedCat, room.room, item.name, status);
     setOpenDropdown(null);
   };
 
@@ -427,16 +439,23 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
           <View style={{ backgroundColor: Colors.surface, borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
             <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isSyncSuccess ? '#F0FDF4' : '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={isSyncSuccess ? "checkmark" : "cloud-upload"} size={24} color={isSyncSuccess ? Colors.success : Colors.primary} />
+                <Ionicons name={isSyncSuccess ? "checkmark" : "phone-portrait-outline"} size={24} color={isSyncSuccess ? Colors.success : Colors.primary} />
               </View>
               <TouchableOpacity onPress={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }} activeOpacity={0.8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </Row>
-            <Txt size={20} weight="900" color={Colors.primaryDark}>{isSyncSuccess ? 'Synced Successfully!' : 'Sync Progress?'}</Txt>
+            {/* Every toggle above already writes to this device's storage the instant it's
+                tapped (see handleSelectStatus) — this dialog is a confirmation, not the save
+                itself, and says so honestly. There is no server endpoint for a facility
+                checklist yet (see useMaintenanceChecklist), so "synced to the server" would
+                have been a claim nothing behind it could back up. */}
+            <Txt size={20} weight="900" color={Colors.primaryDark}>{isSyncSuccess ? 'Saved on this Device' : 'Finish this Check?'}</Txt>
             <Spacer size={8} />
             <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              {isSyncSuccess ? 'Your inspection progress has been securely saved to the server.' : 'Are you ready to save and sync your inspection progress to the server?'}
+              {isSyncSuccess
+                ? 'Your inspection progress is saved on this device and will still be here next time you open the app.'
+                : 'Your changes are already saved as you tick them — this just confirms you\'re done with this round.'}
             </Txt>
             <Spacer size={24} />
             {isSyncSuccess ? (
@@ -446,10 +465,10 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
             ) : (
               <Row gap={12}>
                 <TouchableOpacity onPress={() => setShowSaveConfirm(false)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+                  <Txt size={15} weight="800" color={Colors.textPrimary}>Keep Checking</Txt>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setIsSyncSuccess(true)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight="800" color="#FFF">Sync Now</Txt>
+                  <Txt size={15} weight="800" color="#FFF">Done for Now</Txt>
                 </TouchableOpacity>
               </Row>
             )}
@@ -460,7 +479,10 @@ function FacilityCheckView({ inspections, setInspections, selectedCat, setSelect
   );
 }
 
-function IssuesSupervisionView({ issues, setIssues, inspections, setInspections }: any) {
+function IssuesSupervisionView({ issues, pgId }: { issues: any[]; pgId: string | null }) {
+  const submitIssue = useSubmitComplaintMutation(pgId ?? undefined);
+  const resolveIssue = useResolveComplaintMutation(pgId ?? undefined);
+
   const [showForm, setShowForm] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -524,58 +546,61 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
       }
     };
 
-    const handleAddIssue = () => {
+    // Was entirely local: `setIssues([newItem, ...issues])` plus a hack that spliced a
+    // fabricated entry into the Facility Checks tree so the two screens looked connected.
+    // Neither ever left the device — the "Issue Reported" success screen appeared whether or
+    // not anything had actually happened. Now it really does: `kind: 'complaint'`, the same
+    // request type OwnerReviewsTab/OwnerAnnouncementsTab already read, so this lands in the
+    // owner/manager inbox with a real push (create_request → notify(), pg-backend
+    // request/service/crud.py) and can be escalated via Book a Technician like any other.
+    const handleAddIssue = async () => {
        if (!newCat) return setErr('Please select a category.');
        if (!newLoc) return setErr('Please select a location.');
        if (!newTitle.trim()) return setErr('Please describe the issue.');
-       
+       if (!pgId) return setErr('No active property.');
+
        const fullLoc = newLocDetail.trim() ? `${newLoc} ${newLocDetail.trim()}` : newLoc;
-       
-       const newItem = {
-          id: Date.now(),
-          title: newTitle,
-          location: `${fullLoc} • ${newCat}`,
-          priority: newPriority,
-          status: 'Reported',
-          time: 'Just now'
-       };
-       setIssues([newItem, ...issues]);
+       // High → 'express' so create_request's own notify() marks the push urgent for the
+       // owner/manager; Low/Medium stay 'normal'. The 3-way Low/Medium/High label a
+       // maintenance worker actually thinks in has no server column, so it rides in
+       // `details.severity` and mappers.ts reads it back for display (toComplaint).
+       const priority = newPriority === 'High' ? 'express' : 'normal';
 
-       // Synchronize issue to the Facility Checks tab!
-       if (inspections && setInspections) {
-          const newInspections = { ...inspections };
-          const catName = newCat || 'General';
-          if (!newInspections[catName]) newInspections[catName] = [];
-          
-          let roomName = fullLoc;
-          if (!roomName) {
-            roomName = catName === 'Electrical' ? 'Room 201' : 
-                       catName === 'Cleanliness' ? 'Building Cleanliness' : 
-                       catName === 'Kitchen Hygiene' ? 'Kitchen Check' : 'General Facilities';
-          }
+       try {
+         const created = await submitIssue.mutateAsync({
+           pg_id: pgId,
+           kind: 'complaint',
+           category: newCat,
+           title: newTitle.trim(),
+           description: newNotes.trim(),
+           priority,
+           details: { severity: newPriority, location: fullLoc },
+         });
 
-          let roomGrp = newInspections[catName].find((r: any) => r.room === roomName);
-          if (!roomGrp) {
-             roomGrp = { room: roomName, items: [] };
-             newInspections[catName].push(roomGrp);
-          }
-          
-          roomGrp.items.push({
-             name: newTitle,
-             status: newPriority === 'Low' ? 'Working' : newPriority === 'Medium' ? 'Needs Attention' : 'Not Working'
-          });
-          setInspections(newInspections);
+         if (hasPhoto && photoUri) {
+           try {
+             const { upload_url, object_key } = await getAttachmentUploadUrl(created.id, 'image/jpeg');
+             await uploadAttachment(upload_url, photoUri, 'image/jpeg');
+             await addAttachment(created.id, { object_key, content_type: 'image/jpeg' });
+           } catch (err) {
+             // The ticket itself was created; only the photo did not attach.
+             console.warn('[PGow] maintenance issue filed but photo failed to attach:', err);
+           }
+         }
+
+         setNewTitle('');
+         setNewNotes('');
+         setNewLoc('');
+         setNewLocDetail('');
+         setNewCat('');
+         setNewPriority('Medium');
+         setHasPhoto(false);
+         setPhotoUri(null);
+         setErr('');
+         setIsSuccess(true);
+       } catch (err) {
+         setErr(err instanceof Error ? err.message : 'Could not report this issue. Check your connection and try again.');
        }
-       setNewTitle('');
-       setNewNotes('');
-       setNewLoc('');
-       setNewLocDetail('');
-       setNewCat('');
-       setNewPriority('Medium');
-       setHasPhoto(false);
-       setPhotoUri(null);
-       setErr('');
-       setIsSuccess(true);
     };
 
     return (
@@ -740,8 +765,16 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
 
         {/* Fixed Footer */}
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100, backgroundColor: Colors.canvas, borderTopWidth: 1, borderColor: Colors.borderSubtle }}>
-          <Btn containerColor={Colors.primary} textColor="#FFF" borderRadius={12} height={56} onPress={handleAddIssue}>
-            <Txt size={16} weight="900">Report Issue</Txt>
+          <Btn
+            containerColor={Colors.primary}
+            textColor="#FFF"
+            borderRadius={12}
+            height={56}
+            onPress={handleAddIssue}
+            disabled={submitIssue.isPending}
+            loading={submitIssue.isPending}
+          >
+            <Txt size={16} weight="900">{submitIssue.isPending ? 'Reporting…' : 'Report Issue'}</Txt>
           </Btn>
         </View>
       </View>
@@ -839,35 +872,55 @@ function IssuesSupervisionView({ issues, setIssues, inspections, setInspections 
       <Modal transparent visible={!!selectedIssue} animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <View style={{ backgroundColor: Colors.surface, borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
+            {/* "Reopen" used to be offered here too — a local status flip with nothing behind
+                it. The server has no un-resolve transition (resolve_request: "This ticket is
+                already closed." — a hard CONFLICT, not a toggle), so a resolved ticket now
+                only shows that it's resolved, rather than a button that could never work. */}
             <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: selectedIssue?.status === 'Resolved' ? '#FEF2F2' : '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={selectedIssue?.status === 'Resolved' ? "refresh" : "checkmark-done"} size={24} color={selectedIssue?.status === 'Resolved' ? Colors.danger : Colors.success} />
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="checkmark-done" size={24} color={Colors.success} />
               </View>
               <TouchableOpacity onPress={() => setSelectedIssue(null)} activeOpacity={0.8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </Row>
-            <Txt size={20} weight="900" color={Colors.primaryDark}>{selectedIssue?.status === 'Resolved' ? 'Reopen Issue?' : 'Mark as Resolved?'}</Txt>
+            <Txt size={20} weight="900" color={Colors.primaryDark}>
+              {selectedIssue?.status === 'Resolved' ? 'Already Resolved' : 'Mark as Resolved?'}
+            </Txt>
             <Spacer size={8} />
             <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              {selectedIssue?.status === 'Resolved' 
-                ? `Are you sure you want to reopen "${selectedIssue?.title}"?` 
-                : `Are you sure you want to mark "${selectedIssue?.title}" as resolved?`}
+              {selectedIssue?.status === 'Resolved'
+                ? `"${selectedIssue?.title}" has been resolved.`
+                : `Mark "${selectedIssue?.title}" as resolved? The resident who reported it will be able to see this.`}
             </Txt>
             <Spacer size={24} />
-            <Row gap={12}>
-              <TouchableOpacity onPress={() => setSelectedIssue(null)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => {
-                const newStatus = selectedIssue?.status === 'Resolved' ? 'Reported' : 'Resolved';
-                const newIssues = issues.map((i: any) => i.id === selectedIssue?.id ? { ...i, status: newStatus } : i);
-                setIssues(newIssues);
-                setSelectedIssue(null);
-              }} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: selectedIssue?.status === 'Resolved' ? Colors.danger : Colors.success, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt size={15} weight="800" color="#FFF">{selectedIssue?.status === 'Resolved' ? 'Reopen' : 'Resolve'}</Txt>
-              </TouchableOpacity>
-            </Row>
+            {selectedIssue?.status === 'Resolved' ? (
+              <Btn onPress={() => setSelectedIssue(null)} containerColor={Colors.surfaceMuted} textColor={Colors.textPrimary} borderRadius={12} height={50}>
+                <Txt size={15} weight="800" color={Colors.textPrimary}>Close</Txt>
+              </Btn>
+            ) : (
+              <Row gap={12}>
+                <TouchableOpacity onPress={() => setSelectedIssue(null)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+                  <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  disabled={resolveIssue.isPending}
+                  onPress={async () => {
+                    if (!selectedIssue) return;
+                    try {
+                      await resolveIssue.mutateAsync({ id: selectedIssue.id });
+                      setSelectedIssue(null);
+                    } catch (err) {
+                      Alert.alert('Could not resolve', err instanceof Error ? err.message : 'Please try again.');
+                    }
+                  }}
+                  activeOpacity={0.8}
+                  style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.success, alignItems: 'center', justifyContent: 'center', opacity: resolveIssue.isPending ? 0.6 : 1 }}
+                >
+                  <Txt size={15} weight="800" color="#FFF">{resolveIssue.isPending ? 'Resolving…' : 'Resolve'}</Txt>
+                </TouchableOpacity>
+              </Row>
+            )}
           </View>
         </View>
       </Modal>

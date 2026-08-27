@@ -20,6 +20,7 @@ import { getExpenseSummary } from "../expenses/useExpenses";
 import { getMealSavingsAnalytics } from "../meals/useMeals";
 import { currentPeriod, toAmount } from "../../data/mappers";
 import type { PGOwnerEntity } from "@/types";
+import { todayLocalISO } from "../../utils/format";
 
 export interface PropertyPortfolioStats {
   pgId: string;
@@ -50,8 +51,9 @@ const pgKey = (pgs: PGOwnerEntity[]) => pgs.map((p) => p.id).sort().join(",");
 function thisMonthWindow(): { monthStart: string; monthEnd: string } {
   const now = new Date();
   return {
-    monthStart: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10),
-    monthEnd: now.toISOString().slice(0, 10),
+    // Local calendar day — see todayLocalISO's own note on why toISOString() is wrong here.
+    monthStart: todayLocalISO(new Date(now.getFullYear(), now.getMonth(), 1)),
+    monthEnd: todayLocalISO(now),
   };
 }
 

@@ -18,6 +18,11 @@ export interface SupplyItem {
   image_url?: string | null;
   available?: boolean;
   is_active?: boolean;
+  /** Per-item GST percentage. Groceries are not one flat rate — the server carries 0/5/12/18
+   *  per item and prices tax-INCLUSIVE (`price` is what the customer pays), so this is what
+   *  the client needs to break the tax out of a line rather than add it on top. */
+  gst_rate?: number;
+  hsn_code?: string;
 }
 
 export type SupplyOrderStatus =
@@ -56,6 +61,10 @@ export interface SupplyOrderDetail {
   user_phone?: string;
   status: SupplyOrderStatus;
   subtotal_amount: number;
+  /** The server's own split of a tax-inclusive total: taxable_amount + tax_amount ==
+   *  total_amount, exactly (it derives tax as the remainder so the two always reconcile). */
+  taxable_amount?: number;
+  tax_amount?: number;
   delivery_fee: number;
   discount_amount: number;
   total_amount: number;

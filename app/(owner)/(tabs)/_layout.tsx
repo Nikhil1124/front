@@ -16,23 +16,22 @@ import { TabHeader } from '@/components/TabHeader';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSuccess } from '@/utils/haptics';
-import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 
 export default function OwnerTabsLayout() {
-  const [showNotificationCenter, setShowNotificationCenter] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAddPgModal, setShowAddPgModal] = useState(false);
 
   const activePgId = useAuthStore((s) => s.activePgId);
+  const setActivePgId = useAuthStore((s) => s.setActivePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
   const logout = usePGowStore((s) => s.logout);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
@@ -45,13 +44,15 @@ export default function OwnerTabsLayout() {
         <TabHeader
           actions={
             <>
-              <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotificationCenter(isManager ? 'MANAGER' : 'OWNER')}>
+              <AnimatedPress scale={0.85} hapticPattern="light" accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+                onPress={() => router.push({ pathname: '/notifications', params: { role: isManager ? 'MANAGER' : 'OWNER' } })}>
                 <View style={styles.headerIconBtn}>
                   <Ionicons name="notifications-outline" size={20} color={Colors.textPrimary} />
                   {unreadCount > 0 && <View style={styles.unreadDot} />}
                 </View>
               </AnimatedPress>
-              <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
+              <AnimatedPress scale={0.85} hapticPattern="medium" accessibilityLabel="Log out"
+                onPress={() => { hapticSuccess(); logout(); }}>
                 <View style={styles.headerIconBtn}>
                   <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
                 </View>
@@ -59,7 +60,8 @@ export default function OwnerTabsLayout() {
             </>
           }
         >
-          <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => setShowProfileMenu(true)} style={{ flex: 1 }}>
+          <AnimatedPress scale={0.98} hapticPattern="light" accessibilityLabel="Property menu and switcher"
+            onPress={() => setShowProfileMenu(true)} style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {/* Building icon */}
               <View style={styles.buildingIcon}>
@@ -119,12 +121,6 @@ export default function OwnerTabsLayout() {
       </Dock>
 
       {/* Modals */}
-      {showNotificationCenter && (
-        <RoleNotificationsCenterSheet
-          roleTitle={showNotificationCenter}
-          onDismiss={() => setShowNotificationCenter(null)}
-        />
-      )}
       {showAddPgModal && (
         <AddPgPropertyDialog
           onDismiss={() => setShowAddPgModal(false)}
@@ -150,6 +146,51 @@ export default function OwnerTabsLayout() {
                 </Txt>
               </View>
               <View style={styles.menuDivider} />
+
+              {/* The header renders a chevron-down next to the property name, which reads as
+                  "tap to switch". Until now this popover had no property list behind it, so
+                  the affordance was a lie and switching was only possible three taps deeper
+                  in Manage Properties. */}
+              {allPGs.length > 1 && (
+                <>
+                  <Txt size={10} weight="800" color={Colors.textMuted} style={styles.menuSectionLabel}>
+                    SWITCH PROPERTY
+                  </Txt>
+                  {allPGs.map((pg) => {
+                    const active = pg.id === activePgId;
+                    return (
+                      <TouchableOpacity
+                        key={pg.id}
+                        style={styles.menuRow}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Switch to ${pg.pgName}`}
+                        accessibilityState={{ selected: active }}
+                        onPress={() => {
+                          setShowProfileMenu(false);
+                          if (!active) setActivePgId(pg.id);
+                        }}
+                      >
+                        <Ionicons
+                          name={active ? 'radio-button-on' : 'radio-button-off'}
+                          size={18}
+                          color={active ? Colors.primary : Colors.textMuted}
+                        />
+                        <Txt
+                          size={13}
+                          weight={active ? '800' : '600'}
+                          color={active ? Colors.textPrimary : Colors.textSecondary}
+                          numberOfLines={1}
+                          style={{ marginLeft: 10, flex: 1 }}
+                        >
+                          {pg.pgName}
+                        </Txt>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  <View style={styles.menuDivider} />
+                </>
+              )}
+
               {!isManager && (
                 <>
                   <TouchableOpacity
@@ -203,13 +244,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borderSubtle,
     alignItems: 'center', justifyContent: 'center',
   },
-  // keep for compat
-  bellBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
   unreadDot: {
     position: 'absolute', top: 6, right: 6,
     width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.danger,
@@ -223,6 +257,7 @@ const styles = StyleSheet.create({
   menuDivider: {
     height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 4,
   },
+  menuSectionLabel: { paddingHorizontal: 12, paddingTop: 6, paddingBottom: 2, letterSpacing: 0.5 },
   menuRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 12, paddingVertical: 12,

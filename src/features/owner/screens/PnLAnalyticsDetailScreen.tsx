@@ -17,8 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Row, Col, Spacer } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { PnLChart as PnLChartPresentational } from '@/components/PnLChart';
-import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
 import { usePnL } from '@/features/billing/usePnL';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
 import { useExpensesQuery } from '@/features/expenses/useExpenses';
@@ -50,9 +48,14 @@ export function PnLAnalyticsDetailScreen() {
   const [customStart, setCustomStart] = useState('2026-06-01');
   const [customEnd, setCustomEnd] = useState('2026-08-19');
 
-  const owner = usePGowStore((s) => s.loggedInOwner);
-  const activePgId = useAuthStore((s) => s.activePgId);
-  const pgId = activePgId ?? owner?.id ?? null;
+  // `loggedInOwner` (usePGowStore) is a snapshot taken at login and never refreshed —
+  // switching properties (ManagePropertiesScreen) calls authStore.setActivePgId directly, so
+  // that snapshot goes stale the moment someone switches. It never wrongly scoped a query
+  // here (activePgId always won the `??`), but the subtitle below used to read
+  // `owner?.pgName` and would show the PREVIOUS property's name after a switch.
+  // useActiveProperty derives the same shape live from activePgId instead.
+  const { activeEntity: owner, activePgId } = useActiveProperty();
+  const pgId = activePgId;
   // Real store data collections via React Query
   const { data: allPaymentsState = [] } = usePaymentsQuery(pgId ?? undefined);
   const { data: allExpensesState = [] } = useExpensesQuery(pgId ?? undefined);

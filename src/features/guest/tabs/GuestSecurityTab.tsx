@@ -16,12 +16,14 @@ import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { GuestKycVerificationTab } from './GuestKycVerificationTab';
 import { FormScroll } from '@/components/ui/FormScroll';
+import { useKycStatus } from '@/features/kyc/useKycStatus';
 
-type KycStatus = 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+type KycStatus = 'UNKNOWN' | 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 interface KycPillConfig { label: string; color: string; bg: string; }
 function kycPill(status: KycStatus): KycPillConfig {
   switch (status) {
+    case 'UNKNOWN': return { label: 'Checking…', color: Colors.textMuted, bg: Colors.surfaceMuted };
     case 'VERIFIED': return { label: 'Verified', color: Colors.success, bg: Colors.surfaceElevated };
     case 'PENDING': return { label: 'Pending', color: Colors.warning, bg: Colors.alertGradientStart };
     case 'REJECTED': return { label: 'Action Required', color: Colors.danger, bg: '#FEF2F2' };
@@ -48,7 +50,7 @@ export function GuestSecurityTab() {
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
 
-  const kycStatus = (guest?.kycStatus ?? 'NOT_SUBMITTED') as KycStatus;
+  const kycStatus = useKycStatus() as KycStatus;
   const pill = kycPill(kycStatus);
 
   const confirmLogout = () => {

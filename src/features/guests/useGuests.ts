@@ -5,6 +5,7 @@ import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
 import * as map from "../../data/mappers";
 import type { GuestEntity } from "../../types";
+import { listPayments } from "../payments/usePayments";
 
 export interface GuestMember {
   membership_id: string;
@@ -126,8 +127,27 @@ export function useGuestsQuery(pgId?: string) {
     queryKey: qk.guests.list(pgId ?? ""),
     queryFn: async () => {
       if (!pgId) return [];
-      const res = await listGuests(pgId, { limit: 200 });
-      return res.items.map((g) => map.toGuest(g, {}));
+      // `map.toGuest(g, {})` used to be the whole of this, and `isBillPaid` defaults to false
+      // when the caller supplies nothing — so EVERY resident on the roster read as "Rent
+      // pending for this cycle" no matter what they had paid, and the owner's overdue count
+      // and overdue total were simply the headcount and the rent roll.
+      //
+      // The guest record cannot carry it: whether this cycle is settled is a fact about the
+      // payments table, and this is the one query that can afford to join them (the roster is
+      // one page, not one request per resident).
+      const period = map.currentPeriod();
+      const [res, payments] = await Promise.all([
+        listGuests(pgId, { limit: 200 }),
+        listPayments(pgId, { status: "verified", limit: 200 }).catch(() => null),
+      ]);
+      const settled = new Set(
+        (payments?.items ?? [])
+          .filter((p) => p.purpose === "rent" && p.period === period)
+          .map((p) => p.membership_id)
+      );
+      return res.items.map((g) =>
+        map.toGuest(g, { isBillPaid: settled.has(g.membership_id) })
+      );
     },
     enabled: !!pgId,
   });

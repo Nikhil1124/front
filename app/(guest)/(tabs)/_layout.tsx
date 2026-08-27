@@ -4,10 +4,11 @@
  * state (e.g. the Home tab's KYC upload dialog) lives in that tab's own route file.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal } from 'react-native';
+import { View, StyleSheet, Alert, Modal, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
@@ -15,24 +16,55 @@ import { TabHeader } from '@/components/TabHeader';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSuccess } from '@/utils/haptics';
-import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
-
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useAuthStore } from '@/store/authStore';
 
 export default function GuestTabsLayout() {
-  const [showNotif, setShowNotif] = useState(false);
   const [showProfilePhotoDialog, setShowProfilePhotoDialog] = useState(false);
 
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
+  const user = useAuthStore((s) => s.user);
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const logout = usePGowStore((s) => s.logout);
   const updateProfilePhoto = usePGowStore((s) => s.updateGuestProfilePhoto);
 
+  /**
+   * `updateGuestProfilePhoto` does a real avatar upload (presigned PUT then PATCH /v1/me),
+   * but these buttons used to hand it a literal `sample:selfie_preset_3` string and pop
+   * "Success". Nothing was ever uploaded. Same stub pattern as the KYC dialog had.
+   */
+  const pickPhoto = async (from: 'camera' | 'library') => {
+    const perm = from === 'camera'
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert(
+        from === 'camera' ? 'Camera permission required' : 'Photo permission required',
+        `Allow ${from === 'camera' ? 'camera' : 'photo library'} access in your device settings to continue.`,
+      );
+      return;
+    }
+    const result = from === 'camera'
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85, allowsEditing: true, aspect: [1, 1] })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85, allowsEditing: true, aspect: [1, 1] });
+    if (result.canceled) return;
+    const uri = result.assets?.[0]?.uri;
+    if (!uri) return;
+    updateProfilePhoto(uri);
+    setShowProfilePhotoDialog(false);
+  };
+
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
-  const paid = guest?.isBillPaid ?? false;
   const { dockStyle, contentPaddingBottom } = useDock();
+
+  // Prefer the guest entity's room, fall back to the membership's `room_no` from /v1/me —
+  // that resolves first on a cold start, so the header shows a real room instead of "N/A"
+  // until the rest lands.
+  const membershipRoomNo = activePgId
+    ? user?.memberships.find((m) => m.pg_id === activePgId)?.room_no ?? null
+    : null;
+  const roomNo = guest?.roomNo || membershipRoomNo || 'N/A';
 
   return (
     <Tabs style={styles.root}>
@@ -40,11 +72,12 @@ export default function GuestTabsLayout() {
         {/* ── Header — own surface, separate from the scrollable body below ── */}
         <TabHeader
           leading={
-            <AnimatedPress scale={0.9} hapticPattern="light" onPress={() => setShowProfilePhotoDialog(true)}>
+            <AnimatedPress scale={0.9} hapticPattern="light" accessibilityLabel="Change profile photo"
+              onPress={() => setShowProfilePhotoDialog(true)}>
               <View style={styles.avatarWrap}>
                 <View style={styles.avatar}>
                   {guest?.profilePhotoUri ? (
-                    <Txt variant="caption">📷</Txt>
+                    <Image source={{ uri: guest.profilePhotoUri }} style={styles.avatarImg} />
                   ) : (
                     <Ionicons name="person" size={28} color={Colors.primary} />
                   )}
@@ -55,13 +88,15 @@ export default function GuestTabsLayout() {
           }
           actions={
             <>
-              <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
+              <AnimatedPress scale={0.85} hapticPattern="light" accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+                onPress={() => router.push({ pathname: '/notifications', params: { role: 'RESIDENT' } })}>
                 <View style={styles.bellBtn}>
                   <Ionicons name="notifications-outline" size={20} color={Colors.textPrimary} />
                   {unreadCount > 0 && <View style={styles.unreadDot} />}
                 </View>
               </AnimatedPress>
-              <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
+              <AnimatedPress scale={0.85} hapticPattern="medium" accessibilityLabel="Log out"
+                onPress={() => { hapticSuccess(); logout(); }}>
                 <View style={styles.bellBtn}>
                   <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
                 </View>
@@ -74,15 +109,17 @@ export default function GuestTabsLayout() {
               <View style={[styles.dot, { backgroundColor: Colors.success }]} />
               <Txt size={20} weight="700" color={Colors.textPrimary} numberOfLines={1}>Hello, {guest?.name ?? 'Guest'}</Txt>
             </Row>
+            {/* The rent pill used to sit here as a third stacked line, wedged between the
+                greeting and two icon buttons — and it was the one thing in this header a
+                resident might want to ACT on, with nothing to tap. It now lives on the Home
+                tab beside the KYC banner, same shape, and opens Payments.
+
+                `roomNo` rather than `guest?.roomNo ?? 'N/A'`: the membership from /v1/me
+                carries room_no and resolves first, so the room shows immediately instead of
+                reading "N/A" until the guest entity lands. */}
             <Txt size={12} weight="500" color={Colors.textMuted} style={{ marginTop: 1 }}>
-              Room {guest?.roomNo ?? 'N/A'} • Premium Resident
+              Room {roomNo} • Premium Resident
             </Txt>
-            <View style={[styles.billPill, { backgroundColor: paid ? Colors.surfaceElevated : Colors.alertGradientStart, borderWidth: 1, borderColor: paid ? Colors.success : Colors.warning }]}>
-              <Ionicons name={paid ? 'checkmark-circle' : 'information-circle'} size={11} color={paid ? Colors.success : Colors.tertiary} />
-              <Txt size={10} weight="800" color={paid ? Colors.success : Colors.tertiary} style={{ marginLeft: 4 }}>
-                {paid ? 'Rent Paid' : 'Rent Pending'}
-              </Txt>
-            </View>
           </Col>
         </TabHeader>
 
@@ -108,8 +145,6 @@ export default function GuestTabsLayout() {
         </TabTrigger>
       </Dock>
 
-      {showNotif && <RoleNotificationsCenterSheet roleTitle="RESIDENT" onDismiss={() => setShowNotif(false)} />}
-
       {/* Profile photo dialog */}
       <Modal visible={showProfilePhotoDialog} transparent animationType="fade">
         <View style={styles.backdrop}>
@@ -121,28 +156,20 @@ export default function GuestTabsLayout() {
             <Spacer size={18} />
             <Col align="center">
               <View style={styles.photoPreview}>
-                {guest?.profilePhotoUri ? <Txt>📷</Txt> : <Ionicons name="person" size={50} color={Colors.textMuted} />}
+                {guest?.profilePhotoUri
+                  ? <Image source={{ uri: guest.profilePhotoUri }} style={styles.photoPreviewImg} />
+                  : <Ionicons name="person" size={50} color={Colors.textMuted} />}
               </View>
               <Txt size={12} color={Colors.textMuted}>{guest?.profilePhotoUri ? 'Current Profile Photo' : 'No profile photo set yet'}</Txt>
             </Col>
             <Spacer size={18} />
-            <Btn onPress={() => { updateProfilePhoto(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`); Alert.alert('Success', 'Sample selfie selected!'); setShowProfilePhotoDialog(false); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={44} testID="take_camera_photo_btn">
+            <Btn onPress={() => pickPhoto('camera')} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={44} testID="take_camera_photo_btn">
               <Ionicons name="camera" size={18} color={Colors.textInverse} /><Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Take Photo (Camera)</Txt>
             </Btn>
             <Spacer size={8} />
-            <OutlinedBtn onPress={() => { updateProfilePhoto(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`); Alert.alert('Success', 'Sample photo loaded!'); setShowProfilePhotoDialog(false); }} borderColor={Colors.primary} textColor={Colors.primary} borderRadius={12} height={44} testID="choose_gallery_photo_btn">
+            <OutlinedBtn onPress={() => pickPhoto('library')} borderColor={Colors.primary} textColor={Colors.primary} borderRadius={12} height={44} testID="choose_gallery_photo_btn">
               <Ionicons name="images" size={18} color={Colors.primary} /><Txt size={13} weight="700" color={Colors.primary} style={{ marginLeft: 8 }}>Choose from Gallery</Txt>
             </OutlinedBtn>
-            <Spacer size={12} /><View style={{ height: 1, backgroundColor: Colors.borderMuted }} /><Spacer size={12} />
-            <Txt size={12} weight="700" color={Colors.textPrimary}>Or select a Preset Avatar:</Txt>
-            <Spacer size={8} />
-            <Row gap={8} justify="space-between">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <AnimatedPress key={i} scale={0.9} onPress={() => { updateProfilePhoto(`sample:avatar_preset_${i}`); Alert.alert('Success', `Avatar ${i} selected!`); setShowProfilePhotoDialog(false); }} style={styles.presetAvatar}>
-                  <Ionicons name="happy" size={24} color={Colors.primary} />
-                </AnimatedPress>
-              ))}
-            </Row>
             {guest?.profilePhotoUri ? (
               <>
                 <Spacer size={12} />
@@ -181,11 +208,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borderSubtle,
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  billPill: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
-    marginTop: 4, alignSelf: 'flex-start',
-  },
   bellBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: Colors.surface,
@@ -203,10 +225,6 @@ const styles = StyleSheet.create({
     borderWidth: 3, borderColor: Colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  presetAvatar: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1.5, borderColor: Colors.borderSubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  avatarImg: { width: 50, height: 50, borderRadius: 25 },
+  photoPreviewImg: { width: 84, height: 84, borderRadius: 42 },
 });

@@ -13,3 +13,6 @@ android/
 ios/
 *.keystore
 *.jks
+
+# JetBrains IDE state — workspace.xml and shelved patches are per-developer noise
+.idea/

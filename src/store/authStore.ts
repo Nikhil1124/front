@@ -168,3 +168,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 }));
+
+/**
+ * Manager mode, derived from the role held at the CURRENTLY active property.
+ *
+ * `usePGowStore.isManagerMode` is a boolean written once at login/init and never again.
+ * `setActivePgId` changes `activeRole` here without touching it, so a person who owns
+ * property A and manages property B kept whichever role they signed in with after switching
+ * — wrong quick-action tiles, wrong header badge, wrong owner-only controls. Reading the
+ * role instead of remembering a snapshot of it removes the class of bug rather than adding
+ * another write to keep in sync.
+ */
+export function useIsManagerMode(): boolean {
+  return useAuthStore((s) => s.activeRole === "manager");
+}

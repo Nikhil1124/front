@@ -15,12 +15,16 @@
  *     their own surface card so the page reads like an inbox thread rather
  *     than a wall of text.
  */
-import { View, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { Alert, View, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Row, Col, Spacer, Pill } from '@/components/ui';
+import { Card, Txt, Row, Col, Spacer, Pill, OutlinedBtn } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
 import { formatDateTime } from '@/utils/format';
+import { usePGowStore } from '@/store/usePGowStore';
+import { hapticError, hapticSelect } from '@/utils/haptics';
 import type { FeedbackComplaintEntity } from '@/types';
 
 interface Props {
@@ -47,6 +51,44 @@ const STAGES: { key: Stage; label: string; icon: keyof typeof Ionicons.glyphMap 
 export function TicketDetailScreen({ ticket }: Props) {
   const currentStage = stageFromStatus(ticket.status);
   const currentIdx = STAGES.findIndex((s) => s.key === currentStage);
+
+  // Real — calls POST /v1/requests/{id}/cancel, which the backend allows for either staff
+  // or the ticket's own raiser (cancel_request, pg-backend request/service/workflow.py).
+  // There was no button anywhere that called it: a resident who filed something by mistake,
+  // or whose problem resolved itself before anyone picked it up, had no way to withdraw it.
+  const deleteFeedbackComplaint = usePGowStore((s) => s.deleteFeedbackComplaint);
+  const [cancelling, setCancelling] = useState(false);
+  // Mirrors the server: RESOLVED and CANCELLED are both terminal (cancel_request:
+  // "This ticket is already closed."), and REQUEST_STATUS collapses both into the single
+  // UI label "Resolved" (mappers.ts) — so that's the one check needed here too.
+  const canCancel = ticket.status !== 'Resolved';
+
+  const handleCancel = () => {
+    hapticSelect();
+    Alert.alert(
+      'Withdraw this ticket?',
+      'This closes it — your manager will no longer act on it. You can always file a new one if the issue comes back.',
+      [
+        { text: 'Keep it open', style: 'cancel' },
+        {
+          text: 'Withdraw',
+          style: 'destructive',
+          onPress: async () => {
+            setCancelling(true);
+            try {
+              await deleteFeedbackComplaint(ticket.id);
+              router.back();
+            } catch (err) {
+              hapticError();
+              Alert.alert('Could not withdraw', err instanceof Error ? err.message : 'Please try again.');
+            } finally {
+              setCancelling(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <HubScreenWrapper
@@ -190,6 +232,17 @@ export function TicketDetailScreen({ ticket }: Props) {
           </Col>
         </Row>
       </Card>
+
+      {canCancel ? (
+        <>
+          <Spacer size={14} />
+          <OutlinedBtn onPress={handleCancel} disabled={cancelling} borderColor={Colors.danger} textColor={Colors.danger}>
+            <Txt variant="body" weight="700" color={Colors.danger}>
+              {cancelling ? 'Withdrawing…' : 'Withdraw Ticket'}
+            </Txt>
+          </OutlinedBtn>
+        </>
+      ) : null}
     </HubScreenWrapper>
   );
 }

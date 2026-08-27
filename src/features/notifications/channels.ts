@@ -126,7 +126,13 @@ export function routeFromPushData(data: Record<string, unknown> | undefined): vo
     if (activeRole === "guest") {
       screen = actionId ? `/(guest)/ticket/${actionId}` : "/(guest)/(tabs)/support";
     } else if (activeRole === "owner" || activeRole === "manager") {
-      screen = "/(owner)/services";
+      // Straight to the ticket, not the services tab list — the server's own push already
+      // names it via actionId, so making the owner find it again in a list is the exact gap
+      // this deep link exists to close. That screen fetches the full ticket (photo included;
+      // the list endpoint the services tab reads never carries attachments) and, for a
+      // COMPLAINT still open, offers the same "book a technician" action that hands it to
+      // the area manager.
+      screen = actionId ? `/(owner)/ticket/${actionId}` : "/(owner)/services";
     } else if (activeRole === "maintenance") {
       screen = "/(staff)/housekeeping";
     }

@@ -16,6 +16,7 @@ import {
   periodToMonthYear,
   toAmount,
   toComplaint,
+  isRequestOpen,
   toE164,
   hubStatusToServer,
   toRepairRequest,
@@ -27,6 +28,8 @@ import {
   toPayment,
   toStaff,
 } from "./mappers.ts";
+import { splitTaxInclusive, getPerUnitRateLabel } from "../features/groceries/utils/pricing.ts";
+import { tradeForComplaint, draftNoteFor } from "../features/requests/technicianTrades.ts";
 
 // ─── Phone normalisation: the API's Phone pattern is ^\+[1-9][0-9]{7,14}$ ────
 const E164 = /^\+[1-9][0-9]{7,14}$/;
@@ -140,8 +143,29 @@ const base = {
   priority: "normal" as const, created_at: "2026-08-01T00:00:00Z",
   updated_at: "2026-08-01T00:00:00Z",
 };
-// A cancelled ticket must not read as Open, or it gets chased forever.
-assert.equal(toComplaint({ ...base, status: "cancelled" }).status, "Resolved");
+// A cancelled ticket must not read as Open, or it gets chased forever — but it must not
+// read as Resolved either, which told both the resident and the owner the problem had been
+// dealt with. It is closed and distinct.
+assert.equal(toComplaint({ ...base, status: "cancelled" }).status, "Cancelled");
+assert.equal(toComplaint({ ...base, status: "resolved" }).status, "Resolved");
+assert.equal(isRequestOpen("Cancelled"), false);
+assert.equal(isRequestOpen("Resolved"), false);
+assert.equal(isRequestOpen("Open"), true);
+assert.equal(isRequestOpen("In Progress"), true);
+
+// Ratings ride in `details` until /v1/reviews exists; overall averages only the scores
+// actually given, so a resident who rated one thing is not recorded as scoring the rest 0.
+{
+  const rated = toComplaint({
+    ...base,
+    kind: "feedback",
+    details: { meal_rating: 5, cleanliness_rating: 3 },
+  } as never);
+  assert.equal(rated.mealRating, 5);
+  assert.equal(rated.cleanlinessRating, 3);
+  assert.equal(rated.overallRating, 4);
+  assert.equal(toComplaint({ ...base, status: "open" }).overallRating, 0);
+}
 assert.equal(toComplaint({ ...base, status: "assigned" }).status, "In Progress");
 assert.equal(toComplaint({ ...base, status: "in_progress" }).status, "In Progress");
 assert.equal(toComplaint({ ...base, status: "open" }).status, "Open");
@@ -217,5 +241,51 @@ assert.equal(hubStatusToServer("laundry", "washing & ironing"), "in_progress");
 assert.equal(hubStatusToServer("grocery", "Cancelled"), "cancelled");
 // An unknown label must not silently resolve a ticket.
 assert.equal(hubStatusToServer("repair", "Nonsense"), "in_progress");
+
+// ── Grocery GST ─────────────────────────────────────────────────────────────
+// Tax is INSIDE the price, never added to it, and must reconcile to the line total exactly.
+// Values cross-checked against pg-backend's `_split_tax_inclusive` (Decimal, ROUND_HALF_UP).
+{
+  const line = (price: number, qty: number, rate: number) => {
+    const total = Math.round(price * qty * 100) / 100;
+    const { taxable, tax } = splitTaxInclusive(total, rate);
+    assert.equal(Math.round((taxable + tax) * 100) / 100, total, "tax split must reconcile");
+    return { total, taxable, tax };
+  };
+  assert.deepEqual(line(49.5, 3, 5), { total: 148.5, taxable: 141.43, tax: 7.07 });
+  assert.deepEqual(line(120, 1, 12), { total: 120, taxable: 107.14, tax: 12.86 });
+  assert.deepEqual(line(15, 7, 0), { total: 105, taxable: 105, tax: 0 });
+  assert.deepEqual(line(249.99, 2, 18), { total: 499.98, taxable: 423.71, tax: 76.27 });
+  assert.deepEqual(line(1.99, 11, 12), { total: 21.89, taxable: 19.54, tax: 2.35 });
+}
+
+// A millilitre unit must not read as litres — `includes('l')` used to win over 'ml'.
+assert.equal(getPerUnitRateLabel("500 ml", 100), "\u20b90.2/ml");
+assert.equal(getPerUnitRateLabel("2 l", 100), "\u20b950/L");
+assert.equal(getPerUnitRateLabel("1 kg", 80), "\u20b980/kg");
+assert.equal(getPerUnitRateLabel("10 dozen (120 pcs)", 610), "\u20b95/pc");
+
+// ── Technician trade routing ────────────────────────────────────────────────
+// The trade decides which contractor the area manager dispatches, so a wrong match costs a
+// wasted call-out. Unrecognised input must fall back, never guess.
+{
+  const t = (cat: string, title = "") => tradeForComplaint(cat, title).trade;
+  assert.equal(t("Water & Electricity", "Socket sparking"), "electrician");
+  assert.equal(t("Plumbing/Maintenance", "Tap leaking"), "plumber");
+  assert.equal(t("Room Cleanliness", "Cockroaches in kitchen"), "pest");
+  assert.equal(t("Other", "Wardrobe door hinge broken"), "carpenter");
+  assert.equal(t("Other", "Fridge not cooling"), "appliance");
+  assert.equal(t("Wi-Fi & Internet", "Slow speeds"), "technician");
+  assert.equal(t("", ""), "technician");
+
+  const spec = tradeForComplaint("Water & Electricity", "Socket sparking");
+  assert.equal(spec.label, "Book an electrician");
+  const note = draftNoteFor(spec, { title: "Socket sparking", roomNo: "110", description: "Sparks on plug-in" });
+  assert.ok(note.includes("Room 110"), "brief names the room");
+  assert.ok(note.includes("Sparks on plug-in"), "brief carries the resident's words");
+  assert.ok(note.includes("licensed electrician"), "brief names the trade");
+  // No room recorded must not render "Room null".
+  assert.ok(draftNoteFor(spec, { title: "x" }).includes("Room not recorded"));
+}
 
 console.log("mappers.check.ts — all assertions passed");

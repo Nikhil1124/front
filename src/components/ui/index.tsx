@@ -402,3 +402,8 @@ export const styles = StyleSheet.create({
   fillMaxWidth: { width: '100%' },
   fillMaxSize: { flex: 1 },
 });
+
+// The loading/error primitives live in their own file but belong to the same kit — re-exported
+// so a screen imports them from '@/components/ui' like everything else it renders.
+export { Spinner, LoadingState, ErrorState } from './Spinner';
+export type { SpinnerProps, LoadingStateProps, ErrorStateProps } from './Spinner';

@@ -21,9 +21,10 @@ import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import type { PGOwnerEntity } from '@/types';
+import { isRequestOpen } from '@/data/mappers';
 
 export function ManagePropertiesScreen() {
-  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: allPGs = [], isLoading: pgsLoading, error: pgsError, refetch: refetchPgs } = usePropertiesEntitiesQuery();
   const activePgId = useAuthStore((s) => s.activePgId);
   const setActivePgId = useAuthStore((s) => s.setActivePgId);
   const { data: allGuests = [] } = useGuestsQuery(activePgId ?? undefined);
@@ -39,7 +40,7 @@ export function ManagePropertiesScreen() {
   const totalBeds = allPGs.reduce((sum, pg) => sum + pg.totalBeds, 0);
   const totalGuests = allGuests.length;
   const totalRevenue = allPayments.filter((p) => p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0);
-  const totalComplaints = allComplaints.filter((c) => c.status !== 'Resolved').length;
+  const totalComplaints = allComplaints.filter((c) => isRequestOpen(c.status)).length;
 
   const filtered = allPGs.filter((pg) =>
     !searchQuery.trim() ||

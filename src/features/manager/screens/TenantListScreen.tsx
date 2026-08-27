@@ -24,7 +24,7 @@
 import { useState } from 'react';
 import { View, StyleSheet, Alert, Modal, Pressable, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Pill } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Pill, LoadingState, ErrorState } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
@@ -48,7 +48,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export function TenantListScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: guests = [], isLoading: guestsLoading, error: guestsError, refetch } = useGuestsQuery(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
 
   const [rejectGuestId, setRejectGuestId] = useState<string | null>(null);
@@ -127,14 +127,20 @@ export function TenantListScreen() {
         }
         ListEmptyComponent={
           <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} padding={[20, 20]}>
-            <Col align="center">
-              <Ionicons name="people-outline" size={42} color={Colors.textMuted} />
-              <Spacer size={10} />
-              <Txt size={14} weight="700" color={Colors.textPrimary}>No tenants yet</Txt>
-              <Txt size={12} color={Colors.textMuted} align="center" style={{ marginTop: 4 }}>
-                Tenants will appear here once they join via the property's join code.
-              </Txt>
-            </Col>
+            {guestsLoading ? (
+              <LoadingState label="Loading tenants…" fill={false} />
+            ) : guestsError ? (
+              <ErrorState error={guestsError} title="Could not load tenants" onRetry={refetch} fill={false} />
+            ) : (
+              <Col align="center">
+                <Ionicons name="people-outline" size={42} color={Colors.textMuted} />
+                <Spacer size={10} />
+                <Txt size={14} weight="700" color={Colors.textPrimary}>No tenants yet</Txt>
+                <Txt size={12} color={Colors.textMuted} align="center" style={{ marginTop: 4 }}>
+                  Tenants will appear here once they join via the property's join code.
+                </Txt>
+              </Col>
+            )}
           </Card>
         }
         renderItem={({ item: g }) => {

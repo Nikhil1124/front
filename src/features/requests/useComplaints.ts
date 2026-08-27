@@ -138,10 +138,6 @@ export function getComplaint(id: string): Promise<RequestRecord> {
   return apiFetch<RequestRecord>(API.REQUEST_DETAIL(id));
 }
 
-export function deleteComplaint(id: string): Promise<void> {
-  return apiFetch<void>(API.REQUEST_DETAIL(id), { method: "DELETE" });
-}
-
 export function getAttachmentUploadUrl(
   id: string,
   contentType: string
@@ -159,8 +155,12 @@ export async function uploadAttachment(
 ): Promise<void> {
   // Mock builds hand out a `mock://` url from getAttachmentUploadUrl — nothing real to PUT to.
   if (uploadUrl.startsWith("mock://")) return;
-  // If the file URI is a mock/sample preset, skip fetching it and return success
-  if (uri.startsWith("sample:") || uri.startsWith("mock_media") || uri.startsWith("mock_photo")) return;
+  // Was `return` — an attachment that silently "uploaded" nothing, so the ticket reached the
+  // manager with a photo icon and no photo behind it. The stub pickers that produced these
+  // uris are gone; anything still shaped like one is a bug worth surfacing.
+  if (/^(sample:|mock_media|mock_photo)/.test(uri)) {
+    throw new Error("No photo was captured. Take or choose a photo and try again.");
+  }
   const local = await fetch(uri);
   if (!local.ok) throw new Error("Could not read the selected photo.");
   const image = await local.blob();
@@ -225,6 +225,51 @@ export function cancelComplaint(id: string, reason?: string): Promise<RequestRec
   return apiFetch<RequestRecord>(API.REQUEST_CANCEL(id), {
     method: "POST",
     body: JSON.stringify({ reason }),
+  });
+}
+
+/**
+ * POST /v1/requests/{id}/escalate — "book a technician".
+ *
+ * Hands the ticket to the area manager who covers this property, which is the only route a
+ * property has to somebody it does not employ. `assignComplaint` cannot express it: its
+ * assignee is a membership at THIS pg. Owner and manager both qualify — the server checks
+ * `principal.manages(pg_id)`.
+ */
+export function escalateComplaint(id: string, note?: string): Promise<RequestRecord> {
+  return apiFetch<RequestRecord>(API.REQUEST_ESCALATE(id), {
+    method: "POST",
+    body: JSON.stringify({ note: note?.trim() || null }),
+  });
+}
+
+/**
+ * One ticket, WITH its attachments.
+ *
+ * `listComplaints` cannot stand in for this. The list endpoint builds rows through
+ * `_base_response` server-side, which omits `attachments` entirely — only `_full_response`,
+ * behind `GET /v1/requests/{id}`, hydrates them. So every list-derived complaint has
+ * `mediaUri: null` no matter what the resident photographed, which is why the owner's
+ * screens showed no evidence at all.
+ */
+export function useComplaintQuery(id?: string, pgId?: string) {
+  return useQuery<FeedbackComplaintEntity | null>({
+    queryKey: qk.requests.detail(pgId ?? "", id ?? ""),
+    queryFn: async () => (id ? map.toComplaint(await getComplaint(id)) : null),
+    enabled: !!id,
+  });
+}
+
+export function useEscalateComplaintMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) => escalateComplaint(id, note),
+    onSuccess: (_, vars) => {
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
+        qc.invalidateQueries({ queryKey: qk.requests.detail(pgId, vars.id) });
+      }
+    },
   });
 }
 
@@ -319,25 +364,11 @@ export function useResolveComplaintMutation(pgId?: string) {
   });
 }
 
-export function useDeleteComplaintMutation(pgId?: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteComplaint(id),
-    onSuccess: () => {
-      if (pgId) {
-        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
-        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
-      }
-    },
-  });
-}
-
 export function useComplaints() {
   return {
     submitComplaint,
     listComplaints,
     getComplaint,
-    deleteComplaint,
     getAttachmentUploadUrl,
     uploadAttachment,
     addAttachment,

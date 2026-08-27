@@ -29,6 +29,7 @@ import { FormScroll } from '@/components/ui/FormScroll';
  * "guest" items), so there is no toggle UI — see the mode-sync effect below.
  */
 import { useActiveProperty } from '@/features/properties/useProperties';
+import { LoadingState, ErrorState } from '@/components/ui';
 
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();
@@ -43,7 +44,7 @@ export function GroceriesScreen() {
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const getCartTotal = useCartStore((s) => s.getCartTotal);
 
-  const { data: supplyItems = [] } = useSupplyItems(activePgId ?? undefined);
+  const { data: supplyItems = [], isLoading: itemsLoading, error: itemsError, refetch: refetchItems } = useSupplyItems(activePgId ?? undefined);
   const { data: categories = [] } = useSupplyCategories(activePgId ?? undefined);
   const { data: deals = [] } = useDeals(activePgId ?? undefined);
 
@@ -152,7 +153,11 @@ export function GroceriesScreen() {
               <Text style={styles.searchResultsTitle}>
                 {searchResults.length > 0 ? `${searchResults.length} results for "${searchQuery}"` : `No results for "${searchQuery}"`}
               </Text>
-              {searchResults.length === 0 ? (
+              {itemsLoading ? (
+                <LoadingState label="Loading catalog…" fill={false} />
+              ) : itemsError ? (
+                <ErrorState error={itemsError} title="Could not load the catalog" onRetry={refetchItems} fill={false} />
+              ) : searchResults.length === 0 ? (
                 <View style={styles.noResultsBox}>
                   <Ionicons name="search" size={48} color="#98A39B" />
                   <Text style={styles.noResultsText}>Try a different keyword</Text>

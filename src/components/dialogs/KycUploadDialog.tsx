@@ -27,6 +27,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -63,6 +64,41 @@ export function KycUploadDialog({
   const [showDropdown, setShowDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  /**
+   * Both photo buttons used to set a literal `sample:selfie_preset_3` / `sample:iddoc_…`
+   * string — no picker was ever opened, expo-image-picker was not even imported here, and
+   * `uploadToPresignedUrl` then skipped any uri starting with `sample:` and returned
+   * success. So KYC "succeeded" having uploaded nothing: the server issued an object key,
+   * stored a document row pointing at it, and the owner opened a verification screen
+   * showing a broken image for a photo that was never taken.
+   */
+  const pickImage = async (from: 'camera' | 'library'): Promise<string | null> => {
+    const perm = from === 'camera'
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert(
+        from === 'camera' ? 'Camera permission required' : 'Photo permission required',
+        `Allow ${from === 'camera' ? 'camera' : 'photo library'} access in your device settings to continue.`,
+      );
+      return null;
+    }
+    const result = from === 'camera'
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+    if (result.canceled) return null;
+    return result.assets?.[0]?.uri ?? null;
+  };
+
+  const choosePhoto = (onPicked: (uri: string) => void, label: string) => {
+    hapticSelect();
+    Alert.alert(label, 'Choose a source', [
+      { text: 'Take Photo', onPress: async () => { const u = await pickImage('camera'); if (u) onPicked(u); } },
+      { text: 'Choose from Library', onPress: async () => { const u = await pickImage('library'); if (u) onPicked(u); } },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   // Android hardware back: dismiss the modal rather than letting the OS
   // navigate away. Same pattern as PaymentReceiptDialog — see that file for
   // the rationale on the subscription lifecycle.
@@ -90,10 +126,18 @@ export function KycUploadDialog({
     }
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Only Aadhaar has anywhere to go: the backend stores `aadhaar_last4` and NOTHING else —
+  // `user_documents` has no column for a PAN or passport number, deliberately ("the owner
+  // verifies visually from the image, so keeping it buys nothing and creates breach
+  // liability"). Demanding a number for the other four types blocked submission to collect a
+  // value that was then discarded.
+  const isAadhaar = selectedIdType === 'Aadhaar Card';
+  const aadhaarDigits = idNumber.replace(/\D/g, '');
+
   const handleSubmit = async () => {
-    if (!idNumber.trim()) {
+    if (isAadhaar && aadhaarDigits.length < 4) {
       hapticError();
-      Alert.alert('Validation', 'Please enter your ID document number.');
+      Alert.alert('Validation', 'Enter your 12-digit Aadhaar number. Only the last four digits are stored.');
       return;
     }
     if (!idPhotoUri || !profilePhotoUri) {
@@ -191,7 +235,7 @@ export function KycUploadDialog({
               </View>
               <Col style={{ flex: 1 }}>
                 <Btn
-                  onPress={() => setProfilePhotoUri(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`)}
+                  onPress={() => choosePhoto(setProfilePhotoUri, 'Selfie')}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
                   borderRadius={Layout.borderRadiusButton}
@@ -238,14 +282,20 @@ export function KycUploadDialog({
 
             <Spacer size={12} />
 
-            {/* 3. ID number */}
+            {/* 3. ID number — required only for Aadhaar; see the note on `isAadhaar` above. */}
             <OutlinedTextField
-              label="ID Document Number *"
-              placeholder="1234 5678 9012"
+              label={isAadhaar ? 'Aadhaar Number *' : 'ID Document Number (optional)'}
+              placeholder={isAadhaar ? '1234 5678 9012' : 'Not required — we read it from your photo'}
               value={idNumber}
               onChangeText={setIdNumber}
+              keyboardType={isAadhaar ? 'number-pad' : 'default'}
               testID="kyc_id_number_input"
             />
+            <Txt size={11} color={Colors.textMuted} style={{ marginTop: 4 }}>
+              {isAadhaar
+                ? 'Only the last 4 digits are stored. Your full number is never saved.'
+                : 'Your manager verifies this document from the photo — the number is not stored.'}
+            </Txt>
 
             <Spacer size={14} />
 
@@ -260,7 +310,7 @@ export function KycUploadDialog({
               </View>
               <Col style={{ flex: 1 }}>
                 <Btn
-                  onPress={() => setIdPhotoUri(`sample:iddoc_${selectedIdType.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(Math.random() * 900) + 100}`)}
+                  onPress={() => choosePhoto(setIdPhotoUri, 'ID Document Photo')}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
                   borderRadius={Layout.borderRadiusButton}

@@ -22,6 +22,7 @@ import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { EmptyState } from '@/components/EmptyState';
+import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { DetailBottomSheet } from '@/components/DetailBottomSheet';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
@@ -60,7 +61,7 @@ export function OwnerGuestsManagementTab() {
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
-  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: guests = [], isLoading: guestsLoading, error: guestsError } = useGuestsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const createGuestByOwner = usePGowStore((s) => s.createGuestByOwner);
   const updateGuestByOwner = usePGowStore((s) => s.updateGuestByOwner);
@@ -78,7 +79,7 @@ export function OwnerGuestsManagementTab() {
   const [guestPassword, setGuestPassword] = useState('');
   const [guestRent, setGuestRent] = useState('6500');
   const [isCreating, setIsCreating] = useState(false);
-  const [errorField, setErrorField] = useState<'email' | 'phone' | null>(null);
+  const [errorField, setErrorField] = useState<'email' | 'phone' | 'rent' | null>(null);
 
   // Edit states
   const [editing, setEditing] = useState<GuestEntity | null>(null);
@@ -131,6 +132,15 @@ export function OwnerGuestsManagementTab() {
 
   const handleCreate = async () => {
     if (isCreating) return;
+    // `parseFloat(...) || 6500` used to sit here: clearing the rent field, or typing
+    // anything unparseable, silently registered the resident at ₹6,500 — a number nobody
+    // agreed to, which then drives every invoice and reminder for that tenancy.
+    const parsedRent = parseFloat(guestRent);
+    if (!Number.isFinite(parsedRent) || parsedRent <= 0) {
+      setErrorField('rent');
+      toast('error', 'Monthly rent required', 'Enter the agreed monthly rent for this resident.');
+      return;
+    }
     setIsCreating(true);
     setErrorField(null);
     try {
@@ -140,7 +150,7 @@ export function OwnerGuestsManagementTab() {
         guestPhone,
         guestRoom,
         guestPassword,
-        parseFloat(guestRent) || 6500
+        parsedRent
       );
       if (result.ok) {
         hapticSuccess();
@@ -177,13 +187,18 @@ export function OwnerGuestsManagementTab() {
 
   const handleUpdate = async () => {
     if (!editing) return;
+    const parsedEditRent = parseFloat(editRent);
+    if (!Number.isFinite(parsedEditRent) || parsedEditRent <= 0) {
+      toast('error', 'Monthly rent required', 'Enter the agreed monthly rent for this resident.');
+      return;
+    }
     const result = await updateGuestByOwner(
       editing,
       editName,
       editEmail,
       editPhone,
       editRoom,
-      parseFloat(editRent) || 6500
+      parsedEditRent
     );
     if (result.ok) {
       hapticSuccess();
@@ -616,7 +631,7 @@ export function OwnerGuestsManagementTab() {
                             {g.name}
                           </Txt>
                           <Txt variant="caption" color={MUTED}>
-                            Room {g.roomNo} • ID: {g.idProofType}
+                            Room {g.roomNo}
                           </Txt>
                           {g.idProofNumber ? (
                             <Txt variant="labelSmall" weight="400" color={MUTED}>
@@ -697,6 +712,8 @@ export function OwnerGuestsManagementTab() {
               title="No residents registered yet"
               subtitle="Add one on the Add Guest tab or share your lobby Join Code so residents can self-register. Pull down to refresh."
               accent={GREEN}
+              loading={guestsLoading}
+              error={guestsError}
             />
           }
           renderItem={({ item: g }) => {
@@ -917,12 +934,6 @@ export function OwnerGuestsManagementTab() {
                 {detailGuest.isBillPaid ? 'Rent paid this cycle' : 'Rent pending for this cycle'}
               </Txt>
             </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="star" size={14} color="#D97706" />
-              <Txt variant="caption" color={CHARCOAL}>
-                Reward points: {detailGuest.rewardPoints}
-              </Txt>
-            </View>
 
             <Spacer size={14} />
             <Txt size={11} weight="900" color={GREEN} style={{ letterSpacing: 1 }}>
@@ -943,27 +954,30 @@ export function OwnerGuestsManagementTab() {
                 Status: {detailGuest.kycStatus}
               </Txt>
             </View>
-            {detailGuest.idProofType ? (
+            {detailGuest.kycSubmissionDate ? (
               <View style={styles.detailRow}>
-                <Ionicons name="card" size={14} color={MUTED} />
+                <Ionicons name="calendar" size={14} color={MUTED} />
                 <Txt variant="caption" color={CHARCOAL}>
-                  ID: {detailGuest.idProofType}{' '}
-                  {detailGuest.idProofNumber ? `• ${detailGuest.idProofNumber}` : ''}
+                  Submitted {new Date(detailGuest.kycSubmissionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {detailGuest.kycVerificationDate
+                    ? ` • decided ${new Date(detailGuest.kycVerificationDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                    : ''}
                 </Txt>
               </View>
             ) : null}
-            <View style={styles.detailRow}>
-              <Ionicons name="camera" size={14} color={detailGuest.profilePhotoUri ? '#059669' : MUTED} />
-              <Txt variant="caption" color={detailGuest.profilePhotoUri ? '#059669' : MUTED}>
-                {detailGuest.profilePhotoUri ? 'Profile photo on file' : 'No profile photo'}
-              </Txt>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="document-text" size={14} color={detailGuest.idProofPhotoUri ? '#059669' : MUTED} />
-              <Txt variant="caption" color={detailGuest.idProofPhotoUri ? '#059669' : MUTED}>
-                {detailGuest.idProofPhotoUri ? 'ID document photo on file' : 'No ID document photo'}
-              </Txt>
-            </View>
+            <Spacer size={8} />
+            {/* The photos themselves, not the words "photo on file". These are readable at
+                any KYC status, so an approved resident's documents stay reachable for a
+                lease check or a police verification instead of vanishing at approval. */}
+            <KycDocumentsCard
+              idPhotoUri={detailGuest.idProofPhotoUri}
+              selfieUri={detailGuest.profilePhotoUri}
+              emptyHint={
+                detailGuest.kycStatus === 'NOT_SUBMITTED'
+                  ? 'This resident has not submitted KYC documents yet.'
+                  : 'Documents are not available for this submission.'
+              }
+            />
             {detailGuest.kycRejectReason ? (
               <View style={styles.rejectReasonBox}>
                 <Ionicons name="warning" size={14} color={Colors.danger} />
@@ -1084,42 +1098,18 @@ export function OwnerGuestsManagementTab() {
                   Email: {reviewing.email} • Phone: {reviewing.phone}
                 </Txt>
                 <Spacer size={16} />
-                <Txt variant="caption" weight="800" color={GREEN}>
-                  ID Document: {reviewing.idProofType}
-                </Txt>
-                <Txt variant="body" weight="700" color={CHARCOAL}>
-                  ID Number: {reviewing.idProofNumber || 'Not provided'}
-                </Txt>
-                <Spacer size={12} />
                 <Txt variant="caption" weight="700" color={MUTED}>
-                  Profile Photo / Selfie
+                  Submitted documents
                 </Txt>
-                <View style={styles.photoBox}>
-                  {reviewing.profilePhotoUri ? (
-                    <Txt variant="caption" color={GREEN}>
-                      📷 Photo on file
-                    </Txt>
-                  ) : (
-                    <Txt variant="caption" color={MUTED}>
-                      No Selfie Provided
-                    </Txt>
-                  )}
-                </View>
-                <Spacer size={12} />
-                <Txt variant="caption" weight="700" color={MUTED}>
-                  Document Front Scan / Photo
-                </Txt>
-                <View style={styles.photoBox}>
-                  {reviewing.idProofPhotoUri ? (
-                    <Txt variant="caption" color={GREEN}>
-                      📷 Document on file
-                    </Txt>
-                  ) : (
-                    <Txt variant="caption" color={MUTED}>
-                      No Document Image Provided
-                    </Txt>
-                  )}
-                </View>
+                <Spacer size={8} />
+                {/* The actual photos. This modal asks the owner to APPROVE somebody's
+                    identity and used to show them the words "📷 Photo on file" — a decision
+                    on a document nobody could look at. */}
+                <KycDocumentsCard
+                  idPhotoUri={reviewing.idProofPhotoUri}
+                  selfieUri={reviewing.profilePhotoUri}
+                  emptyHint="This submission has no readable images. Reject it and ask the resident to upload again."
+                />
                 <Spacer size={20} />
                 <Row gap={8}>
                   <Btn

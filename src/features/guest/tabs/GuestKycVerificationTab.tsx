@@ -26,13 +26,14 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
+import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
 import { hapticSelect } from '@/utils/haptics';
 
 interface Props {
   scrollable?: boolean;
 }
 
-type KycStatus = 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+type KycStatus = 'UNKNOWN' | 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 interface BannerConfig {
   bg: string;
@@ -45,6 +46,19 @@ interface BannerConfig {
 
 function bannerFor(status: KycStatus, rejectReason: string | undefined): BannerConfig {
   switch (status) {
+    // Never render "not submitted" while we are still finding out. Telling a verified
+    // resident they have submitted nothing — and offering them an upload button that would
+    // open a SECOND submission on an already-approved account — is the failure this state
+    // exists to prevent.
+    case 'UNKNOWN':
+      return {
+        bg: Colors.surfaceMuted,
+        border: Colors.borderMuted,
+        icon: 'hourglass',
+        iconColor: Colors.textMuted,
+        title: 'Checking your verification status',
+        message: 'One moment while we load your account.',
+      };
     case 'VERIFIED':
       return {
         bg: Colors.surfaceElevated,
@@ -91,7 +105,9 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const [showUpload, setShowUpload] = useState(false);
 
-  const kycStatus = (guest?.kycStatus ?? 'NOT_SUBMITTED') as KycStatus;
+  // `/v1/me`'s gate, not `loggedInGuest` — see useKycStatus for why the old
+  // `guest?.kycStatus ?? 'NOT_SUBMITTED'` showed a verified resident an upload prompt.
+  const kycStatus = useKycStatus() as KycStatus;
   const banner = bannerFor(kycStatus, guest?.kycRejectReason);
 
   const openUpload = () => {
@@ -154,8 +170,10 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
         </Row>
       </Card>
 
-      {/* Action card — Submit / Re-upload CTA. Hidden when verified. */}
-      {kycStatus !== 'VERIFIED' && (
+      {/* Action card — only when we positively KNOW there is something to do. Hidden while
+          the status is still resolving and once verified, so the flow is one-way: a resident
+          cannot open a fresh submission on top of an approved one. */}
+      {canSubmitKyc(kycStatus) && (
         <Card
           containerColor={Colors.surface}
           borderRadius={Layout.borderRadiusCard}

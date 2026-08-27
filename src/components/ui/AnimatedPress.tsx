@@ -57,6 +57,13 @@ export function AnimatedPress({
   children,
   onPressIn,
   onPressOut,
+  // Every AnimatedPress is a button; almost none of the ~82 call sites said so, which left
+  // TalkBack and VoiceOver announcing them as plain text with no hint they could be
+  // activated. Defaulting it here fixes the role everywhere at once and any call site that
+  // is genuinely something else (a link, a tab) can still override. Pressable derives the
+  // spoken label from the child <Text> on its own, so only icon-only buttons still need an
+  // explicit accessibilityLabel.
+  accessibilityRole = 'button',
   ...rest
 }: AnimatedPressProps) {
   const pressed = useSharedValue(0);
@@ -75,6 +82,7 @@ export function AnimatedPress({
 
   return (
     <AnimatedPressable
+      accessibilityRole={accessibilityRole}
       {...rest}
       onPressIn={(e) => {
         pressed.value = withTiming(1, TIMING_IN);

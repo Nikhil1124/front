@@ -99,6 +99,12 @@ export const API = {
   REQUEST_ATTACHMENT_UPLOAD_URL: (id: string) => `/v1/requests/${id}/attachments/upload-url`,
   REQUEST_ATTACHMENTS: (id: string) => `/v1/requests/${id}/attachments`,
   REQUEST_ASSIGN: (id: string) => `/v1/requests/${id}/assign`,
+  // "Book a technician": the property has decided this needs somebody it does not employ,
+  // so the ticket goes up to the area manager who covers this property. Distinct from
+  // ASSIGN above, which can only ever name existing staff at this same PG.
+  REQUEST_ESCALATE: (id: string) => `/v1/requests/${id}/escalate`,
+  // The other end of that handover — PGow ops reading what has been escalated to them.
+  REQUESTS_ESCALATED: "/v1/requests/escalated",
   REQUEST_RESOLVE: (id: string) => `/v1/requests/${id}/resolve`,
   REQUEST_CANCEL: (id: string) => `/v1/requests/${id}/cancel`,
 

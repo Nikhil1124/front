@@ -9,7 +9,7 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -21,10 +21,6 @@ import {
   useRejectProcurementOrder,
 } from './useProcurement';
 import type { ProcurementCatalogItem } from '@/types';
-
-export interface ProcurementScreenProps {
-  mode?: 'manager' | 'owner';
-}
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   grocery: 'nutrition',
@@ -49,14 +45,54 @@ const CATEGORY_TABS = [
 
 import { useActiveProperty } from '@/features/properties/useProperties';
 
-export function ProcurementScreen({ mode }: ProcurementScreenProps) {
-  const isManagerMode = usePGowStore((s) => s.isManagerMode);
-  const effectiveMode = mode ?? (isManagerMode ? 'manager' : 'owner');
+/**
+ * Order supplies AND approve requisitions — the same for owner and manager.
+ *
+ * Used to be two mutually exclusive screens picked by role: a manager got a catalog + cart
+ * with no way to approve anything (not even another manager's requisition), an owner got an
+ * approval queue with no way to browse the catalog or submit one themselves. Neither
+ * restriction exists on the server — `create_order` accepts OWNER, MANAGER or CHEF as the
+ * raiser, and `transition` (approve/reject) checks `require_manage`, which is owner OR
+ * manager, not owner-only. So both roles get both tabs; the starting tab is just a sensible
+ * default for what each role is more often here to do, not a wall.
+ */
+export function ProcurementScreen() {
+  const isManagerMode = useIsManagerMode();
+  const activeRole = useAuthStore((s) => s.activeRole);
+  // Approving is `require_manage` server-side (transition(), procurement/service.py) —
+  // owner or manager only. A chef can raise a requisition (create_order accepts
+  // OWNER/MANAGER/CHEF) but can never approve one, including their own, so there is nothing
+  // real for an Approvals tab to show them — not even an empty state, since list_orders
+  // already scopes a non-managing raiser to their own requests and none of those are ever
+  // theirs to approve.
+  const canApprove = activeRole === 'owner' || activeRole === 'manager';
+  const [tab, setTab] = useState<'order' | 'approvals'>(isManagerMode ? 'order' : 'approvals');
 
-  if (effectiveMode === 'owner') {
-    return <OwnerProcurementView />;
-  }
-  return <ManagerProcurementView />;
+  return (
+    <HubScreenWrapper title="Procurement & Supplies" icon="cart-outline">
+      {canApprove && (
+        <Row gap={8} style={{ marginBottom: 14 }}>
+          <TouchableOpacity
+            onPress={() => { hapticSelect(); setTab('order'); }}
+            style={[styles.tabBtn, tab === 'order' && styles.tabBtnActive]}
+          >
+            <Txt size={12} weight="800" color={tab === 'order' ? Colors.textInverse : Colors.textPrimary}>
+              Order Supplies
+            </Txt>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => { hapticSelect(); setTab('approvals'); }}
+            style={[styles.tabBtn, tab === 'approvals' && styles.tabBtnActive]}
+          >
+            <Txt size={12} weight="800" color={tab === 'approvals' ? Colors.textInverse : Colors.textPrimary}>
+              Approvals
+            </Txt>
+          </TouchableOpacity>
+        </Row>
+      )}
+      {canApprove && tab === 'approvals' ? <ApprovalsSection /> : <OrderSuppliesSection />}
+    </HubScreenWrapper>
+  );
 }
 
 function usePgId(): string | null {
@@ -65,7 +101,7 @@ function usePgId(): string | null {
 
 // ─── Manager View: catalog + requisition cart, submitted to the owner ────────
 
-function ManagerProcurementView() {
+function OrderSuppliesSection() {
   const { activeEntity: owner } = useActiveProperty();
   const pgId = usePgId();
   const toast = useToast();
@@ -104,20 +140,13 @@ function ManagerProcurementView() {
 
   const handleSubmitRequisition = async () => {
     if (cartItemCount === 0 || !pgId) return;
-    const items = Object.entries(cart).map(([id, qty]) => {
-      const it = catalog.find((c) => c.id === id)!;
-      return {
-        item_name: it.itemName,
-        category: it.category,
-        quantity: qty,
-        unit: it.unit,
-        estimated_price: it.defaultPrice,
-      };
-    });
+    // {item_id, quantity} — see the note on SubmitProcurementOrderParams for why this used
+    // to send five fields the server rejects and the one it requires.
+    const items = Object.entries(cart).map(([id, qty]) => ({ item_id: id, quantity: qty }));
     try {
       await submitOrder.mutateAsync({ pg_id: pgId, order_type: 'supplies', items });
       hapticSuccess();
-      toast('success', 'Requisition Sent', `Requisition for ₹${cartTotalAmount.toLocaleString('en-IN')} sent to PG Owner for approval.`);
+      toast('success', 'Requisition Sent', `Requisition for ₹${cartTotalAmount.toLocaleString('en-IN')} sent for approval.`);
       setCart({});
       setShowCartModal(false);
     } catch (err: any) {
@@ -127,11 +156,7 @@ function ManagerProcurementView() {
   };
 
   return (
-    <HubScreenWrapper
-      title="Procurement & Supplies"
-      subtitle={`${owner?.pgName ?? 'Property'} • Store & Requisitions`}
-      icon="cart-outline"
-    >
+    <>
       <OutlinedTextField
         placeholder="Search supplies (e.g. bedsheets, cleaners, bulbs)..."
         value={search}
@@ -193,7 +218,7 @@ function ManagerProcurementView() {
       {myOrders.length > 0 && (
         <>
           <Spacer size={20} />
-          <Txt size={14} weight="900" color={Colors.textPrimary}>Your Requisitions</Txt>
+          <Txt size={14} weight="900" color={Colors.textPrimary}>Recent Requisitions</Txt>
           <Spacer size={8} />
           <View style={{ gap: 8 }}>
             {myOrders.map((ord) => (
@@ -302,13 +327,13 @@ function ManagerProcurementView() {
             >
               <Ionicons name="send" size={16} color={Colors.textInverse} />
               <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
-                Submit Requisition to Owner 📦
+                Submit Requisition 📦
               </Txt>
             </Btn>
           </Card>
         </View>
       </Modal>
-    </HubScreenWrapper>
+    </>
   );
 }
 
@@ -384,7 +409,7 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── Owner View: real requisitions approval queue ─────────────────────────────
 
-function OwnerProcurementView() {
+function ApprovalsSection() {
   const { activeEntity: owner } = useActiveProperty();
   const pgId = usePgId();
   const toast = useToast();
@@ -422,11 +447,7 @@ function OwnerProcurementView() {
   };
 
   return (
-    <HubScreenWrapper
-      title="Procurement Approvals"
-      subtitle={`${owner?.pgName ?? 'Property'} • Manager Requisitions`}
-      icon="receipt-outline"
-    >
+    <>
       {isLoading ? (
         <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>
           <Txt variant="body" color={Colors.textMuted} align="center">Loading requisitions…</Txt>
@@ -444,7 +465,7 @@ function OwnerProcurementView() {
           </Row>
         </Card>
       ) : orders.length === 0 ? (
-        <EmptyState icon="receipt-outline" title="No requisitions yet" subtitle="Requests your manager submits will show up here for approval." />
+        <EmptyState icon="receipt-outline" title="No requisitions yet" subtitle="Requests submitted here will show up for approval." />
       ) : (
         <View style={{ gap: 12 }}>
           {orders.map((req) => (
@@ -536,7 +557,7 @@ function OwnerProcurementView() {
               <Txt size={16} weight="900" color={Colors.textPrimary}>Reject Requisition</Txt>
               <Spacer size={10} />
               <OutlinedTextField
-                label="Reason (shown to the manager)"
+                label="Reason (shown to whoever submitted this)"
                 placeholder="Duplicate order, over budget, etc."
                 value={rejectReason}
                 onChangeText={setRejectReason}
@@ -571,11 +592,24 @@ function OwnerProcurementView() {
           </View>
         </Modal>
       )}
-    </HubScreenWrapper>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+  },
+  tabBtnActive: {
+    backgroundColor: Colors.primaryDark,
+    borderColor: Colors.primaryDark,
+  },
   catPill: {
     paddingHorizontal: 12,
     paddingVertical: 7,

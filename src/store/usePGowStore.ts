@@ -47,7 +47,6 @@ import type {
   AppRoleNotificationEntity,
   SimulatedAlert,
   PGGroceryOrder,
-  ChefGroceryRequestEntity,
   PGDailyGrocerySubscription,
   PGRepairServiceRequest,
   GuestLaundryRequest,
@@ -168,7 +167,6 @@ export interface PGowState {
 
   // ===== Hub services state =====
   pgGroceryOrdersState: PGGroceryOrder[];
-  chefGroceryRequestsState: ChefGroceryRequestEntity[];
   pgDailySubscriptionsState: PGDailyGrocerySubscription[];
   pgRepairRequestsState: PGRepairServiceRequest[];
   guestLaundryRequestsState: GuestLaundryRequest[];
@@ -210,9 +208,6 @@ export interface PGowState {
 
   // ===== Hub services =====
   placePgGroceryOrder: (itemsSummary: string, totalPrice: number, isExpress10Min?: boolean) => void;
-  /** Chef can only request — Manager/Owner see it in Procurement and place the real order. */
-  submitChefGroceryRequest: (itemsSummary: string, itemCount: number, estimatedCost: number) => void;
-  resolveChefGroceryRequest: (requestId: string, status: 'fulfilled' | 'dismissed') => void;
   addPgDailyGrocerySubscription: (title: string, itemsSummary: string, dailyDeliveryTime: string, estimatedDailyCost: number) => void;
   togglePgDailyGrocerySubscription: (subscriptionId: string, isActive: boolean) => void;
   bookPgRepairService: (category: string, issueTitle: string, urgency: string, estimatedCost: number) => void;
@@ -315,6 +310,11 @@ export interface PGowState {
   dismissAlert: () => void;
 }
 
+/** The zustand `persist` names this app owns, cleared on sign-out so the next person on this
+ *  device does not inherit the previous one's cart or wishlist. Keep in sync with the
+ *  `name:` given to each persisted store. */
+const PERSISTED_STORE_KEYS = ['slv-cart', 'slv-wishlist', 'slv-shopping-mode'];
+
 export const usePGowStore = create<PGowState>((set, get) => ({
   activeRole: null,
 
@@ -366,7 +366,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   // fabricated rider and ETA on first launch is indistinguishable from a real order until
   // somebody tries to call the number.
   pgGroceryOrdersState: [],
-  chefGroceryRequestsState: [],
   // Same reasoning as `pgGroceryOrdersState` above: a fabricated ₹1,250/day subscription on
   // first launch is indistinguishable from a real one until an owner goes looking for it.
   pgDailySubscriptionsState: [],
@@ -433,19 +432,20 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     if (!mem) return;
 
     if (activeRole === 'guest') {
-      // isBillPaid is not on the guest record — it is derived from this cycle's verified
-      // payment, and /v1/payments/due is the only endpoint that knows it. Fetched alongside
-      // rather than after, since neither depends on the other.
-      const [guest, rentDue] = await Promise.all([
-        guestsApi.getGuest(mem.membership_id).catch(() => null),
-        paymentsApi.getRentDue(mem.pg_id).catch(() => null),
-      ]);
-      if (guest) {
-        set({ loggedInGuest: map.toGuest(guest, { isBillPaid: rentDue?.is_paid ?? false }) });
-      } else {
-        // The roster record did not come back (a resident reading their own membership can
-        // still 403 on some deployments). Fall back to what /v1/me already carries so the
-        // header shows a real name and room instead of "Guest · Room N/A".
+      // NOT `guestsApi.getGuest(...)`. That endpoint is owner/manager-only — verified against
+      // production: a resident reading their OWN membership gets 403 "Only the owner or a
+      // manager may do this." So calling it here fired a guaranteed-failing request on every
+      // refresh and always fell through to this path anyway.
+      //
+      // Everything the resident's own screens need is readable by the resident:
+      //   • name / room            → /v1/me (already in hand)
+      //   • rent amount / is_paid  → /v1/payments/due
+      //   • KYC status             → /v1/me's `gate`, which IS the authoritative answer.
+      //     `guest_access_state` (pg-backend deps/gates.py) returns the KYC states strictly
+      //     BEFORE it ever returns RENT_UNPAID, so a gate of RENT_UNPAID or null proves KYC
+      //     is verified. This is derivation from the source of truth, not a guess.
+      const rentDue = await paymentsApi.getRentDue(mem.pg_id).catch(() => null);
+      {
         const kycFromGate: Record<string, string> = {
           KYC_REQUIRED: 'NOT_SUBMITTED',
           KYC_PENDING: 'PENDING',
@@ -523,38 +523,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
           },
         });
       });
-  },
-
-  // Chef requests are local-only, like the rest of the groceries feature (see
-  // src/features/groceries — no backend endpoint exists for it yet).
-  submitChefGroceryRequest: (itemsSummary, itemCount, estimatedCost) => {
-    const pgId = useAuthStore.getState().activePgId;
-    if (!pgId) return;
-    const chefName = get().loggedInStaff?.name ?? 'Chef';
-    const newRequest: ChefGroceryRequestEntity = {
-      id: `chefreq_${Date.now()}`,
-      pgId,
-      chefName,
-      itemsSummary,
-      itemCount,
-      estimatedCost,
-      status: 'pending',
-      createdAt: Date.now(),
-    };
-    set((s) => ({ chefGroceryRequestsState: [newRequest, ...s.chefGroceryRequestsState] }));
-    get().sendRoleNotification(
-      'MANAGER',
-      '🥦 Kitchen Grocery Request',
-      `${chefName} requested ${itemCount} item${itemCount === 1 ? '' : 's'} (~₹${Math.round(estimatedCost).toLocaleString('en-IN')}). Review in Procurement.`,
-      'PROCUREMENT',
-      'HIGH',
-    );
-  },
-
-  resolveChefGroceryRequest: (requestId, status) => {
-    set((s) => ({
-      chefGroceryRequestsState: s.chefGroceryRequestsState.map((r) => (r.id === requestId ? { ...r, status } : r)),
-    }));
   },
 
   bookPgRepairService: (category, issueTitle, urgency, estimatedCost) => {
@@ -1059,16 +1027,40 @@ export const usePGowStore = create<PGowState>((set, get) => ({
 
   // ── Complaints & feedback ─────────────────────────────────────────────────
 
-  submitFeedbackComplaint: async (title, description, category, type, mediaUri, isVideo) => {
+  submitFeedbackComplaint: async (
+    title, description, category, type, mediaUri, isVideo,
+    mealRating, cleanlinessRating, managerRating, staffRating, otherRating,
+  ) => {
     const pgId = useAuthStore.getState().activePgId;
     if (!pgId) return { ok: false, error: 'No active property.' };
     try {
+      // The five scores the feedback form collects used to stop here: this action took them
+      // as parameters and then never referenced them, so a resident rated their meals, room,
+      // manager and staff and none of it left the device — while `toComplaint` filled the
+      // same fields back in as 0, making the owner's Reviews tab permanently empty.
+      //
+      // `pg_reviews` exists in the database but has no router yet, so there is no ratings
+      // endpoint to post to. `details` is the request API's own documented extension point
+      // for exactly this ("free-form on purpose", see CreateRequestRequest), it round-trips
+      // through RequestResponse.details, and it is where toComplaint now reads them from.
+      // Move these to the real endpoint when /v1/reviews lands.
+      const ratings =
+        type === 'FEEDBACK'
+          ? {
+              meal_rating: mealRating,
+              cleanliness_rating: cleanlinessRating,
+              manager_rating: managerRating,
+              staff_rating: staffRating,
+              other_rating: otherRating,
+            }
+          : {};
       const created = await requestsApi.submitComplaint({
         pg_id: pgId,
         kind: type === 'FEEDBACK' ? 'feedback' : 'complaint',
         category: category || undefined,
         title,
         description,
+        details: ratings,
       });
       if (mediaUri) {
         // Best effort: a ticket that exists without its photo is far better than one the
@@ -1083,23 +1075,22 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         }
       }
 
-      // Notify Owner, Manager, and Maintenance if this is a maintenance issue
-      if (category?.toLowerCase().includes('maintenance') || category?.toLowerCase().includes('repair') || type === 'COMPLAINT') {
-        const msg = `${title} has been reported.`;
-        get().sendRoleNotification('OWNER', '🔧 New Maintenance Issue', msg, 'COMPLAINT', 'HIGH');
-        get().sendRoleNotification('MANAGER', '🔧 New Maintenance Issue', msg, 'COMPLAINT', 'HIGH');
-        get().sendRoleNotification('MAINTENANCE', '🔧 New Maintenance Issue', msg, 'COMPLAINT', 'HIGH');
-        
-        if (get().activeRole === 'GUEST') {
-          set({
-            activeAlert: {
-              title: '✅ Issue Reported',
-              description: 'The Owner, Manager, and Maintenance staff have been notified.',
-              type: 'SUCCESS',
-              timestamp: Date.now(),
-            },
-          });
-        }
+      // Owner, manager (and maintenance, for a repair/maintenance category) are ALREADY
+      // notified server-side — `create_request` in pg-backend calls `notify()` for exactly
+      // this ticket, with a real push, the correct `action_id` pointing at it, and the same
+      // role targeting this used to redo by hand. The manual `sendRoleNotification` calls
+      // that were here fired a SECOND, generic broadcast for every single complaint — every
+      // owner and manager got two pushes for one ticket, and the hand-rolled one carried no
+      // action_id, so tapping it could not deep-link to the ticket at all.
+      if (get().activeRole === 'GUEST') {
+        set({
+          activeAlert: {
+            title: '✅ Issue Reported',
+            description: 'Your property manager has been notified.',
+            type: 'SUCCESS',
+            timestamp: Date.now(),
+          },
+        });
       }
 
       await get().refreshAll();
@@ -1124,13 +1115,10 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   },
 
   /** Cancel, not delete: a request is an audit trail with events and attachments hanging off
-   *  it, and the API offers no way to erase one. */
+   *  it, and the API offers no way to erase one. Rethrows on failure (e.g. the server's
+   *  "already closed" conflict) instead of swallowing it — the caller shows the real error. */
   deleteFeedbackComplaint: async (id) => {
-    try {
-      await requestsApi.cancelComplaint(id);
-    } catch (err) {
-      console.warn('[PGow] could not cancel request:', err);
-    }
+    await requestsApi.cancelComplaint(id);
     await get().refreshAll();
   },
 
@@ -1441,6 +1429,26 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         upload(mappedKind, idPhotoUri),
         upload('selfie', profilePhotoUri),
       ]);
+      // `aadhaar_last4` used to be sent unconditionally as `idNumber.trim().slice(-4)`.
+      // The server rejects that outright for anything but an Aadhaar —
+      // `_last4_only_for_aadhaar` in kyc/schemas.py — so choosing PAN, Passport, Driving
+      // License or Voter ID produced a guaranteed 422, surfaced to the resident as the
+      // opaque "Request validation failed."
+      //
+      // The rule is two-sided, and the DB half is stricter than the Pydantic half:
+      // `user_documents_last4_only_for_aadhaar` requires last4 to MATCH ^[0-9]{4}$ when the
+      // kind is aadhaar — null is not allowed there either. Pydantic would happily accept a
+      // null and let the insert fail as a 500, so an Aadhaar whose digits we cannot read has
+      // to be refused here, before the request goes out, with something the resident can act
+      // on.
+      const last4 = idNumber.trim().replace(/\D/g, '').slice(-4);
+      if (mappedKind === 'aadhaar' && !/^[0-9]{4}$/.test(last4)) {
+        return {
+          ok: false,
+          error: 'Enter your 12-digit Aadhaar number — the last four digits are recorded with your documents.',
+        };
+      }
+      const aadhaarLast4 = mappedKind === 'aadhaar' ? last4 : undefined;
       await kycApi.submitKyc({
         pg_id: pgId,
         kind: mappedKind,
@@ -1450,7 +1458,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         // never asked for.
         back_object_key: front,
         selfie_object_key: selfie,
-        aadhaar_last4: idNumber.trim().slice(-4),
+        ...(aadhaarLast4 ? { aadhaar_last4: aadhaarLast4 } : {}),
       });
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.session() });
@@ -1477,6 +1485,17 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
+      // The server self-disables document upload when `KYC_BUCKET` is unset (s3.configured()
+      // in pg-backend), answering 503 DEPENDENCY_UNAVAILABLE. That is a deployment setting,
+      // not something the resident did or can retry their way out of — telling them to "try
+      // again" sends them round the same loop forever. Say who can actually fix it.
+      if (err instanceof PGowApiError && err.code === 'DEPENDENCY_UNAVAILABLE') {
+        return {
+          ok: false,
+          error:
+            'Document upload is not switched on for this property yet. Nothing is wrong with your photos — please tell your property manager, and try again once they confirm it is set up.',
+        };
+      }
       return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not submit KYC.' };
     }
   },
@@ -1520,12 +1539,20 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       const pending = await kycApi.listPending(pgId);
       const record = pending.items.find((k) => k.membership_id === guestId);
-      if (record) {
-        if (approve) {
-          await kycApi.verifyKyc(record.id);
-        } else {
-          await kycApi.rejectKyc(record.id, rejectReason || 'Document or selfie photo unreadable.');
-        }
+      // `if (record) { ... }` with no else used to fall straight through to `return {ok:true}`
+      // — so pressing Verify on a resident with nothing pending reported success AND pushed
+      // them a "🎉 KYC Verification Approved" notification, while the server was never
+      // asked to do anything and their status never changed.
+      if (!record) {
+        return {
+          ok: false,
+          error: 'There is no KYC submission awaiting review for this resident. Ask them to upload their documents first.',
+        };
+      }
+      if (approve) {
+        await kycApi.verifyKyc(record.id);
+      } else {
+        await kycApi.rejectKyc(record.id, rejectReason || 'Document or selfie photo unreadable.');
       }
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.guests.all(pgId) });
@@ -1847,10 +1874,23 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   markGuestPaymentDone: async (_guestId, finalAmount) => {
     const pgId = useAuthStore.getState().activePgId;
     if (!pgId) return;
+    // Refuse rather than invent. This used to fall back to `6500` for a non-positive amount
+    // and then verify the payment in the same breath — recording a settled ₹6,500 rent that
+    // nobody had agreed to and that the owner had no prompt to correct.
+    if (!(finalAmount > 0)) {
+      set({
+        activeAlert: {
+          title: '❌ NO AMOUNT ENTERED',
+          description: 'Enter the amount handed over before recording the payment.',
+          type: 'PAYMENT', timestamp: Date.now(),
+        },
+      });
+      return;
+    }
     try {
       const payment = await paymentsApi.submitPayment({
         pg_id: pgId,
-        amount: finalAmount > 0 ? finalAmount : 6500,
+        amount: finalAmount,
         period: map.currentPeriod(),
         purpose: 'rent',
         method: 'cash',
@@ -1877,7 +1917,12 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     // clearing it here too, this action used to rely entirely on `currentScreen` to look
     // like a sign-out while the real session token sat untouched in authStore/SecureStore.
     useAuthStore.getState().logout();
-    import('@react-native-async-storage/async-storage').then((m) => m.default.clear().catch(() => {}));
+    // Named keys, not AsyncStorage.clear(). `clear()` empties the whole app-wide bucket —
+    // every other library's data along with ours — for what only needs to be this app's own
+    // persisted zustand slices.
+    import('@react-native-async-storage/async-storage')
+      .then((m) => m.default.multiRemove(PERSISTED_STORE_KEYS).catch(() => {}))
+      .catch(() => {});
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
       activeRole: null, isManagerMode: false,

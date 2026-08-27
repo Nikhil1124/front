@@ -24,13 +24,14 @@ export async function listProcurementCatalog(): Promise<ProcurementCatalogItem[]
 export interface SubmitProcurementOrderParams {
   pg_id: string;
   order_type: "grocery" | "supplies" | "emergency";
-  items: Array<{
-    item_name: string;
-    category: string;
-    quantity: number;
-    unit: string;
-    estimated_price: number;
-  }>;
+  // Was `{item_name, category, quantity, unit, estimated_price}` — none of those fields
+  // exist on the server's `ProcurementOrderItemRequest` (pg-backend
+  // procurement/schemas.py), which wants `{item_id, quantity}` and nothing else.
+  // `RequestModel.model_config = ConfigDict(extra="forbid")` on every request body means
+  // the old shape was a guaranteed 422 on every submission — required `item_id` missing,
+  // plus five fields the server doesn't recognise. Every requisition ever "submitted" from
+  // this form failed silently into the caller's catch block.
+  items: Array<{ item_id: string; quantity: number }>;
   notes?: string;
 }
 

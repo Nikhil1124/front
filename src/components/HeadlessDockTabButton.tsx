@@ -98,7 +98,16 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
       // `styles.slot` goes LAST, after the injected style: `TabTrigger asChild` merges in
       // its own `flexDirection: 'row'` default, which would otherwise put the label beside
       // the icon instead of under it.
-      <Pressable ref={ref} style={[style as any, styles.slot]} {...props}>
+      // `tab` rather than `button`, and `selected` state: a screen reader should say
+      // "Payments, tab, 3 of 6, selected" rather than reading six identical unlabelled rows.
+      <Pressable
+        ref={ref}
+        accessibilityRole="tab"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: !!isFocused }}
+        style={[style as any, styles.slot]}
+        {...props}
+      >
         <Animated.View style={[styles.iconBox, boxStyle]}>
           <Ionicons name={icon} size={18} color={isFocused ? Colors.primaryDark : Colors.textMuted} />
         </Animated.View>

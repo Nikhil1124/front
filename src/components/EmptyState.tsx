@@ -11,6 +11,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Card, Spacer } from '@/components/ui';
+import { LoadingState, ErrorState } from '@/components/ui/Spinner';
 import { Colors } from '@/theme';
 
 export interface EmptyStateProps {
@@ -18,39 +19,58 @@ export interface EmptyStateProps {
   title: string;
   subtitle?: string;
   accent?: string;
+  /**
+   * The three reasons a list renders nothing are NOT interchangeable, and this component
+   * used to say "nothing here" for all of them. A query in flight and a query that 403'd
+   * both produced the same confident empty copy — and since the query client deliberately
+   * does not retry a 4xx, a permissions failure sat there looking like an answer. Passing
+   * the query's own flags through lets one component tell the three apart.
+   */
+  loading?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
 }
 
 export function EmptyState({
   icon = 'information-circle',
   title,
   subtitle,
-  accent = Colors.SlateMutedText,
+  accent = Colors.textMuted,
+  loading = false,
+  error,
+  onRetry,
 }: EmptyStateProps) {
   return (
     <Card
-      containerColor={Colors.LuxurySurfaceDark}
+      containerColor={Colors.surface}
       borderRadius={16}
       borderWidth={1}
-      borderColor="rgba(126,149,153,0.18)"
+      borderColor={Colors.borderSubtle}
       padding={[32, 24]}
     >
-      <View style={styles.inner}>
-        <View style={[styles.iconWrap, { backgroundColor: `${accent}18` }]}>
-          <Ionicons name={icon} size={36} color={accent} />
+      {loading ? (
+        <LoadingState fill={false} label="Loading…" />
+      ) : error ? (
+        <ErrorState fill={false} error={error} title="Could not load this" onRetry={onRetry} />
+      ) : (
+        <View style={styles.inner}>
+          <View style={[styles.iconWrap, { backgroundColor: `${accent}18` }]}>
+            <Ionicons name={icon} size={36} color={accent} />
+          </View>
+          <Spacer size={12} />
+          <Txt variant="cardTitle" color={Colors.textPrimary} align="center">
+            {title}
+          </Txt>
+          {subtitle ? (
+            <>
+              <Spacer size={6} />
+              <Txt variant="caption" color={Colors.textMuted} align="center" style={{ lineHeight: 17 }}>
+                {subtitle}
+              </Txt>
+            </>
+          ) : null}
         </View>
-        <Spacer size={12} />
-        <Txt variant="cardTitle" color={Colors.IvoryWhiteText} align="center">
-          {title}
-        </Txt>
-        {subtitle ? (
-          <>
-            <Spacer size={6} />
-            <Txt variant="caption" color={Colors.SlateMutedText} align="center" style={{ lineHeight: 17 }}>
-              {subtitle}
-            </Txt>
-          </>
-        ) : null}
-      </View>
+      )}
     </Card>
   );
 }

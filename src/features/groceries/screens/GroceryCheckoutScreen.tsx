@@ -46,7 +46,7 @@ export function GroceryCheckoutScreen() {
   const ownerForGuest = owner;
   const insets = useSafeAreaInsets();
 
-  const { items, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
+  const { items, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();
   const createOrderMutation = useCreateSupplyOrderMutation();
 
   const [fulfillmentMode, setFulfillmentMode] = useState<'delivery' | 'pickup'>('delivery');
@@ -62,10 +62,12 @@ export function GroceryCheckoutScreen() {
   }, [selectedSlotId]);
 
   const subtotal = getCartTotal();
-  const { cgst, sgst, totalGst } = getGSTDetails();
   const deliveryFee = fulfillmentMode === 'pickup' ? 0 : selectedSlot.fee;
   const platformFee = 10;
-  const grandTotal = Math.round((subtotal + totalGst + deliveryFee + platformFee + selectedTip) * 100) / 100;
+  // GST is inside `subtotal`, not added to it — supply_items.price is tax-inclusive and the
+  // server splits it the same way (see getBillEstimate). Only the fees and tip are additions.
+  const { tax: billTax, taxable: billTaxable } = getBillEstimate();
+  const estimatedTotal = Math.round((subtotal + deliveryFee + platformFee + selectedTip) * 100) / 100;
   const cartItemCount = getItemCount();
   const totalSavings = getTotalSavings();
 
@@ -358,18 +360,18 @@ export function GroceryCheckoutScreen() {
           {/* Pricing breakdown */}
           <View style={styles.billBreakdown}>
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Item Total</Text>
+              <Text style={styles.billLabel}>Taxable Value</Text>
+              <Text style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
+            </View>
+
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>GST</Text>
+              <Text style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
+            </View>
+
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Item Total (incl. GST)</Text>
               <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
-            </View>
-
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>CGST (2.5%)</Text>
-              <Text style={styles.billValue}>₹{cgst.toFixed(2)}</Text>
-            </View>
-
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>SGST (2.5%)</Text>
-              <Text style={styles.billValue}>₹{sgst.toFixed(2)}</Text>
             </View>
 
             <View style={styles.billRow}>
@@ -392,9 +394,10 @@ export function GroceryCheckoutScreen() {
             )}
 
             <View style={[styles.billRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total to Pay</Text>
-              <Text style={styles.totalValue}>₹{grandTotal.toFixed(2)}</Text>
+              <Text style={styles.totalLabel}>Estimated Total</Text>
+              <Text style={styles.totalValue}>₹{estimatedTotal.toFixed(2)}</Text>
             </View>
+            <Text style={styles.billLabel}>Item prices include GST. Your final invoice is confirmed when the order is placed.</Text>
           </View>
         </View>
       </FormScroll>
@@ -402,7 +405,7 @@ export function GroceryCheckoutScreen() {
       {/* Sticky Bottom Placement Bar */}
       <View style={[styles.stickyFooter, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.footerLeft}>
-          <Text style={styles.footerPrice}>₹{grandTotal.toFixed(2)}</Text>
+          <Text style={styles.footerPrice}>₹{estimatedTotal.toFixed(2)}</Text>
           {totalSavings > 0 ? (
             <View style={styles.footerSavings}>
               <Ionicons name="leaf-outline" size={10} color={Colors.primary} />

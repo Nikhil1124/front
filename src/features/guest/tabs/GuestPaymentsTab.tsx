@@ -8,7 +8,7 @@ import { View, StyleSheet, Alert, TouchableOpacity, RefreshControl, Modal, Press
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Sharing from 'expo-sharing';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip, Spinner } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { EmptyState } from '@/components/EmptyState';
@@ -34,8 +34,7 @@ import { BASE_URL } from '@/config';
 import type { PaymentEntity, TenantInvoice } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
 
-import { usePaymentsQuery } from '@/features/payments/usePayments';
-import { useGuestsQuery } from '@/features/guests/useGuests';
+import { usePaymentsQuery, useRentDueQuery } from '@/features/payments/usePayments';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
 
@@ -43,8 +42,12 @@ export function GuestPaymentsTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const { activeEntity: ownerForGuest } = useActiveProperty();
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);
-  const { data: allGuests = [] } = useGuestsQuery(activePgId ?? undefined);
+  const { data: allPayments = [], isLoading: paymentsLoading, error: paymentsError } = usePaymentsQuery(activePgId ?? undefined);
+  // GET /v1/payments/due — the server's own answer for "what does this resident owe this
+  // cycle". `useGuestsQuery` used to stand in for it, but that endpoint is
+  // `require_manage`-gated (pg-backend guest/service.py), so from a resident it always 403'd
+  // and silently produced an empty roster.
+  const { data: rentDue, isLoading: rentLoading, error: rentError } = useRentDueQuery(activePgId ?? undefined);
   const submitPayment = usePGowStore((s) => s.submitGuestPayment);
   const activeMembership = useAuthStore((s) => s.user?.memberships.find((m) => m.role === 'guest')?.membership_id ?? null);
   const { refreshing, onRefresh } = usePullToRefresh();
@@ -70,15 +73,17 @@ export function GuestPaymentsTab() {
   const contactPhone = ownerForGuest?.managerPhone?.trim() || ownerForGuest?.phonePeNumber?.trim() || '';
   const isBillPaid = guest?.isBillPaid ?? false;
 
-  const guestsWithRewardPoints = allGuests.filter((g) => g.rewardPoints > 0);
-  const highestReward = guestsWithRewardPoints.length > 0
-    ? guestsWithRewardPoints.reduce((a, b) => (b.rewardPoints > a.rewardPoints ? b : a))
-    : null;
-  const isWinner = highestReward !== null && highestReward.id === guest?.id;
-  // Today's actual date
-  const isOnTime = new Date().getDate() <= 5;
-  const baseRent = guest?.rentAmount ?? 6500;
-  const rentAmount = Math.max(1, baseRent - (isOnTime ? 50 : 0) - (isWinner ? 100 : 0));
+  // The amount the resident owes comes from the server and nowhere else.
+  //
+  // This used to be `guest?.rentAmount ?? 6500` minus a ₹50 "on-time" and ₹100 "rewards
+  // winner" discount computed here. Both were wrong in the same way: the number on screen —
+  // and the number handed to the UPI intent and POSTed as the payment — was one this client
+  // invented. A resident whose guest record had not loaded yet was quoted a ₹6,500 rent that
+  // belonged to nobody, and the discounts existed only on this device, so the amount paid
+  // never matched the amount owed. Any such incentive has to be priced by whatever issues the
+  // invoice; until then the due figure is simply reported, not adjusted.
+  const rentAmount = rentDue ? map.toAmount(rentDue.rent_amount) : null;
+  const rentKnown = rentAmount !== null && rentAmount > 0;
   const currentMonthYear = periodToMonthYear(currentPeriod());
 
   const guestPayments = allPayments.filter((p) => p.payerId === guest?.id);
@@ -87,19 +92,23 @@ export function GuestPaymentsTab() {
   const pendingAmount = guestPayments.filter((p) => p.status === 'PENDING').reduce((s, p) => s + p.amount, 0);
 
   const handleUpiLaunch = async () => {
-    if (!hasUpi) return;
+    if (!hasUpi || !rentKnown) return;
     hapticSelect();
     const result = await launchUpiPayment({
       upiId: ownerUpi,
       payeeName: 'PG Rent Payment',
-      amount: rentAmount,
+      amount: rentAmount!,
       note: `Rent ${currentMonthYear}`,
     });
     Alert.alert('UPI Payment', result.message);
   };
 
   const handleSubmit = async (mode: string) => {
-    const r = await submitPayment(mode, rentAmount, 'GUEST_RENT', utrNumber, currentMonthYear);
+    if (!rentKnown) {
+      Alert.alert('Amount unavailable', 'We could not load what you owe this month. Pull down to refresh and try again.');
+      return;
+    }
+    const r = await submitPayment(mode, rentAmount!, 'GUEST_RENT', utrNumber, currentMonthYear);
     if (r.ok) {
       hapticSuccess();
       setUtrNumber('');
@@ -247,34 +256,22 @@ export function GuestPaymentsTab() {
 
             <Spacer size={8} />
             <Txt size={32} weight="900" color={Colors.primary} style={{ alignSelf: 'flex-start' }}>
-              ₹{Math.round(rentAmount).toLocaleString('en-IN')}
+              {rentLoading ? <Spinner size="large" /> : rentKnown ? `₹${Math.round(rentAmount!).toLocaleString('en-IN')}` : '—'}
             </Txt>
             <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 2 }}>
-              Due now
+              {rentKnown ? 'Due now' : rentLoading ? 'Checking what you owe…' : 'Amount unavailable — pull down to refresh'}
             </Txt>
 
             <Spacer size={16} />
             <View style={styles.breakdownBox}>
               <Row justify="space-between">
-                <Txt variant="caption" color={Colors.textSecondary}>Base Monthly Rent</Txt>
-                <Txt variant="caption" weight="700" color={Colors.textPrimary}>₹{Math.round(baseRent).toLocaleString('en-IN')}</Txt>
+                <Txt variant="caption" color={Colors.textSecondary}>Monthly Rent</Txt>
+                <Txt variant="caption" weight="700" color={Colors.textPrimary}>{rentKnown ? `₹${Math.round(rentAmount!).toLocaleString('en-IN')}` : '—'}</Txt>
               </Row>
-              {isOnTime && (
-                <Row justify="space-between" style={{ marginTop: 4 }}>
-                  <Txt variant="caption" color={Colors.success}>⚡ On-Time Discount (Before 5th)</Txt>
-                  <Txt variant="caption" weight="700" color={Colors.success}>-₹50</Txt>
-                </Row>
-              )}
-              {isWinner && (
-                <Row justify="space-between" style={{ marginTop: 4 }}>
-                  <Txt variant="caption" color={Colors.accentRose}>🏆 Rewards Winner Incentive</Txt>
-                  <Txt variant="caption" weight="700" color={Colors.accentRose}>-₹100</Txt>
-                </Row>
-              )}
               <View style={styles.divider} />
               <Row justify="space-between">
-                <Txt variant="caption" weight="700" color={Colors.textPrimary}>Net Payable Amount</Txt>
-                <Txt variant="body" weight="900" color={Colors.primary}>₹{Math.round(rentAmount).toLocaleString('en-IN')}</Txt>
+                <Txt variant="caption" weight="700" color={Colors.textPrimary}>Payable for {currentMonthYear}</Txt>
+                <Txt variant="body" weight="900" color={Colors.primary}>{rentKnown ? `₹${Math.round(rentAmount!).toLocaleString('en-IN')}` : '—'}</Txt>
               </Row>
             </View>
           </Card>
@@ -282,7 +279,7 @@ export function GuestPaymentsTab() {
           {/* Primary CTA button */}
           <Btn
             onPress={handlePrimaryPayPress}
-            disabled={isBillPaid}
+            disabled={isBillPaid || !rentKnown}
             containerColor={isBillPaid ? Colors.success : Colors.primary}
             textColor={Colors.textInverse}
             borderRadius={Layout.borderRadiusButton}
@@ -291,7 +288,7 @@ export function GuestPaymentsTab() {
           >
             <Ionicons name={isBillPaid ? "checkmark-circle" : "wallet-outline"} size={18} color={Colors.textInverse} />
             <Txt variant="body" weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
-              {isBillPaid ? 'Rent Settled & Verified' : `Pay ₹${Math.round(rentAmount).toLocaleString('en-IN')} →`}
+              {isBillPaid ? 'Rent Settled & Verified' : rentKnown ? `Pay ₹${Math.round(rentAmount!).toLocaleString('en-IN')} →` : 'Amount unavailable'}
             </Txt>
           </Btn>
 
@@ -473,7 +470,7 @@ export function GuestPaymentsTab() {
                   <Txt size={12} weight="800" color={Colors.primary}>💵 Cash Handover Flow</Txt>
                   <Spacer size={8} />
                   <Txt size={11} color={Colors.textSecondary} style={{ lineHeight: 16 }}>
-                    Handover physical cash of <Txt weight="800" color={Colors.textPrimary}>₹{Math.round(rentAmount).toLocaleString('en-IN')}</Txt> directly to your PG Manager {contactPhone ? `(${contactPhone})` : ''}. Once submitted, the manager will verify and settle it on the dashboard.
+                    Handover physical cash of <Txt weight="800" color={Colors.textPrimary}>{rentKnown ? `₹${Math.round(rentAmount!).toLocaleString('en-IN')}` : '—'}</Txt> directly to your PG Manager {contactPhone ? `(${contactPhone})` : ''}. Once submitted, the manager will verify and settle it on the dashboard.
                   </Txt>
                   <Spacer size={12} />
                   <Btn
@@ -484,7 +481,7 @@ export function GuestPaymentsTab() {
                     height={40}
                     testID="cash_handover_btn"
                   >
-                    <Txt variant="caption" weight="700" color={Colors.textInverse}>Confirm Cash Handover (₹{Math.round(rentAmount)})</Txt>
+                    <Txt variant="caption" weight="700" color={Colors.textInverse}>Confirm Cash Handover ({rentKnown ? `₹${Math.round(rentAmount!).toLocaleString('en-IN')}` : '—'})</Txt>
                   </Btn>
                 </Card>
               )}
@@ -564,6 +561,9 @@ export function GuestPaymentsTab() {
               title={`No ${filter === 'ALL' ? '' : filter + ' '}transactions yet`}
               subtitle="Pay your rent via UPI / QR / cash and your receipts will appear here. Pull down to refresh."
               accent={Colors.primary}
+              loading={paymentsLoading}
+              error={paymentsError}
+              onRetry={onRefresh}
             />
           ) : (
             filteredPayments.map((p) => {
@@ -615,14 +615,13 @@ export function GuestPaymentsTab() {
             <InfoTip text="Server-generated monthly rent invoices. Pay online or download a PDF copy." />
           </Row>
           <Spacer size={6} />
-          {invoicesLoading ? (
-            <Txt size={11} color={Colors.textMuted}>Loading invoices…</Txt>
-          ) : invoices.length === 0 ? (
+          {invoicesLoading || invoices.length === 0 ? (
             <EmptyState
               icon="receipt-outline"
               title="No invoices yet"
               subtitle="Your monthly rent invoice will appear here when the owner generates one."
               accent={Colors.primary}
+              loading={invoicesLoading}
             />
           ) : (
             invoices.map((inv: TenantInvoice) => {

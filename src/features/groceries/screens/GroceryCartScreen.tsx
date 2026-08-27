@@ -16,9 +16,10 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { getPerUnitRateLabel } from '../utils/pricing';
+import { useSubmitProcurementOrder } from '@/features/procurement/useProcurement';
 
 export function GroceryCartScreen() {
-  const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getGSTDetails, clearCart, getItemCount, getTotalSavings } = useCartStore();
+  const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();
   const mode = useShoppingModeStore((s) => s.mode);
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: supplyItems = [] } = useSupplyItems(activePgId);
@@ -34,7 +35,7 @@ export function GroceryCartScreen() {
 
   // Calculations
   const subtotal = getCartTotal();
-  const { cgst, sgst, grandTotal } = getGSTDetails();
+  const { subtotal: billSubtotal, tax: billTax, taxable: billTaxable } = getBillEstimate();
   const cartItemCount = getItemCount();
   const totalSavings = getTotalSavings();
 
@@ -75,15 +76,35 @@ export function GroceryCartScreen() {
   };
 
   const isChef = usePGowStore((s) => s.activeRole) === 'CHEF';
-  const submitChefGroceryRequest = usePGowStore((s) => s.submitChefGroceryRequest);
+  const submitProcurementOrder = useSubmitProcurementOrder();
+  const [submittingRequisition, setSubmittingRequisition] = useState(false);
 
-  const handleCheckoutOrRequest = () => {
+  const handleCheckoutOrRequest = async () => {
     if (isChef) {
-      const itemsSummary = items.map((i) => `${i.quantity}x ${i.name}`).join(', ');
-      submitChefGroceryRequest(itemsSummary, cartItemCount, grandTotal);
-      clearCart();
-      Alert.alert('Request Sent', 'Your grocery list has been sent to the Manager for purchase.');
-      router.back();
+      // Was `submitChefGroceryRequest` — a Zustand-only array nobody ever displayed, so a
+      // chef's request vanished on the next app restart and no manager could act on it
+      // despite the "sent to the Manager for purchase" confirmation. The real endpoint for
+      // exactly this — pg-backend's own words: procurement's catalog IS "the real Supply
+      // catalog... what a chef may pick from" (procurement/service.py:list_catalog) — reads
+      // the same `supply_items` table this cart's items already come from, so the cart's
+      // own ids are valid `item_id`s for a real requisition. Owner/manager then see and
+      // approve it on the Approvals tab of this same screen (/procurement).
+      if (!activePgId) return;
+      setSubmittingRequisition(true);
+      try {
+        await submitProcurementOrder.mutateAsync({
+          pg_id: activePgId,
+          order_type: 'supplies',
+          items: items.map((i) => ({ item_id: i.productId, quantity: i.quantity })),
+        });
+        clearCart();
+        Alert.alert('Requisition Sent', 'Your grocery list has been sent to the owner/manager for approval.');
+        router.back();
+      } catch (err) {
+        Alert.alert('Could not send request', err instanceof Error ? err.message : 'Please try again.');
+      } finally {
+        setSubmittingRequisition(false);
+      }
       return;
     }
     router.push('/groceries/checkout');
@@ -285,13 +306,13 @@ export function GroceryCartScreen() {
               )}
 
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>CGST (2.5%)</Text>
-                <Text style={styles.billValue}>₹{cgst}</Text>
+                <Text style={styles.billLabel}>Taxable Value</Text>
+                <Text style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
               </View>
 
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>SGST (2.5%)</Text>
-                <Text style={styles.billValue}>₹{sgst}</Text>
+                <Text style={styles.billLabel}>GST</Text>
+                <Text style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
               </View>
 
               <View style={styles.billRow}>
@@ -301,9 +322,9 @@ export function GroceryCartScreen() {
 
               <View style={[styles.billRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Subtotal</Text>
-                <Text style={styles.totalValue}>₹{grandTotal}</Text>
+                <Text style={styles.totalValue}>₹{billSubtotal}</Text>
               </View>
-              <Text style={styles.billFootnote}>Platform fee &amp; tip are added at checkout.</Text>
+              <Text style={styles.billFootnote}>Item prices are GST-inclusive. Platform fee &amp; tip are added at checkout.</Text>
             </View>
 
             {/* 14. You May Also Need — shared MiniProductCard */}
@@ -348,18 +369,21 @@ export function GroceryCartScreen() {
           {/* 16 & 17. Sticky Checkout Bar */}
           <View style={[styles.stickyCheckoutBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.checkoutBarLeft}>
-              <Text style={styles.checkoutPrice}>₹{grandTotal}</Text>
+              <Text style={styles.checkoutPrice}>₹{billSubtotal}</Text>
               <Text style={styles.checkoutInfoText}>
                 {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}
               </Text>
             </View>
 
             <TouchableOpacity
-              style={styles.checkoutBtn}
+              style={[styles.checkoutBtn, submittingRequisition && { opacity: 0.6 }]}
               onPress={handleCheckoutOrRequest}
               activeOpacity={0.8}
+              disabled={submittingRequisition}
             >
-              <Text style={styles.checkoutBtnText}>{isChef ? 'Request via Manager' : 'Proceed to Checkout'}</Text>
+              <Text style={styles.checkoutBtnText}>
+                {isChef ? (submittingRequisition ? 'Sending…' : 'Request via Manager') : 'Proceed to Checkout'}
+              </Text>
               <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>

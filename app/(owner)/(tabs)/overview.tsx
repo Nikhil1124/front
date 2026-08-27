@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Row, Col, Spacer, Btn, OutlinedBtn, IconBtn } from '@/components/ui';
+import { Card, Row, Col, Spacer, Btn, OutlinedBtn, IconBtn, LoadingState, ErrorState } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -24,6 +24,7 @@ import { hapticSelect } from '@/utils/haptics';
 import { useMealSavings } from '@/features/meals/useMealSavings';
 import { usePortfolioTeaser } from '@/features/properties/usePortfolio';
 import type { AppScreen } from '@/types';
+import { todayLocalISO } from '@/utils/format';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const GREEN    = '#176B3A';
@@ -39,22 +40,33 @@ interface ActionTile {
   label: string;
   desc: string;
   icon: keyof typeof Ionicons.glyphMap;
+  /** Restricted by the SERVER, not by preference — see the note on ACTION_TILES. */
+  ownerOnly?: boolean;
 }
 
-const OWNER_TILES: ActionTile[] = [
-  { screen: 'PNL_ANALYTICS',    label: 'P&L Analytics', desc: '3m / 6m / 1y',              icon: 'stats-chart-outline' },
-  { screen: 'GROCERIES_SCREEN', label: 'Groceries',     desc: 'Kitchen & PG supplies',     icon: 'nutrition-outline' },
-  { screen: 'UPI_SETTINGS',     label: 'UPI Settings',  desc: 'Rent collection & payments', icon: 'card-outline' },
-  { screen: 'OWNER_SERVICES',   label: 'Services',      desc: 'Groceries & repairs',        icon: 'storefront-outline' },
-];
-
-const MANAGER_TILES: ActionTile[] = [
-  { screen: 'BED_VISUALIZER',   label: 'Bed Layout',     desc: 'Floor → room → bed',        icon: 'bed-outline' },
-  { screen: 'TENANT_LIST',      label: 'Tenant Mgmt',    desc: 'KYC decisions',             icon: 'people-outline' },
-  { screen: 'GROCERIES_SCREEN', label: 'Groceries',      desc: 'Kitchen & PG supplies',     icon: 'nutrition-outline' },
-  { action: 'NOTICES',          label: 'Rent Reminders', desc: 'WhatsApp / SMS',            icon: 'notifications-outline' },
-  { screen: 'UPI_SETTINGS',     label: 'UPI Settings',   desc: 'Rent collection & payments', icon: 'card-outline' },
+/**
+ * One list for owners and managers.
+ *
+ * There used to be two, and the split followed no permission the server actually enforces:
+ * managers got Bed Layout, Tenant Mgmt and Rent Reminders while owners did not, and owners
+ * got P&L while managers did not. Checked against the backend — `pnl`, `billing`,
+ * `procurement`, guests, staff and requests are ALL `require_manage`, which means owner *and*
+ * manager. So an owner could not reach their own bed layout, and a manager could not see the
+ * P&L for the property they run, for no reason but this array.
+ *
+ * `ownerOnly` marks the few things the server really does restrict: UPI accounts are
+ * `has_role_at(pg_id, OWNER)` server-side, so showing that tile to a manager would hand them
+ * a 404 rather than a feature.
+ */
+const ACTION_TILES: ActionTile[] = [
+  { screen: 'PNL_ANALYTICS',    label: 'P&L Analytics',  desc: '3m / 6m / 1y',               icon: 'stats-chart-outline' },
+  { screen: 'BED_VISUALIZER',   label: 'Bed Layout',     desc: 'Floor → room → bed',         icon: 'bed-outline' },
+  { screen: 'TENANT_LIST',      label: 'Tenant Mgmt',    desc: 'KYC decisions',              icon: 'people-outline' },
+  { screen: 'GROCERIES_SCREEN', label: 'Groceries',      desc: 'Kitchen & PG supplies',      icon: 'nutrition-outline' },
+  { screen: 'PROCUREMENT_SCREEN', label: 'Procurement',    desc: 'Stock requests & approvals', icon: 'cube-outline' },
+  { action: 'NOTICES',          label: 'Rent Reminders', desc: 'WhatsApp / SMS',             icon: 'notifications-outline' },
   { screen: 'OWNER_SERVICES',   label: 'Services',       desc: 'Groceries & repairs',        icon: 'storefront-outline' },
+  { screen: 'UPI_SETTINGS',     label: 'UPI Settings',   desc: 'Rent collection & payments', icon: 'card-outline', ownerOnly: true },
 ];
 
 const SCREEN_ROUTES: Partial<Record<AppScreen, string>> = {
@@ -64,30 +76,36 @@ const SCREEN_ROUTES: Partial<Record<AppScreen, string>> = {
   OWNER_SERVICES:   '/services',
   BED_VISUALIZER:   '/bed-visualizer',
   TENANT_LIST:      '/tenant-list',
+  PROCUREMENT_SCREEN: '/procurement',
 };
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
+import { isRequestOpen } from '@/data/mappers';
 
 export default function OwnerOverviewTab() {
   const [showOverdueModal, setShowOverdueModal] = useState(false);
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
-  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const { data: roleNotifs = [], isLoading: feedLoading, error: feedError, refetch: refetchFeed } = useRoleNotificationsQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  const isManager = useIsManagerMode();
   const user = useAuthStore((s) => s.user);
   const hasNoMemberships = !user || (user.memberships.length === 0);
 
   const now        = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const monthEnd   = now.toISOString().slice(0, 10);
+  // `todayLocalISO`, not `toISOString().slice(0, 10)`. The latter converts local midnight to
+  // UTC first, so east of Greenwich the 1st of the month comes out as the last day of the
+  // PREVIOUS month (IST: 2026-08-01 → "2026-07-31"), quietly folding a day that belongs to
+  // last month into this month's savings — and monthEnd lost a day before 05:30 IST too.
+  const monthStart = todayLocalISO(new Date(now.getFullYear(), now.getMonth(), 1));
+  const monthEnd   = todayLocalISO(now);
   const { data: mealSavings } = useMealSavings(owner?.id ?? null, monthStart, monthEnd);
   const savedThisMonth   = mealSavings?.total_saved ?? 0;
   const skippedPortions  = mealSavings?.total_skipped_portions ?? 0;
@@ -96,13 +114,17 @@ export default function OwnerOverviewTab() {
   const overdueAmount = guests
     .filter(g => !g.isBillPaid)
     .reduce((s, g) => s + (g.rentAmount ?? 0), 0);
-  const openRequests  = complaints.filter(c => c.status !== 'Resolved').length;
-  const totalBeds     = guests.length;
+  const openRequests  = complaints.filter(c => isRequestOpen(c.status)).length;
+  // Was `guests.length` rendered as "—/{totalBeds}": an em-dash numerator that was never
+  // computed, over a denominator that counted residents rather than beds. The property
+  // carries its own bed count.
+  const occupiedBeds  = guests.length;
+  const totalBeds     = owner?.totalBeds ?? 0;
   const recentFeed    = roleNotifs.slice(0, 3);
 
   const showPortfolio = !isManager && allPGs.length > 1;
   const { data: portfolio } = usePortfolioTeaser(showPortfolio ? allPGs : []);
-  const tiles = isManager ? MANAGER_TILES : OWNER_TILES;
+  const tiles = isManager ? ACTION_TILES.filter((t) => !t.ownerOnly) : ACTION_TILES;
 
   const handleTilePress = (tile: ActionTile) => {
     hapticSelect();
@@ -263,7 +285,7 @@ export default function OwnerOverviewTab() {
               {/* Occupancy */}
               <View style={styles.overviewCell}>
                 <Ionicons name="bed-outline" size={18} color={GREEN} />
-                <Text style={styles.overviewValue}>—/{totalBeds}</Text>
+                <Text style={styles.overviewValue}>{totalBeds > 0 ? `${occupiedBeds}/${totalBeds}` : occupiedBeds}</Text>
                 <Text style={styles.overviewLabel}>Occupancy</Text>
                 <Text style={styles.overviewSub}>beds</Text>
               </View>
@@ -290,7 +312,11 @@ export default function OwnerOverviewTab() {
             {/* ── Recent Activity ───────────────────────────────────────────── */}
             <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Recent Activity</Text>
             <View style={styles.activityCard}>
-              {recentFeed.length === 0 ? (
+              {feedLoading ? (
+                <LoadingState label="Loading activity…" fill={false} />
+              ) : feedError ? (
+                <ErrorState error={feedError} title="Could not load recent activity" onRetry={refetchFeed} fill={false} />
+              ) : recentFeed.length === 0 ? (
                 <Row gap={10} align="center">
                   <View style={styles.activityCheckCircle}>
                     <Ionicons name="checkmark" size={14} color={GREEN} />

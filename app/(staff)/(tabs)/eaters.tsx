@@ -1,10 +1,11 @@
 /** Chef dashboard "Eaters" tab or Delivery Dashboard Route */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Linking } from 'react-native';
 import { Card, Txt, Spacer, Chip, Col, Row, Btn, IconBtn, OutlinedBtn } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
+import { EmptyState } from '@/components/EmptyState';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
@@ -20,6 +21,18 @@ export default function ChefEatersTab() {
 
 import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
 import { useGuestsQuery } from '@/features/guests/useGuests';
+
+/** A real Google Maps deep link — was `Alert.alert('Navigation', 'Opening Google Maps to
+ *  navigate to X...')` on both call sites below, which opened nothing. `Linking.openURL`
+ *  with a maps search query is a platform capability, not a backend one, so this needed no
+ *  new API — just to actually call the thing the text already claimed to be doing. */
+function openInMaps(query: string) {
+  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  Linking.openURL(url).catch(() => {
+    Alert.alert('Could not open Maps', 'No maps app is available on this device.');
+  });
+}
+
 import * as map from '@/data/mappers';
 import type { GuestRSVPEntity } from '@/types';
 
@@ -108,17 +121,10 @@ import {
   uploadToPresignedUrl,
 } from '@/features/staff/useTrips';
 
-const MOCK_ROUTE = [
-  { id: '1', pgName: 'Sunrise PG', location: '12, 4th Cross, Koramangala 5th Block', orders: 120, status: 'Completed', time: '2:42 PM', recipient: 'Ravi Kumar', phone: '+91 98765 43210' },
-  { id: '2', pgName: 'Green Nest PG', location: '89, 17th Main Rd, Sector 4, HSR Layout', orders: 85, status: 'Current', time: null, recipient: 'Sneha Rao', phone: '+91 87654 32109' },
-  { id: '3', pgName: 'Urban Stay PG', location: '45, Outer Ring Rd, BTM Layout 2nd Stage', orders: 56, status: 'Pending', time: null, recipient: 'Amit Singh', phone: '+91 76543 21098' },
-  { id: '4', pgName: 'Royal Homes PG', location: '112, Neeladri Road, Electronic City Phase 1', orders: 32, status: 'Pending', time: null, recipient: 'Priya M', phone: '+91 65432 10987' },
-  { id: '5', pgName: 'Comfort Nest PG', location: '56, ITPL Main Road, Whitefield', orders: 18, status: 'Pending', time: null, recipient: 'Karthik N', phone: '+91 54321 09876' },
-];
 
 function DeliveryDashboardRoute() {
   const staff = usePGowStore((s) => s.loggedInStaff);
-  const { data: realTrips = [], refetch } = useMyTripsQuery();
+  const { data: realTrips = [], refetch, isLoading: tripsLoading, error: tripsError } = useMyTripsQuery();
   const departTripMut = useDepartTripMutation();
   const completeStopMut = useCompleteStopMutation();
 
@@ -127,11 +133,12 @@ function DeliveryDashboardRoute() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
-  // If there are no real trips, we fall back to MOCK_ROUTE
-  const hasRealTrips = realTrips.length > 0;
-  const activeTrip = hasRealTrips
-    ? (realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0])
-    : null;
+  // No fallback route. This used to drop to a MOCK_ROUTE of five invented PGs — complete
+  // with invented recipient names and phone numbers — whenever the agent had no assigned
+  // trip, rendered identically to live stops. An agent with nothing to deliver has to see
+  // that, not a fictional round they might try to drive.
+  const activeTrip =
+    realTrips.find((t) => t.status === 'active' || t.status === 'planned') ?? realTrips[0] ?? null;
 
   const route = activeTrip
     ? activeTrip.stops.map((stop, i) => {
@@ -157,7 +164,7 @@ function DeliveryDashboardRoute() {
           phone: stop.recipient_phone,
         };
       })
-    : MOCK_ROUTE;
+    : [];
 
   const completed = route.filter(r => r.status === 'Completed').length;
   const pending = route.filter(r => r.status === 'Pending').length;
@@ -228,7 +235,7 @@ function DeliveryDashboardRoute() {
             <Txt variant="cardTitle" weight="900" color={Colors.textPrimary}>{activeDelivery.pgName}</Txt>
             <Txt variant="caption" color={Colors.textMuted}>{activeDelivery.location}</Txt>
             <Spacer size={12} />
-            <Btn onPress={() => Alert.alert('Navigation', `Opening Google Maps to navigate to ${activeDelivery.pgName}...`)} containerColor={Colors.surfaceElevated} textColor={Colors.primary} borderRadius={8} height={40}>
+            <Btn onPress={() => openInMaps(activeDelivery.location || activeDelivery.pgName)} containerColor={Colors.surfaceElevated} textColor={Colors.primary} borderRadius={8} height={40}>
               <Ionicons name="navigate" size={16} color={Colors.primary} />
               <Txt size={13} weight="800" style={{ marginLeft: 6 }}>Open in Google Maps</Txt>
             </Btn>
@@ -383,7 +390,7 @@ function DeliveryDashboardRoute() {
                     <Ionicons name="document-text-outline" size={18} color={Colors.primaryDark} style={{ marginRight: 6 }} />
                     <Txt size={14} weight="900" color={Colors.primaryDark}>View Delivery</Txt>
                   </Btn>
-                  <Btn onPress={() => Alert.alert('Navigation', `Opening Google Maps to navigate to ${current.pgName}...`)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.lg} height={48} style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}>
+                  <Btn onPress={() => openInMaps(current.location || current.pgName)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.lg} height={48} style={{ flex: 1, borderWidth: 1, borderColor: Colors.borderSubtle }}>
                     <Ionicons name="navigate-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                     <Txt size={14} weight="900" color="#FFFFFF">Navigate</Txt>
                   </Btn>
@@ -397,11 +404,23 @@ function DeliveryDashboardRoute() {
             <Txt size={14} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 1 }}>DELIVERY ROUTE</Txt>
             <Txt size={12} color={Colors.textMuted}>Largest orders first</Txt>
           </Col>
-          <OutlinedBtn onPress={() => Alert.alert('Route Map', 'Opening full delivery route map...')} borderColor={Colors.borderSubtle} textColor={Colors.primaryDark} height={32}>
+          <OutlinedBtn onPress={() => Alert.alert('Not available yet', 'A combined route map is planned but not built. Tap a stop above to open it in Maps individually.')} borderColor={Colors.borderSubtle} textColor={Colors.primaryDark} height={32}>
             <Ionicons name="map-outline" size={14} color={Colors.primaryDark} style={{ marginRight: 6 }} />
             <Txt size={12} weight="800" color={Colors.primaryDark}>View on Map</Txt>
           </OutlinedBtn>
         </Row>
+
+        {tripsLoading || tripsError || route.length === 0 ? (
+          <EmptyState
+            icon="bicycle-outline"
+            title="No deliveries assigned"
+            subtitle="When a trip is planned for you it will appear here with every stop on the round."
+            accent={Colors.primary}
+            loading={tripsLoading}
+            error={tripsError}
+            onRetry={refetch}
+          />
+        ) : null}
 
         <Col gap={0} style={{ paddingLeft: 4 }}>
           {route.map((r, i) => {

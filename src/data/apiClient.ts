@@ -30,13 +30,36 @@ export interface Page<T> {
   next_cursor: string | null;
 }
 
+/**
+ * A 422 from the API carries `message: "Request validation failed."` and puts the part a
+ * human can act on in `details.fields` — so every validation error reached the user as that
+ * one sentence, identical whether they had mistyped a phone number or picked a document type
+ * the endpoint refuses. Folding the field detail into `.message` means the existing
+ * `err.message` call sites (there are dozens) start saying something useful without each one
+ * having to learn the envelope's shape.
+ */
+function readableMessage(error: ApiError): string {
+  const fields = (error.details as { fields?: { loc?: string; msg?: string }[] } | undefined)?.fields;
+  if (!Array.isArray(fields) || fields.length === 0) return error.message;
+  const parts = fields
+    .map((f) => {
+      const msg = (f?.msg ?? "").trim();
+      if (!msg) return null;
+      // "body.aadhaar_last4" → "aadhaar_last4"; the "body" prefix means nothing to a user.
+      const field = (f?.loc ?? "").split(".").filter((p) => p && p !== "body").pop();
+      return field ? `${field}: ${msg}` : msg;
+    })
+    .filter(Boolean);
+  return parts.length ? parts.join("\n") : error.message;
+}
+
 export class PGowApiError extends Error {
   code: string;
   details?: Record<string, unknown>;
   httpStatus: number;
 
   constructor(httpStatus: number, error: ApiError) {
-    super(error.message);
+    super(readableMessage(error));
     this.name = "PGowApiError";
     this.code = error.code;
     this.details = error.details;

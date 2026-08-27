@@ -30,20 +30,55 @@ export function parseUnitQuantity(unitStr: string): number {
   return wordMatch ? leading * wordMatch.multiplier : leading;
 }
 
+/**
+ * Longest unit first, always. `includes('l')` used to be tested before `includes('ml')`, so
+ * every millilitre unit came back labelled "L" — a 1000x-wrong rate on the very label this
+ * module exists to get right. Ordering is the whole correctness argument here, so the units
+ * are listed longest-first rather than by hand-written `if`s that can be reordered by
+ * accident.
+ */
+const UNIT_LABELS: [needle: string, label: string][] = [
+  ['kg', 'kg'],
+  ['ml', 'ml'],
+  ['dozen', 'pc'],
+  ['pair', 'pc'],
+  ['score', 'pc'],
+  ['gross', 'pc'],
+  ['pc', 'pc'],
+  ['g', 'g'],
+  ['l', 'L'],
+];
+
 function unitLabel(unitStr: string): string {
   const type = unitStr.toLowerCase();
-  if (type.includes('kg')) return 'kg';
-  if (type.includes('g')) return 'g';
-  if (type.includes('l')) return 'L';
-  if (type.includes('ml')) return 'ml';
-  if (type.includes('pc') || type.includes('dozen') || type.includes('pair') || type.includes('score') || type.includes('gross')) return 'pc';
-  return 'unit';
+  return UNIT_LABELS.find(([needle]) => type.includes(needle))?.[1] ?? 'unit';
 }
 
 /** "₹N/kg" style label for a bulk-pricing option, e.g. for "10 dozen (120 pcs)" @ ₹610 -> "₹5/pc". */
 export function getPerUnitRateLabel(unitStr: string, price: number): string {
   const qty = parseUnitQuantity(unitStr);
   if (qty <= 0) return '';
-  const perUnit = Math.round(price / qty);
-  return `₹${perUnit}/${unitLabel(unitStr)}`;
+  const perUnit = price / qty;
+  // `Math.round` alone turned every sub-rupee rate into "₹0" — which is most of them once
+  // the unit is grams or millilitres (₹100 for 500 ml is ₹0.20/ml, shown as "₹0/ml", i.e.
+  // free). At or above ₹1 a whole number is what a shopper wants to compare; below it, the
+  // decimals ARE the number.
+  const shown = perUnit >= 1 ? String(Math.round(perUnit)) : perUnit.toFixed(2).replace(/\.?0+$/, '');
+  return `₹${shown}/${unitLabel(unitStr)}`;
+}
+
+/**
+ * Split a GST-INCLUSIVE amount into its taxable base and the tax inside it.
+ *
+ * Mirrors `_split_tax_inclusive` in pg-backend `supply/service/ordering.py`, deliberately
+ * step for step: `supply_items.price` is what the customer pays, so tax is broken OUT of the
+ * line rather than added to it, the taxable base is rounded, and the tax is the REMAINDER
+ * rather than being rounded on its own. Rounding the two independently would let them drift
+ * a paisa apart from the line total, and the client bill would stop reconciling with the
+ * order the server writes.
+ */
+export function splitTaxInclusive(lineTotal: number, gstRate: number): { taxable: number; tax: number } {
+  const rounded = Math.round(lineTotal * 100) / 100;
+  const taxable = Math.round((rounded / (1 + (gstRate || 0) / 100)) * 100) / 100;
+  return { taxable, tax: Math.round((rounded - taxable) * 100) / 100 };
 }

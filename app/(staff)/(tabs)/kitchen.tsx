@@ -125,7 +125,7 @@ function DeliveryProfileRoute() {
             <Txt size={32}>👨‍✈️</Txt>
           </View>
           <Spacer size={12} />
-          <Txt size={22} weight="900" color={Colors.primaryDark}>{staff?.name ?? 'Rahul Kumar'}</Txt>
+          <Txt size={22} weight="900" color={Colors.primaryDark}>{staff?.name ?? 'Name unavailable'}</Txt>
           <Txt size={14} weight="700" color={Colors.primary}>Delivery Agent</Txt>
           <Spacer size={4} />
           <Txt size={12} color={Colors.textMuted}>Employee ID: DA-{staff?.id ? staff.id.slice(0, 4) : '1001'}</Txt>

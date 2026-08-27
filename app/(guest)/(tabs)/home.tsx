@@ -7,13 +7,15 @@ import { View, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Pill } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Pill, LoadingState, ErrorState } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
+import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
 import { hapticSelect } from '@/utils/haptics';
 import type { MealNotificationEntity } from '@/types';
+import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 
 interface QuickTile { label: string; desc: string; icon: keyof typeof Ionicons.glyphMap; tint: string; href: string; }
 const QUICK_TILES: QuickTile[] = [
@@ -61,8 +63,8 @@ export default function GuestHomeTab() {
 
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: roleNotifs = [], refetch: refetchNotifs } = useRoleNotificationsQuery(activePgId ?? undefined);
-  const { data: meals = [], refetch: refetchMeals } = useMealsQuery(activePgId ?? undefined);
+  const { data: roleNotifs = [], refetch: refetchNotifs, isLoading: noticesLoading, error: noticesError } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const { data: meals = [], refetch: refetchMeals, error: mealsError } = useMealsQuery(activePgId ?? undefined);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -72,7 +74,10 @@ export default function GuestHomeTab() {
     setRefreshing(false);
   };
 
-  const kycStatus = guest?.kycStatus ?? 'NOT_SUBMITTED';
+  const kycStatus = useKycStatus();
+  const isBillPaid = guest?.isBillPaid ?? false;
+  const rentDue = guest?.rentAmount ?? 0;
+  const currentMonth = periodToMonthYear(currentPeriod());
 
   // Pick the next upcoming meal — the first whose specific cutoff hasn't passed yet.
   // Falls back to the most recent meal so the card never renders blank.
@@ -183,8 +188,43 @@ export default function GuestHomeTab() {
           />
         }
       >
+        {/* Rent status — moved off the header, where it was a third stacked line with no
+            tap target. Only shown when something is owed: a resident who is paid up does not
+            need a banner telling them so, and the quiet state is the point. */}
+        {!isBillPaid && (
+          <AnimatedPress
+            scale={0.98}
+            hapticPattern="light"
+            accessibilityLabel="Rent pending — open payments"
+            onPress={() => router.push('/guest-payments')}
+          >
+            <Card
+              containerColor={Colors.alertGradientStart}
+              borderRadius={Layout.borderRadiusCard}
+              borderWidth={1}
+              borderColor={Colors.warning}
+              padding={[16, 16]}
+            >
+              <Row justify="space-between" align="center">
+                <Row gap={10} align="center" style={{ flex: 1 }}>
+                  <View style={styles.bannerIcon}>
+                    <Ionicons name="wallet" size={18} color={Colors.warning} />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Txt size={13} weight="800" color="#B45309">Rent pending</Txt>
+                    <Txt size={11} color="#92400E" style={{ marginTop: 2 }}>
+                      {rentDue ? `₹${Math.round(rentDue).toLocaleString('en-IN')} due for ${currentMonth}` : 'Tap to view what you owe this month.'}
+                    </Txt>
+                  </Col>
+                </Row>
+                <Ionicons name="chevron-forward" size={18} color="#B45309" />
+              </Row>
+            </Card>
+          </AnimatedPress>
+        )}
+
         {/* KYC Verification Status Banner */}
-        {kycStatus !== 'VERIFIED' && (
+        {canSubmitKyc(kycStatus) || kycStatus === 'PENDING' ? (
           <Card
             containerColor={kycStatus === 'PENDING' ? Colors.alertGradientStart : '#FEF2F2'}
             borderRadius={Layout.borderRadiusCard}
@@ -222,7 +262,7 @@ export default function GuestHomeTab() {
               )}
             </Row>
           </Card>
-        )}
+        ) : null}
 
         {/* Hero next-meal card */}
         <Card
@@ -239,12 +279,31 @@ export default function GuestHomeTab() {
               </View>
               <Col style={{ flex: 1 }}>
                 <Txt size={12} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>NEXT MEAL</Txt>
-                <Txt size={16} weight="700" color={Colors.textPrimary} style={{ marginTop: 4 }}>
-                  {upcomingMeal?.mealType ? `${upcomingMeal.mealType[0]}${upcomingMeal.mealType.slice(1).toLowerCase()}` : 'No meal scheduled'}
-                </Txt>
-                <Txt size={13} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
-                  {upcomingMeal?.menuItems || 'Menu not announced yet'}
-                </Txt>
+                {mealsError ? (
+                  // `useMealsQuery` used to fail silently here — `data` defaults to `[]` on
+                  // any error, so a guest gated on KYC or unpaid rent (the backend's own
+                  // guest_access_state, meal/service.py) saw "No meal scheduled / Menu not
+                  // announced yet", indistinguishable from a property with no meals posted.
+                  // The Meals tab already surfaces this correctly (GuestRSVPsTab passes the
+                  // same error into EmptyState); Home just never looked at it.
+                  <>
+                    <Txt size={14} weight="700" color={Colors.danger} style={{ marginTop: 4 }}>
+                      Meals unavailable
+                    </Txt>
+                    <Txt size={12} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2 }}>
+                      {mealsError instanceof Error ? mealsError.message : 'Please try again.'}
+                    </Txt>
+                  </>
+                ) : (
+                  <>
+                    <Txt size={16} weight="700" color={Colors.textPrimary} style={{ marginTop: 4 }}>
+                      {upcomingMeal?.mealType ? `${upcomingMeal.mealType[0]}${upcomingMeal.mealType.slice(1).toLowerCase()}` : 'No meal scheduled'}
+                    </Txt>
+                    <Txt size={13} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
+                      {upcomingMeal?.menuItems || 'Menu not announced yet'}
+                    </Txt>
+                  </>
+                )}
               </Col>
             </Row>
             {/* Countdown pill — amber when approaching, red when passed */}
@@ -298,7 +357,11 @@ export default function GuestHomeTab() {
           </AnimatedPress>
         </Row>
         <Spacer size={2} />
-        {notices.length === 0 ? (
+        {noticesLoading ? (
+          <LoadingState label="Loading notices…" fill={false} />
+        ) : noticesError ? (
+          <ErrorState error={noticesError} title="Could not load notices" onRetry={refetchNotifs} fill={false} />
+        ) : notices.length === 0 ? (
           <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Row gap={10} align="center">
               <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
@@ -380,6 +443,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 14,
     right: 14,
+  },
+  bannerIcon: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center', justifyContent: 'center',
   },
   noticeIconBubble: {
     width: 26, height: 26, borderRadius: 13,

@@ -160,7 +160,8 @@ export default function BookTechnicianScreen() {
             await requestsApi.uploadAttachment(upload_url, uri, 'image/jpeg');
             await requestsApi.addAttachment(created.id, { object_key, content_type: 'image/jpeg' });
           } catch (err) {
-            console.log('[PGow] Failed to upload attachment (typical in dev/mock environment):', err);
+            // The ticket itself was created; only the photo did not attach.
+            console.warn('[PGow] technician request filed but attachment failed:', err);
           }
         }
       }

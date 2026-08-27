@@ -3,13 +3,15 @@ import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, ScrollView, 
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { FeedbackComplaintEntity } from '@/types';
+import { KycDocumentsCard } from '@/components/KycDocumentsCard';
+import { router } from 'expo-router';
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -28,14 +30,14 @@ function staffNameFor(staffList: { name: string; role: string }[], roles: string
 }
 
 import { useStaffQuery } from '@/features/staff/useStaff';
-import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { useComplaintsQuery, useComplaintQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
+import { isRequestOpen } from '@/data/mappers';
 
 export function OwnerReviewsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
-  const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
-  const owner = usePGowStore((s) => s.loggedInOwner);
+  const { data: submissions = [], isLoading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useComplaintsQuery(activePgId ?? undefined);
   const respond = usePGowStore((s) => s.respondToFeedbackComplaint);
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
@@ -70,7 +72,7 @@ export function OwnerReviewsTab() {
 
   // Guest Issues (Complaints)
   const activeIssues = useMemo(() => {
-    return submissions.filter((s) => s.type === 'COMPLAINT' && s.status !== 'Resolved');
+    return submissions.filter((s) => s.type === 'COMPLAINT' && isRequestOpen(s.status));
   }, [submissions]);
 
   // Role feedback maps
@@ -253,7 +255,11 @@ export function OwnerReviewsTab() {
       
       <Spacer size={8} />
 
-      {activeIssues.length === 0 ? (
+      {reviewsLoading ? (
+        <LoadingState label="Loading guest issues…" fill={false} />
+      ) : reviewsError ? (
+        <ErrorState error={reviewsError} title="Could not load guest issues" onRetry={refetchReviews} fill={false} />
+      ) : activeIssues.length === 0 ? (
         <View style={styles.noIssuesRow}>
           <Ionicons name="checkmark-circle" size={18} color={GREEN} />
           <Text style={styles.noIssuesText}>No open guest issues</Text>
@@ -443,6 +449,26 @@ export function OwnerReviewsTab() {
                 Resident: {activeItem.guestName} (Room {activeItem.roomNo})
               </Text>
 
+              {/* The list row this modal opens from never carries an attachment — the list
+                  endpoint's response shape omits attachments entirely; only the per-ticket
+                  detail endpoint hydrates them. So the photo is fetched here, once, only
+                  when a ticket is actually open. */}
+              <ActiveItemEvidence id={activeItem.id} pgId={activePgId} />
+
+              {activeItem.type === 'COMPLAINT' && activeItem.status !== 'Resolved' && (
+                <>
+                  <Spacer size={12} />
+                  <TouchableOpacity
+                    style={styles.bookTechBtn}
+                    onPress={() => { setActiveItem(null); router.push(`/book-technician/${activeItem.id}`); }}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="build-outline" size={16} color={GREEN} />
+                    <Text style={styles.bookTechBtnText}>Book a technician for this issue</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
               <Spacer size={16} />
               
               <TextInput
@@ -487,6 +513,28 @@ export function OwnerReviewsTab() {
         </Modal>
       )}
     </ScrollView>
+  );
+}
+
+/** The one image fetch this screen makes, scoped to whichever ticket is actually open. */
+function ActiveItemEvidence({ id, pgId }: { id: string; pgId: string | null }) {
+  const { data: full, isLoading } = useComplaintQuery(id, pgId ?? undefined);
+  if (isLoading) {
+    return (
+      <>
+        <Spacer size={10} />
+        <Text style={{ fontSize: 11, color: MUTED }}>Loading attachment…</Text>
+      </>
+    );
+  }
+  if (!full?.mediaUri) return null;
+  return (
+    <>
+      <Spacer size={12} />
+      <Text style={{ fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Text>
+      <Spacer size={6} />
+      <KycDocumentsCard idPhotoUri={full.mediaUri} selfieUri={null} />
+    </>
   );
 }
 
@@ -736,4 +784,10 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
   },
   dialogCancelBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
+  bookTechBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    borderWidth: 1.5, borderColor: GREEN, borderRadius: 12, paddingVertical: 12,
+    backgroundColor: `${GREEN}0D`,
+  },
+  bookTechBtnText: { fontSize: 13, fontWeight: '800', color: GREEN },
 });

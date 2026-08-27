@@ -4,26 +4,18 @@
 import { useState } from 'react';
 import { View, StyleSheet, Alert, Modal, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip, LoadingState, ErrorState } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
+import { router } from 'expo-router';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import type { SimulatedMedia, FeedbackComplaintEntity } from '@/types';
+import type { FeedbackComplaintEntity } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
 
-const MOCK_COMPLAINT_MEDIA: SimulatedMedia[] = [
-  { id: '1', name: 'Soggy Roti Photo', isVideo: false, textRepresentation: '📷 Broken fan and soggy roti evidence attached', mockIcon: '🫓' },
-  { id: '2', name: 'Slow WiFi Speedtest', isVideo: false, textRepresentation: '📷 Speedtest showing 0.45 Mbps upload', mockIcon: '📶' },
-  { id: '3', name: 'Dripping Tap Video', isVideo: true, textRepresentation: '🎥 Leakage in guest room bathroom water tap', mockIcon: '🚰' },
-  { id: '4', name: 'No Water in Flush', isVideo: true, textRepresentation: '🎥 Empty toilet tank video submission', mockIcon: '🚽' },
-];
 
-const MOCK_FEEDBACK_MEDIA: SimulatedMedia[] = [
-  { id: '5', name: 'Clean Room Praise', isVideo: false, textRepresentation: '📷 Fresh sheets and neat bed arrangement', mockIcon: '🧹' },
-  { id: '6', name: 'Delicious Sunday Biryani', isVideo: false, textRepresentation: '📷 Special chicken biryani presentation', mockIcon: '🍛' },
-  { id: '7', name: 'Courteous Kitchen Staff Video', isVideo: true, textRepresentation: '🎥 Video showing Chef Ramesh polite behavior', mockIcon: '👨‍🍳' },
-];
 
 const CATEGORIES = ['Food Quality', 'Room Cleanliness', 'Wi-Fi & Internet', 'Water & Electricity', 'Plumbing/Maintenance', 'Other'];
 
@@ -32,7 +24,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export function GuestFeedbackComplaintsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
+  const { data: submissions = [], isLoading: submissionsLoading, error: submissionsError, refetch: refetchSubmissions } = useComplaintsQuery(activePgId ?? undefined);
   const submit = usePGowStore((s) => s.submitFeedbackComplaint);
 
   const [submissionType, setSubmissionType] = useState<'COMPLAINT' | 'FEEDBACK'>('COMPLAINT');
@@ -49,8 +41,25 @@ export function GuestFeedbackComplaintsTab() {
   const [mediaName, setMediaName] = useState<string | null>(null);
   const [preview, setPreview] = useState<FeedbackComplaintEntity | null>(null);
 
+  const attach = async (kind: 'photo' | 'video') => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert('Photo permission required', 'Allow photo library access in your device settings to attach evidence.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: kind === 'video' ? ['videos'] : ['images'],
+      quality: 0.85,
+    });
+    if (result.canceled) return;
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+    setMediaUri(asset.uri);
+    setMediaIsVideo(kind === 'video');
+    setMediaName(asset.fileName ?? (kind === 'video' ? 'Video attachment' : 'Photo attachment'));
+  };
+
   const calculatedOverall = (mealRating + cleanRating + mgrRating + staffRating + otherRating) / 5;
-  const mockMedia = submissionType === 'COMPLAINT' ? MOCK_COMPLAINT_MEDIA : MOCK_FEEDBACK_MEDIA;
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) {
@@ -111,19 +120,9 @@ export function GuestFeedbackComplaintsTab() {
         <Spacer size={14} />
         <Txt variant="caption" weight="700" color={Colors.SlateMutedText}>Attach Photo or Video Evidence</Txt>
         <Row gap={8} style={{ marginTop: 6 }}>
-          <OutlinedBtn onPress={() => { setMediaUri(`mock_media_photo_${Date.now()}`); setMediaIsVideo(false); setMediaName('Gallery Photo'); }} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="camera" size={16} color={Colors.IvoryWhiteText} /><Txt variant="caption" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Photo</Txt></OutlinedBtn>
-          <OutlinedBtn onPress={() => { setMediaUri(`mock_media_video_${Date.now()}`); setMediaIsVideo(true); setMediaName('Device Video (Gallery)'); }} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="videocam" size={16} color={Colors.IvoryWhiteText} /><Txt variant="caption" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Video</Txt></OutlinedBtn>
+          <OutlinedBtn onPress={() => attach('photo')} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="camera" size={16} color={Colors.IvoryWhiteText} /><Txt variant="caption" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Photo</Txt></OutlinedBtn>
+          <OutlinedBtn onPress={() => attach('video')} borderColor={Colors.borderMuted} textColor={Colors.IvoryWhiteText} borderRadius={10} height={38} style={{ flex: 1 }}><Ionicons name="videocam" size={16} color={Colors.IvoryWhiteText} /><Txt variant="caption" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Gallery Video</Txt></OutlinedBtn>
         </Row>
-        <Spacer size={10} />
-        <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Or Select Sandbox Simulated Media Assets:</Txt>
-        <Spacer size={4} />
-        <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-          {mockMedia.map((m) => (
-            <TouchableOpacity key={m.id} onPress={() => { setMediaUri(`mock_media_${m.id}`); setMediaIsVideo(m.isVideo); setMediaName(m.name); if (!title) setTitle(m.name); if (!description) setDescription(m.textRepresentation); }} style={styles.mockMediaChip}>
-              <Row gap={4}><Txt variant="caption">{m.mockIcon}</Txt><Txt variant="labelSmall" weight="400" color={Colors.IvoryWhiteText}>{m.name}</Txt></Row>
-            </TouchableOpacity>
-          ))}
-        </FormScroll>
         {mediaUri && (
           <View style={styles.mediaBanner}>
             <Row gap={6} style={{ flex: 1 }}>
@@ -141,11 +140,26 @@ export function GuestFeedbackComplaintsTab() {
       </Card>
 
       <Txt variant="caption" weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 1 }}>MY RECENT SUBMISSIONS</Txt>
-      {submissions.length === 0 ? (
+      {submissionsLoading ? (
+        <LoadingState label="Loading your submissions…" fill={false} />
+      ) : submissionsError ? (
+        <ErrorState error={submissionsError} title="Could not load your submissions" onRetry={refetchSubmissions} fill={false} />
+      ) : submissions.length === 0 ? (
         <View style={styles.emptyBox}><Txt variant="caption" color={Colors.SlateMutedText}>No reports or reviews submitted yet.</Txt></View>
       ) : (
         submissions.map((item) => (
-          <Card key={item.id} containerColor={Colors.surface} borderRadius={14} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+          // Opens TicketDetailScreen's status tracker. That screen's own docstring says it is
+          // "reached … when a resident taps an existing ticket in the tracker list", but
+          // nothing ever navigated to it — only a push notification could, so a resident who
+          // never got one had no way to see where their ticket had got to.
+          <AnimatedPress
+            key={item.id}
+            scale={0.98}
+            hapticPattern="light"
+            accessibilityLabel={`Open ticket: ${item.title}, ${item.status}`}
+            onPress={() => router.push({ pathname: '/ticket/[id]', params: { id: item.id } })}
+          >
+          <Card containerColor={Colors.surface} borderRadius={14} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row justify="space-between" align="center">
               <Txt variant="labelSmall" color={Colors.CyberPurple}>{item.category.toUpperCase()}</Txt>
               <View style={[styles.statusPill, { backgroundColor: item.status === 'Resolved' ? '#ECFDF5' : item.status === 'In Progress' ? '#FFFBEB' : '#FEF2F2' }]}>
@@ -171,6 +185,7 @@ export function GuestFeedbackComplaintsTab() {
               </View>
             )}
           </Card>
+          </AnimatedPress>
         ))
       )}
 
@@ -241,7 +256,6 @@ function CategoryRatingSelector({ title, icon, rating, onChange }: RatingProps) 
 
 const styles = StyleSheet.create({
   overallBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#ECFDF5', borderRadius: 10, borderWidth: 1, borderColor: '#A7F3D0', padding: 10, marginTop: 8 },
-  mockMediaChip: { backgroundColor: '#F1F5F9', borderRadius: 8, padding: 6 },
   mediaBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.surfaceElevated, borderRadius: 8, padding: 6, marginTop: 12 },
   emptyBox: { paddingVertical: 12, alignItems: 'center' },
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },

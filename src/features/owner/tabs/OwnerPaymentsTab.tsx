@@ -26,7 +26,7 @@ import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
 import { EmptyState } from '@/components/EmptyState';
 import type { PaymentEntity, ExpenseEntity, GuestEntity } from '@/types';
-import { usePaymentsQuery } from '@/features/payments/usePayments';
+import { usePaymentsQuery, useVerifyPaymentMutation, useRejectPaymentMutation } from '@/features/payments/usePayments';
 import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -79,12 +79,43 @@ export function OwnerPaymentsTab() {
   const [statusFilter, setStatusFilter] = useState('All');
 
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: payments = [] } = usePaymentsQuery(activePgId ?? undefined);
-  const { data: expenses = [] } = useExpensesQuery(activePgId ?? undefined);
+  const { data: payments = [], isLoading: paymentsLoading, error: paymentsError } = usePaymentsQuery(activePgId ?? undefined);
+  const { data: expenses = [], isLoading: expensesLoading, error: expensesError } = useExpensesQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const logExpense = usePGowStore((s) => s.logExpense);
   const deleteExpense = usePGowStore((s) => s.deleteExpense);
-  const owner = usePGowStore((s) => s.loggedInOwner);
+
+  // Verify/reject: the backend endpoints (`POST /v1/payments/{id}/verify` and `/reject`)
+  // and the mutation hooks for them already existed — nothing in any screen called them.
+  // A resident could submit a payment and there was no button anywhere for an owner or
+  // manager to approve or reject it.
+  const verifyPayment = useVerifyPaymentMutation(activePgId ?? undefined);
+  const rejectPayment = useRejectPaymentMutation(activePgId ?? undefined);
+  const [rejectingPayment, setRejectingPayment] = useState<PaymentEntity | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  const handleVerifyPayment = async (p: PaymentEntity) => {
+    hapticSelect();
+    try {
+      await verifyPayment.mutateAsync(p.id);
+      hapticSuccess();
+    } catch (err) {
+      hapticError();
+      Alert.alert('Could not verify', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
+
+  const handleRejectPayment = async () => {
+    if (!rejectingPayment) return;
+    try {
+      await rejectPayment.mutateAsync({ paymentId: rejectingPayment.id, reason: rejectReason.trim() || undefined });
+      hapticError();
+      setRejectingPayment(null);
+      setRejectReason('');
+    } catch (err) {
+      Alert.alert('Could not reject', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
 
   const getPayerRoom = (payerId: string) => {
     const g = guests.find((x) => x.id === payerId);
@@ -93,9 +124,6 @@ export function OwnerPaymentsTab() {
 
   const { refreshing, onRefresh } = usePullToRefresh();
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
-
-  const activeRole = useAuthStore((s) => s.activeRole);
-  const isManager = activeRole === 'manager';
 
   // Log expense form states
   const [expenseTitle, setExpenseTitle] = useState('');
@@ -577,9 +605,11 @@ export function OwnerPaymentsTab() {
                 </Text>
               </View>
 
-              {/* Manager log form */}
-              {isManager && (
-                <Card containerColor={WHITE} borderRadius={RADIUS} borderWidth={1} borderColor={BORDER} padding={[16, 16]}>
+              {/* Log expense — `create_expense` on the server is `require_manage` (owner OR
+                  manager, checked against expense/service.py). Restricting this to managers
+                  meant an owner running a property with no manager could not log an expense
+                  from this screen at all, despite the server allowing it. */}
+              <Card containerColor={WHITE} borderRadius={RADIUS} borderWidth={1} borderColor={BORDER} padding={[16, 16]}>
                   <Text style={styles.formTitle}>Log Daily Expense</Text>
                   <Spacer size={8} />
 
@@ -669,7 +699,6 @@ export function OwnerPaymentsTab() {
                     <Text style={styles.submitBtnText}>{isSubmitting ? 'Saving...' : 'Log Expense Entry'}</Text>
                   </TouchableOpacity>
                 </Card>
-              )}
 
               {/* Search expenses */}
               <TextInput
@@ -704,6 +733,8 @@ export function OwnerPaymentsTab() {
               title="No expenses logged"
               subtitle="Logged outflows and property maintenance expenses will appear here."
               accent="#DC2626"
+              loading={expensesLoading}
+              error={expensesError}
             />
           }
           renderItem={({ item: e }) => (
@@ -745,15 +776,15 @@ export function OwnerPaymentsTab() {
                       day: 'numeric',
                     })}
                   </Text>
-                  {isManager && (
-                    <TouchableOpacity
-                      onPress={() => deleteExpense(e)}
-                      style={{ marginTop: 4 }}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="trash-outline" size={14} color="#EF4444" />
-                    </TouchableOpacity>
-                  )}
+                  {/* Reversal — same `require_manage` boundary as logging one; see the note
+                      above the log-expense form. */}
+                  <TouchableOpacity
+                    onPress={() => deleteExpense(e)}
+                    style={{ marginTop: 4 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                  </TouchableOpacity>
                 </Col>
               </Row>
             </Card>
@@ -815,6 +846,8 @@ export function OwnerPaymentsTab() {
               title="No collections logged"
               subtitle="Rent collections and subscriber invoices will appear here."
               accent={GREEN}
+              loading={paymentsLoading}
+              error={paymentsError}
             />
           }
           renderItem={({ item: p }) => (
@@ -880,10 +913,73 @@ export function OwnerPaymentsTab() {
                     </Text>
                   </Col>
                 </Row>
+                {p.status === 'PENDING' && (
+                  <>
+                    <View style={{ height: 1, backgroundColor: BORDER, marginVertical: 10 }} />
+                    <Row gap={8}>
+                      <TouchableOpacity
+                        onPress={() => handleVerifyPayment(p)}
+                        disabled={verifyPayment.isPending}
+                        style={[styles.paymentActionBtn, { backgroundColor: GREEN, opacity: verifyPayment.isPending ? 0.6 : 1 }]}
+                      >
+                        <Ionicons name="checkmark-circle" size={14} color={WHITE} />
+                        <Text style={styles.paymentActionBtnTextLight}>Verify</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => { hapticSelect(); setRejectingPayment(p); setRejectReason(''); }}
+                        style={[styles.paymentActionBtn, { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5' }]}
+                      >
+                        <Ionicons name="close-circle" size={14} color={Colors.danger} />
+                        <Text style={[styles.paymentActionBtnTextLight, { color: Colors.danger }]}>Reject</Text>
+                      </TouchableOpacity>
+                    </Row>
+                  </>
+                )}
               </Card>
             </AnimatedPress>
           )}
         />
+      )}
+
+      {/* ── Reject Payment Modal ── */}
+      {rejectingPayment && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setRejectingPayment(null)}>
+          <View style={styles.pickerPopupBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setRejectingPayment(null)} />
+            <View style={[styles.pickerPopupCard, { padding: 20 }]}>
+              <Text style={styles.pickerPopupTitle}>Reject Payment</Text>
+              <Spacer size={4} />
+              <Text style={{ fontSize: 12, color: MUTED }}>
+                {rejectingPayment.payerName} • ₹{Math.round(rejectingPayment.amount).toLocaleString('en-IN')}
+              </Text>
+              <Spacer size={14} />
+              <OutlinedTextField
+                label="Reason (shown to the resident)"
+                placeholder="Amount doesn't match, UTR not found, etc."
+                value={rejectReason}
+                onChangeText={setRejectReason}
+              />
+              <Spacer size={16} />
+              <Row gap={10}>
+                <TouchableOpacity
+                  onPress={() => setRejectingPayment(null)}
+                  style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: '#F1F5F4', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: CHARCOAL }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleRejectPayment}
+                  disabled={rejectPayment.isPending}
+                  style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center', opacity: rejectPayment.isPending ? 0.6 : 1 }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: WHITE }}>
+                    {rejectPayment.isPending ? 'Rejecting…' : 'Confirm Rejection'}
+                  </Text>
+                </TouchableOpacity>
+              </Row>
+            </View>
+          </View>
+        </Modal>
       )}
 
       {/* ── Custom Date Range Picker Modal ── */}
@@ -1229,6 +1325,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusLabelText: { fontSize: 8, fontWeight: '800' },
+
+  paymentActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 36,
+    borderRadius: 8,
+  },
+  paymentActionBtnTextLight: { fontSize: 12, fontWeight: '800', color: '#FFFFFF' },
 
   // Custom picker popup modals
   pickerPopupBackdrop: {

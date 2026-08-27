@@ -6,14 +6,24 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "pgow",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pgow.app"
+      "bundleIdentifier": "com.pgow.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "PGow uses the camera so you can take your profile photo, submit KYC documents, and capture delivery proof.",
+        "NSPhotoLibraryUsageDescription": "PGow needs access to your photos so you can attach an existing image to your profile, KYC submission, or a maintenance ticket.",
+        "NSLocationWhenInUseUsageDescription": "PGow uses your location to place your property on the map and to find nearby addresses when you add one.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#060D10"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#F7F9F7"
       },
       "package": "com.pgow.app",
       "googleServicesFile": "./google-services.json"

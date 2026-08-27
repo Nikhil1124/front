@@ -88,13 +88,5 @@ export function formatUSD(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
 
-export function toast(msg: string): void {
-  // Simple console-based fallback for non-toast environment.
-  // Real toast rendering is handled by the AlertOverlay component listening to activeAlert.
-  // Components can also call console.warn for diagnostic.
-  // eslint-disable-next-line no-console
-  console.log('[Toast]', msg);
-}
-
 /** Toast callback type expected by ViewModel-style actions. */
 export type ToastFn = (msg: string) => void;

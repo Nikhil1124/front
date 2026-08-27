@@ -6,6 +6,7 @@
  */
 import { forwardRef, useState } from 'react';
 import { View, StyleSheet, type View as RNView, type PressableProps, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Col } from '@/components/ui';
@@ -16,14 +17,12 @@ import { TabHeader } from '@/components/TabHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { hapticSuccess } from '@/utils/haptics';
-import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 
 
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 
 export default function StaffTabsLayout() {
-  const [showNotif, setShowNotif] = useState(false);
 
   const staff = usePGowStore((s) => s.loggedInStaff);
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -47,13 +46,15 @@ export default function StaffTabsLayout() {
         }
         actions={
           <>
-            <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
+            <AnimatedPress scale={0.85} hapticPattern="light" accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+              onPress={() => router.push({ pathname: '/notifications', params: { role: isDelivery ? 'DELIVERY' : activeRole === 'chef' ? 'CHEF' : 'MANAGER' } })}>
               <View style={styles.bellBtn}>
                 <Ionicons name="notifications" size={20} color={Colors.primary} />
                 {unreadCount > 0 && <View style={styles.unreadDot} />}
               </View>
             </AnimatedPress>
-            <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
+            <AnimatedPress scale={0.85} hapticPattern="medium" accessibilityLabel="Log out"
+              onPress={() => { hapticSuccess(); logout(); }}>
               <View style={styles.bellBtn}>
                 <Ionicons name="exit" size={20} color={Colors.danger} />
               </View>
@@ -93,7 +94,6 @@ export default function StaffTabsLayout() {
         </TabTrigger>
       </Dock>
 
-      {showNotif && <RoleNotificationsCenterSheet roleTitle={isDelivery ? 'DELIVERY' : activeRole === 'chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
     </Tabs>
   );
 }
