@@ -239,6 +239,14 @@ export default function RootLayout() {
                   <Stack.Screen name="procurement" />
                 </Stack.Protected>
 
+                {/* Moved from (auth) — that group is unregistered once accessToken exists, so
+                    it was unreachable for any real signed-in owner/manager (Settings' link to
+                    it silently went nowhere). require_manage on the backend, so gated the same
+                    as the (owner) group itself rather than the broader hasResolvedRole. */}
+                <Stack.Protected guard={!!accessToken && isOwnerRole}>
+                  <Stack.Screen name="owner-subscription" />
+                </Stack.Protected>
+
                 {/* Diagnostic screen for unmatched routes */}
                 <Stack.Screen name="+not-found" />
               </Stack>

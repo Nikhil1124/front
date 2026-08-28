@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
 
@@ -13,8 +14,12 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, onBack }) => {
+  // Every other screen's header (TabHeader, HubScreenWrapper) pads by insets.top + 14 — this
+  // one used a fixed 4/8pt instead, so it sat under the status bar / notch. Same fix, same
+  // value, so the grocery mini-app's header lines up with the rest of the app.
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
       <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
         <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
       </TouchableOpacity>
@@ -52,7 +57,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 4 : 8,
     paddingBottom: 10,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,

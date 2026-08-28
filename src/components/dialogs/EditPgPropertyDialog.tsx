@@ -2,7 +2,7 @@
  * EditPgPropertyDialog — port of Kotlin `EditPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert } from 'react-native';
+import { Modal, View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -13,7 +13,6 @@ import type { PickedLocation } from '@/features/places/pendingLocation';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PGOwnerEntity } from '@/types';
-import { FormScroll } from '@/components/ui/FormScroll';
 
 interface Props {
   pg: PGOwnerEntity;
@@ -88,7 +87,18 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
             </Col>
           </Row>
 
-          <FormScroll style={{ flex: 0, maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          {/* Same real fix as AddPgPropertyDialog: FormScroll's inner ScrollView is
+              hardcoded flex: 1, which needs a flex-bounded ancestor — this Card sizes to
+              its own content (maxHeight: '90%' is just a cap, not flex: 1), so flex: 1
+              collapsed to zero the same way flex: 0 did. Plain maxHeight-bounded
+              ScrollView, no flex anywhere in the chain. */}
+          <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+            <ScrollView
+              style={{ maxHeight: 420 }}
+              contentContainerStyle={{ gap: 10 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
             <OutlinedTextField
               label="Property / PG Name"
               value={name}
@@ -148,7 +158,8 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
                 style={{ flex: 1 }}
               />
             </Row>
-          </FormScroll>
+            </ScrollView>
+          </KeyboardAvoidingView>
 
           <Spacer size={14} />
           <Row gap={8}>

@@ -47,7 +47,13 @@ export async function uploadToPresignedUrl(
   if (/^(sample:|mock_media|mock_photo)/.test(fileUri)) {
     throw new Error("No photo was captured. Take or choose a photo and try again.");
   }
-  const blob = await (await fetch(fileUri)).blob();
+  const rawBlob = await (await fetch(fileUri)).blob();
+  // React Native's networking bridge sends the Content-Type it reads off the Blob's own
+  // `type`, not reliably the explicit header below — and a blob read back from a local
+  // file:// URI often doesn't carry the one we asked S3 to sign for. That mismatch is a 403
+  // SignatureDoesNotMatch, not something retrying fixes, so force the blob's type to match
+  // exactly what getUploadUrl told S3 to expect.
+  const blob = rawBlob.type === contentType ? rawBlob : new Blob([rawBlob], { type: contentType });
   const res = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": contentType },

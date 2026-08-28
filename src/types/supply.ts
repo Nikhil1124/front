@@ -36,7 +36,10 @@ export type SupplyOrderStatus =
   | 'cancelled';
 
 
-export type SupplyPaymentMethod = 'upi' | 'credit' | 'cash';
+/** Mirrors the server's `PaymentMethodName` literal (supply/schemas.py). It is NOT the same
+ *  set as credit-payment methods — 'cash' belongs to that other enum, and sending it here is
+ *  a 422. */
+export type SupplyPaymentMethod = 'card' | 'upi' | 'credit' | 'cod';
 
 export interface SupplyOrderItem {
   id: string;
@@ -70,8 +73,9 @@ export interface SupplyOrderDetail {
   total_amount: number;
   payment_method: SupplyPaymentMethod;
   payment_status: 'pending' | 'submitted' | 'paid' | 'failed' | 'refunded';
-  delivery_slot?: string;
-  delivery_notes?: string;
+  /** The server's field is singular `delivery_note` and there is no slot column — the
+   *  chosen slot is prefixed into this note at checkout. */
+  delivery_note?: string;
   items: SupplyOrderItem[];
   created_at: string;
   updated_at?: string;

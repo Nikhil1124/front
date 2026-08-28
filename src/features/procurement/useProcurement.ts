@@ -55,9 +55,26 @@ export async function listProcurementOrders(
   return items.map(toProcurementOrder);
 }
 
-export function approveProcurementOrder(orderId: string): Promise<ProcurementOrder> {
+/**
+ * How the approved requisition actually gets bought. Mirrors
+ * `ApproveProcurementOrderRequest.payment_method` — note it has NO `cod`, unlike the
+ * storefront's own `CreateOrderRequest`.
+ */
+export type ProcurementPaymentMethod = "card" | "upi" | "credit";
+
+/**
+ * Approving is not a status flip: the server turns the requisition into a REAL supply order
+ * through the ordinary purchase path, charged on the method given here. That is why the
+ * field is required and why there is no default — sending nothing (as this did) was a
+ * guaranteed 422, so no requisition could ever be approved.
+ */
+export function approveProcurementOrder(
+  orderId: string,
+  paymentMethod: ProcurementPaymentMethod
+): Promise<ProcurementOrder> {
   return apiFetch<any>(API.PROCUREMENT_ORDER_APPROVE(orderId), {
     method: "POST",
+    body: JSON.stringify({ payment_method: paymentMethod }),
   }).then(toProcurementOrder);
 }
 
@@ -102,9 +119,18 @@ export function useSubmitProcurementOrder() {
 export function useApproveProcurementOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => approveProcurementOrder(orderId),
+    mutationFn: ({
+      orderId,
+      paymentMethod,
+    }: {
+      orderId: string;
+      paymentMethod: ProcurementPaymentMethod;
+    }) => approveProcurementOrder(orderId, paymentMethod),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.procurement.ordersAll() });
+      // Approval places a real supply order and decrements stock behind it, so the
+      // storefront's own order list is stale the moment this returns.
+      qc.invalidateQueries({ queryKey: ["supply_orders"] });
     },
   });
 }

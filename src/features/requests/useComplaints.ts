@@ -163,7 +163,12 @@ export async function uploadAttachment(
   }
   const local = await fetch(uri);
   if (!local.ok) throw new Error("Could not read the selected photo.");
-  const image = await local.blob();
+  const rawImage = await local.blob();
+  // Same fix as kyc/useKyc.ts's uploadToPresignedUrl: React Native's networking bridge can
+  // send the Content-Type it reads off the Blob's own `type` rather than the header below,
+  // and that often doesn't match what the presigned URL was signed for — a 403
+  // SignatureDoesNotMatch, not a transient failure.
+  const image = rawImage.type === contentType ? rawImage : new Blob([rawImage], { type: contentType });
   const uploaded = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": contentType },

@@ -1,15 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
+import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { FormScroll } from '@/components/ui/FormScroll';
 import { EmptyState } from '@/components/EmptyState';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
-import { usePropertyLayout, useAssignBed, useVacateBed } from '@/features/property/usePropertyLayout';
+import {
+  usePropertyLayout,
+  useAssignBed,
+  useVacateBed,
+  useCreateRoom,
+  useIncreaseRoomSharing,
+} from '@/features/property/usePropertyLayout';
 import { useToast } from '@/hooks/useToast';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { BedResponse, RoomResponse } from '@/types';
@@ -31,9 +37,17 @@ export function BedVisualizerScreen() {
   const { data: layout, isLoading, isError, error } = usePropertyLayout(pgId);
   const assignBed = useAssignBed(pgId);
   const vacateBed = useVacateBed(pgId);
+  const createRoom = useCreateRoom(pgId);
+  const increaseSharing = useIncreaseRoomSharing(pgId);
 
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
   const [activeBed, setActiveBed] = useState<{ room: RoomResponse; bed: BedResponse } | null>(null);
+  const [showAddRoom, setShowAddRoom] = useState(false);
+  const [newFloor, setNewFloor] = useState('');
+  const [newRoomNumber, setNewRoomNumber] = useState('');
+  const [newSharing, setNewSharing] = useState('');
+  const [increasingRoom, setIncreasingRoom] = useState<RoomResponse | null>(null);
+  const [increasedSharing, setIncreasedSharing] = useState('');
 
   const floors = layout?.floors ?? [];
   const floor = floors.find((f) => f.floorNumber === selectedFloor) ?? floors[0] ?? null;
@@ -75,6 +89,49 @@ export function BedVisualizerScreen() {
     } catch (err: any) {
       hapticError();
       toast('error', 'Vacate failed', err?.message ?? 'Please try again.');
+    }
+  };
+
+  const handleAddRoom = async () => {
+    const floorNum = parseInt(newFloor, 10);
+    const sharing = parseInt(newSharing, 10);
+    if (!newRoomNumber.trim() || !Number.isFinite(floorNum) || !Number.isFinite(sharing) || sharing < 1) {
+      hapticError();
+      toast('error', 'Check the form', 'Floor, room number, and sharing (1+) are all required.');
+      return;
+    }
+    try {
+      await createRoom.mutateAsync({ floor_number: floorNum, room_number: newRoomNumber.trim(), sharing_type: sharing });
+      hapticSuccess();
+      toast('success', 'Room added', `Room ${newRoomNumber.trim()} with ${sharing} bed${sharing === 1 ? '' : 's'} is on the layout now.`);
+      setShowAddRoom(false);
+      setNewFloor(''); setNewRoomNumber(''); setNewSharing('');
+    } catch (err: any) {
+      hapticError();
+      // The server's own message already names the total_beds cap when that's the reason —
+      // e.g. "...above the 30 beds it's registered for" — worth showing verbatim rather than
+      // a generic failure line.
+      toast('error', 'Could not add room', err?.message ?? 'Please try again.');
+    }
+  };
+
+  const handleIncreaseSharing = async () => {
+    if (!increasingRoom) return;
+    const sharing = parseInt(increasedSharing, 10);
+    if (!Number.isFinite(sharing) || sharing <= increasingRoom.sharingType) {
+      hapticError();
+      toast('error', 'Check the value', `Enter a number greater than ${increasingRoom.sharingType}.`);
+      return;
+    }
+    try {
+      await increaseSharing.mutateAsync({ roomId: increasingRoom.id, sharingType: sharing });
+      hapticSuccess();
+      toast('success', 'Sharing increased', `Room ${increasingRoom.roomNumber} now holds ${sharing}.`);
+      setIncreasingRoom(null);
+      setIncreasedSharing('');
+    } catch (err: any) {
+      hapticError();
+      toast('error', 'Could not increase sharing', err?.message ?? 'Please try again.');
     }
   };
 
@@ -130,6 +187,19 @@ export function BedVisualizerScreen() {
             </Row>
           </Card>
 
+          <Spacer size={12} />
+
+          <OutlinedBtn
+            onPress={() => { hapticSelect(); setShowAddRoom(true); }}
+            borderColor={Colors.primary}
+            textColor={Colors.primary}
+            borderRadius={12}
+            height={44}
+          >
+            <Ionicons name="add-circle-outline" size={16} color={Colors.primary} />
+            <Txt size={12} weight="800" color={Colors.primary} style={{ marginLeft: 6 }}>Add Room / Floor</Txt>
+          </OutlinedBtn>
+
           <Spacer size={14} />
 
           {floors.length > 1 && (
@@ -153,9 +223,17 @@ export function BedVisualizerScreen() {
               <Card key={room.id} containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
                 <Row justify="space-between" align="center">
                   <Txt size={14} weight="900" color={Colors.textPrimary}>Room {room.roomNumber}</Txt>
-                  <Txt size={11} color={Colors.textMuted}>
-                    {room.sharingType} Sharing{room.baseRent ? ` • ₹${room.baseRent.toLocaleString('en-IN')}/mo` : ''}
-                  </Txt>
+                  <Row gap={6} align="center">
+                    <Txt size={11} color={Colors.textMuted}>
+                      {room.sharingType} Sharing{room.baseRent ? ` • ₹${room.baseRent.toLocaleString('en-IN')}/mo` : ''}
+                    </Txt>
+                    <TouchableOpacity
+                      accessibilityLabel={`Increase sharing for Room ${room.roomNumber}`}
+                      onPress={() => { hapticSelect(); setIncreasingRoom(room); setIncreasedSharing(String(room.sharingType + 1)); }}
+                    >
+                      <Ionicons name="add-circle" size={18} color={Colors.primary} />
+                    </TouchableOpacity>
+                  </Row>
                 </Row>
                 <Spacer size={10} />
                 <Row gap={8} style={{ flexWrap: 'wrap' }}>
@@ -238,6 +316,11 @@ export function BedVisualizerScreen() {
                 <>
                   <Txt size={12} weight="700" color={Colors.textPrimary}>Assign a resident</Txt>
                   <Spacer size={8} />
+                  {/* FormScroll's inner ScrollView is hardcoded flex: 1, which needs a
+                      flex-bounded ancestor — this Card sizes to its own content
+                      (maxHeight: '75%' is a cap, not flex: 1), so it collapsed to zero
+                      height (same bug fixed in AddPgPropertyDialog/EditPgPropertyDialog/
+                      ProcurementScreen's cart modal). Plain maxHeight-bounded ScrollView. */}
                   {unassignedGuests.length === 0 ? (
                     <EmptyState
                       icon="people-outline"
@@ -245,26 +328,113 @@ export function BedVisualizerScreen() {
                       subtitle="Add a resident from the Guests tab first, then assign them here."
                     />
                   ) : (
-                    <FormScroll style={{ maxHeight: 280 }}>
-                      <View style={{ gap: 8 }}>
-                        {unassignedGuests.map((g) => (
-                          <TouchableOpacity
-                            key={g.id}
-                            activeOpacity={0.7}
-                            disabled={assignBed.isPending}
-                            onPress={() => handleAssign(g.id, g.name)}
-                          >
-                            <Card containerColor={Colors.surfaceMuted} borderRadius={10} padding={[10, 12]}>
-                              <Txt size={12} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
-                              <Txt size={11} color={Colors.textMuted}>{g.phone}</Txt>
-                            </Card>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </FormScroll>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+                      <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
+                        <View style={{ gap: 8 }}>
+                          {unassignedGuests.map((g) => (
+                            <TouchableOpacity
+                              key={g.id}
+                              activeOpacity={0.7}
+                              disabled={assignBed.isPending}
+                              onPress={() => handleAssign(g.id, g.name)}
+                            >
+                              <Card containerColor={Colors.surfaceMuted} borderRadius={10} padding={[10, 12]}>
+                                <Txt size={12} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                                <Txt size={11} color={Colors.textMuted}>{g.phone}</Txt>
+                              </Card>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </ScrollView>
+                    </KeyboardAvoidingView>
                   )}
                 </>
               )}
+            </Card>
+          </View>
+        </Modal>
+      )}
+
+      {/* Add Room / Floor — a new floor is just a room whose floor_number hasn't been used
+          yet, so one form covers both. The server enforces the total_beds cap; this is just
+          the entry point. */}
+      {showAddRoom && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setShowAddRoom(false)}>
+          <View style={styles.modalBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowAddRoom(false)} />
+            <Card
+              containerColor={Colors.surface}
+              borderRadius={20}
+              borderWidth={1}
+              borderColor={Colors.borderSubtle}
+              padding={[20, 20]}
+              style={{ width: '90%', zIndex: 2 }}
+            >
+              <Row justify="space-between" align="center">
+                <Txt size={16} weight="900" color={Colors.textPrimary}>Add Room / Floor</Txt>
+                <IconBtn onPress={() => setShowAddRoom(false)} icon="close" size={18} tint={Colors.textMuted} />
+              </Row>
+              <Spacer size={4} />
+              <Txt size={11} color={Colors.textMuted}>
+                Total beds on this property is capped — adding beds beyond that is refused.
+              </Txt>
+              <Spacer size={14} />
+              <OutlinedTextField label="Floor number" value={newFloor} onChangeText={setNewFloor} keyboardType="number-pad" style={{ marginBottom: 10 }} />
+              <OutlinedTextField label="Room number" value={newRoomNumber} onChangeText={setNewRoomNumber} style={{ marginBottom: 10 }} />
+              <OutlinedTextField label="Sharing (beds in this room)" value={newSharing} onChangeText={setNewSharing} keyboardType="number-pad" />
+              <Spacer size={16} />
+              <Btn
+                onPress={handleAddRoom}
+                loading={createRoom.isPending}
+                disabled={createRoom.isPending}
+                containerColor={Colors.primary}
+                textColor={Colors.textInverse}
+                borderRadius={10}
+                height={44}
+              >
+                <Txt size={12} weight="800" color={Colors.textInverse}>Add Room</Txt>
+              </Btn>
+            </Card>
+          </View>
+        </Modal>
+      )}
+
+      {/* Increase a room's roommate limit — beds get added to match, capped the same way. */}
+      {increasingRoom && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setIncreasingRoom(null)}>
+          <View style={styles.modalBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIncreasingRoom(null)} />
+            <Card
+              containerColor={Colors.surface}
+              borderRadius={20}
+              borderWidth={1}
+              borderColor={Colors.borderSubtle}
+              padding={[20, 20]}
+              style={{ width: '90%', zIndex: 2 }}
+            >
+              <Row justify="space-between" align="center">
+                <Txt size={16} weight="900" color={Colors.textPrimary}>Increase Sharing</Txt>
+                <IconBtn onPress={() => setIncreasingRoom(null)} icon="close" size={18} tint={Colors.textMuted} />
+              </Row>
+              <Spacer size={4} />
+              <Txt size={11} color={Colors.textMuted}>
+                Room {increasingRoom.roomNumber} currently holds {increasingRoom.sharingType}. This only ever
+                goes up — the extra beds are added, none are removed.
+              </Txt>
+              <Spacer size={14} />
+              <OutlinedTextField label="New sharing" value={increasedSharing} onChangeText={setIncreasedSharing} keyboardType="number-pad" />
+              <Spacer size={16} />
+              <Btn
+                onPress={handleIncreaseSharing}
+                loading={increaseSharing.isPending}
+                disabled={increaseSharing.isPending}
+                containerColor={Colors.primary}
+                textColor={Colors.textInverse}
+                borderRadius={10}
+                height={44}
+              >
+                <Txt size={12} weight="800" color={Colors.textInverse}>Save</Txt>
+              </Btn>
             </Card>
           </View>
         </Modal>

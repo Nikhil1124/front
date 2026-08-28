@@ -138,7 +138,13 @@ export function useGuestsQuery(pgId?: string) {
       const period = map.currentPeriod();
       const [res, payments] = await Promise.all([
         listGuests(pgId, { limit: 200 }),
-        listPayments(pgId, { status: "verified", limit: 200 }).catch(() => null),
+        // 100, not 200 — `/v1/payments` is the one list route capped at `le=100`. At 200
+        // this 422'd on every call and `.catch(() => null)` swallowed it, so `settled` was
+        // always empty and every resident on the roster read "Rent pending for this cycle",
+        // which is the exact bug the comment below was written to prevent.
+        // ponytail: one page, no period filter server-side — page on `next_cursor` if a
+        // property ever exceeds 100 verified payments.
+        listPayments(pgId, { status: "verified", limit: 100 }).catch(() => null),
       ]);
       const settled = new Set(
         (payments?.items ?? [])

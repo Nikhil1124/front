@@ -49,6 +49,30 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
 const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff', 'Delivery Agent'];
 const SHIFT_OPTIONS = ['Day Shift (8 AM - 5 PM)', 'Night Shift (8 PM - 5 AM)', 'Part Time (9 AM - 1 PM)'];
 
+/**
+ * The label is display text; `memberships.shift_start`/`shift_end` are SQL `time` columns.
+ * Sending the label straight through (as this screen used to) is always a 422 — and omitting
+ * `shift_end` is a second one, because `_shift_is_a_pair` requires both or neither.
+ */
+const SHIFT_TIMES: Record<string, { shift_start: string; shift_end: string }> = {
+  'Day Shift (8 AM - 5 PM)': { shift_start: '08:00:00', shift_end: '17:00:00' },
+  'Night Shift (8 PM - 5 AM)': { shift_start: '20:00:00', shift_end: '05:00:00' },
+  'Part Time (9 AM - 1 PM)': { shift_start: '09:00:00', shift_end: '13:00:00' },
+};
+
+/**
+ * The other half of the round-trip. `mappers.toStaff` renders a saved shift as "08:00 - 17:00",
+ * which is not one of the picker's labels — so seeding the picker with it directly left
+ * `SHIFT_TIMES[editShift]` undefined and quietly dropped the shift from every edit of a staff
+ * member who already had one.
+ */
+function shiftLabelFor(shiftTime: string): string {
+  const match = Object.entries(SHIFT_TIMES).find(
+    ([, t]) => `${t.shift_start.slice(0, 5)} - ${t.shift_end.slice(0, 5)}` === shiftTime
+  );
+  return match?.[0] ?? SHIFT_OPTIONS[0];
+}
+
 export function StaffManagementTab() {
   const [subTab, setSubTab] = useState(0); // 0: Add Staff, 1: Staff Directory
   const [searchQuery, setSearchQuery] = useState('');
@@ -190,7 +214,7 @@ export function StaffManagementTab() {
     setEditName(staff.name);
     setEditPhone(staff.phone);
     setEditRole(ROLE_DISPLAY_NAMES[staff.role] || 'Kitchen Staff');
-    setEditShift(staff.shiftTime || 'Day Shift (8 AM - 5 PM)');
+    setEditShift(shiftLabelFor(staff.shiftTime));
     setEditSalary(String(Math.round(staff.monthlySalary)));
     setShowActionMenu(false);
     setShowEditModal(true);
@@ -216,11 +240,17 @@ export function StaffManagementTab() {
         'Delivery Agent': 'delivery_agent',
       };
       
+      // No `|| 'kitchen_staff'` fallback: silently registering someone with the wrong role
+      // is worse than refusing the edit. Omitting the field leaves the role unchanged.
+      const mappedRole = roleMap[editRole];
+      const shift = SHIFT_TIMES[editShift];
+
       const payload = {
         name: editName.trim(),
-        role: roleMap[editRole] || 'kitchen_staff',
+        ...(mappedRole ? { role: mappedRole } : {}),
         monthly_salary: parseFloat(editSalary) || undefined,
-        shift_start: editShift,
+        // Both halves, as real `time` values — see SHIFT_TIMES.
+        ...(shift ?? {}),
       };
 
       await staffApi.updateStaff(selectedStaff.id, payload);
@@ -238,19 +268,20 @@ export function StaffManagementTab() {
 
   const handleResetPin = async () => {
     if (!selectedStaff || isResettingPin) return;
-    if (newPin.length !== 4) {
+    // Mirrors the server's own `^[0-9]{4}$` — a length check alone let "12a4" through to a 422.
+    if (!/^[0-9]{4}$/.test(newPin)) {
       Alert.alert('Validation', 'PIN must be exactly 4 digits.');
       return;
     }
     setIsResettingPin(true);
     try {
-      await staffApi.updateStaff(selectedStaff.id, { email: newPin } as any); // Use email field or a safe updates route if backend allows, or prompt success message
+      await staffApi.resetStaffCredentials(selectedStaff.id, { pin: newPin });
       hapticSuccess();
       Alert.alert('Success', 'Login PIN reset successfully.');
       setNewPin('');
-    } catch {
+    } catch (err: any) {
       hapticError();
-      Alert.alert('Error', 'Could not reset PIN.');
+      Alert.alert('Error', err?.message || 'Could not reset PIN.');
     } finally {
       setIsResettingPin(false);
     }

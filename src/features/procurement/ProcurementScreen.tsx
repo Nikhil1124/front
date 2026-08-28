@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, RefreshControl, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, RefreshControl, Pressable, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn } from '@/components/ui';
@@ -18,6 +18,7 @@ import {
   useProcurementOrders,
   useSubmitProcurementOrder,
   useApproveProcurementOrder,
+  type ProcurementPaymentMethod,
   useRejectProcurementOrder,
 } from './useProcurement';
 import type { ProcurementCatalogItem } from '@/types';
@@ -283,7 +284,13 @@ function OrderSuppliesSection() {
 
             <Spacer size={14} />
 
-            <FormScroll style={{ flex: 0, maxHeight: 280 }} showsVerticalScrollIndicator={false}>
+            {/* Same real fix as AddPgPropertyDialog/EditPgPropertyDialog: FormScroll's inner
+                ScrollView is hardcoded flex: 1, which needs a flex-bounded ancestor — this
+                Card sizes to its own content (maxHeight: '80%' is a cap, not flex: 1), so
+                flex: 1 collapsed to zero the same way flex: 0 did. Plain maxHeight-bounded
+                ScrollView instead, no flex anywhere in the chain. */}
+            <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+              <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={{ gap: 8 }}>
                 {Object.entries(cart).map(([id, qty]) => {
                   const it = catalog.find((c) => c.id === id);
@@ -303,7 +310,8 @@ function OrderSuppliesSection() {
                   );
                 })}
               </View>
-            </FormScroll>
+              </ScrollView>
+            </KeyboardAvoidingView>
 
             <Spacer size={14} />
             <View style={{ height: 1, backgroundColor: Colors.borderSubtle }} />
@@ -421,9 +429,26 @@ function ApprovalsSection() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const handleApprove = async (orderId: string) => {
+  // Approving buys the goods for real — the server turns the requisition into a supply
+  // order charged on this method — so it is asked for, never assumed. (It also has to be
+  // sent at all: omitting it made every approval a 422.)
+  const handleApprove = (orderId: string) => {
+    Alert.alert(
+      'Approve and buy',
+      'This places the order now. How should it be paid?',
+      [
+        { text: 'UPI', onPress: () => submitApproval(orderId, 'upi') },
+        { text: 'Card', onPress: () => submitApproval(orderId, 'card') },
+        { text: 'On credit', onPress: () => submitApproval(orderId, 'credit') },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const submitApproval = async (orderId: string, paymentMethod: ProcurementPaymentMethod) => {
     try {
-      await approveOrder.mutateAsync(orderId);
+      await approveOrder.mutateAsync({ orderId, paymentMethod });
       hapticSuccess();
       toast('success', 'Requisition Approved', 'Manager has been notified with approval.');
     } catch (err: any) {

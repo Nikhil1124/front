@@ -59,12 +59,12 @@ interface ActionTile {
  * a 404 rather than a feature.
  */
 const ACTION_TILES: ActionTile[] = [
+  // Bed Layout, Tenant Mgmt, Procurement, and Rent Reminders tiles removed — each is
+  // redundant with a screen already reachable elsewhere (Bed Visualizer from the Guests
+  // tab, KYC decisions from the Guests tab's own Pending KYC section, Procurement from
+  // Services, and Rent Reminders is just the Notices tab).
   { screen: 'PNL_ANALYTICS',    label: 'P&L Analytics',  desc: '3m / 6m / 1y',               icon: 'stats-chart-outline' },
-  { screen: 'BED_VISUALIZER',   label: 'Bed Layout',     desc: 'Floor → room → bed',         icon: 'bed-outline' },
-  { screen: 'TENANT_LIST',      label: 'Tenant Mgmt',    desc: 'KYC decisions',              icon: 'people-outline' },
   { screen: 'GROCERIES_SCREEN', label: 'Groceries',      desc: 'Kitchen & PG supplies',      icon: 'nutrition-outline' },
-  { screen: 'PROCUREMENT_SCREEN', label: 'Procurement',    desc: 'Stock requests & approvals', icon: 'cube-outline' },
-  { action: 'NOTICES',          label: 'Rent Reminders', desc: 'WhatsApp / SMS',             icon: 'notifications-outline' },
   { screen: 'OWNER_SERVICES',   label: 'Services',       desc: 'Groceries & repairs',        icon: 'storefront-outline' },
   { screen: 'UPI_SETTINGS',     label: 'UPI Settings',   desc: 'Rent collection & payments', icon: 'card-outline', ownerOnly: true },
 ];

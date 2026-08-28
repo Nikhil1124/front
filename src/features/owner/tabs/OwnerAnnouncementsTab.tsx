@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { Colors } from '@/theme';
@@ -10,7 +11,9 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { formatTimeAgo } from '@/utils/format';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
-import type { GuestEntity, FeedbackComplaintEntity } from '@/types';
+import type { GuestEntity } from '@/types';
+import { OwnerReviewsTab } from './OwnerReviewsTab';
+import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -23,26 +26,30 @@ const RADIUS = 16;
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
-import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
-import { isRequestOpen } from '@/data/mappers';
-import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 
 export function OwnerAnnouncementsTab() {
+  // This screen used to only ever render as tab content, under the (owner)/(tabs) layout's
+  // own TabHeader (which already accounts for insets.top) — now it's also the header bell's
+  // destination, a bare root-level screen with nothing above it. Same insets.top + 14 buffer
+  // every other screen's own header uses, so it doesn't sit under the notch there.
+  const insets = useSafeAreaInsets();
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: roleNotifs = [], isLoading: inboxLoading, error: inboxError, refetch: refetchInbox } = useRoleNotificationsQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
-  const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
   const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
-  const respondComplaint = usePGowStore((s) => s.respondToFeedbackComplaint);
   const sendNotice = usePGowStore((s) => s.sendRoleNotification);
 
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
 
-  const [activeSubTab, setActiveSubTab] = useState<'ALL' | 'APPROVALS' | 'ANNOUNCEMENTS'>('ALL');
+  // Complaints moved to their own tab (see OwnerComplaintsTab) — a resident-raised issue
+  // needing action doesn't belong mixed into a notification inbox. Reviews folded in here
+  // instead: ratings/staff-performance is a small, read-mostly screen that doesn't earn its
+  // own dock slot, and it reads the same underlying data this inbox already fetches.
+  const [activeSubTab, setActiveSubTab] = useState<'ALL' | 'APPROVALS' | 'ANNOUNCEMENTS' | 'REVIEWS'>('ALL');
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [selectedInboxItem, setSelectedInboxItem] = useState<any | null>(null);
 
@@ -51,9 +58,6 @@ export function OwnerAnnouncementsTab() {
   const [noticeMessage, setNoticeMessage] = useState('');
   const [noticeAudience, setNoticeAudience] = useState<'all' | 'guest' | 'staff' | 'manager'>('all');
   const [isPublishing, setIsPublishing] = useState(false);
-
-  // Resolution inputs inside detail sheet
-  const [complaintReplyText, setComplaintReplyText] = useState('');
 
   // 1. Compile Unified Inbox Items
   const inboxItems = useMemo(() => {
@@ -72,22 +76,6 @@ export function OwnerAnnouncementsTab() {
         priority: 'MEDIUM',
         icon: 'document-text-outline',
         raw: g,
-      });
-    });
-
-    // Active complaints
-    const openComplaints = submissions.filter((s: FeedbackComplaintEntity) => s.type === 'COMPLAINT' && isRequestOpen(s.status));
-    openComplaints.forEach((c: FeedbackComplaintEntity) => {
-      items.push({
-        id: `complaint_${c.id}`,
-        type: 'COMPLAINT',
-        title: c.title || 'Plumbing request',
-        desc: `Room ${c.roomNo} · ${c.description}`,
-        timestamp: c.timestamp,
-        isRead: c.status === 'In Progress',
-        priority: c.overallRating <= 2 ? 'HIGH' : 'MEDIUM',
-        icon: 'alert-circle-outline',
-        raw: c,
       });
     });
 
@@ -123,17 +111,17 @@ export function OwnerAnnouncementsTab() {
     });
 
     return sorted;
-  }, [guests, submissions, roleNotifs]);
+  }, [guests, roleNotifs]);
 
   // Counts
   const totalInboxCount = inboxItems.length;
-  const approvalsCount = inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC' || i.type === 'COMPLAINT').length;
+  const approvalsCount = inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC').length;
   const noticesCount = inboxItems.filter((i) => i.type === 'NOTICE').length;
 
   // Filter list by active tab
   const displayedItems = useMemo(() => {
     if (activeSubTab === 'APPROVALS') {
-      return inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC' || i.type === 'COMPLAINT');
+      return inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC');
     }
     if (activeSubTab === 'ANNOUNCEMENTS') {
       return inboxItems.filter((i) => i.type === 'NOTICE');
@@ -184,15 +172,6 @@ export function OwnerAnnouncementsTab() {
     }
   };
 
-  const handleResolveComplaint = async (item: any) => {
-    hapticSuccess();
-    const reply = complaintReplyText.trim() || 'Issue resolved by property owner.';
-    await respondComplaint(item.raw.id, reply, 'Resolved');
-    toast('success', 'Complaint Resolved', 'Status marked as Resolved.');
-    setComplaintReplyText('');
-    setSelectedInboxItem(null);
-  };
-
   const handlePublishNotice = async () => {
     if (!noticeTitle.trim() || !noticeMessage.trim()) {
       Alert.alert('Validation', 'Title and message are required.');
@@ -209,7 +188,7 @@ export function OwnerAnnouncementsTab() {
       );
       if (ok) {
         hapticSuccess();
-        toast('success', 'Notice Published', `Broadcast delivered to target ${noticeAudience}.`);
+        toast('success', 'Announcement Published', `Broadcast delivered to target ${noticeAudience}.`);
         setNoticeTitle('');
         setNoticeMessage('');
         setShowBroadcastModal(false);
@@ -230,100 +209,120 @@ export function OwnerAnnouncementsTab() {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} colors={[GREEN]} />
-      }
-    >
+    <View style={styles.rootFlex}>
       {/* ── Title Header ── */}
-      <Row justify="space-between" align="center">
-        <Col>
-          <Text style={styles.bodyTitle}>Notices</Text>
-          <Text style={styles.bodySub}>Updates and actions for your PG</Text>
-        </Col>
-        
-        <TouchableOpacity
-          style={styles.newNoticeBtn}
-          onPress={() => {
-            hapticSelect();
-            setShowBroadcastModal(true);
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="megaphone-outline" size={14} color={WHITE} style={{ marginRight: 6 }} />
-          <Text style={styles.newNoticeBtnText}>+ New Notice</Text>
-        </TouchableOpacity>
-      </Row>
+      <View style={[styles.headerArea, { paddingTop: insets.top + 14 }]}>
+        <Row justify="space-between" align="center">
+          <Col>
+            <Text style={styles.bodyTitle}>Notifications</Text>
+            <Text style={styles.bodySub}>Updates and actions for your PG</Text>
+          </Col>
 
-      <Spacer size={16} />
+          <TouchableOpacity
+            style={styles.newNoticeBtn}
+            onPress={() => {
+              hapticSelect();
+              setShowBroadcastModal(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="megaphone-outline" size={14} color={WHITE} style={{ marginRight: 6 }} />
+            <Text style={styles.newNoticeBtnText}>+ New Announcement</Text>
+          </TouchableOpacity>
+        </Row>
 
-      {/* ── Attention Status Strip ── */}
-      {approvalsCount > 0 ? (
-        <TouchableOpacity
-          style={styles.attentionStrip}
-          onPress={() => setActiveSubTab('APPROVALS')}
-          activeOpacity={0.85}
-        >
-          <Row justify="space-between" align="center" style={{ width: '100%' }}>
-            <Row gap={8} align="center">
-              <Ionicons name="alert-circle-outline" size={18} color="#D97706" />
-              <Text style={styles.attentionStripText}>Needs Attention · {approvalsCount} actions pending</Text>
+        <Spacer size={16} />
+
+        {/* ── Attention Status Strip ── */}
+        {approvalsCount > 0 ? (
+          <TouchableOpacity
+            style={styles.attentionStrip}
+            onPress={() => setActiveSubTab('APPROVALS')}
+            activeOpacity={0.85}
+          >
+            <Row justify="space-between" align="center" style={{ width: '100%' }}>
+              <Row gap={8} align="center">
+                <Ionicons name="alert-circle-outline" size={18} color="#D97706" />
+                <Text style={styles.attentionStripText}>Needs Attention · {approvalsCount} actions pending</Text>
+              </Row>
+              <Ionicons name="chevron-forward" size={14} color="#D97706" />
             </Row>
-            <Ionicons name="chevron-forward" size={14} color="#D97706" />
-          </Row>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.successStrip}>
+            <Ionicons name="checkmark-circle-outline" size={18} color={GREEN} />
+            <Text style={styles.successStripText}>✓ All caught up · No pending approvals.</Text>
+          </View>
+        )}
+
+        <Spacer size={16} />
+
+        {/* ── Navigation Segment Filter Tabs ── */}
+        <Row gap={8} style={{ flexWrap: 'wrap' }}>
+          <TouchableOpacity
+            style={[styles.chipTab, activeSubTab === 'ALL' && styles.chipTabActive]}
+            onPress={() => {
+              hapticSelect();
+              setActiveSubTab('ALL');
+            }}
+          >
+            <Text style={[styles.chipTabText, activeSubTab === 'ALL' && styles.chipTabTextActive]}>
+              All {totalInboxCount}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.chipTab, activeSubTab === 'APPROVALS' && styles.chipTabActive]}
+            onPress={() => {
+              hapticSelect();
+              setActiveSubTab('APPROVALS');
+            }}
+          >
+            <Text style={[styles.chipTabText, activeSubTab === 'APPROVALS' && styles.chipTabTextActive]}>
+              Approvals {approvalsCount}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.chipTab, activeSubTab === 'ANNOUNCEMENTS' && styles.chipTabActive]}
+            onPress={() => {
+              hapticSelect();
+              setActiveSubTab('ANNOUNCEMENTS');
+            }}
+          >
+            <Text style={[styles.chipTabText, activeSubTab === 'ANNOUNCEMENTS' && styles.chipTabTextActive]}>
+              Announcements {noticesCount}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.chipTab, activeSubTab === 'REVIEWS' && styles.chipTabActive]}
+            onPress={() => {
+              hapticSelect();
+              setActiveSubTab('REVIEWS');
+            }}
+          >
+            <Text style={[styles.chipTabText, activeSubTab === 'REVIEWS' && styles.chipTabTextActive]}>
+              Reviews
+            </Text>
+          </TouchableOpacity>
+        </Row>
+      </View>
+
+      {/* ── Reviews sub-tab — the existing OwnerReviewsTab wholesale, not duplicated here.
+          It's small enough (ratings + staff performance, no dock-worthy action of its own)
+          that it doesn't need a bottom tab of its own; it reads the same inbox data this
+          screen already fetches. */}
+      {activeSubTab === 'REVIEWS' ? (
+        <OwnerReviewsTab />
       ) : (
-        <View style={styles.successStrip}>
-          <Ionicons name="checkmark-circle-outline" size={18} color={GREEN} />
-          <Text style={styles.successStripText}>✓ All caught up · No pending approvals.</Text>
-        </View>
-      )}
-
-      <Spacer size={16} />
-
-      {/* ── Navigation Segment Filter Tabs ── */}
-      <Row gap={8}>
-        <TouchableOpacity
-          style={[styles.chipTab, activeSubTab === 'ALL' && styles.chipTabActive]}
-          onPress={() => {
-            hapticSelect();
-            setActiveSubTab('ALL');
-          }}
-        >
-          <Text style={[styles.chipTabText, activeSubTab === 'ALL' && styles.chipTabTextActive]}>
-            All {totalInboxCount}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.chipTab, activeSubTab === 'APPROVALS' && styles.chipTabActive]}
-          onPress={() => {
-            hapticSelect();
-            setActiveSubTab('APPROVALS');
-          }}
-        >
-          <Text style={[styles.chipTabText, activeSubTab === 'APPROVALS' && styles.chipTabTextActive]}>
-            Approvals {approvalsCount}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.chipTab, activeSubTab === 'ANNOUNCEMENTS' && styles.chipTabActive]}
-          onPress={() => {
-            hapticSelect();
-            setActiveSubTab('ANNOUNCEMENTS');
-          }}
-        >
-          <Text style={[styles.chipTabText, activeSubTab === 'ANNOUNCEMENTS' && styles.chipTabTextActive]}>
-            Notices {noticesCount}
-          </Text>
-        </TouchableOpacity>
-      </Row>
-
-      <Spacer size={12} />
-
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} colors={[GREEN]} />
+        }
+      >
       {/* ── Unified Inbox list ── */}
       {inboxLoading ? (
         <LoadingState label="Loading inbox…" fill={false} />
@@ -365,7 +364,6 @@ export function OwnerAnnouncementsTab() {
                       <Text
                         style={[
                           styles.inboxCategoryTag,
-                          item.type === 'COMPLAINT' && { color: '#DC2626' },
                           item.type === 'APPROVAL' && { color: '#D97706' },
                         ]}
                       >
@@ -392,6 +390,8 @@ export function OwnerAnnouncementsTab() {
             </TouchableOpacity>
           ))}
         </View>
+      )}
+      </ScrollView>
       )}
 
       {/* ── Inbox Item Detail Modal ── */}
@@ -479,28 +479,6 @@ export function OwnerAnnouncementsTab() {
                 </View>
               )}
 
-              {selectedInboxItem.type === 'COMPLAINT' && (
-                <View style={styles.actionBlockBox}>
-                  <Text style={styles.actionBlockLabel}>Resolve Guest Issue</Text>
-                  <Spacer size={6} />
-                  <TextInput
-                    style={styles.actionInput}
-                    placeholder="Enter resolution notes / instructions to chef..."
-                    placeholderTextColor={MUTED}
-                    value={complaintReplyText}
-                    onChangeText={setComplaintReplyText}
-                    multiline
-                  />
-                  <Spacer size={10} />
-                  <TouchableOpacity
-                    style={[styles.actionApproveBtn, { width: '100%' }]}
-                    onPress={() => handleResolveComplaint(selectedInboxItem)}
-                  >
-                    <Text style={styles.actionApproveText}>Resolve Issue & Close Ticket</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
               <Spacer size={10} />
               <TouchableOpacity
                 style={styles.sheetCloseBtn}
@@ -522,22 +500,22 @@ export function OwnerAnnouncementsTab() {
             <Animated.View entering={SlideInDown.duration(160)} style={styles.broadcastSheet}>
               <View style={styles.sheetHandle} />
 
-              <Text style={styles.sheetTitle}>Broadcast New Notice</Text>
+              <Text style={styles.sheetTitle}>Broadcast Announcement</Text>
               <Spacer size={12} />
 
               <TextInput
                 style={styles.noticeInput}
-                placeholder="Notice Title (e.g. WiFi Maintenance)"
+                placeholder="Announcement Title (e.g. WiFi Maintenance)"
                 placeholderTextColor={MUTED}
                 value={noticeTitle}
                 onChangeText={setNoticeTitle}
               />
-              
+
               <Spacer size={10} />
 
               <TextInput
                 style={[styles.noticeInput, { height: 90, textAlignVertical: 'top', paddingTop: 10 }]}
-                placeholder="Notice Message / Announcement description..."
+                placeholder="Announcement description..."
                 placeholderTextColor={MUTED}
                 value={noticeMessage}
                 onChangeText={setNoticeMessage}
@@ -573,7 +551,7 @@ export function OwnerAnnouncementsTab() {
                   activeOpacity={0.8}
                 >
                   <Text style={styles.publishBtnText}>
-                    {isPublishing ? 'Publishing...' : 'Publish Notice'}
+                    {isPublishing ? 'Publishing...' : 'Publish'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -588,12 +566,14 @@ export function OwnerAnnouncementsTab() {
           </Animated.View>
         </Modal>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, backgroundColor: BG },
+  rootFlex: { flex: 1, backgroundColor: BG },
+  headerArea: { paddingHorizontal: 20, paddingTop: 16, backgroundColor: BG },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40, backgroundColor: BG },
   bodyTitle: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
   bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
 

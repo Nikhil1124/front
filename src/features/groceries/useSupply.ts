@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/data/apiClient';
+import { toAmount } from '@/data/mappers';
 import { SupplyCategory, SupplyItem } from '@/types';
 
 export function useSupplyCategories(pgId?: string) {
@@ -28,7 +29,11 @@ export function useDeals(pgId?: string) {
     queryKey: ['supply_deals', pgId],
     queryFn: async () => {
       const items = await apiFetch<SupplyItem[]>(`/v1/supply/items?pg_id=${pgId}`);
-      return items.filter(item => item.mrp && item.mrp > item.price);
+      // `toAmount`, not a bare `>`: the server sends Decimal as a JSON string, so comparing
+      // them directly is LEXICOGRAPHIC — "90.00" > "100.00" is true because "9" > "1". That
+      // advertised markups as deals and hid genuine discounts. (`SupplyItem` types these as
+      // `number`, which is the wire format lying; the values are strings at runtime.)
+      return items.filter(item => item.mrp != null && toAmount(item.mrp) > toAmount(item.price));
     },
     enabled: !!pgId,
   });

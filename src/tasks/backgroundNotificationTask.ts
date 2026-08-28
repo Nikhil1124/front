@@ -18,6 +18,7 @@ import * as TaskManager from "expo-task-manager";
 import Notifications, { Notification } from "../data/notificationsCompat";
 import * as SecureStore from "expo-secure-store";
 import { BASE_URL, API } from "../config";
+import { useAuthStore } from "../store/authStore";
 
 export const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND-NOTIFICATION-TASK";
 export const MEAL_RSVP_CATEGORY = "MEAL_RSVP";
@@ -38,8 +39,17 @@ async function refreshedAccessToken(): Promise<string | null> {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    await SecureStore.setItemAsync(KEYS.ACCESS, data.access_token);
-    await SecureStore.setItemAsync(KEYS.REFRESH, data.refresh_token);
+    // Route through the store's own action rather than writing SecureStore directly.
+    //
+    // Writing only SecureStore here made this the SECOND refresh-token writer in the app,
+    // and that is what broke sessions: `hydrateFromStorage` runs once at mount, so when the
+    // app is alive the in-memory token stays the pre-rotation one. The next foreground 401
+    // then presents an already-rotated token, the server's reuse detection fires
+    // `revoke_family`, and the user is signed out with "session ended for security reasons".
+    //
+    // `setTokens` writes SecureStore *and* memory, so both stay in step. Safe on the
+    // killed-app path too: Zustand's store is a plain module object and needs no React tree.
+    await useAuthStore.getState().setTokens(data.access_token, data.refresh_token);
     return data.access_token as string;
   } catch {
     return null;

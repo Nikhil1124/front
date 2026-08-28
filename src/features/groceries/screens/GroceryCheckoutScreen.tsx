@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert, StatusBar } from 'react-native';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,6 +48,9 @@ export function GroceryCheckoutScreen() {
 
   const { items, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();
   const createOrderMutation = useCreateSupplyOrderMutation();
+  // One key per checkout attempt-set. `Math.random` is fine here — this only needs to be
+  // unique per device per pending order, not cryptographically strong.
+  const idempotencyKey = useRef(`ord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
 
   const [fulfillmentMode, setFulfillmentMode] = useState<'delivery' | 'pickup'>('delivery');
   const [selectedSlotId, setSelectedSlotId] = useState<string>('1');
@@ -97,17 +100,26 @@ export function GroceryCheckoutScreen() {
     }
 
     try {
+      // The server has no delivery-slot column, and `CreateOrderRequest` forbids unknown
+      // fields — so the chosen slot rides along in `delivery_note` (which ops actually read)
+      // rather than being dropped on the floor.
+      const slotLine = `Slot: ${selectedSlot.day}, ${selectedSlot.window}`;
       const order = await createOrderMutation.mutateAsync({
         pg_id: targetPgId,
-        payment_method: paymentMethod === 'cod' ? 'cash' : 'upi',
-        delivery_slot: `${selectedSlot.day}, ${selectedSlot.window}`,
-        delivery_notes: driverNote || undefined,
+        payment_method: paymentMethod === 'cod' ? 'cod' : 'upi',
+        delivery_note: driverNote ? `${slotLine} — ${driverNote}` : slotLine,
         items: items.map((i) => ({
           item_id: i.id,
           quantity: i.quantity,
         })),
+        // Stable for the life of this screen, deliberately: a key regenerated per attempt
+        // would make every retry look like a brand-new order, which is the opposite of what
+        // idempotency is for. Reset only after a confirmed success, below.
+        idempotency_key: idempotencyKey.current,
       });
 
+      // Fresh key for any subsequent order placed without remounting this screen.
+      idempotencyKey.current = `ord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       clearCart();
       router.push({ pathname: '/groceries/orders/[id]', params: { id: order.id } });
     } catch (err: any) {
@@ -117,11 +129,10 @@ export function GroceryCheckoutScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 8) }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -432,11 +443,16 @@ export function GroceryCheckoutScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.placeOrderBtn}
+          style={[styles.placeOrderBtn, createOrderMutation.isPending && { opacity: 0.6 }]}
           onPress={handlePlaceOrder}
           activeOpacity={0.8}
+          // Unguarded, a double-tap fired two POSTs — two real orders, two stock
+          // decrements, two charges. `idempotency_key` below is the second line of defence.
+          disabled={createOrderMutation.isPending}
         >
-          <Text style={styles.placeOrderText}>Place Order</Text>
+          <Text style={styles.placeOrderText}>
+            {createOrderMutation.isPending ? 'Placing…' : 'Place Order'}
+          </Text>
           <Ionicons name="arrow-forward" size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>

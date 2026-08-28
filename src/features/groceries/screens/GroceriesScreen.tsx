@@ -1,6 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Animated, FlatList, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -126,7 +126,10 @@ export function GroceriesScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      {/* No local StatusBar override — the root layout's expo-status-bar + app.json's
+          androidStatusBar.translucent:true already make it seamless everywhere else in the
+          app; a per-screen React Native StatusBar here fought that and painted an opaque
+          bar over it. */}
       <View style={styles.safeArea}>
         <Header deliveryLabel={deliveryLabel} onProfilePress={() => router.push('/groceries/profile')} onBack={() => router.back()} />
 

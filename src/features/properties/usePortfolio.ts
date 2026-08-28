@@ -71,7 +71,13 @@ async function fetchOne(
 ): Promise<PropertyPortfolioStats> {
   const [guestsR, paymentsR, summaryR, savingsR] = await Promise.allSettled([
     listGuests(pg.id, { limit: 200 }),
-    listPayments(pg.id, { status: "verified", limit: 200 }),
+    // 100, not 200: `/v1/payments` is the one list route capped at `le=100` (every other
+    // list allows 200). Sending 200 made this call 422 every time — and because
+    // `allSettled` swallows it, `payments` fell back to [] and `pendingDues` then counted
+    // EVERY resident as unpaid: a confident, precise, wrong number on the owner's dashboard.
+    // ponytail: one page. The endpoint has no period filter, so a property with >100
+    // verified payments still truncates — page on `next_cursor` when that starts to bite.
+    listPayments(pg.id, { status: "verified", limit: 100 }),
     getExpenseSummary(pg.id, period),
     getMealSavingsAnalytics(pg.id, monthStart, monthEnd),
   ]);

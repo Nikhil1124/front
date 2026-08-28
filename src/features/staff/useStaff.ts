@@ -81,6 +81,24 @@ export function removeStaff(membershipId: string): Promise<StaffMember> {
   return apiFetch<StaffMember>(API.STAFF_MEMBER(membershipId), { method: "DELETE" });
 }
 
+/**
+ * A new PIN and/or password for a staff member who has lost theirs.
+ *
+ * Deliberately its own route, not a field on `updateStaff`: the server keeps credentials off
+ * `UpdateStaffRequest` because that model is for details anyone on the roster screen may
+ * edit. The reset screen used to send `{email: newPin}` through `updateStaff` instead, which
+ * could never work — `email` is an `EmailStr` server-side, so a 4-digit PIN was always a 422.
+ */
+export function resetStaffCredentials(
+  membershipId: string,
+  params: { pin?: string; password?: string }
+): Promise<StaffMember> {
+  return apiFetch<StaffMember>(API.STAFF_RESET_CREDENTIALS(membershipId), {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
 export function useStaffQuery(pgId?: string) {
   return useQuery<StaffMemberEntity[]>({
     queryKey: qk.staff.list(pgId ?? ""),

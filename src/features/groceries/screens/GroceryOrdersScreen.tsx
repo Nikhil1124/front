@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSupplyOrdersQuery } from '../useSupplyOrders';
 import { useCartStore } from '../store/useCartStore';
@@ -12,6 +13,7 @@ import { Colors, Layout, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 export function GroceryOrdersScreen() {
+  const insets = useSafeAreaInsets();
   const logout = usePGowStore((s) => s.logout);
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: ordersData, isLoading, refetch } = useSupplyOrdersQuery(activePgId);
@@ -56,8 +58,10 @@ export function GroceryOrdersScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header — had no safe-area handling at all (fixed paddingVertical:12 only), unlike
+          every other grocery screen's header (insets.top + 14). This is a dock tab root, not
+          pushed under anything, so it sat directly under the notch. */}
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />

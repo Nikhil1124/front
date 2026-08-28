@@ -13,6 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
@@ -29,6 +30,7 @@ import type { PaymentEntity, ExpenseEntity, GuestEntity } from '@/types';
 import { usePaymentsQuery, useVerifyPaymentMutation, useRejectPaymentMutation } from '@/features/payments/usePayments';
 import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useActiveProperty } from '@/features/properties/useProperties';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 const GREEN = '#176B3A';
@@ -65,6 +67,7 @@ function getPast12Months() {
 }
 
 export function OwnerPaymentsTab() {
+  const { activeEntity: owner } = useActiveProperty();
   const [subTab, setSubTab] = useState(0); // 0: Balance Sheet, 1: Expenses, 2: Collections
   const [period, setPeriod] = useState<'month' | '3m' | '6m' | '1y' | 'custom'>('month');
   
@@ -408,6 +411,27 @@ export function OwnerPaymentsTab() {
         {period === 'custom' && customLabel ? (
           <Text style={styles.customDateText}>Selected: {customLabel}</Text>
         ) : null}
+      </View>
+
+      {/* ── Subscription & Billing — PGow's own bill to the owner, not a resident's rent,
+          so it sits above the sub-tabs rather than inside any one of them. Also the only
+          place to raise the property's total bed capacity (the one-time plan's bed
+          configurator calls updateProperty with a new total_beds). Was Settings-only. */}
+      <View style={styles.periodContainer}>
+        <TouchableOpacity
+          style={styles.subscriptionRow}
+          onPress={() => router.push('/owner-subscription')}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="card-outline" size={20} color={GREEN} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.subscriptionRowTitle}>Subscription & Billing</Text>
+            <Text style={styles.subscriptionRowSub}>
+              {owner?.subscriptionActive ? 'Plan active — view invoices, increase beds' : 'No active plan — activate to get started'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </TouchableOpacity>
       </View>
 
       {/* ── Sub-Tab 0: Balance Sheet ── */}
@@ -1067,6 +1091,25 @@ const styles = StyleSheet.create({
   periodContainer: {
     paddingHorizontal: 20,
     paddingBottom: 14,
+  },
+  subscriptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: WHITE,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 14,
+  },
+  subscriptionRowTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: CHARCOAL,
+  },
+  subscriptionRowSub: {
+    fontSize: 12,
+    color: MUTED,
+    marginTop: 2,
   },
   periodBtn: {
     flex: 1,

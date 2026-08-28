@@ -40,6 +40,7 @@ export function GuestFeedbackComplaintsTab() {
   const [mediaIsVideo, setMediaIsVideo] = useState(false);
   const [mediaName, setMediaName] = useState<string | null>(null);
   const [preview, setPreview] = useState<FeedbackComplaintEntity | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const attach = async (kind: 'photo' | 'video') => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -62,16 +63,22 @@ export function GuestFeedbackComplaintsTab() {
   const calculatedOverall = (mealRating + cleanRating + mgrRating + staffRating + otherRating) / 5;
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!title.trim() || !description.trim()) {
       Alert.alert('Validation', 'Please enter title and description');
       return;
     }
-    const r = await submit(title, description, category, submissionType, mediaUri, mediaIsVideo, mealRating, cleanRating, mgrRating, staffRating, otherRating);
-    if (r.ok) {
-      Alert.alert('Success', submissionType === 'COMPLAINT' ? 'Complaint raised successfully!' : 'Rating & Feedback submitted successfully!');
-      setTitle(''); setDescription(''); setMediaUri(null); setMediaName(null);
-    } else {
-      Alert.alert('Failed', r.error ?? 'Unknown');
+    setIsSubmitting(true);
+    try {
+      const r = await submit(title, description, category, submissionType, mediaUri, mediaIsVideo, mealRating, cleanRating, mgrRating, staffRating, otherRating);
+      if (r.ok) {
+        Alert.alert('Success', submissionType === 'COMPLAINT' ? 'Complaint raised successfully!' : 'Rating & Feedback submitted successfully!');
+        setTitle(''); setDescription(''); setMediaUri(null); setMediaName(null);
+      } else {
+        Alert.alert('Failed', r.error ?? 'Unknown');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -134,7 +141,7 @@ export function GuestFeedbackComplaintsTab() {
         )}
 
         <Spacer size={16} />
-        <Btn onPress={handleSubmit} containerColor={submissionType === 'COMPLAINT' ? '#EF4444' : Colors.CyberGreen} textColor={submissionType === 'COMPLAINT' ? '#FFFFFF' : Colors.LuxuryPureBlack} borderRadius={12} height={44} testID="submit_complaint_button">
+        <Btn onPress={handleSubmit} disabled={isSubmitting} loading={isSubmitting} containerColor={submissionType === 'COMPLAINT' ? '#EF4444' : Colors.CyberGreen} textColor={submissionType === 'COMPLAINT' ? '#FFFFFF' : Colors.LuxuryPureBlack} borderRadius={12} height={44} testID="submit_complaint_button">
           <Txt variant="body" weight="700" color={submissionType === 'COMPLAINT' ? '#FFFFFF' : Colors.LuxuryPureBlack}>{submissionType === 'COMPLAINT' ? 'Broadcast Official Complaint' : 'Send Constructive Review'}</Txt>
         </Btn>
       </Card>

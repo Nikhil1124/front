@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn } from '@/components/ui';
+import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { InfoTip } from '@/components/ui/InfoTip';
 import {
   useInvoices,
@@ -130,20 +131,19 @@ export function OwnerSubscriptionScreen() {
 
   const active = subscription.data;
 
+  // HubScreenWrapper already owns the back button (router.back(), same as every other
+  // drill-down screen); the only reason this screen needed its own header before was the
+  // logout affordance for the not-yet-subscribed state, which becomes rightAction instead.
   return (
-    <ScrollView contentContainerStyle={styles.scroll} style={styles.root}>
-      <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
-        <Txt variant="sectionTitle" color={Colors.IvoryWhiteText}>
-          {active ? 'Subscription & Billing' : 'Secure PG Portal Activation'}
-        </Txt>
-        <IconBtn
-          onPress={() => (active ? router.back() : logout())}
-          icon={active ? 'arrow-back' : 'exit'}
-          size={20}
-          tint={Colors.SlateMutedText}
-        />
-      </Row>
-
+    <HubScreenWrapper
+      title={active ? 'Subscription & Billing' : 'Secure PG Portal Activation'}
+      onBack={() => router.back()}
+      rightAction={
+        !active ? (
+          <IconBtn onPress={() => logout()} icon="exit" size={20} tint={Colors.SlateMutedText} />
+        ) : undefined
+      }
+    >
       <Card containerColor="transparent" borderRadius={16} style={{ height: 130, marginBottom: 16, overflow: 'hidden' }}>
         <Image source={require('../../../assets/img_premium_subscription.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
       </Card>
@@ -372,13 +372,11 @@ export function OwnerSubscriptionScreen() {
           )}
         </>
       )}
-    </ScrollView>
+    </HubScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.LuxuryPureBlack },
-  scroll: { padding: 24, paddingBottom: 100 },
   planCard: {
     flex: 1,
     backgroundColor: '#0F172A',

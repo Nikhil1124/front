@@ -28,9 +28,18 @@ export async function listTenantInvoices(
   return page.items.map(toTenantInvoice);
 }
 
+/**
+ * `PayTenantInvoiceRequest`'s enum, which is NOT the same as `PayInvoiceRequest`'s — the
+ * owner's own subscription invoices accept `bank_transfer`, a tenant's rent invoice accepts
+ * `cash` instead. This type said `bank_transfer` for both, so it advertised a value that is
+ * a 422 here and omitted the one that actually works. Latent only because the single caller
+ * passes `upi_manual`.
+ */
+export type TenantInvoicePayMethod = "upi_intent" | "upi_manual" | "cash";
+
 export function payTenantInvoice(
   invoiceId: string,
-  params: { method: "upi_intent" | "upi_manual" | "bank_transfer"; upi_ref?: string },
+  params: { method: TenantInvoicePayMethod; upi_ref?: string },
 ): Promise<TenantInvoice> {
   return apiFetch<TenantInvoice>(API.BILLING_TENANT_INVOICE_PAY(invoiceId), {
     method: "POST",
@@ -64,7 +73,7 @@ export function usePayTenantInvoice(pgId: string | null) {
   return useMutation({
     mutationFn: (params: {
       invoiceId: string;
-      method: "upi_intent" | "upi_manual" | "bank_transfer";
+      method: TenantInvoicePayMethod;
       upi_ref?: string;
     }) => payTenantInvoice(params.invoiceId, { method: params.method, upi_ref: params.upi_ref }),
     onSuccess: () => {

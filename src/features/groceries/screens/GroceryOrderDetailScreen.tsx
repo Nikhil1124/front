@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderStepper } from '../components/grocery/OrderStepper';
 import { useSupplyOrderDetailQuery, useSupplyTrackingQuery } from '../useSupplyOrders';
 import { Colors, Layout } from '@/theme';
@@ -24,6 +25,7 @@ const STATUS_HERO: Record<string, string> = {
 };
 
 export function GroceryOrderDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: order, isLoading, refetch } = useSupplyOrderDetailQuery(id as string);
   const { data: tracking } = useSupplyTrackingQuery(id as string);
@@ -39,7 +41,7 @@ export function GroceryOrderDetailScreen() {
   if (!order) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -107,7 +109,7 @@ export function GroceryOrderDetailScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Order Summary</Text>
           <Text style={styles.summaryMeta}>Placed on {new Date(order.created_at).toLocaleString()}</Text>
-          {order.delivery_slot ? <Text style={styles.summaryMeta}>Slot: {order.delivery_slot}</Text> : null}
+          {order.delivery_note ? <Text style={styles.summaryMeta}>{order.delivery_note}</Text> : null}
           <Text style={styles.summaryMeta}>Payment Method: {order.payment_method.toUpperCase()}</Text>
           <Text style={styles.summaryMeta}>Payment Status: {order.payment_status.toUpperCase()}</Text>
 

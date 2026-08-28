@@ -1,16 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/data/apiClient';
-import { SupplyOrderDetail, SupplyOrderSummary } from '@/types/supply';
+import { SupplyOrderDetail, SupplyOrderSummary, SupplyPaymentMethod } from '@/types/supply';
 
 export interface CreateOrderPayload {
   pg_id: string;
-  payment_method: 'upi' | 'credit' | 'cash';
-  delivery_slot?: string;
-  delivery_notes?: string;
+  payment_method: SupplyPaymentMethod;
+  /** Singular, matching the server. `CreateOrderRequest` sets `extra="forbid"`, so any
+   *  field not on this interface is a 422 for the whole request — not a silent drop. */
+  delivery_note?: string;
   items: {
     item_id: string;
     quantity: number;
   }[];
+  idempotency_key?: string;
 }
 
 export function useSupplyOrdersQuery(pgId?: string, status?: string) {

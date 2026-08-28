@@ -52,6 +52,7 @@ export function GuestRSVPsTab() {
   const { data: notifications = [], isLoading: mealsLoading, error: mealsError } = useMealsQuery(activePgId ?? undefined);
   const [rsvpChoices, setRsvpChoices] = useState<Record<string, 'REQUIRED' | 'NOT_REQUIRED'>>({});
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
   const getAlertTriggerTime = usePGowStore((s) => s.getAlertTriggerTime);
   const formatServiceTime12h = usePGowStore((s) => s.formatServiceTime12h);
   const toast = useToast();
@@ -139,16 +140,22 @@ export function GuestRSVPsTab() {
 
   const handleRSVP = useCallback(
     async (notificationId: string, choice: 'REQUIRED' | 'NOT_REQUIRED') => {
-      const result = await submitRSVP(notificationId, choice);
-      if (result.ok) {
-        setRsvpChoices((prev) => ({ ...prev, [notificationId]: choice }));
-        hapticSuccess();
-        const label = choice === 'REQUIRED' ? 'Eating' : 'Skipping';
-        toast('success', `RSVP: ${label}`, 'Your portion is booked.');
+      if (submittingId) return;
+      setSubmittingId(notificationId);
+      try {
+        const result = await submitRSVP(notificationId, choice);
+        if (result.ok) {
+          setRsvpChoices((prev) => ({ ...prev, [notificationId]: choice }));
+          hapticSuccess();
+          const label = choice === 'REQUIRED' ? 'Eating' : 'Skipping';
+          toast('success', `RSVP: ${label}`, 'Your portion is booked.');
+        }
+        // On failure, submitRSVP already surfaced the "❌ RSVP NOT RECORDED" alert itself.
+      } finally {
+        setSubmittingId(null);
       }
-      // On failure, submitRSVP already surfaced the "❌ RSVP NOT RECORDED" alert itself.
     },
-    [submitRSVP, toast],
+    [submittingId, submitRSVP, toast],
   );
 
   return (
@@ -321,6 +328,8 @@ export function GuestRSVPsTab() {
                 <Row gap={10}>
                   <Btn
                     onPress={() => handleRSVP(notif.id, 'REQUIRED')}
+                    disabled={submittingId === notif.id}
+                    loading={submittingId === notif.id}
                     containerColor={isEating ? '#10B981' : 'rgba(16,185,129,0.15)'}
                     textColor={isEating ? '#FFFFFF' : '#10B981'}
                     borderRadius={12}
@@ -333,6 +342,8 @@ export function GuestRSVPsTab() {
                   </Btn>
                   <Btn
                     onPress={() => handleRSVP(notif.id, 'NOT_REQUIRED')}
+                    disabled={submittingId === notif.id}
+                    loading={submittingId === notif.id}
                     containerColor={isSkipping ? '#EF4444' : 'rgba(239,68,68,0.15)'}
                     textColor={isSkipping ? '#FFFFFF' : '#EF4444'}
                     borderRadius={12}
@@ -363,6 +374,7 @@ export function GuestRSVPsTab() {
             <Row gap={10}>
               <Btn
                 onPress={() => { handleRSVP(detailMeal.id, 'REQUIRED'); setDetailMeal(null); }}
+                disabled={submittingId != null}
                 containerColor="#10B981"
                 textColor="#FFFFFF"
                 borderRadius={12}
@@ -374,6 +386,7 @@ export function GuestRSVPsTab() {
               </Btn>
               <Btn
                 onPress={() => { handleRSVP(detailMeal.id, 'NOT_REQUIRED'); setDetailMeal(null); }}
+                disabled={submittingId != null}
                 containerColor="#EF4444"
                 textColor="#FFFFFF"
                 borderRadius={12}

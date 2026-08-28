@@ -2,7 +2,7 @@
  * AddPgPropertyDialog — port of Kotlin `AddPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -11,7 +11,6 @@ import LocationPicker from '@/components/LocationPicker';
 import type { PickedLocation } from '@/features/places/pendingLocation';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { FormScroll } from '@/components/ui/FormScroll';
 
 interface Props {
   onDismiss: () => void;
@@ -90,7 +89,21 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             </Col>
           </Row>
 
-          <FormScroll style={{ flex: 0, maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          {/* FormScroll doesn't work here: its inner ScrollView is hardcoded flex: 1, which
+              needs an ancestor with a real (non-content-sized) height to fill — this Card
+              has none (it's centered and sized to its own content, capped by maxHeight:
+              '90%', not flex: 1), so flex: 1 collapsed to zero exactly like the flex: 0 it
+              replaced did. A plain maxHeight-bounded ScrollView (no flex anywhere in the
+              chain) is the correct pattern for a scrollable region inside a content-sized
+              modal card — it sizes to content up to the cap, then scrolls, with no
+              circular dependency on a parent that isn't flex-bounded itself. */}
+          <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+            <ScrollView
+              style={{ maxHeight: 420 }}
+              contentContainerStyle={{ gap: 10 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
             <OutlinedTextField
               label="Property / PG Name *"
               placeholder="Koramangala Executive Hub"
@@ -155,7 +168,8 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
                 ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
               </Txt>
             </View>
-          </FormScroll>
+            </ScrollView>
+          </KeyboardAvoidingView>
 
           <Spacer size={14} />
           <Row gap={8}>

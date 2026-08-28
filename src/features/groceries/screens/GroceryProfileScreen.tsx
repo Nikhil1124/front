@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Radii } from '@/theme';
@@ -74,7 +74,9 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 40 : 16,
+    // SafeAreaView above already applies insets.top — this is only the extra buffer, same
+    // 14/16px every other grocery screen uses (was double-padding on Android: insets.top+40).
+    paddingTop: 14,
     paddingBottom: 16,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,

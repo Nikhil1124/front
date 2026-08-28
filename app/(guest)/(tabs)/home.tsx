@@ -19,13 +19,8 @@ import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 
 interface QuickTile { label: string; desc: string; icon: keyof typeof Ionicons.glyphMap; tint: string; href: string; }
 const QUICK_TILES: QuickTile[] = [
-  { label: 'Rent & Receipts',  desc: 'Pay & download PDF',    icon: 'card',            tint: Colors.primary, href: '/guest-payments' },
-  { label: 'Maintenance',      desc: 'Raise & track tickets',  icon: 'construct',       tint: Colors.danger,  href: '/support' },
   { label: 'Weekly Menu',      desc: '7-day meal plan',        icon: 'restaurant',       tint: Colors.warning, href: '/meals' },
-  { label: 'Profile & KYC',    desc: 'Verify identity',        icon: 'shield-checkmark', tint: Colors.info,    href: '/profile' },
-  { label: 'Hub Services',     desc: 'Marketplace & laundry',  icon: 'storefront',       tint: '#9333EA',      href: '/hub-services' },
   { label: 'Groceries',        desc: 'Order fresh essentials', icon: 'cart',             tint: Colors.primary, href: '/groceries' },
-  { label: 'Book a Technician', desc: 'Get help with repairs',  icon: 'hammer',           tint: Colors.warning, href: '/book-technician' },
 ];
 
 // Countdown formatter — returns "⏰ Cut-off in 1h 15m" or "Closed" based on

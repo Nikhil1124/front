@@ -518,7 +518,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         set({
           activeAlert: {
             title: '❌ ORDER NOT PLACED',
-            description: err instanceof PGowApiError ? err.message : 'The order was not saved.',
+            description: err instanceof Error ? err.message : 'The order was not saved.',
             type: 'ANNOUNCEMENT', timestamp: Date.now(),
           },
         });
@@ -552,7 +552,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         set({
           activeAlert: {
             title: '❌ REPAIR NOT BOOKED',
-            description: err instanceof PGowApiError ? err.message : 'The booking was not saved.',
+            description: err instanceof Error ? err.message : 'The booking was not saved.',
             type: 'ANNOUNCEMENT', timestamp: Date.now(),
           },
         });
@@ -587,7 +587,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         set({
           activeAlert: {
             title: '❌ PICKUP NOT SCHEDULED',
-            description: err instanceof PGowApiError ? err.message : 'The booking was not saved.',
+            description: err instanceof Error ? err.message : 'The booking was not saved.',
             type: 'ANNOUNCEMENT', timestamp: Date.now(),
           },
         });
@@ -867,7 +867,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not log the expense.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not log the expense.' };
     }
   },
 
@@ -883,7 +883,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       set({
         activeAlert: {
           title: '❌ COULD NOT REVERSE ENTRY',
-          description: err instanceof PGowApiError ? err.message : 'Nothing was changed.',
+          description: err instanceof Error ? err.message : 'Nothing was changed.',
           type: 'ANNOUNCEMENT', timestamp: Date.now(),
         },
       });
@@ -942,7 +942,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       // Report the real failure rather than faking success with a property that only exists
       // in local state — the owner would otherwise believe they have a working listing with a
       // real UPI ID and PIN that the server has never heard of.
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not create the property.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not create the property.' };
     }
   },
 
@@ -969,7 +969,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not update the property.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not update the property.' };
     }
   },
 
@@ -993,7 +993,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true, joinCode: join_code };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not create a code.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not create a code.' };
     }
   },
 
@@ -1005,7 +1005,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not turn self-join off.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not turn self-join off.' };
     }
   },
 
@@ -1020,7 +1020,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not save the rent.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not save the rent.' };
     }
   },
 
@@ -1096,7 +1096,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not submit.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not submit.' };
     }
   },
 
@@ -1110,7 +1110,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not respond.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not respond.' };
     }
   },
 
@@ -1165,7 +1165,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       });
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not register.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not register.' };
     }
   },
 
@@ -1204,7 +1204,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         ok: false,
         error: err instanceof PGowApiError && err.httpStatus === 401
           ? 'Invalid phone number or password.'
-          : err instanceof PGowApiError ? err.message : 'Could not sign in.',
+          : err instanceof Error ? err.message : 'Could not sign in.',
       };
     }
   },
@@ -1228,7 +1228,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     } catch (err) {
       return {
         ok: false,
-        error: err instanceof PGowApiError ? err.message : 'Could not update password.',
+        error: err instanceof Error ? err.message : 'Could not update password.',
       };
     }
   },
@@ -1268,7 +1268,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not add staff member.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not add staff member.' };
     }
   },
 
@@ -1279,7 +1279,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       return { ok: true };
     } catch (err) {
       console.warn('[PGow] could not remove staff member:', err);
-      const msg = err instanceof PGowApiError ? err.message : 'Could not remove staff member.';
+      const msg = err instanceof Error ? err.message : 'Could not remove staff member.';
       return { ok: false, error: msg };
     }
   },
@@ -1325,7 +1325,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not join.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not join.' };
     }
   },
 
@@ -1354,7 +1354,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         ok: false,
         error: err instanceof PGowApiError && err.httpStatus === 401
           ? 'Invalid phone number or password.'
-          : err instanceof PGowApiError ? err.message : 'Could not sign in.',
+          : err instanceof Error ? err.message : 'Could not sign in.',
       };
     }
   },
@@ -1398,7 +1398,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         ok: false,
         error: err instanceof PGowApiError && err.httpStatus === 401
           ? 'Your current password is not correct.'
-          : err instanceof PGowApiError ? err.message : 'Could not change password.',
+          : err instanceof Error ? err.message : 'Could not change password.',
       };
     }
   },
@@ -1496,7 +1496,11 @@ export const usePGowStore = create<PGowState>((set, get) => ({
             'Document upload is not switched on for this property yet. Nothing is wrong with your photos — please tell your property manager, and try again once they confirm it is set up.',
         };
       }
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not submit KYC.' };
+      // uploadToPresignedUrl throws plain Error (not PGowApiError) for a failed S3 PUT or a
+      // missing photo — those messages are the actual diagnostic ("Upload failed: 403 — …"),
+      // so narrowing to PGowApiError here was discarding them in favor of a useless generic
+      // string. Any Error's .message is real; only a non-Error throw falls back.
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not submit KYC.' };
     }
   },
 
@@ -1525,7 +1529,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       set({
         activeAlert: {
           title: '❌ PHOTO NOT SAVED',
-          description: err instanceof PGowApiError ? err.message : 'The photo could not be uploaded.',
+          description: err instanceof Error ? err.message : 'The photo could not be uploaded.',
           type: 'ANNOUNCEMENT', timestamp: Date.now(),
         },
       });
@@ -1572,7 +1576,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not record the decision.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not record the decision.' };
     }
   },
 
@@ -1597,7 +1601,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not add resident.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not add resident.' };
     }
   },
 
@@ -1615,7 +1619,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not update resident.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not update resident.' };
     }
   },
 
@@ -1639,7 +1643,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       set({
         activeAlert: {
           title: '❌ COULD NOT SAVE UPI ID',
-          description: err instanceof PGowApiError ? err.message : 'The UPI ID was not saved.',
+          description: err instanceof Error ? err.message : 'The UPI ID was not saved.',
           type: 'ANNOUNCEMENT', timestamp: Date.now(),
         },
       });
@@ -1653,7 +1657,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       return { ok: true };
     } catch (err) {
       console.warn('[PGow] could not remove resident:', err);
-      const msg = err instanceof PGowApiError ? err.message : 'Could not remove resident.';
+      const msg = err instanceof Error ? err.message : 'Could not remove resident.';
       return { ok: false, error: msg };
     }
   },
@@ -1682,7 +1686,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         ok: false,
         error: err instanceof PGowApiError && err.httpStatus === 401
           ? 'Invalid phone number or PIN.'
-          : err instanceof PGowApiError ? err.message : 'Could not sign in.',
+          : err instanceof Error ? err.message : 'Could not sign in.',
       };
     }
   },
@@ -1723,7 +1727,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not broadcast the meal.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not broadcast the meal.' };
     }
   },
 
@@ -1731,7 +1735,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     try {
       await mealsApi.submitResponse(notificationId, choice === 'REQUIRED' ? 'eating' : 'skipping');
     } catch (err) {
-      const message = err instanceof PGowApiError ? err.message : 'Your answer was not saved. Try again.';
+      const message = err instanceof Error ? err.message : 'Your answer was not saved. Try again.';
       set({
         activeAlert: {
           title: '❌ RSVP NOT RECORDED',
@@ -1784,7 +1788,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       await get().refreshAll();
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof PGowApiError ? err.message : 'Could not submit payment.' };
+      return { ok: false, error: err instanceof Error ? err.message : 'Could not submit payment.' };
     }
   },
 
@@ -1799,7 +1803,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       set({
         activeAlert: {
           title: '❌ COULD NOT RECORD DECISION',
-          description: err instanceof PGowApiError ? err.message : 'Nothing was changed. Try again.',
+          description: err instanceof Error ? err.message : 'Nothing was changed. Try again.',
           type: 'PAYMENT', timestamp: Date.now(),
         },
       });
@@ -1860,7 +1864,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       set({
         activeAlert: {
           title: '❌ REMINDERS NOT SENT',
-          description: err instanceof PGowApiError ? err.message : 'Nothing was sent. Try again.',
+          description: err instanceof Error ? err.message : 'Nothing was sent. Try again.',
           type: 'PAYMENT', timestamp: Date.now(),
         },
       });
@@ -1900,7 +1904,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       set({
         activeAlert: {
           title: '❌ COULD NOT RECORD PAYMENT',
-          description: err instanceof PGowApiError ? err.message : 'Nothing was recorded. Try again.',
+          description: err instanceof Error ? err.message : 'Nothing was recorded. Try again.',
           type: 'PAYMENT', timestamp: Date.now(),
         },
       });

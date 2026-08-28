@@ -79,6 +79,7 @@ export function OwnerGuestsManagementTab() {
   const [guestPassword, setGuestPassword] = useState('');
   const [guestRent, setGuestRent] = useState('6500');
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [errorField, setErrorField] = useState<'email' | 'phone' | 'rent' | null>(null);
 
   // Edit states
@@ -186,27 +187,32 @@ export function OwnerGuestsManagementTab() {
   };
 
   const handleUpdate = async () => {
-    if (!editing) return;
+    if (!editing || isUpdating) return;
     const parsedEditRent = parseFloat(editRent);
     if (!Number.isFinite(parsedEditRent) || parsedEditRent <= 0) {
       toast('error', 'Monthly rent required', 'Enter the agreed monthly rent for this resident.');
       return;
     }
-    const result = await updateGuestByOwner(
-      editing,
-      editName,
-      editEmail,
-      editPhone,
-      editRoom,
-      parsedEditRent
-    );
-    if (result.ok) {
-      hapticSuccess();
-      toast('success', 'Profile Updated', 'Resident profile & monthly fee updated.');
-      setEditing(null);
-    } else {
-      hapticError();
-      Alert.alert('Failed', result.error ?? 'Unknown');
+    setIsUpdating(true);
+    try {
+      const result = await updateGuestByOwner(
+        editing,
+        editName,
+        editEmail,
+        editPhone,
+        editRoom,
+        parsedEditRent
+      );
+      if (result.ok) {
+        hapticSuccess();
+        toast('success', 'Profile Updated', 'Resident profile & monthly fee updated.');
+        setEditing(null);
+      } else {
+        hapticError();
+        Alert.alert('Failed', result.error ?? 'Unknown');
+      }
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -1044,6 +1050,8 @@ export function OwnerGuestsManagementTab() {
             <Row gap={8}>
               <Btn
                 onPress={handleUpdate}
+                disabled={isUpdating}
+                loading={isUpdating}
                 containerColor={GREEN}
                 textColor={WHITE}
                 borderRadius={10}

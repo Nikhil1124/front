@@ -62,6 +62,7 @@ export function GuestPaymentsTab() {
   const [activeSubTab, setActiveSubTab] = useState(0);
   const [payMode, setPayMode] = useState('ONLINE_PHONEPE');
   const [utrNumber, setUtrNumber] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
   const [filter, setFilter] = useState('ALL');
 
@@ -104,18 +105,24 @@ export function GuestPaymentsTab() {
   };
 
   const handleSubmit = async (mode: string) => {
+    if (isSubmitting) return;
     if (!rentKnown) {
       Alert.alert('Amount unavailable', 'We could not load what you owe this month. Pull down to refresh and try again.');
       return;
     }
-    const r = await submitPayment(mode, rentAmount!, 'GUEST_RENT', utrNumber, currentMonthYear);
-    if (r.ok) {
-      hapticSuccess();
-      setUtrNumber('');
-      toast('success', 'Payment submitted!', isBillPaid ? 'Your payment was recorded.' : 'Awaiting owner verification.');
-    } else {
-      hapticError();
-      Alert.alert('Failed', r.error ?? 'Unknown');
+    setIsSubmitting(true);
+    try {
+      const r = await submitPayment(mode, rentAmount!, 'GUEST_RENT', utrNumber, currentMonthYear);
+      if (r.ok) {
+        hapticSuccess();
+        setUtrNumber('');
+        toast('success', 'Payment submitted!', isBillPaid ? 'Your payment was recorded.' : 'Awaiting owner verification.');
+      } else {
+        hapticError();
+        Alert.alert('Failed', r.error ?? 'Unknown');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -279,7 +286,8 @@ export function GuestPaymentsTab() {
           {/* Primary CTA button */}
           <Btn
             onPress={handlePrimaryPayPress}
-            disabled={isBillPaid || !rentKnown}
+            disabled={isBillPaid || !rentKnown || isSubmitting}
+            loading={isSubmitting}
             containerColor={isBillPaid ? Colors.success : Colors.primary}
             textColor={Colors.textInverse}
             borderRadius={Layout.borderRadiusButton}
@@ -420,7 +428,8 @@ export function GuestPaymentsTab() {
                   />
                   <Btn
                     onPress={() => handleSubmit('ONLINE_PHONEPE')}
-                    disabled={!utrNumber.trim()}
+                    disabled={!utrNumber.trim() || isSubmitting}
+                    loading={isSubmitting}
                     containerColor={Colors.primary}
                     textColor={Colors.textInverse}
                     borderRadius={10}
@@ -453,7 +462,8 @@ export function GuestPaymentsTab() {
                   />
                   <Btn
                     onPress={() => handleSubmit('SCAN_QR')}
-                    disabled={!utrNumber.trim()}
+                    disabled={!utrNumber.trim() || isSubmitting}
+                    loading={isSubmitting}
                     containerColor={Colors.primary}
                     textColor={Colors.textInverse}
                     borderRadius={10}
@@ -475,6 +485,8 @@ export function GuestPaymentsTab() {
                   <Spacer size={12} />
                   <Btn
                     onPress={() => handleSubmit('CASH_HANDOVER')}
+                    disabled={isSubmitting}
+                    loading={isSubmitting}
                     containerColor={Colors.primary}
                     textColor={Colors.textInverse}
                     borderRadius={10}

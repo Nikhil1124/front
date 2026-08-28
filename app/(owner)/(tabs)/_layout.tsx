@@ -44,6 +44,15 @@ export default function OwnerTabsLayout() {
         <TabHeader
           actions={
             <>
+              {/* Pushes to the shared /notifications route (app/notifications/index.tsx),
+                  which renders OwnerAnnouncementsTab for owner/manager — same rich screen
+                  (broadcast composer, approvals, folded-in Reviews), reached the reliable
+                  way. This used to push straight to '/notices' (the tab route), but once
+                  that tab's TabTrigger was removed from the dock, expo-router/ui's Tabs
+                  navigator no longer had it in its route table (that table is built from
+                  declared TabTriggers, not the file system) — the push silently went
+                  nowhere. A root-level Stack route like /notifications doesn't have that
+                  problem: it's reachable regardless of which Tabs navigator is active. */}
               <AnimatedPress scale={0.85} hapticPattern="light" accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
                 onPress={() => router.push({ pathname: '/notifications', params: { role: isManager ? 'MANAGER' : 'OWNER' } })}>
                 <View style={styles.headerIconBtn}>
@@ -100,23 +109,25 @@ export default function OwnerTabsLayout() {
 
       {/* ── Sticky bottom dock — see Dock/useDock in HeadlessDockTabButton.tsx ──── */}
       <Dock style={dockStyle}>
-        <TabTrigger name="overview" href="/overview" asChild>
-          <HeadlessDockTabButton icon="grid" label="Overview" />
-        </TabTrigger>
+        {/* Overview sits in the middle — the natural thumb-reach spot — with the rest split
+            evenly left and right, same layout convention as the guest dock. Notifications
+            has no dock slot of its own: the header bell already opens it (see onPress
+            above), so a second entry point here was redundant. Reviews (ratings + staff
+            performance) folded into Notifications as a sub-tab, same reasoning. */}
         <TabTrigger name="guests" href="/guests" asChild>
           <HeadlessDockTabButton icon="people" label="Guests" />
         </TabTrigger>
         <TabTrigger name="payments" href="/payments" asChild>
           <HeadlessDockTabButton icon="card" label="Payments" />
         </TabTrigger>
+        <TabTrigger name="overview" href="/overview" asChild>
+          <HeadlessDockTabButton icon="grid" label="Overview" />
+        </TabTrigger>
         <TabTrigger name="staff" href="/staff" asChild>
           <HeadlessDockTabButton icon="ribbon" label="Staff" />
         </TabTrigger>
-        <TabTrigger name="notices" href="/notices" asChild>
-          <HeadlessDockTabButton icon="megaphone" label="Notices" />
-        </TabTrigger>
-        <TabTrigger name="reviews" href="/reviews" asChild>
-          <HeadlessDockTabButton icon="star" label="Reviews" />
+        <TabTrigger name="complaints" href="/complaints" asChild>
+          <HeadlessDockTabButton icon="alert-circle" label="Complaints" />
         </TabTrigger>
       </Dock>
 

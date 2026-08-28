@@ -4,7 +4,6 @@ import React from 'react';
 import {
   FlatList,
   Image,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -31,7 +30,6 @@ export function GroceryWishlistScreen() {
   if (items.length === 0) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Wishlist</Text>
@@ -59,7 +57,6 @@ export function GroceryWishlistScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Wishlist</Text>

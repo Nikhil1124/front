@@ -92,6 +92,13 @@ export function KycUploadDialog({
 
   const choosePhoto = (onPicked: (uri: string) => void, label: string) => {
     hapticSelect();
+    // react-native-web's Alert.alert is a no-op stub, so the Take Photo / Choose from
+    // Library action sheet below never appears on web — go straight to the file picker,
+    // which is the only source a desktop browser has anyway.
+    if (Platform.OS === 'web') {
+      pickImage('library').then((u) => { if (u) onPicked(u); });
+      return;
+    }
     Alert.alert(label, 'Choose a source', [
       { text: 'Take Photo', onPress: async () => { const u = await pickImage('camera'); if (u) onPicked(u); } },
       { text: 'Choose from Library', onPress: async () => { const u = await pickImage('library'); if (u) onPicked(u); } },

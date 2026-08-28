@@ -1,6 +1,7 @@
 import { SupplyCategory, SupplyItem } from '@/types';
+import { toAmount } from '@/data/mappers';
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, StatusBar, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -107,7 +108,9 @@ export function GroceryCategoryScreen() {
             categories.find((c) => c.name === activeSupplyCategory && c.id === p.category_id) !== undefined
         )
       : filter === 'deals'
-      ? supplyItems.filter((p) => p.mrp && p.mrp > p.price)
+      // Numeric compare — see the note in useSupply.ts's useDeals: these are Decimal
+      // strings on the wire, so a bare `>` compares them lexicographically.
+      ? supplyItems.filter((p) => p.mrp != null && toAmount(p.mrp) > toAmount(p.price))
       : supplyItems;
 
     if (search.trim()) {
@@ -151,11 +154,10 @@ export function GroceryCategoryScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.canvas} />
 
       <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
-        <View style={[styles.topHeader, { paddingTop: insets.top + 10 }]}>
+        <View style={[styles.topHeader, { paddingTop: insets.top + 14 }]}>
           {showProductList ? (
             <TouchableOpacity
               style={styles.backBtn}

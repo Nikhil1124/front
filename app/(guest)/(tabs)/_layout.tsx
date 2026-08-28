@@ -131,11 +131,17 @@ export default function GuestTabsLayout() {
 
       {/* Sticky bottom dock — see Dock/useDock in HeadlessDockTabButton.tsx */}
       <Dock style={dockStyle}>
+        {/* Mess, not Meals — the term every Indian PG/hostel resident actually uses
+            (mess bill, mess menu, mess timing). Home sits in the middle, the natural
+            thumb-reach spot on a 5-tab dock. */}
+        <TabTrigger name="meals" href="/meals" asChild>
+          <HeadlessDockTabButton icon="restaurant" label="Mess" />
+        </TabTrigger>
+        <TabTrigger name="support" href="/support" asChild>
+          <HeadlessDockTabButton icon="alert-circle" label="Complaints" />
+        </TabTrigger>
         <TabTrigger name="home" href="/home" asChild>
           <HeadlessDockTabButton icon="home" label="Home" />
-        </TabTrigger>
-        <TabTrigger name="meals" href="/meals" asChild>
-          <HeadlessDockTabButton icon="restaurant" label="Meals" />
         </TabTrigger>
         <TabTrigger name="guest-payments" href="/guest-payments" asChild>
           <HeadlessDockTabButton icon="card" label="Payments" />

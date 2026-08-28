@@ -36,6 +36,32 @@ export function vacateBed(pgId: string, bedId: string): Promise<PropertyLayoutRe
   }).then(toPropertyLayout);
 }
 
+/** Creates a room (and, if its floor hasn't been used yet, effectively a new floor) with
+ *  `sharing_type` beds. The server rejects this — 422 VALIDATION_ERROR — if it would push
+ *  the property past the total_beds it's registered for. */
+export function createRoom(
+  pgId: string,
+  params: { floor_number: number; room_number: string; sharing_type: number; base_rent?: number },
+): Promise<PropertyLayoutResponse> {
+  return apiFetch<any>(API.PG_ROOMS(pgId), {
+    method: "POST",
+    body: JSON.stringify(params),
+  }).then(toPropertyLayout);
+}
+
+/** Raises a room's roommate capacity, adding the extra beds. Same total_beds cap as
+ *  createRoom; only ever increases (the server rejects a lower or equal value). */
+export function increaseRoomSharing(
+  pgId: string,
+  roomId: string,
+  sharingType: number,
+): Promise<PropertyLayoutResponse> {
+  return apiFetch<any>(API.PG_ROOM_SHARING(pgId, roomId), {
+    method: "PATCH",
+    body: JSON.stringify({ sharing_type: sharingType }),
+  }).then(toPropertyLayout);
+}
+
 // ─── React bindings ──────────────────────────────────────────────────────────
 
 export function usePropertyLayout(pgId: string | null) {
@@ -67,6 +93,28 @@ export function useVacateBed(pgId: string | null) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.properties.layout(pgId ?? "") });
       qc.invalidateQueries({ queryKey: ["guests"] });
+    },
+  });
+}
+
+export function useCreateRoom(pgId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { floor_number: number; room_number: string; sharing_type: number; base_rent?: number }) =>
+      createRoom(pgId!, params),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.properties.layout(pgId ?? "") });
+    },
+  });
+}
+
+export function useIncreaseRoomSharing(pgId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { roomId: string; sharingType: number }) =>
+      increaseRoomSharing(pgId!, params.roomId, params.sharingType),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.properties.layout(pgId ?? "") });
     },
   });
 }

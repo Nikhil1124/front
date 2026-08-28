@@ -1,6 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, StatusBar, Image } from 'react-native';
+import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -109,7 +109,6 @@ export function GroceryProductScreen() {
   if (!product || options.length === 0) {
     return (
       <View style={styles.errorContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
         <View style={styles.errorState}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textSecondary} />
           <Text style={styles.errorText}>Product not found</Text>
@@ -152,10 +151,12 @@ export function GroceryProductScreen() {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
 
-      {/* Floating top header */}
-      <View style={[styles.floatingHeader, { paddingTop: 8 }]}>
+      {/* Floating top header — position: absolute + top: 0, so unlike the rest of this
+          screen (which already uses insets.top below), its own top padding has to account
+          for the notch/status bar directly rather than sitting in normal flow under it.
+          insets.top + 14 matches every other grocery screen's header. */}
+      <View style={[styles.floatingHeader, { paddingTop: insets.top + 14 }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -180,7 +181,8 @@ export function GroceryProductScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* ── Top split: image + title ── */}
-        <View style={[styles.topRowSection, { paddingTop: 54 }]}>
+        {/* Clears the floating header above (insets.top + 14 padding + ~36px buttons). */}
+        <View style={[styles.topRowSection, { paddingTop: insets.top + 60 }]}>
 
           {/* Left: product image */}
           <View style={styles.leftImageColumn}>

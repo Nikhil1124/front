@@ -28,7 +28,11 @@ export interface NotificationRecord {
   title: string;
   body: string;
   /** Where a tap goes. Pairs with `action_id`; both null means the row is read-only text. */
-  action_type?: "request" | "payment" | "kyc" | "meal" | null;
+  // Mirrors the server's `NotificationActionType`. 'order' is written by every supply order
+  // transition and 'trip' by delivery-agent assignment — both were missing here, so those
+  // rows fell outside the declared union (harmless today: this is only rendered as a label,
+  // never switched on for navigation).
+  action_type?: "request" | "payment" | "kyc" | "meal" | "order" | "trip" | null;
   action_id?: string | null;
   is_read: boolean;
   created_at: string;
