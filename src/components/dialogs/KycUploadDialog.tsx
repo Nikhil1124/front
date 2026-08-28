@@ -24,8 +24,9 @@
 import { useEffect, useState } from 'react';
 import {
   Modal, View, StyleSheet, Pressable, TouchableOpacity, Alert, Platform, BackHandler,
-  KeyboardAvoidingView,
+  KeyboardAvoidingView, ScrollView,
 } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
@@ -171,7 +172,10 @@ export function KycUploadDialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      {/* behavior="padding" only on Android — iOS natively handles keyboard avoidance via
+          automaticallyAdjustKeyboardInsets. Using "padding" on iOS double-counts the
+          keyboard height and leaves a blank gap above the keyboard instead. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
       <Pressable style={styles.backdrop} onPress={onDismiss}>
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable onPress={() => {/* swallow tap so it doesn't bubble */}} style={styles.cardWrap}>
@@ -230,6 +234,15 @@ export function KycUploadDialog({
             )}
 
             <Spacer size={16} />
+
+            {/* ScrollView caps the form content so the card never exceeds the screen height;
+                the Submit/Cancel row lives outside it and is always visible. */}
+            <ScrollView
+              style={{ maxHeight: 370 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              automaticallyAdjustKeyboardInsets
+            >
 
             {/* 1. Selfie / Profile photo */}
             <Txt variant="body" weight="700" color={Colors.primary}>1. Selfie / Profile Photo</Txt>
@@ -330,7 +343,9 @@ export function KycUploadDialog({
               </Col>
             </Row>
 
-            <Spacer size={22} />
+            </ScrollView>
+
+            <Spacer size={16} />
 
             {/* Bottom action row — distinct Submit / Cancel affordances */}
             <Row gap={10}>

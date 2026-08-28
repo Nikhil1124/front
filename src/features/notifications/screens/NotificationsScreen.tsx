@@ -10,7 +10,7 @@
  * push notification tap that has nothing more specific to open can land.
  */
 import { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -77,7 +77,7 @@ export interface NotificationsScreenProps {
 
 export function NotificationsScreen({ roleTitle }: NotificationsScreenProps) {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: roleNotifs = [], isLoading, error, refetch } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const { data: roleNotifs = [], isLoading, error, refetch, isRefetching } = useRoleNotificationsQuery(activePgId ?? undefined);
   const markAllRead = usePGowStore((s) => s.markAllRoleNotificationsAsRead);
   const markRead = usePGowStore((s) => s.markRoleNotificationAsRead);
   const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
@@ -113,7 +113,10 @@ export function NotificationsScreen({ roleTitle }: NotificationsScreenProps) {
         </Row>
       }
     >
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView
+        contentContainerStyle={styles.body}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+      >
         <View style={styles.headerRow}>
           <View style={[styles.roleIconBox, { backgroundColor: '#F0FDF9' }]}>
             <Ionicons name={roleIcon(roleTitle)} size={20} color={Colors.primary} />

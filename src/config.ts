@@ -72,6 +72,7 @@ export const API = {
 
   // Address autocomplete, proxied by our backend — no map key ships in this app.
   PLACES_AUTOCOMPLETE: "/v1/places/autocomplete",
+  PLACES_PLACE_DETAILS: "/v1/places/place-details",
   PLACES_REVERSE_GEOCODE: "/v1/places/reverse-geocode",
   PLACES_MAP_TILE: "/v1/places/map-tile",
   // The live map's style — vector tiles, sprite and glyphs all proxied through it too; see

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -31,10 +31,10 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 
 export function BedVisualizerScreen() {
   const pgId = useAuthStore((s) => s.activePgId) ?? null;
-  const { data: guests = [] } = useGuestsQuery(pgId ?? undefined);
+  const { data: guests = [], refetch: refetchGuests } = useGuestsQuery(pgId ?? undefined);
   const toast = useToast();
 
-  const { data: layout, isLoading, isError, error } = usePropertyLayout(pgId);
+  const { data: layout, isLoading, isError, error, refetch: refetchLayout, isRefetching: isRefetchingLayout } = usePropertyLayout(pgId);
   const assignBed = useAssignBed(pgId);
   const vacateBed = useVacateBed(pgId);
   const createRoom = useCreateRoom(pgId);
@@ -140,6 +140,7 @@ export function BedVisualizerScreen() {
       title="Bed Layout"
       subtitle={layout?.propertyName ?? 'Property Layout'}
       icon="bed-outline"
+      refreshControl={<RefreshControl refreshing={isRefetchingLayout} onRefresh={() => Promise.all([refetchLayout(), refetchGuests()])} />}
     >
       {isLoading ? (
         <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>

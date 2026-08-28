@@ -11,6 +11,8 @@ import {
   Modal,
   Pressable,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -968,43 +970,47 @@ export function OwnerPaymentsTab() {
       {/* ── Reject Payment Modal ── */}
       {rejectingPayment && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setRejectingPayment(null)}>
-          <View style={styles.pickerPopupBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setRejectingPayment(null)} />
-            <View style={[styles.pickerPopupCard, { padding: 20 }]}>
-              <Text style={styles.pickerPopupTitle}>Reject Payment</Text>
-              <Spacer size={4} />
-              <Text style={{ fontSize: 12, color: MUTED }}>
-                {rejectingPayment.payerName} • ₹{Math.round(rejectingPayment.amount).toLocaleString('en-IN')}
-              </Text>
-              <Spacer size={14} />
-              <OutlinedTextField
-                label="Reason (shown to the resident)"
-                placeholder="Amount doesn't match, UTR not found, etc."
-                value={rejectReason}
-                onChangeText={setRejectReason}
-              />
-              <Spacer size={16} />
-              <Row gap={10}>
-                <TouchableOpacity
-                  onPress={() => setRejectingPayment(null)}
-                  style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: '#F1F5F4', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: CHARCOAL }}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleRejectPayment}
-                  disabled={rejectPayment.isPending}
-                  style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center', opacity: rejectPayment.isPending ? 0.6 : 1 }}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: WHITE }}>
-                    {rejectPayment.isPending ? 'Rejecting…' : 'Confirm Rejection'}
-                  </Text>
-                </TouchableOpacity>
-              </Row>
+          {/* KAV so the reason input isn't covered by keyboard on Android */}
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+            <View style={styles.pickerPopupBackdrop}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => setRejectingPayment(null)} />
+              <View style={[styles.pickerPopupCard, { padding: 20 }]}>
+                <Text style={styles.pickerPopupTitle}>Reject Payment</Text>
+                <Spacer size={4} />
+                <Text style={{ fontSize: 12, color: MUTED }}>
+                  {rejectingPayment.payerName} • ₹{Math.round(rejectingPayment.amount).toLocaleString('en-IN')}
+                </Text>
+                <Spacer size={14} />
+                <OutlinedTextField
+                  label="Reason (shown to the resident)"
+                  placeholder="Amount doesn't match, UTR not found, etc."
+                  value={rejectReason}
+                  onChangeText={setRejectReason}
+                />
+                <Spacer size={16} />
+                <Row gap={10}>
+                  <TouchableOpacity
+                    onPress={() => setRejectingPayment(null)}
+                    style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: '#F1F5F4', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: CHARCOAL }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleRejectPayment}
+                    disabled={rejectPayment.isPending}
+                    style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center', opacity: rejectPayment.isPending ? 0.6 : 1 }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: WHITE }}>
+                      {rejectPayment.isPending ? 'Rejecting…' : 'Confirm Rejection'}
+                    </Text>
+                  </TouchableOpacity>
+                </Row>
+              </View>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
       )}
+
 
       {/* ── Custom Date Range Picker Modal ── */}
       {showDatePicker && (

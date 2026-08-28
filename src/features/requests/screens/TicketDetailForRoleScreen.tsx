@@ -8,7 +8,7 @@
  * way), so this is also where the two are told apart — a "Book a technician" button on a
  * five-star meal review would be a design bug, not a helpful shortcut.
  */
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, RefreshControl } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -23,14 +23,17 @@ import { Colors, Layout } from '@/theme';
 export function TicketDetailForRoleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: ticket, isLoading, error, refetch } = useComplaintQuery(id, activePgId ?? undefined);
+  const { data: ticket, isLoading, error, refetch, isRefetching } = useComplaintQuery(id, activePgId ?? undefined);
 
   const isComplaint = ticket?.type === 'COMPLAINT';
   const canBook = isComplaint && ticket?.status !== 'Resolved';
   const spec = ticket ? tradeForComplaint(ticket.category, ticket.title) : null;
 
   return (
-    <HubScreenWrapper title={isComplaint ? 'Complaint' : 'Feedback'}>
+    <HubScreenWrapper
+      title={isComplaint ? 'Complaint' : 'Feedback'}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+    >
       {isLoading ? (
         <LoadingState label="Loading…" />
       ) : error || !ticket ? (

@@ -1,7 +1,7 @@
 import { SupplyCategory, SupplyItem } from '@/types';
 import { toAmount } from '@/data/mappers';
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -15,49 +15,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Colors, Layout, Radii } from '@/theme';
 import { FormScroll } from '@/components/ui/FormScroll';
 
-// Section Grouping Definition
-interface SupplyCategoryGroup {
-  id: string;
-  title: string;
-  categoryIds: string[];
-}
 
-const CATEGORY_GROUPS: SupplyCategoryGroup[] = [
-  {
-    id: 'grocery-kitchen',
-    title: 'Grocery & Kitchen',
-    categoryIds: [
-      'cat-fruitsveg',
-      'cat-flours',
-      'cat-oils',
-      'cat-dairy',
-      'cat-bakery',
-      'cat-pulses',
-      'cat-chicken',
-      'cat-addons',
-    ],
-  },
-  {
-    id: 'snacks-drinks',
-    title: 'Snacks & Drinks',
-    categoryIds: [
-      'cat-canned',
-      'cat-sweets',
-      'cat-beverages',
-      'cat-frozen',
-      'cat-sauces',
-    ],
-  },
-  {
-    id: 'household-essentials',
-    title: 'Household & Essentials',
-    categoryIds: [
-      'cat-cleaning',
-      'cat-packaging',
-      'cat-custom',
-    ],
-  },
-];
 
 // Map section filter keys → display info
 const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNames: string[] }> = {
@@ -85,8 +43,13 @@ export function GroceryCategoryScreen() {
   const filter: string | undefined = undefined;
 
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
-  const { data: supplyItems = [] } = useSupplyItems(activePgId);
-  const { data: categories = [] } = useSupplyCategories(activePgId);
+  const { data: supplyItems = [], refetch: refetchItems, isRefetching: isRefetchingItems } = useSupplyItems(activePgId);
+  const { data: categories = [], refetch: refetchCats, isRefetching: isRefetchingCats } = useSupplyCategories(activePgId);
+
+  const isRefreshing = isRefetchingItems || isRefetchingCats;
+  const handleRefresh = async () => {
+    await Promise.all([refetchItems(), refetchCats()]);
+  };
 
   const mode = useShoppingModeStore((s) => s.mode);
   const getCartTotal = useCartStore((s) => s.getCartTotal);
@@ -217,44 +180,87 @@ export function GroceryCategoryScreen() {
 
         {/* MAIN CONTENT AREA */}
         {!showProductList ? (
-          /* ── CATEGORY SECTION GROUPS (Blinkit Style 4-Column Layout) ── */
+          /* ── CATEGORY SECTION GROUPS (Dynamic — all categories from API) ── */
           <FormScroll
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.sectionsScrollContent}
+            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
           >
-            {CATEGORY_GROUPS.map((group) => {
-              // Get categories belonging to this section
-              const groupCats = categories.filter((c) => group.categoryIds.includes(c.id));
-              if (groupCats.length === 0) return null;
+            {(() => {
+              // Group categories dynamically: first try to match the curated groups by name
+              // (not by hardcoded IDs — new admin-created categories have UUIDs that would
+              // never match the old 'cat-fruitsveg' style IDs). Fall back: any category not
+              // claimed by a named group goes into "More Categories".
+              const NAMED_GROUPS: { title: string; names: string[] }[] = [
+                {
+                  title: 'Grocery & Kitchen',
+                  names: [
+                    'Vegetables & Fruits', 'Fruits & Vegetables',
+                    'Atta, Rice & Dal', 'Dal, Atta & Rice',
+                    'Dairy, Bread & Eggs', 'Eggs, Bread & Dairy',
+                    'Oil, Ghee & Masala', 'Oils & Masala',
+                    'Chicken, Meat & Fish', 'Meat & Fish',
+                    'PG Kitchen Needs', 'Kitchen Essentials',
+                  ],
+                },
+                {
+                  title: 'Snacks & Drinks',
+                  names: [
+                    'Snacks', 'Beverages', 'Drinks',
+                    'Frozen Foods', 'Sauces & Spreads', 'Sweets & Chocolates',
+                    'Canned & Ready-to-eat',
+                  ],
+                },
+                {
+                  title: 'Household & Essentials',
+                  names: [
+                    'Cleaning Supplies', 'Household', 'Cleaning',
+                    'Packaging', 'Custom Supplies',
+                  ],
+                },
+              ];
 
-              // If a filter is applied, filter categories accordingly
-              const filteredGroupCats = sectionFilter && sectionFilter.categoryNames.length > 0
-                ? groupCats.filter((c) => sectionFilter.categoryNames.includes(c.name))
-                : groupCats;
+              const claimedIds = new Set<string>();
+              const grouped: { title: string; cats: SupplyCategory[] }[] = [];
 
-              if (filteredGroupCats.length === 0) return null;
+              for (const g of NAMED_GROUPS) {
+                const matched = categories.filter((c) =>
+                  g.names.some((n) => c.name.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(c.name.toLowerCase()))
+                );
+                if (matched.length > 0) {
+                  matched.forEach((c) => claimedIds.add(c.id));
+                  const filtered = sectionFilter && sectionFilter.categoryNames.length > 0
+                    ? matched.filter((c) => sectionFilter.categoryNames.includes(c.name))
+                    : matched;
+                  if (filtered.length > 0) {
+                    grouped.push({ title: g.title, cats: filtered });
+                  }
+                }
+              }
 
-              return (
-                <View key={group.id} style={styles.sectionBlock}>
-                  <Text style={styles.sectionHeading}>{group.title}</Text>
+              // Any category not matched above — admin-added categories land here
+              const unclaimed = categories.filter((c) => !claimedIds.has(c.id));
+              const unclaimedFiltered = sectionFilter && sectionFilter.categoryNames.length > 0
+                ? unclaimed.filter((c) => sectionFilter.categoryNames.includes(c.name))
+                : unclaimed;
+              if (unclaimedFiltered.length > 0) {
+                grouped.push({ title: 'More Categories', cats: unclaimedFiltered });
+              }
+
+              // If no groups matched at all (rare edge case), show all flat
+              if (grouped.length === 0 && categories.length > 0) {
+                grouped.push({ title: 'All Categories', cats: categories });
+              }
+
+              return grouped.map((g) => (
+                <View key={g.title} style={styles.sectionBlock}>
+                  <Text style={styles.sectionHeading}>{g.title}</Text>
                   <View style={styles.gridRow}>
-                    {filteredGroupCats.map(renderSupplyCategoryItem)}
+                    {g.cats.map(renderSupplyCategoryItem)}
                   </View>
                 </View>
-              );
-            })}
-
-            {/* Fallback for unclassified categories */}
-            {categories.some((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id))) && (
-              <View style={styles.sectionBlock}>
-                <Text style={styles.sectionHeading}>All Categories</Text>
-                <View style={styles.gridRow}>
-                  {categories
-                    .filter((c) => !CATEGORY_GROUPS.some((g) => g.categoryIds.includes(c.id)))
-                    .map(renderSupplyCategoryItem)}
-                </View>
-              </View>
-            )}
+              ));
+            })()}
           </FormScroll>
         ) : (
           /* ── PRODUCT GRID (When a Category is Tapped) ── */
@@ -265,6 +271,7 @@ export function GroceryCategoryScreen() {
             contentContainerStyle={styles.gridContent}
             columnWrapperStyle={styles.columnWrapper}
             showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
             ListEmptyComponent={
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyIcon}>🔍</Text>
@@ -273,6 +280,7 @@ export function GroceryCategoryScreen() {
             }
             renderItem={({ item }) => (
               <View style={{ width: productCardWidth }}>
+
                 <ProductCard
                   product={item}
                   onPress={(p) => router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })}

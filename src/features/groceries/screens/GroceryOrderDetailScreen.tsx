@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,8 +28,8 @@ const STATUS_HERO: Record<string, string> = {
 export function GroceryOrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: order, isLoading, refetch } = useSupplyOrderDetailQuery(id as string);
-  const { data: tracking } = useSupplyTrackingQuery(id as string);
+  const { data: order, isLoading, refetch, isRefetching } = useSupplyOrderDetailQuery(id as string);
+  const { data: tracking, refetch: refetchTracking } = useSupplyTrackingQuery(id as string);
 
   if (isLoading) {
     return (
@@ -71,7 +72,11 @@ export function GroceryOrderDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => Promise.all([refetch(), refetchTracking()])} />}
+      >
         {/* Status Card */}
         <View style={styles.statusHeroCard}>
           <Text style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || order.status.toUpperCase()}</Text>

@@ -16,7 +16,7 @@
  *     than a wall of text.
  */
 import { useState } from 'react';
-import { Alert, View, StyleSheet } from 'react-native';
+import { Alert, View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer, Pill, OutlinedBtn } from '@/components/ui';
@@ -29,6 +29,8 @@ import type { FeedbackComplaintEntity } from '@/types';
 
 interface Props {
   ticket: FeedbackComplaintEntity;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 type Stage = 'SUBMITTED' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED';
@@ -48,7 +50,7 @@ const STAGES: { key: Stage; label: string; icon: keyof typeof Ionicons.glyphMap 
   { key: 'RESOLVED', label: 'Resolved', icon: 'checkmark-circle' },
 ];
 
-export function TicketDetailScreen({ ticket }: Props) {
+export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
   const currentStage = stageFromStatus(ticket.status);
   const currentIdx = STAGES.findIndex((s) => s.key === currentStage);
 
@@ -95,6 +97,7 @@ export function TicketDetailScreen({ ticket }: Props) {
       title={ticket.title || 'Support Ticket'}
       subtitle={`Opened ${formatDateTime(ticket.timestamp)}`}
       icon="arrow-back"
+      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}
     >
       {/* Status tracker — horizontal stepper */}
       <Card

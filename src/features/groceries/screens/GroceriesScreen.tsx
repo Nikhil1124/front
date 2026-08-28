@@ -1,6 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Animated, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -44,9 +44,13 @@ export function GroceriesScreen() {
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const getCartTotal = useCartStore((s) => s.getCartTotal);
 
-  const { data: supplyItems = [], isLoading: itemsLoading, error: itemsError, refetch: refetchItems } = useSupplyItems(activePgId ?? undefined);
-  const { data: categories = [] } = useSupplyCategories(activePgId ?? undefined);
-  const { data: deals = [] } = useDeals(activePgId ?? undefined);
+  const { data: supplyItems = [], isLoading: itemsLoading, error: itemsError, refetch: refetchItems, isRefetching: isRefetchingItems } = useSupplyItems(activePgId ?? undefined);
+  const { data: categories = [], refetch: refetchCategories } = useSupplyCategories(activePgId ?? undefined);
+  const { data: deals = [], refetch: refetchDeals } = useDeals(activePgId ?? undefined);
+
+  const handleRefresh = async () => {
+    await Promise.all([refetchItems(), refetchCategories(), refetchDeals()]);
+  };
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -133,7 +137,11 @@ export function GroceriesScreen() {
       <View style={styles.safeArea}>
         <Header deliveryLabel={deliveryLabel} onProfilePress={() => router.push('/groceries/profile')} onBack={() => router.back()} />
 
-        <FormScroll showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <FormScroll
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={<RefreshControl refreshing={isRefetchingItems} onRefresh={handleRefresh} />}
+        >
           <View style={styles.searchContainer}>
             <SearchBar
               value={searchQuery}

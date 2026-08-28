@@ -22,7 +22,8 @@
  *     (verified=green, pending=amber, rejected=red, none=slate).
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable, FlatList } from 'react-native';
+import { View, StyleSheet, Alert, Modal, Pressable, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Pill, LoadingState, ErrorState } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -48,7 +49,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export function TenantListScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: guests = [], isLoading: guestsLoading, error: guestsError, refetch } = useGuestsQuery(activePgId ?? undefined);
+  const { data: guests = [], isLoading: guestsLoading, error: guestsError, refetch, isRefetching } = useGuestsQuery(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
 
   const [rejectGuestId, setRejectGuestId] = useState<string | null>(null);
@@ -114,6 +115,8 @@ export function TenantListScreen() {
         keyExtractor={(g) => g.id}
         contentContainerStyle={{ gap: 10, paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
+        onRefresh={refetch}
+        refreshing={isRefetching}
         ListHeaderComponent={
           <View>
             {/* KYC Triage bar — surfaces the counts at a glance */}
@@ -206,57 +209,61 @@ export function TenantListScreen() {
 
       {/* Reject reason modal */}
       <Modal visible={rejectGuestId !== null} transparent animationType="fade" onRequestClose={() => setRejectGuestId(null)}>
-        <Pressable style={styles.backdrop} onPress={() => setRejectGuestId(null)}>
-          <Pressable onPress={() => {/* swallow */}} style={styles.rejectCardWrap}>
-            <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
-              <Row gap={8} align="center">
-                <View style={styles.titleIconWrap}>
-                  <Ionicons name="warning" size={20} color={Colors.danger} />
-                </View>
-                <Col>
-                  <Txt size={16} weight="800" color={Colors.textPrimary}>Reject KYC Submission</Txt>
-                  <Txt size={11} color={Colors.textMuted}>The resident will be asked to re-upload</Txt>
-                </Col>
-              </Row>
-              <Spacer size={16} />
-              <OutlinedTextField
-                label="Reason for rejection *"
-                placeholder="Photo blurry — please retake"
-                value={rejectReason}
-                onChangeText={setRejectReason}
-                multiline
-                height={80}
-                testID="tenant_reject_reason_input"
-              />
-              <Spacer size={14} />
-              <Row gap={10}>
-                <Btn
-                  onPress={handleRejectSubmit}
-                  containerColor={Colors.danger}
-                  textColor={Colors.textInverse}
-                  borderRadius={Layout.borderRadiusButton}
-                  height={44}
-                  loading={!!submittingId}
-                  style={{ flex: 1 }}
-                  testID="tenant_reject_submit_btn"
-                >
-                  <Ionicons name="close-circle" size={16} color={Colors.textInverse} />
-                  <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Reject Submission</Txt>
-                </Btn>
-                <OutlinedBtn
-                  onPress={() => setRejectGuestId(null)}
-                  borderColor={Colors.borderMuted}
-                  textColor={Colors.textSecondary}
-                  borderRadius={Layout.borderRadiusButton}
-                  height={44}
-                >
-                  <Txt size={13} weight="700" color={Colors.textSecondary}>Cancel</Txt>
-                </OutlinedBtn>
-              </Row>
-            </Card>
+        {/* KAV so the text input isn't hidden behind the keyboard on Android */}
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+          <Pressable style={styles.backdrop} onPress={() => setRejectGuestId(null)}>
+            <Pressable onPress={() => {/* swallow */}} style={styles.rejectCardWrap}>
+              <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
+                <Row gap={8} align="center">
+                  <View style={styles.titleIconWrap}>
+                    <Ionicons name="warning" size={20} color={Colors.danger} />
+                  </View>
+                  <Col>
+                    <Txt size={16} weight="800" color={Colors.textPrimary}>Reject KYC Submission</Txt>
+                    <Txt size={11} color={Colors.textMuted}>The resident will be asked to re-upload</Txt>
+                  </Col>
+                </Row>
+                <Spacer size={16} />
+                <OutlinedTextField
+                  label="Reason for rejection *"
+                  placeholder="Photo blurry — please retake"
+                  value={rejectReason}
+                  onChangeText={setRejectReason}
+                  multiline
+                  height={80}
+                  testID="tenant_reject_reason_input"
+                />
+                <Spacer size={14} />
+                <Row gap={10}>
+                  <Btn
+                    onPress={handleRejectSubmit}
+                    containerColor={Colors.danger}
+                    textColor={Colors.textInverse}
+                    borderRadius={Layout.borderRadiusButton}
+                    height={44}
+                    loading={!!submittingId}
+                    style={{ flex: 1 }}
+                    testID="tenant_reject_submit_btn"
+                  >
+                    <Ionicons name="close-circle" size={16} color={Colors.textInverse} />
+                    <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Reject Submission</Txt>
+                  </Btn>
+                  <OutlinedBtn
+                    onPress={() => setRejectGuestId(null)}
+                    borderColor={Colors.borderMuted}
+                    textColor={Colors.textSecondary}
+                    borderRadius={Layout.borderRadiusButton}
+                    height={44}
+                  >
+                    <Txt size={13} weight="700" color={Colors.textSecondary}>Cancel</Txt>
+                  </OutlinedBtn>
+                </Row>
+              </Card>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
+
     </HubScreenWrapper>
   );
 }

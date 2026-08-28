@@ -122,6 +122,14 @@ export function OwnerRegisterScreen() {
         label="PG Full Address"
         value={ownerAddressInput}
         onChangeText={(v) => set('ownerAddressInput', v)}
+        onLocationResolved={(loc) => {
+          // Pre-seed the map pin so the owner doesn't have to open the picker
+          // just to confirm what they already typed. The picker can still be
+          // opened to fine-tune — that always wins.
+          if (!ownerLocationInput) {
+            set('ownerLocationInput', loc);
+          }
+        }}
         style={{ marginBottom: 12 }}
       />
       <LocationField value={ownerLocationInput} onPress={() => setPicking(true)} />

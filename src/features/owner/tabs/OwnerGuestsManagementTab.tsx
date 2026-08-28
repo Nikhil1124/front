@@ -11,9 +11,11 @@ import {
   ScrollView,
   Pressable,
   KeyboardAvoidingView,
+  Platform,
   Share,
   ActivityIndicator,
 } from 'react-native';
+
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -998,86 +1000,94 @@ export function OwnerGuestsManagementTab() {
 
       {/* Edit Dialog */}
       <Modal visible={editing != null} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <Card
-            containerColor={WHITE}
-            borderRadius={20}
-            borderWidth={1}
-            borderColor={BORDER}
-            padding={[16, 16]}
-            style={{ width: '92%' }}
-          >
-            <Txt variant="sectionTitle" weight="800" color={CHARCOAL}>
-              Edit Resident Profile
-            </Txt>
-            <Spacer size={12} />
-            <OutlinedTextField
-              label="Resident Full Name *"
-              value={editName}
-              onChangeText={setEditName}
-              containerColor={BG}
-              style={{ marginBottom: 8 }}
-            />
-            <OutlinedTextField
-              label="Room No *"
-              value={editRoom}
-              onChangeText={setEditRoom}
-              containerColor={BG}
-              style={{ marginBottom: 8 }}
-            />
-            <OutlinedTextField
-              label="Monthly Rent Fee (₹) *"
-              value={editRent}
-              onChangeText={setEditRent}
-              keyboardType="number-pad"
-              containerColor={BG}
-              style={{ marginBottom: 8 }}
-            />
-            <OutlinedTextField
-              label="Phone Number"
-              value={editPhone}
-              onChangeText={setEditPhone}
-              containerColor={BG}
-              style={{ marginBottom: 8 }}
-            />
-            <OutlinedTextField
-              label="Email Address *"
-              value={editEmail}
-              onChangeText={setEditEmail}
-              containerColor={BG}
-              style={{ marginBottom: 12 }}
-            />
-            <Row gap={8}>
-              <Btn
-                onPress={handleUpdate}
-                disabled={isUpdating}
-                loading={isUpdating}
-                containerColor={GREEN}
-                textColor={WHITE}
-                borderRadius={10}
-                height={42}
-                style={{ flex: 1 }}
-              >
-                <Txt variant="body" weight="800" color={WHITE}>
-                  Save Changes
-                </Txt>
-              </Btn>
-              <OutlinedBtn
-                onPress={() => setEditing(null)}
-                borderColor={BORDER}
-                textColor={CHARCOAL}
-                borderRadius={10}
-                height={42}
-                style={{ flex: 1 }}
-              >
-                <Txt variant="body" weight="800" color={CHARCOAL}>
-                  Cancel
-                </Txt>
-              </OutlinedBtn>
-            </Row>
-          </Card>
-        </View>
+        {/* KAV platform-aware: padding on Android only, iOS handles it natively */}
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+          <View style={styles.modalBackdrop}>
+            <Card
+              containerColor={WHITE}
+              borderRadius={20}
+              borderWidth={1}
+              borderColor={BORDER}
+              padding={[16, 16]}
+              style={{ width: '92%' }}
+            >
+              <Txt variant="sectionTitle" weight="800" color={CHARCOAL}>
+                Edit Resident Profile
+              </Txt>
+              <Spacer size={12} />
+              {/* ScrollView so fields are reachable when keyboard pushes the card up */}
+              <ScrollView style={{ maxHeight: 340 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} automaticallyAdjustKeyboardInsets>
+                <OutlinedTextField
+                  label="Resident Full Name *"
+                  value={editName}
+                  onChangeText={setEditName}
+                  containerColor={BG}
+                  style={{ marginBottom: 8 }}
+                />
+                <OutlinedTextField
+                  label="Room No *"
+                  value={editRoom}
+                  onChangeText={setEditRoom}
+                  containerColor={BG}
+                  style={{ marginBottom: 8 }}
+                />
+                <OutlinedTextField
+                  label="Monthly Rent Fee (₹) *"
+                  value={editRent}
+                  onChangeText={setEditRent}
+                  keyboardType="number-pad"
+                  containerColor={BG}
+                  style={{ marginBottom: 8 }}
+                />
+                <OutlinedTextField
+                  label="Phone Number"
+                  value={editPhone}
+                  onChangeText={setEditPhone}
+                  containerColor={BG}
+                  style={{ marginBottom: 8 }}
+                />
+                <OutlinedTextField
+                  label="Email Address *"
+                  value={editEmail}
+                  onChangeText={setEditEmail}
+                  containerColor={BG}
+                  style={{ marginBottom: 4 }}
+                />
+              </ScrollView>
+              <Spacer size={12} />
+              <Row gap={8}>
+                <Btn
+                  onPress={handleUpdate}
+                  disabled={isUpdating}
+                  loading={isUpdating}
+                  containerColor={GREEN}
+                  textColor={WHITE}
+                  borderRadius={10}
+                  height={42}
+                  style={{ flex: 1 }}
+                >
+                  <Txt variant="body" weight="800" color={WHITE}>
+                    Save Changes
+                  </Txt>
+                </Btn>
+                <OutlinedBtn
+                  onPress={() => setEditing(null)}
+                  borderColor={BORDER}
+                  textColor={CHARCOAL}
+                  borderRadius={10}
+                  height={42}
+                  style={{ flex: 1 }}
+                >
+                  <Txt variant="body" weight="800" color={CHARCOAL}>
+                    Cancel
+                  </Txt>
+                </OutlinedBtn>
+              </Row>
+            </Card>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
+
 
       {/* Review KYC Dialog */}
       <Modal visible={reviewing != null} transparent animationType="fade">
@@ -1156,65 +1166,69 @@ export function OwnerGuestsManagementTab() {
 
       {/* Reject Reason Dialog */}
       <Modal visible={rejecting != null} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <Card
-            containerColor={WHITE}
-            borderRadius={20}
-            borderWidth={1}
-            borderColor={BORDER}
-            padding={[16, 16]}
-            style={{ width: '92%' }}
-          >
-            <Txt variant="sectionTitle" weight="800" color={Colors.danger}>
-              Reject KYC for {rejecting?.name}
-            </Txt>
-            <Spacer size={12} />
-            <Txt variant="caption" color={MUTED}>
-              Provide a reason so the resident can re-upload clear documents:
-            </Txt>
-            <Spacer size={8} />
-            <OutlinedTextField
-              label="Rejection Reason"
-              placeholder="ID photo blurry or ID number mismatch"
-              value={rejectionReason}
-              onChangeText={setRejectionReason}
-              containerColor={BG}
-              style={{ marginBottom: 16 }}
-            />
-            <Row gap={8}>
-              <Btn
-                onPress={handleReject}
-                containerColor={Colors.danger}
-                textColor={WHITE}
-                borderRadius={10}
-                height={42}
-                style={{ flex: 1 }}
-              >
-                <Txt variant="body" weight="800" color={WHITE}>
-                  Reject & Notify
-                </Txt>
-              </Btn>
-              <OutlinedBtn
-                onPress={() => setRejecting(null)}
-                borderColor={BORDER}
-                textColor={CHARCOAL}
-                borderRadius={10}
-                height={42}
-                style={{ flex: 1 }}
-              >
-                <Txt variant="body" weight="800" color={CHARCOAL}>
-                  Cancel
-                </Txt>
-              </OutlinedBtn>
-            </Row>
-          </Card>
-        </View>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+          <View style={styles.modalBackdrop}>
+            <Card
+              containerColor={WHITE}
+              borderRadius={20}
+              borderWidth={1}
+              borderColor={BORDER}
+              padding={[16, 16]}
+              style={{ width: '92%' }}
+            >
+              <Txt variant="sectionTitle" weight="800" color={Colors.danger}>
+                Reject KYC for {rejecting?.name}
+              </Txt>
+              <Spacer size={12} />
+              <Txt variant="caption" color={MUTED}>
+                Provide a reason so the resident can re-upload clear documents:
+              </Txt>
+              <Spacer size={8} />
+              <OutlinedTextField
+                label="Rejection Reason"
+                placeholder="ID photo blurry or ID number mismatch"
+                value={rejectionReason}
+                onChangeText={setRejectionReason}
+                containerColor={BG}
+                style={{ marginBottom: 16 }}
+              />
+              <Row gap={8}>
+                <Btn
+                  onPress={handleReject}
+                  containerColor={Colors.danger}
+                  textColor={WHITE}
+                  borderRadius={10}
+                  height={42}
+                  style={{ flex: 1 }}
+                >
+                  <Txt variant="body" weight="800" color={WHITE}>
+                    Reject & Notify
+                  </Txt>
+                </Btn>
+                <OutlinedBtn
+                  onPress={() => setRejecting(null)}
+                  borderColor={BORDER}
+                  textColor={CHARCOAL}
+                  borderRadius={10}
+                  height={42}
+                  style={{ flex: 1 }}
+                >
+                  <Txt variant="body" weight="800" color={CHARCOAL}>
+                    Cancel
+                  </Txt>
+                </OutlinedBtn>
+              </Row>
+            </Card>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
+
 
       {/* Invite Resident Sign-up Link Sheet / Modal */}
       {showInviteModal && owner && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowInviteModal(false)}>
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          {/* behavior="padding" only on Android — iOS handles it natively */}
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
             <Animated.View entering={FadeIn.duration(200)} style={styles.modalBackdrop}>
               <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowInviteModal(false)} />
               

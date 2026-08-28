@@ -47,6 +47,8 @@ export interface HubScreenWrapperProps {
   scrollable?: boolean;
   /** Custom content container style for the scroll view. */
   contentContainerStyle?: ViewStyle;
+  /** Optional pull-to-refresh control element. */
+  refreshControl?: ReactNode;
   /** Override the back handler. By default calls `router.back()`. */
   onBack?: () => void;
   testID?: string;
@@ -60,6 +62,7 @@ export function HubScreenWrapper({
   children,
   scrollable = true,
   contentContainerStyle,
+  refreshControl,
   onBack,
   testID,
 }: HubScreenWrapperProps) {
@@ -106,6 +109,7 @@ export function HubScreenWrapper({
         <FormScroll
           contentContainerStyle={{ padding: 16, paddingBottom: 32, ...contentContainerStyle }}
           style={styles.scrollBody}
+          refreshControl={refreshControl as any}
         >
           {children}
         </FormScroll>

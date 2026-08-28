@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, TextInput, Image, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, TextInput, Image, Modal, RefreshControl } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -58,14 +58,16 @@ export function HousekeepingDashboard() {
   // OwnerAnnouncementsTab already read — a maintenance staffer is in `_QUEUE_ROLES`
   // server-side (pg-backend request/service/crud.py), so this is the property's actual
   // open-issue queue, not a filtered slice of it.
-  const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
+  const { data: complaints = [], refetch: refetchComplaints, isRefetching: isRefetchingComplaints } = useComplaintsQuery(activePgId ?? undefined);
   // The query includes both complaint and feedback tickets (that split is what a resident's
   // Support tab shows); a facility issue is only ever the former.
   const issues = complaints.filter((c) => c.type === 'COMPLAINT').map(toIssueView);
 
+  const refreshCtrl = <RefreshControl refreshing={isRefetchingComplaints} onRefresh={refetchComplaints} />;
+
   if (isMgmt) {
     return (
-      <HubScreenWrapper title="Maintenance Progress" icon="sparkles" scrollable={true}>
+      <HubScreenWrapper title="Maintenance Progress" icon="sparkles" scrollable={true} refreshControl={refreshCtrl}>
         <MaintenanceStatsSummary inspections={inspections} issues={issues} />
       </HubScreenWrapper>
     );
@@ -73,9 +75,9 @@ export function HousekeepingDashboard() {
 
   return (
     <View style={styles.root}>
-      {activeTab === 'dash' && <MaintenanceDashView inspections={inspections} issues={issues} onGoToChecks={(cat: string) => { setCheckTabCategory(cat); setActiveTab('check'); }} />}
+      {activeTab === 'dash' && <MaintenanceDashView inspections={inspections} issues={issues} onGoToChecks={(cat: string) => { setCheckTabCategory(cat); setActiveTab('check'); }} refreshControl={refreshCtrl} />}
       {activeTab === 'check' && <FacilityCheckView inspections={inspections} setItemStatus={setItemStatus} selectedCat={checkTabCategory} setSelectedCat={setCheckTabCategory} />}
-      {activeTab === 'issues' && <IssuesSupervisionView issues={issues} pgId={activePgId} />}
+      {activeTab === 'issues' && <IssuesSupervisionView issues={issues} pgId={activePgId} refreshControl={refreshCtrl} />}
       {activeTab === 'profile' && <MaintenanceProfileView staff={staff} logout={logout} />}
       <View style={dockStyle as any}>
         <HeadlessDockTabButton icon="home" label="Dash" isFocused={activeTab === 'dash'} onPress={() => setActiveTab('dash')} />
@@ -238,9 +240,9 @@ export function MaintenanceStatsSummary({ inspections, issues, onGoToChecks }: a
   );
 }
 
-function MaintenanceDashView({ inspections, issues, onGoToChecks }: any) {
+function MaintenanceDashView({ inspections, issues, onGoToChecks, refreshControl }: any) {
   return (
-    <FormScroll bottomPadding={120} contentContainerStyle={{ padding: 18, gap: 16 }}>
+    <FormScroll bottomPadding={120} contentContainerStyle={{ padding: 18, gap: 16 }} refreshControl={refreshControl}>
       <Row justify="space-between" align="center" style={{ marginBottom: 4 }}>
         <Row gap={12} align="center">
           <Ionicons name="menu" size={28} color={Colors.primaryDark} />
@@ -479,7 +481,7 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
   );
 }
 
-function IssuesSupervisionView({ issues, pgId }: { issues: any[]; pgId: string | null }) {
+function IssuesSupervisionView({ issues, pgId, refreshControl }: { issues: any[]; pgId: string | null; refreshControl?: React.ReactNode }) {
   const submitIssue = useSubmitComplaintMutation(pgId ?? undefined);
   const resolveIssue = useResolveComplaintMutation(pgId ?? undefined);
 
@@ -814,7 +816,7 @@ function IssuesSupervisionView({ issues, pgId }: { issues: any[]; pgId: string |
           })}
         </FormScroll>
       </View>
-      <FormScroll bottomPadding={180} contentContainerStyle={{ padding: 18, gap: 16 }}>
+      <FormScroll bottomPadding={180} contentContainerStyle={{ padding: 18, gap: 16 }} refreshControl={refreshControl as any}>
         {displayedIssues.length === 0 ? (
            <Txt size={14} color={Colors.textMuted} align="center" style={{ marginTop: 40 }}>No issues found</Txt>
         ) : (

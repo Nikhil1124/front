@@ -4,7 +4,8 @@
  * hardware back button support, and backdrop touch-to-dismiss.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable, KeyboardAvoidingView } from 'react-native';
+import { Modal, View, StyleSheet, Alert, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -39,7 +40,7 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
       <View style={styles.backdrop}>
         {/* Background tap to dismiss */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />

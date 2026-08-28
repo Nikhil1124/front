@@ -2,15 +2,20 @@
  * AddPgPropertyDialog — port of Kotlin `AddPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
 import type { PickedLocation } from '@/features/places/pendingLocation';
+import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+
+const SCREEN_H = Dimensions.get('window').height;
+
 
 interface Props {
   onDismiss: () => void;
@@ -99,10 +104,11 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               circular dependency on a parent that isn't flex-bounded itself. */}
           <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
             <ScrollView
-              style={{ maxHeight: 420 }}
+              style={{ maxHeight: SCREEN_H * 0.45 }}
               contentContainerStyle={{ gap: 10 }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets
             >
             <OutlinedTextField
               label="Property / PG Name *"
@@ -113,16 +119,18 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               focusedBorderColor={Colors.primary}
               unfocusedBorderColor={Colors.borderSubtle}
             />
-            <OutlinedTextField
+            <AddressAutocompleteField
               label="Property Address *"
-              placeholder="8th Block, Koramangala, Bangalore"
               value={address}
               onChangeText={setAddress}
-              containerColor={Colors.surfaceMuted}
-              focusedBorderColor={Colors.primary}
-              unfocusedBorderColor={Colors.borderSubtle}
+              onLocationResolved={(loc) => {
+                // Pre-seed map pin from autocomplete pick; user can still open the picker to adjust
+                if (!location) setLocation(loc);
+              }}
             />
             <LocationField value={location} onPress={() => setPicking(true)} />
+
+
 
             <OutlinedTextField
               label="Total Bed Capacity *"

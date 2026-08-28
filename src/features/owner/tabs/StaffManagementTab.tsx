@@ -12,7 +12,11 @@ import {
   Pressable,
   KeyboardAvoidingView,
   ActivityIndicator,
+  Platform,
+  RefreshControl,
 } from 'react-native';
+
+
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
@@ -80,7 +84,7 @@ export function StaffManagementTab() {
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
-  const { data: staffList = [], isLoading: staffLoading, error: staffError } = useStaffQuery(activePgId ?? undefined);
+  const { data: staffList = [], isLoading: staffLoading, error: staffError, refetch: refetchStaff, isRefetching: isRefetchingStaff } = useStaffQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const isManager = useIsManagerMode();
   // D-06 on the server (staff/service.py): "adding a manager is owner-only, so a manager
@@ -500,6 +504,8 @@ export function StaffManagementTab() {
           keyExtractor={(staff) => staff.id}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          onRefresh={refetchStaff}
+          refreshing={isRefetchingStaff}
           ListHeaderComponent={
             <View style={{ gap: 14, marginBottom: 12 }}>
               <Row justify="space-between" align="center">
@@ -747,7 +753,10 @@ export function StaffManagementTab() {
       {/* ── Edit Staff Modal ── */}
       {showEditModal && selectedStaff && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowEditModal(false)}>
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          {/* behavior="padding" only on Android — iOS handles keyboard avoidance natively via
+              automaticallyAdjustKeyboardInsets on the inner ScrollView.  Using "padding" on iOS
+              double-counts the keyboard height and leaves a blank gap above the keyboard. */}
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
             <View style={styles.modalBackdrop}>
               <Card
                 containerColor={WHITE}
@@ -763,80 +772,93 @@ export function StaffManagementTab() {
                     <Ionicons name="close" size={20} color={MUTED} />
                   </TouchableOpacity>
                 </Row>
-                
+
                 <Spacer size={16} />
 
-                <OutlinedTextField
-                  label="Full Name"
-                  value={editName}
-                  onChangeText={setEditName}
-                  containerColor={BG}
-                  style={{ marginBottom: 12 }}
-                />
-
-                <OutlinedTextField
-                  label="Phone Number"
-                  value={editPhone}
-                  editable={false}
-                  onChangeText={() => {}}
-                  containerColor={BG}
-                  style={{ marginBottom: 12, opacity: 0.6 }}
-                />
-
-                <Row gap={8} style={{ marginBottom: 12 }}>
+                {/* maxHeight caps the card so it fits on screen; ScrollView makes fields
+                    reachable instead of clipped when the card is taller than this cap.
+                    The Save/Cancel row lives outside the ScrollView so it is always visible
+                    — the previous bug was the opposite: only the buttons were visible. */}
+                <ScrollView
+                  style={{ maxHeight: 360 }}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  automaticallyAdjustKeyboardInsets
+                >
                   <OutlinedTextField
-                    label="Salary (₹)"
-                    value={editSalary}
-                    onChangeText={setEditSalary}
-                    keyboardType="number-pad"
+                    label="Full Name"
+                    value={editName}
+                    onChangeText={setEditName}
                     containerColor={BG}
-                    style={{ flex: 1 }}
+                    style={{ marginBottom: 12 }}
                   />
-                  
-                  <Col style={{ flex: 1.2 }}>
-                    <Text style={styles.inputLabelStyle}>Shift</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <Row gap={6} align="center">
-                        {SHIFT_OPTIONS.map((opt) => {
-                          const isSelected = editShift === opt;
-                          return (
-                            <TouchableOpacity
-                              key={opt}
-                              style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
-                              onPress={() => setEditShift(opt)}
-                            >
-                              <Text style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
-                                {opt.replace(' Shift', '').split(' ')[0]}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </Row>
-                    </ScrollView>
-                  </Col>
-                </Row>
 
-                <Spacer size={8} />
+                  <OutlinedTextField
+                    label="Phone Number"
+                    value={editPhone}
+                    editable={false}
+                    onChangeText={() => {}}
+                    containerColor={BG}
+                    style={{ marginBottom: 12, opacity: 0.6 }}
+                  />
 
-                <Text style={styles.inputLabelStyle}>Role</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                  <Row gap={6}>
-                    {selectableRoles.map((r) => {
-                      const isSelected = editRole === r;
-                      return (
-                        <TouchableOpacity
-                          key={r}
-                          style={[styles.roleChip, isSelected && styles.roleChipActive]}
-                          onPress={() => setEditRole(r)}
-                        >
-                          <Text style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
-                            {r}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
+                  <Row gap={8} style={{ marginBottom: 12 }}>
+                    <OutlinedTextField
+                      label="Salary (₹)"
+                      value={editSalary}
+                      onChangeText={setEditSalary}
+                      keyboardType="number-pad"
+                      containerColor={BG}
+                      style={{ flex: 1 }}
+                    />
+                    
+                    <Col style={{ flex: 1.2 }}>
+                      <Text style={styles.inputLabelStyle}>Shift</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <Row gap={6} align="center">
+                          {SHIFT_OPTIONS.map((opt) => {
+                            const isSelected = editShift === opt;
+                            return (
+                              <TouchableOpacity
+                                key={opt}
+                                style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
+                                onPress={() => setEditShift(opt)}
+                              >
+                                <Text style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+                                  {opt.replace(' Shift', '').split(' ')[0]}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </Row>
+                      </ScrollView>
+                    </Col>
                   </Row>
+
+                  <Spacer size={8} />
+
+                  <Text style={styles.inputLabelStyle}>Role</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                    <Row gap={6}>
+                      {selectableRoles.map((r) => {
+                        const isSelected = editRole === r;
+                        return (
+                          <TouchableOpacity
+                            key={r}
+                            style={[styles.roleChip, isSelected && styles.roleChipActive]}
+                            onPress={() => setEditRole(r)}
+                          >
+                            <Text style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+                              {r}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </Row>
+                  </ScrollView>
                 </ScrollView>
+
+                <Spacer size={12} />
 
                 <Row gap={10}>
                   <TouchableOpacity
@@ -863,6 +885,7 @@ export function StaffManagementTab() {
           </KeyboardAvoidingView>
         </Modal>
       )}
+
     </View>
   );
 }

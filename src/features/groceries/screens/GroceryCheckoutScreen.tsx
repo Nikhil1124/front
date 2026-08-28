@@ -106,10 +106,14 @@ export function GroceryCheckoutScreen() {
       const slotLine = `Slot: ${selectedSlot.day}, ${selectedSlot.window}`;
       const order = await createOrderMutation.mutateAsync({
         pg_id: targetPgId,
-        payment_method: paymentMethod === 'cod' ? 'cod' : 'upi',
+        // `payment_method` is passed as-is — the backend accepts 'card' | 'upi' | 'credit' | 'cod'.
+        // The previous mapping (cod ? 'cod' : 'upi') silently dropped 'card' and sent 'upi' instead.
+        payment_method: paymentMethod as 'card' | 'upi' | 'credit' | 'cod',
         delivery_note: driverNote ? `${slotLine} — ${driverNote}` : slotLine,
         items: items.map((i) => ({
-          item_id: i.id,
+          // `i.id` is the cart's compound key (productId + '-' + unit) — not a UUID.
+          // The backend's CreateOrderRequest requires a valid UUID for item_id.
+          item_id: i.productId,
           quantity: i.quantity,
         })),
         // Stable for the life of this screen, deliberately: a key regenerated per attempt

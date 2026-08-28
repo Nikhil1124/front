@@ -417,8 +417,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={64}
+        behavior={Platform.OS === 'android' ? 'padding' : undefined}
       >
         <ScrollView
           style={{ flex: 1 }}

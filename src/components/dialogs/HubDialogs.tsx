@@ -12,9 +12,11 @@ import {
   TouchableOpacity,
   Pressable,
   KeyboardAvoidingView,
+  Platform,
   Text,
   TextInput,
 } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInDown, FadeIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
@@ -39,7 +41,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Card
@@ -166,7 +168,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
   return (
     <>
       <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
           <Animated.View entering={FadeIn.duration(250)} style={styles.backdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
             
@@ -433,7 +435,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Card

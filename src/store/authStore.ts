@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as SecureStore from "@/utils/secureStorage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ─── Types (matching /v1/me response) ────────────────────────────────────────
 
@@ -129,9 +130,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setActivePgId: async (pgId) => {
     await SecureStore.setItemAsync(KEYS.PG_ID, pgId);
-    const { user } = get();
+    const { user, activePgId } = get();
     const membership = user?.memberships.find((m) => m.pg_id === pgId);
     set({ activePgId: pgId, activeRole: membership?.role ?? null });
+    // Clear the persisted cart whenever the active property changes — cart items are scoped
+    // to a specific PG (the warehouse area, pricing, catalog all differ per property). Without
+    // this, switching to a new PG (or creating one) left the old cart visible with items that
+    // belong to a completely different property.
+    if (activePgId !== pgId) {
+      AsyncStorage.removeItem('slv-cart').catch(() => {});
+    }
   },
 
   logout: async () => {

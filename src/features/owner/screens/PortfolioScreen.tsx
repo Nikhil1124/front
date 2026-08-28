@@ -13,7 +13,7 @@
  * Deliberately does not duplicate the property switcher: that already lives in the
  * header (tap the PG name to open it). This screen is analytics only.
  */
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { Txt, Row, Spacer } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors } from '@/theme';
@@ -28,13 +28,14 @@ function formatINR(n: number): string {
 }
 
 export function PortfolioScreen() {
-  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const { data: allPGs = [], refetch, isRefetching } = usePropertiesEntitiesQuery();
   const { data, isLoading } = usePortfolioDetail(allPGs);
 
   return (
     <HubScreenWrapper
       title="All properties"
       subtitle={`${allPGs.length} active PG propert${allPGs.length === 1 ? 'y' : 'ies'}`}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
     >
       {isLoading || !data ? (
         <View style={styles.loading}>

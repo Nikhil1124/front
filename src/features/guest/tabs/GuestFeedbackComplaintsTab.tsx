@@ -2,7 +2,7 @@
  * GuestFeedbackComplaintsTab — port of Kotlin `GuestFeedbackComplaintsTab`.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, Modal, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip, LoadingState, ErrorState } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -24,7 +24,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export function GuestFeedbackComplaintsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: submissions = [], isLoading: submissionsLoading, error: submissionsError, refetch: refetchSubmissions } = useComplaintsQuery(activePgId ?? undefined);
+  const { data: submissions = [], isLoading: submissionsLoading, error: submissionsError, refetch: refetchSubmissions, isRefetching: isRefetchingSubmissions } = useComplaintsQuery(activePgId ?? undefined);
   const submit = usePGowStore((s) => s.submitFeedbackComplaint);
 
   const [submissionType, setSubmissionType] = useState<'COMPLAINT' | 'FEEDBACK'>('COMPLAINT');
@@ -83,7 +83,10 @@ export function GuestFeedbackComplaintsTab() {
   };
 
   return (
-    <FormScroll contentContainerStyle={{ padding: 16, gap: 16 }}>
+    <FormScroll
+      contentContainerStyle={{ padding: 16, gap: 16 }}
+      refreshControl={<RefreshControl refreshing={isRefetchingSubmissions} onRefresh={refetchSubmissions} />}
+    >
       <Row gap={6} align="center">
         <Txt variant="screenTitle" weight="900" color={Colors.CyberGreen} style={{ letterSpacing: -0.3 }}>Grievance & Review Portal</Txt>
         <InfoTip text="File official complaints or share constructive feedback. Upload videos or photos of issues for immediate staff resolution." />

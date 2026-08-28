@@ -5,7 +5,8 @@
  * sentiment. Same underlying query (`useComplaintsQuery`), two different jobs.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text, KeyboardAvoidingView, Platform } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -155,75 +156,79 @@ export function OwnerComplaintsTab() {
       {/* ── Guest Issue Response Modal ── */}
       {activeItem && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setActiveItem(null)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveItem(null)} />
-            <Card containerColor={WHITE} borderRadius={20} borderWidth={1} borderColor={BORDER} padding={[20, 20]} style={{ width: '90%' }}>
-              <Text style={styles.dialogTitle}>Review Response & Action</Text>
-              <Text style={styles.dialogSub}>
-                Resident: {activeItem.guestName} (Room {activeItem.roomNo})
-              </Text>
+          {/* KAV: text area hidden under keyboard on Android without this */}
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+            <View style={styles.modalBackdrop}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveItem(null)} />
+              <Card containerColor={WHITE} borderRadius={20} borderWidth={1} borderColor={BORDER} padding={[20, 20]} style={{ width: '90%' }}>
+                <Text style={styles.dialogTitle}>Review Response & Action</Text>
+                <Text style={styles.dialogSub}>
+                  Resident: {activeItem.guestName} (Room {activeItem.roomNo})
+                </Text>
 
-              {/* The list row this modal opens from never carries an attachment — the list
-                  endpoint's response shape omits attachments entirely; only the per-ticket
-                  detail endpoint hydrates them. So the photo is fetched here, once, only
-                  when a ticket is actually open. */}
-              <ActiveItemEvidence id={activeItem.id} pgId={activePgId} />
+                {/* The list row this modal opens from never carries an attachment — the list
+                    endpoint's response shape omits attachments entirely; only the per-ticket
+                    detail endpoint hydrates them. So the photo is fetched here, once, only
+                    when a ticket is actually open. */}
+                <ActiveItemEvidence id={activeItem.id} pgId={activePgId} />
 
-              {activeItem.type === 'COMPLAINT' && activeItem.status !== 'Resolved' && (
-                <>
-                  <Spacer size={12} />
-                  <TouchableOpacity
-                    style={styles.bookTechBtn}
-                    onPress={() => { setActiveItem(null); router.push(`/book-technician/${activeItem.id}`); }}
-                    activeOpacity={0.85}
-                  >
-                    <Ionicons name="build-outline" size={16} color={GREEN} />
-                    <Text style={styles.bookTechBtnText}>Book a technician for this issue</Text>
+                {activeItem.type === 'COMPLAINT' && activeItem.status !== 'Resolved' && (
+                  <>
+                    <Spacer size={12} />
+                    <TouchableOpacity
+                      style={styles.bookTechBtn}
+                      onPress={() => { setActiveItem(null); router.push(`/book-technician/${activeItem.id}`); }}
+                      activeOpacity={0.85}
+                    >
+                      <Ionicons name="build-outline" size={16} color={GREEN} />
+                      <Text style={styles.bookTechBtnText}>Book a technician for this issue</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+
+                <Spacer size={16} />
+
+                <TextInput
+                  style={styles.dialogInput}
+                  placeholder="Write resolution notes or replies..."
+                  placeholderTextColor={MUTED}
+                  value={responseText}
+                  onChangeText={setResponseText}
+                  multiline
+                  numberOfLines={4}
+                />
+
+                <Spacer size={14} />
+
+                <Text style={styles.inputLabelStyle}>Set Status:</Text>
+                <Row gap={6} style={{ marginTop: 4 }}>
+                  {['Open', 'In Progress', 'Resolved'].map((st) => (
+                    <TouchableOpacity
+                      key={st}
+                      style={[styles.smallChip, responseStatus === st && styles.smallChipActive]}
+                      onPress={() => setResponseStatus(st)}
+                    >
+                      <Text style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </Row>
+
+                <Spacer size={20} />
+
+                <Row gap={10}>
+                  <TouchableOpacity style={styles.dialogSaveBtn} onPress={handleSaveReply} activeOpacity={0.8}>
+                    <Text style={styles.dialogSaveBtnText}>Save Response</Text>
                   </TouchableOpacity>
-                </>
-              )}
-
-              <Spacer size={16} />
-
-              <TextInput
-                style={styles.dialogInput}
-                placeholder="Write resolution notes or replies..."
-                placeholderTextColor={MUTED}
-                value={responseText}
-                onChangeText={setResponseText}
-                multiline
-                numberOfLines={4}
-              />
-
-              <Spacer size={14} />
-
-              <Text style={styles.inputLabelStyle}>Set Status:</Text>
-              <Row gap={6} style={{ marginTop: 4 }}>
-                {['Open', 'In Progress', 'Resolved'].map((st) => (
-                  <TouchableOpacity
-                    key={st}
-                    style={[styles.smallChip, responseStatus === st && styles.smallChipActive]}
-                    onPress={() => setResponseStatus(st)}
-                  >
-                    <Text style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Text>
+                  <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)} activeOpacity={0.8}>
+                    <Text style={styles.dialogCancelBtnText}>Cancel</Text>
                   </TouchableOpacity>
-                ))}
-              </Row>
-
-              <Spacer size={20} />
-
-              <Row gap={10}>
-                <TouchableOpacity style={styles.dialogSaveBtn} onPress={handleSaveReply} activeOpacity={0.8}>
-                  <Text style={styles.dialogSaveBtnText}>Save Response</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)} activeOpacity={0.8}>
-                  <Text style={styles.dialogCancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
-              </Row>
-            </Card>
-          </View>
+                </Row>
+              </Card>
+            </View>
+          </KeyboardAvoidingView>
         </Modal>
       )}
+
     </ScrollView>
   );
 }

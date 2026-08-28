@@ -2,7 +2,7 @@
  * EditPgPropertyDialog — port of Kotlin `EditPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Modal, View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -10,8 +10,12 @@ import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
 import PropertyMap from '@/components/PropertyMap';
 import type { PickedLocation } from '@/features/places/pendingLocation';
+import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+
+const SCREEN_H = Dimensions.get('window').height;
+
 import type { PGOwnerEntity } from '@/types';
 
 interface Props {
@@ -94,10 +98,11 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               ScrollView, no flex anywhere in the chain. */}
           <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
             <ScrollView
-              style={{ maxHeight: 420 }}
+              style={{ maxHeight: SCREEN_H * 0.45 }}
               contentContainerStyle={{ gap: 10 }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets
             >
             <OutlinedTextField
               label="Property / PG Name"
@@ -107,14 +112,16 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               focusedBorderColor={Colors.primary}
               unfocusedBorderColor={Colors.borderSubtle}
             />
-            <OutlinedTextField
+            <AddressAutocompleteField
               label="Branch Location / Address"
               value={address}
               onChangeText={setAddress}
-              containerColor={Colors.surfaceMuted}
-              focusedBorderColor={Colors.primary}
-              unfocusedBorderColor={Colors.borderSubtle}
+              onLocationResolved={(loc) => {
+                // Pre-seed map pin from autocomplete pick; picker can still adjust
+                if (!location) setLocation(loc);
+              }}
             />
+
             <PropertyMap
               formattedAddress={pg.formattedAddress}
               latitude={pg.latitude}

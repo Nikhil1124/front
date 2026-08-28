@@ -6,7 +6,7 @@
  * Quick Action destination.
  */
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer, IconBtn } from '@/components/ui';
@@ -24,12 +24,12 @@ import type { PGOwnerEntity } from '@/types';
 import { isRequestOpen } from '@/data/mappers';
 
 export function ManagePropertiesScreen() {
-  const { data: allPGs = [], isLoading: pgsLoading, error: pgsError, refetch: refetchPgs } = usePropertiesEntitiesQuery();
+  const { data: allPGs = [], isLoading: pgsLoading, error: pgsError, refetch: refetchPgs, isRefetching: isRefetchingPgs } = usePropertiesEntitiesQuery();
   const activePgId = useAuthStore((s) => s.activePgId);
   const setActivePgId = useAuthStore((s) => s.setActivePgId);
-  const { data: allGuests = [] } = useGuestsQuery(activePgId ?? undefined);
-  const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);
-  const { data: allComplaints = [] } = useComplaintsQuery(activePgId ?? undefined);
+  const { data: allGuests = [], refetch: refetchGuests } = useGuestsQuery(activePgId ?? undefined);
+  const { data: allPayments = [], refetch: refetchPayments } = usePaymentsQuery(activePgId ?? undefined);
+  const { data: allComplaints = [], refetch: refetchComplaints } = useComplaintsQuery(activePgId ?? undefined);
   const currentOwner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const switchPG = (pgId: string) => setActivePgId(pgId);
 
@@ -55,6 +55,7 @@ export function ManagePropertiesScreen() {
         title="Manage Properties"
         subtitle={`${allPGs.length} Active PG Propert${allPGs.length === 1 ? 'y' : 'ies'}`}
         rightAction={<IconBtn onPress={() => setShowAddPgModal(true)} icon="add-circle" size={24} tint={Colors.primary} />}
+        refreshControl={<RefreshControl refreshing={isRefetchingPgs} onRefresh={() => Promise.all([refetchPgs(), refetchGuests(), refetchPayments(), refetchComplaints()])} />}
       >
         <Row gap={6}>
           <View style={[styles.statBox, { backgroundColor: '#F0FDF9' }]}>

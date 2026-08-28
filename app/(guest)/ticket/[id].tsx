@@ -14,7 +14,7 @@ import { TicketDetailScreen } from '@/features/guest/screens/TicketDetailScreen'
 export default function TicketDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: complaints = [], isLoading, error, refetch } = useComplaintsQuery(activePgId ?? undefined);
+  const { data: complaints = [], isLoading, error, refetch, isRefetching } = useComplaintsQuery(activePgId ?? undefined);
   const ticket = complaints.find((t) => t.id === id);
 
   // The three states are distinct and used to collapse into one line of copy: while the
@@ -33,5 +33,5 @@ export default function TicketDetailRoute() {
     );
   }
 
-  return <TicketDetailScreen ticket={ticket} />;
+  return <TicketDetailScreen ticket={ticket} onRefresh={refetch} refreshing={isRefetching} />;
 }

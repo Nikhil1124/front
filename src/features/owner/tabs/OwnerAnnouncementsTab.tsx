@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text, Image } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text, Image, KeyboardAvoidingView, Platform } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -496,76 +497,79 @@ export function OwnerAnnouncementsTab() {
         <Modal visible transparent animationType="none" onRequestClose={() => setShowBroadcastModal(false)}>
           <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowBroadcastModal(false)} />
-            
-            <Animated.View entering={SlideInDown.duration(160)} style={styles.broadcastSheet}>
-              <View style={styles.sheetHandle} />
+            {/* KAV so TextInputs aren't covered by the keyboard on Android */}
+            <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined} style={{ width: '100%', alignItems: 'center' }}>
+              <Animated.View entering={SlideInDown.duration(160)} style={styles.broadcastSheet}>
+                <View style={styles.sheetHandle} />
 
-              <Text style={styles.sheetTitle}>Broadcast Announcement</Text>
-              <Spacer size={12} />
+                <Text style={styles.sheetTitle}>Broadcast Announcement</Text>
+                <Spacer size={12} />
 
-              <TextInput
-                style={styles.noticeInput}
-                placeholder="Announcement Title (e.g. WiFi Maintenance)"
-                placeholderTextColor={MUTED}
-                value={noticeTitle}
-                onChangeText={setNoticeTitle}
-              />
+                <TextInput
+                  style={styles.noticeInput}
+                  placeholder="Announcement Title (e.g. WiFi Maintenance)"
+                  placeholderTextColor={MUTED}
+                  value={noticeTitle}
+                  onChangeText={setNoticeTitle}
+                />
 
-              <Spacer size={10} />
+                <Spacer size={10} />
 
-              <TextInput
-                style={[styles.noticeInput, { height: 90, textAlignVertical: 'top', paddingTop: 10 }]}
-                placeholder="Announcement description..."
-                placeholderTextColor={MUTED}
-                value={noticeMessage}
-                onChangeText={setNoticeMessage}
-                multiline
-                numberOfLines={3}
-              />
+                <TextInput
+                  style={[styles.noticeInput, { height: 90, textAlignVertical: 'top', paddingTop: 10 }]}
+                  placeholder="Announcement description..."
+                  placeholderTextColor={MUTED}
+                  value={noticeMessage}
+                  onChangeText={setNoticeMessage}
+                  multiline
+                  numberOfLines={3}
+                />
 
-              <Spacer size={12} />
+                <Spacer size={12} />
 
-              <Text style={styles.inputLabelStyle}>Select Audience</Text>
-              <Spacer size={6} />
-              <Row gap={6}>
-                {(['all', 'guest', 'staff', 'manager'] as const).map((aud) => (
+                <Text style={styles.inputLabelStyle}>Select Audience</Text>
+                <Spacer size={6} />
+                <Row gap={6}>
+                  {(['all', 'guest', 'staff', 'manager'] as const).map((aud) => (
+                    <TouchableOpacity
+                      key={aud}
+                      style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]}
+                      onPress={() => setNoticeAudience(aud)}
+                    >
+                      <Text style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
+                        {aud === 'all' ? 'All' : aud === 'guest' ? 'Residents' : aud === 'staff' ? 'Staff' : 'Managers'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </Row>
+
+                <Spacer size={20} />
+
+                <Row gap={10}>
                   <TouchableOpacity
-                    key={aud}
-                    style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]}
-                    onPress={() => setNoticeAudience(aud)}
+                    style={styles.publishBtn}
+                    onPress={handlePublishNotice}
+                    disabled={isPublishing}
+                    activeOpacity={0.8}
                   >
-                    <Text style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
-                      {aud === 'all' ? 'All' : aud === 'guest' ? 'Residents' : aud === 'staff' ? 'Staff' : 'Managers'}
+                    <Text style={styles.publishBtnText}>
+                      {isPublishing ? 'Publishing...' : 'Publish'}
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </Row>
-
-              <Spacer size={20} />
-
-              <Row gap={10}>
-                <TouchableOpacity
-                  style={styles.publishBtn}
-                  onPress={handlePublishNotice}
-                  disabled={isPublishing}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.publishBtnText}>
-                    {isPublishing ? 'Publishing...' : 'Publish'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.publishCancelBtn}
-                  onPress={() => setShowBroadcastModal(false)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.publishCancelText}>Cancel</Text>
-                </TouchableOpacity>
-              </Row>
-            </Animated.View>
+                  <TouchableOpacity
+                    style={styles.publishCancelBtn}
+                    onPress={() => setShowBroadcastModal(false)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.publishCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                </Row>
+              </Animated.View>
+            </KeyboardAvoidingView>
           </Animated.View>
         </Modal>
       )}
+
     </View>
   );
 }
