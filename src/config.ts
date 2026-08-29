@@ -170,7 +170,6 @@ export const API = {
   PROCUREMENT_ORDERS: "/v1/procurement/orders",
   PROCUREMENT_ORDER_APPROVE: (id: string) => `/v1/procurement/orders/${id}/approve`,
   PROCUREMENT_ORDER_REJECT: (id: string) => `/v1/procurement/orders/${id}/reject`,
-  PROCUREMENT_FLAG_LOW_STOCK: "/v1/procurement/flag-low-stock",
 
   MEAL_MENU: "/v1/meals/menu",
   MEAL_TODAY_SUMMARY: (pgId: string) => `/v1/meals/today-summary?pg_id=${pgId}`,
