@@ -24,6 +24,7 @@ import { API, BASE_URL } from '@/config';
 import { fetchWithTimeout } from '@/data/apiClient';
 import { round6 } from '@/features/places/geo';
 import { fetchMapStyle } from '@/features/places/mapStyle';
+import { useMapReady } from '@/features/places/useMapReady';
 import { useDeviceLocation } from '@/features/places/useDeviceLocation';
 import { Colors, Radii, Spacing } from '@/theme';
 
@@ -50,6 +51,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
   const seq = useRef(0);
 
   const [mapStyle, setMapStyle] = useState<StyleSpecification | null>(null);
+  const { ready, failed, onRendered, onFailed } = useMapReady(mapStyle !== null);
   useEffect(() => {
     let live = true;
     fetchMapStyle().then((style) => {
@@ -128,11 +130,15 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.mapWindow}>
+        {/* Mounted as soon as the style lands — mounting is what starts the tile fetches.
+            The overlay below covers it until those tiles have actually painted. */}
         {mapStyle ? (
           <Map
             mapStyle={mapStyle}
             style={styles.map}
             onRegionDidChange={onRegionDidChange}
+            onDidFinishRenderingMapFully={onRendered}
+            onDidFailLoadingMap={onFailed}
             logo={false}
             attribution={false}
             compass={false}
@@ -148,17 +154,33 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
               minZoom={3}
             />
           </Map>
-        ) : (
-          <View style={[styles.map, styles.mapLoading]}>
-            <ActivityIndicator color={Colors.CyberGreen} />
-          </View>
-        )}
+        ) : null}
 
         {/* A plain overlay, not part of the map, so it stays fixed on screen while the map
             moves underneath. Offset upward by half its height so the point sits at the tip. */}
         <View pointerEvents="none" style={styles.pinWrap}>
           <Ionicons name="location" size={40} color={Colors.CyberGreen} />
         </View>
+
+        {!ready && !failed && (
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}
+          >
+            <ActivityIndicator color={Colors.CyberGreen} />
+          </View>
+        )}
+
+        {/* Worth surfacing rather than swallowing: this screen is in the registration flow,
+            and a silently blank map here means an owner pins their property from memory. */}
+        {failed && (
+          <View style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}>
+            <Ionicons name="map-outline" size={24} color={Colors.SlateMutedText} />
+            <Txt variant="caption" color={Colors.SlateMutedText} style={{ marginTop: 6 }}>
+              Map unavailable — you can still confirm the coordinates below
+            </Txt>
+          </View>
+        )}
 
         <View style={styles.zoomStack}>
           <TouchableOpacity
@@ -231,6 +253,7 @@ const styles = StyleSheet.create({
   mapWindow: { flex: 1, overflow: 'hidden', backgroundColor: Colors.LuxurySurfaceDark },
   map: { flex: 1 },
   mapLoading: { alignItems: 'center', justifyContent: 'center' },
+  mapOverlay: { backgroundColor: Colors.LuxurySurfaceDark, paddingHorizontal: Spacing.lg },
   pinWrap: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',

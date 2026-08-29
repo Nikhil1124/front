@@ -1,5 +1,5 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import React, { useImperativeHandle } from 'react';
+import React, { useEffect, useImperativeHandle } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Txt } from '@/components/ui';
 import { Colors } from '@/theme';
@@ -11,14 +11,22 @@ let Camera: any;
 let ViewAnnotation: any;
 
 if (isExpoGo) {
-  Map = ({ children, style }: any) => (
-    <View style={[styles.fallback, style]}>
-      {children}
-      <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
-        Map preview unavailable in Expo Go — use a development build to see the live map.
-      </Txt>
-    </View>
-  );
+  Map = ({ children, style, onDidFinishRenderingMapFully }: any) => {
+    // See the note in maplibreCompat.web.tsx: callers gate a loading overlay on this, so
+    // dropping it would hide this message behind a spinner until their timeout fires.
+    useEffect(() => {
+      onDidFinishRenderingMapFully?.({ nativeEvent: null });
+    }, [onDidFinishRenderingMapFully]);
+
+    return (
+      <View style={[styles.fallback, style]}>
+        {children}
+        <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
+          Map preview unavailable in Expo Go — use a development build to see the live map.
+        </Txt>
+      </View>
+    );
+  };
   Camera = React.forwardRef(({ ...props }: any, ref: any) => {
     useImperativeHandle(ref, () => ({
       flyTo: () => {},

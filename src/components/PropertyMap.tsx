@@ -27,6 +27,7 @@ import { Map, Camera, ViewAnnotation } from '@/components/maplibreCompat';
 
 import { Txt } from '@/components/ui';
 import { fetchMapStyle } from '@/features/places/mapStyle';
+import { useMapReady } from '@/features/places/useMapReady';
 import { Colors, Radii, Spacing } from '@/theme';
 
 interface Props {
@@ -44,6 +45,7 @@ export default function PropertyMap({
   height = 150,
 }: Props) {
   const [mapStyle, setMapStyle] = useState<StyleSpecification | null>(null);
+  const { ready, failed, onRendered, onFailed } = useMapReady(mapStyle !== null);
 
   useEffect(() => {
     let live = true;
@@ -75,10 +77,15 @@ export default function PropertyMap({
   return (
     <View style={styles.card}>
       <View style={[styles.map, { height }]}>
+        {/* The map mounts as soon as the style is in — it has to, since mounting is what
+            starts the tile fetches. The overlay below sits on top until those tiles have
+            actually painted, rather than the map being withheld until then. */}
         {mapStyle ? (
           <Map
             mapStyle={mapStyle}
             style={StyleSheet.absoluteFill}
+            onDidFinishRenderingMapFully={onRendered}
+            onDidFailLoadingMap={onFailed}
             logo={false}
             attribution={false}
             compass={false}
@@ -91,9 +98,25 @@ export default function PropertyMap({
               <Ionicons name="location" size={32} color={Colors.CyberGreen} />
             </ViewAnnotation>
           </Map>
-        ) : (
-          <View style={[StyleSheet.absoluteFill, styles.mapLoading]}>
+        ) : null}
+
+        {!ready && !failed && (
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}
+          >
             <ActivityIndicator color={Colors.CyberGreen} />
+          </View>
+        )}
+
+        {/* `/style.json` answers 200 with an empty style when Ola is unreachable, so a
+            failure is otherwise indistinguishable from a map that simply has nothing on it. */}
+        {failed && (
+          <View style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}>
+            <Ionicons name="map-outline" size={20} color={Colors.SlateMutedText} />
+            <Txt variant="caption" color={Colors.SlateMutedText} style={{ marginTop: 4 }}>
+              Map unavailable
+            </Txt>
           </View>
         )}
       </View>
@@ -122,6 +145,7 @@ const styles = StyleSheet.create({
   },
   map: { width: '100%', backgroundColor: Colors.LuxurySurfaceDark },
   mapLoading: { alignItems: 'center', justifyContent: 'center' },
+  mapOverlay: { backgroundColor: Colors.LuxurySurfaceDark },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',

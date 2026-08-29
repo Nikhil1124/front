@@ -16,3 +16,7 @@ ios/
 
 # JetBrains IDE state — workspace.xml and shelved patches are per-developer noise
 .idea/
+
+# Local Claude Code workspace config (launch profiles, settings) — machine-specific,
+# not part of the app.
+.claude/

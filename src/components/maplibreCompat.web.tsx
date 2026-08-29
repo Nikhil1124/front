@@ -4,19 +4,28 @@
  * with the same component shapes LocationPicker.tsx and PropertyMap.tsx already use, so those
  * two files need no platform branching of their own.
  */
-import React, { useImperativeHandle } from 'react';
+import React, { useEffect, useImperativeHandle } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Txt } from '@/components/ui';
 import { Colors } from '@/theme';
 
-export const Map = ({ children, style }: any) => (
-  <View style={[styles.fallback, style]}>
-    {children}
-    <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
-      Map preview unavailable on web — open the app on iOS or Android to see the live map.
-    </Txt>
-  </View>
-);
+export const Map = ({ children, style, onDidFinishRenderingMapFully }: any) => {
+  // Honour the callback the real native Map fires. Callers gate their loading overlay on
+  // it, so a stand-in that silently drops it leaves them spinning over this very message
+  // until their timeout expires. There is nothing to wait for here — say so immediately.
+  useEffect(() => {
+    onDidFinishRenderingMapFully?.({ nativeEvent: null });
+  }, [onDidFinishRenderingMapFully]);
+
+  return (
+    <View style={[styles.fallback, style]}>
+      {children}
+      <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
+        Map preview unavailable on web — open the app on iOS or Android to see the live map.
+      </Txt>
+    </View>
+  );
+};
 
 export type CameraRef = {
   flyTo: (options: any) => void;
