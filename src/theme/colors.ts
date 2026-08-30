@@ -1,38 +1,26 @@
 /**
- * 🌿 PGow "Cyber Mint" Design System — Variant 8
+ * 🌿 PGow "Cyber Indigo" Design System — Indigo Redesign
  *
- * Replaces the legacy obsidian dark theme (`#060D10`) with an ultra-clean,
- * airy, high-contrast light mint palette inspired by PhonePe / Cred / Airbnb.
- *
- * Migration strategy:
- *   - The CANONICAL new tokens (canvas, surface, primary, textPrimary, …) are
- *     exported as top-level `Colors.*` keys and match the spec verbatim.
- *   - The LEGACY token names (`LuxuryPureBlack`, `CyberGreen`, `IvoryWhiteText`,
- *     `SlateMutedText`, `LuxurySurfaceDark`, `LuxuryCardBorder`, …) are kept
- *     as DEPRECATED ALIASES that map to the closest mint equivalent. This lets
- *     every existing screen pick up the new look without a rewrite — the old
- *     names were used pervasively, and re-pointing them at mint values is the
- *     single highest-leverage change in the whole migration.
- *   - The `Palette` collection below preserves a few status / accent hexes the
- *     app still reaches for directly, also reminted where appropriate.
+ * Replaces the mint green theme with an ultra-clean,
+ * premium Indigo/violet palette.
  */
 export const Colors = {
   // ── Surfaces & Canvas ─────────────────────────────────────────────────────
-  canvas: '#F7F9F7',              // Groceries light background
+  canvas: '#F7F8FC',              // Light cool background
   surface: '#FFFFFF',             // Pure white cards & dialogs
   surfaceCard: '#FFFFFF',         // Card background
-  surfaceElevated: '#F0FDF4',     // Soft highlighted tiles / active chips
-  surfaceGlass: 'rgba(255, 255, 255, 0.92)', // Glassmorphism modals & floating bars
-  surfaceMuted: '#F4F6F4',        // Secondary background for text fields & disabled states
+  surfaceElevated: '#EEF2FF',     // Soft highlighted tiles / active indigo chips
+  surfaceGlass: 'rgba(255, 255, 255, 0.94)', // Glassmorphism modals & floating bars
+  surfaceMuted: '#F3F4F6',        // Secondary background for text fields & disabled states
 
   // ── Brand & Accents ───────────────────────────────────────────────────────
-  primary: '#15803D',             // Groceries crisp Green
-  primaryDark: '#166534',         // Darker green for pressed states & headers
-  primaryGlow: 'rgba(21, 128, 61, 0.18)', // Soft green shadow glow
-  secondary: '#166534',           // Deep Green for sub-headings
-  tertiary: '#D97706',            // Amber Accent (Alerts, Overdue dues, Urgent notices)
+  primary: '#5B45E8',             // Premium Indigo brand
+  primaryDark: '#4338CA',         // Darker indigo for pressed states & headers
+  primaryGlow: 'rgba(91, 69, 232, 0.12)', // Soft indigo shadow glow
+  secondary: '#4F46E5',           // Deep Indigo for sub-headings
+  tertiary: '#D97706',            // Amber Accent (Alerts, Overdue dues)
   accentWarm: '#D97706',          // Warm Amber
-  accentCool: '#15803D',          // Cool Green
+  accentCool: '#5B45E8',          // Cool Indigo
   accentRose: '#E11D48',          // Critical / Panic / Expired badges
 
   // ── Status Colors ─────────────────────────────────────────────────────────
@@ -42,139 +30,114 @@ export const Colors = {
   info: '#0284C7',                // Notice / Info blue
 
   // ── Typography & Content ───────────────────────────────────────────────────
-  textPrimary: '#17201A',         // Groceries dark text (High contrast)
-  textSecondary: '#3F4D43',       // Groceries subtitle text
-  textMuted: '#647067',           // Groceries muted text
+  textPrimary: '#15171A',         // Deep charcoal text (High contrast)
+  textSecondary: '#4B5563',       // Subtitle gray text
+  textMuted: '#6B7280',           // Muted caption text
   textInverse: '#FFFFFF',         // White text on primary buttons
-  textAccent: '#15803D',          // Green text for links & active tab labels
+  textAccent: '#5B45E8',          // Indigo text for links & active tab labels
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
-  borderSubtle: '#DCFCE7',        // Soft green border (1px default on cards)
-  borderFocus: '#15803D',         // 2px active input focus border
-  borderGlass: 'rgba(21, 128, 61, 0.15)', // Glassmorphic borders
-  borderMuted: '#E2E8F0',         // Divider lines
+  borderSubtle: '#E5E7EB',        // Soft gray border (1px default on cards)
+  borderFocus: '#5B45E8',         // 2px active input focus border
+  borderGlass: 'rgba(91, 69, 232, 0.1)', // Glassmorphic borders
+  borderMuted: '#E5E7EB',         // Divider lines
 
   // ── Gradients ─────────────────────────────────────────────────────────────
-  heroGradientStart: '#15803D',   // Top header & key banner gradient
-  heroGradientEnd: '#22C55E',
+  heroGradientStart: '#5B45E8',   // Top header & key banner gradient
+  heroGradientEnd: '#8B5CF6',     // Violet end
   cardGradientStart: '#FFFFFF',
-  cardGradientEnd: '#F7F9F7',
+  cardGradientEnd: '#F7F8FC',
   alertGradientStart: '#FFFBEB',
   alertGradientEnd: '#FEF3C7',
   panicGradientStart: '#EF4444',
   panicGradientEnd: '#DC2626',
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // DEPRECATED LEGACY ALIASES — kept so existing call-sites compile and
-  // automatically inherit the new mint look. Do NOT use in new code; reach
-  // for the canonical token above instead. The mapping is intentionally
-  // biased toward "what would a screen that used this token visually want
-  // once we are on a light canvas?" rather than a literal 1:1 hue match.
-  // ──────────────────────────────────────────────────────────────────────────
-  // 60% Dominant Color Token (was obsidian black) — now the mint canvas.
-  LuxuryPureBlack: '#F7F9F7',
-  // 30% Structural Secondary (was elevated dark glass) — now pure white surface.
+  // ── Legacy Aliases ────────────────────────────────────────────────────────
+  LuxuryPureBlack: '#F7F8FC',
   LuxurySurfaceDark: '#FFFFFF',
-  // Card border (was dark teal) — now the soft mint border.
-  LuxuryCardBorder: '#DCFCE7',
-  // Muted slate text (was slate on dark) — now slate-500 (muted caption).
-  SlateMutedText: '#647067',
-  // Ivory white text (was near-white on dark) — now slate-900 (high-contrast body).
-  IvoryWhiteText: '#17201A',
-  // CyberGreen accent (was neon mint) — now the canonical primary teal.
-  CyberGreen: '#15803D',
-  // CyberPurple (was deep teal) — now primaryDark (slightly darker teal).
-  CyberPurple: '#166534',
-  // CyberPink (was bright cyan-mint) — collapses onto primary teal so chips
-  // and outlines don't fight the new single-accent system.
-  CyberPink: '#15803D',
-  // CyberAmber (was orange) — now the warm amber accent.
+  LuxuryCardBorder: '#E5E7EB',
+  SlateMutedText: '#6B7280',
+  IvoryWhiteText: '#15171A',
+  CyberGreen: '#5B45E8',
+  CyberPurple: '#4338CA',
+  CyberPink: '#5B45E8',
   CyberAmber: '#D97706',
 
-  // Compatibility aliases from the old Theme export block — all repointed
-  // at mint equivalents so any code that reads `Colors.Teal40` etc. keeps
-  // working without a hunt-and-replace.
-  Teal80: '#15803D',
-  TealSecondary80: '#166534',
+  Teal80: '#5B45E8',
+  TealSecondary80: '#4338CA',
   Gold80: '#D97706',
-  Teal40: '#166534',
-  TealSecondary40: '#166534',
+  Teal40: '#4338CA',
+  TealSecondary40: '#4338CA',
   Gold40: '#B45309',
-  SlateDarkBackground: '#F7F9F7',
+  SlateDarkBackground: '#F7F8FC',
   SlateDarkSurface: '#FFFFFF',
-  LightCreamBackground: '#F7F9F7',
+  LightCreamBackground: '#F7F8FC',
   LightCreamSurface: '#FFFFFF',
 } as const;
 
 export type ColorToken = keyof typeof Colors;
 
-/**
- * Extra palette — preserved for direct hex access in legacy screens. Every
- * value has been re-pointed at the mint / slate / amber palette so the app
- * looks coherent after the migration.
- */
 export const Palette = {
-  // Status colors — verbatim from the new spec, reused widely.
+  // Status colors
   StatusGreen: '#10B981',
   StatusGreenSoft: '#34D399',
   StatusRed: '#EF4444',
   StatusAmber: '#F59E0B',
   StatusAmberDeep: '#D97706',
   StatusPink: '#E11D48',
-  StatusCyan: '#15803D',
+  StatusCyan: '#5B45E8',
   StatusBlue: '#0284C7',
-  StatusPurple: '#166534',
+  StatusPurple: '#4338CA',
   StatusGold: '#D97706',
   StatusOrange: '#D97706',
 
-  // Functional gradients — repointed at mint hero / panic gradients.
-  GradientStart: '#15803D',
-  GradientEnd: '#22C55E',
+  // Functional gradients
+  GradientStart: '#5B45E8',
+  GradientEnd: '#8B5CF6',
 
-  // Surfaces — collapsed onto the new white / mint / muted-slate scale.
+  // Surfaces
   SurfaceDeepNavy: '#FFFFFF',
-  SurfaceInkDark: '#F4F6F4',
+  SurfaceInkDark: '#F3F4F6',
   SurfaceDarkCard: '#FFFFFF',
-  SurfacePanel: '#F7F9F7',
-  SurfaceInk: '#F4F6F4',
-  SurfaceInkAlt: '#F0FDF4',
-  SurfaceInkDeep: '#F0FDF4',
+  SurfacePanel: '#F7F8FC',
+  SurfaceInk: '#F3F4F6',
+  SurfaceInkAlt: '#EEF2FF',
+  SurfaceInkDeep: '#EEF2FF',
   SurfaceMagenta: '#FFFBEB',
-  SurfaceViolet: '#F0FDF4',
-  SurfaceTeal: '#F0FDF4',
-  SurfaceVioletDeep: '#F0FDF4',
-  SurfaceVioletBright: '#F0FDF4',
+  SurfaceViolet: '#EEF2FF',
+  SurfaceTeal: '#EEF2FF',
+  SurfaceVioletDeep: '#EEF2FF',
+  SurfaceVioletBright: '#EEF2FF',
   SurfaceInkMagenta: '#FFFBEB',
   SurfaceInkAmber: '#FFFBEB',
   SurfaceInkBrown: '#FEF3C7',
-  SurfaceInkCyan: '#F0FDF4',
-  SurfaceInkGreen: '#F0FDF4',
+  SurfaceInkCyan: '#EEF2FF',
+  SurfaceInkGreen: '#EEF2FF',
   SurfaceInkPink: '#FFFBEB',
-  SurfaceInkPurple: '#F0FDF4',
+  SurfaceInkPurple: '#EEF2FF',
 
-  // Background variants — all light, all mint-tinted or white.
+  // Background variants
   BgCard: '#FFFFFF',
-  BgPaper: '#F7F9F7',
-  BgTerminal: '#F7F9F7',
-  BgScrim: 'rgba(23, 32, 26, 0.55)', // modal scrim
+  BgPaper: '#F7F8FC',
+  BgTerminal: '#F7F8FC',
+  BgScrim: 'rgba(21, 23, 26, 0.45)', // modal scrim
 
-  // Text tints — slate scale.
-  TextMuted: '#647067',
-  TextMid: '#3F4D43',
-  TextFaint: '#15803D',
+  // Text tints
+  TextMuted: '#6B7280',
+  TextMid: '#4B5563',
+  TextFaint: '#5B45E8',
 
-  // Border variants — mint / slate hairlines.
-  BorderFaint: '#DCFCE7',
-  BorderMid: '#E2E8F0',
-  BorderStrong: '#15803D',
-  BorderPurpleSoft: '#DCFCE7',
+  // Border variants
+  BorderFaint: '#E5E7EB',
+  BorderMid: '#E5E7EB',
+  BorderStrong: '#5B45E8',
+  BorderPurpleSoft: '#EEF2FF',
   BorderAmberSoft: '#FEF3C7',
 } as const;
 
 export const Theme = {
   colors: Colors,
   palette: Palette,
-  // Material colorScheme equivalent — repointed at the mint system.
   primary: Colors.primary,
   secondary: Colors.secondary,
   tertiary: Colors.tertiary,
@@ -198,26 +161,21 @@ export const Theme = {
 
 export type ThemeType = typeof Theme;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Layout tokens — Variant 8 spec. Cards & buttons share a uniform corner
-// radius scale, and shadows use the soft mint glow rather than the old
-// high-contrast dark elevation.
-// ─────────────────────────────────────────────────────────────────────────────
 export const Layout = {
-  borderRadiusCard: 14,
-  borderRadiusButton: 10,
+  borderRadiusCard: 22,
+  borderRadiusButton: 12,
   borderRadiusChip: 20,
   shadowCard: {
-    shadowColor: '#15803D',
+    shadowColor: '#5B45E8',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 3,
   } as const,
   shadowHero: {
-    shadowColor: '#166534',
+    shadowColor: '#5B45E8',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 5,
   } as const,

@@ -28,6 +28,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import * as requestsApi from '@/features/requests/useComplaints';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { qk } from '@/data/queryKeys';
 import { formatDateTime } from '@/utils/format';
 import type { RequestRecord } from '@/features/requests/useComplaints';
@@ -717,10 +718,11 @@ export default function BookTechnicianScreen() {
 
       {/* Category Selection Dropdown Modal */}
       {showCategoryMenu && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowCategoryMenu(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setShowCategoryMenu(false)}>
+        <Modal visible transparent animationType="none" onRequestClose={() => setShowCategoryMenu(false)}>
+          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={styles.dropdownCard}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCategoryMenu(false)} />
+            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
               <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Service</Txt>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
                 {REPAIR_CATEGORIES.map((cat) => (
@@ -735,17 +737,18 @@ export default function BookTechnicianScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            </View>
-          </Pressable>
+            </Animated.View>
+          </Animated.View>
         </Modal>
       )}
 
       {/* Date Dropdown Popup Modal */}
       {showDatePicker && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setShowDatePicker(false)}>
+        <Modal visible transparent animationType="none" onRequestClose={() => setShowDatePicker(false)}>
+          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={styles.dropdownCard}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
+            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
               <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Date</Txt>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
                 {getNext7Days().map((d) => (
@@ -760,17 +763,18 @@ export default function BookTechnicianScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            </View>
-          </Pressable>
+            </Animated.View>
+          </Animated.View>
         </Modal>
       )}
 
       {/* Time Dropdown Popup Modal */}
       {showTimePicker && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowTimePicker(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setShowTimePicker(false)}>
+        <Modal visible transparent animationType="none" onRequestClose={() => setShowTimePicker(false)}>
+          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={styles.dropdownCard}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
+            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
               <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Time Slot</Txt>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
                 {TIME_SLOTS.map((t) => (
@@ -785,8 +789,8 @@ export default function BookTechnicianScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            </View>
-          </Pressable>
+            </Animated.View>
+          </Animated.View>
         </Modal>
       )}
     </HubScreenWrapper>

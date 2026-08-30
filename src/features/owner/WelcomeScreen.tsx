@@ -8,12 +8,12 @@ import { hapticSelect } from '@/utils/haptics';
 import { useAuthStore } from '@/store/authStore';
 
 
-// Premium Design System Tokens (Forest Green & Off-White)
-const BRAND_GREEN = '#176B3A';
-const BRAND_BG = '#F8FAF8';
-const CHARCOAL = '#1C2E24';
-const TEXT_MUTED = '#5A6E60';
-const BORDER_COLOR = '#E2EBE5';
+// Premium Design System Tokens (Indigo & Off-White)
+const BRAND_GREEN = '#5B45E8';
+const BRAND_BG = '#F7F8FC';
+const CHARCOAL = '#15171A';
+const TEXT_MUTED = '#6B7280';
+const BORDER_COLOR = '#E5E7EB';
 const CARD_BG = '#FFFFFF';
 
 // Subtle Amber Palette for Staff Card
@@ -40,11 +40,11 @@ export function WelcomeScreen() {
       </View>
 
       <View style={styles.bottomLeftHouse} pointerEvents="none">
-        <Ionicons name="home-outline" size={90} color="#E8EFEA" />
+        <Ionicons name="home-outline" size={90} color="#EEF2FF" />
       </View>
 
       <View style={styles.bottomRightHouse} pointerEvents="none">
-        <Ionicons name="business-outline" size={100} color="#E8EFEA" />
+        <Ionicons name="business-outline" size={100} color="#EEF2FF" />
       </View>
 
 
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderWidth: 1.5,
-    borderColor: '#E8EFEA',
+    borderColor: '#EEF2FF',
     zIndex: -1,
   },
   dotGrid: {
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E2EBE5',
+    backgroundColor: '#E5E7EB',
   },
   bottomLeftHouse: {
     position: 'absolute',

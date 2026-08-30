@@ -22,7 +22,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { SlideInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown } from 'react-native-reanimated';
 
 import { Txt, Row } from '@/components/ui';
 import { Colors } from '@/theme';
@@ -61,16 +61,14 @@ export function DetailBottomSheet({
   }, [visible]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss} testID={testID}>
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} testID={testID}>
+      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Pressable
           style={styles.sheetWrapper}
           onPress={(e) => e.stopPropagation()}
         >
-          <Animated.View
-            entering={SlideInDown.springify().damping(18).stiffness(260).mass(0.7)}
-            style={styles.sheet}
-          >
+          <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.sheet}>
             {/* Drag handle */}
             <View style={styles.handleBar} />
 
@@ -115,7 +113,7 @@ export function DetailBottomSheet({
             {footer ? <View style={styles.footer}>{footer}</View> : null}
           </Animated.View>
         </Pressable>
-      </Pressable>
+      </Animated.View>
     </Modal>
   );
 }

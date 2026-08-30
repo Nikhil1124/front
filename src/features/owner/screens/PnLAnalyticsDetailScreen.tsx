@@ -23,14 +23,13 @@ import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { hapticSelect } from '@/utils/haptics';
 import type { PnLInterval, PaymentEntity, ExpenseEntity } from '@/types';
 
-// ── Design Tokens ─────────────────────────────────────────────────────────────
-const GREEN = '#176B3A';
-const BG = '#F7FAF7';
-const CHARCOAL = '#17201A';
-const MUTED = '#68736C';
-const BORDER = '#E6EFEA';
+const GREEN = '#5B45E8';      // Indigo primary brand
+const BG = '#F7F8FC';         // Canvas BG
+const CHARCOAL = '#15171A';   // Primary text
+const MUTED = '#6B7280';      // Muted text
+const BORDER = '#E5E7EB';     // Subtle border
 const WHITE = '#FFFFFF';
-const RADIUS = 16;
+const RADIUS = 22;            // Premium rounded corners
 
 type AnalyticsInterval = PnLInterval | 'custom';
 
@@ -644,7 +643,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#EAF5EE',
+    backgroundColor: '#EEF2FF',
   },
   presetChipText: { fontSize: 11, fontWeight: '700', color: GREEN },
 

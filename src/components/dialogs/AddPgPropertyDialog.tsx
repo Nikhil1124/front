@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
@@ -73,17 +74,18 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
   }
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-      <View style={styles.backdrop}>
+    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
+      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={24}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[20, 20]}
-          style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}
-        >
+        <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={24}
+            borderWidth={1}
+            borderColor={Colors.borderSubtle}
+            padding={[20, 20]}
+            style={{ width: '100%', maxHeight: '100%' }}
+          >
           <Row align="center" gap={8} style={{ marginBottom: 12 }}>
             <View style={styles.headerIconBox}>
               <Ionicons name="business" size={20} color={Colors.primary} />
@@ -202,8 +204,9 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
             </OutlinedBtn>
           </Row>
-        </Card>
-      </View>
+          </Card>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -215,7 +218,7 @@ const styles = StyleSheet.create({
   },
   headerIconBox: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: '#F0FDF9',
+    backgroundColor: '#EEF2FF',
     alignItems: 'center', justifyContent: 'center',
   },
   sectionCard: {
