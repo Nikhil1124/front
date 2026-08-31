@@ -1,5 +1,6 @@
 export * from './colors';
 export * from './typography';
+export * from './motion';
 
 import { Colors, Palette, Theme, Layout } from './colors';
 

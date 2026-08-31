@@ -9,8 +9,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { BlurView } from 'expo-blur';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
-import { Colors, Layout } from '@/theme';
+import { Colors, Layout, Motion } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { hapticSelect } from '@/utils/haptics';
@@ -83,10 +84,15 @@ export function PaymentReceiptDialog({
   };
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onDismiss}>
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
+      <Animated.View entering={FadeIn.duration(Motion.timing.sheet)} exiting={FadeOut.duration(Motion.timing.sheet)} style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <Animated.View
+          entering={SlideInDown.duration(Motion.timing.sheet).easing(Motion.easing.entrance)}
+          exiting={SlideOutDown.duration(Motion.timing.sheet).easing(Motion.easing.exit)}
+          style={styles.modalContent}
+          onStartShouldSetResponder={() => true}
+        >
           {/* Header */}
           <Row justify="space-between" align="center" style={styles.header}>
             <Row gap={8} align="center">
@@ -251,8 +257,8 @@ export function PaymentReceiptDialog({
               </OutlinedBtn>
             </Row>
           </View>
-        </View>
-      </Pressable>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }

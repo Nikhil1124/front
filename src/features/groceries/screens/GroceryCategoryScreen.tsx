@@ -121,22 +121,20 @@ export function GroceryCategoryScreen() {
       <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
         <View style={[styles.topHeader, { paddingTop: insets.top + 14 }]}>
-          {showProductList ? (
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={() => {
-                if (activeSupplyCategory) {
-                  setActiveSupplyCategory(null);
-                  setSearch('');
-                } else {
-                  router.back();
-                }
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-            </TouchableOpacity>
-          ) : null}
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => {
+              if (activeSupplyCategory) {
+                setActiveSupplyCategory(null);
+                setSearch('');
+              } else {
+                router.back();
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
 
           <View style={styles.searchBarContainer}>
             <Ionicons name="search" size={20} color={Colors.primary} />

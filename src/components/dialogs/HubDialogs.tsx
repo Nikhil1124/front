@@ -18,10 +18,10 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { SlideInDown, FadeIn } from 'react-native-reanimated';
+import Animated, { SlideInDown, SlideOutDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
+import { Colors, dialogEntering, dialogExiting, Motion } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 // ===== AddPgDailySubscriptionDialog =====
@@ -40,18 +40,19 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
   };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
+    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-      <View style={styles.backdrop}>
+      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={24}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[20, 20]}
-          style={{ width: '92%', zIndex: 2 }}
-        >
+        <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '92%', zIndex: 2 }}>
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={24}
+            borderWidth={1}
+            borderColor={Colors.borderSubtle}
+            padding={[20, 20]}
+            style={{ width: '100%' }}
+          >
           <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
             <Row gap={8} align="center">
               <Txt size={18}>🔄</Txt>
@@ -100,7 +101,8 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
             <Txt variant="body" weight="800" color={Colors.textInverse}>Activate Daily Subscription</Txt>
           </Btn>
         </Card>
-      </View>
+        </Animated.View>
+      </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -169,11 +171,12 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
     <>
       <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-          <Animated.View entering={FadeIn.duration(250)} style={styles.backdrop}>
+          <Animated.View entering={FadeIn.duration(Motion.timing.sheet)} exiting={FadeOut.duration(Motion.timing.sheet)} style={styles.backdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
             
             <Animated.View
-              entering={SlideInDown.duration(180)}
+              entering={SlideInDown.duration(Motion.timing.sheet).easing(Motion.easing.entrance)}
+              exiting={SlideOutDown.duration(Motion.timing.sheet).easing(Motion.easing.exit)}
               style={styles.sheetCard}
             >
               {/* Handlebar */}
@@ -434,18 +437,19 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
   };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
+    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-      <View style={styles.backdrop}>
+      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={24}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[20, 20]}
-          style={{ width: '92%', zIndex: 2 }}
-        >
+        <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '92%', zIndex: 2 }}>
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={24}
+            borderWidth={1}
+            borderColor={Colors.borderSubtle}
+            padding={[20, 20]}
+            style={{ width: '100%' }}
+          >
           <Row justify="space-between" align="center" style={{ marginBottom: 4 }}>
             <Row gap={8} align="center">
               <Txt size={18}>🧺</Txt>
@@ -525,7 +529,8 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
             </Btn>
           </Row>
         </Card>
-      </View>
+        </Animated.View>
+      </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );

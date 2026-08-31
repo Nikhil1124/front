@@ -37,20 +37,20 @@ import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { formatDateTime } from '@/utils/format';
 import type { GuestEntity } from '@/types';
 
-const GREEN = '#176B3A';
-const BG = '#F7FAF7';
-const CHARCOAL = '#17201A';
-const MUTED = '#66736B';
-const BORDER = '#E6EFEA';
+const GREEN = '#5B45E8';      // Indigo brand primary
+const BG = '#F7F8FC';         // Canvas BG
+const CHARCOAL = '#15171A';   // Primary text
+const MUTED = '#6B7280';      // Muted text
+const BORDER = '#E5E7EB';     // Subtle border
 const WHITE = '#FFFFFF';
-const LIGHT_GREEN = '#EEF8F1';
-const RADIUS = 18;
+const LIGHT_GREEN = '#EEF2FF';// Soft indigo tint
+const RADIUS = 22;            // Premium corner radius
 
 const KYC_STYLE: Record<string, { bg: string; border: string; text: string; label: string }> = {
   VERIFIED: { bg: '#ECFDF5', border: '#A7F3D0', text: '#047857', label: '✅ Verified' },
   PENDING: { bg: '#FFFBEB', border: '#FDE68A', text: '#B45309', label: '⏳ KYC Pending' },
   REJECTED: { bg: '#FEF2F2', border: '#FECACA', text: '#B91C1C', label: '❌ Rejected' },
-  DEFAULT: { bg: '#F7FAF7', border: '#E6EFEA', text: '#66736B', label: '⚠️ No KYC' },
+  DEFAULT: { bg: '#F7F8FC', border: '#E5E7EB', text: '#6B7280', label: '⚠️ No KYC' },
 };
 
 import { useGuestsQuery } from '@/features/guests/useGuests';

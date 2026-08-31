@@ -1,6 +1,6 @@
 /** Chef dashboard "Kitchen" tab or Delivery Agent Profile */
 import { useEffect, useState } from 'react';
-import { Alert, View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { Alert, View, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, Spacer, Col } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -12,6 +12,7 @@ import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 const ANNOUNCEMENTS = [
   'Special Dessert today! 🍨',
@@ -168,9 +169,10 @@ function DeliveryProfileRoute() {
         </Btn>
       </FormScroll>
 
-      <Modal transparent visible={showLogoutConfirm} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: Colors.surface, borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
+      <Modal transparent visible={showLogoutConfirm} animationType="none" onRequestClose={() => setShowLogoutConfirm(false)}>
+        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowLogoutConfirm(false)} />
+          <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={{ backgroundColor: Colors.surface, borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
             <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="log-out" size={24} color={Colors.danger} />
@@ -193,8 +195,8 @@ function DeliveryProfileRoute() {
                 <Txt size={15} weight="800" color="#FFF">Sign Out</Txt>
               </TouchableOpacity>
             </Row>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
       </Modal>
     </View>
   );

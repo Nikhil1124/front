@@ -16,14 +16,14 @@ import { useProcurementOrders } from '@/features/procurement/useProcurement';
 import { hapticSelect } from '@/utils/haptics';
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
-const GREEN = '#176B3A';
-const BG = '#F7FAF7';
-const CHARCOAL = '#17201A';
-const MUTED = '#66736B';
-const BORDER = '#E6EFEA';
+const GREEN = '#5B45E8';      // Indigo brand primary
+const BG = '#F7F8FC';         // Canvas BG
+const CHARCOAL = '#15171A';   // Primary text
+const MUTED = '#6B7280';      // Muted text
+const BORDER = '#E5E7EB';     // Subtle border
 const WHITE = '#FFFFFF';
-const LIGHT_GREEN = '#EEF8F1';
-const RADIUS = 18;
+const LIGHT_GREEN = '#EEF2FF';// Soft indigo active tint
+const RADIUS = 22;            // Premium rounded corner radius
 
 export function OwnerServicesTab() {
   const [showBookRepair, setShowBookRepair] = useState(false);

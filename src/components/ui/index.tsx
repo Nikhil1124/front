@@ -19,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Palette, Radii, Layout } from '@/theme';
 import { Typography, type TypographyKey } from '@/theme/typography';
 import type { FontWeight } from '@/theme/typography';
+import { Txt, type TxtProps } from './Txt';
+import { AnimatedPress } from './AnimatedPress';
 
 type RNFontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
@@ -76,48 +78,6 @@ export function Card({
   return <View testID={testID} style={[cardStyle, style]}>{children}</View>;
 }
 
-export interface TxtProps {
-  children: React.ReactNode;
-  /** Named scale token (see theme/typography.ts) — sets size/weight/lineHeight/letterSpacing
-   *  together. Individual props below still override a single field when passed. */
-  variant?: TypographyKey;
-  size?: number;
-  weight?: FontWeight;
-  color?: string;
-  align?: 'auto' | 'left' | 'right' | 'center' | 'justify';
-  lineHeight?: number;
-  letterSpacing?: number;
-  style?: StyleProp<TextStyle>;
-  numberOfLines?: number;
-  ellipsizeMode?: 'head' | 'middle' | 'tail' | 'clip';
-}
-
-export function Txt({
-  children, variant, size, weight, color = Colors.textPrimary,
-  align = 'left', lineHeight, letterSpacing, style, numberOfLines, ellipsizeMode,
-}: TxtProps) {
-  const base = variant ? Typography[variant] : null;
-  const resolvedSize = size ?? base?.fontSize ?? 13;
-  const resolvedWeight = (weight ?? base?.fontWeight ?? '400') as RNFontWeight;
-  const resolvedLineHeight = lineHeight ?? base?.lineHeight ?? resolvedSize * 1.35;
-  const resolvedLetterSpacing = letterSpacing ?? base?.letterSpacing ?? 0;
-  return (
-    <Text
-      style={[{
-        fontSize: resolvedSize,
-        fontWeight: resolvedWeight,
-        color,
-        textAlign: align,
-        lineHeight: resolvedLineHeight,
-        letterSpacing: resolvedLetterSpacing,
-      }, style]}
-      numberOfLines={numberOfLines}
-      ellipsizeMode={ellipsizeMode}
-    >
-      {children}
-    </Text>
-  );
-}
 
 export interface ButtonProps {
   children: React.ReactNode;
@@ -142,9 +102,8 @@ export function Btn({
   style, contentStyle, testID,
 }: ButtonProps) {
   return (
-    <TouchableOpacity
+    <AnimatedPress
       testID={testID}
-      activeOpacity={0.85}
       disabled={disabled || loading}
       onPress={onPress}
       style={[
@@ -170,7 +129,7 @@ export function Btn({
           {children}
         </View>
       )}
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -196,9 +155,8 @@ export function OutlinedBtn({
   containerColor = 'transparent', disabled, style, testID,
 }: OutlinedButtonProps & { textColor?: string }) {
   return (
-    <TouchableOpacity
+    <AnimatedPress
       testID={testID}
-      activeOpacity={0.85}
       disabled={disabled}
       onPress={onPress}
       style={[
@@ -218,7 +176,7 @@ export function OutlinedBtn({
       ]}
     >
       {children}
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -243,13 +201,11 @@ export function IconBtn({
   accessibilityLabel, hitSlop,
 }: IconBtnProps & { hitSlop?: { top: number; bottom: number; left: number; right: number } }) {
   return (
-    <TouchableOpacity
+    <AnimatedPress
       testID={testID}
-      activeOpacity={0.7}
       disabled={disabled}
       onPress={onPress}
       hitSlop={hitSlop ?? { top: 8, bottom: 8, left: 8, right: 8 }}
-      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={{
         backgroundColor: containerColor, borderRadius, padding,
@@ -259,7 +215,7 @@ export function IconBtn({
       {typeof icon === 'string' ? (
         <Ionicons name={icon as any} size={size} color={tint} />
       ) : (icon)}
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -407,3 +363,7 @@ export const styles = StyleSheet.create({
 // so a screen imports them from '@/components/ui' like everything else it renders.
 export { Spinner, LoadingState, ErrorState } from './Spinner';
 export type { SpinnerProps, LoadingStateProps, ErrorStateProps } from './Spinner';
+export { Txt, type TxtProps };
+export { Skeleton } from './Skeleton';
+export { AnimatedChevron } from './AnimatedChevron';
+

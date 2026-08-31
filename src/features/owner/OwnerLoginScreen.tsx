@@ -38,14 +38,14 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const GREEN   = '#176B3A';
-const BG      = '#F8FAF8';
-const CHARCOAL = '#1C2B22';
-const MUTED   = '#5A6E60';
-const BORDER  = '#D8E4DC';
+const GREEN   = '#5B45E8';      // Indigo primary brand
+const BG      = '#F7F8FC';      // Canvas BG
+const CHARCOAL = '#15171A';     // charcoal text
+const MUTED   = '#6B7280';      // muted text
+const BORDER  = '#E5E7EB';      // subtle border
 const WHITE   = '#FFFFFF';
 const FIELD_H = 56;
-const RADIUS  = 13;
+const RADIUS  = 22;             // Premium rounded corners
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 const TABS = [
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
   segPill: {
     position: 'absolute',
     left: 4, top: 4, bottom: 4,
-    backgroundColor: '#EAF5EE',
+    backgroundColor: '#EEF2FF',
     borderRadius: 9,
     borderWidth: 1.5,
     borderColor: GREEN,

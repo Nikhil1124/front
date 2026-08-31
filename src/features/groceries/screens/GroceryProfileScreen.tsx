@@ -2,6 +2,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
@@ -28,6 +29,9 @@ export function GroceryProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
@@ -73,6 +77,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.canvas,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     // SafeAreaView above already applies insets.top — this is only the extra buffer, same
     // 14/16px every other grocery screen uses (was double-padding on Android: insets.top+40).
@@ -81,6 +87,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
+    gap: 12,
+  },
+  backBtn: {
+    padding: 4,
   },
   headerTitle: {
     fontSize: 20,

@@ -18,40 +18,26 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
-  Easing,
   interpolate,
   runOnJS,
 } from 'react-native-reanimated';
 
 import { haptic, HapticPattern } from '@/utils/haptics';
+import { Motion } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export interface AnimatedPressProps extends Omit<PressableProps, 'style'> {
-  /** Scale to compress to when pressed. 0.96 ≈ gentle, 0.90 ≈ emphatic. */
+  /** Scale to compress to when pressed. 0.97 ≈ gentle (spec), 0.90 ≈ emphatic. */
   scale?: number;
   /** Haptic pattern fired on press-in. Pass `null` to disable. */
   hapticPattern?: HapticPattern | null;
-  /** Spring config for the press-out bounce. */
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }
 
-const SPRING_OUT = {
-  damping: 14,
-  stiffness: 320,
-  mass: 0.6,
-  overshootClamping: false,
-} as const;
-
-const TIMING_IN = {
-  duration: 90,
-  easing: Easing.out(Easing.cubic),
-} as const;
-
 export function AnimatedPress({
-  scale = 0.96,
+  scale = 0.97,
   hapticPattern = 'light',
   style,
   children,
@@ -85,12 +71,12 @@ export function AnimatedPress({
       accessibilityRole={accessibilityRole}
       {...rest}
       onPressIn={(e) => {
-        pressed.value = withTiming(1, TIMING_IN);
+        pressed.value = withTiming(1, { duration: 100, easing: Motion.easing.entrance });
         fireHaptic();
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        pressed.value = withSpring(0, SPRING_OUT);
+        pressed.value = withTiming(0, { duration: Motion.timing.micro, easing: Motion.easing.standard });
         onPressOut?.(e);
       }}
       style={[animatedStyle, style]}

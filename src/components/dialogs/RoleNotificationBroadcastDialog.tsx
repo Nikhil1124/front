@@ -4,12 +4,12 @@
  * hardware back button support, and backdrop touch-to-dismiss.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
-
+import { Modal, View, StyleSheet, Alert, Pressable, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
+import { Colors, dialogEntering, dialogExiting } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 interface Props {
@@ -39,20 +39,21 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
   };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-      <View style={styles.backdrop}>
-        {/* Background tap to dismiss */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
+          {/* Background tap to dismiss */}
+          <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
 
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={24}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[20, 20]}
-          style={{ width: '90%', zIndex: 2 }}
-        >
+          <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '90%', zIndex: 2 }}>
+            <Card
+              containerColor={Colors.surface}
+              borderRadius={24}
+              borderWidth={1}
+              borderColor={Colors.borderSubtle}
+              padding={[20, 20]}
+              style={{ width: '100%' }}
+            >
           <Row align="center" gap={8} style={{ marginBottom: 12 }}>
             <View style={styles.iconBox}>
               <Ionicons name="megaphone" size={20} color={Colors.primary} />
@@ -120,8 +121,9 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
               <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
             </OutlinedBtn>
           </Row>
-        </Card>
-      </View>
+            </Card>
+          </Animated.View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -136,7 +138,7 @@ const styles = StyleSheet.create({
   },
   iconBox: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: '#F0FDF9',
+    backgroundColor: '#EEF2FF',
     alignItems: 'center', justifyContent: 'center',
   },
 });

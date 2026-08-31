@@ -35,14 +35,14 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { FormScroll } from '@/components/ui/FormScroll';
 
-const GREEN = '#176B3A';
-const BG = '#F7FAF7';
-const CHARCOAL = '#17201A';
-const MUTED = '#66736B';
-const BORDER = '#E6EFEA';
+const GREEN = '#5B45E8';      // Indigo primary brand
+const BG = '#F7F8FC';         // Canvas BG
+const CHARCOAL = '#15171A';   // Primary text
+const MUTED = '#6B7280';      // Muted text
+const BORDER = '#E5E7EB';     // Subtle border
 const WHITE = '#FFFFFF';
-const LIGHT_GREEN = '#EEF8F1';
-const RADIUS = 18;
+const LIGHT_GREEN = '#EEF2FF';// Soft indigo active tint
+const RADIUS = 22;            // Premium rounded corner radius
 
 const EXPENSE_CATEGORIES = [
   'Staff Salary',

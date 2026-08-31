@@ -25,6 +25,7 @@
 import { forwardRef } from 'react';
 import { View, Pressable, StyleSheet, type PressableProps } from 'react-native';
 import Animated, {
+  interpolate,
   interpolateColor,
   useAnimatedStyle,
   useDerivedValue,
@@ -35,6 +36,8 @@ import { TabList } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt } from '@/components/ui';
 import { Colors } from '@/theme';
+
+const AnimatedIcon = Animated.createAnimatedComponent(Ionicons);
 
 /** Same function reference as `TabList`, so `isTabList(child)` still passes. */
 export { TabList as Dock };
@@ -91,7 +94,27 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
       ),
       shadowOpacity: 0.16 * progress.value,
       elevation: 3 * progress.value,
-      transform: [{ translateY: -2 * progress.value }],
+      transform: [
+        { translateY: -2 * progress.value },
+        { scale: interpolate(progress.value, [0, 1], [0.95, 1]) }
+      ],
+    }));
+
+    const iconStyle = useAnimatedStyle(() => ({
+      color: interpolateColor(
+        progress.value,
+        [0, 1],
+        [Colors.textMuted, Colors.primaryDark]
+      ),
+    }));
+
+    const labelStyle = useAnimatedStyle(() => ({
+      color: interpolateColor(
+        progress.value,
+        [0, 1],
+        [Colors.textMuted, Colors.primaryDark]
+      ),
+      fontWeight: isFocused ? '800' : '600' as any,
     }));
 
     return (
@@ -109,18 +132,18 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
         {...props}
       >
         <Animated.View style={[styles.iconBox, boxStyle]}>
-          <Ionicons name={icon} size={18} color={isFocused ? Colors.primaryDark : Colors.textMuted} />
+          <AnimatedIcon name={icon} size={18} style={iconStyle} />
         </Animated.View>
-        <Txt
-          size={10}
-          weight={isFocused ? '800' : '600'}
-          color={isFocused ? Colors.primaryDark : Colors.textMuted}
-          align="center"
+        <Animated.Text
+          style={[{
+            fontSize: 10,
+            textAlign: 'center',
+            marginTop: 3,
+          }, labelStyle]}
           numberOfLines={1}
-          style={{ marginTop: 3 }}
         >
           {label}
-        </Txt>
+        </Animated.Text>
       </Pressable>
     );
   }

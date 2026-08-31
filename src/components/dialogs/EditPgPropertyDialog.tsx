@@ -2,21 +2,19 @@
  * EditPgPropertyDialog — port of Kotlin `EditPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { Modal, View, StyleSheet, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
 import PropertyMap from '@/components/PropertyMap';
 import type { PickedLocation } from '@/features/places/pendingLocation';
-import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
-import { Colors } from '@/theme';
+import { Colors, dialogEntering, dialogExiting } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-
-const SCREEN_H = Dimensions.get('window').height;
-
 import type { PGOwnerEntity } from '@/types';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 interface Props {
   pg: PGOwnerEntity;
@@ -71,16 +69,18 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
   }
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-      <View style={styles.backdrop}>
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={24}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[20, 20]}
-          style={{ width: '92%', maxHeight: '90%' }}
-        >
+    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
+      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={24}
+            borderWidth={1}
+            borderColor={Colors.borderSubtle}
+            padding={[20, 20]}
+            style={{ width: '100%', maxHeight: '100%' }}
+          >
           <Row align="center" gap={8} style={{ marginBottom: 12 }}>
             <View style={styles.headerIconBox}>
               <Ionicons name="create-outline" size={20} color={Colors.primary} />
@@ -91,19 +91,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
             </Col>
           </Row>
 
-          {/* Same real fix as AddPgPropertyDialog: FormScroll's inner ScrollView is
-              hardcoded flex: 1, which needs a flex-bounded ancestor — this Card sizes to
-              its own content (maxHeight: '90%' is just a cap, not flex: 1), so flex: 1
-              collapsed to zero the same way flex: 0 did. Plain maxHeight-bounded
-              ScrollView, no flex anywhere in the chain. */}
-          <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-            <ScrollView
-              style={{ maxHeight: SCREEN_H * 0.45 }}
-              contentContainerStyle={{ gap: 10 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              automaticallyAdjustKeyboardInsets
-            >
+          <FormScroll style={{ flex: 0, maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             <OutlinedTextField
               label="Property / PG Name"
               value={name}
@@ -112,16 +100,14 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               focusedBorderColor={Colors.primary}
               unfocusedBorderColor={Colors.borderSubtle}
             />
-            <AddressAutocompleteField
+            <OutlinedTextField
               label="Branch Location / Address"
               value={address}
               onChangeText={setAddress}
-              onLocationResolved={(loc) => {
-                // Pre-seed map pin from autocomplete pick; picker can still adjust
-                if (!location) setLocation(loc);
-              }}
+              containerColor={Colors.surfaceMuted}
+              focusedBorderColor={Colors.primary}
+              unfocusedBorderColor={Colors.borderSubtle}
             />
-
             <PropertyMap
               formattedAddress={pg.formattedAddress}
               latitude={pg.latitude}
@@ -165,8 +151,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
                 style={{ flex: 1 }}
               />
             </Row>
-            </ScrollView>
-          </KeyboardAvoidingView>
+          </FormScroll>
 
           <Spacer size={14} />
           <Row gap={8}>
@@ -191,8 +176,9 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
             </OutlinedBtn>
           </Row>
-        </Card>
-      </View>
+          </Card>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -204,7 +190,7 @@ const styles = StyleSheet.create({
   },
   headerIconBox: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: '#F0FDF9',
+    backgroundColor: '#EEF2FF',
     alignItems: 'center', justifyContent: 'center',
   },
 });
