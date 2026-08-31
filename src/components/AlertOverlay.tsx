@@ -24,7 +24,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Txt, Row } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Colors, Motion } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 interface ToastStyle {
@@ -55,7 +55,7 @@ export function AlertOverlay() {
   const [rsvpChoice, setRsvpChoice] = useState<string | null>(null);
   const isDismissing = useRef(false);
 
-  const translateY = useSharedValue(-60);
+  const translateY = useSharedValue(-20);
   const opacity = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -66,20 +66,20 @@ export function AlertOverlay() {
   const handleDismiss = useCallback(() => {
     if (isDismissing.current) return;
     isDismissing.current = true;
-    translateY.value = withTiming(-60, { duration: 220, easing: Easing.in(Easing.cubic) }, (finished) => {
+    translateY.value = withTiming(-20, { duration: Motion.timing.small, easing: Motion.easing.exit }, (finished) => {
       if (finished) runOnJS(dismiss)();
     });
-    opacity.value = withTiming(0, { duration: 180 });
+    opacity.value = withTiming(0, { duration: Motion.timing.small, easing: Motion.easing.exit });
   }, [dismiss, translateY, opacity]);
 
   useEffect(() => {
     setRsvpChoice(null);
     if (activeAlert) {
       isDismissing.current = false;
-      translateY.value = -60;
+      translateY.value = -20;
       opacity.value = 0;
-      translateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
-      opacity.value = withTiming(1, { duration: 180 });
+      translateY.value = withTiming(0, { duration: Motion.timing.small, easing: Motion.easing.entrance });
+      opacity.value = withTiming(1, { duration: Motion.timing.small, easing: Motion.easing.entrance });
 
       const isMealWithNotif = activeAlert.type === 'MEAL' && activeAlert.notificationId != null;
       // A plain toast reads in under two seconds; the meal card needs longer because it is

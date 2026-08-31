@@ -5,15 +5,16 @@
  */
 import { useState } from 'react';
 import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, Pressable, Alert } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, Skeleton } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { formatTimeAgo } from '@/utils/format';
 import { RoleNotificationBroadcastDialog } from './RoleNotificationBroadcastDialog';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useAuthStore } from '@/store/authStore';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
+import { Motion } from '@/theme';
 
 // ── Color System ─────────────────────────────────────────────────────────────
 const PRIMARY = '#5B45E8';      // Premium Indigo / Violet
@@ -155,10 +156,14 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.backdrop}>
+      <Animated.View entering={FadeIn.duration(Motion.timing.sheet)} exiting={FadeOut.duration(Motion.timing.sheet)} style={styles.backdrop}>
         <Pressable style={styles.dismissBackdropArea} onPress={onDismiss} testID="sheet_backdrop_dismiss" />
 
-        <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.sheet}>
+        <Animated.View
+          entering={SlideInDown.duration(Motion.timing.sheet).easing(Motion.easing.entrance)}
+          exiting={SlideOutDown.duration(Motion.timing.sheet).easing(Motion.easing.exit)}
+          style={styles.sheet}
+        >
           {/* Drag Handle */}
           <View style={styles.dragHandlePill} />
 
@@ -431,17 +436,17 @@ function NotificationSkeleton() {
   return (
     <View style={{ gap: 12 }}>
       {[1, 2, 3].map((key) => (
-        <View key={key} style={[styles.notifCard, { opacity: 0.6 }]}>
+        <View key={key} style={styles.notifCard}>
           <Row align="flex-start" gap={12}>
-            <View style={[styles.notifIconBox, { backgroundColor: '#E5E7EB' }]} />
+            <Skeleton style={{ width: 52, height: 52, borderRadius: 14 }} />
             <Col style={{ flex: 1, gap: 8 }}>
-              <View style={{ height: 10, width: 60, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
-              <View style={{ height: 14, width: '75%', backgroundColor: '#E5E7EB', borderRadius: 4 }} />
-              <View style={{ height: 10, width: '90%', backgroundColor: '#E5E7EB', borderRadius: 4 }} />
-              <View style={{ height: 10, width: '80%', backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+              <Skeleton style={{ height: 10, width: 60 }} />
+              <Skeleton style={{ height: 14, width: '75%' }} />
+              <Skeleton style={{ height: 10, width: '90%' }} />
+              <Skeleton style={{ height: 10, width: '80%' }} />
               <Row justify="space-between" align="center" style={{ marginTop: 8 }}>
-                <View style={{ height: 10, width: 40, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
-                <View style={{ height: 26, width: 85, backgroundColor: '#E5E7EB', borderRadius: 8 }} />
+                <Skeleton style={{ height: 10, width: 40 }} />
+                <Skeleton style={{ height: 26, width: 85, borderRadius: 8 }} />
               </Row>
             </Col>
           </Row>

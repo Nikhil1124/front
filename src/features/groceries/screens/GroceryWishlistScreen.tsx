@@ -32,7 +32,11 @@ export function GroceryWishlistScreen() {
       <View style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+            </TouchableOpacity>
             <Text style={styles.headerTitle}>My Wishlist</Text>
+            <View style={{ width: 28 }} />
           </View>
           <View style={styles.emptyContainer}>
             <View style={styles.iconCircle}>
@@ -59,7 +63,12 @@ export function GroceryWishlistScreen() {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Wishlist</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Wishlist</Text>
+          </View>
           <Text style={styles.headerCount}>{items.length} items</Text>
         </View>
 
@@ -217,6 +226,9 @@ const styles = StyleSheet.create({
   },
   addBtnTextFilled: {
     color: '#fff',
+  },
+  backBtn: {
+    padding: 4,
   },
   removeBtn: {
     position: 'absolute',

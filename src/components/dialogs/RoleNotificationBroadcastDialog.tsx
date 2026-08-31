@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
+import { Colors, dialogEntering, dialogExiting } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 interface Props {
@@ -41,11 +41,11 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.backdrop}>
+        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
           {/* Background tap to dismiss */}
           <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
 
-          <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={{ width: '90%', zIndex: 2 }}>
+          <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '90%', zIndex: 2 }}>
             <Card
               containerColor={Colors.surface}
               borderRadius={24}

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut, SlideInDown, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { tabEntering, tabExiting } from '@/theme';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,7 +36,9 @@ export default function OwnerTabsLayout() {
   const [showNotificationCenter, setShowNotificationCenter] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAddPgModal, setShowAddPgModal] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showAddOptions, setShowAddOptions] = useState(false);
+
+
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
@@ -64,61 +67,80 @@ export default function OwnerTabsLayout() {
       {/* ── Main Layout Wrapper ── */}
       <View style={{ flex: 1, backgroundColor: BG, paddingBottom: 68 + insets.bottom }}>
         {/* ── Personalized Redesigned Header ───────────────────────────────────── */}
-        <View style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}>
-          <Row justify="space-between" align="center">
-            {/* Left Avatar + User Greeting & Property swapper */}
-            <Row gap={12} align="center" style={{ flex: 1 }}>
-              {/* Owner Avatar Frame */}
-              <View style={styles.avatarFrame}>
-                <Txt size={18}>🤵</Txt>
-              </View>
-              
-              <Col style={{ flex: 1 }}>
-                <Txt size={12} weight="600" color={MUTED}>{greeting}</Txt>
-                <Spacer size={2} />
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => { hapticSelect(); setShowProfileMenu(true); }}
-                  style={styles.propertySelectRow}
-                >
-                  <Txt size={16} weight="800" color={CHARCOAL} numberOfLines={1}>
-                    {owner?.pgName ?? 'Select PG'}
-                  </Txt>
-                  <Ionicons name="chevron-down" size={13} color={MUTED} />
-                  {isManager && (
-                    <View style={styles.managerBadge}>
-                      <Txt size={8} weight="900" color={PRIMARY}>MANAGER</Txt>
-                    </View>
-                  )}
-                </TouchableOpacity>
-                <Spacer size={1} />
-                <Txt size={11} color={MUTED}>{subLabel}</Txt>
-              </Col>
-            </Row>
-
-            {/* Right Action Icons */}
-            <Row gap={8} align="center">
-              <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => setShowNotificationCenter(isManager ? 'MANAGER' : 'OWNER')}>
-                <View style={styles.headerActionBtn}>
-                  <Ionicons name="notifications-outline" size={20} color={CHARCOAL} />
-                  {unreadCount > 0 && <View style={styles.unreadDot} />}
+        {isOverviewActive ? (
+          <View style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}>
+            <Row justify="space-between" align="center">
+              {/* Left Avatar + User Greeting & Property swapper */}
+              <Row gap={12} align="center" style={{ flex: 1 }}>
+                {/* Owner Avatar Frame */}
+                <View style={styles.avatarFrame}>
+                  <Txt size={18}>🤵</Txt>
                 </View>
-              </AnimatedPress>
+                
+                <Col style={{ flex: 1 }}>
+                  <Txt size={12} weight="600" color={MUTED}>{greeting}</Txt>
+                  <Spacer size={2} />
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => { hapticSelect(); setShowProfileMenu(true); }}
+                    style={styles.propertySelectRow}
+                  >
+                    <Txt size={16} weight="800" color={CHARCOAL} numberOfLines={1}>
+                      {owner?.pgName ?? 'Select PG'}
+                    </Txt>
+                    <Ionicons name="chevron-down" size={13} color={MUTED} />
+                    {isManager && (
+                      <View style={styles.managerBadge}>
+                        <Txt size={8} weight="900" color={PRIMARY}>MANAGER</Txt>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  <Spacer size={1} />
+                  <Txt size={11} color={MUTED}>{subLabel}</Txt>
+                </Col>
+              </Row>
 
-              <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => router.push('/settings')}>
-                <View style={styles.headerActionBtn}>
-                  <Ionicons name="settings-outline" size={20} color={CHARCOAL} />
-                </View>
-              </AnimatedPress>
+              {/* Right Action Icons */}
+              <Row gap={8} align="center">
+                <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => setShowNotificationCenter(isManager ? 'MANAGER' : 'OWNER')}>
+                  <View style={styles.headerActionBtn}>
+                    <Ionicons name="notifications-outline" size={20} color={CHARCOAL} />
+                    {unreadCount > 0 && <View style={styles.unreadDot} />}
+                  </View>
+                </AnimatedPress>
+
+                <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => router.push('/settings')}>
+                  <View style={styles.headerActionBtn}>
+                    <Ionicons name="settings-outline" size={20} color={CHARCOAL} />
+                  </View>
+                </AnimatedPress>
+              </Row>
             </Row>
-          </Row>
-        </View>
-
+          </View>
+        ) : (
+          <View style={[styles.headerContainer, { paddingTop: insets.top + 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 14 }]}>
+            <TouchableOpacity
+              style={styles.headerActionBtn}
+              onPress={() => { hapticSelect(); router.push('/overview'); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={20} color={CHARCOAL} />
+            </TouchableOpacity>
+            <Txt size={18} weight="800" color={CHARCOAL}>
+              {pathname === '/guests' ? 'Residents Directory' :
+               pathname === '/payments' ? 'Payments & Revenue' :
+               pathname === '/staff' ? 'Staff Management' :
+               pathname === '/complaints' ? 'Complaints & Requests' :
+               pathname === '/notices' ? 'Notice Board' :
+               pathname === '/reviews' ? 'Reviews & Feedback' : 'Details'}
+            </Txt>
+          </View>
+        )}
         {/* ── Active Tab Content View Slot ────────────────────────────────────── */}
         <Animated.View
           key={pathname}
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
+          entering={tabEntering}
+          exiting={tabExiting}
           style={{ flex: 1 }}
         >
           <TabSlot />
@@ -140,24 +162,15 @@ export default function OwnerTabsLayout() {
           </TouchableOpacity>
         </TabTrigger>
 
-        {/* Action 2: Properties */}
-        <TouchableOpacity
-          style={styles.dockItem}
-          activeOpacity={0.8}
-          onPress={() => { hapticSelect(); router.push('/manage-properties'); }}
-        >
-          <Ionicons name="business" size={20} color={MUTED} />
-          <Txt size={10} weight="600" color={MUTED} style={styles.dockText}>
-            Properties
-          </Txt>
-        </TouchableOpacity>
+
 
         {/* Center Action 3: Elevated Floating Plus */}
         <View style={styles.plusBtnContainer}>
           <TouchableOpacity
             style={styles.floatingPlusBtn}
             activeOpacity={0.85}
-            onPress={() => { hapticSuccess(); setShowAddPgModal(true); }}
+            onPress={() => { hapticSuccess(); setShowAddOptions(true); }}
+
           >
             <Ionicons name="add" size={28} color={WHITE} />
           </TouchableOpacity>
@@ -173,17 +186,6 @@ export default function OwnerTabsLayout() {
           </TouchableOpacity>
         </TabTrigger>
 
-        {/* Action 5: More Menu */}
-        <TouchableOpacity
-          style={styles.dockItem}
-          activeOpacity={0.8}
-          onPress={() => { hapticSelect(); setShowMoreMenu(true); }}
-        >
-          <Ionicons name="ellipsis-horizontal" size={20} color={MUTED} />
-          <Txt size={10} weight="600" color={MUTED} style={styles.dockText}>
-            More
-          </Txt>
-        </TouchableOpacity>
 
         {/* Hidden triggers to register all tab routes in the navigator */}
         <TabTrigger name="payments" href="/payments" style={{ display: 'none' }} />
@@ -264,75 +266,7 @@ export default function OwnerTabsLayout() {
         </Modal>
       )}
 
-      {/* ── More Navigation Sheet Menu ───────────────────────────────────────── */}
-      {showMoreMenu && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowMoreMenu(false)}>
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.moreMenuBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowMoreMenu(false)} />
-            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.moreMenuSheet}>
-              <View style={styles.sheetHandle} />
-              <Txt size={16} weight="900" color={CHARCOAL} style={{ marginBottom: 16 }}>More Operations</Txt>
-              
-              <View style={styles.moreGrid}>
-                {/* Payments */}
-                <TouchableOpacity
-                  style={styles.moreGridItem}
-                  onPress={() => { setShowMoreMenu(false); router.push('/payments'); }}
-                >
-                  <View style={styles.moreIconBox}><Ionicons name="card-outline" size={22} color={PRIMARY} /></View>
-                  <Txt size={12} weight="700" color={CHARCOAL}>Payments</Txt>
-                </TouchableOpacity>
 
-                {/* Staff */}
-                <TouchableOpacity
-                  style={styles.moreGridItem}
-                  onPress={() => { setShowMoreMenu(false); router.push('/staff'); }}
-                >
-                  <View style={styles.moreIconBox}><Ionicons name="ribbon-outline" size={22} color={PRIMARY} /></View>
-                  <Txt size={12} weight="700" color={CHARCOAL}>Staff</Txt>
-                </TouchableOpacity>
-
-                {/* Notices */}
-                <TouchableOpacity
-                  style={styles.moreGridItem}
-                  onPress={() => { setShowMoreMenu(false); router.push('/notices'); }}
-                >
-                  <View style={styles.moreIconBox}><Ionicons name="megaphone-outline" size={22} color={PRIMARY} /></View>
-                  <Txt size={12} weight="700" color={CHARCOAL}>Notices</Txt>
-                </TouchableOpacity>
-
-                {/* Reviews */}
-                <TouchableOpacity
-                  style={styles.moreGridItem}
-                  onPress={() => { setShowMoreMenu(false); router.push('/reviews'); }}
-                >
-                  <View style={styles.moreIconBox}><Ionicons name="star-outline" size={22} color={PRIMARY} /></View>
-                  <Txt size={12} weight="700" color={CHARCOAL}>Reviews</Txt>
-                </TouchableOpacity>
-              </View>
-
-              <View style={[styles.menuDivider, { marginVertical: 18 }]} />
-
-              <Row gap={12}>
-                <TouchableOpacity
-                  style={[styles.moreActionBtn, { flex: 1, backgroundColor: PRIMARY }]}
-                  onPress={() => { setShowMoreMenu(false); router.push('/settings'); }}
-                >
-                  <Ionicons name="settings-outline" size={16} color={WHITE} />
-                  <Txt size={13} weight="800" color={WHITE} style={{ marginLeft: 6 }}>Settings</Txt>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.moreActionBtn, { flex: 1, backgroundColor: '#FEF2F2', borderColor: '#FEE2E2', borderWidth: 1 }]}
-                  onPress={() => { setShowMoreMenu(false); hapticSuccess(); logout(); router.replace('/'); }}
-                >
-                  <Ionicons name="log-out-outline" size={16} color={DANGER} />
-                  <Txt size={13} weight="800" color={DANGER} style={{ marginLeft: 6 }}>Logout</Txt>
-                </TouchableOpacity>
-              </Row>
-            </Animated.View>
-          </Animated.View>
-        </Modal>
-      )}
 
       {/* Notifications & Property Addition Overlays */}
       {showNotificationCenter && (
@@ -345,6 +279,68 @@ export default function OwnerTabsLayout() {
         <AddPgPropertyDialog
           onDismiss={() => setShowAddPgModal(false)}
         />
+      )}
+
+      {/* ── Add Options Sheet Menu ─────────────────────────────────────────── */}
+      {showAddOptions && (
+        <Modal visible transparent animationType="none" onRequestClose={() => setShowAddOptions(false)}>
+          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.moreMenuBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowAddOptions(false)} />
+            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.moreMenuSheet}>
+              <View style={styles.sheetHandle} />
+              <Txt size={16} weight="900" color={CHARCOAL} style={{ marginBottom: 16, textAlign: 'center' }}>Quick Creation</Txt>
+              
+              <Row justify="space-evenly" align="center" style={{ marginVertical: 10 }}>
+                {/* Add Resident */}
+                <TouchableOpacity
+                  style={styles.addOptionItem}
+                  onPress={() => {
+                    setShowAddOptions(false);
+                    hapticSelect();
+                    router.push('/guests');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.moreIconBox, { backgroundColor: '#ECFDF5' }]}><Ionicons name="person-add-outline" size={22} color="#10B981" /></View>
+                  <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Resident</Txt>
+                </TouchableOpacity>
+
+                {/* Add Staff */}
+                <TouchableOpacity
+                  style={styles.addOptionItem}
+                  onPress={() => {
+                    setShowAddOptions(false);
+                    hapticSelect();
+                    router.push('/staff');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.moreIconBox, { backgroundColor: '#EEF2FF' }]}><Ionicons name="ribbon-outline" size={22} color={PRIMARY} /></View>
+                  <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Staff</Txt>
+                </TouchableOpacity>
+
+                {/* Add Property */}
+                <TouchableOpacity
+                  style={styles.addOptionItem}
+                  onPress={() => {
+                    setShowAddOptions(false);
+                    hapticSelect();
+                    setShowAddPgModal(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.moreIconBox, { backgroundColor: '#FEF3C7' }]}><Ionicons name="business-outline" size={22} color="#F59E0B" /></View>
+                  <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Property</Txt>
+                </TouchableOpacity>
+              </Row>
+
+              <Spacer size={8} />
+              <TouchableOpacity style={styles.sheetCancelBtn} onPress={() => setShowAddOptions(false)}>
+                <Txt size={13} weight="800" color={MUTED} align="center">Cancel</Txt>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        </Modal>
       )}
     </Tabs>
   );
@@ -541,4 +537,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  addOptionItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 80,
+  },
+  sheetCancelBtn: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    width: '100%',
+  },
 });
+

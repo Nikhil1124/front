@@ -19,6 +19,7 @@ import { hapticSuccess } from '@/utils/haptics';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import { usePathname } from 'expo-router';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { tabEntering, tabExiting } from '@/theme';
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 
@@ -76,8 +77,8 @@ export default function StaffTabsLayout() {
       <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
         <Animated.View
           key={pathname}
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
+          entering={tabEntering}
+          exiting={tabExiting}
           style={{ flex: 1 }}
         >
           <TabSlot />

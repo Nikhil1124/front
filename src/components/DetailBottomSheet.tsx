@@ -22,10 +22,10 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut, SlideInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 import { Txt, Row } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Colors, Motion } from '@/theme';
 import { haptic } from '@/utils/haptics';
 
 export interface DetailBottomSheetProps {
@@ -62,13 +62,17 @@ export function DetailBottomSheet({
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} testID={testID}>
-      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.backdrop}>
+      <Animated.View entering={FadeIn.duration(Motion.timing.sheet)} exiting={FadeOut.duration(Motion.timing.sheet)} style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Pressable
           style={styles.sheetWrapper}
           onPress={(e) => e.stopPropagation()}
         >
-          <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.sheet}>
+          <Animated.View
+            entering={SlideInDown.duration(Motion.timing.sheet).easing(Motion.easing.entrance)}
+            exiting={SlideOutDown.duration(Motion.timing.sheet).easing(Motion.easing.exit)}
+            style={styles.sheet}
+          >
             {/* Drag handle */}
             <View style={styles.handleBar} />
 

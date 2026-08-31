@@ -17,6 +17,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSuccess } from '@/utils/haptics';
 import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { tabEntering, tabExiting } from '@/theme';
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useAuthStore } from '@/store/authStore';
@@ -91,8 +92,8 @@ export default function GuestTabsLayout() {
         {/* ── Active tab content ─────────────────────────────────────────── */}
         <Animated.View
           key={pathname}
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
+          entering={tabEntering}
+          exiting={tabExiting}
           style={{ flex: 1 }}
         >
           <TabSlot />

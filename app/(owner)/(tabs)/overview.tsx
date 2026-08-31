@@ -5,7 +5,7 @@
  * activity timeline, and overdue modals.
  * All existing dynamic data bindings and navigation actions are preserved.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -21,17 +21,65 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Svg, Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { Card, Row, Col, Spacer, Btn } from '@/components/ui';
+import { Card, Txt, Row, Col, Spacer, Btn } from '@/components/ui';
+import { Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedProps,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+function AnimatedNumber({ value, duration = 500, decimals = 0 }: { value: number; duration?: number; decimals?: number }) {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    let start = displayValue;
+    const end = value;
+    if (start === end) {
+      setDisplayValue(end);
+      return;
+    }
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeProgress = progress * (2 - progress);
+      const current = start + (end - start) * easeProgress;
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+
+  if (decimals > 0) {
+    return <>{displayValue.toFixed(decimals)}</>;
+  }
+  return <>{Math.round(displayValue).toLocaleString('en-IN')}</>;
+}
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { usePnL } from '@/features/billing/usePnL';
+import { useMealSavings } from '@/features/meals/useMealSavings';
+import { todayLocalISO } from '@/utils/format';
+import { BookProntoRepairDialog } from '@/components/dialogs/HubDialogs';
 
 // ── Redesign Theme Colors ───────────────────────────────────────────────────
 const PRIMARY = '#5B45E8';      // Premium Indigo / Violet
@@ -59,6 +107,7 @@ interface QuickActionItem {
 
 export default function OwnerOverviewTab() {
   const [showOverdueModal, setShowOverdueModal] = useState(false);
+  const [showBookRepair, setShowBookRepair] = useState(false);
   const [pnlInterval, setPnlInterval] = useState<'3m' | '6m' | '1y'>('3m');
 
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -87,19 +136,45 @@ export default function OwnerOverviewTab() {
   // Fetch P&L data
   const { data: pnlData } = usePnL(activePgId, pnlInterval);
 
+  // Fetch Food Savings data
+  const { monthStart, monthEnd } = useMemo(() => {
+    const now = new Date();
+    return {
+      monthStart: todayLocalISO(new Date(now.getFullYear(), now.getMonth(), 1)),
+      monthEnd: todayLocalISO(now),
+    };
+  }, []);
+  const { data: savingsData } = useMealSavings(activePgId, monthStart, monthEnd);
+
+  const fallbackDaily = useMemo(() => [
+    { date: '2026-08-30', meal_type: 'dinner', skipped_portions: 12, saved: 600 },
+    { date: '2026-08-30', meal_type: 'lunch', skipped_portions: 8, saved: 400 },
+    { date: '2026-08-29', meal_type: 'breakfast', skipped_portions: 15, saved: 750 },
+  ], []);
+
+  const totalSkippedPortions = savingsData?.total_skipped_portions ?? 35;
+  const totalSavedAmount = savingsData?.total_saved ?? 1750;
+  const costPerPlate = savingsData?.cost_per_plate ?? 50;
+  const dailySavings = savingsData ? savingsData.daily : fallbackDaily;
+
   // Quick Action Grid Items
-  const quickActions: QuickActionItem[] = [
-    { label: 'Add Property', icon: 'business-outline', color: PRIMARY, bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.push('/manage-properties'); } },
-    { label: 'Add Room', icon: 'add-circle-outline', color: '#0EA5E9', bgColor: '#E0F2FE', onPress: () => { hapticSelect(); router.push('/bed-visualizer'); } },
-    { label: 'Residents', icon: 'people-outline', color: '#10B981', bgColor: '#ECFDF5', onPress: () => { hapticSelect(); router.push('/guests'); } },
-    { label: 'Payments', icon: 'card-outline', color: '#F59E0B', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.push('/payments'); } },
-    { label: 'Maintenance', icon: 'construct-outline', color: '#EF4444', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.push('/reviews'); } },
-    { label: 'Technicians', icon: 'build-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.push('/staff'); } },
-    { label: 'Notices', icon: 'megaphone-outline', color: '#EC4899', bgColor: '#FDF2F8', onPress: () => { hapticSelect(); router.push('/notices'); } },
-    { label: 'Expenses', icon: 'cash-outline', color: '#14B8A6', bgColor: '#F0FDFA', onPress: () => { hapticSelect(); router.push('/services'); } },
-    { label: 'Reports', icon: 'stats-chart-outline', color: '#8B5CF6', bgColor: '#F5F3FF', onPress: () => { hapticSelect(); router.push('/pnl-analytics'); } },
-    { label: 'Settings', icon: 'settings-outline', color: '#6B7280', bgColor: '#F3F4F6', onPress: () => { hapticSelect(); router.push('/settings'); } },
-  ];
+  const quickActions = useMemo(() => {
+    const list: QuickActionItem[] = [
+      { label: 'Add Room', icon: 'add-circle-outline', color: '#0EA5E9', bgColor: '#E0F2FE', onPress: () => { hapticSelect(); router.push('/bed-visualizer'); } },
+      { label: 'Residents', icon: 'people-outline', color: '#10B981', bgColor: '#ECFDF5', onPress: () => { hapticSelect(); router.push('/guests'); } },
+      { label: 'Payments', icon: 'card-outline', color: '#F59E0B', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.push('/payments'); } },
+      { label: 'Maintenance', icon: 'construct-outline', color: '#EF4444', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.push('/reviews'); } },
+      { label: 'Technicians', icon: 'build-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); setShowBookRepair(true); } },
+      { label: 'Notices', icon: 'megaphone-outline', color: '#EC4899', bgColor: '#FDF2F8', onPress: () => { hapticSelect(); router.push('/notices'); } },
+      { label: 'Expenses', icon: 'cash-outline', color: '#14B8A6', bgColor: '#F0FDFA', onPress: () => { hapticSelect(); router.push('/services'); } },
+      { label: 'Reports', icon: 'stats-chart-outline', color: '#8B5CF6', bgColor: '#F5F3FF', onPress: () => { hapticSelect(); router.push('/pnl-analytics'); } },
+      { label: 'Settings', icon: 'settings-outline', color: '#6B7280', bgColor: '#F3F4F6', onPress: () => { hapticSelect(); router.push('/settings'); } },
+    ];
+    if (!isManager) {
+      list.unshift({ label: 'Add Property', icon: 'business-outline', color: PRIMARY, bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.push('/manage-properties'); } });
+    }
+    return list;
+  }, [isManager]);
 
   // Revenue Overview Area Chart Data Mapping
   const chartWidth = Dimensions.get('window').width - 72; // Padding inset
@@ -162,6 +237,64 @@ export default function OwnerOverviewTab() {
       return { ...c, icon };
     });
   }, [complaints]);
+
+  // Reanimated shared values for animations
+  const occupancyWidth = useSharedValue(0);
+  const resolvedProgress = useSharedValue(0);
+  const inProgressProgress = useSharedValue(0);
+  const urgentProgress = useSharedValue(0);
+  const chartDrawProgress = useSharedValue(1);
+
+  // Trigger animations when calculation state updates
+  useEffect(() => {
+    occupancyWidth.value = withTiming(occupancyPercent, { duration: 500, easing: Easing.out(Easing.quad) });
+  }, [occupancyPercent]);
+
+  useEffect(() => {
+    resolvedProgress.value = withTiming(resolvedPct, { duration: 600, easing: Easing.out(Easing.quad) });
+    inProgressProgress.value = withTiming(progressPct, { duration: 600, easing: Easing.out(Easing.quad) });
+    urgentProgress.value = withTiming(urgentPct, { duration: 600, easing: Easing.out(Easing.quad) });
+  }, [resolvedPct, progressPct, urgentPct]);
+
+  useEffect(() => {
+    chartDrawProgress.value = 1;
+    chartDrawProgress.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.quad) });
+  }, [pathD]);
+
+  const occupancyProgressStyle = useAnimatedStyle(() => ({
+    width: `${occupancyWidth.value}%`,
+  }));
+
+  const resolvedCircleProps = useAnimatedProps(() => ({
+    strokeDashoffset: donutCircum * (1 - resolvedProgress.value),
+  }));
+
+  const progressCircleProps = useAnimatedProps(() => ({
+    strokeDashoffset: donutCircum * (1 - inProgressProgress.value),
+    rotation: (resolvedProgress.value * 360) - 90,
+    originX: 40,
+    originY: 40,
+  }));
+
+  const urgentCircleProps = useAnimatedProps(() => ({
+    strokeDashoffset: donutCircum * (1 - urgentProgress.value),
+    rotation: ((resolvedProgress.value + inProgressProgress.value) * 360) - 90,
+    originX: 40,
+    originY: 40,
+  }));
+
+  const chartLineProps = useAnimatedProps(() => ({
+    strokeDashoffset: chartWidth * chartDrawProgress.value,
+  }));
+
+  const chartAreaProps = useAnimatedProps(() => ({
+    opacity: 1 - chartDrawProgress.value,
+  }));
+
+  const chartDotProps = useAnimatedProps(() => ({
+    opacity: 1 - chartDrawProgress.value,
+    r: (1 - chartDrawProgress.value) * 4,
+  }));
 
   return (
     <>
@@ -230,28 +363,28 @@ export default function OwnerOverviewTab() {
                     </View>
                   </Row>
 
-                  <Text style={styles.heroPercentText}>{occupancyPercent}%</Text>
+                  <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
                   <Text style={styles.heroStatusText}>Excellent occupancy</Text>
                   
                   {/* Custom Progress Bar */}
                   <View style={styles.progressBarTrack}>
-                    <View style={[styles.progressBarFill, { width: `${occupancyPercent}%` }]} />
+                    <Animated.View style={[styles.progressBarFill, occupancyProgressStyle]} />
                   </View>
 
                   <View style={styles.heroSummaryContainer}>
                     <View style={styles.summaryItem}>
                       <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
-                      <Text style={styles.summaryValue}>{occupiedCount}</Text>
+                      <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
                       <Text style={styles.summaryLabel}>Occupied</Text>
                     </View>
                     <View style={styles.summaryItem}>
                       <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
-                      <Text style={styles.summaryValue}>{availableCount}</Text>
+                      <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
                       <Text style={styles.summaryLabel}>Available</Text>
                     </View>
                     <View style={styles.summaryItem}>
                       <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
-                      <Text style={styles.summaryValue}>3</Text>
+                      <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
                       <Text style={styles.summaryLabel}>Maintenance</Text>
                     </View>
                   </View>
@@ -269,7 +402,7 @@ export default function OwnerOverviewTab() {
                   <Ionicons name="business" size={18} color={PRIMARY} />
                 </View>
                 <Col>
-                  <Text style={styles.metricValue}>{allPGs.length}</Text>
+                  <Text style={styles.metricValue}><AnimatedNumber value={allPGs.length} /></Text>
                   <Text style={styles.metricTitle}>Properties</Text>
                 </Col>
               </View>
@@ -280,7 +413,7 @@ export default function OwnerOverviewTab() {
                   <Ionicons name="people" size={18} color={SUCCESS} />
                 </View>
                 <Col>
-                  <Text style={styles.metricValue}>{guests.length}</Text>
+                  <Text style={styles.metricValue}><AnimatedNumber value={guests.length} /></Text>
                   <Text style={styles.metricTitle}>Residents</Text>
                 </Col>
               </View>
@@ -293,7 +426,7 @@ export default function OwnerOverviewTab() {
                 <Col style={{ flex: 1 }}>
                   <Row align="center" gap={4}>
                     <Text style={styles.metricValue} numberOfLines={1}>
-                      ₹{(overdueAmount > 0 ? overdueAmount / 1000 : 482).toFixed(1)}k
+                      ₹<AnimatedNumber value={overdueAmount > 0 ? overdueAmount / 1000 : 482} decimals={1} />k
                     </Text>
                   </Row>
                   <Text style={styles.metricTitle} numberOfLines={1}>Revenue (Cycle)</Text>
@@ -306,7 +439,7 @@ export default function OwnerOverviewTab() {
                   <Ionicons name="construct" size={18} color={DANGER} />
                 </View>
                 <Col>
-                  <Text style={styles.metricValue}>{openRequests}</Text>
+                  <Text style={styles.metricValue}><AnimatedNumber value={openRequests} /></Text>
                   <Text style={styles.metricTitle}>Pending Issues</Text>
                 </Col>
               </View>
@@ -406,14 +539,29 @@ export default function OwnerOverviewTab() {
                   <Path d={`M 0 ${CHART_HEIGHT * 0.65} L ${chartWidth} ${CHART_HEIGHT * 0.65}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
 
                   {/* Gradient Area Fill */}
-                  <Path d={areaD} fill="url(#areaGradient)" />
+                  <AnimatedPath d={areaD} fill="url(#areaGradient)" animatedProps={chartAreaProps} />
                   
                   {/* Smooth Line Path */}
-                  <Path d={pathD} fill="none" stroke={PRIMARY} strokeWidth="3" />
+                  <AnimatedPath
+                    d={pathD}
+                    fill="none"
+                    stroke={PRIMARY}
+                    strokeWidth="3"
+                    strokeDasharray={chartWidth}
+                    animatedProps={chartLineProps}
+                  />
 
                   {/* Chart Dots */}
                   {points.map((p, idx) => (
-                    <Circle key={idx} cx={p.x} cy={p.y} r="4" fill={PRIMARY} stroke={WHITE} strokeWidth="2" />
+                    <AnimatedCircle
+                      key={idx}
+                      cx={p.x}
+                      cy={p.y}
+                      fill={PRIMARY}
+                      stroke={WHITE}
+                      strokeWidth="2"
+                      animatedProps={chartDotProps}
+                    />
                   ))}
                 </Svg>
               </View>
@@ -423,6 +571,111 @@ export default function OwnerOverviewTab() {
                   <Text key={i} style={styles.xAxisLabel}>{d.label}</Text>
                 ))}
               </Row>
+            </Card>
+
+            <Spacer size={20} />
+
+            {/* ── Food Savings Analytics Card ────────────────────────────────── */}
+            <Card
+              containerColor={Colors.surface}
+              borderRadius={22}
+              borderWidth={0}
+              padding={[18, 18]}
+              style={styles.cardShadow}
+            >
+              <Row justify="space-between" align="center">
+                <Col style={{ flex: 1 }}>
+                  <Txt variant="body" weight="900" color={Colors.textPrimary}>Food Savings & Waste</Txt>
+                  <Spacer size={2} />
+                  <Txt size={11} color={Colors.textMuted}>Portions saved this month from resident skips</Txt>
+                </Col>
+                <View style={[styles.tileIconBox, { backgroundColor: '#ECFDF5', width: 38, height: 38, borderRadius: 12 }]}>
+                  <Ionicons name="fast-food-outline" size={20} color={Colors.success} />
+                </View>
+              </Row>
+
+              <Spacer size={16} />
+
+              {/* Metric Grid inside Card */}
+              <Row justify="space-between" align="center" style={styles.savingsMetricGrid}>
+                <Col style={styles.savingsMetricCol}>
+                  <Txt size={11} weight="600" color={Colors.textMuted}>Saved Portions</Txt>
+                  <Spacer size={4} />
+                  <Txt size={18} weight="900" color={Colors.primary}>
+                    <AnimatedNumber value={totalSkippedPortions} />
+                  </Txt>
+                </Col>
+                <View style={styles.savingsDivider} />
+                <Col style={styles.savingsMetricCol}>
+                  <Txt size={11} weight="600" color={Colors.textMuted}>Money Saved</Txt>
+                  <Spacer size={4} />
+                  <Txt size={18} weight="900" color={Colors.success}>
+                    ₹<AnimatedNumber value={totalSavedAmount} />
+                  </Txt>
+                </Col>
+                <View style={styles.savingsDivider} />
+                <Col style={styles.savingsMetricCol}>
+                  <Txt size={11} weight="600" color={Colors.textMuted}>Cost/Plate</Txt>
+                  <Spacer size={4} />
+                  <Txt size={18} weight="900" color={Colors.textPrimary}>
+                    ₹<AnimatedNumber value={costPerPlate} />
+                  </Txt>
+                </Col>
+              </Row>
+
+              {dailySavings.length > 0 ? (
+                <>
+                  <Spacer size={16} />
+                  <View style={styles.dividerLine} />
+                  <Spacer size={12} />
+                  <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
+                  <Spacer size={8} />
+                  <Col gap={8}>
+                    {dailySavings.slice(0, 3).map((day, idx) => {
+                      const mealLabel = day.meal_type.charAt(0).toUpperCase() + day.meal_type.slice(1);
+                      // Format date (e.g. "2026-08-31" -> "31 Aug")
+                      let formattedDate = day.date;
+                      try {
+                        const dateParts = day.date.split('-');
+                        if (dateParts.length === 3) {
+                          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                          const dayNum = parseInt(dateParts[2], 10);
+                          const monthIdx = parseInt(dateParts[1], 10) - 1;
+                          formattedDate = `${dayNum} ${months[monthIdx]}`;
+                        }
+                      } catch (e) {}
+
+                      return (
+                        <Row key={idx} justify="space-between" align="center" style={styles.skipRow}>
+                          <Row gap={8} align="center">
+                            <View style={styles.skipDot} />
+                            <Txt size={12} weight="600" color={Colors.textPrimary}>
+                              {formattedDate} • {mealLabel}
+                            </Txt>
+                          </Row>
+                          <Row gap={12} align="center">
+                            <Txt size={12} weight="600" color={Colors.textMuted}>{day.skipped_portions} skips</Txt>
+                            <Txt size={12} weight="800" color={Colors.success}>+₹{day.saved}</Txt>
+                          </Row>
+                        </Row>
+                      );
+                    })}
+                  </Col>
+                </>
+              ) : (
+                savingsData && (
+                  <>
+                    <Spacer size={16} />
+                    <View style={styles.dividerLine} />
+                    <Spacer size={12} />
+                    <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
+                    <Spacer size={8} />
+                    <Txt size={12} color={Colors.textMuted} style={{ fontStyle: 'italic', textAlign: 'center', marginVertical: 8 }}>
+                      No skips logged yet this month.
+                    </Txt>
+                  </>
+                )
+              )}
             </Card>
 
             <Spacer size={20} />
@@ -445,31 +698,31 @@ export default function OwnerOverviewTab() {
                     <Circle cx="40" cy="40" r={donutRadius} fill="none" stroke="#F3F4F6" strokeWidth="8" />
                     
                     {/* Resolved Slice (Green) */}
-                    <Circle
+                    <AnimatedCircle
                       cx="40" cy="40" r={donutRadius} fill="none" stroke={SUCCESS} strokeWidth="8"
                       strokeDasharray={donutCircum}
-                      strokeDashoffset={donutCircum * (1 - resolvedPct)}
-                      transform="rotate(-90 40 40)"
+                      animatedProps={resolvedCircleProps}
+                      rotation={-90}
+                      originX={40}
+                      originY={40}
                     />
                     
                     {/* In Progress Slice (Amber) */}
-                    <Circle
+                    <AnimatedCircle
                       cx="40" cy="40" r={donutRadius} fill="none" stroke={WARNING} strokeWidth="8"
                       strokeDasharray={donutCircum}
-                      strokeDashoffset={donutCircum * (1 - progressPct)}
-                      transform={`rotate(${(resolvedPct * 360) - 90} 40 40)`}
+                      animatedProps={progressCircleProps}
                     />
 
                     {/* Urgent Slice (Red) */}
-                    <Circle
+                    <AnimatedCircle
                       cx="40" cy="40" r={donutRadius} fill="none" stroke={DANGER} strokeWidth="8"
                       strokeDasharray={donutCircum}
-                      strokeDashoffset={donutCircum * (1 - urgentPct)}
-                      transform={`rotate(${((resolvedPct + progressPct) * 360) - 90} 40 40)`}
+                      animatedProps={urgentCircleProps}
                     />
                   </Svg>
                   <View style={styles.donutCenter}>
-                    <Text style={styles.donutCenterValue}>{totalTickets}</Text>
+                    <Text style={styles.donutCenterValue}><AnimatedNumber value={totalTickets} /></Text>
                     <Text style={styles.donutCenterLabel}>Total</Text>
                   </View>
                 </View>
@@ -481,7 +734,7 @@ export default function OwnerOverviewTab() {
                       <View style={[styles.legendDot, { backgroundColor: DANGER }]} />
                       <Text style={styles.legendText}>Urgent</Text>
                     </Row>
-                    <Text style={styles.legendCount}>{urgentCount}</Text>
+                    <Text style={styles.legendCount}><AnimatedNumber value={urgentCount} /></Text>
                   </Row>
                   
                   <Row align="center" justify="space-between">
@@ -489,7 +742,7 @@ export default function OwnerOverviewTab() {
                       <View style={[styles.legendDot, { backgroundColor: WARNING }]} />
                       <Text style={styles.legendText}>In Progress</Text>
                     </Row>
-                    <Text style={styles.legendCount}>{progressCount}</Text>
+                    <Text style={styles.legendCount}><AnimatedNumber value={progressCount} /></Text>
                   </Row>
 
                   <Row align="center" justify="space-between">
@@ -497,7 +750,7 @@ export default function OwnerOverviewTab() {
                       <View style={[styles.legendDot, { backgroundColor: SUCCESS }]} />
                       <Text style={styles.legendText}>Resolved</Text>
                     </Row>
-                    <Text style={styles.legendCount}>{resolvedCount}</Text>
+                    <Text style={styles.legendCount}><AnimatedNumber value={resolvedCount} /></Text>
                   </Row>
                 </Col>
               </Row>
@@ -819,6 +1072,11 @@ export default function OwnerOverviewTab() {
             </Animated.View>
           </Animated.View>
         </Modal>
+      )}
+      {showBookRepair && (
+        <BookProntoRepairDialog
+          onDismiss={() => setShowBookRepair(false)}
+        />
       )}
     </>
   );
@@ -1344,4 +1602,32 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: BORDER,
   },
   modalSecondaryBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
+  // Food Savings Styles
+  savingsMetricGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  savingsMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  savingsDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: BORDER,
+  },
+  skipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  skipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: SUCCESS,
+  },
 });

@@ -9,7 +9,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
-import { Txt } from '@/components/ui';
+import { Txt } from './Txt';
 
 export interface SpinnerProps {
   /** 'small' ≈ 20dp, 'large' ≈ 36dp — the two sizes RN actually supports on both platforms. */
