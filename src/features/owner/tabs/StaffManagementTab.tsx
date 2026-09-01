@@ -14,7 +14,9 @@ import {
   ActivityIndicator,
   Platform,
   RefreshControl,
+  BackHandler,
 } from 'react-native';
+import { router } from 'expo-router';
 
 
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +35,7 @@ import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties'
 import { useStaffQuery } from '@/features/staff/useStaff';
 import { FormScroll } from '@/components/ui/FormScroll';
 
-const GREEN = '#5B45E8';      // Indigo brand primary
+const GREEN = '#4F51D5';      // Indigo brand primary
 const BG = '#F7F8FC';         // Canvas BG
 const CHARCOAL = '#15171A';   // Primary text
 const MUTED = '#6B7280';      // Muted text
@@ -129,6 +131,17 @@ export function StaffManagementTab() {
   const [editShift, setEditShift] = useState('Day Shift (8 AM - 5 PM)');
   const [editSalary, setEditSalary] = useState('15000');
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Override back navigation — this screen lives inside the tab navigator, not a stack,
+  // so native back would leave ghost tab state. We force-replace with overview instead.
+  useEffect(() => {
+    const onBack = () => {
+      router.replace('/overview');
+      return true; // prevent default
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, []);
 
   // Sync default role input based on manager vs owner role
   useEffect(() => {

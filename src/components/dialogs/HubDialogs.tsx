@@ -1,5 +1,5 @@
 /**
- * HubDialogs — AddPgDailySubscriptionDialog + BookProntoRepairDialog + GuestLaundryBookingDialog
+ * HubDialogs — AddPgDailySubscriptionDialog + BookRepairDialog + GuestLaundryBookingDialog
  * Ported to the Cyber Indigo theme.
  */
 import { useState } from 'react';
@@ -18,7 +18,6 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { SlideInDown, SlideOutDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, dialogEntering, dialogExiting, Motion } from '@/theme';
@@ -42,9 +41,9 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
+      <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '92%', zIndex: 2 }}>
+        <View style={{ width: '92%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
             borderRadius={24}
@@ -101,14 +100,14 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
             <Txt variant="body" weight="800" color={Colors.textInverse}>Activate Daily Subscription</Txt>
           </Btn>
         </Card>
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-// ===== BookProntoRepairDialog =====
+// ===== BookRepairDialog =====
 const REPAIR_CATEGORIES = ['Plumbing', 'Electrical', 'Carpenter', 'AC Repair', 'RO Servicing', 'Pest Control'];
 
 const TIME_SLOTS = [
@@ -143,7 +142,7 @@ const DIALOG_BORDER = Colors.borderSubtle;
 const DIALOG_WHITE = Colors.surface;
 const DIALOG_LIGHT_GREEN = Colors.surfaceElevated;
 
-export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void }) {
+export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
   const [category, setCategory] = useState('Plumbing');
   const [issue, setIssue] = useState('');
@@ -163,7 +162,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
     // Pass custom schedule details inside the request summary if scheduled
     const urgencyLabel = urgency === '15-Min Express' ? '15-Min Express' : `Scheduled for ${schedDate} at ${schedTime}`;
     bookRepair(category, finalIssue, urgencyLabel, cost);
-    Alert.alert('Success', 'Pronto Technician Dispatched!');
+    Alert.alert('Success', 'Technician Dispatched!');
     onDismiss();
   };
 
@@ -171,12 +170,10 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
     <>
       <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-          <Animated.View entering={FadeIn.duration(Motion.timing.sheet)} exiting={FadeOut.duration(Motion.timing.sheet)} style={styles.backdrop}>
+          <View style={styles.backdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
             
-            <Animated.View
-              entering={SlideInDown.duration(Motion.timing.sheet).easing(Motion.easing.entrance)}
-              exiting={SlideOutDown.duration(Motion.timing.sheet).easing(Motion.easing.exit)}
+            <View
               style={styles.sheetCard}
             >
               {/* Handlebar */}
@@ -355,8 +352,8 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
                 <Ionicons name="lock-closed-outline" size={12} color={DIALOG_MUTED} />
                 <Text style={styles.securityText}>Your request is secure and confidential</Text>
               </Row>
-            </Animated.View>
-          </Animated.View>
+            </View>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -439,9 +436,9 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
+      <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '92%', zIndex: 2 }}>
+        <View style={{ width: '92%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
             borderRadius={24}
@@ -529,8 +526,8 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
             </Btn>
           </Row>
         </Card>
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
       </KeyboardAvoidingView>
     </Modal>
   );

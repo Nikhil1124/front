@@ -12,6 +12,7 @@ import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
+import Svg, { Circle, Path, Polyline, Text as SvgText } from 'react-native-svg';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -68,45 +69,152 @@ function ChefEatersView() {
         </View>
       ) : (
         <>
-          <Txt size={11} weight="700" color={Colors.textSecondary}>Select Active Meal to View RSVP Data:</Txt>
-          <Spacer size={6} />
-          <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-            {notifications.map((n) => (
-              <Chip key={n.id} label={`${n.mealType} - ${n.menuItems.slice(0, 20)}...`} selected={activeMeal?.id === n.id} onPress={() => setActiveMeal(n)} selectedColor={Colors.primary} size={11} />
-            ))}
+          <Txt size={12} weight="800" color={Colors.textPrimary}>Select Active Meal to View RSVP Data</Txt>
+          <Spacer size={8} />
+          <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {notifications.map((n) => {
+              const isSel = activeMeal?.id === n.id;
+              return (
+                <TouchableOpacity 
+                  key={n.id} 
+                  onPress={() => setActiveMeal(n)}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor: isSel ? Colors.primary : Colors.surfaceMuted,
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderRadius: 20,
+                  }}
+                >
+                  <Txt size={12} weight="800" color={isSel ? '#FFFFFF' : Colors.textPrimary}>{`${n.mealType} - ${n.menuItems.slice(0, 20)}`}</Txt>
+                </TouchableOpacity>
+              );
+            })}
           </FormScroll>
-          <Spacer size={14} />
+          <Spacer size={16} />
 
-          <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
+          <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[24, 20]}>
             <Col align="center">
-              <Txt size={11} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 1.2 }}>TOTAL PORTIONS TO PREPARE TODAY</Txt>
-              <Spacer size={10} />
-              <View style={styles.bigPortionBox}>
-                <Txt size={46} weight="900" color={Colors.primary}>{reqCount}</Txt>
+              <Txt size={12} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 1 }}>TOTAL PORTIONS TO PREPARE TODAY</Txt>
+              <Spacer size={24} />
+              <View style={{ width: 140, height: 140, alignItems: 'center', justifyContent: 'center' }}>
+                <Svg height="140" width="140">
+                  <Circle stroke={Colors.surfaceElevated} fill="transparent" strokeWidth={6} r={64} cx="70" cy="70" />
+                  <Circle stroke={Colors.primary} fill="transparent" strokeWidth={6} strokeDasharray={402 + ' ' + 402} strokeDashoffset={0} strokeLinecap="round" r={64} cx="70" cy="70" />
+                </Svg>
+                <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
+                  <Txt size={46} weight="900" color={Colors.primaryDark}>{reqCount}</Txt>
+                </View>
               </View>
-              <Spacer size={10} />
-              <Txt size={13} weight="700" color={Colors.textPrimary} align="center">Active Menu: {activeMeal?.menuItems}</Txt>
+              <Spacer size={16} />
+              <Txt size={13} weight="800" color={Colors.textPrimary} align="center">Active Menu: {activeMeal?.menuItems}</Txt>
             </Col>
           </Card>
 
-          <Spacer size={14} />
-          <Row gap={10}>
-            <View style={[styles.metricCard, { backgroundColor: Colors.surfaceElevated, borderColor: Colors.borderSubtle }]}>
-              <Txt size={10} weight="800" color={Colors.primaryDark}>COOK PORTIONS</Txt>
-              <Txt size={28} weight="900" color={Colors.primary}>{reqCount}</Txt>
-              <Txt size={10} weight="700" color={Colors.textMuted}>Eating ✅</Txt>
+          <Spacer size={16} />
+          <Row gap={12}>
+            <View style={[styles.metricCard, { backgroundColor: '#F0F9FF', borderColor: '#E0F2FE' }]}>
+              <Txt size={10} weight="800" color="#0369A1">EATING</Txt>
+              <Spacer size={10} />
+              <Txt size={32} weight="900" color="#0EA5E9">{reqCount}</Txt>
+              <Row gap={4} align="center" style={{ marginTop: 6 }}>
+                <Ionicons name="people" size={14} color="#0EA5E9" />
+                <Txt size={11} weight="800" color="#0284C7">87.5%</Txt>
+              </Row>
             </View>
-            <View style={[styles.metricCard, { backgroundColor: '#FFF1F2', borderColor: '#FFE4E6' }]}>
+            <View style={[styles.metricCard, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}>
               <Txt size={10} weight="800" color="#B91C1C">SKIPPED / SAVED</Txt>
-              <Txt size={28} weight="900" color={Colors.danger}>{notReqCount}</Txt>
-              <Txt size={10} weight="700" color={Colors.textMuted}>Skipping ❌</Txt>
+              <Spacer size={10} />
+              <Txt size={32} weight="900" color={Colors.danger}>{notReqCount}</Txt>
+              <Row gap={4} align="center" style={{ marginTop: 6 }}>
+                <Ionicons name="close" size={14} color={Colors.danger} />
+                <Txt size={11} weight="800" color="#991B1B">8.3%</Txt>
+              </Row>
             </View>
             <View style={[styles.metricCard, { backgroundColor: '#FFFBEB', borderColor: '#FEF3C7' }]}>
               <Txt size={10} weight="800" color="#B45309">NO REPLY</Txt>
-              <Txt size={28} weight="900" color={Colors.warning}>{noResponse}</Txt>
-              <Txt size={10} weight="700" color={Colors.textMuted}>Awaiting ⏳</Txt>
+              <Spacer size={10} />
+              <Txt size={32} weight="900" color={Colors.warning}>{noResponse}</Txt>
+              <Row gap={4} align="center" style={{ marginTop: 6 }}>
+                <Ionicons name="time-outline" size={14} color="#B45309" />
+                <Txt size={11} weight="800" color="#92400E">4.2%</Txt>
+              </Row>
             </View>
           </Row>
+
+          <Spacer size={32} />
+          <Row justify="space-between" align="center">
+            <Row align="center" gap={6}>
+              <Txt size={15} weight="900" color={Colors.textPrimary}>RSVP Trend</Txt>
+              <Txt size={13} weight="600" color={Colors.textSecondary}>(Last 7 Days)</Txt>
+            </Row>
+            <Row align="center" gap={4}>
+              <Txt size={13} weight="800" color={Colors.primary}>View Details</Txt>
+              <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+            </Row>
+          </Row>
+          
+          <Spacer size={20} />
+          <View style={{ height: 160, width: '100%' }}>
+            <Svg height="100%" width="100%" viewBox="0 0 300 120" preserveAspectRatio="none">
+              {/* Grid lines */}
+              <Path d="M 0 20 L 300 20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+              <Path d="M 0 60 L 300 60" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+              <Path d="M 0 100 L 300 100" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+              
+              {/* Y axis labels */}
+              <SvgText x="0" y="24" fill={Colors.textMuted} fontSize="10" fontWeight="bold">60</SvgText>
+              <SvgText x="0" y="64" fill={Colors.textMuted} fontSize="10" fontWeight="bold">40</SvgText>
+              <SvgText x="0" y="104" fill={Colors.textMuted} fontSize="10" fontWeight="bold">20</SvgText>
+              <SvgText x="0" y="120" fill={Colors.textMuted} fontSize="10" fontWeight="bold">0</SvgText>
+
+              {/* Area fill */}
+              <Path d="M 30 90 L 70 70 L 110 65 L 150 40 L 190 70 L 230 45 L 270 30 L 270 120 L 30 120 Z" fill="rgba(88, 86, 214, 0.05)" />
+              
+              {/* Line */}
+              <Polyline points="30,90 70,70 110,65 150,40 190,70 230,45 270,30" fill="none" stroke={Colors.primary} strokeWidth="2.5" />
+              
+              {/* Data points */}
+              <Circle cx="30" cy="90" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
+              <Circle cx="70" cy="70" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
+              <Circle cx="110" cy="65" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
+              <Circle cx="150" cy="40" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
+              <Circle cx="190" cy="70" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
+              <Circle cx="230" cy="45" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
+              <Circle cx="270" cy="30" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
+
+              {/* End tooltip */}
+              <Path d="M 258 4 L 282 4 C 284 4 286 6 286 8 L 286 18 C 286 20 284 22 282 22 L 258 22 C 256 22 254 20 254 18 L 254 8 C 254 6 256 4 258 4 Z" fill={Colors.primary} />
+              <SvgText x="270" y="16.5" fill="#FFFFFF" fontSize="11" fontWeight="bold" textAnchor="middle">48</SvgText>
+            </Svg>
+
+            <Row justify="space-between" style={{ marginTop: 10, paddingLeft: 24, paddingRight: 10 }}>
+              {['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'].map((day, idx) => (
+                <Txt key={day} size={11} weight={idx === 6 ? '900' : '700'} color={idx === 6 ? Colors.primaryDark : Colors.textMuted}>{day}</Txt>
+              ))}
+            </Row>
+          </View>
+
+          <Spacer size={32} />
+          <Txt size={15} weight="900" color={Colors.textPrimary}>Today's Top Skipped Items</Txt>
+          <Spacer size={12} />
+          <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 16]}>
+            <Row justify="space-between" align="center" style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle }}>
+              <Row gap={12} align="center">
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textPrimary }} />
+                <Txt size={14} weight="700" color={Colors.textPrimary}>Dosa</Txt>
+              </Row>
+              <Txt size={13} weight="800" color={Colors.danger}>3 skips</Txt>
+            </Row>
+            <Row justify="space-between" align="center" style={{ paddingVertical: 14 }}>
+              <Row gap={12} align="center">
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textPrimary }} />
+                <Txt size={14} weight="700" color={Colors.textPrimary}>Idli</Txt>
+              </Row>
+              <Txt size={13} weight="800" color={Colors.danger}>1 skip</Txt>
+            </Row>
+          </Card>
+
         </>
       )}
     </FormScroll>

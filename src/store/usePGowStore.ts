@@ -178,6 +178,7 @@ export interface PGowState {
 
   // ===== UI / Selected Active Item =====
   activeNotificationId: string | null;
+  isQuickActionsExpanded: boolean;
 
   // ===== Initialization =====
   _initialized: boolean;
@@ -354,6 +355,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   lastFollowupTimestamp: 0,
 
   activeNotificationId: null,
+  isQuickActionsExpanded: false,
 
   _initialized: false,
 

@@ -162,7 +162,6 @@ export async function uploadAttachment(
     throw new Error("No photo was captured. Take or choose a photo and try again.");
   }
   const local = await fetch(uri);
-  if (!local.ok) throw new Error("Could not read the selected photo.");
   const rawImage = await local.blob();
   // Same fix as kyc/useKyc.ts's uploadToPresignedUrl: React Native's networking bridge can
   // send the Content-Type it reads off the Blob's own `type` rather than the header below,

@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 
 
 // Premium Design System Tokens (Indigo & Off-White)
-const BRAND_GREEN = '#5B45E8';
+const BRAND_GREEN = '#4F51D5';
 const BRAND_BG = '#F7F8FC';
 const CHARCOAL = '#15171A';
 const TEXT_MUTED = '#6B7280';

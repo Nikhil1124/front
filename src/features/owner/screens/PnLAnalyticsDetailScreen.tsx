@@ -23,7 +23,7 @@ import { useExpensesQuery } from '@/features/expenses/useExpenses';
 import { hapticSelect } from '@/utils/haptics';
 import type { PnLInterval, PaymentEntity, ExpenseEntity } from '@/types';
 
-const GREEN = '#5B45E8';      // Indigo primary brand
+const GREEN = '#4F51D5';      // Indigo primary brand
 const BG = '#F7F8FC';         // Canvas BG
 const CHARCOAL = '#15171A';   // Primary text
 const MUTED = '#6B7280';      // Muted text
@@ -405,8 +405,8 @@ export function PnLAnalyticsDetailScreen() {
       ) : (
         <Col gap={16}>
           {/* KPI Summary Block */}
-          <Row gap={10}>
-            <View style={styles.kpiCard}>
+          <Row gap={10} style={{ flexWrap: 'wrap' }}>
+            <View style={[styles.kpiCard, { minWidth: 100 }]}>
               <Row gap={4} align="center">
                 <Ionicons name="trending-up" size={14} color={GREEN} />
                 <Text style={styles.kpiLabel}>REVENUE</Text>
@@ -415,7 +415,7 @@ export function PnLAnalyticsDetailScreen() {
               {compData && <ComparisonBadge value={compData.revenue} />}
             </View>
 
-            <View style={styles.kpiCard}>
+            <View style={[styles.kpiCard, { minWidth: 100 }]}>
               <Row gap={4} align="center">
                 <Ionicons name="trending-down" size={14} color="#B91C1C" />
                 <Text style={styles.kpiLabel}>EXPENSES</Text>
@@ -426,7 +426,7 @@ export function PnLAnalyticsDetailScreen() {
               {compData && <ComparisonBadge value={compData.expenses} isExpense />}
             </View>
 
-            <View style={styles.kpiCard}>
+            <View style={[styles.kpiCard, { minWidth: 100 }]}>
               <Row gap={4} align="center">
                 <Ionicons name="cash" size={14} color={netVal >= 0 ? GREEN : '#B91C1C'} />
                 <Text style={styles.kpiLabel}>NET PROFIT</Text>

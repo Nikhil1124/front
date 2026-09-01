@@ -199,7 +199,7 @@ export default function RootLayout() {
               cause of the double-safe-area header bugs fixed earlier). */}
           <SafeAreaView style={styles.container} edges={[]}>
             {isHydrated ? (
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', gestureEnabled: true }}>
+              <Stack screenOptions={{ headerShown: false, animation: 'none', gestureEnabled: true }}>
                 {/* The root index route must be explicitly included because we are providing manual children to Stack */}
                 <Stack.Screen name="index" />
 

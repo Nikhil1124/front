@@ -6,6 +6,7 @@ import { useCartStore } from '../../store/useCartStore';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { Colors } from '@/theme';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 interface ProductCardProps {
   product: SupplyItem;
@@ -68,11 +69,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     updateQuantity(compoundId, quantity - 1);
   };
 
-  // Full Layout (Blinkit Redesign Layout)
+  // Full Layout (Premium Redesign Layout)
   return (
-    <TouchableOpacity
+    <AnimatedPress
       style={[styles.card, { width: cardWidth }, style]}
-      activeOpacity={0.95}
+      scale={0.96}
+      hapticPattern="light"
       onPress={() => onPress?.(product)}
     >
       {/* Top row containing Discount and Wishlist heart */}
@@ -106,7 +108,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         />
         {quantity > 0 && (
           <View style={styles.checkmarkBadge}>
-            <Ionicons name="checkmark-circle" size={18} color="#15803D" />
+            <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
           </View>
         )}
       </View>
@@ -179,22 +181,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </View>
       </View>
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 10,
+    backgroundColor: Colors.surfaceCard,
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#E4E9E5',
+    borderColor: Colors.borderSubtle,
     marginRight: 10,
     marginBottom: 8,
     position: 'relative',
-    height: 290, // clean fixed height to prevent clipping
+    height: 300,
     justifyContent: 'space-between',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
@@ -247,7 +254,8 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 14,
-    color: '#17201A',
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   unitText: {
     fontSize: 11,
@@ -267,7 +275,8 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 15,
-    color: '#15803D',
+    fontWeight: '800',
+    color: Colors.primary,
   },
   strikePrice: {
     fontSize: 11,
@@ -302,37 +311,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   selectedOptionTab: {
-    borderColor: '#15803D',
-    backgroundColor: '#F0FDF4',
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surfaceElevated,
   },
   optionText: {
     fontSize: 9,
-    color: '#647067',
+    color: Colors.textMuted,
   },
   selectedOptionText: {
-    color: '#15803D',
+    color: Colors.primary,
+    fontWeight: '700',
   },
   actionContainer: {
     marginTop: 6,
   },
   addBtn: {
-    backgroundColor: '#15803D',
-    borderRadius: 8,
-    height: 32,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    height: 34,
     justifyContent: 'center',
     alignItems: 'center',
   },
   addBtnText: {
-    color: '#FFFFFF',
+    color: Colors.textInverse,
     fontSize: 12,
+    fontWeight: '700',
   },
   qtyControl: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#15803D',
-    borderRadius: 8,
-    height: 32,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    height: 34,
     paddingHorizontal: 8,
   },
   qtyBtn: {
@@ -345,15 +356,20 @@ const styles = StyleSheet.create({
 
   // ── Simple Layout Styles ──
   simpleCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 8,
+    backgroundColor: Colors.surfaceCard,
+    borderRadius: 14,
+    padding: 10,
     borderWidth: 1,
-    borderColor: '#E4E9E5',
+    borderColor: Colors.borderSubtle,
     marginRight: 8,
     marginBottom: 6,
-    height: 165,
+    height: 175,
     justifyContent: 'space-between',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   simpleImageContainer: {
     width: '100%',
@@ -387,7 +403,8 @@ const styles = StyleSheet.create({
   },
   simplePrice: {
     fontSize: 13,
-    color: '#15803D',
+    fontWeight: '800',
+    color: Colors.primary,
   },
   simpleStrikePrice: {
     fontSize: 9,
@@ -395,20 +412,20 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   simpleAddButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: '#15803D',
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   simpleQuantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#15803D',
-    borderRadius: 6,
-    height: 24,
-    paddingHorizontal: 2,
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    height: 26,
+    paddingHorizontal: 4,
     gap: 4,
   },
   simpleQtyBtn: {

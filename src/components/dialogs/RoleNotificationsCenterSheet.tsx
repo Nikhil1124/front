@@ -5,8 +5,8 @@
  */
 import { useState } from 'react';
 import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, Pressable, Alert } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, Col, Spacer, Skeleton } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { formatTimeAgo } from '@/utils/format';
@@ -17,7 +17,7 @@ import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 import { Motion } from '@/theme';
 
 // ── Color System ─────────────────────────────────────────────────────────────
-const PRIMARY = '#5B45E8';      // Premium Indigo / Violet
+const PRIMARY = '#4F51D5';      // Premium Indigo / Violet
 const PRIMARY_SOFT = '#EEEAFE'; // Soft Indigo
 const BG = '#F7F8FC';           // Canvas bg
 const CHARCOAL = '#15171A';     // Main text
@@ -39,7 +39,7 @@ const FILTERS: Array<[string, string]> = [
   ['HIGH_PRIORITY', 'High Priority'],
   ['MEAL_RSVP', 'Meals'],
   ['RENT_PAYMENT', 'Payments'],
-  ['COMPLAINT_MAINTENANCE', 'Issues'],
+  ['COMPLAINT', 'Issues'],
   ['EXPENSE_FINANCE', 'Finance'],
 ];
 
@@ -49,7 +49,7 @@ const FILTER_CONFIGS: Record<string, { label: string; icon: string }> = {
   HIGH_PRIORITY: { label: 'High Priority', icon: 'alert-circle-outline' },
   MEAL_RSVP: { label: 'Meals', icon: 'restaurant-outline' },
   RENT_PAYMENT: { label: 'Payments', icon: 'wallet-outline' },
-  COMPLAINT_MAINTENANCE: { label: 'Issues', icon: 'construct-outline' },
+  COMPLAINT: { label: 'Issues', icon: 'construct-outline' },
   EXPENSE_FINANCE: { label: 'Finance', icon: 'cash-outline' },
 };
 
@@ -73,7 +73,7 @@ function getNotifConfig(category: string, priority?: string) {
         labelColor: SUCCESS,
         actionLabel: 'View KYC',
       };
-    case 'COMPLAINT_MAINTENANCE':
+    case 'COMPLAINT':
       const isHigh = priority === 'HIGH';
       return {
         label: 'COMPLAINT',
@@ -81,7 +81,7 @@ function getNotifConfig(category: string, priority?: string) {
         iconBg: isHigh ? '#FFF7ED' : '#FEF2F2', // Soft orange or soft pink/red
         iconColor: isHigh ? WARNING : ERROR,
         labelColor: isHigh ? WARNING : ERROR,
-        actionLabel: 'View Request',
+        actionLabel: 'Book Technician',
       };
     case 'MEAL_RSVP':
       return {
@@ -156,12 +156,10 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <Animated.View entering={FadeIn.duration(Motion.timing.sheet)} exiting={FadeOut.duration(Motion.timing.sheet)} style={styles.backdrop}>
+      <View style={styles.backdrop}>
         <Pressable style={styles.dismissBackdropArea} onPress={onDismiss} testID="sheet_backdrop_dismiss" />
 
-        <Animated.View
-          entering={SlideInDown.duration(Motion.timing.sheet).easing(Motion.easing.entrance)}
-          exiting={SlideOutDown.duration(Motion.timing.sheet).easing(Motion.easing.exit)}
+        <View
           style={styles.sheet}
         >
           {/* Drag Handle */}
@@ -333,8 +331,8 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                         {/* Right Info Section */}
                         <Col style={{ flex: 1 }}>
                           {/* Header: Category, Badges, Timestamp & Deletion */}
-                          <Row justify="space-between" align="center" style={{ width: '100%' }}>
-                            <Row gap={6} align="center">
+                          <Row justify="space-between" align="center" style={{ width: '100%', flexWrap: 'wrap' }}>
+                            <Row gap={6} align="center" style={{ flexWrap: 'wrap' }}>
                               <Txt size={11} weight="900" color={config.labelColor} style={{ letterSpacing: 0.5 }}>
                                 {config.label}
                               </Txt>
@@ -376,7 +374,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                           <Spacer size={12} />
 
                           {/* Footer Actions & State */}
-                          <Row justify="space-between" align="center">
+                          <Row justify="space-between" align="center" style={{ flexWrap: 'wrap', gap: 6 }}>
                             {isRead ? (
                               <Row gap={4} align="center">
                                 <Ionicons name="checkmark-circle-outline" size={14} color={MUTED} />
@@ -399,6 +397,9 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                                   hapticSuccess();
                                   markRead(notif.id);
                                   onDismiss();
+                                  if (notif.category === 'COMPLAINT' && notif.actionId) {
+                                    router.push(`/book-technician/${notif.actionId}`);
+                                  }
                                 }}
                                 containerColor={config.iconColor}
                                 textColor={WHITE}
@@ -422,8 +423,8 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
 
             <Spacer size={20} />
           </ScrollView>
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
 
       {showBroadcast && (
         <RoleNotificationBroadcastDialog onDismiss={() => setShowBroadcast(false)} />

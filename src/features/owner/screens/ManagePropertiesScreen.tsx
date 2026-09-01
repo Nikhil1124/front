@@ -22,7 +22,7 @@ import type { PGOwnerEntity } from '@/types';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 
 // ── Color System ─────────────────────────────────────────────────────────────
-const PRIMARY = '#5B45E8';      // Premium Indigo / Violet
+const PRIMARY = '#4F51D5';      // Premium Indigo / Violet
 const PRIMARY_SOFT = '#EEEAFE'; // Soft Indigo
 const BG = '#F7F8FC';           // Canvas bg
 const CHARCOAL = '#16181D';     // Main text
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 180,
+    aspectRatio: 16 / 9,
     position: 'relative',
     backgroundColor: '#E5E7EB',
   },

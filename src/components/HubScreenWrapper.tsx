@@ -32,6 +32,7 @@ import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors } from '@/theme';
 import { hapticSelect } from '@/utils/haptics';
+import { useResponsivePadding } from '@/utils/responsive';
 
 export interface HubScreenWrapperProps {
   title: string;
@@ -67,6 +68,7 @@ export function HubScreenWrapper({
   testID,
 }: HubScreenWrapperProps) {
   const insets = useSafeAreaInsets();
+  const responsivePadding = useResponsivePadding();
   // Hardware back / iOS swipe-back are handled by the Stack navigator itself now — no manual
   // BackHandler listener needed, unlike the old custom screen-stack this replaced.
   const handleBack = () => {
@@ -78,7 +80,7 @@ export function HubScreenWrapper({
   return (
     <View style={styles.root} testID={testID}>
       {/* Sticky top bar — mint-tinted band with back chevron + title */}
-      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 14, paddingHorizontal: responsivePadding }]}>
         <AnimatedPress
           scale={0.9}
           hapticPattern="light"
@@ -107,14 +109,14 @@ export function HubScreenWrapper({
           for why a plain ScrollView isn't enough on Android), padding for cards */}
       {scrollable ? (
         <FormScroll
-          contentContainerStyle={{ padding: 16, paddingBottom: 32, ...contentContainerStyle }}
+          contentContainerStyle={{ paddingHorizontal: responsivePadding, paddingTop: 16, paddingBottom: 32, ...contentContainerStyle }}
           style={styles.scrollBody}
           refreshControl={refreshControl as any}
         >
           {children}
         </FormScroll>
       ) : (
-        <View style={{ flex: 1, padding: 16, ...contentContainerStyle }}>{children}</View>
+        <View style={{ flex: 1, paddingHorizontal: responsivePadding, paddingTop: 16, ...contentContainerStyle }}>{children}</View>
       )}
     </View>
   );
@@ -128,7 +130,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
     paddingVertical: 14,
     backgroundColor: Colors.surfaceElevated,
     borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle,

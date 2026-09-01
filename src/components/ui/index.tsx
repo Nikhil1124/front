@@ -110,7 +110,7 @@ export function Btn({
         {
           backgroundColor: containerColor,
           borderRadius,
-          height,
+          minHeight: height,
           width,
           borderWidth: borderWidth ?? 0,
           borderColor: borderColor ?? 'transparent',
@@ -163,7 +163,7 @@ export function OutlinedBtn({
         {
           backgroundColor: containerColor,
           borderRadius,
-          height,
+          minHeight: height,
           width,
           borderWidth,
           borderColor,

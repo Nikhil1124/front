@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 50,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderColor: 'transparent',
     ...Layout.shadowCard,
   },
   inputWrapper: {
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderColor: 'transparent',
     ...Layout.shadowCard,
   },
 });

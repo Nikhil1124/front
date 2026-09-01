@@ -22,7 +22,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+
 
 import { Txt, Row } from '@/components/ui';
 import { Colors, Motion } from '@/theme';
@@ -62,17 +62,13 @@ export function DetailBottomSheet({
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} testID={testID}>
-      <Animated.View entering={FadeIn.duration(Motion.timing.sheet)} exiting={FadeOut.duration(Motion.timing.sheet)} style={styles.backdrop}>
+      <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Pressable
           style={styles.sheetWrapper}
           onPress={(e) => e.stopPropagation()}
         >
-          <Animated.View
-            entering={SlideInDown.duration(Motion.timing.sheet).easing(Motion.easing.entrance)}
-            exiting={SlideOutDown.duration(Motion.timing.sheet).easing(Motion.easing.exit)}
-            style={styles.sheet}
-          >
+          <View style={styles.sheet}>
             {/* Drag handle */}
             <View style={styles.handleBar} />
 
@@ -115,9 +111,9 @@ export function DetailBottomSheet({
 
             {/* Optional pinned footer */}
             {footer ? <View style={styles.footer}>{footer}</View> : null}
-          </Animated.View>
+          </View>
         </Pressable>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }

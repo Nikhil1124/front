@@ -14,13 +14,13 @@ export const Colors = {
   surfaceMuted: '#F3F4F6',        // Secondary background for text fields & disabled states
 
   // ── Brand & Accents ───────────────────────────────────────────────────────
-  primary: '#5B45E8',             // Premium Indigo brand
+  primary: '#4F51D5',             // Premium Indigo brand
   primaryDark: '#4338CA',         // Darker indigo for pressed states & headers
   primaryGlow: 'rgba(91, 69, 232, 0.12)', // Soft indigo shadow glow
   secondary: '#4F46E5',           // Deep Indigo for sub-headings
   tertiary: '#D97706',            // Amber Accent (Alerts, Overdue dues)
   accentWarm: '#D97706',          // Warm Amber
-  accentCool: '#5B45E8',          // Cool Indigo
+  accentCool: '#4F51D5',          // Cool Indigo
   accentRose: '#E11D48',          // Critical / Panic / Expired badges
 
   // ── Status Colors ─────────────────────────────────────────────────────────
@@ -34,16 +34,16 @@ export const Colors = {
   textSecondary: '#4B5563',       // Subtitle gray text
   textMuted: '#6B7280',           // Muted caption text
   textInverse: '#FFFFFF',         // White text on primary buttons
-  textAccent: '#5B45E8',          // Indigo text for links & active tab labels
+  textAccent: '#4F51D5',          // Indigo text for links & active tab labels
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
   borderSubtle: '#E5E7EB',        // Soft gray border (1px default on cards)
-  borderFocus: '#5B45E8',         // 2px active input focus border
+  borderFocus: '#4F51D5',         // 2px active input focus border
   borderGlass: 'rgba(91, 69, 232, 0.1)', // Glassmorphic borders
   borderMuted: '#E5E7EB',         // Divider lines
 
   // ── Gradients ─────────────────────────────────────────────────────────────
-  heroGradientStart: '#5B45E8',   // Top header & key banner gradient
+  heroGradientStart: '#4F51D5',   // Top header & key banner gradient
   heroGradientEnd: '#8B5CF6',     // Violet end
   cardGradientStart: '#FFFFFF',
   cardGradientEnd: '#F7F8FC',
@@ -58,12 +58,12 @@ export const Colors = {
   LuxuryCardBorder: '#E5E7EB',
   SlateMutedText: '#6B7280',
   IvoryWhiteText: '#15171A',
-  CyberGreen: '#5B45E8',
+  CyberGreen: '#4F51D5',
   CyberPurple: '#4338CA',
-  CyberPink: '#5B45E8',
+  CyberPink: '#4F51D5',
   CyberAmber: '#D97706',
 
-  Teal80: '#5B45E8',
+  Teal80: '#4F51D5',
   TealSecondary80: '#4338CA',
   Gold80: '#D97706',
   Teal40: '#4338CA',
@@ -85,14 +85,14 @@ export const Palette = {
   StatusAmber: '#F59E0B',
   StatusAmberDeep: '#D97706',
   StatusPink: '#E11D48',
-  StatusCyan: '#5B45E8',
+  StatusCyan: '#4F51D5',
   StatusBlue: '#0284C7',
   StatusPurple: '#4338CA',
   StatusGold: '#D97706',
   StatusOrange: '#D97706',
 
   // Functional gradients
-  GradientStart: '#5B45E8',
+  GradientStart: '#4F51D5',
   GradientEnd: '#8B5CF6',
 
   // Surfaces
@@ -125,12 +125,12 @@ export const Palette = {
   // Text tints
   TextMuted: '#6B7280',
   TextMid: '#4B5563',
-  TextFaint: '#5B45E8',
+  TextFaint: '#4F51D5',
 
   // Border variants
   BorderFaint: '#E5E7EB',
   BorderMid: '#E5E7EB',
-  BorderStrong: '#5B45E8',
+  BorderStrong: '#4F51D5',
   BorderPurpleSoft: '#EEF2FF',
   BorderAmberSoft: '#FEF3C7',
 } as const;
@@ -166,14 +166,14 @@ export const Layout = {
   borderRadiusButton: 12,
   borderRadiusChip: 20,
   shadowCard: {
-    shadowColor: '#5B45E8',
+    shadowColor: '#4F51D5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 3,
   } as const,
   shadowHero: {
-    shadowColor: '#5B45E8',
+    shadowColor: '#4F51D5',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 16,

@@ -13,21 +13,11 @@
  * screens without restructuring.
  */
 import React from 'react';
-import { Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  runOnJS,
-} from 'react-native-reanimated';
+import { TouchableOpacity, TouchableOpacityProps, StyleProp, ViewStyle } from 'react-native';
 
 import { haptic, HapticPattern } from '@/utils/haptics';
-import { Motion } from '@/theme';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-export interface AnimatedPressProps extends Omit<PressableProps, 'style'> {
+export interface AnimatedPressProps extends Omit<TouchableOpacityProps, 'style'> {
   /** Scale to compress to when pressed. 0.97 ≈ gentle (spec), 0.90 ≈ emphatic. */
   scale?: number;
   /** Haptic pattern fired on press-in. Pass `null` to disable. */
@@ -52,37 +42,26 @@ export function AnimatedPress({
   accessibilityRole = 'button',
   ...rest
 }: AnimatedPressProps) {
-  const pressed = useSharedValue(0);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      transform: [{ scale: interpolate(pressed.value, [0, 1], [1, scale]) }],
-    };
-  });
-
   const fireHaptic = () => {
-    'worklet';
-    if (hapticPattern) runOnJS(haptic)(hapticPattern);
+    if (hapticPattern) haptic(hapticPattern);
   };
 
   return (
-    <AnimatedPressable
+    <TouchableOpacity
       accessibilityRole={accessibilityRole}
+      activeOpacity={scale}
       {...rest}
       onPressIn={(e) => {
-        pressed.value = withTiming(1, { duration: 100, easing: Motion.easing.entrance });
         fireHaptic();
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        pressed.value = withTiming(0, { duration: Motion.timing.micro, easing: Motion.easing.standard });
         onPressOut?.(e);
       }}
-      style={[animatedStyle, style]}
+      style={style}
     >
       {children}
-    </AnimatedPressable>
+    </TouchableOpacity>
   );
 }
 

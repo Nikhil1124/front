@@ -5,7 +5,7 @@
  * activity timeline, and overdue modals.
  * All existing dynamic data bindings and navigation actions are preserved.
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -16,8 +16,16 @@ import {
   Linking,
   Text,
   Image,
+  ImageBackground,
   Dimensions,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Svg, Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -26,50 +34,12 @@ import { Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  useSharedValue,
-  useAnimatedStyle,
-  useAnimatedProps,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 function AnimatedNumber({ value, duration = 500, decimals = 0 }: { value: number; duration?: number; decimals?: number }) {
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useEffect(() => {
-    let start = displayValue;
-    const end = value;
-    if (start === end) {
-      setDisplayValue(end);
-      return;
-    }
-    const startTime = performance.now();
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easeProgress = progress * (2 - progress);
-      const current = start + (end - start) * easeProgress;
-      setDisplayValue(current);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [value, duration]);
-
   if (decimals > 0) {
-    return <>{displayValue.toFixed(decimals)}</>;
+    return <>{value.toFixed(decimals)}</>;
   }
-  return <>{Math.round(displayValue).toLocaleString('en-IN')}</>;
+  return <>{Math.round(value).toLocaleString('en-IN')}</>;
 }
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
@@ -79,21 +49,22 @@ import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { usePnL } from '@/features/billing/usePnL';
 import { useMealSavings } from '@/features/meals/useMealSavings';
 import { todayLocalISO } from '@/utils/format';
-import { BookProntoRepairDialog } from '@/components/dialogs/HubDialogs';
+import { BookRepairDialog } from '@/components/dialogs/HubDialogs';
+import { useResponsivePadding } from '@/utils/responsive';
 
 // ── Redesign Theme Colors ───────────────────────────────────────────────────
-const PRIMARY = '#5B45E8';      // Premium Indigo / Violet
-const SECONDARY_BG = '#EEF2FF'; // Soft blue/violet tint
-const BG = '#F7F8FC';           // Very light cool/neutral gray
-const CHARCOAL = '#15171A';     // Main text
-const MUTED = '#6B7280';        // Secondary text
-const BORDER = '#E5E7EB';       // Subtle borders
-const WHITE = '#FFFFFF';
+const PRIMARY = Colors.primary;
+const SECONDARY_BG = Colors.surfaceElevated;
+const BG = Colors.canvas;
+const CHARCOAL = Colors.textPrimary;
+const MUTED = Colors.textMuted;
+const BORDER = Colors.borderSubtle;
+const WHITE = Colors.surface;
 
 // Status colors
-const SUCCESS = '#10B981';      // Vibrant Green
-const WARNING = '#F59E0B';      // Warm Amber
-const DANGER = '#EF4444';       // Urgent Red
+const SUCCESS = Colors.success;
+const WARNING = Colors.warning;
+const DANGER = Colors.danger;
 
 const CHART_HEIGHT = 110;       // Chart height constant at module scope
 
@@ -109,16 +80,42 @@ export default function OwnerOverviewTab() {
   const [showOverdueModal, setShowOverdueModal] = useState(false);
   const [showBookRepair, setShowBookRepair] = useState(false);
   const [pnlInterval, setPnlInterval] = useState<'3m' | '6m' | '1y'>('3m');
+  const isQuickActionsExpanded = usePGowStore((s) => s.isQuickActionsExpanded);
+  const responsivePadding = useResponsivePadding();
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
-  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+
+
+  const carouselRef = useRef<ScrollView>(null);
+  const activeCarouselIndex = useRef(0);
+
   const user = useAuthStore((s) => s.user);
   const hasNoMemberships = !user || (user.memberships.length === 0);
+
+  useEffect(() => {
+    if (hasNoMemberships) return;
+    const interval = setInterval(() => {
+      const itemWidth = Dimensions.get("window").width - (responsivePadding * 2) + 16;
+      if (activeCarouselIndex.current === 3) {
+        carouselRef.current?.scrollTo({ x: 0, animated: false });
+        activeCarouselIndex.current = 1;
+        setTimeout(() => {
+          carouselRef.current?.scrollTo({ x: itemWidth, animated: true });
+        }, 50);
+      } else {
+        activeCarouselIndex.current += 1;
+        carouselRef.current?.scrollTo({ x: activeCarouselIndex.current * itemWidth, animated: true });
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [hasNoMemberships, responsivePadding]);
+
+  const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
+  const isManager = usePGowStore((s) => s.isManagerMode);
 
   // Dynamic calculations
   const occupiedCount = guests.length;
@@ -159,22 +156,34 @@ export default function OwnerOverviewTab() {
 
   // Quick Action Grid Items
   const quickActions = useMemo(() => {
-    const list: QuickActionItem[] = [
-      { label: 'Add Room', icon: 'add-circle-outline', color: '#0EA5E9', bgColor: '#E0F2FE', onPress: () => { hapticSelect(); router.push('/bed-visualizer'); } },
-      { label: 'Residents', icon: 'people-outline', color: '#10B981', bgColor: '#ECFDF5', onPress: () => { hapticSelect(); router.push('/guests'); } },
-      { label: 'Payments', icon: 'card-outline', color: '#F59E0B', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.push('/payments'); } },
-      { label: 'Maintenance', icon: 'construct-outline', color: '#EF4444', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.push('/reviews'); } },
-      { label: 'Technicians', icon: 'build-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); setShowBookRepair(true); } },
-      { label: 'Notices', icon: 'megaphone-outline', color: '#EC4899', bgColor: '#FDF2F8', onPress: () => { hapticSelect(); router.push('/notices'); } },
-      { label: 'Services', icon: 'storefront-outline', color: '#14B8A6', bgColor: '#F0FDFA', onPress: () => { hapticSelect(); router.push('/services'); } },
-      { label: 'Groceries', icon: 'cart-outline', color: '#84CC16', bgColor: '#F7FEE7', onPress: () => { hapticSelect(); router.push('/groceries'); } },
-      { label: 'Reports', icon: 'stats-chart-outline', color: '#8B5CF6', bgColor: '#F5F3FF', onPress: () => { hapticSelect(); router.push('/pnl-analytics'); } },
-      { label: 'Settings', icon: 'settings-outline', color: '#6B7280', bgColor: '#F3F4F6', onPress: () => { hapticSelect(); router.push('/settings'); } },
+    const top4: QuickActionItem[] = [
+      { label: 'Groceries', icon: 'cart-outline', color: '#84CC16', bgColor: '#F7FEE7', onPress: () => { hapticSelect(); router.navigate('/groceries'); } },
+      { label: 'Procurement', icon: 'cube-outline', color: '#F59E0B', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.navigate('/procurement'); } },
+      { label: 'Services', icon: 'storefront-outline', color: '#14B8A6', bgColor: '#F0FDFA', onPress: () => { hapticSelect(); router.navigate('/services'); } },
+      { label: 'Residents', icon: 'people-outline', color: '#8B5CF6', bgColor: '#F5F3FF', onPress: () => { hapticSelect(); router.navigate('/guests'); } },
     ];
+
+    const rest: QuickActionItem[] = [
+      { label: 'Add Room', icon: 'add-circle-outline', color: '#0EA5E9', bgColor: '#E0F2FE', onPress: () => { hapticSelect(); router.navigate('/bed-visualizer'); } },
+      { label: 'Ads', icon: 'newspaper-outline', color: '#D946EF', bgColor: '#FDF4FF', onPress: () => { hapticSelect(); router.navigate('/manage-ad'); } },
+      { label: 'Complaints', icon: 'warning-outline', color: '#EF4444', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.navigate('/complaints'); } },
+      { label: 'Food RSVP', icon: 'restaurant-outline', color: '#F97316', bgColor: '#FFF7ED', onPress: () => { hapticSelect(); router.navigate('/rsvp-trends'); } },
+      { label: 'Managers', icon: 'person-add-outline', color: '#10B981', bgColor: '#ECFDF5', onPress: () => { hapticSelect(); router.navigate('/manager-provisioning'); } },
+      { label: 'Portfolio', icon: 'briefcase-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.navigate('/portfolio'); } },
+      { label: 'Reviews', icon: 'star-outline', color: '#F59E0B', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.navigate('/reviews'); } },
+      { label: 'Settings', icon: 'settings-outline', color: '#6B7280', bgColor: '#F3F4F6', onPress: () => { hapticSelect(); router.navigate('/settings'); } },
+      { label: 'Staff', icon: 'people-circle-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.navigate('/staff'); } },
+      { label: 'Technicians', icon: 'build-outline', color: '#3B82F6', bgColor: '#EFF6FF', onPress: () => { hapticSelect(); setShowBookRepair(true); } },
+      { label: 'UPI Setup', icon: 'qr-code-outline', color: '#06B6D4', bgColor: '#ECFEFF', onPress: () => { hapticSelect(); router.navigate('/upi-settings'); } },
+    ];
+
     if (!isManager) {
-      list.unshift({ label: 'Add Property', icon: 'business-outline', color: PRIMARY, bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.push('/manage-properties'); } });
+      rest.push({ label: 'Add Property', icon: 'business-outline', color: PRIMARY, bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.navigate('/manage-properties'); } });
     }
-    return list;
+
+    rest.sort((a, b) => a.label.localeCompare(b.label));
+
+    return [...top4, ...rest];
   }, [isManager]);
 
   // Split into rows of 5 for the horizontal-scroll grid (handles any list length)
@@ -246,70 +255,17 @@ export default function OwnerOverviewTab() {
     });
   }, [complaints]);
 
-  // Reanimated shared values for animations
-  const occupancyWidth = useSharedValue(0);
-  const resolvedProgress = useSharedValue(0);
-  const inProgressProgress = useSharedValue(0);
-  const urgentProgress = useSharedValue(0);
-  const chartDrawProgress = useSharedValue(1);
 
-  // Trigger animations when calculation state updates
-  useEffect(() => {
-    occupancyWidth.value = withTiming(occupancyPercent, { duration: 500, easing: Easing.out(Easing.quad) });
-  }, [occupancyPercent]);
-
-  useEffect(() => {
-    resolvedProgress.value = withTiming(resolvedPct, { duration: 600, easing: Easing.out(Easing.quad) });
-    inProgressProgress.value = withTiming(progressPct, { duration: 600, easing: Easing.out(Easing.quad) });
-    urgentProgress.value = withTiming(urgentPct, { duration: 600, easing: Easing.out(Easing.quad) });
-  }, [resolvedPct, progressPct, urgentPct]);
-
-  useEffect(() => {
-    chartDrawProgress.value = 1;
-    chartDrawProgress.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.quad) });
-  }, [pathD]);
-
-  const occupancyProgressStyle = useAnimatedStyle(() => ({
-    width: `${occupancyWidth.value}%`,
-  }));
-
-  const resolvedCircleProps = useAnimatedProps(() => ({
-    strokeDashoffset: donutCircum * (1 - resolvedProgress.value),
-  }));
-
-  const progressCircleProps = useAnimatedProps(() => ({
-    strokeDashoffset: donutCircum * (1 - inProgressProgress.value),
-    rotation: (resolvedProgress.value * 360) - 90,
-    originX: 40,
-    originY: 40,
-  }));
-
-  const urgentCircleProps = useAnimatedProps(() => ({
-    strokeDashoffset: donutCircum * (1 - urgentProgress.value),
-    rotation: ((resolvedProgress.value + inProgressProgress.value) * 360) - 90,
-    originX: 40,
-    originY: 40,
-  }));
-
-  const chartLineProps = useAnimatedProps(() => ({
-    strokeDashoffset: chartWidth * chartDrawProgress.value,
-  }));
-
-  const chartAreaProps = useAnimatedProps(() => ({
-    opacity: 1 - chartDrawProgress.value,
-  }));
-
-  const chartDotProps = useAnimatedProps(() => ({
-    opacity: 1 - chartDrawProgress.value,
-    r: (1 - chartDrawProgress.value) * 4,
-  }));
 
   return (
     <>
       <ScrollView
         style={styles.root}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: responsivePadding }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        canCancelContentTouches
+        scrollEventThrottle={16}
       >
         {hasNoMemberships ? (
           <Card
@@ -344,68 +300,345 @@ export default function OwnerOverviewTab() {
           </Card>
         ) : (
           <>
-            {/* ── 1. Property Hero Card ─────────────────────────────────────── */}
-            <Card
-              containerColor={WHITE}
-              borderRadius={22}
-              borderWidth={0}
-              padding={[0, 0]}
-              style={styles.heroCardShadow}
+            {/* ── Dashboard Carousel ─────────────────────────────────────── */}
+            <ScrollView
+              ref={carouselRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={Dimensions.get("window").width - (responsivePadding * 2) + 16}
+              decelerationRate="fast"
+              disableIntervalMomentum
+              contentContainerStyle={{ paddingHorizontal: responsivePadding, gap: 16, alignItems: 'stretch' }}
+              style={{ marginHorizontal: -responsivePadding }}
             >
-              <View style={styles.heroFlexRow}>
-                {/* Left side building image */}
-                <View style={styles.heroImageContainer}>
-                  <Image
-                    source={require('../../../assets/bangalore_pg_building.png')}
-                    style={styles.heroImage}
-                    resizeMode="cover"
-                  />
-                </View>
-
-                {/* Right side stats panel with subtle gradient */}
-                <View style={styles.heroStatsPanel}>
-                  <Row justify="space-between" align="center">
-                    <Text style={styles.heroLabel}>Occupancy</Text>
-                    <View style={styles.trendBadge}>
-                      <Text style={styles.trendBadgeText}>↑ 6%</Text>
-                    </View>
-                  </Row>
-
-                  <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
-                  <Text style={styles.heroStatusText}>Excellent occupancy</Text>
-                  
-                  {/* Custom Progress Bar */}
-                  <View style={styles.progressBarTrack}>
-                    <Animated.View style={[styles.progressBarFill, occupancyProgressStyle]} />
+              <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
+              {/* ── 1. Property Hero Card ─────────────────────────────────────── */}
+              <Card
+                containerColor={WHITE}
+                borderRadius={22}
+                borderWidth={0}
+                padding={[0, 0]}
+                style={[styles.heroCardShadow, { flex: 1 }]}
+              >
+                <View style={styles.heroFlexRow}>
+                  {/* Left side building image */}
+                  <View style={styles.heroImageContainer}>
+                    <Image
+                      source={require('../../../assets/bangalore_pg_building.png')}
+                      style={styles.heroImage}
+                      resizeMode="cover"
+                    />
                   </View>
-
-                  <View style={styles.heroSummaryContainer}>
-                    <View style={styles.summaryItem}>
-                      <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
-                      <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
-                      <Text style={styles.summaryLabel}>Occupied</Text>
+  
+                  {/* Right side stats panel with subtle gradient */}
+                  <View style={styles.heroStatsPanel}>
+                    <Row justify="space-between" align="center">
+                      <Text style={styles.heroLabel}>Occupancy</Text>
+                      <View style={styles.trendBadge}>
+                        <Text style={styles.trendBadgeText}>↑ 6%</Text>
+                      </View>
+                    </Row>
+  
+                    <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
+                    <Text style={styles.heroStatusText}>Excellent occupancy</Text>
+  
+                    {/* Custom Progress Bar */}
+                    <View style={styles.progressBarTrack}>
+                      <View style={[styles.progressBarFill, { width: `${occupancyPercent}%` }]} />
                     </View>
-                    <View style={styles.summaryItem}>
-                      <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
-                      <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
-                      <Text style={styles.summaryLabel}>Available</Text>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
-                      <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
-                      <Text style={styles.summaryLabel}>Maintenance</Text>
+  
+                    <View style={styles.heroSummaryContainer}>
+                      <View style={styles.summaryItem}>
+                        <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
+                        <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
+                        <Text style={styles.summaryLabel}>Occupied</Text>
+                      </View>
+                      <View style={styles.summaryItem}>
+                        <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
+                        <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
+                        <Text style={styles.summaryLabel}>Available</Text>
+                      </View>
+                      <View style={styles.summaryItem}>
+                        <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
+                        <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
+                        <Text style={styles.summaryLabel}>Maintenance</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
+              </Card>
+  
               </View>
-            </Card>
+              <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
+              {/* ── 4. Revenue Overview Card ────────────────────────────────────── */}
+              <Card
+                containerColor={WHITE}
+                borderRadius={22}
+                borderWidth={0}
+                padding={[18, 18]}
+                style={[styles.cardShadow, { flex: 1 }]}
+              >
+                <Row justify="space-between" align="center">
+                  <Col>
+                    <Text style={styles.chartTitle}>Revenue Overview</Text>
+                    <Spacer size={4} />
+                    <Row align="center" gap={6}>
+                      <Text style={styles.chartAmountText}>₹4,82,000</Text>
+                      <View style={styles.growthBadge}>
+                        <Text style={styles.growthBadgeText}>↑ 12.4%</Text>
+                      </View>
+                    </Row>
+                    <Text style={styles.chartSubtext}>vs last month</Text>
+                  </Col>
+  
+                  {/* Interval Selector */}
+                  <Row gap={4} style={styles.intervalRow}>
+                    {(['3m', '6m', '1y'] as const).map(i => (
+                      <TouchableOpacity
+                        key={i}
+                        style={[styles.intervalBtn, pnlInterval === i && styles.intervalBtnActive]}
+                        onPress={() => { hapticSelect(); setPnlInterval(i); }}
+                      >
+                        <Text style={[styles.intervalBtnText, pnlInterval === i && styles.intervalBtnTextActive]}>
+                          {i.toUpperCase()}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </Row>
+                </Row>
+  
+                <Spacer size={16} />
+  
+                {/* Svg area line chart */}
+                <View style={styles.svgContainer}>
+                  <Svg width={chartWidth} height={CHART_HEIGHT}>
+                    <Defs>
+                      <LinearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                        <Stop offset="0%" stopColor={PRIMARY} stopOpacity="0.25" />
+                        <Stop offset="100%" stopColor={PRIMARY} stopOpacity="0.0" />
+                      </LinearGradient>
+                    </Defs>
+  
+                    {/* Grid Lines */}
+                    <Path d={`M 0 ${CHART_HEIGHT * 0.3} L ${chartWidth} ${CHART_HEIGHT * 0.3}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
+                    <Path d={`M 0 ${CHART_HEIGHT * 0.65} L ${chartWidth} ${CHART_HEIGHT * 0.65}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
+  
+                    {/* Gradient Area Fill */}
+                    <Path d={areaD} fill="url(#areaGradient)" opacity={1} />
+  
+                    {/* Smooth Line Path */}
+                    <Path
+                      d={pathD}
+                      fill="none"
+                      stroke={PRIMARY}
+                      strokeWidth="3"
+                      strokeDasharray={chartWidth}
+                      strokeDashoffset={0}
+                    />
+  
+                    {/* Chart Dots */}
+                    {points.map((p, idx) => (
+                      <Circle
+                        key={idx}
+                        cx={p.x}
+                        cy={p.y}
+                        fill={PRIMARY}
+                        stroke={WHITE}
+                        strokeWidth="2"
+                        opacity={1}
+                        r={4}
+                      />
+                    ))}
+                  </Svg>
+                </View>
+  
+                <Row justify="space-between" style={{ marginTop: 8 }}>
+                  {areaData.map((d, i) => (
+                    <Text key={i} style={styles.xAxisLabel}>{d.label}</Text>
+                  ))}
+                </Row>
+              </Card>
+  
+              </View>
+              <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
+              {/* ── Food Savings Analytics Card ────────────────────────────────── */}
+              <Card
+                containerColor={Colors.surface}
+                borderRadius={22}
+                borderWidth={0}
+                padding={[0, 0]}
+                style={[styles.cardShadow, { flex: 1, overflow: 'hidden' }]}
+              >
+                <ImageBackground 
+                  source={require('../../../assets/food_savings_banner.png')}
+                  style={{ width: '100%', height: 110 }}
+                  resizeMode="cover"
+                >
+                  {/* Dark overlay for text readability */}
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
+                  <View style={{ padding: 18, flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Col style={{ flex: 1 }}>
+                      <Txt variant="body" weight="900" color={Colors.textInverse}>Food Savings & Waste</Txt>
+                      <Spacer size={2} />
+                      <Txt size={11} color="rgba(255,255,255,0.85)">Portions saved this month from resident skips</Txt>
+                    </Col>
+                    <View style={[styles.tileIconBox, { backgroundColor: 'rgba(255,255,255,0.2)', width: 38, height: 38, borderRadius: 12 }]}>
+                      <Ionicons name="fast-food-outline" size={20} color={Colors.textInverse} />
+                    </View>
+                  </View>
+                </ImageBackground>
+  
+                <View style={{ paddingHorizontal: 18, paddingBottom: 18, paddingTop: 16, flex: 1, justifyContent: 'space-between' }}>
+                  {/* Metric Grid inside Card */}
+                <Row justify="space-between" align="center" style={styles.savingsMetricGrid}>
+                  <Col style={styles.savingsMetricCol}>
+                    <Txt size={11} weight="600" color={Colors.textMuted}>Saved Portions</Txt>
+                    <Spacer size={4} />
+                    <Txt size={18} weight="900" color={Colors.primary}>
+                      <AnimatedNumber value={totalSkippedPortions} />
+                    </Txt>
+                  </Col>
+                  <View style={styles.savingsDivider} />
+                  <Col style={styles.savingsMetricCol}>
+                    <Txt size={11} weight="600" color={Colors.textMuted}>Money Saved</Txt>
+                    <Spacer size={4} />
+                    <Txt size={18} weight="900" color={Colors.success}>
+                      ₹<AnimatedNumber value={totalSavedAmount} />
+                    </Txt>
+                  </Col>
+                  <View style={styles.savingsDivider} />
+                  <Col style={styles.savingsMetricCol}>
+                    <Txt size={11} weight="600" color={Colors.textMuted}>Cost/Plate</Txt>
+                    <Spacer size={4} />
+                    <Txt size={18} weight="900" color={Colors.textPrimary}>
+                      ₹<AnimatedNumber value={costPerPlate} />
+                    </Txt>
+                  </Col>
+                </Row>
+  
+                {dailySavings.length > 0 ? (
+                  <>
+                    <Spacer size={16} />
+                    <View style={styles.dividerLine} />
+                    <Spacer size={12} />
+                    <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
+                    <Spacer size={8} />
+                    <Col gap={8}>
+                      {dailySavings.slice(0, 3).map((day, idx) => {
+                        const mealLabel = day.meal_type.charAt(0).toUpperCase() + day.meal_type.slice(1);
+                        // Format date (e.g. "2026-08-31" -> "31 Aug")
+                        let formattedDate = day.date;
+                        try {
+                          const dateParts = day.date.split('-');
+                          if (dateParts.length === 3) {
+                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const dayNum = parseInt(dateParts[2], 10);
+                            const monthIdx = parseInt(dateParts[1], 10) - 1;
+                            formattedDate = `${dayNum} ${months[monthIdx]}`;
+                          }
+                        } catch (e) { }
+  
+                        return (
+                          <Row key={idx} justify="space-between" align="center" style={styles.skipRow}>
+                            <Row gap={8} align="center">
+                              <View style={styles.skipDot} />
+                              <Txt size={12} weight="600" color={Colors.textPrimary}>
+                                {formattedDate} • {mealLabel}
+                              </Txt>
+                            </Row>
+                            <Row gap={12} align="center">
+                              <Txt size={12} weight="600" color={Colors.textMuted}>{day.skipped_portions} skips</Txt>
+                              <Txt size={12} weight="800" color={Colors.success}>+₹{day.saved}</Txt>
+                            </Row>
+                          </Row>
+                        );
+                      })}
+                    </Col>
+                  </>
+                ) : (
+                  savingsData && (
+                    <>
+                      <Spacer size={16} />
+                      <View style={styles.dividerLine} />
+                      <Spacer size={12} />
+                      <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
+                      <Spacer size={8} />
+                      <Txt size={12} color={Colors.textMuted} style={{ fontStyle: 'italic', textAlign: 'center', marginVertical: 8 }}>
+                        No skips logged yet this month.
+                      </Txt>
+                    </>
+                  )
+                )}
+                </View>
+              </Card>
+  
+              </View>
+              <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
+              {/* ── 1. Property Hero Card (Duplicate for loop) ─────────────────────────────────────── */}
+              <Card
+                containerColor={WHITE}
+                borderRadius={22}
+                borderWidth={0}
+                padding={[0, 0]}
+                style={[styles.heroCardShadow, { flex: 1 }]}
+              >
+                <View style={styles.heroFlexRow}>
+                  {/* Left side building image */}
+                  <View style={styles.heroImageContainer}>
+                    <Image
+                      source={require('../../../assets/bangalore_pg_building.png')}
+                      style={styles.heroImage}
+                      resizeMode="cover"
+                    />
+                  </View>
+  
+                  {/* Right side stats panel with subtle gradient */}
+                  <View style={styles.heroStatsPanel}>
+                    <Row justify="space-between" align="center">
+                      <Text style={styles.heroLabel}>Occupancy</Text>
+                      <View style={styles.trendBadge}>
+                        <Text style={styles.trendBadgeText}>↑ 6%</Text>
+                      </View>
+                    </Row>
+  
+                    <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
+                    <Text style={styles.heroStatusText}>Excellent occupancy</Text>
+  
+                    {/* Custom Progress Bar */}
+                    <View style={styles.progressBarTrack}>
+                      <View style={[styles.progressBarFill, { width: `${occupancyPercent}%` }]} />
+                    </View>
+  
+                    <View style={styles.heroSummaryContainer}>
+                      <View style={styles.summaryItem}>
+                        <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
+                        <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
+                        <Text style={styles.summaryLabel}>Occupied</Text>
+                      </View>
+                      <View style={styles.summaryItem}>
+                        <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
+                        <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
+                        <Text style={styles.summaryLabel}>Available</Text>
+                      </View>
+                      <View style={styles.summaryItem}>
+                        <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
+                        <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
+                        <Text style={styles.summaryLabel}>Maintenance</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </Card>
+  
+              </View>
+            </ScrollView>
 
-            <Spacer size={20} />
+            <Spacer size={24} />
 
             {/* ── 2. Key Metrics Grid ────────────────────────────────────────── */}
             <View style={styles.metricsGrid}>
               {/* Properties Card */}
-              <View style={styles.metricCard}>
+              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push('/manage-properties'); }} style={styles.metricCard}>
                 <View style={[styles.metricIconCircle, { backgroundColor: '#EEF2FF' }]}>
                   <Ionicons name="business" size={18} color={PRIMARY} />
                 </View>
@@ -413,10 +646,10 @@ export default function OwnerOverviewTab() {
                   <Text style={styles.metricValue}><AnimatedNumber value={allPGs.length} /></Text>
                   <Text style={styles.metricTitle}>Properties</Text>
                 </Col>
-              </View>
+              </TouchableOpacity>
 
               {/* Residents Card */}
-              <View style={styles.metricCard}>
+              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push('/guests'); }} style={styles.metricCard}>
                 <View style={[styles.metricIconCircle, { backgroundColor: '#ECFDF5' }]}>
                   <Ionicons name="people" size={18} color={SUCCESS} />
                 </View>
@@ -424,10 +657,10 @@ export default function OwnerOverviewTab() {
                   <Text style={styles.metricValue}><AnimatedNumber value={guests.length} /></Text>
                   <Text style={styles.metricTitle}>Residents</Text>
                 </Col>
-              </View>
+              </TouchableOpacity>
 
               {/* Revenue Card */}
-              <View style={styles.metricCard}>
+              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push('/pnl-analytics'); }} style={styles.metricCard}>
                 <View style={[styles.metricIconCircle, { backgroundColor: '#FEF3C7' }]}>
                   <Ionicons name="wallet" size={18} color={WARNING} />
                 </View>
@@ -439,10 +672,10 @@ export default function OwnerOverviewTab() {
                   </Row>
                   <Text style={styles.metricTitle} numberOfLines={1}>Revenue (Cycle)</Text>
                 </Col>
-              </View>
+              </TouchableOpacity>
 
               {/* Pending Issues Card */}
-              <View style={styles.metricCard}>
+              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } }); }} style={styles.metricCard}>
                 <View style={[styles.metricIconCircle, { backgroundColor: '#FEF2F2' }]}>
                   <Ionicons name="construct" size={18} color={DANGER} />
                 </View>
@@ -450,235 +683,46 @@ export default function OwnerOverviewTab() {
                   <Text style={styles.metricValue}><AnimatedNumber value={openRequests} /></Text>
                   <Text style={styles.metricTitle}>Pending Issues</Text>
                 </Col>
-              </View>
+              </TouchableOpacity>
             </View>
+
 
             <Spacer size={24} />
 
             {/* ── 3. Quick Actions ───────────────────────────────────────────── */}
             <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
               <Text style={styles.sectionHeading}>Quick Actions</Text>
-              <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/services')}>
-                <Text style={styles.viewAllText}>View all →</Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  usePGowStore.getState().set('isQuickActionsExpanded', !isQuickActionsExpanded);
+                }}
+                style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+              >
+                <Row align="center" gap={4}>
+                  <Text style={styles.viewAllText}>{isQuickActionsExpanded ? 'Show less' : 'View all'}</Text>
+                  <Ionicons name={isQuickActionsExpanded ? "chevron-up" : "chevron-down"} size={16} color={PRIMARY} />
+                </Row>
               </TouchableOpacity>
             </Row>
 
-            <View style={styles.actionsBox}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionsScroll}>
-                {/* Render quick actions in 2 horizontal rows for neatness on mobile */}
-                <Col gap={16}>
-                  {quickActionRows.map((row, rowIdx) => (
-                    <Row gap={14} key={rowIdx}>
-                      {row.map(act => (
-                        <TouchableOpacity key={act.label} style={styles.actionItem} onPress={act.onPress} activeOpacity={0.7}>
-                          <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor }]}>
-                            <Ionicons name={act.icon} size={20} color={act.color} />
-                          </View>
-                          <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </Row>
-                  ))}
-                </Col>
-              </ScrollView>
+            <View style={[styles.actionsBox, { paddingHorizontal: 12, paddingVertical: 16 }]}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16 }}>
+                {(isQuickActionsExpanded ? quickActions : quickActions.slice(0, 4)).map(act => (
+                  <TouchableOpacity key={act.label} style={{ width: '23%', alignItems: 'center', gap: 6 }} onPress={act.onPress} activeOpacity={0.7}>
+                    <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor }]}>
+                      <Ionicons name={act.icon} size={20} color={act.color} />
+                    </View>
+                    <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
+
 
             <Spacer size={24} />
 
-            {/* ── 4. Revenue Overview Card ────────────────────────────────────── */}
-            <Card
-              containerColor={WHITE}
-              borderRadius={22}
-              borderWidth={0}
-              padding={[18, 18]}
-              style={styles.cardShadow}
-            >
-              <Row justify="space-between" align="center">
-                <Col>
-                  <Text style={styles.chartTitle}>Revenue Overview</Text>
-                  <Spacer size={4} />
-                  <Row align="center" gap={6}>
-                    <Text style={styles.chartAmountText}>₹4,82,000</Text>
-                    <View style={styles.growthBadge}>
-                      <Text style={styles.growthBadgeText}>↑ 12.4%</Text>
-                    </View>
-                  </Row>
-                  <Text style={styles.chartSubtext}>vs last month</Text>
-                </Col>
-
-                {/* Interval Selector */}
-                <Row gap={4} style={styles.intervalRow}>
-                  {(['3m', '6m', '1y'] as const).map(i => (
-                    <TouchableOpacity
-                      key={i}
-                      style={[styles.intervalBtn, pnlInterval === i && styles.intervalBtnActive]}
-                      onPress={() => { hapticSelect(); setPnlInterval(i); }}
-                    >
-                      <Text style={[styles.intervalBtnText, pnlInterval === i && styles.intervalBtnTextActive]}>
-                        {i.toUpperCase()}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </Row>
-              </Row>
-
-              <Spacer size={16} />
-
-              {/* Svg area line chart */}
-              <View style={styles.svgContainer}>
-                <Svg width={chartWidth} height={CHART_HEIGHT}>
-                  <Defs>
-                    <LinearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor={PRIMARY} stopOpacity="0.25" />
-                      <Stop offset="100%" stopColor={PRIMARY} stopOpacity="0.0" />
-                    </LinearGradient>
-                  </Defs>
-                  
-                  {/* Grid Lines */}
-                  <Path d={`M 0 ${CHART_HEIGHT * 0.3} L ${chartWidth} ${CHART_HEIGHT * 0.3}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
-                  <Path d={`M 0 ${CHART_HEIGHT * 0.65} L ${chartWidth} ${CHART_HEIGHT * 0.65}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
-
-                  {/* Gradient Area Fill */}
-                  <AnimatedPath d={areaD} fill="url(#areaGradient)" animatedProps={chartAreaProps} />
-                  
-                  {/* Smooth Line Path */}
-                  <AnimatedPath
-                    d={pathD}
-                    fill="none"
-                    stroke={PRIMARY}
-                    strokeWidth="3"
-                    strokeDasharray={chartWidth}
-                    animatedProps={chartLineProps}
-                  />
-
-                  {/* Chart Dots */}
-                  {points.map((p, idx) => (
-                    <AnimatedCircle
-                      key={idx}
-                      cx={p.x}
-                      cy={p.y}
-                      fill={PRIMARY}
-                      stroke={WHITE}
-                      strokeWidth="2"
-                      animatedProps={chartDotProps}
-                    />
-                  ))}
-                </Svg>
-              </View>
-
-              <Row justify="space-between" style={{ marginTop: 8 }}>
-                {areaData.map((d, i) => (
-                  <Text key={i} style={styles.xAxisLabel}>{d.label}</Text>
-                ))}
-              </Row>
-            </Card>
-
-            <Spacer size={20} />
-
-            {/* ── Food Savings Analytics Card ────────────────────────────────── */}
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={22}
-              borderWidth={0}
-              padding={[18, 18]}
-              style={styles.cardShadow}
-            >
-              <Row justify="space-between" align="center">
-                <Col style={{ flex: 1 }}>
-                  <Txt variant="body" weight="900" color={Colors.textPrimary}>Food Savings & Waste</Txt>
-                  <Spacer size={2} />
-                  <Txt size={11} color={Colors.textMuted}>Portions saved this month from resident skips</Txt>
-                </Col>
-                <View style={[styles.tileIconBox, { backgroundColor: '#ECFDF5', width: 38, height: 38, borderRadius: 12 }]}>
-                  <Ionicons name="fast-food-outline" size={20} color={Colors.success} />
-                </View>
-              </Row>
-
-              <Spacer size={16} />
-
-              {/* Metric Grid inside Card */}
-              <Row justify="space-between" align="center" style={styles.savingsMetricGrid}>
-                <Col style={styles.savingsMetricCol}>
-                  <Txt size={11} weight="600" color={Colors.textMuted}>Saved Portions</Txt>
-                  <Spacer size={4} />
-                  <Txt size={18} weight="900" color={Colors.primary}>
-                    <AnimatedNumber value={totalSkippedPortions} />
-                  </Txt>
-                </Col>
-                <View style={styles.savingsDivider} />
-                <Col style={styles.savingsMetricCol}>
-                  <Txt size={11} weight="600" color={Colors.textMuted}>Money Saved</Txt>
-                  <Spacer size={4} />
-                  <Txt size={18} weight="900" color={Colors.success}>
-                    ₹<AnimatedNumber value={totalSavedAmount} />
-                  </Txt>
-                </Col>
-                <View style={styles.savingsDivider} />
-                <Col style={styles.savingsMetricCol}>
-                  <Txt size={11} weight="600" color={Colors.textMuted}>Cost/Plate</Txt>
-                  <Spacer size={4} />
-                  <Txt size={18} weight="900" color={Colors.textPrimary}>
-                    ₹<AnimatedNumber value={costPerPlate} />
-                  </Txt>
-                </Col>
-              </Row>
-
-              {dailySavings.length > 0 ? (
-                <>
-                  <Spacer size={16} />
-                  <View style={styles.dividerLine} />
-                  <Spacer size={12} />
-                  <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
-                  <Spacer size={8} />
-                  <Col gap={8}>
-                    {dailySavings.slice(0, 3).map((day, idx) => {
-                      const mealLabel = day.meal_type.charAt(0).toUpperCase() + day.meal_type.slice(1);
-                      // Format date (e.g. "2026-08-31" -> "31 Aug")
-                      let formattedDate = day.date;
-                      try {
-                        const dateParts = day.date.split('-');
-                        if (dateParts.length === 3) {
-                          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                          const dayNum = parseInt(dateParts[2], 10);
-                          const monthIdx = parseInt(dateParts[1], 10) - 1;
-                          formattedDate = `${dayNum} ${months[monthIdx]}`;
-                        }
-                      } catch (e) {}
-
-                      return (
-                        <Row key={idx} justify="space-between" align="center" style={styles.skipRow}>
-                          <Row gap={8} align="center">
-                            <View style={styles.skipDot} />
-                            <Txt size={12} weight="600" color={Colors.textPrimary}>
-                              {formattedDate} • {mealLabel}
-                            </Txt>
-                          </Row>
-                          <Row gap={12} align="center">
-                            <Txt size={12} weight="600" color={Colors.textMuted}>{day.skipped_portions} skips</Txt>
-                            <Txt size={12} weight="800" color={Colors.success}>+₹{day.saved}</Txt>
-                          </Row>
-                        </Row>
-                      );
-                    })}
-                  </Col>
-                </>
-              ) : (
-                savingsData && (
-                  <>
-                    <Spacer size={16} />
-                    <View style={styles.dividerLine} />
-                    <Spacer size={12} />
-                    <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
-                    <Spacer size={8} />
-                    <Txt size={12} color={Colors.textMuted} style={{ fontStyle: 'italic', textAlign: 'center', marginVertical: 8 }}>
-                      No skips logged yet this month.
-                    </Txt>
-                  </>
-                )
-              )}
-            </Card>
-
-            <Spacer size={20} />
 
             {/* ── 5. Maintenance Overview Card ────────────────────────────────── */}
             <Card
@@ -696,29 +740,35 @@ export default function OwnerOverviewTab() {
                 <View style={styles.donutBox}>
                   <Svg width={80} height={80} viewBox="0 0 80 80">
                     <Circle cx="40" cy="40" r={donutRadius} fill="none" stroke="#F3F4F6" strokeWidth="8" />
-                    
+
                     {/* Resolved Slice (Green) */}
-                    <AnimatedCircle
+                    <Circle
                       cx="40" cy="40" r={donutRadius} fill="none" stroke={SUCCESS} strokeWidth="8"
                       strokeDasharray={donutCircum}
-                      animatedProps={resolvedCircleProps}
+                      strokeDashoffset={donutCircum * (1 - resolvedPct)}
                       rotation={-90}
                       originX={40}
                       originY={40}
                     />
-                    
+
                     {/* In Progress Slice (Amber) */}
-                    <AnimatedCircle
+                    <Circle
                       cx="40" cy="40" r={donutRadius} fill="none" stroke={WARNING} strokeWidth="8"
                       strokeDasharray={donutCircum}
-                      animatedProps={progressCircleProps}
+                      strokeDashoffset={donutCircum * (1 - progressPct)}
+                      rotation={(resolvedPct * 360) - 90}
+                      originX={40}
+                      originY={40}
                     />
 
                     {/* Urgent Slice (Red) */}
-                    <AnimatedCircle
+                    <Circle
                       cx="40" cy="40" r={donutRadius} fill="none" stroke={DANGER} strokeWidth="8"
                       strokeDasharray={donutCircum}
-                      animatedProps={urgentCircleProps}
+                      strokeDashoffset={donutCircum * (1 - urgentPct)}
+                      rotation={((resolvedPct + progressPct) * 360) - 90}
+                      originX={40}
+                      originY={40}
                     />
                   </Svg>
                   <View style={styles.donutCenter}>
@@ -736,7 +786,7 @@ export default function OwnerOverviewTab() {
                     </Row>
                     <Text style={styles.legendCount}><AnimatedNumber value={urgentCount} /></Text>
                   </Row>
-                  
+
                   <Row align="center" justify="space-between">
                     <Row gap={6} align="center">
                       <View style={[styles.legendDot, { backgroundColor: WARNING }]} />
@@ -758,8 +808,8 @@ export default function OwnerOverviewTab() {
               <Spacer size={16} />
               <View style={styles.dividerLine} />
               <Spacer size={12} />
-              
-              <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/reviews')}>
+
+              <TouchableOpacity activeOpacity={0.7} onPress={() => router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } })}>
                 <Row align="center" justify="center" gap={4}>
                   <Text style={styles.viewAllRequestsText}>View All Requests</Text>
                   <Ionicons name="arrow-forward" size={14} color={PRIMARY} />
@@ -814,7 +864,7 @@ export default function OwnerOverviewTab() {
                           {
                             backgroundColor:
                               req.status === 'Open' ? '#FEF2F2' :
-                              req.status === 'In Progress' ? '#FEF3C7' : '#ECFDF5',
+                                req.status === 'In Progress' ? '#FEF3C7' : '#ECFDF5',
                           }
                         ]}>
                           <Text style={[
@@ -822,7 +872,7 @@ export default function OwnerOverviewTab() {
                             {
                               color:
                                 req.status === 'Open' ? DANGER :
-                                req.status === 'In Progress' ? WARNING : SUCCESS,
+                                  req.status === 'In Progress' ? WARNING : SUCCESS,
                             }
                           ]}>
                             {req.status}
@@ -842,7 +892,7 @@ export default function OwnerOverviewTab() {
 
             {/* ── 7. Recent Activity Timeline ────────────────────────────────── */}
             <Text style={[styles.sectionHeading, styles.sectionHeaderRow]}>Recent Activity</Text>
-            
+
             <Card
               containerColor={WHITE}
               borderRadius={22}
@@ -862,14 +912,14 @@ export default function OwnerOverviewTab() {
                 <View style={{ position: 'relative' }}>
                   {/* Vertical line indicator */}
                   <View style={styles.timelineVerticalLine} />
-                  
+
                   <Col gap={16}>
                     {recentFeed.map((feed) => {
                       const isPayment = (feed.category ?? '').toUpperCase().includes('PAYMENT');
                       const isKyc = (feed.category ?? '').toUpperCase().includes('KYC');
                       const isHigh = (feed.priority ?? '').toUpperCase() === 'HIGH';
-                      
-                      let dotColor = PRIMARY;
+
+                      let dotColor: string = PRIMARY;
                       let iconName: keyof typeof Ionicons.glyphMap = 'notifications';
                       if (isPayment) {
                         dotColor = SUCCESS;
@@ -982,9 +1032,9 @@ export default function OwnerOverviewTab() {
       {/* ── Overdue Detail Modal ──────────────────────────────────────────── */}
       {showOverdueModal && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowOverdueModal(false)}>
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
+          <View style={styles.modalBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOverdueModal(false)} />
-            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.modalCard}>
+            <View style={styles.modalCard}>
               <Row justify="space-between" align="center">
                 <Row gap={10} align="center">
                   <View style={styles.modalIconBox}>
@@ -1069,12 +1119,12 @@ export default function OwnerOverviewTab() {
                   <Text style={styles.modalSecondaryBtnText}>Open Ledger ›</Text>
                 </TouchableOpacity>
               </Row>
-            </Animated.View>
-          </Animated.View>
+            </View>
+          </View>
         </Modal>
       )}
       {showBookRepair && (
-        <BookProntoRepairDialog
+        <BookRepairDialog
           onDismiss={() => setShowBookRepair(false)}
         />
       )}
@@ -1084,11 +1134,11 @@ export default function OwnerOverviewTab() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
+  scroll: { paddingTop: 16, paddingBottom: 40 },
 
   // Get Started / empty state cards
   cardShadow: {
-    shadowColor: '#5B45E8',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
     shadowRadius: 12,
@@ -1113,7 +1163,8 @@ const styles = StyleSheet.create({
   },
   heroFlexRow: {
     flexDirection: 'row',
-    height: 180,
+    flex: 1,
+    minHeight: 180,
   },
   heroImageContainer: {
     width: '46%',
@@ -1203,7 +1254,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   metricCard: {
-    width: '48%',
+    minWidth: 150,
+    flexGrow: 1,
     height: 68,
     backgroundColor: WHITE,
     borderRadius: 18,
@@ -1559,7 +1611,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalTitle: { fontSize: 16, fontWeight: '900', color: CHARCOAL },
-  modalSub:   { fontSize: 12, color: MUTED, marginTop: 1 },
+  modalSub: { fontSize: 12, color: MUTED, marginTop: 1 },
   menuDivider: { height: 1, backgroundColor: BORDER, marginVertical: 14 },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16,
@@ -1571,7 +1623,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECFDF5', borderRadius: 14, marginBottom: 8,
   },
   allPaidTitle: { fontSize: 14, fontWeight: '800', color: SUCCESS, marginTop: 8 },
-  allPaidSub:   { fontSize: 12, color: MUTED, marginTop: 2 },
+  allPaidSub: { fontSize: 12, color: MUTED, marginTop: 2 },
   overdueRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1580,7 +1632,7 @@ const styles = StyleSheet.create({
     borderBottomColor: BORDER,
   },
   overdueGuestName: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
-  overdueGuestSub:  { fontSize: 12, color: MUTED, marginTop: 2 },
+  overdueGuestSub: { fontSize: 12, color: MUTED, marginTop: 2 },
   overdueAmount: { fontSize: 15, fontWeight: '800', color: WARNING },
   callBtn: {
     marginTop: 4, width: 28, height: 28, borderRadius: 14,

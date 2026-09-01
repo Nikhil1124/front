@@ -16,13 +16,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-  runOnJS,
-} from 'react-native-reanimated';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Txt, Row } from '@/components/ui';
 import { Colors, Motion } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -48,6 +43,7 @@ function toastStyleFor(type: string): ToastStyle {
 }
 
 export function AlertOverlay() {
+  const insets = useSafeAreaInsets();
   const activeAlert = usePGowStore((s) => s.activeAlert);
   const dismiss = usePGowStore((s) => s.dismissAlert);
   const submitRSVPFromNotification = usePGowStore((s) => s.submitRSVPFromNotification);
@@ -55,31 +51,16 @@ export function AlertOverlay() {
   const [rsvpChoice, setRsvpChoice] = useState<string | null>(null);
   const isDismissing = useRef(false);
 
-  const translateY = useSharedValue(-20);
-  const opacity = useSharedValue(0);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-    opacity: opacity.value,
-  }));
-
   const handleDismiss = useCallback(() => {
     if (isDismissing.current) return;
     isDismissing.current = true;
-    translateY.value = withTiming(-20, { duration: Motion.timing.small, easing: Motion.easing.exit }, (finished) => {
-      if (finished) runOnJS(dismiss)();
-    });
-    opacity.value = withTiming(0, { duration: Motion.timing.small, easing: Motion.easing.exit });
-  }, [dismiss, translateY, opacity]);
+    dismiss();
+  }, [dismiss]);
 
   useEffect(() => {
     setRsvpChoice(null);
     if (activeAlert) {
       isDismissing.current = false;
-      translateY.value = -20;
-      opacity.value = 0;
-      translateY.value = withTiming(0, { duration: Motion.timing.small, easing: Motion.easing.entrance });
-      opacity.value = withTiming(1, { duration: Motion.timing.small, easing: Motion.easing.entrance });
 
       const isMealWithNotif = activeAlert.type === 'MEAL' && activeAlert.notificationId != null;
       // A plain toast reads in under two seconds; the meal card needs longer because it is
@@ -92,7 +73,7 @@ export function AlertOverlay() {
 
       return () => clearTimeout(timer);
     }
-  }, [activeAlert?.timestamp, activeAlert?.type, activeAlert?.notificationId, handleDismiss, translateY, opacity]);
+  }, [activeAlert?.timestamp, activeAlert?.type, activeAlert?.notificationId, handleDismiss]);
 
   if (!activeAlert) return null;
 
@@ -114,7 +95,7 @@ export function AlertOverlay() {
   };
 
   return (
-    <Animated.View style={[styles.overlay, animatedStyle]} pointerEvents="box-none">
+    <View style={[styles.overlay, { top: Math.max(insets.top, 8) + 8 }]} pointerEvents="box-none">
       <TouchableOpacity
         activeOpacity={0.92}
         onPress={handleDismiss}
@@ -151,7 +132,7 @@ export function AlertOverlay() {
           )}
         </View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 }
 

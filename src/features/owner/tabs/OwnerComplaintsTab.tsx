@@ -4,8 +4,8 @@
  * need a resolve/respond/escalate action a resident is waiting on; reviews are read-only
  * sentiment. Same underlying query (`useComplaintsQuery`), two different jobs.
  */
-import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text, KeyboardAvoidingView, Platform, BackHandler } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -50,6 +50,13 @@ export function OwnerComplaintsTab() {
     setResponseText(item.adminResponse ?? '');
     setResponseStatus(item.status);
   };
+
+  // Back-press override: replace ghost tab state with overview
+  useEffect(() => {
+    const onBack = () => { router.replace('/overview'); return true; };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, []);
 
   const handleSaveReply = async () => {
     if (!activeItem) return;

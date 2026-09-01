@@ -114,6 +114,9 @@ export default function GuestTabsLayout() {
         <TabTrigger name="profile" href="/profile" asChild>
           <HeadlessDockTabButton icon="ribbon" label="Profile" />
         </TabTrigger>
+
+        {/* Hidden trigger to register support route in the tabs navigator */}
+        <TabTrigger name="support" href="/support" style={{ display: 'none' }} />
       </Dock>
 
       {showNotif && <RoleNotificationsCenterSheet roleTitle="RESIDENT" onDismiss={() => setShowNotif(false)} />}

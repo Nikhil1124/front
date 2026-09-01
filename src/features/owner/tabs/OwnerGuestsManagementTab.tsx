@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,6 +14,7 @@ import {
   Platform,
   Share,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 
 import { router } from 'expo-router';
@@ -37,7 +38,7 @@ import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { formatDateTime } from '@/utils/format';
 import type { GuestEntity } from '@/types';
 
-const GREEN = '#5B45E8';      // Indigo brand primary
+const GREEN = '#4F51D5';      // Indigo brand primary
 const BG = '#F7F8FC';         // Canvas BG
 const CHARCOAL = '#15171A';   // Primary text
 const MUTED = '#6B7280';      // Muted text
@@ -113,6 +114,17 @@ export function OwnerGuestsManagementTab() {
   const toast = useToast();
 
   const pendingKyc = guests.filter((g) => g.kycStatus === 'PENDING');
+
+  // Override back navigation — this screen lives inside the tab navigator, not a stack,
+  // so native back would leave ghost tab state. We force-replace with overview instead.
+  useEffect(() => {
+    const onBack = () => {
+      router.replace('/overview');
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, []);
 
   const confirmDeleteGuest = (g: GuestEntity) => {
     if (isDeletingGuest) return;

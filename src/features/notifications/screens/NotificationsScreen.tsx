@@ -163,8 +163,8 @@ export function NotificationsScreen({ roleTitle }: NotificationsScreenProps) {
                   borderColor={notif.isRead ? Colors.borderSubtle : Colors.primary}
                   padding={[14, 14]}
                 >
-                  <Row justify="space-between" align="center">
-                    <Row gap={6} align="center">
+                  <Row justify="space-between" align="center" style={{ flexWrap: 'wrap' }}>
+                    <Row gap={6} align="center" style={{ flexWrap: 'wrap' }}>
                       <View style={[styles.dot, { backgroundColor: notif.isRead ? Colors.borderSubtle : accent }]} />
                       <Txt variant="labelSmall" weight="900" color={Colors.primaryDark}>{notif.category.replace(/_/g, ' ')}</Txt>
                       {notif.priority === 'HIGH' && (
@@ -183,7 +183,7 @@ export function NotificationsScreen({ roleTitle }: NotificationsScreenProps) {
                   <Spacer size={4} />
                   <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 16 }}>{notif.message}</Txt>
                   <Spacer size={10} />
-                  <Row justify="space-between" align="center">
+                  <Row justify="space-between" align="center" style={{ flexWrap: 'wrap', gap: 6 }}>
                     {notif.isRead ? (
                       <Txt size={9} color={Colors.textMuted}>✓ Read</Txt>
                     ) : (

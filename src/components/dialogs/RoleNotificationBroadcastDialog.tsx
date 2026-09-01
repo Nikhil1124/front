@@ -6,10 +6,9 @@
 import { useState } from 'react';
 import { Modal, View, StyleSheet, Alert, Pressable, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors, dialogEntering, dialogExiting } from '@/theme';
+import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 interface Props {
@@ -41,11 +40,11 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
+        <View style={styles.backdrop}>
           {/* Background tap to dismiss */}
           <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
 
-          <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '90%', zIndex: 2 }}>
+          <View style={{ width: '90%', zIndex: 2 }}>
             <Card
               containerColor={Colors.surface}
               borderRadius={24}
@@ -122,8 +121,8 @@ export function RoleNotificationBroadcastDialog({ onDismiss }: Props) {
             </OutlinedBtn>
           </Row>
             </Card>
-          </Animated.View>
-        </Animated.View>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );

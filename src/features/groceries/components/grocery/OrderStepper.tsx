@@ -1,13 +1,6 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  cancelAnimation,
-} from 'react-native-reanimated';
+
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyOrderStatus } from '@/types/supply';
 import { Colors } from '@/theme';
@@ -63,7 +56,7 @@ export function OrderStepper({ status }: OrderStepperProps) {
             {/* Left Node & Line */}
             <View style={styles.nodeColumn}>
               <View style={styles.nodeWrapper}>
-                {active && <PulseRing />}
+
                 <View style={[styles.node, done || active ? styles.activeNode : styles.inactiveNode]}>
                   <Ionicons
                     name={done ? 'checkmark' : meta.icon}
@@ -89,26 +82,7 @@ export function OrderStepper({ status }: OrderStepperProps) {
   );
 }
 
-function PulseRing() {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0.6);
 
-  useEffect(() => {
-    scale.value = withRepeat(withTiming(1.6, { duration: 1200, easing: Easing.out(Easing.ease) }), -1, false);
-    opacity.value = withRepeat(withTiming(0, { duration: 1200, easing: Easing.out(Easing.ease) }), -1, false);
-    return () => {
-      cancelAnimation(scale);
-      cancelAnimation(opacity);
-    };
-  }, [scale, opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return <Animated.View style={[styles.pulseRing, animatedStyle]} />;
-}
 
 const styles = StyleSheet.create({
   container: {

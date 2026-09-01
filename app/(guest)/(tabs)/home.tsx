@@ -21,6 +21,7 @@ interface QuickTile { label: string; desc: string; icon: keyof typeof Ionicons.g
 const QUICK_TILES: QuickTile[] = [
   { label: 'Weekly Menu',      desc: '7-day meal plan',        icon: 'restaurant',       tint: Colors.warning, href: '/meals' },
   { label: 'Groceries',        desc: 'Order fresh essentials', icon: 'cart',             tint: Colors.primary, href: '/groceries' },
+  { label: 'Complaints',       desc: 'Report issues & feedback', icon: 'warning',        tint: Colors.danger,  href: '/support' },
 ];
 
 // Countdown formatter — returns "⏰ Cut-off in 1h 15m" or "Closed" based on

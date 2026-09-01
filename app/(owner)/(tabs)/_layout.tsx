@@ -9,13 +9,11 @@ import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView } from
 import { router, usePathname } from 'expo-router';
 import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut, SlideInDown, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { tabEntering, tabExiting } from '@/theme';
-import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '@/theme';
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
@@ -24,16 +22,15 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 
 // ── Redesign Theme Colors ───────────────────────────────────────────────────
-const PRIMARY = '#5B45E8';      // Premium Indigo / Violet
-const BG = '#F7F8FC';           // Very light cool gray
-const CHARCOAL = '#15171A';     // Main text
-const MUTED = '#6B7280';        // Secondary text
-const BORDER = '#E5E7EB';       // Light gray border
-const WHITE = '#FFFFFF';
-const DANGER = '#EF4444';       // Error/logout red
+const PRIMARY = Colors.primary;
+const BG = Colors.canvas;
+const CHARCOAL = Colors.textPrimary;
+const MUTED = Colors.textMuted;
+const BORDER = Colors.borderSubtle;
+const WHITE = Colors.surface;
+const DANGER = Colors.danger;
 
 export default function OwnerTabsLayout() {
-  const [showNotificationCenter, setShowNotificationCenter] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAddPgModal, setShowAddPgModal] = useState(false);
   const [showAddOptions, setShowAddOptions] = useState(false);
@@ -60,7 +57,7 @@ export default function OwnerTabsLayout() {
 
   // Paths
   const isOverviewActive = pathname === '/overview';
-  const isGuestsActive = pathname === '/guests';
+  const isPaymentsActive = pathname === '/payments';
 
   return (
     <Tabs style={styles.root}>
@@ -102,7 +99,7 @@ export default function OwnerTabsLayout() {
 
               {/* Right Action Icons */}
               <Row gap={8} align="center">
-                <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => setShowNotificationCenter(isManager ? 'MANAGER' : 'OWNER')}>
+                <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/notices'); }}>
                   <View style={styles.headerActionBtn}>
                     <Ionicons name="notifications-outline" size={20} color={CHARCOAL} />
                     {unreadCount > 0 && <View style={styles.unreadDot} />}
@@ -131,20 +128,18 @@ export default function OwnerTabsLayout() {
                pathname === '/payments' ? 'Payments & Revenue' :
                pathname === '/staff' ? 'Staff Management' :
                pathname === '/complaints' ? 'Complaints & Requests' :
-               pathname === '/notices' ? 'Notice Board' :
+               pathname === '/notices' ? 'Notifications' :
                pathname === '/reviews' ? 'Reviews & Feedback' : 'Details'}
             </Txt>
           </View>
         )}
         {/* ── Active Tab Content View Slot ────────────────────────────────────── */}
-        <Animated.View
+        <View
           key={pathname}
-          entering={tabEntering}
-          exiting={tabExiting}
           style={{ flex: 1 }}
         >
           <TabSlot />
-        </Animated.View>
+        </View>
       </View>
 
       {/* ── Custom Floating Bottom Navigation Bar ──────────────────────────────
@@ -176,19 +171,19 @@ export default function OwnerTabsLayout() {
           </TouchableOpacity>
         </View>
 
-        {/* Tab 4: Residents */}
-        <TabTrigger name="guests" href="/guests" asChild>
+        {/* Tab 4: Payments */}
+        <TabTrigger name="payments" href="/payments" asChild>
           <TouchableOpacity style={styles.dockItem} activeOpacity={0.8}>
-            <Ionicons name="people" size={20} color={isGuestsActive ? PRIMARY : MUTED} />
-            <Txt size={10} weight={isGuestsActive ? '800' : '600'} color={isGuestsActive ? PRIMARY : MUTED} style={styles.dockText}>
-              Residents
+            <Ionicons name="card" size={20} color={isPaymentsActive ? PRIMARY : MUTED} />
+            <Txt size={10} weight={isPaymentsActive ? '800' : '600'} color={isPaymentsActive ? PRIMARY : MUTED} style={styles.dockText}>
+              Payments
             </Txt>
           </TouchableOpacity>
         </TabTrigger>
 
 
         {/* Hidden triggers to register all tab routes in the navigator */}
-        <TabTrigger name="payments" href="/payments" style={{ display: 'none' }} />
+        <TabTrigger name="guests" href="/guests" style={{ display: 'none' }} />
         <TabTrigger name="staff" href="/staff" style={{ display: 'none' }} />
         <TabTrigger name="notices" href="/notices" style={{ display: 'none' }} />
         <TabTrigger name="reviews" href="/reviews" style={{ display: 'none' }} />
@@ -197,9 +192,9 @@ export default function OwnerTabsLayout() {
       {/* ── PG Swapper Popover Menu ─────────────────────────────────────────── */}
       {showProfileMenu && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowProfileMenu(false)}>
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
+          <View style={styles.modalBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowProfileMenu(false)} />
-            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.swapperMenuCard}>
+            <View style={styles.swapperMenuCard}>
               <Card
                 containerColor={WHITE}
                 borderRadius={22}
@@ -261,20 +256,14 @@ export default function OwnerTabsLayout() {
                   </>
                 )}
               </Card>
-            </Animated.View>
-          </Animated.View>
+            </View>
+          </View>
         </Modal>
       )}
 
 
 
-      {/* Notifications & Property Addition Overlays */}
-      {showNotificationCenter && (
-        <RoleNotificationsCenterSheet
-          roleTitle={showNotificationCenter}
-          onDismiss={() => setShowNotificationCenter(null)}
-        />
-      )}
+      {/* Property Addition Overlays */}
       {showAddPgModal && (
         <AddPgPropertyDialog
           onDismiss={() => setShowAddPgModal(false)}
@@ -284,9 +273,9 @@ export default function OwnerTabsLayout() {
       {/* ── Add Options Sheet Menu ─────────────────────────────────────────── */}
       {showAddOptions && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowAddOptions(false)}>
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.moreMenuBackdrop}>
+          <View style={styles.moreMenuBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowAddOptions(false)} />
-            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.moreMenuSheet}>
+            <View style={styles.moreMenuSheet}>
               <View style={styles.sheetHandle} />
               <Txt size={16} weight="900" color={CHARCOAL} style={{ marginBottom: 16, textAlign: 'center' }}>Quick Creation</Txt>
               
@@ -297,7 +286,7 @@ export default function OwnerTabsLayout() {
                   onPress={() => {
                     setShowAddOptions(false);
                     hapticSelect();
-                    router.push('/guests');
+                    setTimeout(() => router.navigate('/guests'), 150);
                   }}
                   activeOpacity={0.7}
                 >
@@ -311,7 +300,7 @@ export default function OwnerTabsLayout() {
                   onPress={() => {
                     setShowAddOptions(false);
                     hapticSelect();
-                    router.push('/staff');
+                    setTimeout(() => router.navigate('/staff'), 150);
                   }}
                   activeOpacity={0.7}
                 >
@@ -338,8 +327,8 @@ export default function OwnerTabsLayout() {
               <TouchableOpacity style={styles.sheetCancelBtn} onPress={() => setShowAddOptions(false)}>
                 <Txt size={13} weight="800" color={MUTED} align="center">Cancel</Txt>
               </TouchableOpacity>
-            </Animated.View>
-          </Animated.View>
+            </View>
+          </View>
         </Modal>
       )}
     </Tabs>

@@ -41,38 +41,41 @@ export default function StaffTabsLayout() {
   return (
     <Tabs style={styles.root}>
       {/* Header — its own surface, separate from the scrollable body below,
-          so it reads as fixed chrome rather than the first card in the list. */}
-      <TabHeader
-        leading={
-          <View style={styles.chefIcon}><Ionicons name={activeRole === 'delivery_agent' ? 'bicycle' : 'restaurant'} size={24} color={Colors.primary} /></View>
-        }
-        actions={
-          <>
-            <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
-              <View style={styles.bellBtn}>
-                <Ionicons name="notifications" size={20} color={Colors.primary} />
-                {unreadCount > 0 && <View style={styles.unreadDot} />}
-              </View>
-            </AnimatedPress>
-            <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
-              <View style={styles.bellBtn}>
-                <Ionicons name="exit" size={20} color={Colors.danger} />
-              </View>
-            </AnimatedPress>
-          </>
-        }
-      >
-        <Col style={{ marginLeft: 12 }}>
-          <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>
-            {activeRole === 'delivery_agent' ? 'Delivery Dashboard' : 'CHEF DASHBOARD'}
-          </Txt>
-          <Txt size={11} color={Colors.textMuted}>
-            {activeRole === 'delivery_agent'
-              ? `${staff?.name ?? 'Rahul Kumar'} · Delivery Agent`
-              : `Chef: ${staff?.name ?? 'Ramesh Kumar'}`}
-          </Txt>
-        </Col>
-      </TabHeader>
+          so it reads as fixed chrome rather than the first card in the list.
+          Hide on the broadcast (Menu) tab to allow for a custom personal header. */}
+      {pathname !== '/broadcast' && (
+        <TabHeader
+          leading={
+            <View style={styles.chefIcon}><Ionicons name={activeRole === 'delivery_agent' ? 'bicycle' : 'restaurant'} size={24} color={Colors.primary} /></View>
+          }
+          actions={
+            <>
+              <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
+                <View style={styles.bellBtn}>
+                  <Ionicons name="notifications" size={20} color={Colors.primary} />
+                  {unreadCount > 0 && <View style={styles.unreadDot} />}
+                </View>
+              </AnimatedPress>
+              <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
+                <View style={styles.bellBtn}>
+                  <Ionicons name="exit" size={20} color={Colors.danger} />
+                </View>
+              </AnimatedPress>
+            </>
+          }
+        >
+          <Col style={{ marginLeft: 12 }}>
+            <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>
+              {activeRole === 'delivery_agent' ? 'Delivery Dashboard' : 'CHEF DASHBOARD'}
+            </Txt>
+            <Txt size={11} color={Colors.textMuted}>
+              {activeRole === 'delivery_agent'
+                ? `${staff?.name ?? 'Rahul Kumar'} · Delivery Agent`
+                : `Chef: ${staff?.name ?? 'Ramesh Kumar'}`}
+            </Txt>
+          </Col>
+        </TabHeader>
+      )}
 
       <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
         <Animated.View

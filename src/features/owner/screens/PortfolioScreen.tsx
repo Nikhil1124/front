@@ -16,9 +16,10 @@
 import { View, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { Txt, Row, Spacer } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors } from '@/theme';
+import { Colors, Spacing } from '@/theme';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { usePortfolioDetail } from '@/features/properties/usePortfolio';
+import { useResponsivePadding, useResponsiveGap } from '@/utils/responsive';
 
 function formatINR(n: number): string {
   if (n >= 100_000) {
@@ -30,6 +31,8 @@ function formatINR(n: number): string {
 export function PortfolioScreen() {
   const { data: allPGs = [], refetch, isRefetching } = usePropertiesEntitiesQuery();
   const { data, isLoading } = usePortfolioDetail(allPGs);
+  const responsivePadding = useResponsivePadding();
+  const responsiveGap = useResponsiveGap();
 
   return (
     <HubScreenWrapper
@@ -46,7 +49,7 @@ export function PortfolioScreen() {
         </View>
       ) : (
         /* ── Single primary portfolio container ── */
-        <View style={styles.container}>
+        <View style={[styles.container, { padding: responsivePadding }]}>
           {/* ── TOTALS section ── */}
           <Txt
             size={11}
@@ -56,8 +59,8 @@ export function PortfolioScreen() {
           >
             TOTALS
           </Txt>
-          <Spacer size={10} />
-          <View style={styles.statGrid}>
+          <Spacer size={Spacing.md} />
+          <View style={[styles.statGrid, { gap: responsiveGap }]}>
             <View style={styles.statBox}>
               <Txt size={10} weight="600" color={Colors.textMuted}>
                 Beds occupied
@@ -163,7 +166,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    padding: 18,
     shadowColor: '#0D9488',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -174,10 +176,9 @@ const styles = StyleSheet.create({
   statGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
   },
   statBox: {
-    flexBasis: '47%',
+    minWidth: 140,
     flexGrow: 1,
     backgroundColor: Colors.surfaceMuted,
     borderRadius: 12,

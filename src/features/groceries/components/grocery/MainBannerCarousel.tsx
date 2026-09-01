@@ -130,7 +130,7 @@ export const MainBannerCarousel: React.FC<MainBannerCarouselProps> = ({ onBanner
         />
         <View style={styles.ctaOverlayButton}>
           <Text style={styles.ctaOverlayText}>{item.cta}</Text>
-          <Ionicons name="arrow-forward" size={12} color="#0C2E4E" />
+          <Ionicons name="arrow-forward" size={12} color={Colors.primary} />
         </View>
       </TouchableOpacity>
     );
@@ -217,7 +217,8 @@ const styles = StyleSheet.create({
   },
   ctaOverlayText: {
     fontSize: 10,
-    color: '#0C2E4E',
+    fontWeight: '700',
+    color: Colors.primary,
   },
   paginationContainer: {
     flexDirection: 'row',

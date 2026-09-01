@@ -23,7 +23,7 @@ import { qk } from '@/data/queryKeys';
 import { listUpiIds, addUpiId, activateUpiId, removeUpiId } from '@/features/properties/useProperties';
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
-const GREEN = '#5B45E8';      // Indigo brand primary
+const GREEN = '#4F51D5';      // Indigo brand primary
 const BG = '#F7F8FC';         // Canvas BG
 const CHARCOAL = '#15171A';   // Primary text
 const MUTED = '#6B7280';      // Muted text

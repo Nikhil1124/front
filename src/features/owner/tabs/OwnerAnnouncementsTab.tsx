@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text, Image, KeyboardAvoidingView, Platform } from 'react-native';
-
+import { useState, useMemo, useEffect } from 'react';
+import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text, Image, KeyboardAvoidingView, Platform, FlatList, Animated as RNAnimated, PanResponder, BackHandler } from 'react-native';
+import { useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { Colors } from '@/theme';
@@ -16,25 +17,174 @@ import type { GuestEntity } from '@/types';
 import { OwnerReviewsTab } from './OwnerReviewsTab';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 
-const GREEN = '#5B45E8';      // Indigo brand primary
-const BG = '#F7F8FC';         // Canvas BG
-const CHARCOAL = '#15171A';   // Primary text
-const MUTED = '#6B7280';      // Muted text
-const BORDER = '#E5E7EB';     // Subtle border
-const WHITE = '#FFFFFF';
-const LIGHT_GREEN = '#EEF2FF';// Soft indigo active tint
-const RADIUS = 22;            // Premium rounded corner radius
+const PRIMARY = '#4F51D5';
+const PRIMARY_DARK = '#4338CA';
+const BG = '#F7F8FC';
+const SURFACE = '#FFFFFF';
+const UNREAD_SURFACE = '#F5F3FF';
+const TEXT_PRIMARY = '#17181C';
+const TEXT_SECONDARY = '#6B7280';
+const DIVIDER = '#E8EAF0';
+const WARNING = '#D97706';
+const DANGER = '#DC2626';
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAuthStore } from '@/store/authStore';
 
-export function OwnerAnnouncementsTab() {
-  // This screen used to only ever render as tab content, under the (owner)/(tabs) layout's
-  // own TabHeader (which already accounts for insets.top) — now it's also the header bell's
-  // destination, a bare root-level screen with nothing above it. Same insets.top + 14 buffer
-  // every other screen's own header uses, so it doesn't sit under the notch there.
+// === HELPER COMPONENTS ===
+
+const NotificationHeader = ({ title, onBack }: { title: string, onBack: () => void }) => {
   const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.headerContainer, { paddingTop: insets.top + 12 }]}>
+      <TouchableOpacity onPress={onBack} activeOpacity={0.7} style={styles.headerBackBtn}>
+        <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>{title}</Text>
+      <View style={{ width: 40 }} />
+    </View>
+  );
+};
+
+const NotificationSummary = ({ total, approvals }: { total: number, approvals: number }) => (
+  <View style={styles.summaryContainer}>
+    <Text style={styles.summarySub}>{total} updates · {approvals} approvals</Text>
+  </View>
+);
+
+const NotificationStatusRow = ({ pending }: { pending: number }) => {
+  if (pending > 0) {
+    return (
+      <View style={[styles.statusRow, styles.statusWarning]}>
+        <Ionicons name="alert-circle" size={16} color={WARNING} />
+        <Text style={styles.statusWarningText}>Needs Attention · {pending} pending</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.statusRow, styles.statusSuccess]}>
+      <Ionicons name="checkmark-circle" size={16} color={PRIMARY} />
+      <Text style={styles.statusSuccessText}>All caught up · No pending approvals</Text>
+    </View>
+  );
+};
+
+const NotificationFilterRow = ({ tabs, activeTab, onChange }: { tabs: { id: string, label: string, count?: number }[], activeTab: string, onChange: (id: string) => void }) => (
+  <View>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
+      {tabs.map(tab => (
+        <TouchableOpacity
+          key={tab.id}
+          activeOpacity={0.8}
+          onPress={() => onChange(tab.id)}
+          style={[styles.filterChip, activeTab === tab.id && styles.filterChipActive]}
+        >
+          <Text style={[styles.filterChipText, activeTab === tab.id && styles.filterChipTextActive]}>
+            {tab.label} {tab.count !== undefined ? tab.count : ''}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
+);
+
+const NotificationEmptyState = () => (
+  <View style={styles.emptyContainer}>
+    <Ionicons name="notifications-off-outline" size={32} color={TEXT_SECONDARY} />
+    <Spacer size={12} />
+    <Text style={styles.emptyTitle}>You're all caught up</Text>
+    <Text style={styles.emptySub}>No new notifications right now.</Text>
+  </View>
+);
+
+const NotificationItem = ({ item, onPress }: { item: any, onPress: () => void }) => {
+  const isUnread = !item.isRead;
+  const isHighPriority = item.priority === 'HIGH';
+
+  return (
+    <TouchableOpacity 
+      activeOpacity={0.7} 
+      onPress={onPress}
+      style={[
+        styles.notifItemContainer,
+        isUnread && styles.notifItemUnread
+      ]}
+    >
+      <Row gap={12} align="flex-start">
+        <View style={[styles.iconContainer, isHighPriority && styles.iconContainerHigh]}>
+          <Ionicons name={item.icon} size={20} color={isHighPriority ? DANGER : PRIMARY} />
+        </View>
+        <Col style={{ flex: 1 }}>
+          <Row justify="space-between" align="center">
+            <Row align="center" gap={6}>
+              {isUnread && <View style={styles.unreadIndicator} />}
+              <Text style={[styles.categoryLabel, isHighPriority && { color: WARNING }]}>{item.categoryText}</Text>
+            </Row>
+            <Text style={styles.timeText}>{formatTimeAgo(item.timestamp)}</Text>
+          </Row>
+          <Spacer size={4} />
+          <Text style={[styles.titleText, isUnread && styles.titleTextUnread]} numberOfLines={1}>{item.title}</Text>
+          <Spacer size={2} />
+          <Text style={styles.descText} numberOfLines={2}>{item.desc}</Text>
+        </Col>
+        <Ionicons name="chevron-forward" size={16} color={TEXT_SECONDARY} style={{ marginTop: 24, marginLeft: 8 }} />
+      </Row>
+    </TouchableOpacity>
+  );
+};
+
+const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
+  const insets = useSafeAreaInsets();
+  const pan = useRef(new RNAnimated.ValueXY()).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Start dragging if moved more than 5 pixels
+        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value
+        });
+      },
+      onPanResponderMove: RNAnimated.event(
+        [null, { dx: pan.x, dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+      }
+    })
+  ).current;
+
+  return (
+    <RNAnimated.View
+      {...panResponder.panHandlers}
+      style={[
+        styles.fab,
+        { bottom: Math.max(insets.bottom + 80, 80) },
+        { transform: [{ translateX: pan.x }, { translateY: pan.y }] }
+      ]}
+    >
+      <TouchableOpacity 
+        activeOpacity={0.85} 
+        onPress={onPress}
+        style={styles.fabInner}
+      >
+        <Ionicons name="megaphone-outline" size={18} color={SURFACE} />
+        <Text style={styles.fabText}>New Announcement</Text>
+      </TouchableOpacity>
+    </RNAnimated.View>
+  );
+}
+
+// === MAIN SCREEN COMPONENT ===
+
+export function OwnerAnnouncementsTab() {
+  const router = useRouter();
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: roleNotifs = [], isLoading: inboxLoading, error: inboxError, refetch: refetchInbox } = useRoleNotificationsQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
@@ -42,91 +192,106 @@ export function OwnerAnnouncementsTab() {
   const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
   const sendNotice = usePGowStore((s) => s.sendRoleNotification);
+  const bookRepair = usePGowStore((s) => s.bookPgRepairService);
 
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
 
-  // Complaints moved to their own tab (see OwnerComplaintsTab) — a resident-raised issue
-  // needing action doesn't belong mixed into a notification inbox. Reviews folded in here
-  // instead: ratings/staff-performance is a small, read-mostly screen that doesn't earn its
-  // own dock slot, and it reads the same underlying data this inbox already fetches.
   const [activeSubTab, setActiveSubTab] = useState<'ALL' | 'APPROVALS' | 'ANNOUNCEMENTS' | 'REVIEWS'>('ALL');
+
+  // Override back navigation — notices is a hidden tab, not a stack screen.
+  useEffect(() => {
+    const onBack = () => { router.replace('/overview'); return true; };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, []);
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [selectedInboxItem, setSelectedInboxItem] = useState<any | null>(null);
 
-  // Broadcast notice form states
   const [noticeTitle, setNoticeTitle] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
   const [noticeAudience, setNoticeAudience] = useState<'all' | 'guest' | 'staff' | 'manager'>('all');
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // 1. Compile Unified Inbox Items
   const inboxItems = useMemo(() => {
     const items: any[] = [];
 
-    // Pending KYC Reviews
     const pendingKycGuests = guests.filter((g: GuestEntity) => g.kycStatus === 'PENDING');
     pendingKycGuests.forEach((g: GuestEntity) => {
       items.push({
         id: `kyc_${g.id}`,
         type: 'KYC',
+        categoryText: 'KYC',
         title: 'New resident joined',
         desc: `Room ${g.roomNo} · KYC review required`,
         timestamp: g.kycSubmissionDate || Date.now(),
         isRead: false,
         priority: 'MEDIUM',
-        icon: 'document-text-outline',
+        icon: 'shield-checkmark',
         raw: g,
       });
     });
 
-    // Manager Approvals & General Notices
     roleNotifs.forEach((n) => {
-      const isApproval =
-        (n.category || '').toUpperCase().includes('EXPENSE') ||
-        (n.category || '').toUpperCase().includes('FINANCE') ||
-        (n.title || '').toLowerCase().includes('approval') ||
-        (n.title || '').toLowerCase().includes('procurement') ||
-        (n.title || '').toLowerCase().includes('salary');
+      const titleLower = (n.title || '').toLowerCase();
+      const catUpper = (n.category || '').toUpperCase();
+      const descLower = (n.message || '').toLowerCase();
+      
+      let isApproval = catUpper.includes('EXPENSE') || catUpper.includes('FINANCE') || titleLower.includes('approval') || titleLower.includes('procurement') || titleLower.includes('salary');
+      
+      let icon: any = 'notifications';
+      let categoryText = 'UPDATE';
+      
+      if (titleLower.includes('payment') || descLower.includes('payment') || titleLower.includes('rent')) {
+        icon = 'wallet';
+        categoryText = 'PAYMENT';
+      } else if (titleLower.includes('complaint') || titleLower.includes('repair') || titleLower.includes('maintenance')) {
+        icon = 'construct';
+        categoryText = 'MAINTENANCE';
+      } else if (titleLower.includes('review') || titleLower.includes('rating') || titleLower.includes('feedback')) {
+        icon = 'star';
+        categoryText = 'REVIEW';
+      } else if (titleLower.includes('food') || titleLower.includes('meal') || titleLower.includes('rsvp')) {
+        icon = 'restaurant';
+        categoryText = 'MEAL';
+      } else if (isApproval) {
+        icon = 'flash';
+        categoryText = 'APPROVAL';
+      } else {
+        icon = 'megaphone';
+        categoryText = 'ANNOUNCEMENT';
+      }
 
       items.push({
         id: `notif_${n.id}`,
         type: isApproval ? 'APPROVAL' : 'NOTICE',
+        categoryText,
         title: n.title,
         desc: n.message,
         timestamp: n.timestamp,
         isRead: n.isRead,
         priority: isApproval ? 'HIGH' : 'LOW',
-        icon: isApproval ? 'flash-outline' : 'megaphone-outline',
+        icon,
         raw: n,
       });
     });
 
-    // Sort: HIGH -> MEDIUM -> LOW, then timestamp desc
     const weights: Record<string, number> = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-    const sorted = items.sort((a, b) => {
+    return items.sort((a, b) => {
       const wA = weights[a.priority] || 1;
       const wB = weights[b.priority] || 1;
       if (wA !== wB) return wB - wA;
       return b.timestamp - a.timestamp;
     });
-
-    return sorted;
   }, [guests, roleNotifs]);
 
-  // Counts
   const totalInboxCount = inboxItems.length;
   const approvalsCount = inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC').length;
   const noticesCount = inboxItems.filter((i) => i.type === 'NOTICE').length;
 
-  // Filter list by active tab
   const displayedItems = useMemo(() => {
-    if (activeSubTab === 'APPROVALS') {
-      return inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC');
-    }
-    if (activeSubTab === 'ANNOUNCEMENTS') {
-      return inboxItems.filter((i) => i.type === 'NOTICE');
-    }
+    if (activeSubTab === 'APPROVALS') return inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC');
+    if (activeSubTab === 'ANNOUNCEMENTS') return inboxItems.filter((i) => i.type === 'NOTICE');
     return inboxItems;
   }, [inboxItems, activeSubTab]);
 
@@ -173,6 +338,14 @@ export function OwnerAnnouncementsTab() {
     }
   };
 
+  const handleBookService = (item: any) => {
+    hapticSuccess();
+    const serviceName = item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() || "General Repair";
+    bookRepair(serviceName, `Direct booking from notification: ${item.desc}`, 'ASAP', 149);
+    toast('success', 'Service Booked!', `Technician assigned for ${serviceName}.`);
+    setSelectedInboxItem(null);
+  };
+
   const handlePublishNotice = async () => {
     if (!noticeTitle.trim() || !noticeMessage.trim()) {
       Alert.alert('Validation', 'Title and message are required.');
@@ -204,241 +377,111 @@ export function OwnerAnnouncementsTab() {
   const handleOpenItem = (item: any) => {
     hapticSelect();
     setSelectedInboxItem(item);
-    if (item.type === 'NOTICE' || item.type === 'APPROVAL') {
-      markAsRead(item.raw.id);
-    }
+    if (item.type === 'NOTICE' || item.type === 'APPROVAL') markAsRead(item.raw.id);
   };
 
+  const tabs = [
+    { id: 'ALL', label: 'All', count: totalInboxCount },
+    { id: 'APPROVALS', label: 'Approvals', count: approvalsCount },
+    { id: 'ANNOUNCEMENTS', label: 'Announcements', count: noticesCount },
+    { id: 'REVIEWS', label: 'Reviews' },
+  ];
+
   return (
-    <View style={styles.rootFlex}>
-      {/* ── Title Header ── */}
-      <View style={[styles.headerArea, { paddingTop: insets.top + 14 }]}>
-        <Row justify="space-between" align="center">
-          <Col>
-            <Text style={styles.bodyTitle}>Notifications</Text>
-            <Text style={styles.bodySub}>Updates and actions for your PG</Text>
-          </Col>
-
-          <TouchableOpacity
-            style={styles.newNoticeBtn}
-            onPress={() => {
-              hapticSelect();
-              setShowBroadcastModal(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="megaphone-outline" size={14} color={WHITE} style={{ marginRight: 6 }} />
-            <Text style={styles.newNoticeBtnText}>+ New Announcement</Text>
-          </TouchableOpacity>
-        </Row>
-
+    <View style={styles.root}>
+      <ScrollView 
+        contentContainerStyle={[styles.mainScroll, { paddingBottom: 120 }]} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
+      >
+        <NotificationSummary total={totalInboxCount} approvals={approvalsCount} />
         <Spacer size={16} />
-
-        {/* ── Attention Status Strip ── */}
-        {approvalsCount > 0 ? (
-          <TouchableOpacity
-            style={styles.attentionStrip}
-            onPress={() => setActiveSubTab('APPROVALS')}
-            activeOpacity={0.85}
-          >
-            <Row justify="space-between" align="center" style={{ width: '100%' }}>
-              <Row gap={8} align="center">
-                <Ionicons name="alert-circle-outline" size={18} color="#D97706" />
-                <Text style={styles.attentionStripText}>Needs Attention · {approvalsCount} actions pending</Text>
-              </Row>
-              <Ionicons name="chevron-forward" size={14} color="#D97706" />
-            </Row>
-          </TouchableOpacity>
+        <NotificationStatusRow pending={approvalsCount} />
+        <Spacer size={20} />
+        <NotificationFilterRow 
+          tabs={tabs} 
+          activeTab={activeSubTab} 
+          onChange={(id) => { hapticSelect(); setActiveSubTab(id as any); }} 
+        />
+        <Spacer size={16} />
+        
+        {activeSubTab === 'REVIEWS' ? (
+          <View style={{ marginHorizontal: -20 }}>
+            <OwnerReviewsTab />
+          </View>
         ) : (
-          <View style={styles.successStrip}>
-            <Ionicons name="checkmark-circle-outline" size={18} color={GREEN} />
-            <Text style={styles.successStripText}>✓ All caught up · No pending approvals.</Text>
+          <View>
+            {inboxLoading ? (
+              <LoadingState label="Loading inbox…" fill={false} />
+            ) : inboxError ? (
+              <ErrorState error={inboxError} title="Could not load the inbox" onRetry={refetchInbox} fill={false} />
+            ) : displayedItems.length === 0 ? (
+              <NotificationEmptyState />
+            ) : (
+              <View style={styles.listContainer}>
+                {displayedItems.map((item, index) => (
+                  <View key={item.id}>
+                    <NotificationItem item={item} onPress={() => handleOpenItem(item)} />
+                    {index < displayedItems.length - 1 && <View style={styles.divider} />}
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
-
-        <Spacer size={16} />
-
-        {/* ── Navigation Segment Filter Tabs ── */}
-        <Row gap={8} style={{ flexWrap: 'wrap' }}>
-          <TouchableOpacity
-            style={[styles.chipTab, activeSubTab === 'ALL' && styles.chipTabActive]}
-            onPress={() => {
-              hapticSelect();
-              setActiveSubTab('ALL');
-            }}
-          >
-            <Text style={[styles.chipTabText, activeSubTab === 'ALL' && styles.chipTabTextActive]}>
-              All {totalInboxCount}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.chipTab, activeSubTab === 'APPROVALS' && styles.chipTabActive]}
-            onPress={() => {
-              hapticSelect();
-              setActiveSubTab('APPROVALS');
-            }}
-          >
-            <Text style={[styles.chipTabText, activeSubTab === 'APPROVALS' && styles.chipTabTextActive]}>
-              Approvals {approvalsCount}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.chipTab, activeSubTab === 'ANNOUNCEMENTS' && styles.chipTabActive]}
-            onPress={() => {
-              hapticSelect();
-              setActiveSubTab('ANNOUNCEMENTS');
-            }}
-          >
-            <Text style={[styles.chipTabText, activeSubTab === 'ANNOUNCEMENTS' && styles.chipTabTextActive]}>
-              Announcements {noticesCount}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.chipTab, activeSubTab === 'REVIEWS' && styles.chipTabActive]}
-            onPress={() => {
-              hapticSelect();
-              setActiveSubTab('REVIEWS');
-            }}
-          >
-            <Text style={[styles.chipTabText, activeSubTab === 'REVIEWS' && styles.chipTabTextActive]}>
-              Reviews
-            </Text>
-          </TouchableOpacity>
-        </Row>
-      </View>
-
-      {/* ── Reviews sub-tab — the existing OwnerReviewsTab wholesale, not duplicated here.
-          It's small enough (ratings + staff performance, no dock-worthy action of its own)
-          that it doesn't need a bottom tab of its own; it reads the same inbox data this
-          screen already fetches. */}
-      {activeSubTab === 'REVIEWS' ? (
-        <OwnerReviewsTab />
-      ) : (
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} colors={[GREEN]} />
-        }
-      >
-      {/* ── Unified Inbox list ── */}
-      {inboxLoading ? (
-        <LoadingState label="Loading inbox…" fill={false} />
-      ) : inboxError ? (
-        <ErrorState error={inboxError} title="Could not load the inbox" onRetry={refetchInbox} fill={false} />
-      ) : displayedItems.length === 0 ? (
-        <View style={styles.emptyInboxBox}>
-          <Ionicons name="checkmark-circle-outline" size={32} color={MUTED} />
-          <Text style={styles.emptyInboxTitle}>All caught up</Text>
-          <Text style={styles.emptyInboxDesc}>
-            There are no new announcements or actions right now.
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.inboxListContainer}>
-          {displayedItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.inboxRow}
-              onPress={() => handleOpenItem(item)}
-              activeOpacity={0.8}
-            >
-              <Row justify="space-between" align="center" style={{ width: '100%' }}>
-                <Row gap={12} align="center" style={{ flex: 1 }}>
-                  {/* Category icon indicator */}
-                  <View style={[styles.inboxIconBox, item.priority === 'HIGH' && { backgroundColor: '#FEF2F2' }]}>
-                    <Ionicons
-                      name={item.icon}
-                      size={18}
-                      color={item.priority === 'HIGH' ? '#DC2626' : GREEN}
-                    />
-                  </View>
-
-                  <Col style={{ flex: 1 }}>
-                    <Row gap={6} align="center">
-                      {!item.isRead && (
-                        <View style={styles.unreadDot} />
-                      )}
-                      <Text
-                        style={[
-                          styles.inboxCategoryTag,
-                          item.type === 'APPROVAL' && { color: '#D97706' },
-                        ]}
-                      >
-                        {item.type}
-                      </Text>
-                    </Row>
-                    <Text
-                      style={[styles.inboxTitleText, !item.isRead && styles.inboxTitleTextUnread]}
-                      numberOfLines={1}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text style={styles.inboxDescText} numberOfLines={1}>
-                      {item.desc}
-                    </Text>
-                  </Col>
-                </Row>
-
-                <Col align="flex-end" style={{ marginLeft: 10 }}>
-                  <Text style={styles.inboxTimeText}>{formatTimeAgo(item.timestamp)}</Text>
-                  <Ionicons name="chevron-forward" size={14} color={MUTED} style={{ marginTop: 6 }} />
-                </Col>
-              </Row>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
       </ScrollView>
-      )}
+
+      <NotificationFAB onPress={() => { hapticSelect(); setShowBroadcastModal(true); }} />
 
       {/* ── Inbox Item Detail Modal ── */}
       {selectedInboxItem && (
         <Modal visible transparent animationType="none" onRequestClose={() => setSelectedInboxItem(null)}>
-          <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
+          <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedInboxItem(null)} />
-            
-            <Animated.View entering={SlideInDown.duration(160)} style={styles.detailSheet}>
+            <Animated.View entering={SlideInDown.duration(150)} style={styles.detailSheet}>
               <View style={styles.sheetHandle} />
-
-              <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
-                <View style={styles.detailBadge}>
-                  <Text style={styles.detailBadgeText}>{selectedInboxItem.type}</Text>
-                </View>
-                <Text style={styles.detailDateText}>
-                  {new Date(selectedInboxItem.timestamp).toLocaleString('en-IN', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
-                </Text>
+              
+              <Row justify="space-between" align="center" style={{ marginBottom: 20 }}>
+                <Row gap={8} align="center">
+                  <View style={styles.detailIconCircle}>
+                     <Ionicons 
+                        name={selectedInboxItem.type === 'APPROVAL' ? 'checkmark-circle' : selectedInboxItem.type === 'NOTICE' ? 'megaphone' : 'information-circle'} 
+                        size={18} 
+                        color={PRIMARY} 
+                     />
+                  </View>
+                  <Text style={styles.detailCategoryText}>{selectedInboxItem.categoryText}</Text>
+                </Row>
+                <TouchableOpacity onPress={() => setSelectedInboxItem(null)} style={styles.closeIconBtn} activeOpacity={0.7}>
+                  <Ionicons name="close" size={18} color={TEXT_SECONDARY} />
+                </TouchableOpacity>
               </Row>
 
-              <Text style={styles.detailTitleText}>{selectedInboxItem.title}</Text>
-              <Text style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+              <Text style={styles.detailTitleText}>
+                {selectedInboxItem.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
+              </Text>
+              
+              <Text style={styles.detailDateText}>
+                {new Date(selectedInboxItem.timestamp).toLocaleString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              </Text>
 
-              <Spacer size={16} />
+              <Spacer size={24} />
 
-              {/* Conditional Action Box */}
+              <View style={styles.detailMessageCard}>
+                <Text style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+              </View>
+
+              <Spacer size={32} />
+
               {selectedInboxItem.type === 'APPROVAL' && (
                 <View style={styles.actionBlockBox}>
                   <Text style={styles.actionBlockLabel}>Requires Owner Approval</Text>
-                  <Spacer size={8} />
-                  <Row gap={8}>
-                    <TouchableOpacity
-                      style={styles.actionApproveBtn}
-                      onPress={() => handleApproveRequest(selectedInboxItem)}
-                    >
-                      <Text style={styles.actionApproveText}>Approve Request</Text>
+                  <Spacer size={16} />
+                  <Row gap={12}>
+                    <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
+                      <Text style={styles.actionApproveText}>Approve</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionRejectBtn}
-                      onPress={() => handleRejectRequest(selectedInboxItem)}
-                    >
+                    <TouchableOpacity style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
                       <Text style={styles.actionRejectText}>Reject</Text>
                     </TouchableOpacity>
                   </Row>
@@ -447,46 +490,45 @@ export function OwnerAnnouncementsTab() {
 
               {selectedInboxItem.type === 'KYC' && (
                 <View style={styles.actionBlockBox}>
-                  <Text style={styles.actionBlockLabel}>KYC Document Verification Required</Text>
-                  <Text style={styles.actionBlockDesc}>
-                    Verify {selectedInboxItem.raw.name}'s identity documents.
-                  </Text>
-                  
-                  <Spacer size={10} />
-                  
-                  {/* The submitted documents, via the shared card so screen capture is
-                      blocked here too — this modal is a KYC decision point like the roster's
-                      review sheet, and both show the same photos. */}
+                  <Text style={styles.actionBlockLabel}>Identity Verification Required</Text>
+                  <Text style={styles.actionBlockDesc}>Verify {selectedInboxItem.raw.name}'s identity documents.</Text>
+                  <Spacer size={16} />
                   <KycDocumentsCard
                     idPhotoUri={selectedInboxItem.raw.idProofPhotoUri}
                     selfieUri={selectedInboxItem.raw.profilePhotoUri}
-                    emptyHint="This submission has no readable images. Reject it and ask the resident to upload again."
+                    emptyHint="No readable images found. Reject and request re-upload."
                   />
-
-                  <Row gap={8}>
-                    <TouchableOpacity
-                      style={styles.actionApproveBtn}
-                      onPress={() => handleApproveRequest(selectedInboxItem)}
-                    >
-                      <Text style={styles.actionApproveText}>Verify & Approve</Text>
+                  <Spacer size={16} />
+                  <Row gap={12}>
+                    <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
+                      <Text style={styles.actionApproveText}>Verify</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionRejectBtn}
-                      onPress={() => handleRejectRequest(selectedInboxItem)}
-                    >
-                      <Text style={styles.actionRejectText}>Reject Docs</Text>
+                    <TouchableOpacity style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
+                      <Text style={styles.actionRejectText}>Reject</Text>
                     </TouchableOpacity>
                   </Row>
                 </View>
               )}
 
-              <Spacer size={10} />
-              <TouchableOpacity
-                style={styles.sheetCloseBtn}
-                onPress={() => setSelectedInboxItem(null)}
-              >
-                <Text style={styles.sheetCloseBtnText}>Close</Text>
-              </TouchableOpacity>
+              {selectedInboxItem.categoryText === 'MAINTENANCE' && (
+                <View style={styles.actionBlockBox}>
+                  <Text style={styles.actionBlockLabel}>Resolve this issue</Text>
+                  <Text style={styles.actionBlockDesc}>Instantly book a technician to fix this problem.</Text>
+                  <Spacer size={16} />
+                  <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleBookService(selectedInboxItem)} activeOpacity={0.85}>
+                    <Row gap={8} align="center">
+                      <Ionicons name="construct" size={16} color={SURFACE} />
+                      <Text style={styles.actionApproveText}>Book Service Now</Text>
+                    </Row>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {(selectedInboxItem.type !== 'APPROVAL' && selectedInboxItem.type !== 'KYC' && selectedInboxItem.categoryText !== 'MAINTENANCE') && (
+                <TouchableOpacity style={styles.primaryDismissBtn} onPress={() => setSelectedInboxItem(null)} activeOpacity={0.85}>
+                  <Text style={styles.primaryDismissBtnText}>Got it</Text>
+                </TouchableOpacity>
+              )}
             </Animated.View>
           </Animated.View>
         </Modal>
@@ -495,72 +537,34 @@ export function OwnerAnnouncementsTab() {
       {/* ── Publish New Notice Dialog ── */}
       {showBroadcastModal && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowBroadcastModal(false)}>
-          <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
+          <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowBroadcastModal(false)} />
-            {/* KAV so TextInputs aren't covered by the keyboard on Android */}
             <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined} style={{ width: '100%', alignItems: 'center' }}>
-              <Animated.View entering={SlideInDown.duration(160)} style={styles.broadcastSheet}>
+              <Animated.View entering={SlideInDown.duration(150)} style={styles.broadcastSheet}>
                 <View style={styles.sheetHandle} />
-
-                <Text style={styles.sheetTitle}>Broadcast Announcement</Text>
+                <Text style={styles.sheetTitle}>New Announcement</Text>
+                <Spacer size={16} />
+                <TextInput style={styles.noticeInput} placeholder="Title (e.g. WiFi Maintenance)" placeholderTextColor={TEXT_SECONDARY} value={noticeTitle} onChangeText={setNoticeTitle} />
                 <Spacer size={12} />
-
-                <TextInput
-                  style={styles.noticeInput}
-                  placeholder="Announcement Title (e.g. WiFi Maintenance)"
-                  placeholderTextColor={MUTED}
-                  value={noticeTitle}
-                  onChangeText={setNoticeTitle}
-                />
-
-                <Spacer size={10} />
-
-                <TextInput
-                  style={[styles.noticeInput, { height: 90, textAlignVertical: 'top', paddingTop: 10 }]}
-                  placeholder="Announcement description..."
-                  placeholderTextColor={MUTED}
-                  value={noticeMessage}
-                  onChangeText={setNoticeMessage}
-                  multiline
-                  numberOfLines={3}
-                />
-
-                <Spacer size={12} />
-
-                <Text style={styles.inputLabelStyle}>Select Audience</Text>
-                <Spacer size={6} />
-                <Row gap={6}>
+                <TextInput style={[styles.noticeInput, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]} placeholder="Description..." placeholderTextColor={TEXT_SECONDARY} value={noticeMessage} onChangeText={setNoticeMessage} multiline numberOfLines={3} />
+                <Spacer size={16} />
+                <Text style={styles.inputLabelStyle}>Target Audience</Text>
+                <Spacer size={8} />
+                <Row gap={8}>
                   {(['all', 'guest', 'staff', 'manager'] as const).map((aud) => (
-                    <TouchableOpacity
-                      key={aud}
-                      style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]}
-                      onPress={() => setNoticeAudience(aud)}
-                    >
+                    <TouchableOpacity key={aud} style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]} onPress={() => setNoticeAudience(aud)}>
                       <Text style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
                         {aud === 'all' ? 'All' : aud === 'guest' ? 'Residents' : aud === 'staff' ? 'Staff' : 'Managers'}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </Row>
-
-                <Spacer size={20} />
-
-                <Row gap={10}>
-                  <TouchableOpacity
-                    style={styles.publishBtn}
-                    onPress={handlePublishNotice}
-                    disabled={isPublishing}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.publishBtnText}>
-                      {isPublishing ? 'Publishing...' : 'Publish'}
-                    </Text>
+                <Spacer size={24} />
+                <Row gap={12}>
+                  <TouchableOpacity style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing} activeOpacity={0.8}>
+                    <Text style={styles.publishBtnText}>{isPublishing ? 'Publishing...' : 'Publish'}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.publishCancelBtn}
-                    onPress={() => setShowBroadcastModal(false)}
-                    activeOpacity={0.8}
-                  >
+                  <TouchableOpacity style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)} activeOpacity={0.8}>
                     <Text style={styles.publishCancelText}>Cancel</Text>
                   </TouchableOpacity>
                 </Row>
@@ -575,255 +579,86 @@ export function OwnerAnnouncementsTab() {
 }
 
 const styles = StyleSheet.create({
-  rootFlex: { flex: 1, backgroundColor: BG },
-  headerArea: { paddingHorizontal: 20, paddingTop: 16, backgroundColor: BG },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40, backgroundColor: BG },
-  bodyTitle: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
-  bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
+  root: { flex: 1, backgroundColor: BG },
+  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: BG },
+  headerBackBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
+  
+  mainScroll: { paddingHorizontal: 20, paddingTop: 8 },
+  
+  summaryContainer: { marginTop: 0 },
+  summaryTitle: { fontSize: 24, fontWeight: '800', color: TEXT_PRIMARY },
+  summarySub: { fontSize: 14, fontWeight: '500', color: TEXT_SECONDARY },
+  
+  statusRow: { flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 12, borderRadius: 8, backgroundColor: SURFACE },
+  statusSuccess: { backgroundColor: '#F0FDF4' },
+  statusSuccessText: { fontSize: 13, fontWeight: '600', color: '#166534', marginLeft: 8 },
+  statusWarning: { backgroundColor: '#FFFBEB' },
+  statusWarningText: { fontSize: 13, fontWeight: '600', color: '#B45309', marginLeft: 8 },
 
-  // New Notice Button
-  newNoticeBtn: {
-    height: 36,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: GREEN,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  newNoticeBtnText: { fontSize: 12, fontWeight: '800', color: WHITE },
+  filterScrollContent: { paddingRight: 20 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER, marginRight: 8 },
+  filterChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  filterChipText: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
+  filterChipTextActive: { color: SURFACE },
+  
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: TEXT_PRIMARY },
+  emptySub: { fontSize: 14, color: TEXT_SECONDARY, marginTop: 4 },
 
-  // Attention status strip
-  attentionStrip: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#F59E0B',
-    backgroundColor: '#FFFBEB',
-    paddingHorizontal: 14,
-    justifyContent: 'center',
-  },
-  attentionStripText: { fontSize: 12, fontWeight: '700', color: '#B45309', marginLeft: 8 },
-  successStrip: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: LIGHT_GREEN,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  successStripText: { fontSize: 12, fontWeight: '700', color: GREEN, marginLeft: 8 },
+  listContainer: { backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: DIVIDER, overflow: 'hidden' },
+  notifItemContainer: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SURFACE },
+  notifItemUnread: { backgroundColor: UNREAD_SURFACE },
+  divider: { height: 1, backgroundColor: DIVIDER },
+  
+  iconContainer: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  iconContainerHigh: { backgroundColor: '#FEF2F2' },
+  unreadIndicator: { width: 6, height: 6, borderRadius: 3, backgroundColor: PRIMARY },
+  categoryLabel: { fontSize: 11, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5 },
+  timeText: { fontSize: 12, fontWeight: '500', color: TEXT_SECONDARY },
+  titleText: { fontSize: 15, fontWeight: '500', color: TEXT_PRIMARY },
+  titleTextUnread: { fontWeight: '700' },
+  descText: { fontSize: 14, color: TEXT_SECONDARY, lineHeight: 20 },
+  
+  fab: { position: 'absolute', right: 20, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
+  fabInner: { height: 48, paddingHorizontal: 16, borderRadius: 24, backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  fabText: { fontSize: 14, fontWeight: '700', color: SURFACE, marginLeft: 8 },
 
-  // Navigation Filter chips
-  chipTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: WHITE,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  chipTabActive: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
-  chipTabText: { fontSize: 12, color: CHARCOAL, fontWeight: '600' },
-  chipTabTextActive: { color: WHITE, fontWeight: '700' },
-
-  // Inbox list
-  emptyInboxBox: {
-    backgroundColor: WHITE,
-    borderRadius: RADIUS,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyInboxTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL, marginTop: 8 },
-  emptyInboxDesc: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 2 },
-
-  inboxListContainer: {
-    backgroundColor: WHITE,
-    borderRadius: RADIUS,
-    borderWidth: 1,
-    borderColor: BORDER,
-    overflow: 'hidden',
-  },
-  inboxRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: BG,
-  },
-  inboxIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: LIGHT_GREEN,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  unreadDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: GREEN,
-    marginRight: 4,
-  },
-  inboxCategoryTag: { fontSize: 9, fontWeight: '800', color: GREEN, letterSpacing: 0.5 },
-  inboxTitleText: { fontSize: 13, fontWeight: '500', color: CHARCOAL, marginTop: 2 },
-  inboxTitleTextUnread: { fontWeight: '700' },
-  inboxDescText: { fontSize: 11, color: MUTED, marginTop: 1 },
-  inboxTimeText: { fontSize: 9, color: MUTED },
-
-  // Modal Backdrop
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 18, 13, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Detail slide-up sheet
-  detailSheet: {
-    width: '100%',
-    backgroundColor: WHITE,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 34,
-    alignSelf: 'flex-end',
-  },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: BORDER,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  detailBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    backgroundColor: LIGHT_GREEN,
-  },
-  detailBadgeText: { fontSize: 9, fontWeight: '800', color: GREEN },
-  detailDateText: { fontSize: 10, color: MUTED },
-  detailTitleText: { fontSize: 16, fontWeight: '700', color: CHARCOAL, marginTop: 4 },
-  detailDescText: { fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 18 },
-
-  // Conditional action box
-  actionBlockBox: {
-    backgroundColor: BG,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
-    padding: 12,
-  },
-  actionBlockLabel: { fontSize: 11, fontWeight: '800', color: CHARCOAL, letterSpacing: 0.5 },
-  actionBlockDesc: { fontSize: 11, color: MUTED, marginTop: 2 },
-  actionApproveBtn: {
-    flex: 1.5,
-    height: 40,
-    backgroundColor: GREEN,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionApproveText: { fontSize: 12, fontWeight: '800', color: WHITE },
-  actionRejectBtn: {
-    flex: 1,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    backgroundColor: WHITE,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionRejectText: { fontSize: 12, fontWeight: '700', color: '#DC2626' },
-  actionInput: {
-    height: 64,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: WHITE,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 12,
-    color: CHARCOAL,
-    textAlignVertical: 'top',
-    paddingTop: 6,
-  },
-
-  sheetCloseBtn: {
-    height: 44,
-    backgroundColor: BG,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sheetCloseBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-
-  // Broadcast Notice Modal Sheet
-  broadcastSheet: {
-    width: '100%',
-    backgroundColor: WHITE,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 34,
-    alignSelf: 'flex-end',
-  },
-  sheetTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
-  noticeInput: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: BG,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 13,
-    color: CHARCOAL,
-  },
-  inputLabelStyle: { fontSize: 11, fontWeight: '700', color: MUTED },
-  smallChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: WHITE,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  smallChipActive: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
-  smallChipText: { fontSize: 11, color: CHARCOAL, fontWeight: '600' },
-  smallChipTextActive: { color: WHITE, fontWeight: '700' },
-  publishBtn: {
-    flex: 1.5,
-    height: 46,
-    backgroundColor: GREEN,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  publishBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
-  publishCancelBtn: {
-    flex: 1,
-    height: 46,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: WHITE,
-  },
-  publishCancelText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(23, 24, 28, 0.45)', justifyContent: 'flex-end' },
+  detailSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 48, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
+  broadcastSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 40 },
+  sheetHandle: { width: 48, height: 5, borderRadius: 2.5, backgroundColor: DIVIDER, alignSelf: 'center', marginBottom: 24 },
+  
+  detailIconCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  detailCategoryText: { fontSize: 12, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5, textTransform: 'uppercase' },
+  closeIconBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
+  
+  detailTitleText: { fontSize: 22, fontWeight: '800', color: TEXT_PRIMARY, lineHeight: 28 },
+  detailDateText: { fontSize: 13, fontWeight: '600', color: TEXT_SECONDARY, marginTop: 6 },
+  
+  detailMessageCard: { backgroundColor: '#F9FAFB', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: DIVIDER },
+  detailDescText: { fontSize: 15, color: '#374151', lineHeight: 24 },
+  
+  actionBlockBox: { backgroundColor: SURFACE, borderWidth: 1, borderColor: PRIMARY, borderRadius: 16, padding: 20 },
+  actionBlockLabel: { fontSize: 14, fontWeight: '800', color: PRIMARY },
+  actionBlockDesc: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 4 },
+  actionApproveBtn: { flex: 1, height: 48, backgroundColor: PRIMARY, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionApproveText: { fontSize: 15, fontWeight: '800', color: SURFACE },
+  actionRejectBtn: { flex: 1, height: 48, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: SURFACE, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionRejectText: { fontSize: 15, fontWeight: '700', color: '#4B5563' },
+  
+  primaryDismissBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  primaryDismissBtnText: { fontSize: 16, fontWeight: '800', color: SURFACE },
+  
+  sheetTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
+  noticeInput: { borderWidth: 1, borderColor: DIVIDER, backgroundColor: BG, borderRadius: 12, paddingHorizontal: 16, fontSize: 14, color: TEXT_PRIMARY, height: 48 },
+  inputLabelStyle: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
+  smallChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER },
+  smallChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  smallChipText: { fontSize: 12, fontWeight: '600', color: TEXT_PRIMARY },
+  smallChipTextActive: { color: SURFACE },
+  publishBtn: { flex: 2, height: 48, backgroundColor: PRIMARY, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  publishBtnText: { fontSize: 15, fontWeight: '700', color: SURFACE },
+  publishCancelBtn: { flex: 1, height: 48, borderWidth: 1, borderColor: DIVIDER, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: SURFACE },
+  publishCancelText: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
 });

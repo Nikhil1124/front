@@ -321,6 +321,8 @@ export interface VisualDishItem {
   icon: string;
   category: string;
   isVeg: boolean;
+  image_url?: any; // require() source or string URL
+  rating?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

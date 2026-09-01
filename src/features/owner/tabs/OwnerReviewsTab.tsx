@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
-import { View, StyleSheet, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text } from 'react-native';
+import { useState, useMemo, useEffect } from 'react';
+import { View, StyleSheet, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text, BackHandler } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
@@ -7,7 +8,7 @@ import { Row, Col, Spacer } from '@/components/ui';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { hapticSelect } from '@/utils/haptics';
 
-const GREEN = '#5B45E8';      // Indigo brand primary
+const GREEN = '#4F51D5';      // Indigo brand primary
 const BG = '#F7F8FC';         // Canvas BG
 const CHARCOAL = '#15171A';   // Primary text
 const MUTED = '#6B7280';      // Muted text
@@ -37,6 +38,14 @@ export function OwnerReviewsTab() {
   const [filterType, setFilterType] = useState<'All' | 'Highest Rated' | 'Needs Attention' | 'No Reviews'>('All');
 
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
+
+  // Override back navigation — reviews is a hidden tab, not a stack screen,
+  // so native back would leave ghost tab state. Force-replace with overview.
+  useEffect(() => {
+    const onBack = () => { router.replace('/overview'); return true; };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, []);
 
   // Calculations
   const totalReviews = submissions.length;

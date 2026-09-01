@@ -5,14 +5,13 @@ import { useState } from 'react';
 import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
 import type { PickedLocation } from '@/features/places/pendingLocation';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
-import { Colors, dialogEntering, dialogExiting } from '@/theme';
+import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -75,9 +74,9 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.backdrop}>
+      <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Animated.View entering={dialogEntering} exiting={dialogExiting} style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
+        <View style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
             borderRadius={24}
@@ -205,8 +204,8 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             </OutlinedBtn>
           </Row>
           </Card>
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
     </Modal>
   );
 }

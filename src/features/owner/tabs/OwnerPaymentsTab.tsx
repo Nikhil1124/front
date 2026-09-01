@@ -35,7 +35,7 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { FormScroll } from '@/components/ui/FormScroll';
 
-const GREEN = '#5B45E8';      // Indigo primary brand
+const GREEN = '#4F51D5';      // Indigo primary brand
 const BG = '#F7F8FC';         // Canvas BG
 const CHARCOAL = '#15171A';   // Primary text
 const MUTED = '#6B7280';      // Muted text
@@ -477,7 +477,7 @@ export function OwnerPaymentsTab() {
               {/* Financial Overview KPIs */}
               <Text style={styles.sectionHeader}>Financial Overview</Text>
               <Spacer size={10} />
-              <Row gap={10}>
+              <Row gap={10} style={{ flexWrap: 'wrap' }}>
                 {/* KPI 1: Collected */}
                 <View style={[styles.kpiCard, { borderColor: '#EEF8F1' }]}>
                   <Row gap={6} align="center">
@@ -1160,6 +1160,7 @@ const styles = StyleSheet.create({
   // KPIs
   kpiCard: {
     flex: 1,
+    minWidth: 100,
     backgroundColor: WHITE,
     borderRadius: RADIUS,
     borderWidth: 1,

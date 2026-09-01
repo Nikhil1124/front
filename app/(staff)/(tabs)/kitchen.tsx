@@ -94,25 +94,58 @@ function ChefKitchenView() {
         )}
       </Card>
 
-      <Spacer size={18} />
-      <Txt size={15} weight="900" color={Colors.textPrimary}>Broadcast Custom Message to Residents</Txt>
-      <Spacer size={8} />
-      <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-        <OutlinedTextField placeholder="Type custom kitchen update..." value={chefBroadcast} onChangeText={setChefBroadcast} focusedBorderColor={Colors.primary} multiline numberOfLines={3} style={{ marginBottom: 10 }} />
-        <Txt size={10} weight="700" color={Colors.textMuted}>Tap to quick-populate template:</Txt>
-        <Spacer size={6} />
-        <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-          {ANNOUNCEMENTS.map((msg) => (
-            <Btn key={msg} onPress={() => setChefBroadcast(msg)} containerColor={Colors.surfaceElevated} textColor={Colors.primaryDark} borderRadius={8} height={30} contentStyle={{ paddingHorizontal: 10 }}>
-              <Txt size={10} weight="800" color={Colors.primaryDark}>{msg}</Txt>
-            </Btn>
-          ))}
-        </FormScroll>
-        <Spacer size={14} />
-        <Btn onPress={sendCustomAnnouncement} disabled={!chefBroadcast.trim()} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={10} height={42}>
-          <Txt size={12} weight="800" color="#FFFFFF">Send Announcement to Residents 🚀</Txt>
-        </Btn>
+      <Spacer size={24} />
+      <Row justify="space-between" align="center">
+        <Txt size={14} weight="900" color={Colors.textPrimary}>Today's Progress</Txt>
+        <Txt size={11} color={Colors.textMuted}>Last updated: 8:45 AM</Txt>
+      </Row>
+      <Spacer size={12} />
+      <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 16]}>
+        {[
+          { label: 'Vegetables Cutting', time: '8:00 AM', pct: 75, icon: '🥕' },
+          { label: 'Batter Preparation', time: '8:30 AM', pct: 60, icon: '🥣' },
+          { label: 'Chutney & Sambar', time: '9:00 AM', pct: 40, icon: '🍲' },
+          { label: 'Roti / Poori Dough', time: '9:15 AM', pct: 30, icon: '🫓' },
+        ].map((item, idx, arr) => (
+          <Row key={item.label} align="center" gap={12} style={{ paddingVertical: 14, borderBottomWidth: idx === arr.length - 1 ? 0 : 1, borderBottomColor: Colors.borderSubtle }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <Txt size={16}>{item.icon}</Txt>
+            </View>
+            <Col style={{ flex: 1 }}>
+              <Txt size={13} weight="800" color={Colors.textPrimary}>{item.label}</Txt>
+              <Txt size={11} color={Colors.textMuted}>{item.time}</Txt>
+              <Spacer size={6} />
+              <View style={{ height: 6, backgroundColor: Colors.surfaceMuted, borderRadius: 3, width: '100%', overflow: 'hidden' }}>
+                <View style={{ width: `${item.pct}%`, height: '100%', backgroundColor: Colors.primary }} />
+              </View>
+            </Col>
+            <Col align="flex-end" justify="space-between" style={{ height: 36 }}>
+              <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+              <Txt size={11} weight="800" color={Colors.textSecondary}>{item.pct}%</Txt>
+            </Col>
+          </Row>
+        ))}
       </Card>
+
+      <Spacer size={24} />
+      <Txt size={15} weight="900" color={Colors.textPrimary}>Broadcast Custom Message</Txt>
+      <Spacer size={12} />
+      <OutlinedTextField placeholder="Type your kitchen update..." value={chefBroadcast} onChangeText={setChefBroadcast} focusedBorderColor={Colors.primary} multiline numberOfLines={4} style={{ backgroundColor: Colors.surfaceMuted, borderColor: 'transparent', borderRadius: 12 }} />
+      
+      <Spacer size={20} />
+      <Txt size={13} weight="800" color={Colors.textPrimary}>Quick Templates</Txt>
+      <Spacer size={10} />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {ANNOUNCEMENTS.map((msg) => (
+          <Btn key={msg} onPress={() => setChefBroadcast(msg)} containerColor={Colors.primaryGlow} textColor={Colors.primaryDark} borderRadius={8} height={34} contentStyle={{ paddingHorizontal: 12 }}>
+            <Txt size={11} weight="800" color={Colors.primaryDark}>{msg}</Txt>
+          </Btn>
+        ))}
+      </View>
+      <Spacer size={24} />
+      <Btn onPress={sendCustomAnnouncement} disabled={!chefBroadcast.trim()} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={14} height={54}>
+        <Txt size={14} weight="900" color="#FFFFFF">Send Announcement to Residents 🚀</Txt>
+      </Btn>
     </FormScroll>
   );
 }

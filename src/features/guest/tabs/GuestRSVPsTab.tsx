@@ -197,7 +197,7 @@ export function GuestRSVPsTab() {
       <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={16} borderWidth={1} borderColor={Colors.LuxuryCardBorder} padding={[16, 16]}>
         <Txt variant="sectionTitle" weight="800" color={Colors.IvoryWhiteText}>📅 Daily RSVP Status Planner</Txt>
         <Spacer size={12} />
-        <Row gap={10}>
+        <Row gap={10} style={{ flexWrap: 'wrap' }}>
           {mealSlots.map((slot) => {
             const matchingNotif = notifications.find((n) => n.mealType.toUpperCase() === slot.key);
             const rsvpChoice = matchingNotif ? rsvpChoices[matchingNotif.id] : null;
@@ -220,7 +220,7 @@ export function GuestRSVPsTab() {
                   hapticSelect();
                   setSelectedMealFilter(isFilterSelected ? 'ALL' : slot.key);
                 }}
-                style={{ flex: 1 }}
+                style={{ flex: 1, minWidth: 90 }}
               >
                 <View style={[styles.mealCard, { backgroundColor: statusBg, borderColor: isFilterSelected ? Colors.CyberPink : statusBorder, borderWidth: isFilterSelected ? 2 : 1 }]}>
                   <Col align="center">
@@ -248,7 +248,7 @@ export function GuestRSVPsTab() {
 
       <Col>
         <Txt variant="body" weight="700" color={Colors.IvoryWhiteText}>Quick-Action Filter by Menu</Txt>
-        <Row gap={8} style={{ marginTop: 8 }}>
+        <Row gap={8} style={{ marginTop: 8, flexWrap: 'wrap' }}>
           {[
             { key: 'ALL', label: 'All Menus 🍽️' },
             { key: 'BREAKFAST', label: 'Breakfast 🍳' },
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   mealCard: { borderRadius: 12, padding: 10, alignItems: 'center' },
   progressTrack: { height: 10, backgroundColor: '#E2E8F0', borderRadius: 5, marginTop: 6, overflow: 'hidden' },
   progressFill: { height: '100%' },
-  filterChip: { flex: 1, paddingVertical: 8, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
+  filterChip: { flex: 1, minWidth: 80, paddingVertical: 8, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
   mealIconBox: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   serviceBox: { flexDirection: 'row', backgroundColor: Colors.surfaceElevated, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(20,226,177,0.15)', padding: 10, alignItems: 'center', justifyContent: 'space-between' },
   chefNoteBox: { backgroundColor: Colors.surfaceElevated, borderRadius: 8, padding: 6 },

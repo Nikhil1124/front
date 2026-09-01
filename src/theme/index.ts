@@ -12,7 +12,7 @@ export const Spacing = {
   lg: 16,
   xl: 20,
   xxl: 24,
-  xxxl: 32,
+  section: 28,
 } as const;
 
 /** Common radii. */

@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
+import { BlurView } from 'expo-blur';
 
 interface HeaderProps {
   /** Static "delivering to" line — groceries always ship to the PG's own
@@ -19,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
   // value, so the grocery mini-app's header lines up with the rest of the app.
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+    <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 14 }]}>
       <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
         <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
       </TouchableOpacity>
@@ -47,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
           <Text style={styles.profileAvatarText}>S</Text>
         </View>
       </TouchableOpacity>
-    </View>
+    </BlurView>
   );
 };
 
@@ -58,9 +59,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
+    borderBottomColor: 'rgba(229, 231, 235, 0.5)',
   },
   backBtn: {
     padding: 4,

@@ -2,7 +2,7 @@
  * OwnerLoginScreen — Premium redesign.
  * Compact header · clean segmented control · labelled input fields ·
  * password toggle · forgot-password link · strong CTA · registration footer.
- * Single flat colour system: Indigo Purple primary (#5B45E8), #F7F8FC canvas.
+ * Single flat colour system: Indigo Purple primary (#4F51D5), #F7F8FC canvas.
  */
 import { useState, useRef } from 'react';
 import {
@@ -38,7 +38,7 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const GREEN   = '#5B45E8';      // Indigo primary brand
+const GREEN   = '#4F51D5';      // Indigo primary brand
 const BG      = '#F7F8FC';      // Canvas BG
 const CHARCOAL = '#15171A';     // charcoal text
 const MUTED   = '#6B7280';      // muted text

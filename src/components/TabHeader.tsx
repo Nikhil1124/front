@@ -23,6 +23,7 @@ import { type ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/theme';
+import { useResponsivePadding } from '@/utils/responsive';
 
 export interface TabHeaderProps {
   /** Small icon/avatar/status-dot area, left-aligned. */
@@ -35,8 +36,9 @@ export interface TabHeaderProps {
 
 export function TabHeader({ leading, children, actions }: TabHeaderProps) {
   const insets = useSafeAreaInsets();
+  const responsivePadding = useResponsivePadding();
   return (
-    <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+    <View style={[styles.header, { paddingTop: insets.top + 14, paddingHorizontal: responsivePadding }]}>
       <View style={styles.row}>
         {leading}
         <View style={styles.center}>{children}</View>
@@ -48,7 +50,6 @@ export function TabHeader({ leading, children, actions }: TabHeaderProps) {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 18,
     paddingVertical: 14,
     backgroundColor: Colors.surfaceElevated,
     borderBottomWidth: 1,

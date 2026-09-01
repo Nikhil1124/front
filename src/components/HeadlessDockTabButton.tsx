@@ -23,21 +23,14 @@
  *   bespoke onPress.
  */
 import { forwardRef } from 'react';
-import { View, Pressable, StyleSheet, type PressableProps } from 'react-native';
-import Animated, {
-  interpolate,
-  interpolateColor,
-  useAnimatedStyle,
-  useDerivedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { View, Pressable, StyleSheet, Text, type PressableProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabList } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt } from '@/components/ui';
 import { Colors } from '@/theme';
 
-const AnimatedIcon = Animated.createAnimatedComponent(Ionicons);
+
 
 /** Same function reference as `TabList`, so `isTabList(child)` still passes. */
 export { TabList as Dock };
@@ -73,49 +66,24 @@ interface Props extends PressableProps {
 
 export const HeadlessDockTabButton = forwardRef<View, Props>(
   ({ icon, label, isFocused, style, ...props }, ref) => {
-    const progress = useDerivedValue(
-      () => withTiming(isFocused ? 1 : 0, { duration: 200 }),
-      [isFocused]
-    );
-
-    // The icon lives INSIDE this box rather than beside it: on Android a sibling with
-    // elevation draws above its neighbours regardless of tree order, which would put the
-    // highlight on top of the icon. As its parent it can never do that. The label is a
-    // sibling, but sits below with no overlap, so elevation ordering cannot affect it.
-    // Only colour, shadow and a 2px lift animate — the box is a fixed square either way,
-    // so selecting a tab never reflows the row.
-    const boxStyle = useAnimatedStyle(() => ({
-      backgroundColor: interpolateColor(
-        progress.value,
-        [0, 1],
-        // From the bar's own colour, so an unselected box is invisible against it —
-        // no alpha, so the fade never washes through a grey midpoint.
-        [Colors.surface, Colors.surfaceElevated]
-      ),
-      shadowOpacity: 0.16 * progress.value,
-      elevation: 3 * progress.value,
+    const boxStyle = {
+      backgroundColor: isFocused ? Colors.surfaceElevated : Colors.surface,
+      shadowOpacity: isFocused ? 0.16 : 0,
+      elevation: isFocused ? 3 : 0,
       transform: [
-        { translateY: -2 * progress.value },
-        { scale: interpolate(progress.value, [0, 1], [0.95, 1]) }
+        { translateY: isFocused ? -2 : 0 },
+        { scale: isFocused ? 1 : 0.95 }
       ],
-    }));
+    };
 
-    const iconStyle = useAnimatedStyle(() => ({
-      color: interpolateColor(
-        progress.value,
-        [0, 1],
-        [Colors.textMuted, Colors.primaryDark]
-      ),
-    }));
+    const iconStyle = {
+      color: isFocused ? Colors.primaryDark : Colors.textMuted,
+    };
 
-    const labelStyle = useAnimatedStyle(() => ({
-      color: interpolateColor(
-        progress.value,
-        [0, 1],
-        [Colors.textMuted, Colors.primaryDark]
-      ),
+    const labelStyle = {
+      color: isFocused ? Colors.primaryDark : Colors.textMuted,
       fontWeight: isFocused ? '800' : '600' as any,
-    }));
+    };
 
     return (
       // `styles.slot` goes LAST, after the injected style: `TabTrigger asChild` merges in
@@ -131,10 +99,10 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
         style={[style as any, styles.slot]}
         {...props}
       >
-        <Animated.View style={[styles.iconBox, boxStyle]}>
-          <AnimatedIcon name={icon} size={18} style={iconStyle} />
-        </Animated.View>
-        <Animated.Text
+        <View style={[styles.iconBox, boxStyle]}>
+          <Ionicons name={icon} size={18} style={iconStyle} />
+        </View>
+        <Text
           style={[{
             fontSize: 10,
             textAlign: 'center',
@@ -143,7 +111,7 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
           numberOfLines={1}
         >
           {label}
-        </Animated.Text>
+        </Text>
       </Pressable>
     );
   }
