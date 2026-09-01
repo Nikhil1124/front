@@ -63,3 +63,63 @@ export function useRecordAdEventMutation(pgId?: string) {
 export function useAds() {
   return { recordAdEvent, getAdMetrics };
 }
+
+/** The one sponsored ad an owner has configured for their property. `null` from the GET
+ *  means they haven't set one up — that's the render-nothing signal, not an error. */
+export interface AdConfig {
+  pg_id: string;
+  brand_name: string;
+  tagline: string;
+  description: string;
+  discount_code: string;
+  discount_percent: number;
+  delivery_time: string;
+  cuisines: string;
+  image_url: string | null;
+  online_url: string | null;
+}
+
+export type UpsertAdConfigInput = Omit<AdConfig, "pg_id"> & { pg_id: string };
+
+export function getAdConfig(pgId: string): Promise<AdConfig | null> {
+  return apiFetch<AdConfig | null>(API.ADS_CONFIG(pgId));
+}
+
+export function upsertAdConfig(input: UpsertAdConfigInput): Promise<AdConfig> {
+  return apiFetch<AdConfig>(API.ADS_CONFIG_BASE, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteAdConfig(pgId: string): Promise<void> {
+  return apiFetch<void>(API.ADS_CONFIG(pgId), { method: "DELETE" });
+}
+
+export function useAdConfigQuery(pgId?: string) {
+  return useQuery<AdConfig | null>({
+    queryKey: qk.ads.config(pgId ?? ""),
+    queryFn: () => getAdConfig(pgId!),
+    enabled: !!pgId,
+  });
+}
+
+export function useUpsertAdConfigMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: upsertAdConfig,
+    onSuccess: () => {
+      if (pgId) qc.invalidateQueries({ queryKey: qk.ads.config(pgId) });
+    },
+  });
+}
+
+export function useDeleteAdConfigMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteAdConfig(pgId!),
+    onSuccess: () => {
+      if (pgId) qc.invalidateQueries({ queryKey: qk.ads.config(pgId) });
+    },
+  });
+}

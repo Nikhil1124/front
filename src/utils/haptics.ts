@@ -1,15 +1,10 @@
 /**
- * haptics.ts — thin wrapper around expo-haptics with a no-op fallback.
+ * haptics.ts — haptic feedback disabled app-wide.
  *
- * Why a wrapper: not every environment has the native module wired up (Expo Go on
- * web, jest tests, dev clients that didn't re-build after adding the dep). A bare
- * `import * as Haptics from 'expo-haptics'` would crash on those targets. The
- * wrapper imports lazily inside the call so a missing module becomes a silent
- * no-op, which is the correct behaviour for a haptic — the user feels nothing
- * either way.
+ * ponytail: neutered at this single chokepoint instead of stripping calls from
+ * the ~40 call sites that import these — same effect (no vibration anywhere),
+ * one-file diff. Re-enable by restoring the expo-haptics-backed impl if wanted.
  */
-import { Platform } from 'react-native';
-
 export type HapticPattern =
   | 'light'
   | 'medium'
@@ -19,71 +14,8 @@ export type HapticPattern =
   | 'warning'
   | 'error';
 
-let cachedImpl: ((pattern: HapticPattern) => Promise<void> | void) | null = null;
-let didTryImport = false;
-
-async function loadImpl(): Promise<(pattern: HapticPattern) => Promise<void> | void> {
-  if (didTryImport) return cachedImpl ?? noopImpl;
-  didTryImport = true;
-
-  // Web never has haptics, and React Native's vibration API on web is non-existent.
-  if (Platform.OS === 'web') {
-    cachedImpl = noopImpl;
-    return cachedImpl;
-  }
-
-  try {
-    // Lazy require so the module is only loaded on platforms that actually have it.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Haptics = require('expo-haptics');
-    cachedImpl = async (pattern: HapticPattern) => {
-      try {
-        switch (pattern) {
-          case 'light':
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            break;
-          case 'medium':
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            break;
-          case 'heavy':
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            break;
-          case 'selection':
-            await Haptics.selectionAsync();
-            break;
-          case 'success':
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            break;
-          case 'warning':
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            break;
-          case 'error':
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            break;
-        }
-      } catch {
-        /* swallow — see header comment */
-      }
-    };
-  } catch {
-    cachedImpl = noopImpl;
-  }
-  return cachedImpl;
-}
-
-function noopImpl(_pattern: HapticPattern) {
-  /* no-op */
-}
-
-/** Fire a haptic pattern. Safe to call anywhere. */
-export async function haptic(pattern: HapticPattern = 'light'): Promise<void> {
-  const impl = await loadImpl();
-  try {
-    await impl(pattern);
-  } catch {
-    /* never throw on haptics */
-  }
-}
+/** No-op. Kept async to match the previous signature at every call site. */
+export async function haptic(_pattern: HapticPattern = 'light'): Promise<void> {}
 
 /** Convenience: a light tap. Use on tab switches, card taps. */
 export const hapticTap = () => haptic('light');

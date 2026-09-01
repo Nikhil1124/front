@@ -61,6 +61,16 @@ function ChefKitchenView() {
     <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
       <ChefGroceriesShortcut />
 
+      <TouchableOpacity onPress={() => router.push('/rsvp-trends')} activeOpacity={0.85}>
+        <Card containerColor={Colors.surfaceElevated} borderRadius={14} borderWidth={1} borderColor={Colors.borderGlass} padding={[14, 14]}>
+          <Row gap={10} align="center">
+            <Ionicons name="trending-up" size={20} color={Colors.primary} />
+            <Txt size={13} weight="800" color={Colors.primaryDark} style={{ flex: 1 }}>View RSVP Trends</Txt>
+            <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
+          </Row>
+        </Card>
+      </TouchableOpacity>
+
       <Txt size={15} weight="900" color={Colors.textPrimary}>Kitchen Preparation Status</Txt>
       <Spacer size={8} />
       <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>

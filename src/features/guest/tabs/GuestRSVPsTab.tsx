@@ -309,7 +309,7 @@ export function GuestRSVPsTab() {
                 <View style={styles.serviceBox}>
                   <Col style={{ flex: 1 }}>
                     <Txt variant="caption" weight="700" color={Colors.CyberGreen}>🕒 Meal Service: {formatServiceTime12h(notif.serviceTime)}</Txt>
-                    <Txt size={10} weight="500" color={notif.isAlertSent ? '#02E0A5' : '#9CA3AF'}>
+                    <Txt size={10} weight="500" color={notif.isAlertSent ? Colors.primary : Colors.textMuted}>
                       {notif.isAlertSent ? '🔔 Interactive RSVP status notification sent' : `🔔 Status bar RSVP alert triggers at ${getAlertTriggerTime(notif.serviceTime)}`}
                     </Txt>
                   </Col>

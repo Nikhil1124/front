@@ -118,6 +118,38 @@ export function SettingsScreen() {
           </Col>
           <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => router.push('/rsvp-trends')}
+          accessibilityRole="button"
+          accessibilityLabel="RSVP trends"
+        >
+          <Ionicons name="trending-up-outline" size={22} color={Colors.primary} />
+          <Col style={{ flex: 1, marginLeft: 10 }}>
+            <Txt variant="body" weight="700" color={Colors.textPrimary}>RSVP Trends</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Eating vs. skipping, last 7 days</Txt>
+          </Col>
+          <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+        </TouchableOpacity>
+      </Card>
+
+      <Spacer size={20} />
+      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>MONETIZATION</Txt>
+      <Spacer size={8} />
+      <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 4]}>
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => router.push('/manage-ad')}
+          accessibilityRole="button"
+          accessibilityLabel="Sponsored ad"
+        >
+          <Ionicons name="megaphone-outline" size={22} color={Colors.primary} />
+          <Col style={{ flex: 1, marginLeft: 10 }}>
+            <Txt variant="body" weight="700" color={Colors.textPrimary}>Sponsored Ad</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Show a promotion to your residents</Txt>
+          </Col>
+          <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+        </TouchableOpacity>
       </Card>
 
       <Spacer size={20} />

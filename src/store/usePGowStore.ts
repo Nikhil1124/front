@@ -19,7 +19,6 @@ import * as map from '@/data/mappers';
 import { NotificationHelper } from '@/data/notificationHelper';
 import { queryClient } from '@/data/queryClient';
 import { qk } from '@/data/queryKeys';
-import * as adsApi from '@/features/ads/useAds';
 import * as authApi from '@/features/auth/useAuth';
 import * as expensesApi from '@/features/expenses/useExpenses';
 import * as guestsApi from '@/features/guests/useGuests';
@@ -154,17 +153,6 @@ export interface PGowState {
   serviceTimeInput: string;
   autoScheduleAlert: boolean;
 
-  // ===== Ad monetization config =====
-  adBrandName: string;
-  adTagline: string;
-  adDescription: string;
-  adDiscountCode: string;
-  adDiscountPercent: number;
-  adDeliveryTime: string;
-  adCuisines: string;
-  adOnlineUrl: string;
-  adImageUrl: string;
-
   // ===== Hub services state =====
   pgGroceryOrdersState: PGGroceryOrder[];
   pgDailySubscriptionsState: PGDailyGrocerySubscription[];
@@ -173,12 +161,6 @@ export interface PGowState {
 
   // ===== Active alert / push =====
   activeAlert: SimulatedAlert | null;
-
-  // ===== Ad metrics =====
-  adImpressionsCount: number;
-  adClicksCount: number;
-  adCopiedCouponsCount: number;
-  adEarningsUSD: number;
 
   // ===== Financial summary (real P&L for the cycle in progress) =====
   cycleCollected: number;
@@ -222,11 +204,6 @@ export interface PGowState {
   getAlertTriggerTime: (serviceTime: string) => string;
   formatServiceTime12h: (serviceTime: string) => string;
   triggerSimulated2HourAlert: (notification: MealNotificationEntity) => Promise<void>;
-
-  // ===== Ad metrics =====
-  recordAdImpression: () => void;
-  recordAdClick: () => void;
-  recordCouponCopy: () => void;
 
   // ===== Chef alarms =====
   triggerChefAlarm: (alarmSlot: string) => Promise<void>;
@@ -352,16 +329,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   serviceTimeInput: '08:30',
   autoScheduleAlert: true,
 
-  adBrandName: 'NutriFit Cloud Kitchen',
-  adTagline: 'Chef-crafted healthy meal boxes delivered',
-  adDescription: 'High-protein, calorie-counted lunch & dinner boxes tailored for busy PG residents. Free doorstep delivery + extra 15% off coupon!',
-  adDiscountCode: 'PGNUTRI15',
-  adDiscountPercent: 15,
-  adDeliveryTime: '12-18 min',
-  adCuisines: 'Salads, Keto Plates, Grain Bowls',
-  adOnlineUrl: 'https://www.zomato.com',
-  adImageUrl: '',
-
   // Filled by `refreshAll` from `/v1/requests`. Empty rather than seeded with demo rows: a
   // fabricated rider and ETA on first launch is indistinguishable from a real order until
   // somebody tries to call the number.
@@ -373,14 +340,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   guestLaundryRequestsState: [],
 
   activeAlert: null,
-
-  // Real counts, fetched in `refreshAll` (`adMetrics` below) and set again on every login and
-  // mutation — these zeros are only ever visible for the one frame before that first fetch
-  // resolves, never a fallback value shown as if it were real.
-  adImpressionsCount: 0,
-  adClicksCount: 0,
-  adCopiedCouponsCount: 0,
-  adEarningsUSD: 0,
 
   cycleCollected: 0,
   cycleSpent: 0,
@@ -683,33 +642,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     });
     await NotificationHelper.showRsvpNotification(notification, get().loggedInGuest?.id ?? '');
     await get().refreshAll();
-  },
-
-
-  // ── Ad engagement ─────────────────────────────────────────────────────────
-  // Reported to the server as events; the local counters stay so the card can animate
-  // without waiting for a round trip. `earnings` is NOT computed here any more — the server
-  // derives it from the events, and two formulas would eventually disagree.
-  //
-  // Fire and forget on purpose: an impression is a side effect of rendering something, and a
-  // failed metric must never interrupt what the resident was doing.
-
-  recordAdImpression: () => {
-    const pgId = useAuthStore.getState().activePgId;
-    if (pgId) adsApi.recordAdEvent(pgId, 'impression').catch(() => {});
-    set((s) => ({ adImpressionsCount: s.adImpressionsCount + 1 }));
-  },
-
-  recordAdClick: () => {
-    const pgId = useAuthStore.getState().activePgId;
-    if (pgId) adsApi.recordAdEvent(pgId, 'click').catch(() => {});
-    set((s) => ({ adClicksCount: s.adClicksCount + 1 }));
-  },
-
-  recordCouponCopy: () => {
-    const pgId = useAuthStore.getState().activePgId;
-    if (pgId) adsApi.recordAdEvent(pgId, 'coupon_copy').catch(() => {});
-    set((s) => ({ adCopiedCouponsCount: s.adCopiedCouponsCount + 1 }));
   },
 
   // Local reminders for the chef's own phone — a scheduled nudge to go and broadcast, not

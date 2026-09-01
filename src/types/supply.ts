@@ -63,13 +63,14 @@ export interface SupplyOrderDetail {
   user_name?: string;
   user_phone?: string;
   status: SupplyOrderStatus;
-  subtotal_amount: number;
   /** The server's own split of a tax-inclusive total: taxable_amount + tax_amount ==
-   *  total_amount, exactly (it derives tax as the remainder so the two always reconcile). */
-  taxable_amount?: number;
-  tax_amount?: number;
-  delivery_fee: number;
-  discount_amount: number;
+   *  total_amount, exactly (it derives tax as the remainder so the two always reconcile).
+   *  There is no separate delivery fee or discount on a supply order — `total_amount` is
+   *  the sum of line totals, full stop; earlier versions of this type invented
+   *  `subtotal_amount`/`delivery_fee`/`discount_amount` fields the server never sent,
+   *  which is why the order-detail bill used to render "₹NaN". */
+  taxable_amount: number;
+  tax_amount: number;
   total_amount: number;
   payment_method: SupplyPaymentMethod;
   payment_status: 'pending' | 'submitted' | 'paid' | 'failed' | 'refunded';

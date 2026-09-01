@@ -299,20 +299,6 @@ export type UserRole = 'OWNER' | 'GUEST' | 'STAFF' | 'MANAGER' | 'CHEF';
 // ── Task 8: P&L interval selector — complements Task 7's PnLData type ──────────
 export type PnLInterval = '3m' | '6m' | '1y';
 
-export interface CloudKitchenAd {
-  // Local, hard-coded ad inventory — never a server id.
-  id: number;
-  brandName: string;
-  tagline: string;
-  description: string;
-  discountCode: string;
-  discountPercent: number;
-  rating: number;
-  deliveryTime: string;
-  cuisines: string;
-  imageResId: string; // local asset key
-}
-
 export interface DailyTrend {
   dayName: string;
   yesCount: number;

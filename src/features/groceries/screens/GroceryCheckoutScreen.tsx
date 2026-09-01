@@ -30,15 +30,32 @@ const CHECKOUT_SLOTS: CheckoutSlot[] = [
 
 const TIPS = [0, 20, 30, 50, 100];
 
-const PAYMENT_METHODS = [
-  { id: 'upi', label: 'UPI / Google Pay / PhonePe', icon: 'qr-code-outline' },
+/**
+ * Who may pay how, mirroring the server's own matrix (`ordering._METHODS_BY_BILLED_TO`).
+ *
+ * The split is not cosmetic: `create_order` derives `billed_to` from the placer's role at
+ * the property — owner/manager bills the property, everyone else bills themselves — and
+ * then rejects any method outside that row with a 422. One hardcoded list for everybody
+ * meant an owner picking Cash on Delivery and a guest picking Card both got a flat
+ * "Payment method is not available for this order" at submit, and that credit — the whole
+ * point of the property's credit line — was never offered to anyone at all.
+ */
+const UPI_METHOD = { id: 'upi', label: 'UPI / Google Pay / PhonePe', icon: 'qr-code-outline' };
+
+const PROPERTY_BILLED_METHODS = [
+  UPI_METHOD,
   { id: 'card', label: 'Credit or Debit Card', icon: 'card-outline' },
+  { id: 'credit', label: 'Pay on credit (property account)', icon: 'business-outline' },
+];
+
+const GUEST_BILLED_METHODS = [
+  UPI_METHOD,
   { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
 ];
 
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { useAuthStore } from '@/store/authStore';
-import { useCreateSupplyOrderMutation } from '../useSupplyOrders';
+import { useCreateSupplyOrderMutation, useCreditAccountQuery } from '../useSupplyOrders';
 
 export function GroceryCheckoutScreen() {
   const { activeEntity: owner } = useActiveProperty();
@@ -57,6 +74,20 @@ export function GroceryCheckoutScreen() {
   const [driverNote, setDriverNote] = useState<string>('');
   const [selectedTip, setSelectedTip] = useState<number>(20);
   const [paymentMethod, setPaymentMethod] = useState<string>('upi');
+
+  // Same rule the server applies in `_placing_membership`: owner/manager bill the property,
+  // everyone else bills themselves. Read from the role held at the ACTIVE property, which is
+  // the one this order is placed against.
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const billsToProperty = activeRole === 'owner' || activeRole === 'manager';
+  const paymentMethods = billsToProperty ? PROPERTY_BILLED_METHODS : GUEST_BILLED_METHODS;
+
+  // Only someone who manages the PG may read its credit line — the same people who may pay
+  // with it — so this never fires for a guest.
+  const { data: creditAccount } = useCreditAccountQuery(
+    activePgId ?? owner?.id,
+    billsToProperty
+  );
   const [deliveryAddress, setDeliveryAddress] = useState((owner ?? ownerForGuest)?.address ?? 'Your PG address');
 
   // Fetch active configurations
@@ -73,6 +104,10 @@ export function GroceryCheckoutScreen() {
   const estimatedTotal = Math.round((subtotal + deliveryFee + platformFee + selectedTip) * 100) / 100;
   const cartItemCount = getItemCount();
   const totalSavings = getTotalSavings();
+
+  useEffect(() => {
+    if (!paymentMethods.some((pm) => pm.id === paymentMethod)) setPaymentMethod('upi');
+  }, [paymentMethods, paymentMethod]);
 
   const handleUpdateAddress = () => {
     Alert.prompt(
@@ -322,13 +357,31 @@ export function GroceryCheckoutScreen() {
           </View>
 
           <View style={styles.paymentList}>
-            {PAYMENT_METHODS.map((pm) => {
+            {paymentMethods.map((pm) => {
               const isSelected = paymentMethod === pm.id;
+              // A closed credit account is the one unambiguous "you cannot pay this way".
+              // The remaining balance is NOT used to disable: the server prices the order
+              // itself (no tip, no fees), so blocking on this screen's estimate would refuse
+              // orders the server would have accepted. It is shown as guidance, and
+              // `_enforce_credit_limit` remains the thing that actually decides.
+              const isCredit = pm.id === 'credit';
+              const isDisabled = isCredit && creditAccount != null && !creditAccount.is_active;
+              const overCredit =
+                isCredit &&
+                creditAccount != null &&
+                creditAccount.is_active &&
+                Number(creditAccount.available) < estimatedTotal;
+
               return (
                 <TouchableOpacity
                   key={pm.id}
-                  style={[styles.paymentRow, isSelected && styles.selectedPaymentRow]}
-                  onPress={() => setPaymentMethod(pm.id)}
+                  style={[
+                    styles.paymentRow,
+                    isSelected && styles.selectedPaymentRow,
+                    isDisabled && styles.disabledPaymentRow,
+                  ]}
+                  onPress={() => !isDisabled && setPaymentMethod(pm.id)}
+                  disabled={isDisabled}
                   activeOpacity={0.8}
                 >
                   <Ionicons
@@ -337,9 +390,20 @@ export function GroceryCheckoutScreen() {
                     color={isSelected ? Colors.primary : Colors.textSecondary}
                     style={styles.paymentIcon}
                   />
-                  <Text style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
-                    {pm.label}
-                  </Text>
+                  <View style={styles.paymentLabelColumn}>
+                    <Text style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
+                      {pm.label}
+                    </Text>
+                    {isCredit && creditAccount && (
+                      <Text style={[styles.paymentSubLabel, overCredit && styles.paymentWarnLabel]}>
+                        {!creditAccount.is_active
+                          ? 'This property has no active credit account.'
+                          : overCredit
+                            ? `Only ₹${creditAccount.available} left of ₹${creditAccount.credit_limit} — this order may be refused.`
+                            : `₹${creditAccount.available} of ₹${creditAccount.credit_limit} available`}
+                      </Text>
+                    )}
+                  </View>
                   <Ionicons
                     name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                     size={16}
@@ -752,13 +816,26 @@ const styles = StyleSheet.create({
   paymentIcon: {
     marginRight: 10,
   },
-  paymentLabel: {
+  disabledPaymentRow: {
+    opacity: 0.5,
+  },
+  paymentLabelColumn: {
     flex: 1,
+  },
+  paymentLabel: {
     fontSize: 12,
     color: Colors.textSecondary,
   },
   selectedPaymentLabel: {
     color: Colors.textPrimary,
+  },
+  paymentSubLabel: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  paymentWarnLabel: {
+    color: Colors.warning,
   },
   // Summary Details
   summaryTitle: {

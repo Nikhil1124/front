@@ -129,6 +129,11 @@ export const API = {
   // counter that resets with the app.
   ADS_EVENTS: "/v1/ads/events",
   ADS_METRICS: "/v1/ads/metrics",
+  // The owner's one sponsored ad, if they've set one up. Null means show nothing —
+  // there is deliberately no separate on/off flag, see the backend model's own doc comment.
+  // GET/DELETE take pg_id as a query param; PUT takes it in the body instead.
+  ADS_CONFIG_BASE: "/v1/ads/config",
+  ADS_CONFIG: (pgId: string) => `/v1/ads/config?pg_id=${pgId}`,
 
   // Staff sign in with a PIN their owner issued, so the owner can reissue it — without this
   // a forgotten PIN means deleting the person and losing their shift history. There is no
@@ -176,6 +181,10 @@ export const API = {
   MEAL_FEEDBACK: (mealId: string) => `/v1/meals/${mealId}/feedback`,
   MEAL_SAVINGS_ANALYTICS: (pgId: string, start: string, end: string) =>
     `/v1/meals/analytics/savings?pg_id=${pgId}&start_date=${start}&end_date=${end}`,
+  // Eating vs. skipping per meal — the portion-planning chart. Staff-readable (owner,
+  // manager, or chef), unlike savings above which is owner/manager-only revenue data.
+  MEAL_RSVP_TRENDS: (pgId: string, start: string, end: string) =>
+    `/v1/meals/analytics/rsvp-trends?pg_id=${pgId}&start_date=${start}&end_date=${end}`,
 
   // Billing — tenant invoices, the property-wide ledger, P&L over 3m/6m/1y,
   // CSV export, and the remind-unpaid fan-out.

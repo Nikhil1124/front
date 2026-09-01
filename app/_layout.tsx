@@ -23,6 +23,7 @@ import {
   registerMealRsvpCategory,
   routeFromPushData,
 } from '@/features/notifications/channels';
+import { useRegisterDeviceForPush } from '@/features/devices/useDevices';
 // Side-effect import: defines BACKGROUND_NOTIFICATION_TASK at module scope, which must happen
 // on every JS launch — including Expo's headless relaunch for a killed app — before the OS can
 // deliver an Eat/Skip button tap to it.
@@ -65,6 +66,10 @@ export default function RootLayout() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const activeRole = useAuthStore((s) => s.activeRole);
   const user = useAuthStore((s) => s.user);
+
+  // Registers this phone for push once signed in, and re-registers on every property
+  // switch — see the hook's own doc for why this single line is load-bearing.
+  useRegisterDeviceForPush();
 
   const [isHydrated, setIsHydrated] = useState(false);
 

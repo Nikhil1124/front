@@ -137,21 +137,13 @@ export function GroceryOrderDetailScreen() {
           <View style={styles.divider} />
 
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Item Subtotal</Text>
-            <Text style={styles.billVal}>₹{Number(order.subtotal_amount).toFixed(2)}</Text>
+            <Text style={styles.billLabel}>Taxable Value</Text>
+            <Text style={styles.billVal}>₹{Number(order.taxable_amount).toFixed(2)}</Text>
           </View>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Delivery Fee</Text>
-            <Text style={styles.billVal}>
-              {Number(order.delivery_fee) === 0 ? 'FREE' : `₹${Number(order.delivery_fee).toFixed(2)}`}
-            </Text>
+            <Text style={styles.billLabel}>GST</Text>
+            <Text style={styles.billVal}>₹{Number(order.tax_amount).toFixed(2)}</Text>
           </View>
-          {Number(order.discount_amount) > 0 && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Discount</Text>
-              <Text style={styles.billVal}>-₹{Number(order.discount_amount).toFixed(2)}</Text>
-            </View>
-          )}
           <View style={[styles.billRow, { marginTop: 6 }]}>
             <Text style={styles.totalLabel}>Total Amount</Text>
             <Text style={styles.totalVal}>₹{Number(order.total_amount).toFixed(2)}</Text>

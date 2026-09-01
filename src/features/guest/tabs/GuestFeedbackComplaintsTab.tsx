@@ -265,12 +265,12 @@ function CategoryRatingSelector({ title, icon, rating, onChange }: RatingProps) 
 }
 
 const styles = StyleSheet.create({
-  overallBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#ECFDF5', borderRadius: 10, borderWidth: 1, borderColor: '#A7F3D0', padding: 10, marginTop: 8 },
+  overallBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.surfaceElevated, borderRadius: 10, borderWidth: 1, borderColor: Colors.borderGlass, padding: 10, marginTop: 8 },
   mediaBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.surfaceElevated, borderRadius: 8, padding: 6, marginTop: 12 },
   emptyBox: { paddingVertical: 12, alignItems: 'center' },
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   mediaLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.surfaceElevated, borderRadius: 8, padding: 8, marginTop: 10 },
-  adminReplyBox: { backgroundColor: '#F0FDF9', borderRadius: 10, padding: 12, marginTop: 12 },
+  adminReplyBox: { backgroundColor: Colors.surfaceElevated, borderRadius: 10, padding: 12, marginTop: 12 },
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.6)', alignItems: 'center', justifyContent: 'center' },
   previewBox: { height: 200, backgroundColor: '#F8FAFC', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   playBtn: { width: 54, height: 54, borderRadius: 27, backgroundColor: Colors.surfaceElevated, borderWidth: 2, borderColor: Colors.CyberGreen, alignItems: 'center', justifyContent: 'center' },

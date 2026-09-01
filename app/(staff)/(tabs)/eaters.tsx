@@ -255,7 +255,7 @@ function DeliveryDashboardRoute() {
             </Row>
             <Spacer size={16} />
             <View style={[styles.statusPill, { backgroundColor: activeDelivery.status === 'Completed' ? '#F0FDF4' : '#FFFBEB' }]}>
-              <Txt size={12} weight="800" color={activeDelivery.status === 'Completed' ? '#15803D' : '#B45309'}>
+              <Txt size={12} weight="800" color={activeDelivery.status === 'Completed' ? Colors.success : Colors.tertiary}>
                 {activeDelivery.status === 'Completed' ? `✓ Delivered at ${activeDelivery.time}` : '● Out for Delivery'}
               </Txt>
             </View>
@@ -463,7 +463,7 @@ function DeliveryDashboardRoute() {
                           {isCompleted && (
                             <>
                               <View style={{ backgroundColor: Colors.surfaceElevated, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                                <Txt size={10} weight="800" color="#059669">Completed</Txt>
+                                <Txt size={10} weight="800" color={Colors.success}>Completed</Txt>
                               </View>
                               <Spacer size={4} />
                               <Txt size={10} weight="700" color={Colors.textMuted}>{r.time}</Txt>
@@ -501,8 +501,8 @@ const styles = StyleSheet.create({
   emptyMealBox: { height: 160, backgroundColor: Colors.surfaceMuted, borderRadius: 16, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', padding: 16 },
   bigPortionBox: { width: 104, height: 104, borderRadius: 52, backgroundColor: Colors.surfaceElevated, borderWidth: 2, borderColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   metricCard: { flex: 1, borderRadius: 14, borderWidth: 1, padding: 12, alignItems: 'center' },
-  progressTrack: { height: 8, backgroundColor: '#115E59', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#2DD4BF' },
+  progressTrack: { height: 8, backgroundColor: Colors.surfaceElevated, borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: Colors.primary },
   seqBadge: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   statusPill: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, alignSelf: 'flex-start' },
   photoPreviewBox: { height: 160, backgroundColor: Colors.surfaceMuted, borderRadius: 12, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },

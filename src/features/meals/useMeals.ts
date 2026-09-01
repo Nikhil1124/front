@@ -164,6 +164,27 @@ export function getMealSavingsAnalytics(
   return apiFetch<MealSavingsAnalytics>(API.MEAL_SAVINGS_ANALYTICS(pgId, startDate, endDate));
 }
 
+export interface MealRSVPTrendDay {
+  date: string;
+  meal_type: "breakfast" | "lunch" | "dinner";
+  eating_portions: number;
+  skipped_portions: number;
+}
+
+export interface MealRSVPTrends {
+  daily: MealRSVPTrendDay[];
+}
+
+// GET /v1/meals/analytics/rsvp-trends?pg_id=&start_date=&end_date= — eating vs. skipping
+// per meal, for the kitchen's portion-planning chart. Staff-readable, no cost figure.
+export function getMealRSVPTrends(
+  pgId: string,
+  startDate: string,
+  endDate: string
+): Promise<MealRSVPTrends> {
+  return apiFetch<MealRSVPTrends>(API.MEAL_RSVP_TRENDS(pgId, startDate, endDate));
+}
+
 export function useMealsQuery(pgId?: string) {
   return useQuery<MealNotificationEntity[]>({
     queryKey: qk.meals.list(pgId ?? ""),
@@ -278,5 +299,6 @@ export function useMeals() {
     submitResponse,
     getMyResponse,
     getMealSavingsAnalytics,
+    getMealRSVPTrends,
   };
 }

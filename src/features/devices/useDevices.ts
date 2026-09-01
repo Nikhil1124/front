@@ -1,8 +1,11 @@
+import { useEffect, useRef } from "react";
+
 import Notifications from "../../data/notificationsCompat";
 import { Platform } from "react-native";
 
 import { API } from "../../config";
 import { apiFetch } from "../../data/apiClient";
+import { useAuthStore } from "../../store/authStore";
 
 export interface DeviceResponse {
   id: string;
@@ -67,4 +70,41 @@ export function unregisterDevice(deviceId: string): Promise<void> {
 
 export function useDevices() {
   return { registerDevice, unregisterDevice };
+}
+
+/**
+ * Registers this phone for push and keeps its topic subscription pointed at whichever
+ * property is currently active — mount this once, at the app root.
+ *
+ * `registerDevice` was built (this whole file) but nothing ever called it: no device token
+ * was ever posted to the server, so no phone was ever subscribed to anything, on any
+ * account. The audience filtering in `push._filter_policy` (guest-only vs everyone) and the
+ * account-reassignment handling in `device.service.register_device` are both correct
+ * server-side — they simply never ran, because the client leg of ADR-006 was missing.
+ *
+ * Re-registers whenever `accessToken` or `activePgId` changes, which covers every case that
+ * matters: a fresh login, a cold-start session restore, and a property switch. All three are
+ * "call it again" per this module's own contract (`registerDevice`'s docstring) — the server
+ * upserts by device token, so a repeat call updates one row rather than piling up duplicates.
+ * This is also what makes a shared phone safe: when a second account logs in and this effect
+ * re-fires, the server sees the same token under a new `user_id` and reassigns it — tearing
+ * down the previous account's SNS endpoint and subscription before creating a fresh one under
+ * the new account's own role (`device.service`'s `user_id != principal.user_id` branch) — so
+ * the outgoing account stops receiving pushes on a device it no longer holds.
+ */
+export function useRegisterDeviceForPush(): void {
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const setDeviceId = useAuthStore((s) => s.setDeviceId);
+  // Registration is best-effort background work — a stale closure racing a fast
+  // login/logout must not write a deviceId that belongs to the account that just left.
+  const generation = useRef(0);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    const myGeneration = ++generation.current;
+    registerDevice(activePgId).then((device) => {
+      if (device && generation.current === myGeneration) setDeviceId(device.id);
+    });
+  }, [accessToken, activePgId, setDeviceId]);
 }

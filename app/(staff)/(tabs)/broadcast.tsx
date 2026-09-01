@@ -159,8 +159,8 @@ function ChefBroadcastView() {
         {filteredDishes.map((dish) => {
           const isSel = selectedDishes.includes(dish.name);
           return (
-            <TouchableOpacity key={dish.name} onPress={() => toggleDish(dish.name)} style={[styles.dishShelfCard, { backgroundColor: isSel ? '#E6FAF5' : Colors.surface, borderColor: isSel ? Colors.primary : Colors.borderSubtle, borderWidth: isSel ? 1.5 : 1 }]}>
-              <View style={[styles.dishIcon, { backgroundColor: isSel ? '#CCFBF1' : Colors.surfaceMuted }]}><Txt size={20}>{dish.icon}</Txt></View>
+            <TouchableOpacity key={dish.name} onPress={() => toggleDish(dish.name)} style={[styles.dishShelfCard, { backgroundColor: isSel ? Colors.surfaceElevated : Colors.surface, borderColor: isSel ? Colors.primary : Colors.borderSubtle, borderWidth: isSel ? 1.5 : 1 }]}>
+              <View style={[styles.dishIcon, { backgroundColor: isSel ? Colors.primaryGlow : Colors.surfaceMuted }]}><Txt size={20}>{dish.icon}</Txt></View>
               <Txt size={12} weight="800" color={Colors.textPrimary} numberOfLines={1}>{dish.name}</Txt>
               <Row gap={4} align="center"><View style={[styles.vegDot, { backgroundColor: dish.isVeg ? '#10B981' : '#EF4444' }]} /><Txt size={9} weight="700" color={Colors.textMuted}>{dish.isVeg ? 'Veg' : 'Non-Veg'}</Txt></Row>
               <View style={[styles.dishSelBtn, { backgroundColor: isSel ? Colors.primary : Colors.surfaceMuted }]}><Txt size={10} weight="800" color={isSel ? '#FFFFFF' : Colors.primary}>{isSel ? '✅ Added' : '➕ Add'}</Txt></View>
@@ -319,7 +319,7 @@ function DeliveryHistoryRoute() {
                 </View>
               </Row>
               <View style={[styles.statusPill, { backgroundColor: item.status === 'Delivered' ? '#F0FDF4' : '#FEF2F2' }]}>
-                <Txt size={11} weight="800" color={item.status === 'Delivered' ? '#15803D' : '#DC2626'}>{item.status}</Txt>
+                <Txt size={11} weight="800" color={item.status === 'Delivered' ? Colors.success : Colors.danger}>{item.status}</Txt>
               </View>
             </Row>
           </Card>

@@ -105,3 +105,29 @@ export function useSubmitUpiPaymentMutation() {
     },
   });
 }
+
+/**
+ * The property's credit line — limit, what's outstanding, what's left.
+ *
+ * `GET /v1/supply/credit/accounts/{pg_id}` is readable only by someone who manages the PG
+ * (or PGow ops), which is exactly the set of people allowed to pay on credit — so this is
+ * gated on the same condition the "Pay on credit" option is. Outstanding is derived
+ * server-side from unpaid credit orders minus their allocations; nothing here is cached
+ * across properties.
+ */
+export interface CreditAccount {
+  pg_id: string;
+  /** Decimal on the wire, like every other money field. */
+  credit_limit: string;
+  is_active: boolean;
+  outstanding: string;
+  available: string;
+}
+
+export function useCreditAccountQuery(pgId?: string, enabled = true) {
+  return useQuery<CreditAccount>({
+    queryKey: ['supply_credit_account', pgId],
+    queryFn: () => apiFetch(`/v1/supply/credit/accounts/${pgId}`),
+    enabled: !!pgId && enabled,
+  });
+}

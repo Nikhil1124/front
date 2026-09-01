@@ -1,6 +1,6 @@
 /**
  * HubDialogs — AddPgDailySubscriptionDialog + BookProntoRepairDialog + GuestLaundryBookingDialog
- * Ported to Cyber Mint Light Theme.
+ * Ported to the Cyber Indigo theme.
  */
 import { useState } from 'react';
 import {
@@ -135,13 +135,13 @@ function getNext7Days(): string[] {
   return list;
 }
 
-const DIALOG_GREEN = '#176B3A';
-const DIALOG_BG = '#F7FAF7';
-const DIALOG_CHARCOAL = '#17201A';
-const DIALOG_MUTED = '#66736B';
-const DIALOG_BORDER = '#E6EFEA';
-const DIALOG_WHITE = '#FFFFFF';
-const DIALOG_LIGHT_GREEN = '#EEF8F1';
+const DIALOG_GREEN = Colors.primary;
+const DIALOG_BG = Colors.canvas;
+const DIALOG_CHARCOAL = Colors.textPrimary;
+const DIALOG_MUTED = Colors.textMuted;
+const DIALOG_BORDER = Colors.borderSubtle;
+const DIALOG_WHITE = Colors.surface;
+const DIALOG_LIGHT_GREEN = Colors.surfaceElevated;
 
 export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
@@ -232,7 +232,7 @@ export function BookProntoRepairDialog({ onDismiss }: { onDismiss: () => void })
                     if (v.length <= 250) setIssue(v);
                   }}
                   placeholder="Describe the problem briefly..."
-                  placeholderTextColor="#9EB09E"
+                  placeholderTextColor={DIALOG_MUTED}
                   multiline
                   numberOfLines={4}
                   maxLength={250}
@@ -471,7 +471,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
                   styles.laundryOpt,
                   {
                     borderColor: service === srv ? Colors.primary : Colors.borderSubtle,
-                    backgroundColor: service === srv ? '#F0FDF9' : Colors.surfaceMuted,
+                    backgroundColor: service === srv ? DIALOG_LIGHT_GREEN : Colors.surfaceMuted,
                   },
                 ]}
               >
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#EEF8F1',
+    backgroundColor: DIALOG_LIGHT_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -600,8 +600,8 @@ const styles = StyleSheet.create({
     borderColor: '#E6EFEA',
   },
   categoryChipSelected: {
-    backgroundColor: '#176B3A',
-    borderColor: '#176B3A',
+    backgroundColor: DIALOG_GREEN,
+    borderColor: DIALOG_GREEN,
   },
   categoryChipText: { fontSize: 13, fontWeight: '600', color: '#17201A' },
   categoryChipTextSelected: { color: '#FFFFFF', fontWeight: '700' },
@@ -631,26 +631,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   urgencyBtnActive: {
-    borderColor: '#176B3A',
-    backgroundColor: '#EEF8F1',
+    borderColor: DIALOG_GREEN,
+    backgroundColor: DIALOG_LIGHT_GREEN,
     borderWidth: 1.5,
   },
   urgencyBtnText: { fontSize: 13, fontWeight: '600', color: '#66736B' },
-  urgencyBtnTextActive: { color: '#176B3A', fontWeight: '800' },
+  urgencyBtnTextActive: { color: DIALOG_GREEN, fontWeight: '800' },
 
   // ETA strip
   etaStrip: {
-    backgroundColor: '#EEF8F1',
+    backgroundColor: DIALOG_LIGHT_GREEN,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  etaText: { fontSize: 12, color: '#176B3A', fontWeight: '600', flex: 1, lineHeight: 16 },
+  etaText: { fontSize: 12, color: DIALOG_GREEN, fontWeight: '600', flex: 1, lineHeight: 16 },
 
   // Submit
   sheetSubmitBtn: {
     height: 52,
-    backgroundColor: '#176B3A',
+    backgroundColor: DIALOG_GREEN,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F7FAF7',
   },
   pickerPopupOptionActive: {
-    backgroundColor: '#EEF8F1',
+    backgroundColor: DIALOG_LIGHT_GREEN,
   },
   pickerPopupOptionText: {
     fontSize: 13,
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   pickerPopupOptionTextActive: {
-    color: '#176B3A',
+    color: DIALOG_GREEN,
     fontWeight: '700',
   },
 });

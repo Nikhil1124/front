@@ -28,9 +28,10 @@ export interface CartItem {
  * line. Two things were wrong with it: Indian grocery GST is per-item (0/5/12/18%), so one
  * blanket rate is wrong for most baskets; and checkout POSTs only `item_id` + `quantity`
  * (see GroceryCheckoutScreen), so the server prices the order itself and returns
- * `subtotal_amount` / `discount_amount` / `total_amount`. The tax shown here was a number
- * this client made up and the server never agreed with. Taxes now appear once the order
- * exists and the server has stated them.
+ * `taxable_amount` / `tax_amount` / `total_amount` (no separate delivery fee or discount —
+ * see `SupplyOrderDetail`). The tax shown here was a number this client made up and the
+ * server never agreed with. Taxes now appear once the order exists and the server has
+ * stated them.
  */
 export interface BillEstimate {
   /** What the customer pays for the items. GST is already inside this, not added to it. */

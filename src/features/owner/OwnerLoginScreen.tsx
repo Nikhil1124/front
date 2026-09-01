@@ -2,7 +2,7 @@
  * OwnerLoginScreen — Premium redesign.
  * Compact header · clean segmented control · labelled input fields ·
  * password toggle · forgot-password link · strong CTA · registration footer.
- * Single flat colour system: #176B3A forest green, #F8FAF8 canvas.
+ * Single flat colour system: Indigo Purple primary (#5B45E8), #F7F8FC canvas.
  */
 import { useState, useRef } from 'react';
 import {
@@ -99,7 +99,7 @@ function Field({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="#9EB09E"
+          placeholderTextColor={Colors.textMuted}
           secureTextEntry={secure && !visible}
           keyboardType={keyboard}
           onFocus={() => setFocused(true)}
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryBtnDisabled: { backgroundColor: '#A8C9B6', opacity: 0.8 },
+  primaryBtnDisabled: { backgroundColor: Colors.primaryGlow, opacity: 0.8 },
   primaryBtnText: { fontSize: 16, fontWeight: '800', color: WHITE, letterSpacing: 0.2 },
 
   // Ghost / cancel button
@@ -873,7 +873,7 @@ const styles = StyleSheet.create({
   scannerFrame: {
     width: 200, height: 160, alignSelf: 'center',
     borderWidth: 2, borderColor: GREEN, borderRadius: 12,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: Colors.surfaceElevated,
     alignItems: 'center', justifyContent: 'flex-end',
     paddingBottom: 12,
   },
@@ -895,16 +895,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 8,
   },
-  subToggleBtnSel: { backgroundColor: '#EAF5EE', borderWidth: 1, borderColor: GREEN },
+  subToggleBtnSel: { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: GREEN },
   subToggleLabel:  { fontSize: 13, fontWeight: '600', color: MUTED },
   subToggleLabelSel: { color: GREEN, fontWeight: '800' },
 
   // Staff route info
   routeInfoBox: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#C6E8D4',
+    borderColor: Colors.borderGlass,
     padding: 14,
     marginBottom: 20,
   },

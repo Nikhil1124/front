@@ -305,7 +305,7 @@ export default function BookTechnicianScreen() {
           </Col>
 
           {/* Details Card */}
-          <Card containerColor="#EEF8F1" borderRadius={20} borderWidth={1.5} borderColor={Colors.primary} padding={[20, 20]}>
+          <Card containerColor={Colors.surfaceElevated} borderRadius={20} borderWidth={1.5} borderColor={Colors.primary} padding={[20, 20]}>
             <Row justify="space-between" align="center">
               <Txt size={13} color={Colors.textSecondary} weight="600">Request ID</Txt>
               <Row gap={6} align="center">
@@ -383,7 +383,7 @@ export default function BookTechnicianScreen() {
                   key={f}
                   style={[
                     styles.chipBtn,
-                    isSelected ? { backgroundColor: '#176B3A', borderColor: '#176B3A' } : { backgroundColor: Colors.surface, borderColor: Colors.borderSubtle }
+                    isSelected ? { backgroundColor: Colors.primary, borderColor: Colors.primary } : { backgroundColor: Colors.surface, borderColor: Colors.borderSubtle }
                   ]}
                   onPress={() => { hapticSelect(); setFilter(f); }}
                 >
@@ -689,10 +689,10 @@ export default function BookTechnicianScreen() {
 
           {/* Info Card */}
           <Spacer size={4} />
-          <Card containerColor="#EEF8F1" borderRadius={12} borderWidth={1} borderColor={Colors.primary} padding={[12, 14]}>
+          <Card containerColor={Colors.surfaceElevated} borderRadius={12} borderWidth={1} borderColor={Colors.primary} padding={[12, 14]}>
             <Row gap={10} align="center">
               <Ionicons name="shield-checkmark-outline" size={18} color={Colors.primary} />
-              <Txt size={12} color="#176B3A" weight="600" style={{ flex: 1, lineHeight: 16 }}>
+              <Txt size={12} color={Colors.primaryDark} weight="600" style={{ flex: 1, lineHeight: 16 }}>
                 Your request will be sent to the property owner and manager. They will get notified and take action.
               </Txt>
             </Row>
@@ -802,11 +802,11 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#EEF8F1',
+    backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#D1FAE5',
+    borderColor: Colors.borderGlass,
   },
   dropdownBox: {
     flexDirection: 'row',

@@ -63,6 +63,8 @@ export const qk = {
     todaySummary: (pgId: string) => ["meals", "todaySummary", pgId] as const,
     savings: (pgId: string, start: string, end: string) =>
       ["meals", "savings", pgId, start, end] as const,
+    rsvpTrends: (pgId: string, start: string, end: string) =>
+      ["meals", "rsvpTrends", pgId, start, end] as const,
   },
 
   expenses: {
@@ -89,6 +91,7 @@ export const qk = {
   ads: {
     all: (pgId: string) => ["ads", pgId] as const,
     metrics: (pgId: string) => ["ads", pgId, "metrics"] as const,
+    config: (pgId: string) => ["ads", pgId, "config"] as const,
   },
 
   rewards: {

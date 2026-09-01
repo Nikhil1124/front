@@ -166,7 +166,8 @@ export default function OwnerOverviewTab() {
       { label: 'Maintenance', icon: 'construct-outline', color: '#EF4444', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.push('/reviews'); } },
       { label: 'Technicians', icon: 'build-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); setShowBookRepair(true); } },
       { label: 'Notices', icon: 'megaphone-outline', color: '#EC4899', bgColor: '#FDF2F8', onPress: () => { hapticSelect(); router.push('/notices'); } },
-      { label: 'Expenses', icon: 'cash-outline', color: '#14B8A6', bgColor: '#F0FDFA', onPress: () => { hapticSelect(); router.push('/services'); } },
+      { label: 'Services', icon: 'storefront-outline', color: '#14B8A6', bgColor: '#F0FDFA', onPress: () => { hapticSelect(); router.push('/services'); } },
+      { label: 'Groceries', icon: 'cart-outline', color: '#84CC16', bgColor: '#F7FEE7', onPress: () => { hapticSelect(); router.push('/groceries'); } },
       { label: 'Reports', icon: 'stats-chart-outline', color: '#8B5CF6', bgColor: '#F5F3FF', onPress: () => { hapticSelect(); router.push('/pnl-analytics'); } },
       { label: 'Settings', icon: 'settings-outline', color: '#6B7280', bgColor: '#F3F4F6', onPress: () => { hapticSelect(); router.push('/settings'); } },
     ];
@@ -175,6 +176,13 @@ export default function OwnerOverviewTab() {
     }
     return list;
   }, [isManager]);
+
+  // Split into rows of 5 for the horizontal-scroll grid (handles any list length)
+  const quickActionRows = useMemo(() => {
+    const rows: QuickActionItem[][] = [];
+    for (let i = 0; i < quickActions.length; i += 5) rows.push(quickActions.slice(i, i + 5));
+    return rows;
+  }, [quickActions]);
 
   // Revenue Overview Area Chart Data Mapping
   const chartWidth = Dimensions.get('window').width - 72; // Padding inset
@@ -459,26 +467,18 @@ export default function OwnerOverviewTab() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionsScroll}>
                 {/* Render quick actions in 2 horizontal rows for neatness on mobile */}
                 <Col gap={16}>
-                  <Row gap={14}>
-                    {quickActions.slice(0, 5).map(act => (
-                      <TouchableOpacity key={act.label} style={styles.actionItem} onPress={act.onPress} activeOpacity={0.7}>
-                        <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor }]}>
-                          <Ionicons name={act.icon} size={20} color={act.color} />
-                        </View>
-                        <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </Row>
-                  <Row gap={14}>
-                    {quickActions.slice(5, 10).map(act => (
-                      <TouchableOpacity key={act.label} style={styles.actionItem} onPress={act.onPress} activeOpacity={0.7}>
-                        <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor }]}>
-                          <Ionicons name={act.icon} size={20} color={act.color} />
-                        </View>
-                        <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </Row>
+                  {quickActionRows.map((row, rowIdx) => (
+                    <Row gap={14} key={rowIdx}>
+                      {row.map(act => (
+                        <TouchableOpacity key={act.label} style={styles.actionItem} onPress={act.onPress} activeOpacity={0.7}>
+                          <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor }]}>
+                            <Ionicons name={act.icon} size={20} color={act.color} />
+                          </View>
+                          <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </Row>
+                  ))}
                 </Col>
               </ScrollView>
             </View>

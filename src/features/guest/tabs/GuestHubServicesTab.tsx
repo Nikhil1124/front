@@ -65,12 +65,12 @@ export function GuestHubServicesTab() {
       {/* 2x2 Hub Service Grid */}
       <View style={{ gap: 12 }}>
         <Row gap={12}>
-          <HubServiceCard title="GROCERY\n(Bulk Dark Store)" icon="cart" iconColor="#14E2B1" statusText="Ready" statusColor="#14E2B1" buttonText="[ Order Now ]" onPress={() => router.push('/groceries')} />
+          <HubServiceCard title="GROCERY\n(Bulk Dark Store)" icon="cart" iconColor={Colors.primary} statusText="Ready" statusColor={Colors.primary} buttonText="[ Order Now ]" onPress={() => router.push('/groceries')} />
           <HubServiceCard title="REPAIRS &\nMAINTENANCE" icon="build" iconColor="#FFA726" statusText="Repairs Due" statusColor="#FFA726" buttonText="[ Log Grievance ]" onPress={() => router.push('/book-technician')} />
         </Row>
         <Row gap={12}>
-          <HubServiceCard title="DEEP CLEANING\n& SANITATION" icon="sparkles" iconColor="#00DFBC" statusText="Coming Soon" statusColor={Colors.textMuted} buttonText="[ Notify Me ]" onPress={() => Alert.alert('Not available yet', 'Deep cleaning bookings are not live yet. Raise it as a request from Maintenance in the meantime and your manager will arrange it.')} />
-          <HubServiceCard title="WI-FI & INTERNET\nMANAGEMENT" icon="wifi" iconColor="#00A38C" statusText="Coming Soon" statusColor={Colors.textMuted} buttonText="[ Notify Me ]" onPress={() => Alert.alert('Not available yet', 'Wi-Fi plan management is not live yet. Raise a connectivity issue from Maintenance in the meantime.')} />
+          <HubServiceCard title="DEEP CLEANING\n& SANITATION" icon="sparkles" iconColor={Colors.secondary} statusText="Coming Soon" statusColor={Colors.textMuted} buttonText="[ Notify Me ]" onPress={() => Alert.alert('Not available yet', 'Deep cleaning bookings are not live yet. Raise it as a request from Maintenance in the meantime and your manager will arrange it.')} />
+          <HubServiceCard title="WI-FI & INTERNET\nMANAGEMENT" icon="wifi" iconColor={Colors.primaryDark} statusText="Coming Soon" statusColor={Colors.textMuted} buttonText="[ Notify Me ]" onPress={() => Alert.alert('Not available yet', 'Wi-Fi plan management is not live yet. Raise a connectivity issue from Maintenance in the meantime.')} />
         </Row>
       </View>
 
