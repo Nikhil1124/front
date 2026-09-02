@@ -1,7 +1,6 @@
 /**
  * RoleNotificationsCenterSheet — Completely redesigned notification center.
- * Modern mobile layout, horizontal scroll filter chips, visual skeletons,
- * customized category icons, and high-priority sorting.
+ * Visual System: Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
  */
 import { useState } from 'react';
 import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, Pressable, Alert } from 'react-native';
@@ -14,19 +13,19 @@ import { RoleNotificationBroadcastDialog } from './RoleNotificationBroadcastDial
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useAuthStore } from '@/store/authStore';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
-import { Motion } from '@/theme';
+import { Colors } from '@/theme';
 
-// ── Color System ─────────────────────────────────────────────────────────────
-const PRIMARY = '#4F51D5';      // Premium Indigo / Violet
-const PRIMARY_SOFT = '#EEEAFE'; // Soft Indigo
-const BG = '#F7F8FC';           // Canvas bg
-const CHARCOAL = '#15171A';     // Main text
-const MUTED = '#6B7280';        // Secondary text
-const BORDER = '#E5E7EB';       // Subtle border
+// ── Color System (Official LUNA Palette) ────────────────────────────────────
+const PRIMARY = '#26658C';      // Deep Ocean Blue
+const PRIMARY_SOFT = '#EBF7FA'; // Soft Ice Cyan
+const BG = '#FFFFFF';           // Pure White Canvas bg
+const CHARCOAL = '#011C40';     // Obsidian Navy text
+const MUTED = '#26658C';        // Secondary Ocean text
+const BORDER = '#CBEFF4';       // Ice Cyan border
 const WHITE = '#FFFFFF';
-const SUCCESS = '#16A34A';
+const SUCCESS = '#10B981';
 const WARNING = '#F59E0B';
-const ERROR = '#DC2626';
+const ERROR = '#EF4444';
 
 interface Props {
   roleTitle: string;
@@ -59,16 +58,16 @@ function getNotifConfig(category: string, priority?: string) {
       return {
         label: 'RENT',
         icon: 'wallet-outline',
-        iconBg: '#EEEAFE', // Soft purple
-        iconColor: PRIMARY,
-        labelColor: PRIMARY,
+        iconBg: '#F6F1E9',
+        iconColor: '#173A33',
+        labelColor: '#173A33',
         actionLabel: 'View Payment',
       };
     case 'KYC':
       return {
         label: 'KYC',
         icon: 'shield-checkmark-outline',
-        iconBg: '#ECFDF5', // Soft green
+        iconBg: '#F6F1E9',
         iconColor: SUCCESS,
         labelColor: SUCCESS,
         actionLabel: 'View KYC',
@@ -78,7 +77,7 @@ function getNotifConfig(category: string, priority?: string) {
       return {
         label: 'COMPLAINT',
         icon: 'construct-outline',
-        iconBg: isHigh ? '#FFF7ED' : '#FEF2F2', // Soft orange or soft pink/red
+        iconBg: isHigh ? '#FFF7ED' : '#FEE2E2',
         iconColor: isHigh ? WARNING : ERROR,
         labelColor: isHigh ? WARNING : ERROR,
         actionLabel: 'Book Technician',
@@ -87,25 +86,25 @@ function getNotifConfig(category: string, priority?: string) {
       return {
         label: 'MEALS',
         icon: 'restaurant-outline',
-        iconBg: '#EFF6FF', // Soft blue
-        iconColor: '#2563EB',
-        labelColor: '#2563EB',
+        iconBg: '#F6F1E9',
+        iconColor: PRIMARY,
+        labelColor: PRIMARY,
         actionLabel: 'View Meals',
       };
     case 'EXPENSE_FINANCE':
       return {
         label: 'FINANCE',
         icon: 'cash-outline',
-        iconBg: '#ECFDF5', // Soft green
-        iconColor: SUCCESS,
-        labelColor: SUCCESS,
+        iconBg: '#F6F1E9',
+        iconColor: PRIMARY,
+        labelColor: PRIMARY,
         actionLabel: 'View Finance',
       };
     default:
       return {
         label: 'ALERT',
         icon: 'notifications-outline',
-        iconBg: '#F3F4F6', // Muted gray
+        iconBg: '#F6F1E9',
         iconColor: MUTED,
         labelColor: MUTED,
         actionLabel: 'View Detail',
@@ -159,9 +158,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
       <View style={styles.backdrop}>
         <Pressable style={styles.dismissBackdropArea} onPress={onDismiss} testID="sheet_backdrop_dismiss" />
 
-        <View
-          style={styles.sheet}
-        >
+        <View style={styles.sheet}>
           {/* Drag Handle */}
           <View style={styles.dragHandlePill} />
 
@@ -182,7 +179,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
 
               <Row gap={12} align="center">
                 <View style={styles.bellWrapper}>
-                  <Ionicons name="notifications-outline" size={20} color={CHARCOAL} />
+                  <Ionicons name="notifications-outline" size={20} color={PRIMARY} />
                   {unreadCount > 0 && (
                     <View style={styles.bellBadge}>
                       <Txt size={9} weight="900" color={WHITE}>{unreadCount}</Txt>
@@ -342,7 +339,7 @@ export function RoleNotificationsCenterSheet({ roleTitle, onDismiss }: Props) {
                                 </View>
                               )}
                             </Row>
-                            
+
                             <Row gap={8} align="center">
                               <Txt size={10} color={MUTED}>{formatTimeAgo(notif.timestamp)}</Txt>
                               <TouchableOpacity
@@ -460,7 +457,7 @@ function NotificationSkeleton() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: 'rgba(23, 58, 51, 0.55)',
     justifyContent: 'flex-end',
   },
   dismissBackdropArea: {
@@ -508,7 +505,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: BG,
+    backgroundColor: PRIMARY_SOFT,
   },
   bellBadge: {
     position: 'absolute',
@@ -593,15 +590,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
     padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#173A33',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
   notifCardUnread: {
-    backgroundColor: '#F5F3FF', // Very soft lavender/indigo tint
-    borderColor: '#E0DBFF',
+    backgroundColor: '#F6F1E9', // Champagne background
+    borderColor: '#B8C4B2',
   },
   notifIconBox: {
     width: 52,

@@ -40,21 +40,21 @@ export function LocationField({ value, onPress, placeholder }: Props) {
       <Ionicons
         name={picked ? 'location' : 'map-outline'}
         size={18}
-        color={picked ? Colors.CyberGreen : Colors.SlateMutedText}
+        color={picked ? Colors.primary : Colors.textMuted}
       />
       <View style={styles.text}>
-        <Txt variant="labelSmall" color={Colors.SlateMutedText} style={styles.label}>
+        <Txt variant="labelSmall" color={Colors.textMuted} style={styles.label}>
           PROPERTY LOCATION
         </Txt>
         <Txt
           size={12}
-          color={picked ? Colors.IvoryWhiteText : Colors.SlateMutedText}
+          color={picked ? Colors.textPrimary : Colors.textMuted}
           numberOfLines={2}
         >
           {summary}
         </Txt>
       </View>
-      <Txt variant="caption" weight="700" color={Colors.CyberGreen}>
+      <Txt variant="caption" weight="700" color={Colors.primary}>
         {picked ? 'Change' : 'Pick'}
       </Txt>
     </TouchableOpacity>
@@ -67,13 +67,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.LuxuryCardBorder,
+    borderColor: Colors.borderSubtle,
     borderRadius: Radii.lg,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
   },
-  rowPicked: { borderColor: Colors.CyberGreen },
+  rowPicked: { borderColor: Colors.primary },
   text: { flex: 1, gap: 2 },
   label: { letterSpacing: 0.5 },
 });

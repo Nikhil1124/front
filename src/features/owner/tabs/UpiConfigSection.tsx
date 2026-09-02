@@ -16,21 +16,22 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Row, Col, Spacer } from '@/components/ui';
+import { Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { hapticSuccess, hapticSelect, hapticError } from '@/utils/haptics';
 import { qk } from '@/data/queryKeys';
 import { listUpiIds, addUpiId, activateUpiId, removeUpiId } from '@/features/properties/useProperties';
 
-// ── Design Tokens ─────────────────────────────────────────────────────────────
-const GREEN = '#4F51D5';      // Indigo brand primary
-const BG = '#F7F8FC';         // Canvas BG
-const CHARCOAL = '#15171A';   // Primary text
-const MUTED = '#6B7280';      // Muted text
-const BORDER = '#E5E7EB';     // Subtle border
-const WHITE = '#FFFFFF';
-const LIGHT_GREEN = '#EEF2FF';// Soft indigo active tint
-const RADIUS = 22;            // Premium rounded corner radius
+// ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
+const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
+const BG = Colors.canvas;            // Light Ice Canvas BG
+const CHARCOAL = Colors.textPrimary; // Obsidian Navy primary text
+const MUTED = Colors.textMuted;      // Ocean Muted text
+const BORDER = Colors.borderSubtle;  // Ice Cyan subtle border
+const WHITE = Colors.surface;        // Pure White surface
+const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan active tint
+const RADIUS = 20;            // Rounded corner radius
 
 export function UpiConfigSection() {
   const activePgId = useAuthStore((s) => s.activePgId);

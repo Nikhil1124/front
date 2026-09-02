@@ -21,7 +21,7 @@ if (isExpoGo) {
     return (
       <View style={[styles.fallback, style]}>
         {children}
-        <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
+        <Txt variant="caption" color={Colors.textMuted} style={styles.text}>
           Map preview unavailable in Expo Go — use a development build to see the live map.
         </Txt>
       </View>

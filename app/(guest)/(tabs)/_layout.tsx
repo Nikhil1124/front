@@ -40,54 +40,7 @@ export default function GuestTabsLayout() {
   return (
     <Tabs style={styles.root}>
       <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
-        {/* ── Header — own surface, separate from the scrollable body below ── */}
-        <TabHeader
-          leading={
-            <AnimatedPress scale={0.9} hapticPattern="light" onPress={() => setShowProfilePhotoDialog(true)}>
-              <View style={styles.avatarWrap}>
-                <View style={styles.avatar}>
-                  {guest?.profilePhotoUri ? (
-                    <Txt variant="caption">📷</Txt>
-                  ) : (
-                    <Ionicons name="person" size={28} color={Colors.primary} />
-                  )}
-                </View>
-                <View style={styles.cameraBadge}><Ionicons name="camera" size={10} color={Colors.primaryDark} /></View>
-              </View>
-            </AnimatedPress>
-          }
-          actions={
-            <>
-              <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
-                <View style={styles.bellBtn}>
-                  <Ionicons name="notifications-outline" size={20} color={Colors.textPrimary} />
-                  {unreadCount > 0 && <View style={styles.unreadDot} />}
-                </View>
-              </AnimatedPress>
-              <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
-                <View style={styles.bellBtn}>
-                  <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
-                </View>
-              </AnimatedPress>
-            </>
-          }
-        >
-          <Col style={{ flex: 1, marginLeft: 12 }}>
-            <Row gap={6} align="center">
-              <View style={[styles.dot, { backgroundColor: Colors.success }]} />
-              <Txt size={20} weight="700" color={Colors.textPrimary} numberOfLines={1}>Hello, {guest?.name ?? 'Guest'}</Txt>
-            </Row>
-            <Txt size={12} weight="500" color={Colors.textMuted} style={{ marginTop: 1 }}>
-              Room {guest?.roomNo ?? 'N/A'} • Premium Resident
-            </Txt>
-            <View style={[styles.billPill, { backgroundColor: paid ? Colors.surfaceElevated : Colors.alertGradientStart, borderWidth: 1, borderColor: paid ? Colors.success : Colors.warning }]}>
-              <Ionicons name={paid ? 'checkmark-circle' : 'information-circle'} size={11} color={paid ? Colors.success : Colors.tertiary} />
-              <Txt size={10} weight="800" color={paid ? Colors.success : Colors.tertiary} style={{ marginLeft: 4 }}>
-                {paid ? 'Rent Paid' : 'Rent Pending'}
-              </Txt>
-            </View>
-          </Col>
-        </TabHeader>
+        {/* Header removed — each screen manages its own header */}
 
         {/* ── Active tab content ─────────────────────────────────────────── */}
         <Animated.View
@@ -103,16 +56,16 @@ export default function GuestTabsLayout() {
       {/* Sticky bottom dock — see Dock/useDock in HeadlessDockTabButton.tsx */}
       <Dock style={dockStyle}>
         <TabTrigger name="home" href="/home" asChild>
-          <HeadlessDockTabButton icon="home" label="Home" />
+          <HeadlessDockTabButton icon="home-outline" label="Home" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
         </TabTrigger>
         <TabTrigger name="meals" href="/meals" asChild>
-          <HeadlessDockTabButton icon="restaurant" label="Meals" />
+          <HeadlessDockTabButton icon="restaurant-outline" label="Meals" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
         </TabTrigger>
         <TabTrigger name="guest-payments" href="/guest-payments" asChild>
-          <HeadlessDockTabButton icon="card" label="Payments" />
+          <HeadlessDockTabButton icon="card-outline" label="Payments" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
         </TabTrigger>
         <TabTrigger name="profile" href="/profile" asChild>
-          <HeadlessDockTabButton icon="ribbon" label="Profile" />
+          <HeadlessDockTabButton icon="person-outline" label="Profile" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
         </TabTrigger>
 
         {/* Hidden trigger to register support route in the tabs navigator */}

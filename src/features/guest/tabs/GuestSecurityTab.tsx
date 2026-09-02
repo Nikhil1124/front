@@ -1,243 +1,313 @@
 /**
- * GuestSecurityTab — Resident profile card + KYC verification + change passcode.
+ * GuestSecurityTab — Resident Profile & Security Portal.
  *
- * Cyber Mint migration:
- *   - White cards on mint canvas, slate-900 text, teal accents.
- *   - Status pill in the header summarises KYC state at a glance.
- *   - The KYC verification body delegates to <GuestKycVerificationTab/>
- *     which now renders status banners + opens <KycUploadDialog/>.
+ * Unified Luxury Emerald System:
+ *   - Dark Forest to Rich Emerald Header (#173A33 → #0F5E4A)
+ *   - Champagne Canvas (#F6F1E9), Pure White Cards (#FFFFFF), Soft Sage Borders (#B8C4B2)
+ *   - High-Contrast Dark Forest Typography (#173A33)
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors, Layout } from '@/theme';
+import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { GuestKycVerificationTab } from './GuestKycVerificationTab';
-import { FormScroll } from '@/components/ui/FormScroll';
 import { useKycStatus } from '@/features/kyc/useKycStatus';
+import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
+import { useToast } from '@/hooks/useToast';
 
 type KycStatus = 'UNKNOWN' | 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 interface KycPillConfig { label: string; color: string; bg: string; }
 function kycPill(status: KycStatus): KycPillConfig {
   switch (status) {
-    case 'UNKNOWN': return { label: 'Checking…', color: Colors.textMuted, bg: Colors.surfaceMuted };
-    case 'VERIFIED': return { label: 'Verified', color: Colors.success, bg: Colors.surfaceElevated };
-    case 'PENDING': return { label: 'Pending', color: Colors.warning, bg: Colors.alertGradientStart };
-    case 'REJECTED': return { label: 'Action Required', color: Colors.danger, bg: '#FEF2F2' };
+    case 'UNKNOWN': return { label: 'Checking…', color: Colors.textPrimarySecondary, bg: '#F6F1E9' };
+    case 'VERIFIED': return { label: 'Verified Shield', color: Colors.success, bg: '#F6F1E9' };
+    case 'PENDING': return { label: 'Under Review', color: '#D97706', bg: '#FEF3C7' };
+    case 'REJECTED': return { label: 'Action Required', color: Colors.danger, bg: '#FEE2E2' };
     case 'NOT_SUBMITTED':
-    default: return { label: 'Not Submitted', color: Colors.textMuted, bg: Colors.surfaceMuted };
+    default: return { label: 'Not Submitted', color: Colors.textPrimarySecondary, bg: '#F6F1E9' };
   }
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <Row justify="space-between" align="center" style={styles.fieldRow}>
-      <Txt variant="caption" color={Colors.textMuted}>{label}</Txt>
-      <Txt size={13} weight="600" color={Colors.textPrimary} style={mono ? styles.monoValue : undefined}>
-        {value || '—'}
-      </Txt>
-    </Row>
-  );
-}
-
 export function GuestSecurityTab() {
+  const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const changePassword = usePGowStore((s) => s.changeGuestPassword);
   const logout = usePGowStore((s) => s.logout);
+  const toast = useToast();
+
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const kycStatus = useKycStatus() as KycStatus;
   const pill = kycPill(kycStatus);
 
   const confirmLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
+    hapticSelect();
+    Alert.alert('Log Out', 'Are you sure you want to log out of PGow?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log Out', style: 'destructive', onPress: logout },
     ]);
   };
 
-  return (
-    <FormScroll contentContainerStyle={{ padding: 16, gap: 16 }}>
-      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>ACCOUNT</Txt>
-      <Spacer size={8} />
+  const handleUpdatePassword = async () => {
+    if (isUpdating) return;
+    if (!currentPassword.trim() || !newPassword.trim()) {
+      hapticError();
+      Alert.alert('Validation Error', 'Please enter your current and new passcode.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      hapticError();
+      Alert.alert('Passcode Too Short', 'New passcode must be at least 8 characters long.');
+      return;
+    }
+    setIsUpdating(true);
+    hapticSelect();
+    try {
+      const r = await changePassword(newPassword, currentPassword);
+      if (r.ok) {
+        hapticSuccess();
+        toast('success', 'Passcode Updated', 'Your login credentials have been updated.');
+        setNewPassword('');
+        setCurrentPassword('');
+      } else {
+        hapticError();
+        Alert.alert('Update Failed', r.error ?? 'Unknown error');
+      }
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
-      {/* Resident details card with KYC pill */}
-      <Card
-        containerColor={Colors.surface}
-        borderRadius={Layout.borderRadiusCard}
-        borderWidth={1}
-        borderColor={Colors.borderSubtle}
-        padding={[16, 16]}
+  return (
+    <View style={styles.root}>
+      {/* ── 1. LUXURY EMERALD GRADIENT HEADER ── */}
+      <LinearGradient
+        colors={['#011C40', '#023859']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 12 }]}
       >
-        <Row gap={12} align="center">
-          <Ionicons name="person-circle" size={44} color={Colors.primary} />
-          <Col style={{ flex: 1 }}>
-            <Txt size={16} weight="800" color={Colors.textPrimary}>
-              {guest?.name ?? 'Resident'}
-            </Txt>
-            <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 2 }}>
-              Premium Resident · Room {guest?.roomNo ?? 'N/A'}
+        <View style={styles.hWave1} />
+        <View style={styles.hWave2} />
+        <Row justify="space-between" align="center" style={styles.hRow}>
+          <Col>
+            <Txt size={26} weight="900" color="#FFFFFF">My Account & Profile</Txt>
+            <Txt size={13} weight="500" color="rgba(255,255,255,0.78)" style={{ marginTop: 2 }}>
+              Personal Identity, Security & Verification
             </Txt>
           </Col>
-          <View style={[styles.kycPill, { backgroundColor: pill.bg }]}>
-            <Ionicons
-              name={kycStatus === 'VERIFIED' ? 'shield-checkmark' : kycStatus === 'PENDING' ? 'hourglass' : kycStatus === 'REJECTED' ? 'warning' : 'card'}
-              size={11}
-              color={pill.color}
-            />
-            <Txt variant="labelSmall" weight="800" color={pill.color} style={{ marginLeft: 4 }}>{pill.label}</Txt>
+          <View style={styles.badgeWrap}>
+            <Ionicons name="ribbon" size={20} color="#FFFFFF" />
           </View>
         </Row>
+      </LinearGradient>
 
-        {guest?.phone ? (
-          <>
-            <Spacer size={12} />
-            <View style={styles.divider} />
-            <Spacer size={12} />
-            <Row gap={10} align="center">
-              <Ionicons name="call" size={16} color={Colors.textMuted} />
-              <Txt variant="caption" color={Colors.textSecondary}>{guest.phone}</Txt>
-            </Row>
-          </>
-        ) : null}
-
-        {guest?.email ? (
-          <>
-            <Spacer size={10} />
-            <Row gap={10} align="center">
-              <Ionicons name="mail" size={16} color={Colors.textMuted} />
-              <Txt variant="caption" color={Colors.textSecondary}>{guest.email}</Txt>
-            </Row>
-          </>
-        ) : null}
-      </Card>
-
-      <Spacer size={8} />
-      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>IDENTITY DOCUMENT (KYC)</Txt>
-      <Spacer size={8} />
-
-      {/* KYC verification body — banners + dialog */}
-      <Card
-        containerColor={Colors.surface}
-        borderRadius={Layout.borderRadiusCard}
-        borderWidth={1}
-        borderColor={Colors.borderSubtle}
-        padding={[16, 16]}
+      {/* ── SCROLLABLE CONTENT ── */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
       >
-        <Row gap={8} align="center" style={styles.kycHeader}>
-          <View style={styles.kycHeaderIcon}>
-            <Ionicons name="ribbon" size={18} color={Colors.primary} />
-          </View>
-          <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Verification Status</Txt>
-        </Row>
-        <Spacer size={12} />
-        <GuestKycVerificationTab scrollable={false} />
-      </Card>
+        {/* ── 2. RESIDENT PROFILE IDENTITY CARD ── */}
+        <View style={styles.profileCard}>
+          <Row justify="space-between" align="center">
+            <Row gap={14} align="center" style={{ flex: 1 }}>
+              <View style={styles.avatarRing}>
+                <Ionicons name="person" size={32} color={Colors.primaryDark} />
+              </View>
+              <Col style={{ flex: 1 }}>
+                <Txt size={18} weight="900" color={Colors.textPrimary}>
+                  {guest?.name ?? 'Resident'}
+                </Txt>
+                <Txt size={12} weight="600" color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+                  Room {guest?.roomNo ?? 'N/A'} • Premium Resident
+                </Txt>
+              </Col>
+            </Row>
 
-      <Spacer size={8} />
-      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>SECURITY</Txt>
-      <Spacer size={8} />
+            <View style={[styles.kycPill, { backgroundColor: pill.bg }]}>
+              <Ionicons
+                name={kycStatus === 'VERIFIED' ? 'shield-checkmark' : kycStatus === 'PENDING' ? 'hourglass' : 'warning'}
+                size={12}
+                color={pill.color}
+              />
+              <Txt size={11} weight="800" color={pill.color} style={{ marginLeft: 4 }}>
+                {pill.label}
+              </Txt>
+            </View>
+          </Row>
 
-      {/* Change passcode */}
-      <Card
-        containerColor={Colors.surface}
-        borderRadius={Layout.borderRadiusCard}
-        borderWidth={1}
-        borderColor={Colors.borderSubtle}
-        padding={[16, 16]}
-      >
-        <Row gap={8} align="center">
-          <Ionicons name="lock-closed" size={18} color={Colors.primary} />
-          <Txt variant="cardTitle" weight="800" color={Colors.textPrimary}>Change Login Passcode</Txt>
-        </Row>
-        <Spacer size={10} />
-        {/* The server will not change a password without proof of the current one — that is
-            what stops an unattended phone from being locked out of its own account. */}
-        <OutlinedTextField
-          label="Current Password"
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          secureTextEntry
-          testID="guest_current_password_input"
-          style={{ marginBottom: 10 }}
-        />
-        <OutlinedTextField
-          label="New Passcode / Password (min 8 characters)"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          secureTextEntry
-          testID="guest_change_password_input"
-          style={{ marginBottom: 16 }}
-        />
-        <Btn
-          onPress={async () => {
-            const r = await changePassword(newPassword, currentPassword);
-            if (r.ok) {
-              Alert.alert('Success', 'Passcode updated successfully!');
-              setNewPassword('');
-              setCurrentPassword('');
-            } else {
-              Alert.alert('Failed', r.error ?? 'Unknown');
-            }
-          }}
-          containerColor={Colors.primary}
-          textColor={Colors.textInverse}
-          borderRadius={Layout.borderRadiusButton}
-          height={44}
-          testID="guest_change_password_btn"
+          {(guest?.phone || guest?.email) && (
+            <View style={styles.contactDetailsBox}>
+              {guest?.phone ? (
+                <Row gap={10} align="center">
+                  <Ionicons name="call-outline" size={16} color={Colors.textPrimarySecondary} />
+                  <Txt size={13} weight="600" color={Colors.textPrimary}>{guest.phone}</Txt>
+                </Row>
+              ) : null}
+              {guest?.email ? (
+                <Row gap={10} align="center" style={{ marginTop: 8 }}>
+                  <Ionicons name="mail-outline" size={16} color={Colors.textPrimarySecondary} />
+                  <Txt size={13} weight="600" color={Colors.textPrimary}>{guest.email}</Txt>
+                </Row>
+              ) : null}
+            </View>
+          )}
+        </View>
+
+        {/* ── 3. IDENTITY DOCUMENT (KYC) VERIFICATION ── */}
+        <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
+          Identity Verification (KYC)
+        </Txt>
+        <Card
+          containerColor="#FFFFFF"
+          borderRadius={20}
+          borderWidth={1}
+          borderColor={Colors.borderSubtle}
+          padding={[16, 16]}
+          style={styles.sectionCard}
         >
-          <Ionicons name="key" size={16} color={Colors.textInverse} />
-          <Txt variant="body" weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Update Passcode</Txt>
-        </Btn>
-      </Card>
+          <Row gap={10} align="center" style={{ marginBottom: 10 }}>
+            <View style={styles.sectionIconWrap}>
+              <Ionicons name="shield-checkmark" size={18} color={Colors.primary} />
+            </View>
+            <Txt size={15} weight="800" color={Colors.textPrimary}>Official Document Verification</Txt>
+          </Row>
+          <GuestKycVerificationTab scrollable={false} />
+        </Card>
 
-      <Spacer size={16} />
-      <Btn
-        onPress={confirmLogout}
-        containerColor={Colors.surface}
-        textColor={Colors.danger}
-        borderRadius={12}
-        height={48}
-        borderWidth={1}
-        borderColor="#FECACA"
-        testID="guest_logout_btn"
-      >
-        <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
-        <Txt variant="body" weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>Log Out</Txt>
-      </Btn>
-    </FormScroll>
+        {/* ── 4. SECURITY & PASSCODE MANAGEMENT ── */}
+        <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
+          Security & Passcode
+        </Txt>
+        <Card
+          containerColor="#FFFFFF"
+          borderRadius={20}
+          borderWidth={1}
+          borderColor={Colors.borderSubtle}
+          padding={[16, 16]}
+          style={styles.sectionCard}
+        >
+          <Row gap={10} align="center" style={{ marginBottom: 14 }}>
+            <View style={styles.sectionIconWrap}>
+              <Ionicons name="key" size={18} color={Colors.primary} />
+            </View>
+            <Txt size={15} weight="800" color={Colors.textPrimary}>Change Login Passcode</Txt>
+          </Row>
+
+          <OutlinedTextField
+            label="Current Passcode"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            secureTextEntry
+            focusedBorderColor={Colors.primary}
+            borderRadius={14}
+            style={{ marginBottom: 12 }}
+          />
+
+          <OutlinedTextField
+            label="New Passcode (min 8 characters)"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            focusedBorderColor={Colors.primary}
+            borderRadius={14}
+            style={{ marginBottom: 16 }}
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={handleUpdatePassword}
+            disabled={isUpdating}
+            style={styles.updatePasscodeBtn}
+          >
+            <Ionicons name="lock-closed" size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Txt size={13} weight="800" color="#FFFFFF">Update Passcode</Txt>
+          </TouchableOpacity>
+        </Card>
+
+        {/* ── 5. LOGOUT BUTTON ── */}
+        <Spacer size={24} />
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={confirmLogout}
+          style={styles.logoutBtn}
+        >
+          <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
+          <Txt size={14} weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>
+            Log Out of PGow Account
+          </Txt>
+        </TouchableOpacity>
+
+        <Spacer size={32} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  kycPill: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: Layout.borderRadiusChip,
-    borderWidth: 1, borderColor: 'transparent',
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
+
+  // Header
+  header: { overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  hRow: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 24 },
+  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.07)' },
+  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)' },
+  badgeWrap: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 16 },
+
+  // Profile Card
+  profileCard: {
+    marginTop: -14, backgroundColor: '#FFFFFF', borderRadius: 20,
+    borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16,
+    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
   },
-  fieldRow: {
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.borderMuted,
-  },
-  monoValue: {
-    fontVariant: ['tabular-nums'],
-  },
-  kycHeader: {
-    marginBottom: 4,
-  },
-  kycHeaderIcon: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: Colors.surfaceElevated,
+  avatarRing: {
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: '#F6F1E9', borderWidth: 2, borderColor: Colors.borderSubtle,
     alignItems: 'center', justifyContent: 'center',
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.borderMuted,
+  kycPill: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
+  },
+  contactDetailsBox: {
+    marginTop: 14, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: '#F6F1E9',
+  },
+
+  // Section Cards
+  sectionCard: {
+    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
+  },
+  sectionIconWrap: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center',
+  },
+
+  // Buttons
+  updatePasscodeBtn: {
+    backgroundColor: Colors.primary, borderRadius: 14,
+    paddingVertical: 12, paddingHorizontal: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 3,
+  },
+  logoutBtn: {
+    backgroundColor: '#FFF5F5', borderRadius: 16,
+    borderWidth: 1.5, borderColor: '#FECACA',
+    paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
   },
 });

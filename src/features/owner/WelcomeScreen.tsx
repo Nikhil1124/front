@@ -5,28 +5,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { hapticSelect } from '@/utils/haptics';
-import { useAuthStore } from '@/store/authStore';
 
-
-// Premium Design System Tokens (Indigo & Off-White)
-const BRAND_GREEN = '#4F51D5';
-const BRAND_BG = '#F7F8FC';
-const CHARCOAL = '#15171A';
-const TEXT_MUTED = '#6B7280';
-const BORDER_COLOR = '#E5E7EB';
+// Official LUNA Design System Tokens
+const BRAND_NAVY = '#011C40';       // Obsidian Navy
+const BRAND_MIDNIGHT = '#023859';   // Deep Midnight Blue
+const BRAND_OCEAN = '#26658C';      // Deep Ocean Blue
+const BRAND_CYAN = '#54ACBF';       // Cyan Teal
+const BRAND_ICE = '#A7EBF2';        // Soft Ice Cyan
+const BRAND_BG = '#F4F9FB';         // Light Ice Canvas
+const CHARCOAL = '#011C40';         // Dark Navy Text
+const TEXT_MUTED = '#26658C';       // Ocean Text Muted
+const BORDER_COLOR = '#CBEFF4';     // Ice Cyan Border
 const CARD_BG = '#FFFFFF';
-
-// Subtle Amber Palette for Staff Card
-const AMBER_ICON = '#D97706';
-const AMBER_TEXT = '#B45309';
-const AMBER_BORDER = '#FDE68A';
-const AMBER_BG = '#FFFBEB';
 
 export function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.outerContainer}>
-      {/* Background Watermark Decorations (pointerEvents="none" so they don't block taps) */}
+      {/* Background Watermark Decorations */}
       <View style={styles.topRightCircle} pointerEvents="none" />
 
       <View style={styles.dotGrid} pointerEvents="none">
@@ -40,22 +36,20 @@ export function WelcomeScreen() {
       </View>
 
       <View style={styles.bottomLeftHouse} pointerEvents="none">
-        <Ionicons name="home-outline" size={90} color="#EEF2FF" />
+        <Ionicons name="home-outline" size={90} color="#EBF7FA" />
       </View>
 
       <View style={styles.bottomRightHouse} pointerEvents="none">
-        <Ionicons name="business-outline" size={100} color="#EEF2FF" />
+        <Ionicons name="business-outline" size={100} color="#EBF7FA" />
       </View>
-
-
 
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.root, { paddingTop: insets.top + 24 }]}>
         {/* Centered Compact Header */}
         <View style={styles.headerSection}>
-          <Txt size={36} weight="900" color={BRAND_GREEN} align="center" style={styles.logo}>
+          <Txt size={38} weight="900" color={BRAND_NAVY} align="center" style={styles.logo}>
             PGow
           </Txt>
-          <Txt size={9} weight="800" color={TEXT_MUTED} align="center" style={styles.tagline}>
+          <Txt size={9} weight="800" color={BRAND_CYAN} align="center" style={styles.tagline}>
             SMART CO-LIVING & PG MANAGEMENT
           </Txt>
 
@@ -66,10 +60,10 @@ export function WelcomeScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          <Txt size={22} weight="800" color={CHARCOAL} align="center" style={styles.heading}>
+          <Txt size={22} weight="900" color={CHARCOAL} align="center" style={styles.heading}>
             Choose Your Portal
           </Txt>
-          <Txt size={12} weight="500" color={TEXT_MUTED} align="center" style={styles.subheading}>
+          <Txt size={12} weight="600" color={TEXT_MUTED} align="center" style={styles.subheading}>
             One Platform. Every Role. Seamless Experience.
           </Txt>
         </View>
@@ -94,7 +88,7 @@ export function WelcomeScreen() {
               <Row align="center" justify="space-between" style={{ width: '100%' }}>
                 <Row align="center" gap={12} style={{ flex: 1 }}>
                   <View style={styles.iconCircle}>
-                    <Ionicons name="business" size={18} color={BRAND_GREEN} />
+                    <Ionicons name="business" size={18} color={BRAND_OCEAN} />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={15} weight="800" color={CHARCOAL}>
@@ -108,11 +102,11 @@ export function WelcomeScreen() {
                 <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
               </Row>
 
-              <Spacer size={8} />
+              <Spacer size={10} />
               <Row gap={8}>
                 <Btn
                   onPress={() => { hapticSelect(); router.push('/owner-register'); }}
-                  containerColor={BRAND_GREEN}
+                  containerColor={BRAND_OCEAN}
                   textColor="#FFFFFF"
                   borderRadius={10}
                   height={44}
@@ -126,16 +120,16 @@ export function WelcomeScreen() {
                 </Btn>
                 <OutlinedBtn
                   onPress={() => { hapticSelect(); router.push('/owner-login'); }}
-                  borderColor={BRAND_GREEN}
-                  textColor={BRAND_GREEN}
+                  borderColor={BRAND_OCEAN}
+                  textColor={BRAND_OCEAN}
                   borderRadius={10}
                   height={44}
                   style={{ flex: 1 }}
                   testID="welcome_login_button"
                 >
                   <Row align="center" gap={6}>
-                    <Ionicons name="log-in-outline" size={16} color={BRAND_GREEN} />
-                    <Txt size={13} weight="800" color={BRAND_GREEN}>Owner Login</Txt>
+                    <Ionicons name="log-in-outline" size={16} color={BRAND_OCEAN} />
+                    <Txt size={13} weight="800" color={BRAND_OCEAN}>Owner Login</Txt>
                   </Row>
                 </OutlinedBtn>
               </Row>
@@ -159,7 +153,7 @@ export function WelcomeScreen() {
               <Row align="center" justify="space-between" style={{ width: '100%' }}>
                 <Row align="center" gap={12} style={{ flex: 1 }}>
                   <View style={styles.iconCircle}>
-                    <Ionicons name="home" size={18} color={BRAND_GREEN} />
+                    <Ionicons name="home" size={18} color={BRAND_OCEAN} />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={15} weight="800" color={CHARCOAL}>
@@ -173,10 +167,10 @@ export function WelcomeScreen() {
                 <Ionicons name="chevron-forward" size={16} color={TEXT_MUTED} style={{ marginLeft: 4 }} />
               </Row>
 
-              <Spacer size={8} />
+              <Spacer size={10} />
               <Btn
                 onPress={() => { hapticSelect(); router.push('/guest-join'); }}
-                containerColor={BRAND_GREEN}
+                containerColor={BRAND_OCEAN}
                 textColor="#FFFFFF"
                 borderRadius={10}
                 height={44}
@@ -207,8 +201,8 @@ export function WelcomeScreen() {
             >
               <Row align="center" justify="space-between" style={{ width: '100%' }}>
                 <Row align="center" gap={12} style={{ flex: 1 }}>
-                  <View style={[styles.iconCircle, { backgroundColor: 'rgba(217, 119, 6, 0.08)' }]}>
-                    <Ionicons name="people" size={18} color={AMBER_ICON} />
+                  <View style={[styles.iconCircle, { backgroundColor: '#EBF7FA' }]}>
+                    <Ionicons name="people" size={18} color={BRAND_CYAN} />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={15} weight="800" color={CHARCOAL}>
@@ -226,38 +220,36 @@ export function WelcomeScreen() {
               <Row gap={6} style={styles.badgeRow}>
                 <View style={styles.staffBadge}>
                   <Row align="center" gap={4}>
-                    <Ionicons name="restaurant-outline" size={13} color={AMBER_ICON} />
-                    <Txt size={10} weight="700" color={AMBER_TEXT}>Kitchen</Txt>
+                    <Ionicons name="restaurant-outline" size={13} color={BRAND_CYAN} />
+                    <Txt size={10} weight="700" color={BRAND_MIDNIGHT}>Kitchen</Txt>
                   </Row>
                 </View>
                 <View style={styles.staffBadge}>
                   <Row align="center" gap={4}>
-                    <Ionicons name="construct-outline" size={13} color={AMBER_ICON} />
-                    <Txt size={10} weight="700" color={AMBER_TEXT}>Maintenance</Txt>
+                    <Ionicons name="construct-outline" size={13} color={BRAND_CYAN} />
+                    <Txt size={10} weight="700" color={BRAND_MIDNIGHT}>Maintenance</Txt>
                   </Row>
                 </View>
               </Row>
 
-              <Spacer size={8} />
+              <Spacer size={10} />
               <OutlinedBtn
                 onPress={() => { hapticSelect(); router.push('/staff-login'); }}
-                borderColor={AMBER_ICON}
-                textColor={AMBER_ICON}
+                borderColor={BRAND_OCEAN}
+                textColor={BRAND_OCEAN}
                 borderRadius={10}
                 height={44}
                 style={{ backgroundColor: '#FFFFFF' }}
               >
                 <Row align="center" gap={6}>
-                  <Ionicons name="people" size={16} color={AMBER_ICON} />
-                  <Txt size={13} weight="800" color={AMBER_ICON}>
+                  <Ionicons name="people" size={16} color={BRAND_OCEAN} />
+                  <Txt size={13} weight="800" color={BRAND_OCEAN}>
                     Open Staff & Operations Portal
                   </Txt>
                 </Row>
               </OutlinedBtn>
             </Card>
           </AnimatedPress>
-
-
 
         </View>
 
@@ -272,9 +264,8 @@ export function WelcomeScreen() {
             style={styles.trustCard}
           >
             <Row align="center" justify="space-between" style={{ width: '100%' }}>
-              {/* Secure & Reliable */}
               <Col align="center" style={{ flex: 1 }}>
-                <Ionicons name="shield-checkmark-outline" size={18} color={BRAND_GREEN} />
+                <Ionicons name="shield-checkmark-outline" size={18} color={BRAND_OCEAN} />
                 <Spacer size={4} />
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">Secure</Txt>
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">& Reliable</Txt>
@@ -282,9 +273,8 @@ export function WelcomeScreen() {
 
               <View style={styles.verticalDivider} />
 
-              {/* Easy to Use */}
               <Col align="center" style={{ flex: 1 }}>
-                <Ionicons name="flash-outline" size={18} color={BRAND_GREEN} />
+                <Ionicons name="flash-outline" size={18} color={BRAND_OCEAN} />
                 <Spacer size={4} />
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">Easy</Txt>
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">to Use</Txt>
@@ -292,9 +282,8 @@ export function WelcomeScreen() {
 
               <View style={styles.verticalDivider} />
 
-              {/* Real-time Updates */}
               <Col align="center" style={{ flex: 1 }}>
-                <Ionicons name="time-outline" size={18} color={BRAND_GREEN} />
+                <Ionicons name="time-outline" size={18} color={BRAND_OCEAN} />
                 <Spacer size={4} />
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">Real-time</Txt>
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">Updates</Txt>
@@ -302,9 +291,8 @@ export function WelcomeScreen() {
 
               <View style={styles.verticalDivider} />
 
-              {/* 24/7 Support */}
               <Col align="center" style={{ flex: 1 }}>
-                <Ionicons name="headset-outline" size={18} color={BRAND_GREEN} />
+                <Ionicons name="headset-outline" size={18} color={BRAND_OCEAN} />
                 <Spacer size={4} />
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">24/7</Txt>
                 <Txt size={9} weight="700" color={CHARCOAL} align="center">Support</Txt>
@@ -368,7 +356,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: BRAND_GREEN,
+    backgroundColor: BRAND_OCEAN,
     marginHorizontal: 8,
   },
   heading: {
@@ -382,10 +370,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(21, 128, 61, 0.08)',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#EBF7FA',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -403,15 +391,15 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: AMBER_BORDER,
-    backgroundColor: AMBER_BG,
+    borderColor: BORDER_COLOR,
+    backgroundColor: '#EBF7FA',
   },
   cardShadow: {
-    shadowColor: BRAND_GREEN,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 1,
+    shadowColor: BRAND_NAVY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   footerSection: {
     alignItems: 'center',
@@ -419,7 +407,7 @@ const styles = StyleSheet.create({
   },
   trustCard: {
     width: '100%',
-    shadowColor: '#000000',
+    shadowColor: BRAND_NAVY,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 6,
@@ -434,7 +422,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     opacity: 0.8,
   },
-  // Background Watermarks
   topRightCircle: {
     position: 'absolute',
     right: -40,
@@ -443,7 +430,7 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderWidth: 1.5,
-    borderColor: '#EEF2FF',
+    borderColor: '#EBF7FA',
     zIndex: -1,
   },
   dotGrid: {
@@ -457,7 +444,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: BORDER_COLOR,
   },
   bottomLeftHouse: {
     position: 'absolute',
@@ -473,5 +460,4 @@ const styles = StyleSheet.create({
     opacity: 0.25,
     zIndex: -1,
   },
-
 });

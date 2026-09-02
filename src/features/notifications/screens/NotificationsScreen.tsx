@@ -36,11 +36,11 @@ const FILTERS: Array<[string, string]> = [
 
 function accentColor(category: string): string {
   switch (category) {
-    case 'EXPENSE_FINANCE': return Colors.CyberGreen;
-    case 'RENT_PAYMENT': return Colors.CyberAmber;
+    case 'EXPENSE_FINANCE': return Colors.primary;
+    case 'RENT_PAYMENT': return Colors.secondary;
     case 'MEAL_RSVP': return '#00E5FF';
-    case 'COMPLAINT_MAINTENANCE': return Colors.CyberPink;
-    default: return Colors.CyberPurple;
+    case 'COMPLAINT_MAINTENANCE': return Colors.accentRose;
+    default: return Colors.primaryDark;
   }
 }
 

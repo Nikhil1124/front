@@ -159,7 +159,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
         {/* A plain overlay, not part of the map, so it stays fixed on screen while the map
             moves underneath. Offset upward by half its height so the point sits at the tip. */}
         <View pointerEvents="none" style={styles.pinWrap}>
-          <Ionicons name="location" size={40} color={Colors.CyberGreen} />
+          <Ionicons name="location" size={40} color={Colors.primary} />
         </View>
 
         {!ready && !failed && (
@@ -167,7 +167,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
             pointerEvents="none"
             style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}
           >
-            <ActivityIndicator color={Colors.CyberGreen} />
+            <ActivityIndicator color={Colors.primary} />
           </View>
         )}
 
@@ -175,8 +175,8 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
             and a silently blank map here means an owner pins their property from memory. */}
         {failed && (
           <View style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}>
-            <Ionicons name="map-outline" size={24} color={Colors.SlateMutedText} />
-            <Txt variant="caption" color={Colors.SlateMutedText} style={{ marginTop: 6 }}>
+            <Ionicons name="map-outline" size={24} color={Colors.textMuted} />
+            <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 6 }}>
               Map unavailable — you can still confirm the coordinates below
             </Txt>
           </View>
@@ -187,27 +187,27 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.min(20, zoom + 1), { duration: 200 })}
           >
-            <Ionicons name="add" size={20} color={Colors.IvoryWhiteText} />
+            <Ionicons name="add" size={20} color={Colors.textInverse} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.max(3, zoom - 1), { duration: 200 })}
           >
-            <Ionicons name="remove" size={20} color={Colors.IvoryWhiteText} />
+            <Ionicons name="remove" size={20} color={Colors.textInverse} />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.gpsBtn} onPress={useMyLocation} disabled={locating}>
           {locating ? (
-            <ActivityIndicator size="small" color={Colors.CyberGreen} />
+            <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <Ionicons name="locate" size={20} color={Colors.CyberGreen} />
+            <Ionicons name="locate" size={20} color={Colors.primary} />
           )}
         </TouchableOpacity>
       </View>
 
       <View style={styles.sheet}>
-        <Txt variant="labelSmall" color={Colors.SlateMutedText} style={styles.sheetLabel}>
+        <Txt variant="labelSmall" color={Colors.textMuted} style={styles.sheetLabel}>
           SELECTED LOCATION
         </Txt>
         {/* Fixed-height box, not just fixed-height text: "Locating…" is one line and a real
@@ -217,7 +217,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
         <View style={styles.addressBox}>
           <Txt
             size={14}
-            color={resolving ? Colors.SlateMutedText : Colors.IvoryWhiteText}
+            color={resolving ? Colors.textMuted : Colors.textInverse}
             numberOfLines={2}
           >
             {resolving
@@ -225,7 +225,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
               : (address ?? 'No address here — the coordinates will still be saved')}
           </Txt>
         </View>
-        <Txt variant="caption" color={Colors.SlateMutedText} style={{ marginBottom: Spacing.sm }}>
+        <Txt variant="caption" color={Colors.textMuted} style={{ marginBottom: Spacing.sm }}>
           {centre.latitude}, {centre.longitude}
         </Txt>
 
@@ -239,7 +239,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
             })
           }
         >
-          <Txt variant="cardTitle" color={Colors.LuxuryPureBlack}>
+          <Txt variant="cardTitle" color={Colors.canvas}>
             Confirm location
           </Txt>
         </TouchableOpacity>
@@ -249,11 +249,11 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: Colors.LuxuryPureBlack },
-  mapWindow: { flex: 1, overflow: 'hidden', backgroundColor: Colors.LuxurySurfaceDark },
+  wrap: { flex: 1, backgroundColor: Colors.canvas },
+  mapWindow: { flex: 1, overflow: 'hidden', backgroundColor: Colors.surface },
   map: { flex: 1 },
   mapLoading: { alignItems: 'center', justifyContent: 'center' },
-  mapOverlay: { backgroundColor: Colors.LuxurySurfaceDark, paddingHorizontal: Spacing.lg },
+  mapOverlay: { backgroundColor: Colors.surface, paddingHorizontal: Spacing.lg },
   pinWrap: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
@@ -266,9 +266,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radii.sm,
-    backgroundColor: Colors.LuxurySurfaceDark,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.LuxuryCardBorder,
+    borderColor: Colors.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -279,24 +279,24 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.LuxurySurfaceDark,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.CyberGreen,
+    borderColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sheet: {
     padding: Spacing.lg,
     gap: Spacing.xs,
-    backgroundColor: Colors.LuxuryPureBlack,
+    backgroundColor: Colors.canvas,
     borderTopWidth: 1,
-    borderTopColor: Colors.LuxuryCardBorder,
+    borderTopColor: Colors.borderSubtle,
   },
   sheetLabel: { letterSpacing: 0.5 },
   // Two lines' worth, fixed — see the comment above `addressBox`'s usage.
   addressBox: { height: 42, justifyContent: 'center' },
   confirm: {
-    backgroundColor: Colors.CyberGreen,
+    backgroundColor: Colors.primary,
     borderRadius: Radii.xl,
     paddingVertical: Spacing.md,
     alignItems: 'center',

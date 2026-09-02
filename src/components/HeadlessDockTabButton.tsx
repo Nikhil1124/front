@@ -62,12 +62,19 @@ interface Props extends PressableProps {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   isFocused?: boolean;
+  activeTint?: string;
+  inactiveTint?: string;
+  activeBg?: string;
 }
 
 export const HeadlessDockTabButton = forwardRef<View, Props>(
-  ({ icon, label, isFocused, style, ...props }, ref) => {
+  ({ icon, label, isFocused, activeTint, inactiveTint, activeBg, style, ...props }, ref) => {
+    const activeColor = activeTint ?? Colors.primaryDark;
+    const inactiveColor = inactiveTint ?? Colors.textMuted;
+    const activeBackground = activeBg ?? Colors.surfaceElevated;
+
     const boxStyle = {
-      backgroundColor: isFocused ? Colors.surfaceElevated : Colors.surface,
+      backgroundColor: isFocused ? activeBackground : Colors.surface,
       shadowOpacity: isFocused ? 0.16 : 0,
       elevation: isFocused ? 3 : 0,
       transform: [
@@ -77,11 +84,11 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
     };
 
     const iconStyle = {
-      color: isFocused ? Colors.primaryDark : Colors.textMuted,
+      color: isFocused ? activeColor : inactiveColor,
     };
 
     const labelStyle = {
-      color: isFocused ? Colors.primaryDark : Colors.textMuted,
+      color: isFocused ? activeColor : inactiveColor,
       fontWeight: isFocused ? '800' : '600' as any,
     };
 

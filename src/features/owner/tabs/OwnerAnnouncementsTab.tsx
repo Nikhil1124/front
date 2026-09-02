@@ -17,16 +17,16 @@ import type { GuestEntity } from '@/types';
 import { OwnerReviewsTab } from './OwnerReviewsTab';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 
-const PRIMARY = '#4F51D5';
-const PRIMARY_DARK = '#4338CA';
-const BG = '#F7F8FC';
-const SURFACE = '#FFFFFF';
-const UNREAD_SURFACE = '#F5F3FF';
-const TEXT_PRIMARY = '#17181C';
-const TEXT_SECONDARY = '#6B7280';
-const DIVIDER = '#E8EAF0';
-const WARNING = '#D97706';
-const DANGER = '#DC2626';
+const PRIMARY = Colors.primary;       // Deep Ocean Blue
+const PRIMARY_DARK = Colors.primaryDark; // Obsidian Navy
+const BG = Colors.canvas;            // Light Ice Canvas
+const SURFACE = Colors.surface;      // Pure White
+const UNREAD_SURFACE = Colors.surfaceElevated; // Soft Ice Cyan Tint
+const TEXT_PRIMARY = Colors.textPrimary; // Obsidian Navy
+const TEXT_SECONDARY = Colors.textMuted; // Ocean Muted
+const DIVIDER = Colors.borderSubtle;     // Ice Subtle Border
+const WARNING = Colors.warning;
+const DANGER = Colors.danger;
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
@@ -488,27 +488,38 @@ export function OwnerAnnouncementsTab() {
                 </View>
               )}
 
-              {selectedInboxItem.type === 'KYC' && (
-                <View style={styles.actionBlockBox}>
-                  <Text style={styles.actionBlockLabel}>Identity Verification Required</Text>
-                  <Text style={styles.actionBlockDesc}>Verify {selectedInboxItem.raw.name}'s identity documents.</Text>
-                  <Spacer size={16} />
-                  <KycDocumentsCard
-                    idPhotoUri={selectedInboxItem.raw.idProofPhotoUri}
-                    selfieUri={selectedInboxItem.raw.profilePhotoUri}
-                    emptyHint="No readable images found. Reject and request re-upload."
-                  />
-                  <Spacer size={16} />
-                  <Row gap={12}>
-                    <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
-                      <Text style={styles.actionApproveText}>Verify</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
-                      <Text style={styles.actionRejectText}>Reject</Text>
-                    </TouchableOpacity>
-                  </Row>
-                </View>
-              )}
+              {selectedInboxItem.type === 'KYC' && (() => {
+                const kycGuest = (selectedInboxItem.raw && selectedInboxItem.raw.idProofPhotoUri)
+                  ? selectedInboxItem.raw
+                  : guests.find((g: GuestEntity) => 
+                      (selectedInboxItem.raw?.actionId && g.id === selectedInboxItem.raw.actionId) ||
+                      (selectedInboxItem.raw?.name && g.name.toLowerCase() === selectedInboxItem.raw.name.toLowerCase()) ||
+                      (selectedInboxItem.desc && selectedInboxItem.desc.includes(g.roomNo)) ||
+                      (selectedInboxItem.message && selectedInboxItem.message.toLowerCase().includes(g.name.toLowerCase()))
+                    ) || guests.find((g: GuestEntity) => g.kycStatus === 'PENDING') || selectedInboxItem.raw;
+
+                return (
+                  <View style={styles.actionBlockBox}>
+                    <Text style={styles.actionBlockLabel}>Identity Verification Required</Text>
+                    <Text style={styles.actionBlockDesc}>Verify {kycGuest?.name || selectedInboxItem.raw?.name || 'resident'}'s identity documents.</Text>
+                    <Spacer size={16} />
+                    <KycDocumentsCard
+                      idPhotoUri={kycGuest?.idProofPhotoUri}
+                      selfieUri={kycGuest?.profilePhotoUri}
+                      emptyHint="No document photos uploaded yet."
+                    />
+                    <Spacer size={16} />
+                    <Row gap={12}>
+                      <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
+                        <Text style={styles.actionApproveText}>Verify</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
+                        <Text style={styles.actionRejectText}>Reject</Text>
+                      </TouchableOpacity>
+                    </Row>
+                  </View>
+                );
+              })()}
 
               {selectedInboxItem.categoryText === 'MAINTENANCE' && (
                 <View style={styles.actionBlockBox}>
@@ -642,10 +653,10 @@ const styles = StyleSheet.create({
   actionBlockBox: { backgroundColor: SURFACE, borderWidth: 1, borderColor: PRIMARY, borderRadius: 16, padding: 20 },
   actionBlockLabel: { fontSize: 14, fontWeight: '800', color: PRIMARY },
   actionBlockDesc: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 4 },
-  actionApproveBtn: { flex: 1, height: 48, backgroundColor: PRIMARY, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionApproveBtn: { flex: 1, height: 48, backgroundColor: '#16A34A', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   actionApproveText: { fontSize: 15, fontWeight: '800', color: SURFACE },
-  actionRejectBtn: { flex: 1, height: 48, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: SURFACE, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  actionRejectText: { fontSize: 15, fontWeight: '700', color: '#4B5563' },
+  actionRejectBtn: { flex: 1, height: 48, backgroundColor: '#DC2626', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionRejectText: { fontSize: 15, fontWeight: '800', color: SURFACE },
   
   primaryDismissBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   primaryDismissBtnText: { fontSize: 16, fontWeight: '800', color: SURFACE },

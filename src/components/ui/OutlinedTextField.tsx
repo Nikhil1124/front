@@ -8,7 +8,7 @@ import {
   KeyboardTypeOptions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Palette } from '@/theme';
+import { Colors } from '@/theme';
 import { Layout } from '@/theme';
 import { Txt } from './index';
 
@@ -71,7 +71,7 @@ export function OutlinedTextField({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={Palette.TextMuted}
+          placeholderTextColor={Colors.textMuted}
           keyboardType={keyboardType}
           secureTextEntry={secureTextEntry}
           multiline={multiline}

@@ -30,6 +30,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Svg, Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Card, Txt, Row, Col, Spacer, Btn } from '@/components/ui';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -66,7 +67,7 @@ const SUCCESS = Colors.success;
 const WARNING = Colors.warning;
 const DANGER = Colors.danger;
 
-const CHART_HEIGHT = 110;       // Chart height constant at module scope
+const CHART_HEIGHT = 100;       // Balanced 100px chart height for carousel tile
 
 interface QuickActionItem {
   label: string;
@@ -154,31 +155,31 @@ export default function OwnerOverviewTab() {
   const costPerPlate = savingsData?.cost_per_plate ?? 50;
   const dailySavings = savingsData ? savingsData.daily : fallbackDaily;
 
-  // Quick Action Grid Items
+  // Quick Action Grid Items — Cool LUNA Design System Icons
   const quickActions = useMemo(() => {
     const top4: QuickActionItem[] = [
-      { label: 'Groceries', icon: 'cart-outline', color: '#84CC16', bgColor: '#F7FEE7', onPress: () => { hapticSelect(); router.navigate('/groceries'); } },
-      { label: 'Procurement', icon: 'cube-outline', color: '#F59E0B', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.navigate('/procurement'); } },
-      { label: 'Services', icon: 'storefront-outline', color: '#14B8A6', bgColor: '#F0FDFA', onPress: () => { hapticSelect(); router.navigate('/services'); } },
-      { label: 'Residents', icon: 'people-outline', color: '#8B5CF6', bgColor: '#F5F3FF', onPress: () => { hapticSelect(); router.navigate('/guests'); } },
+      { label: 'Groceries', icon: 'basket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/groceries'); } },
+      { label: 'Procurement', icon: 'cube', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/procurement'); } },
+      { label: 'Services', icon: 'sparkles', color: '#023859', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/services'); } },
+      { label: 'Residents', icon: 'people', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/guests'); } },
     ];
 
     const rest: QuickActionItem[] = [
-      { label: 'Add Room', icon: 'add-circle-outline', color: '#0EA5E9', bgColor: '#E0F2FE', onPress: () => { hapticSelect(); router.navigate('/bed-visualizer'); } },
-      { label: 'Ads', icon: 'newspaper-outline', color: '#D946EF', bgColor: '#FDF4FF', onPress: () => { hapticSelect(); router.navigate('/manage-ad'); } },
-      { label: 'Complaints', icon: 'warning-outline', color: '#EF4444', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.navigate('/complaints'); } },
-      { label: 'Food RSVP', icon: 'restaurant-outline', color: '#F97316', bgColor: '#FFF7ED', onPress: () => { hapticSelect(); router.navigate('/rsvp-trends'); } },
-      { label: 'Managers', icon: 'person-add-outline', color: '#10B981', bgColor: '#ECFDF5', onPress: () => { hapticSelect(); router.navigate('/manager-provisioning'); } },
-      { label: 'Portfolio', icon: 'briefcase-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.navigate('/portfolio'); } },
-      { label: 'Reviews', icon: 'star-outline', color: '#F59E0B', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.navigate('/reviews'); } },
-      { label: 'Settings', icon: 'settings-outline', color: '#6B7280', bgColor: '#F3F4F6', onPress: () => { hapticSelect(); router.navigate('/settings'); } },
-      { label: 'Staff', icon: 'people-circle-outline', color: '#6366F1', bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.navigate('/staff'); } },
-      { label: 'Technicians', icon: 'build-outline', color: '#3B82F6', bgColor: '#EFF6FF', onPress: () => { hapticSelect(); setShowBookRepair(true); } },
-      { label: 'UPI Setup', icon: 'qr-code-outline', color: '#06B6D4', bgColor: '#ECFEFF', onPress: () => { hapticSelect(); router.navigate('/upi-settings'); } },
+      { label: 'Add Room', icon: 'bed', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/bed-visualizer'); } },
+      { label: 'Ads', icon: 'rocket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/manage-ad'); } },
+      { label: 'Complaints', icon: 'alert-circle', color: '#DC2626', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.navigate('/complaints'); } },
+      { label: 'Food RSVP', icon: 'fast-food', color: '#023859', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/rsvp-trends'); } },
+      { label: 'Managers', icon: 'ribbon', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/manager-provisioning'); } },
+      { label: 'Portfolio', icon: 'stats-chart', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/portfolio'); } },
+      { label: 'Reviews', icon: 'star', color: '#D97706', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.navigate('/reviews'); } },
+      { label: 'Settings', icon: 'options', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/settings'); } },
+      { label: 'Staff', icon: 'id-card', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/staff'); } },
+      { label: 'Technicians', icon: 'construct', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); setShowBookRepair(true); } },
+      { label: 'UPI Setup', icon: 'qr-code', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/upi-settings'); } },
     ];
 
     if (!isManager) {
-      rest.push({ label: 'Add Property', icon: 'business-outline', color: PRIMARY, bgColor: '#EEF2FF', onPress: () => { hapticSelect(); router.navigate('/manage-properties'); } });
+      rest.push({ label: 'Add Property', icon: 'business', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/manage-properties'); } });
     }
 
     rest.sort((a, b) => a.label.localeCompare(b.label));
@@ -312,324 +313,278 @@ export default function OwnerOverviewTab() {
               style={{ marginHorizontal: -responsivePadding }}
             >
               <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
-              {/* ── 1. Property Hero Card ─────────────────────────────────────── */}
-              <Card
-                containerColor={WHITE}
-                borderRadius={22}
-                borderWidth={0}
-                padding={[0, 0]}
-                style={[styles.heroCardShadow, { flex: 1 }]}
-              >
-                <View style={styles.heroFlexRow}>
-                  {/* Left side building image */}
-                  <View style={styles.heroImageContainer}>
-                    <Image
-                      source={require('../../../assets/bangalore_pg_building.png')}
-                      style={styles.heroImage}
-                      resizeMode="cover"
-                    />
-                  </View>
-  
-                  {/* Right side stats panel with subtle gradient */}
-                  <View style={styles.heroStatsPanel}>
-                    <Row justify="space-between" align="center">
-                      <Text style={styles.heroLabel}>Occupancy</Text>
-                      <View style={styles.trendBadge}>
-                        <Text style={styles.trendBadgeText}>↑ 6%</Text>
-                      </View>
-                    </Row>
-  
-                    <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
-                    <Text style={styles.heroStatusText}>Excellent occupancy</Text>
-  
-                    {/* Custom Progress Bar */}
-                    <View style={styles.progressBarTrack}>
-                      <View style={[styles.progressBarFill, { width: `${occupancyPercent}%` }]} />
+                {/* ── 1. Property Hero Card ─────────────────────────────────────── */}
+                <Card
+                  containerColor={WHITE}
+                  borderRadius={22}
+                  borderWidth={0}
+                  padding={[0, 0]}
+                  style={[styles.heroCardShadow, { flex: 1 }]}
+                >
+                  <View style={styles.heroFlexRow}>
+                    {/* Left side building image */}
+                    <View style={styles.heroImageContainer}>
+                      <Image
+                        source={require('../../../assets/bangalore_pg_building.png')}
+                        style={styles.heroImage}
+                        resizeMode="cover"
+                      />
                     </View>
-  
-                    <View style={styles.heroSummaryContainer}>
-                      <View style={styles.summaryItem}>
-                        <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
-                        <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
-                        <Text style={styles.summaryLabel}>Occupied</Text>
+
+                    {/* Right side stats panel with subtle gradient */}
+                    <View style={styles.heroStatsPanel}>
+                      <Row justify="space-between" align="center">
+                        <Text style={styles.heroLabel}>Occupancy</Text>
+                        <View style={styles.trendBadge}>
+                          <Text style={styles.trendBadgeText}>↑ 6%</Text>
+                        </View>
+                      </Row>
+
+                      <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
+                      <Text style={styles.heroStatusText}>Excellent occupancy</Text>
+
+                      {/* Custom Progress Bar */}
+                      <View style={styles.progressBarTrack}>
+                        <View style={[styles.progressBarFill, { width: `${occupancyPercent}%` }]} />
                       </View>
-                      <View style={styles.summaryItem}>
-                        <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
-                        <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
-                        <Text style={styles.summaryLabel}>Available</Text>
-                      </View>
-                      <View style={styles.summaryItem}>
-                        <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
-                        <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
-                        <Text style={styles.summaryLabel}>Maintenance</Text>
+
+                      <View style={styles.heroSummaryContainer}>
+                        <View style={styles.summaryItem}>
+                          <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
+                          <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
+                          <Text style={styles.summaryLabel}>Occupied</Text>
+                        </View>
+                        <View style={styles.summaryItem}>
+                          <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
+                          <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
+                          <Text style={styles.summaryLabel}>Available</Text>
+                        </View>
+                        <View style={styles.summaryItem}>
+                          <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
+                          <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
+                          <Text style={styles.summaryLabel}>Maintenance</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              </Card>
-  
+                </Card>
+
               </View>
               <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
-              {/* ── 4. Revenue Overview Card ────────────────────────────────────── */}
-              <Card
-                containerColor={WHITE}
-                borderRadius={22}
-                borderWidth={0}
-                padding={[18, 18]}
-                style={[styles.cardShadow, { flex: 1 }]}
-              >
-                <Row justify="space-between" align="center">
-                  <Col>
-                    <Text style={styles.chartTitle}>Revenue Overview</Text>
-                    <Spacer size={4} />
-                    <Row align="center" gap={6}>
-                      <Text style={styles.chartAmountText}>₹4,82,000</Text>
-                      <View style={styles.growthBadge}>
-                        <Text style={styles.growthBadgeText}>↑ 12.4%</Text>
-                      </View>
+                {/* ── 4. Revenue Overview Card ────────────────────────────────────── */}
+                <Card
+                  containerColor={WHITE}
+                  borderRadius={22}
+                  borderWidth={0}
+                  padding={[18, 18]}
+                  style={[styles.cardShadow, { flex: 1 }]}
+                >
+                  <Row justify="space-between" align="center">
+                    <Col>
+                      <Text style={styles.chartTitle}>Revenue Overview</Text>
+                      <Spacer size={4} />
+                      <Row align="center" gap={6}>
+                        <Text style={styles.chartAmountText}>₹4,82,000</Text>
+                        <View style={styles.growthBadge}>
+                          <Text style={styles.growthBadgeText}>↑ 12.4%</Text>
+                        </View>
+                      </Row>
+                      <Text style={styles.chartSubtext}>vs last month</Text>
+                    </Col>
+
+                    {/* Interval Selector */}
+                    <Row gap={4} style={styles.intervalRow}>
+                      {(['3m', '6m', '1y'] as const).map(i => (
+                        <TouchableOpacity
+                          key={i}
+                          style={[styles.intervalBtn, pnlInterval === i && styles.intervalBtnActive]}
+                          onPress={() => { hapticSelect(); setPnlInterval(i); }}
+                        >
+                          <Text style={[styles.intervalBtnText, pnlInterval === i && styles.intervalBtnTextActive]}>
+                            {i.toUpperCase()}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
                     </Row>
-                    <Text style={styles.chartSubtext}>vs last month</Text>
-                  </Col>
-  
-                  {/* Interval Selector */}
-                  <Row gap={4} style={styles.intervalRow}>
-                    {(['3m', '6m', '1y'] as const).map(i => (
-                      <TouchableOpacity
-                        key={i}
-                        style={[styles.intervalBtn, pnlInterval === i && styles.intervalBtnActive]}
-                        onPress={() => { hapticSelect(); setPnlInterval(i); }}
-                      >
-                        <Text style={[styles.intervalBtnText, pnlInterval === i && styles.intervalBtnTextActive]}>
-                          {i.toUpperCase()}
-                        </Text>
-                      </TouchableOpacity>
+                  </Row>
+
+                  <Spacer size={16} />
+
+                  {/* Svg area line chart */}
+                  <View style={styles.svgContainer}>
+                    <Svg width={chartWidth} height={CHART_HEIGHT}>
+                      <Defs>
+                        <LinearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                          <Stop offset="0%" stopColor={PRIMARY} stopOpacity="0.25" />
+                          <Stop offset="100%" stopColor={PRIMARY} stopOpacity="0.0" />
+                        </LinearGradient>
+                      </Defs>
+
+                      {/* Grid Lines */}
+                      <Path d={`M 0 ${CHART_HEIGHT * 0.3} L ${chartWidth} ${CHART_HEIGHT * 0.3}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
+                      <Path d={`M 0 ${CHART_HEIGHT * 0.65} L ${chartWidth} ${CHART_HEIGHT * 0.65}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
+
+                      {/* Gradient Area Fill */}
+                      <Path d={areaD} fill="url(#areaGradient)" opacity={1} />
+
+                      {/* Smooth Line Path */}
+                      <Path
+                        d={pathD}
+                        fill="none"
+                        stroke={PRIMARY}
+                        strokeWidth="3"
+                        strokeDasharray={chartWidth}
+                        strokeDashoffset={0}
+                      />
+
+                      {/* Chart Dots */}
+                      {points.map((p, idx) => (
+                        <Circle
+                          key={idx}
+                          cx={p.x}
+                          cy={p.y}
+                          fill={PRIMARY}
+                          stroke={WHITE}
+                          strokeWidth="2"
+                          opacity={1}
+                          r={4}
+                        />
+                      ))}
+                    </Svg>
+                  </View>
+
+                  <Row justify="space-between" style={{ marginTop: 8 }}>
+                    {areaData.map((d, i) => (
+                      <Text key={i} style={styles.xAxisLabel}>{d.label}</Text>
                     ))}
                   </Row>
-                </Row>
-  
-                <Spacer size={16} />
-  
-                {/* Svg area line chart */}
-                <View style={styles.svgContainer}>
-                  <Svg width={chartWidth} height={CHART_HEIGHT}>
-                    <Defs>
-                      <LinearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <Stop offset="0%" stopColor={PRIMARY} stopOpacity="0.25" />
-                        <Stop offset="100%" stopColor={PRIMARY} stopOpacity="0.0" />
-                      </LinearGradient>
-                    </Defs>
-  
-                    {/* Grid Lines */}
-                    <Path d={`M 0 ${CHART_HEIGHT * 0.3} L ${chartWidth} ${CHART_HEIGHT * 0.3}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
-                    <Path d={`M 0 ${CHART_HEIGHT * 0.65} L ${chartWidth} ${CHART_HEIGHT * 0.65}`} stroke="#F3F4F6" strokeWidth="1" strokeDasharray="4 4" />
-  
-                    {/* Gradient Area Fill */}
-                    <Path d={areaD} fill="url(#areaGradient)" opacity={1} />
-  
-                    {/* Smooth Line Path */}
-                    <Path
-                      d={pathD}
-                      fill="none"
-                      stroke={PRIMARY}
-                      strokeWidth="3"
-                      strokeDasharray={chartWidth}
-                      strokeDashoffset={0}
-                    />
-  
-                    {/* Chart Dots */}
-                    {points.map((p, idx) => (
-                      <Circle
-                        key={idx}
-                        cx={p.x}
-                        cy={p.y}
-                        fill={PRIMARY}
-                        stroke={WHITE}
-                        strokeWidth="2"
-                        opacity={1}
-                        r={4}
-                      />
-                    ))}
-                  </Svg>
-                </View>
-  
-                <Row justify="space-between" style={{ marginTop: 8 }}>
-                  {areaData.map((d, i) => (
-                    <Text key={i} style={styles.xAxisLabel}>{d.label}</Text>
-                  ))}
-                </Row>
-              </Card>
-  
+                </Card>
+
               </View>
               <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
-              {/* ── Food Savings Analytics Card ────────────────────────────────── */}
-              <Card
-                containerColor={Colors.surface}
-                borderRadius={22}
-                borderWidth={0}
-                padding={[0, 0]}
-                style={[styles.cardShadow, { flex: 1, overflow: 'hidden' }]}
-              >
-                <ImageBackground 
-                  source={require('../../../assets/food_savings_banner.png')}
-                  style={{ width: '100%', height: 110 }}
-                  resizeMode="cover"
+                {/* ── Food Savings Analytics Card ────────────────────────────────── */}
+                <Card
+                  containerColor={WHITE}
+                  borderRadius={22}
+                  borderWidth={0}
+                  padding={[0, 0]}
+                  style={[styles.heroCardShadow, { flex: 1 }]}
                 >
-                  {/* Dark overlay for text readability */}
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
-                  <View style={{ padding: 18, flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Col style={{ flex: 1 }}>
-                      <Txt variant="body" weight="900" color={Colors.textInverse}>Food Savings & Waste</Txt>
-                      <Spacer size={2} />
-                      <Txt size={11} color="rgba(255,255,255,0.85)">Portions saved this month from resident skips</Txt>
-                    </Col>
-                    <View style={[styles.tileIconBox, { backgroundColor: 'rgba(255,255,255,0.2)', width: 38, height: 38, borderRadius: 12 }]}>
-                      <Ionicons name="fast-food-outline" size={20} color={Colors.textInverse} />
+                  <View style={styles.heroFlexRow}>
+                    {/* Left side cover image */}
+                    <View style={styles.heroImageContainer}>
+                      <Image
+                        source={require('../../../assets/food_savings_banner.png')}
+                        style={styles.heroImage}
+                        resizeMode="cover"
+                      />
+                      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.15)' }]} />
+                      <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(1,28,64,0.85)', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 }}>
+                        <Row gap={4} align="center">
+                          <Ionicons name="fast-food" size={10} color="#FFF" />
+                          <Txt size={8} weight="900" color="#FFF">FOOD SAVINGS</Txt>
+                        </Row>
+                      </View>
+                    </View>
+
+                    {/* Right side text & stats panel */}
+                    <View style={styles.heroStatsPanel}>
+                      <View>
+                        <Txt size={13} weight="900" color={Colors.textPrimary} numberOfLines={1}>Food Savings & Waste</Txt>
+                        <Txt size={9} color={Colors.textMuted} numberOfLines={1} style={{ marginTop: 1 }}>Portions saved from resident skips</Txt>
+                      </View>
+
+                      <Row justify="space-between" align="center" style={{ backgroundColor: '#F4F9FB', paddingHorizontal: 6, paddingVertical: 8, borderRadius: 10, marginVertical: 4, borderWidth: 1, borderColor: '#CBEFF4' }}>
+                        <Col align="center" style={{ flex: 1 }}>
+                          <Txt size={8} weight="700" color={Colors.textMuted}>PORTIONS</Txt>
+                          <Txt size={13} weight="900" color={Colors.primary} style={{ marginTop: 1 }}>
+                            <AnimatedNumber value={totalSkippedPortions} />
+                          </Txt>
+                        </Col>
+                        <View style={{ width: 1, height: 18, backgroundColor: '#CBEFF4' }} />
+                        <Col align="center" style={{ flex: 1 }}>
+                          <Txt size={8} weight="700" color={Colors.textMuted}>SAVED</Txt>
+                          <Txt size={13} weight="900" color={Colors.success} style={{ marginTop: 1 }}>
+                            ₹<AnimatedNumber value={totalSavedAmount} />
+                          </Txt>
+                        </Col>
+                        <View style={{ width: 1, height: 18, backgroundColor: '#CBEFF4' }} />
+                        <Col align="center" style={{ flex: 1 }}>
+                          <Txt size={8} weight="700" color={Colors.textMuted}>PLATE</Txt>
+                          <Txt size={13} weight="900" color={Colors.textPrimary} style={{ marginTop: 1 }}>
+                            ₹<AnimatedNumber value={costPerPlate} />
+                          </Txt>
+                        </Col>
+                      </Row>
+
+                      <Row justify="space-between" align="center">
+                        <Txt size={9} weight="700" color={Colors.textMuted}>Today's Skips</Txt>
+                        <View style={{ backgroundColor: '#ECFDF5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                          <Txt size={8} weight="900" color={Colors.success}>ACTIVE SAVINGS</Txt>
+                        </View>
+                      </Row>
                     </View>
                   </View>
-                </ImageBackground>
-  
-                <View style={{ paddingHorizontal: 18, paddingBottom: 18, paddingTop: 16, flex: 1, justifyContent: 'space-between' }}>
-                  {/* Metric Grid inside Card */}
-                <Row justify="space-between" align="center" style={styles.savingsMetricGrid}>
-                  <Col style={styles.savingsMetricCol}>
-                    <Txt size={11} weight="600" color={Colors.textMuted}>Saved Portions</Txt>
-                    <Spacer size={4} />
-                    <Txt size={18} weight="900" color={Colors.primary}>
-                      <AnimatedNumber value={totalSkippedPortions} />
-                    </Txt>
-                  </Col>
-                  <View style={styles.savingsDivider} />
-                  <Col style={styles.savingsMetricCol}>
-                    <Txt size={11} weight="600" color={Colors.textMuted}>Money Saved</Txt>
-                    <Spacer size={4} />
-                    <Txt size={18} weight="900" color={Colors.success}>
-                      ₹<AnimatedNumber value={totalSavedAmount} />
-                    </Txt>
-                  </Col>
-                  <View style={styles.savingsDivider} />
-                  <Col style={styles.savingsMetricCol}>
-                    <Txt size={11} weight="600" color={Colors.textMuted}>Cost/Plate</Txt>
-                    <Spacer size={4} />
-                    <Txt size={18} weight="900" color={Colors.textPrimary}>
-                      ₹<AnimatedNumber value={costPerPlate} />
-                    </Txt>
-                  </Col>
-                </Row>
-  
-                {dailySavings.length > 0 ? (
-                  <>
-                    <Spacer size={16} />
-                    <View style={styles.dividerLine} />
-                    <Spacer size={12} />
-                    <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
-                    <Spacer size={8} />
-                    <Col gap={8}>
-                      {dailySavings.slice(0, 3).map((day, idx) => {
-                        const mealLabel = day.meal_type.charAt(0).toUpperCase() + day.meal_type.slice(1);
-                        // Format date (e.g. "2026-08-31" -> "31 Aug")
-                        let formattedDate = day.date;
-                        try {
-                          const dateParts = day.date.split('-');
-                          if (dateParts.length === 3) {
-                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            const dayNum = parseInt(dateParts[2], 10);
-                            const monthIdx = parseInt(dateParts[1], 10) - 1;
-                            formattedDate = `${dayNum} ${months[monthIdx]}`;
-                          }
-                        } catch (e) { }
-  
-                        return (
-                          <Row key={idx} justify="space-between" align="center" style={styles.skipRow}>
-                            <Row gap={8} align="center">
-                              <View style={styles.skipDot} />
-                              <Txt size={12} weight="600" color={Colors.textPrimary}>
-                                {formattedDate} • {mealLabel}
-                              </Txt>
-                            </Row>
-                            <Row gap={12} align="center">
-                              <Txt size={12} weight="600" color={Colors.textMuted}>{day.skipped_portions} skips</Txt>
-                              <Txt size={12} weight="800" color={Colors.success}>+₹{day.saved}</Txt>
-                            </Row>
-                          </Row>
-                        );
-                      })}
-                    </Col>
-                  </>
-                ) : (
-                  savingsData && (
-                    <>
-                      <Spacer size={16} />
-                      <View style={styles.dividerLine} />
-                      <Spacer size={12} />
-                      <Txt size={13} weight="800" color={Colors.textPrimary}>Recent Saved Meals</Txt>
-                      <Spacer size={8} />
-                      <Txt size={12} color={Colors.textMuted} style={{ fontStyle: 'italic', textAlign: 'center', marginVertical: 8 }}>
-                        No skips logged yet this month.
-                      </Txt>
-                    </>
-                  )
-                )}
-                </View>
-              </Card>
-  
+                </Card>
+
               </View>
               <View style={{ width: Dimensions.get("window").width - (responsivePadding * 2) }}>
-              {/* ── 1. Property Hero Card (Duplicate for loop) ─────────────────────────────────────── */}
-              <Card
-                containerColor={WHITE}
-                borderRadius={22}
-                borderWidth={0}
-                padding={[0, 0]}
-                style={[styles.heroCardShadow, { flex: 1 }]}
-              >
-                <View style={styles.heroFlexRow}>
-                  {/* Left side building image */}
-                  <View style={styles.heroImageContainer}>
-                    <Image
-                      source={require('../../../assets/bangalore_pg_building.png')}
-                      style={styles.heroImage}
-                      resizeMode="cover"
-                    />
-                  </View>
-  
-                  {/* Right side stats panel with subtle gradient */}
-                  <View style={styles.heroStatsPanel}>
-                    <Row justify="space-between" align="center">
-                      <Text style={styles.heroLabel}>Occupancy</Text>
-                      <View style={styles.trendBadge}>
-                        <Text style={styles.trendBadgeText}>↑ 6%</Text>
-                      </View>
-                    </Row>
-  
-                    <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
-                    <Text style={styles.heroStatusText}>Excellent occupancy</Text>
-  
-                    {/* Custom Progress Bar */}
-                    <View style={styles.progressBarTrack}>
-                      <View style={[styles.progressBarFill, { width: `${occupancyPercent}%` }]} />
+                {/* ── 1. Property Hero Card (Duplicate for loop) ─────────────────────────────────────── */}
+                <Card
+                  containerColor={WHITE}
+                  borderRadius={22}
+                  borderWidth={0}
+                  padding={[0, 0]}
+                  style={[styles.heroCardShadow, { flex: 1 }]}
+                >
+                  <View style={styles.heroFlexRow}>
+                    {/* Left side building image */}
+                    <View style={styles.heroImageContainer}>
+                      <Image
+                        source={require('../../../assets/bangalore_pg_building.png')}
+                        style={styles.heroImage}
+                        resizeMode="cover"
+                      />
                     </View>
-  
-                    <View style={styles.heroSummaryContainer}>
-                      <View style={styles.summaryItem}>
-                        <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
-                        <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
-                        <Text style={styles.summaryLabel}>Occupied</Text>
+
+                    {/* Right side stats panel with subtle gradient */}
+                    <View style={styles.heroStatsPanel}>
+                      <Row justify="space-between" align="center">
+                        <Text style={styles.heroLabel}>Occupancy</Text>
+                        <View style={styles.trendBadge}>
+                          <Text style={styles.trendBadgeText}>↑ 6%</Text>
+                        </View>
+                      </Row>
+
+                      <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
+                      <Text style={styles.heroStatusText}>Excellent occupancy</Text>
+
+                      {/* Custom Progress Bar */}
+                      <View style={styles.progressBarTrack}>
+                        <View style={[styles.progressBarFill, { width: `${occupancyPercent}%` }]} />
                       </View>
-                      <View style={styles.summaryItem}>
-                        <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
-                        <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
-                        <Text style={styles.summaryLabel}>Available</Text>
-                      </View>
-                      <View style={styles.summaryItem}>
-                        <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
-                        <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
-                        <Text style={styles.summaryLabel}>Maintenance</Text>
+
+                      <View style={styles.heroSummaryContainer}>
+                        <View style={styles.summaryItem}>
+                          <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
+                          <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
+                          <Text style={styles.summaryLabel}>Occupied</Text>
+                        </View>
+                        <View style={styles.summaryItem}>
+                          <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
+                          <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
+                          <Text style={styles.summaryLabel}>Available</Text>
+                        </View>
+                        <View style={styles.summaryItem}>
+                          <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
+                          <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
+                          <Text style={styles.summaryLabel}>Maintenance</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              </Card>
-  
+                </Card>
+
               </View>
             </ScrollView>
 
@@ -638,52 +593,74 @@ export default function OwnerOverviewTab() {
             {/* ── 2. Key Metrics Grid ────────────────────────────────────────── */}
             <View style={styles.metricsGrid}>
               {/* Properties Card */}
-              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push('/manage-properties'); }} style={styles.metricCard}>
-                <View style={[styles.metricIconCircle, { backgroundColor: '#EEF2FF' }]}>
-                  <Ionicons name="business" size={18} color={PRIMARY} />
+              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/manage-properties'); }} style={{ flex: 1, minWidth: 150 }}>
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#EBF7FA', borderColor: '#CBEFF4', borderWidth: 1 }]}>
+                    <Ionicons name="business" size={18} color="#011C40" />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Row justify="space-between" align="center">
+                      <Text style={styles.metricValue}><AnimatedNumber value={allPGs.length} /></Text>
+                      <View style={styles.metricBadgePrimary}><Text style={styles.metricBadgeTextPrimary}>ACTIVE</Text></View>
+                    </Row>
+                    <Text style={styles.metricTitle}>Properties</Text>
+                  </Col>
                 </View>
-                <Col>
-                  <Text style={styles.metricValue}><AnimatedNumber value={allPGs.length} /></Text>
-                  <Text style={styles.metricTitle}>Properties</Text>
-                </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
 
               {/* Residents Card */}
-              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push('/guests'); }} style={styles.metricCard}>
-                <View style={[styles.metricIconCircle, { backgroundColor: '#ECFDF5' }]}>
-                  <Ionicons name="people" size={18} color={SUCCESS} />
+              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/guests'); }} style={{ flex: 1, minWidth: 150 }}>
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#EBF7FA', borderColor: '#CBEFF4', borderWidth: 1 }]}>
+                    <Ionicons name="people" size={18} color="#26658C" />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Row justify="space-between" align="center">
+                      <Text style={styles.metricValue}><AnimatedNumber value={guests.length} /></Text>
+                      <View style={styles.metricBadgeSuccess}><Text style={styles.metricBadgeTextSuccess}>+6%</Text></View>
+                    </Row>
+                    <Text style={styles.metricTitle}>Residents</Text>
+                  </Col>
                 </View>
-                <Col>
-                  <Text style={styles.metricValue}><AnimatedNumber value={guests.length} /></Text>
-                  <Text style={styles.metricTitle}>Residents</Text>
-                </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
 
               {/* Revenue Card */}
-              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push('/pnl-analytics'); }} style={styles.metricCard}>
-                <View style={[styles.metricIconCircle, { backgroundColor: '#FEF3C7' }]}>
-                  <Ionicons name="wallet" size={18} color={WARNING} />
+              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/pnl-analytics'); }} style={{ flex: 1, minWidth: 150 }}>
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A', borderWidth: 1 }]}>
+                    <Ionicons name="wallet" size={18} color="#D97706" />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Row justify="space-between" align="center">
+                      <Text style={styles.metricValue} numberOfLines={1}>
+                        ₹<AnimatedNumber value={overdueAmount > 0 ? overdueAmount / 1000 : 482} decimals={1} />k
+                      </Text>
+                      <View style={styles.metricBadgeWarning}><Text style={styles.metricBadgeTextWarning}>CYC</Text></View>
+                    </Row>
+                    <Text style={styles.metricTitle} numberOfLines={1}>Revenue (Cycle)</Text>
+                  </Col>
                 </View>
-                <Col style={{ flex: 1 }}>
-                  <Row align="center" gap={4}>
-                    <Text style={styles.metricValue} numberOfLines={1}>
-                      ₹<AnimatedNumber value={overdueAmount > 0 ? overdueAmount / 1000 : 482} decimals={1} />k
-                    </Text>
-                  </Row>
-                  <Text style={styles.metricTitle} numberOfLines={1}>Revenue (Cycle)</Text>
-                </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
 
               {/* Pending Issues Card */}
-              <TouchableOpacity activeOpacity={0.7} delayPressIn={100} onPress={() => { hapticSelect(); router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } }); }} style={styles.metricCard}>
-                <View style={[styles.metricIconCircle, { backgroundColor: '#FEF2F2' }]}>
-                  <Ionicons name="construct" size={18} color={DANGER} />
+              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } }); }} style={{ flex: 1, minWidth: 150 }}>
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1 }]}>
+                    <Ionicons name="alert-circle" size={18} color="#DC2626" />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Row justify="space-between" align="center">
+                      <Text style={styles.metricValue}><AnimatedNumber value={openRequests} /></Text>
+                      {openRequests > 0 ? (
+                        <View style={styles.metricBadgeDanger}><Text style={styles.metricBadgeTextDanger}>OPEN</Text></View>
+                      ) : (
+                        <View style={styles.metricBadgeSuccess}><Text style={styles.metricBadgeTextSuccess}>CLEAR</Text></View>
+                      )}
+                    </Row>
+                    <Text style={styles.metricTitle}>Pending Issues</Text>
+                  </Col>
                 </View>
-                <Col>
-                  <Text style={styles.metricValue}><AnimatedNumber value={openRequests} /></Text>
-                  <Text style={styles.metricTitle}>Pending Issues</Text>
-                </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
             </View>
 
 
@@ -691,7 +668,10 @@ export default function OwnerOverviewTab() {
 
             {/* ── 3. Quick Actions ───────────────────────────────────────────── */}
             <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionHeading}>Quick Actions</Text>
+              <Row gap={6} align="center">
+                <Ionicons name="flash" size={16} color="#26658C" />
+                <Text style={styles.sectionHeading}>Quick Actions</Text>
+              </Row>
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => {
@@ -707,15 +687,17 @@ export default function OwnerOverviewTab() {
               </TouchableOpacity>
             </Row>
 
-            <View style={[styles.actionsBox, { paddingHorizontal: 12, paddingVertical: 16 }]}>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16 }}>
+            <View style={[styles.actionsBox, { paddingHorizontal: 14, paddingVertical: 18 }]}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 18 }}>
                 {(isQuickActionsExpanded ? quickActions : quickActions.slice(0, 4)).map(act => (
-                  <TouchableOpacity key={act.label} style={{ width: '23%', alignItems: 'center', gap: 6 }} onPress={act.onPress} activeOpacity={0.7}>
-                    <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor }]}>
-                      <Ionicons name={act.icon} size={20} color={act.color} />
+                  <AnimatedPress key={act.label} scale={0.92} hapticPattern="light" onPress={act.onPress} style={{ width: '22%', alignItems: 'center' }}>
+                    <View style={{ alignItems: 'center', gap: 6, width: '100%' }}>
+                      <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor, borderColor: '#CBEFF4', borderWidth: 1 }]}>
+                        <Ionicons name={act.icon} size={22} color={act.color} />
+                      </View>
+                      <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
                     </View>
-                    <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 ))}
               </View>
             </View>
@@ -1138,6 +1120,8 @@ const styles = StyleSheet.create({
 
   // Get Started / empty state cards
   cardShadow: {
+    borderWidth: 1,
+    borderColor: '#CBEFF4',
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
@@ -1154,6 +1138,8 @@ const styles = StyleSheet.create({
 
   // 1. Property Hero Card
   heroCardShadow: {
+    borderWidth: 1,
+    borderColor: '#CBEFF4',
     shadowColor: PRIMARY,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -1164,10 +1150,10 @@ const styles = StyleSheet.create({
   heroFlexRow: {
     flexDirection: 'row',
     flex: 1,
-    minHeight: 180,
+    minHeight: 130,
   },
   heroImageContainer: {
-    width: '46%',
+    width: '40%',
     height: '100%',
   },
   heroImage: {
@@ -1176,33 +1162,33 @@ const styles = StyleSheet.create({
   },
   heroStatsPanel: {
     flex: 1,
-    padding: 14,
+    padding: 10,
     justifyContent: 'space-between',
     backgroundColor: WHITE,
   },
   heroLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     color: MUTED,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   trendBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 5,
     backgroundColor: '#EEF2FF',
   },
   trendBadgeText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
     color: PRIMARY,
   },
   heroPercentText: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '900',
     color: CHARCOAL,
-    lineHeight: 32,
+    lineHeight: 24,
   },
   heroStatusText: {
     fontSize: 11,
@@ -1254,38 +1240,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   metricCard: {
-    minWidth: 150,
-    flexGrow: 1,
-    height: 68,
+    width: '100%',
+    height: 72,
     backgroundColor: WHITE,
-    borderRadius: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#CBEFF4',
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    shadowColor: PRIMARY,
+    shadowColor: '#011C40',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 3,
   },
   metricIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   metricValue: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '900',
     color: CHARCOAL,
   },
   metricTitle: {
     fontSize: 11,
     color: MUTED,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginTop: 1,
   },
+  metricBadgePrimary: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#EBF7FA' },
+  metricBadgeTextPrimary: { fontSize: 8, fontWeight: '900', color: '#011C40' },
+  metricBadgeSuccess: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#ECFDF5' },
+  metricBadgeTextSuccess: { fontSize: 8, fontWeight: '900', color: SUCCESS },
+  metricBadgeWarning: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#FEF3C7' },
+  metricBadgeTextWarning: { fontSize: 8, fontWeight: '900', color: '#D97706' },
+  metricBadgeDanger: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#FEF2F2' },
+  metricBadgeTextDanger: { fontSize: 8, fontWeight: '900', color: DANGER },
 
   // 3. Quick Actions
   sectionHeaderRow: {

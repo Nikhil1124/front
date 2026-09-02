@@ -11,14 +11,16 @@ import { useProcurementOrders } from '@/features/procurement/useProcurement';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// ── Design Tokens ─────────────────────────────────────────────────────────────
-const PRIMARY = '#4F51D5';      
-const BG = '#F7F8FC';           
-const SURFACE = '#FFFFFF';
-const CHARCOAL = '#15171A';     
-const MUTED = '#6B7280';        
-const BORDER = '#E5E7EB';       
-const LIGHT_INDIGO = '#EEF2FF'; 
+import { Colors } from '@/theme';
+
+// ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
+const PRIMARY = Colors.primary;       // Deep Ocean Blue
+const BG = Colors.canvas;            // Light Ice Canvas
+const SURFACE = Colors.surface;      // Pure White
+const CHARCOAL = Colors.textPrimary; // Obsidian Navy
+const MUTED = Colors.textMuted;      // Ocean Muted
+const BORDER = Colors.borderSubtle;  // Ice Subtle Border
+const LIGHT_INDIGO = Colors.surfaceElevated; // Soft Ice Cyan Tint 
 
 type ServiceItem = {
   id: string;

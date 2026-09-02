@@ -5,17 +5,18 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
 import { Row, Col, Spacer } from '@/components/ui';
+import { Colors } from '@/theme';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { hapticSelect } from '@/utils/haptics';
 
-const GREEN = '#4F51D5';      // Indigo brand primary
-const BG = '#F7F8FC';         // Canvas BG
-const CHARCOAL = '#15171A';   // Primary text
-const MUTED = '#6B7280';      // Muted text
-const BORDER = '#E5E7EB';     // Subtle border
-const WHITE = '#FFFFFF';
-const LIGHT_GREEN = '#EEF2FF';// Soft indigo tint
-const RADIUS = 22;            // Premium corner radius
+const GREEN = Colors.primary;        // Deep Ocean Blue
+const BG = Colors.canvas;            // Light Ice Canvas
+const CHARCOAL = Colors.textPrimary; // Obsidian Navy
+const MUTED = Colors.textMuted;      // Ocean Muted
+const BORDER = Colors.borderSubtle;  // Ice Subtle Border
+const WHITE = Colors.surface;
+const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan Tint
+const RADIUS = 20;
 
 /** Real staff members with any of these roles, joined into a display name — or a generic
  *  role label when nobody with that role is registered yet. Never a fabricated person name. */

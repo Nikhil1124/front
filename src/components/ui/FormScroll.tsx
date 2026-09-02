@@ -73,6 +73,8 @@ export function FormScroll({
         // Drag down over the form to dismiss, rather than hunting for a Done button.
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
         {...rest}
       >
         {children}

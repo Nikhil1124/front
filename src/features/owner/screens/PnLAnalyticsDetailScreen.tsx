@@ -20,16 +20,16 @@ import { PnLChart as PnLChartPresentational } from '@/components/PnLChart';
 import { usePnL } from '@/features/billing/usePnL';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
 import { useExpensesQuery } from '@/features/expenses/useExpenses';
-import { hapticSelect } from '@/utils/haptics';
+import { Colors } from '@/theme';
 import type { PnLInterval, PaymentEntity, ExpenseEntity } from '@/types';
 
-const GREEN = '#4F51D5';      // Indigo primary brand
-const BG = '#F7F8FC';         // Canvas BG
-const CHARCOAL = '#15171A';   // Primary text
-const MUTED = '#6B7280';      // Muted text
-const BORDER = '#E5E7EB';     // Subtle border
-const WHITE = '#FFFFFF';
-const RADIUS = 22;            // Premium rounded corners
+const GREEN = Colors.primary;        // Deep Ocean Blue
+const BG = Colors.canvas;            // Light Ice Canvas
+const CHARCOAL = Colors.textPrimary; // Obsidian Navy
+const MUTED = Colors.textMuted;      // Ocean Muted
+const BORDER = Colors.borderSubtle;  // Ice Subtle Border
+const WHITE = Colors.surface;
+const RADIUS = 20;
 
 type AnalyticsInterval = PnLInterval | 'custom';
 

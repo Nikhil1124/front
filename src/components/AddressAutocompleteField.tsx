@@ -94,7 +94,7 @@ export function AddressAutocompleteField({
       {open && (searching || suggestions.length > 0) && (
         <View style={styles.dropdown}>
           {searching && suggestions.length === 0 ? (
-            <Txt variant="caption" color={Colors.SlateMutedText} style={styles.searching}>
+            <Txt variant="caption" color={Colors.textMuted} style={styles.searching}>
               Searching…
             </Txt>
           ) : (
@@ -105,13 +105,13 @@ export function AddressAutocompleteField({
                 style={styles.row}
                 activeOpacity={0.7}
               >
-                <Ionicons name="location-outline" size={16} color={Colors.SlateMutedText} />
+                <Ionicons name="location-outline" size={16} color={Colors.textMuted} />
                 <View style={styles.rowText}>
-                  <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText} numberOfLines={1}>
+                  <Txt variant="caption" weight="700" color={Colors.textPrimary} numberOfLines={1}>
                     {s.primary}
                   </Txt>
                   {s.secondary ? (
-                    <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText} numberOfLines={1}>
+                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted} numberOfLines={1}>
                       {s.secondary}
                     </Txt>
                   ) : null}
@@ -128,9 +128,9 @@ export function AddressAutocompleteField({
 const styles = StyleSheet.create({
   dropdown: {
     borderWidth: 1,
-    borderColor: Colors.LuxuryCardBorder,
+    borderColor: Colors.borderSubtle,
     borderRadius: Radii.lg,
-    backgroundColor: Colors.LuxurySurfaceDark,
+    backgroundColor: Colors.surface,
     marginTop: 4,
     overflow: 'hidden',
   },

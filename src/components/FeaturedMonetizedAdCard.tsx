@@ -32,12 +32,12 @@ export function FeaturedMonetizedAdCard() {
   const recordCouponCopy = () => recordEvent.mutate({ eventType: 'coupon_copy' });
 
   return (
-    <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={16} borderWidth={1} borderColor="rgba(255,215,0,0.4)" padding={[8, 8]}>
+    <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor="rgba(255,215,0,0.4)" padding={[8, 8]}>
       {/* Sponsored Header */}
       <View style={styles.sponsoredHeader}>
         <Row gap={8} align="center" style={{ flex: 1 }}>
           <View style={styles.sponsoredTag}><Txt size={8} weight="900" color="#FFD700" style={{ letterSpacing: 0.5 }}>SPONSORED PARTNER</Txt></View>
-          <Txt variant="labelSmall" color={Colors.SlateMutedText}>Monetized Channel</Txt>
+          <Txt variant="labelSmall" color={Colors.textMuted}>Monetized Channel</Txt>
         </Row>
       </View>
 
@@ -57,12 +57,12 @@ export function FeaturedMonetizedAdCard() {
       <View style={{ padding: 16 }}>
         <Col style={{ flex: 1 }}>
           <Txt variant="sectionTitle" weight="800" color="#FFFFFF">{ad.brand_name}</Txt>
-          {!!ad.tagline && <Txt variant="caption" weight="600" color={Colors.CyberPink}>{ad.tagline}</Txt>}
+          {!!ad.tagline && <Txt variant="caption" weight="600" color={Colors.accentRose}>{ad.tagline}</Txt>}
         </Col>
         {!!ad.description && (
           <>
             <Spacer size={8} />
-            <Txt variant="caption" color={Colors.SlateMutedText} style={{ lineHeight: 16 }}>{ad.description}</Txt>
+            <Txt variant="caption" color={Colors.textMuted} style={{ lineHeight: 16 }}>{ad.description}</Txt>
           </>
         )}
         {!!ad.cuisines && (
@@ -94,7 +94,7 @@ export function FeaturedMonetizedAdCard() {
           )}
           <Btn
             onPress={() => { recordClick(); setShowCheckout(true); }}
-            containerColor={Colors.CyberPink}
+            containerColor={Colors.accentRose}
             textColor="#FFFFFF"
             borderRadius={10}
             height={40}
@@ -109,16 +109,16 @@ export function FeaturedMonetizedAdCard() {
           the copy-code-and-continue flow the prototype offered. */}
       <Modal visible={showCheckout} transparent animationType="fade">
         <View style={styles.backdrop}>
-          <Card containerColor="#0F0B21" borderRadius={20} borderWidth={1} borderColor={Colors.CyberPink} padding={[20, 20]} style={{ width: '92%' }}>
+          <Card containerColor="#0F0B21" borderRadius={20} borderWidth={1} borderColor={Colors.accentRose} padding={[20, 20]} style={{ width: '92%' }}>
             <Col align="center">
               <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color="#10B981" /></View>
               <Spacer size={16} />
               <Txt variant="sectionTitle" weight="900" color="#FFFFFF" align="center">{ad.brand_name}</Txt>
-              <Txt variant="caption" color={Colors.SlateMutedText}>Exclusive PG Partner Integration</Txt>
-              <Spacer size={16} /><View style={{ height: 1, backgroundColor: Colors.LuxuryCardBorder, width: '100%' }} /><Spacer size={12} />
+              <Txt variant="caption" color={Colors.textMuted}>Exclusive PG Partner Integration</Txt>
+              <Spacer size={16} /><View style={{ height: 1, backgroundColor: Colors.borderSubtle, width: '100%' }} /><Spacer size={12} />
               {!!ad.discount_code && (
                 <Row justify="space-between" style={{ width: '100%' }}>
-                  <Txt variant="caption" color={Colors.SlateMutedText}>Resident Meal Voucher</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Resident Meal Voucher</Txt>
                   <Txt variant="caption" weight="700" color="#10B981">
                     {ad.discount_percent > 0 ? `- ${ad.discount_percent}% Off Applied` : 'Applied'}
                   </Txt>
@@ -126,18 +126,18 @@ export function FeaturedMonetizedAdCard() {
               )}
               {!!ad.delivery_time && (
                 <Row justify="space-between" style={{ width: '100%', marginTop: 6 }}>
-                  <Txt variant="caption" color={Colors.SlateMutedText}>Estimated Arrival</Txt>
-                  <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText}>{ad.delivery_time}</Txt>
+                  <Txt variant="caption" color={Colors.textMuted}>Estimated Arrival</Txt>
+                  <Txt variant="caption" weight="700" color={Colors.textInverse}>{ad.delivery_time}</Txt>
                 </Row>
               )}
               <Spacer size={20} />
-              <Txt variant="caption" color={Colors.SlateMutedText} align="center">
+              <Txt variant="caption" color={Colors.textMuted} align="center">
                 {ad.discount_code
                   ? `Voucher code '${ad.discount_code}' is copied and active. You can complete order on their platform.`
                   : 'You can complete your order on their platform.'}
               </Txt>
               <Spacer size={20} />
-              <Btn onPress={() => setShowCheckout(false)} containerColor={Colors.CyberPink} textColor="#FFFFFF" borderRadius={12} height={44} style={{ width: '100%' }}>
+              <Btn onPress={() => setShowCheckout(false)} containerColor={Colors.accentRose} textColor="#FFFFFF" borderRadius={12} height={44} style={{ width: '100%' }}>
                 <Txt variant="body" weight="700" color="#FFFFFF">Awesome, Continue</Txt>
               </Btn>
             </Col>

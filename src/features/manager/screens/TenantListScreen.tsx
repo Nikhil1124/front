@@ -47,6 +47,8 @@ function kycPill(status: string | undefined): KycPillConfig {
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAuthStore } from '@/store/authStore';
 
+import { KycDocumentsCard } from '@/components/KycDocumentsCard';
+
 export function TenantListScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: guests = [], isLoading: guestsLoading, error: guestsError, refetch, isRefetching } = useGuestsQuery(activePgId ?? undefined);
@@ -55,6 +57,7 @@ export function TenantListScreen() {
   const [rejectGuestId, setRejectGuestId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleVerify = (guest: GuestEntity) => {
     Alert.alert(
@@ -149,6 +152,8 @@ export function TenantListScreen() {
         renderItem={({ item: g }) => {
           const pill = kycPill(g.kycStatus);
           const canDecide = g.kycStatus === 'PENDING' || g.kycStatus === 'REJECTED';
+          const isExpanded = expandedId === g.id || canDecide;
+
           return (
             <Card
               containerColor={Colors.surface}
@@ -157,16 +162,33 @@ export function TenantListScreen() {
               borderColor={Colors.borderSubtle}
               padding={[14, 14]}
             >
-              <Row gap={12} align="center">
-                <View style={[styles.avatar, { backgroundColor: `${pill.color}1A` }]}>
-                  <Txt size={14} weight="800" color={pill.color}>{(g.name ?? '?').slice(0, 1).toUpperCase()}</Txt>
+              <Pressable onPress={() => setExpandedId(isExpanded ? null : g.id)}>
+                <Row gap={12} align="center">
+                  <View style={[styles.avatar, { backgroundColor: `${pill.color}1A` }]}>
+                    <Txt size={14} weight="800" color={pill.color}>{(g.name ?? '?').slice(0, 1).toUpperCase()}</Txt>
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Txt size={14} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                    <Txt size={11} color={Colors.textMuted}>Room {g.roomNo || '—'} • {g.phone || 'No phone'}</Txt>
+                  </Col>
+                  <Pill label={pill.label} color={pill.color} bg={pill.bg} />
+                  <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={16} color={Colors.textMuted} />
+                </Row>
+              </Pressable>
+
+              {/* KYC Document Photos Preview — visible when expanded or pending */}
+              {isExpanded && (
+                <View style={{ marginTop: 12 }}>
+                  <Txt size={11} weight="700" color={Colors.textMuted} style={{ marginBottom: 6 }}>
+                    SUBMITTED KYC DOCUMENTS
+                  </Txt>
+                  <KycDocumentsCard
+                    idPhotoUri={g.idProofPhotoUri}
+                    selfieUri={g.profilePhotoUri}
+                    emptyHint="No KYC documents uploaded yet."
+                  />
                 </View>
-                <Col style={{ flex: 1 }}>
-                  <Txt size={14} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
-                  <Txt size={11} color={Colors.textMuted}>Room {g.roomNo || '—'} • {g.phone || 'No phone'}</Txt>
-                </Col>
-                <Pill label={pill.label} color={pill.color} bg={pill.bg} />
-              </Row>
+              )}
 
               {/* Action row — visible only when there's a decision to make */}
               {canDecide ? (
@@ -186,20 +208,20 @@ export function TenantListScreen() {
                       <Txt size={12} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Verify KYC</Txt>
                     </Btn>
                   )}
-                  <OutlinedBtn
+                  <Btn
                     onPress={() => { hapticSelect(); setRejectGuestId(g.id); setRejectReason(''); }}
-                    borderColor={Colors.danger}
-                    textColor={Colors.danger}
+                    containerColor={Colors.danger}
+                    textColor={Colors.textInverse}
                     borderRadius={Layout.borderRadiusButton}
                     height={36}
                     style={{ flex: g.kycStatus === 'PENDING' ? undefined : 1 }}
                     testID={`tenant_reject_${g.id}`}
                   >
-                    <Ionicons name="close-circle" size={16} color={Colors.danger} />
-                    <Txt size={12} weight="700" color={Colors.danger} style={{ marginLeft: 6 }}>
+                    <Ionicons name="close-circle" size={16} color={Colors.textInverse} />
+                    <Txt size={12} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>
                       {g.kycStatus === 'PENDING' ? 'Reject' : 'Re-reject'}
                     </Txt>
-                  </OutlinedBtn>
+                  </Btn>
                 </Row>
               ) : null}
             </Card>

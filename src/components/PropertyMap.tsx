@@ -95,7 +95,7 @@ export default function PropertyMap({
                 pinch-out past it lands somewhere with no tiles at all. */}
             <Camera initialViewState={{ center: [lng, lat], zoom: 15 }} minZoom={3} />
             <ViewAnnotation lngLat={[lng, lat]} anchor="bottom">
-              <Ionicons name="location" size={32} color={Colors.CyberGreen} />
+              <Ionicons name="location" size={32} color={Colors.primary} />
             </ViewAnnotation>
           </Map>
         ) : null}
@@ -105,7 +105,7 @@ export default function PropertyMap({
             pointerEvents="none"
             style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}
           >
-            <ActivityIndicator color={Colors.CyberGreen} />
+            <ActivityIndicator color={Colors.primary} />
           </View>
         )}
 
@@ -113,20 +113,20 @@ export default function PropertyMap({
             failure is otherwise indistinguishable from a map that simply has nothing on it. */}
         {failed && (
           <View style={[StyleSheet.absoluteFill, styles.mapLoading, styles.mapOverlay]}>
-            <Ionicons name="map-outline" size={20} color={Colors.SlateMutedText} />
-            <Txt variant="caption" color={Colors.SlateMutedText} style={{ marginTop: 4 }}>
+            <Ionicons name="map-outline" size={20} color={Colors.textMuted} />
+            <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 4 }}>
               Map unavailable
             </Txt>
           </View>
         )}
       </View>
       <TouchableOpacity style={styles.footer} onPress={openInMaps} activeOpacity={0.8}>
-        <Txt variant="caption" color={Colors.SlateMutedText} style={styles.address} numberOfLines={1}>
+        <Txt variant="caption" color={Colors.textMuted} style={styles.address} numberOfLines={1}>
           {formattedAddress || 'Location'}
         </Txt>
         <View style={styles.open}>
-          <Ionicons name="open-outline" size={14} color={Colors.CyberGreen} />
-          <Txt variant="caption" weight="600" color={Colors.CyberGreen}>
+          <Ionicons name="open-outline" size={14} color={Colors.primary} />
+          <Txt variant="caption" weight="600" color={Colors.primary}>
             Open
           </Txt>
         </View>
@@ -138,14 +138,14 @@ export default function PropertyMap({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderColor: Colors.LuxuryCardBorder,
+    borderColor: Colors.borderSubtle,
     borderRadius: Radii.xl,
-    backgroundColor: Colors.LuxurySurfaceDark,
+    backgroundColor: Colors.surface,
     overflow: 'hidden',
   },
-  map: { width: '100%', backgroundColor: Colors.LuxurySurfaceDark },
+  map: { width: '100%', backgroundColor: Colors.surface },
   mapLoading: { alignItems: 'center', justifyContent: 'center' },
-  mapOverlay: { backgroundColor: Colors.LuxurySurfaceDark },
+  mapOverlay: { backgroundColor: Colors.surface },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.LuxuryCardBorder,
+    borderTopColor: Colors.borderSubtle,
   },
   address: { flex: 1 },
   open: { flexDirection: 'row', alignItems: 'center', gap: 4 },

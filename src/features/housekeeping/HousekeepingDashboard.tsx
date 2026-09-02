@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Alert, TextInput, Image, Modal, Ref
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
@@ -935,16 +936,21 @@ function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues
 
   return (
     <FormScroll bottomPadding={120} contentContainerStyle={{ padding: 18, gap: 16 }}>
-      <Col align="center" style={{ marginTop: 20 }}>
+      <LinearGradient
+        colors={['#011C40', '#023859']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ borderRadius: 24, padding: 20, alignItems: 'center' }}
+      >
         <View style={styles.avatarBox}>
           <Txt size={32}>🛠️</Txt>
         </View>
         <Spacer size={12} />
-        <Txt size={22} weight="900" color={Colors.primaryDark}>{staff?.name ?? 'Arjun Reddy'}</Txt>
-        <Txt size={14} weight="700" color={Colors.primary}>Maintenance Staff</Txt>
+        <Txt size={22} weight="900" color="#FFFFFF">{staff?.name ?? 'Arjun Reddy'}</Txt>
+        <Txt size={14} weight="700" color="#A7EBF2">Maintenance Staff</Txt>
         <Spacer size={4} />
-        <Txt size={12} color={Colors.textMuted}>Employee ID: MS-2001</Txt>
-      </Col>
+        <Txt size={12} color="rgba(255,255,255,0.75)">Employee ID: MS-2001</Txt>
+      </LinearGradient>
 
       <Spacer size={20} />
       <View style={styles.sectionHeader}>

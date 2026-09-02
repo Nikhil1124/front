@@ -38,13 +38,13 @@ import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { formatDateTime } from '@/utils/format';
 import type { GuestEntity } from '@/types';
 
-const GREEN = '#4F51D5';      // Indigo brand primary
-const BG = '#F7F8FC';         // Canvas BG
-const CHARCOAL = '#15171A';   // Primary text
-const MUTED = '#6B7280';      // Muted text
-const BORDER = '#E5E7EB';     // Subtle border
-const WHITE = '#FFFFFF';
-const LIGHT_GREEN = '#EEF2FF';// Soft indigo tint
+const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
+const BG = Colors.canvas;            // Light Ice Canvas BG
+const CHARCOAL = Colors.textPrimary; // Obsidian Navy primary text
+const MUTED = Colors.textMuted;      // Ocean Muted text
+const BORDER = Colors.borderSubtle;  // Ice Cyan subtle border
+const WHITE = Colors.surface;        // Pure White surface
+const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan active tint
 const RADIUS = 22;            // Premium corner radius
 
 const KYC_STYLE: Record<string, { bg: string; border: string; text: string; label: string }> = {
@@ -1144,7 +1144,7 @@ export function OwnerGuestsManagementTab() {
                 <Row gap={8}>
                   <Btn
                     onPress={() => handleApprove(reviewing)}
-                    containerColor={GREEN}
+                    containerColor={Colors.success}
                     textColor={WHITE}
                     borderRadius={10}
                     height={42}

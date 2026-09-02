@@ -9,6 +9,7 @@ import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView } from
 import { router, usePathname } from 'expo-router';
 import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
@@ -63,10 +64,17 @@ export default function OwnerTabsLayout() {
     <Tabs style={styles.root}>
       {/* ── Main Layout Wrapper ── */}
       <View style={{ flex: 1, backgroundColor: BG, paddingBottom: 68 + insets.bottom }}>
-        {/* ── Personalized Redesigned Header ───────────────────────────────────── */}
+        {/* ── Personalized LUNA Gradient Header (Replicating Resident Design) ───── */}
         {isOverviewActive ? (
-          <View style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}>
-            <Row justify="space-between" align="center">
+          <LinearGradient
+            colors={['#011C40', '#023859']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}
+          >
+            <View style={styles.hWave1} />
+            <View style={styles.hWave2} />
+            <Row justify="space-between" align="center" style={{ width: '100%' }}>
               {/* Left Avatar + User Greeting & Property swapper */}
               <Row gap={12} align="center" style={{ flex: 1 }}>
                 {/* Owner Avatar Frame */}
@@ -75,25 +83,25 @@ export default function OwnerTabsLayout() {
                 </View>
                 
                 <Col style={{ flex: 1 }}>
-                  <Txt size={12} weight="600" color={MUTED}>{greeting}</Txt>
+                  <Txt size={12} weight="600" color="rgba(255, 255, 255, 0.78)">{greeting}</Txt>
                   <Spacer size={2} />
                   <TouchableOpacity
                     activeOpacity={0.7}
                     onPress={() => { hapticSelect(); setShowProfileMenu(true); }}
                     style={styles.propertySelectRow}
                   >
-                    <Txt size={16} weight="800" color={CHARCOAL} numberOfLines={1}>
+                    <Txt size={17} weight="900" color="#FFFFFF" numberOfLines={1}>
                       {owner?.pgName ?? 'Select PG'}
                     </Txt>
-                    <Ionicons name="chevron-down" size={13} color={MUTED} />
+                    <Ionicons name="chevron-down" size={14} color="#A7EBF2" />
                     {isManager && (
                       <View style={styles.managerBadge}>
-                        <Txt size={8} weight="900" color={PRIMARY}>MANAGER</Txt>
+                        <Txt size={8} weight="900" color="#011C40">MANAGER</Txt>
                       </View>
                     )}
                   </TouchableOpacity>
                   <Spacer size={1} />
-                  <Txt size={11} color={MUTED}>{subLabel}</Txt>
+                  <Txt size={11} color="rgba(255, 255, 255, 0.75)">{subLabel}</Txt>
                 </Col>
               </Row>
 
@@ -101,29 +109,34 @@ export default function OwnerTabsLayout() {
               <Row gap={8} align="center">
                 <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/notices'); }}>
                   <View style={styles.headerActionBtn}>
-                    <Ionicons name="notifications-outline" size={20} color={CHARCOAL} />
+                    <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
                     {unreadCount > 0 && <View style={styles.unreadDot} />}
                   </View>
                 </AnimatedPress>
 
                 <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => router.push('/settings')}>
                   <View style={styles.headerActionBtn}>
-                    <Ionicons name="settings-outline" size={20} color={CHARCOAL} />
+                    <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
                   </View>
                 </AnimatedPress>
               </Row>
             </Row>
-          </View>
+          </LinearGradient>
         ) : (
-          <View style={[styles.headerContainer, { paddingTop: insets.top + 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 14 }]}>
+          <LinearGradient
+            colors={['#011C40', '#023859']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.headerContainer, { paddingTop: insets.top + 10, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }]}
+          >
             <TouchableOpacity
               style={styles.headerActionBtn}
               onPress={() => { hapticSelect(); router.push('/overview'); }}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={20} color={CHARCOAL} />
+              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
             </TouchableOpacity>
-            <Txt size={18} weight="800" color={CHARCOAL}>
+            <Txt size={20} weight="900" color="#FFFFFF">
               {pathname === '/guests' ? 'Residents Directory' :
                pathname === '/payments' ? 'Payments & Revenue' :
                pathname === '/staff' ? 'Staff Management' :
@@ -131,7 +144,7 @@ export default function OwnerTabsLayout() {
                pathname === '/notices' ? 'Notifications' :
                pathname === '/reviews' ? 'Reviews & Feedback' : 'Details'}
             </Txt>
-          </View>
+          </LinearGradient>
         )}
         {/* ── Active Tab Content View Slot ────────────────────────────────────── */}
         <View
@@ -338,21 +351,23 @@ export default function OwnerTabsLayout() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
-  // Redesigned Header
+  // LUNA Gradient Header (Matching Resident Design)
   headerContainer: {
     paddingHorizontal: 18,
-    paddingBottom: 12,
-    backgroundColor: WHITE,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
   },
+  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255, 255, 255, 0.07)' },
+  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255, 255, 255, 0.05)' },
   avatarFrame: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: BORDER,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -362,20 +377,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   managerBadge: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: '#EEF2FF',
-    borderWidth: 1,
-    borderColor: '#E0E7FF',
+    backgroundColor: '#A7EBF2',
   },
   headerActionBtn: {
     width: 38,
     height: 38,
-    borderRadius: 12,
-    backgroundColor: WHITE,
-    borderWidth: 1,
-    borderColor: BORDER,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -78,7 +78,7 @@ export async function registerNotificationChannels(): Promise<void> {
         name: c.name,
         description: c.description,
         importance: c.importance,
-        lightColor: Colors.CyberGreen,
+        lightColor: Colors.primary,
       })
     )
   );

@@ -15,7 +15,7 @@ import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Svg, Rect, Line, Text as SvgText, G } from 'react-native-svg';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Card, Txt, Row, Chip, Spacer, LoadingState, ErrorState } from '@/components/ui';
-import { Colors, Palette, Radii } from '@/theme';
+import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useRSVPTrends } from '@/features/meals/useRSVPTrends';
 import type { MealRSVPTrendDay } from '@/features/meals/useMeals';
@@ -176,7 +176,7 @@ function TrendChart({ data }: { data: DayTotal[] }) {
               y1={y}
               x2={LEFT_PAD + plotWidth}
               y2={y}
-              stroke={Palette.BorderFaint}
+              stroke={Colors.borderSubtle}
               strokeWidth={1}
               strokeDasharray={step === 0 ? undefined : '3 3'}
             />

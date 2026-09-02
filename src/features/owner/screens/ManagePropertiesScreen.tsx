@@ -21,14 +21,16 @@ import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog'
 import type { PGOwnerEntity } from '@/types';
 import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 
-// ── Color System ─────────────────────────────────────────────────────────────
-const PRIMARY = '#4F51D5';      // Premium Indigo / Violet
-const PRIMARY_SOFT = '#EEEAFE'; // Soft Indigo
-const BG = '#F7F8FC';           // Canvas bg
-const CHARCOAL = '#16181D';     // Main text
-const MUTED = '#6B7280';        // Secondary text
-const BORDER = '#E5E7EB';       // Subtle border
-const WHITE = '#FFFFFF';
+import { Colors } from '@/theme';
+
+// ── Color System (Official LUNA Palette) ───────────────────────────────────
+const PRIMARY = Colors.primary;       // Deep Ocean Blue
+const PRIMARY_SOFT = Colors.surfaceElevated; // Soft Ice Cyan Tint
+const BG = Colors.canvas;            // Light Ice Canvas
+const CHARCOAL = Colors.textPrimary; // Obsidian Navy
+const MUTED = Colors.textMuted;      // Ocean Muted
+const BORDER = Colors.borderSubtle;  // Ice Subtle Border
+const WHITE = Colors.surface;
 const SUCCESS = '#16A34A';
 const WARNING = '#F59E0B';
 const ERROR = '#DC2626';

@@ -23,7 +23,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
-import { Colors, Palette, Radii } from '@/theme';
+import { Colors, Radii } from '@/theme';
 import { haptic } from '@/utils/haptics';
 import type { MealToggleState } from '@/types';
 
@@ -89,9 +89,9 @@ const MEAL_META: Record<
   MealType,
   { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tint: string }
 > = {
-  breakfast: { icon: 'weather-sunny', label: 'Breakfast', tint: Colors.CyberAmber },
-  lunch: { icon: 'white-balance-sunny', label: 'Lunch', tint: Colors.CyberGreen },
-  dinner: { icon: 'weather-sunset-down', label: 'Dinner', tint: Colors.CyberPurple },
+  breakfast: { icon: 'weather-sunny', label: 'Breakfast', tint: Colors.secondary },
+  lunch: { icon: 'white-balance-sunny', label: 'Lunch', tint: Colors.primary },
+  dinner: { icon: 'weather-sunset-down', label: 'Dinner', tint: Colors.primaryDark },
 };
 
 export function MealToggleWidget({ breakfast, lunch, dinner, onToggle }: MealToggleWidgetProps) {
@@ -121,17 +121,17 @@ function MealRow({ mealType, state, onToggle }: MealRowProps) {
   };
 
   return (
-    <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={Radii.xxl} padding={[14, 14]}>
+    <Card containerColor={Colors.surface} borderRadius={Radii.xxl} padding={[14, 14]}>
       <Row align="center" justify="space-between" gap={12}>
         <Row align="center" gap={12} style={{ flex: 1 }}>
           <View style={[styles.iconChip, { backgroundColor: `${meta.tint}22` }]}>
             <MaterialCommunityIcons name={meta.icon} size={22} color={meta.tint} />
           </View>
           <Col style={{ flex: 1 }}>
-            <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>
+            <Txt variant="cardTitle" color={Colors.textInverse}>
               {meta.label}
             </Txt>
-            <Txt variant="caption" color={Colors.SlateMutedText} numberOfLines={1}>
+            <Txt variant="caption" color={Colors.textMuted} numberOfLines={1}>
               {state.menuSummary || 'Menu not posted'}
             </Txt>
           </Col>
@@ -155,8 +155,8 @@ function MealSwitch({
   onToggle: () => void;
   tint: string;
 }) {
-  const trackColor = enabled ? Palette.StatusGreen : Palette.BorderMid;
-  const thumbColor = enabled ? Colors.LuxuryPureBlack : Colors.SlateMutedText;
+  const trackColor = enabled ? Colors.success : Colors.borderMuted;
+  const thumbColor = enabled ? Colors.canvas : Colors.textMuted;
 
   // The thumb slides 20px (track width 44 minus thumb 24). Using a plain
   // animated transform would be smoother, but the spring on AnimatedPress is
@@ -170,7 +170,7 @@ function MealSwitch({
       accessibilityLabel="Meal opt-in toggle"
       onPress={onToggle}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      style={[styles.switchTrack, { backgroundColor: trackColor, borderColor: enabled ? tint : Palette.BorderMid }]}
+      style={[styles.switchTrack, { backgroundColor: trackColor, borderColor: enabled ? tint : Colors.borderMuted }]}
     >
       <View style={[styles.switchThumb, thumbOffset, { backgroundColor: thumbColor }]} />
     </Pressable>
@@ -181,7 +181,7 @@ function CountdownLine({ state, countdown }: { state: MealToggleState; countdown
   // No upcoming cutoff → render nothing, not a "0h 00m" tease.
   if (state.nextCutoffMs == null) {
     return (
-      <Txt variant="caption" color={Colors.SlateMutedText}>
+      <Txt variant="caption" color={Colors.textMuted}>
         No cutoff scheduled
       </Txt>
     );
@@ -190,8 +190,8 @@ function CountdownLine({ state, countdown }: { state: MealToggleState; countdown
   if (countdown.isPast) {
     return (
       <Row align="center" gap={6}>
-        <MaterialCommunityIcons name="clock-outline" size={13} color={Colors.SlateMutedText} />
-        <Txt variant="caption" color={Colors.SlateMutedText}>
+        <MaterialCommunityIcons name="clock-outline" size={13} color={Colors.textMuted} />
+        <Txt variant="caption" color={Colors.textMuted}>
           Cutoff passed — skipped
         </Txt>
       </Row>
@@ -203,9 +203,9 @@ function CountdownLine({ state, countdown }: { state: MealToggleState; countdown
   // under 15 minutes — beyond that, "2h 14m" is the right granularity and a
   // ticking seconds field would just be noise.
   const tint =
-    totalMinutes < 15 ? Palette.StatusRed
-    : totalMinutes < 60 ? Palette.StatusAmber
-    : Colors.SlateMutedText;
+    totalMinutes < 15 ? Colors.danger
+    : totalMinutes < 60 ? Colors.secondary
+    : Colors.textMuted;
 
   const label =
     totalMinutes < 15
@@ -218,7 +218,7 @@ function CountdownLine({ state, countdown }: { state: MealToggleState; countdown
       <Txt variant="caption" weight="600" color={tint}>
         {label}
       </Txt>
-      <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>
+      <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>
         · {state.cutoffTime}
       </Txt>
     </Row>

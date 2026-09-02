@@ -1396,6 +1396,16 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       });
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.session() });
+      const currentGuest = get().loggedInGuest;
+      if (currentGuest) {
+        set({
+          loggedInGuest: {
+            ...currentGuest,
+            kycStatus: 'PENDING',
+            kycRejectReason: '',
+          },
+        });
+      }
       useAuthStore.getState().setUser(await authApi.fetchMe(), 'guest');
       
       // Dispatch notification to Manager & Owner

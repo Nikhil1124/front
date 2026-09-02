@@ -1,12 +1,14 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
+import { Row, Col, Txt } from '@/components/ui';
 
 const MENU_ITEMS = [
   { id: '1', title: 'Manage Addresses', icon: 'location-outline' as const },
@@ -15,10 +17,9 @@ const MENU_ITEMS = [
   { id: '4', title: 'Settings', icon: 'settings-outline' as const },
 ];
 
-/** The groceries mini-app's own profile tab — the real signed-in account (whichever role
- *  is shopping: owner, manager, chef, or resident), not a stand-in. Logout is the same
- *  action the rest of the app uses (`usePGowStore.logout`, see `GroceryOrdersScreen`). */
+/** The groceries mini-app's profile screen — styled with the official LUNA palette */
 export function GroceryProfileScreen() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const logout = usePGowStore((s) => s.logout);
 
@@ -27,15 +28,25 @@ export function GroceryProfileScreen() {
   const avatarLetter = name.trim().charAt(0).toUpperCase() || 'P';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-      </View>
+    <View style={styles.container}>
+      {/* ── 1. LUNA GRADIENT HEADER ── */}
+      <LinearGradient
+        colors={['#011C40', '#023859']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.headerGradient, { paddingTop: insets.top + 12 }]}
+      >
+        <Row justify="space-between" align="center" style={styles.hRow}>
+          <Row gap={10} align="center">
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Txt size={22} weight="900" color="#FFFFFF">Grocery Account</Txt>
+          </Row>
+        </Row>
+      </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{avatarLetter}</Text>
@@ -52,11 +63,11 @@ export function GroceryProfileScreen() {
               <TouchableOpacity style={styles.menuItem}>
                 <View style={styles.menuLeft}>
                   <View style={styles.menuIconContainer}>
-                    <Ionicons name={item.icon} size={20} color={Colors.textSecondary} />
+                    <Ionicons name={item.icon} size={20} color={Colors.primary} />
                   </View>
                   <Text style={styles.menuTitle}>{item.title}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+                <Ionicons name="chevron-forward" size={20} color={Colors.textPrimarySecondary} />
               </TouchableOpacity>
               {index < MENU_ITEMS.length - 1 && <View style={styles.divider} />}
             </View>
@@ -67,7 +78,7 @@ export function GroceryProfileScreen() {
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -76,42 +87,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.canvas,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    // SafeAreaView above already applies insets.top — this is only the extra buffer, same
-    // 14/16px every other grocery screen uses (was double-padding on Android: insets.top+40).
-    paddingTop: 14,
-    paddingBottom: 16,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-    gap: 12,
+  headerGradient: {
+    overflow: 'hidden',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  hRow: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    color: Colors.textPrimary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: Colors.surface,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     marginTop: 16,
-    marginBottom: 24,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    marginBottom: 16,
+    borderWidth: 1,
     borderColor: Colors.borderSubtle,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.primary,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: Colors.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -119,31 +132,38 @@ const styles = StyleSheet.create({
   avatarText: {
     color: '#fff',
     fontSize: 22,
+    fontWeight: '900',
   },
   userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 18,
+    fontWeight: '800',
     color: Colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   userPhone: {
-    fontSize: 14,
-    color: Colors.textSecondary,
+    fontSize: 13,
+    color: Colors.textPrimarySecondary,
   },
   menuContainer: {
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: 14,
   },
   menuLeft: {
     flexDirection: 'row',
@@ -154,12 +174,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.surfaceMuted,
+    backgroundColor: '#EBF7FA',
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuTitle: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
   divider: {
@@ -168,18 +189,18 @@ const styles = StyleSheet.create({
     marginLeft: 48,
   },
   logoutBtn: {
-    marginHorizontal: 20,
-    marginTop: 32,
-    marginBottom: 110,
-    backgroundColor: Colors.surface,
-    paddingVertical: 16,
-    borderRadius: Radii.xl,
+    marginTop: 24,
+    marginBottom: 40,
+    backgroundColor: '#FFF5F5',
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.danger,
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
   },
   logoutText: {
     color: Colors.danger,
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '800',
   },
 });

@@ -32,7 +32,7 @@ export interface DetailBottomSheetProps {
   visible: boolean;
   title: string;
   subtitle?: string;
-  /** Tint color for the icon header strip. Defaults to CyberGreen. */
+  /** Tint color for the icon header strip. Defaults to Colors.primary. */
   accent?: string;
   /** Ionicons name shown beside the title. */
   icon?: keyof typeof Ionicons.glyphMap;
@@ -47,7 +47,7 @@ export function DetailBottomSheet({
   visible,
   title,
   subtitle,
-  accent = Colors.CyberGreen,
+  accent = Colors.primary,
   icon,
   onDismiss,
   footer,
@@ -81,11 +81,11 @@ export function DetailBottomSheet({
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
-                  <Txt variant="screenTitle" color={Colors.IvoryWhiteText} numberOfLines={1}>
+                  <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1}>
                     {title}
                   </Txt>
                   {subtitle ? (
-                    <Txt variant="caption" color={Colors.SlateMutedText} numberOfLines={2}>
+                    <Txt variant="caption" color={Colors.textMuted} numberOfLines={2}>
                       {subtitle}
                     </Txt>
                   ) : null}
@@ -96,7 +96,7 @@ export function DetailBottomSheet({
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 style={styles.closeBtn}
               >
-                <Ionicons name="close" size={20} color={Colors.SlateMutedText} />
+                <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -134,12 +134,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sheet: {
-    backgroundColor: Colors.LuxurySurfaceDark,
+    backgroundColor: Colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1.5,
     borderBottomWidth: 0,
-    borderColor: Colors.LuxuryCardBorder,
+    borderColor: Colors.borderSubtle,
     maxHeight: '88%',
     paddingBottom: Platform.OS === 'ios' ? 28 : 16,
   },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 3,
-    backgroundColor: Colors.LuxuryCardBorder,
+    backgroundColor: Colors.borderSubtle,
     alignSelf: 'center',
     marginTop: 8,
     marginBottom: 4,
@@ -184,8 +184,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.LuxuryCardBorder,
-    backgroundColor: Colors.LuxuryPureBlack,
+    borderTopColor: Colors.borderSubtle,
+    backgroundColor: Colors.canvas,
   },
 });
 

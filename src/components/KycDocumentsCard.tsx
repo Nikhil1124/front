@@ -28,94 +28,234 @@ export interface KycDocumentsCardProps {
 
 export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocumentsCardProps) {
   const [zoomed, setZoomed] = useState<{ uri: string; label: string } | null>(null);
-  const hasAny = !!idPhotoUri || !!selfieUri;
+  const [idFailed, setIdFailed] = useState(false);
+  const [selfieFailed, setSelfieFailed] = useState(false);
 
-  // Active whenever documents are on screen, zoomed or not.
+  const hasIdPhoto = !!idPhotoUri && idPhotoUri.trim() !== '' && !idPhotoUri.includes('placeholder') && !idFailed;
+  const hasSelfie = !!selfieUri && selfieUri.trim() !== '' && !selfieUri.includes('placeholder') && !selfieFailed;
+  const hasAny = hasIdPhoto || hasSelfie;
+
+  // Active whenever documents are rendered
   useScreenCaptureGuard(hasAny);
 
   if (!hasAny) {
     return (
       <View style={styles.emptyBox}>
-        <Ionicons name="document-outline" size={18} color={Colors.textMuted} />
+        <Ionicons name="document-text-outline" size={20} color={Colors.textMuted} />
         <Txt size={12} color={Colors.textMuted} style={{ flex: 1 }}>
-          {emptyHint ?? 'No documents on file yet.'}
+          {emptyHint ?? 'No uploaded document photos on file for this submission.'}
         </Txt>
       </View>
     );
   }
 
-  const thumb = (uri: string | null | undefined, label: string, icon: 'card' | 'person') => {
-    if (!uri) {
+  const renderThumb = (uri: string | null | undefined, hasImage: boolean, label: string, badgeIcon: 'card' | 'person', onError: () => void) => {
+    if (!hasImage || !uri) {
       return (
-        <View style={[styles.thumb, styles.thumbEmpty]}>
-          <Ionicons name={icon === 'card' ? 'card-outline' : 'person-outline'} size={22} color={Colors.textMuted} />
-          <Txt size={10} color={Colors.textMuted} style={{ marginTop: 4 }}>No {label.toLowerCase()}</Txt>
+        <View style={styles.thumbEmptyCard}>
+          <Ionicons name={badgeIcon === 'card' ? 'card-outline' : 'person-outline'} size={24} color={Colors.textMuted} />
+          <Txt size={10} weight="700" color={Colors.textMuted} style={{ marginTop: 4 }}>
+            No {label.toLowerCase()}
+          </Txt>
         </View>
       );
     }
+
     return (
       <Pressable
-        style={styles.thumb}
+        style={styles.thumbCard}
         onPress={() => setZoomed({ uri, label })}
         accessibilityRole="imagebutton"
         accessibilityLabel={`View ${label} full screen`}
       >
-        <Image source={{ uri }} style={styles.thumbImg} resizeMode="cover" />
-        <View style={styles.thumbLabel}>
-          <Txt size={10} weight="700" color={Colors.textInverse}>{label}</Txt>
+        <Image
+          source={{ uri }}
+          style={styles.thumbImg}
+          resizeMode="cover"
+          onError={onError}
+        />
+        <View style={styles.thumbOverlay}>
+          <View style={styles.badgePill}>
+            <Ionicons name={badgeIcon === 'card' ? 'card-outline' : 'person-outline'} size={12} color="#FFF" />
+            <Txt size={10} weight="800" color="#FFF">{label}</Txt>
+          </View>
+          <View style={styles.inspectHint}>
+            <Ionicons name="scan-outline" size={11} color="#54ACBF" />
+            <Txt size={9} weight="800" color="#54ACBF">TAP TO ENLARGE</Txt>
+          </View>
         </View>
       </Pressable>
     );
   };
 
   return (
-    <>
-      <Row gap={10}>
-        {thumb(idPhotoUri, 'ID document', 'card')}
-        {thumb(selfieUri, 'Selfie', 'person')}
+    <View style={styles.container}>
+      <Row gap={10} style={{ width: '100%' }}>
+        {renderThumb(idPhotoUri, hasIdPhoto, 'ID Proof Document', 'card', () => setIdFailed(true))}
+        {renderThumb(selfieUri, hasSelfie, 'Resident Selfie Photo', 'person', () => setSelfieFailed(true))}
       </Row>
-      <Spacer size={6} />
-      <Row gap={6} align="center">
-        <Ionicons name="lock-closed" size={11} color={Colors.textMuted} />
-        <Txt size={10} color={Colors.textMuted} style={{ flex: 1 }}>
-          Screenshots are blocked on these documents. Links expire — reopen this screen to view them again.
+      
+      <Spacer size={8} />
+      <Row gap={6} align="center" style={styles.securityNoteBox}>
+        <Ionicons name="shield-checkmark" size={12} color={Colors.primary} />
+        <Txt size={10} weight="600" color={Colors.textMuted} style={{ flex: 1 }}>
+          Encrypted document viewer. Screenshots protected.
         </Txt>
       </Row>
 
+      {/* Full-Screen Document Inspection Viewer */}
       <Modal visible={zoomed != null} transparent animationType="fade" onRequestClose={() => setZoomed(null)}>
         <View style={styles.zoomBackdrop}>
-          <Row justify="space-between" align="center" style={styles.zoomHeader}>
-            <Txt size={14} weight="800" color={Colors.textInverse}>{zoomed?.label}</Txt>
-            <Pressable onPress={() => setZoomed(null)} accessibilityRole="button" accessibilityLabel="Close document viewer" hitSlop={12}>
-              <Ionicons name="close" size={26} color={Colors.textInverse} />
+          <View style={styles.zoomHeader}>
+            <View>
+              <Txt size={15} weight="900" color="#FFFFFF">{zoomed?.label}</Txt>
+              <Txt size={11} color="#A7EBF2" style={{ marginTop: 2 }}>Official KYC Verification Document</Txt>
+            </View>
+            <Pressable onPress={() => setZoomed(null)} style={styles.closeBtn} accessibilityRole="button">
+              <Ionicons name="close" size={24} color="#FFFFFF" />
             </Pressable>
-          </Row>
-          {zoomed ? <Image source={{ uri: zoomed.uri }} style={styles.zoomImg} resizeMode="contain" /> : null}
+          </View>
+
+          <View style={styles.zoomImgWrapper}>
+            {zoomed ? (
+              <Image source={{ uri: zoomed.uri }} style={styles.zoomImg} resizeMode="contain" />
+            ) : null}
+          </View>
+
+          <View style={styles.zoomFooter}>
+            <Pressable style={styles.closeModalBtn} onPress={() => setZoomed(null)}>
+              <Ionicons name="checkmark-circle" size={18} color="#FFF" />
+              <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>Done Inspecting</Txt>
+            </Pressable>
+          </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    marginVertical: 4,
+  },
   emptyBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Colors.surfaceMuted, borderRadius: 10, padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F4F9FB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CBEFF4',
+    padding: 14,
   },
-  thumb: {
-    flex: 1, height: 104, borderRadius: 12, overflow: 'hidden',
-    backgroundColor: Colors.surfaceMuted,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
+  thumbEmptyCard: {
+    flex: 1,
+    height: 135,
+    borderRadius: 16,
+    backgroundColor: '#F4F9FB',
+    borderWidth: 1.5,
+    borderColor: '#CBEFF4',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  thumbEmpty: { alignItems: 'center', justifyContent: 'center' },
+  thumbCard: {
+    flex: 1,
+    height: 135,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#011C40',
+    borderWidth: 1.5,
+    borderColor: '#CBEFF4',
+    shadowColor: '#011C40',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   thumbImg: { width: '100%', height: '100%' },
-  thumbLabel: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(15,23,42,0.62)', paddingVertical: 4, alignItems: 'center',
+  thumbOverlay: {
+    position: 'absolute',
+    left: 0, right: 0, top: 0, bottom: 0,
+    justifyContent: 'space-between',
+    padding: 8,
+    backgroundColor: 'rgba(1, 28, 64, 0.25)',
   },
-  zoomBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.94)' },
-  zoomHeader: { paddingHorizontal: 18, paddingTop: 54, paddingBottom: 12 },
-  zoomImg: { flex: 1, width: '100%' },
+  badgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(1, 28, 64, 0.85)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  inspectHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+  securityNoteBox: {
+    backgroundColor: '#EBF7FA',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  zoomBackdrop: {
+    flex: 1,
+    backgroundColor: '#011C40',
+    justifyContent: 'space-between',
+  },
+  zoomHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 54,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(203, 239, 244, 0.2)',
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomImgWrapper: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomImg: {
+    width: '100%',
+    height: '100%',
+  },
+  zoomFooter: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  closeModalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#26658C',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 14,
+    width: '100%',
+  },
 });
 
 export default KycDocumentsCard;

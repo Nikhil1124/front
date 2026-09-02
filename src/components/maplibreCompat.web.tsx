@@ -20,7 +20,7 @@ export const Map = ({ children, style, onDidFinishRenderingMapFully }: any) => {
   return (
     <View style={[styles.fallback, style]}>
       {children}
-      <Txt variant="caption" color={Colors.SlateMutedText} style={styles.text}>
+      <Txt variant="caption" color={Colors.textMuted} style={styles.text}>
         Map preview unavailable on web — open the app on iOS or Android to see the live map.
       </Txt>
     </View>

@@ -12,7 +12,7 @@
  *   2. If granted, show a large circular capture button. Tapping it launches
  *      `expo-image-picker`'s native camera UI (`launchCameraAsync`).
  *   3. Once a photo is captured, show it as a preview with "Retake" (outlined)
- *      and "Submit" (solid CyberGreen) below.
+ *      and "Submit" (solid Colors.primary) below.
  *   4. Submit calls `onCapture(photoUri)`, shows a spinner for the duration of
  *      the returned promise, then closes via `onClose`.
  *
@@ -43,7 +43,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Card, Txt, Row, Col, Btn, OutlinedBtn, Spacer } from '@/components/ui';
-import { Colors, Palette, Radii } from '@/theme';
+import { Colors, Radii } from '@/theme';
 import { haptic } from '@/utils/haptics';
 
 export interface CameraProofModalProps {
@@ -130,17 +130,17 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
           {/* Header */}
           <Row align="center" justify="space-between" style={styles.header}>
             <Col style={{ flex: 1 }}>
-              <Txt variant="screenTitle" color={Colors.IvoryWhiteText} numberOfLines={1}>
+              <Txt variant="screenTitle" color={Colors.textInverse} numberOfLines={1}>
                 {title}
               </Txt>
               {subtitle ? (
-                <Txt variant="caption" color={Colors.SlateMutedText} numberOfLines={2}>
+                <Txt variant="caption" color={Colors.textMuted} numberOfLines={2}>
                   {subtitle}
                 </Txt>
               ) : null}
             </Col>
             <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}>
-              <MaterialCommunityIcons name="close" size={22} color={Colors.SlateMutedText} />
+              <MaterialCommunityIcons name="close" size={22} color={Colors.textMuted} />
             </Pressable>
           </Row>
 
@@ -168,20 +168,20 @@ function CaptureBody({ onCapture }: { onCapture: () => void }) {
   return (
     <Col align="center" justify="center" gap={24} style={{ flex: 1 }}>
       <Card
-        containerColor={Palette.SurfaceInk}
+        containerColor={Colors.surfaceElevated}
         borderRadius={Radii.xxl}
-        borderColor={Palette.BorderMid}
+        borderColor={Colors.borderMuted}
         padding={[16, 18]}
         style={{ maxWidth: 320 }}
       >
         <Row align="center" gap={10}>
-          <MaterialCommunityIcons name="camera-iris" size={20} color={Colors.CyberGreen} />
-          <Txt variant="caption" color={Colors.IvoryWhiteText} weight="600">
+          <MaterialCommunityIcons name="camera-iris" size={20} color={Colors.primary} />
+          <Txt variant="caption" color={Colors.textInverse} weight="600">
             Frame the area clearly
           </Txt>
         </Row>
         <Spacer size={4} />
-        <Txt variant="caption" color={Colors.SlateMutedText}>
+        <Txt variant="caption" color={Colors.textMuted}>
           Ensure good lighting. This photo is the proof that completes the task.
         </Txt>
       </Card>
@@ -196,9 +196,9 @@ function CaptureBody({ onCapture }: { onCapture: () => void }) {
         accessibilityLabel="Capture photo"
         testID="camera-proof-capture"
       >
-        <MaterialCommunityIcons name="camera" size={32} color={Colors.CyberGreen} />
+        <MaterialCommunityIcons name="camera" size={32} color={Colors.primary} />
       </Pressable>
-      <Txt variant="caption" color={Colors.SlateMutedText}>Tap to capture</Txt>
+      <Txt variant="caption" color={Colors.textMuted}>Tap to capture</Txt>
     </Col>
   );
 }
@@ -218,9 +218,9 @@ function PreviewBody({
   return (
     <Col style={{ flex: 1 }} gap={12}>
       <Card
-        containerColor={Palette.SurfaceInk}
+        containerColor={Colors.surfaceElevated}
         borderRadius={Radii.xxl}
-        borderColor={Palette.BorderMid}
+        borderColor={Colors.borderMuted}
         padding={0}
         style={{ flex: 1, overflow: 'hidden' }}
       >
@@ -232,35 +232,35 @@ function PreviewBody({
       </Card>
 
       {submitting ? (
-        <Card containerColor={Palette.SurfaceInk} borderRadius={Radii.lg} borderColor={Palette.BorderMid} padding={[14, 14]}>
+        <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.lg} borderColor={Colors.borderMuted} padding={[14, 14]}>
           <Row align="center" justify="center" gap={10}>
-            <ActivityIndicator color={Colors.CyberGreen} />
-            <Txt variant="caption" weight="600" color={Colors.IvoryWhiteText}>Uploading proof…</Txt>
+            <ActivityIndicator color={Colors.primary} />
+            <Txt variant="caption" weight="600" color={Colors.textInverse}>Uploading proof…</Txt>
           </Row>
         </Card>
       ) : (
         <Row gap={10}>
           <OutlinedBtn
             onPress={onRetake}
-            borderColor={Palette.BorderStrong}
-            textColor={Colors.IvoryWhiteText}
+            borderColor={Colors.borderFocus}
+            textColor={Colors.textInverse}
             height={46}
             style={{ flex: 1 }}
             testID="camera-proof-retake"
           >
-            <MaterialCommunityIcons name="camera-retake" size={18} color={Colors.IvoryWhiteText} />
-            <Txt variant="caption" weight="700" color={Colors.IvoryWhiteText} style={{ marginLeft: 6 }}>Retake</Txt>
+            <MaterialCommunityIcons name="camera-retake" size={18} color={Colors.textInverse} />
+            <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Retake</Txt>
           </OutlinedBtn>
           <Btn
             onPress={onSubmit}
-            containerColor={Colors.CyberGreen}
-            textColor={Colors.LuxuryPureBlack}
+            containerColor={Colors.primary}
+            textColor={Colors.canvas}
             height={46}
             style={{ flex: 1 }}
             testID="camera-proof-submit"
           >
-            <MaterialCommunityIcons name="check-circle" size={18} color={Colors.LuxuryPureBlack} />
-            <Txt variant="caption" weight="700" color={Colors.LuxuryPureBlack} style={{ marginLeft: 6 }}>Submit</Txt>
+            <MaterialCommunityIcons name="check-circle" size={18} color={Colors.canvas} />
+            <Txt variant="caption" weight="700" color={Colors.canvas} style={{ marginLeft: 6 }}>Submit</Txt>
           </Btn>
         </Row>
       )}
@@ -272,33 +272,33 @@ function PreviewBody({
 function PermissionDeniedCard({ onRequest }: { onRequest: () => void }) {
   return (
     <Col align="center" justify="center" gap={16} style={{ flex: 1 }}>
-      <View style={[styles.deniedIcon, { backgroundColor: `${Palette.StatusRed}22` }]}>
-        <MaterialCommunityIcons name="camera-off" size={36} color={Palette.StatusRed} />
+      <View style={[styles.deniedIcon, { backgroundColor: `${Colors.danger}22` }]}>
+        <MaterialCommunityIcons name="camera-off" size={36} color={Colors.danger} />
       </View>
-      <Txt variant="cardTitle" color={Colors.IvoryWhiteText} align="center">
+      <Txt variant="cardTitle" color={Colors.textInverse} align="center">
         Camera permission required
       </Txt>
-      <Txt variant="caption" color={Colors.SlateMutedText} align="center" style={{ paddingHorizontal: 24 }}>
+      <Txt variant="caption" color={Colors.textMuted} align="center" style={{ paddingHorizontal: 24 }}>
         PGow needs camera access to capture proof-of-work photos. Grant access in settings to continue.
       </Txt>
       <Row gap={10}>
         <OutlinedBtn
           onPress={onRequest}
-          borderColor={Colors.CyberGreen}
-          textColor={Colors.CyberGreen}
+          borderColor={Colors.primary}
+          textColor={Colors.primary}
           height={42}
           testID="camera-proof-retry-permission"
         >
-          <Txt variant="body" weight="700" color={Colors.CyberGreen}>Retry</Txt>
+          <Txt variant="body" weight="700" color={Colors.primary}>Retry</Txt>
         </OutlinedBtn>
         <Btn
           onPress={() => Linking.openSettings()}
-          containerColor={Colors.CyberGreen}
-          textColor={Colors.LuxuryPureBlack}
+          containerColor={Colors.primary}
+          textColor={Colors.canvas}
           height={42}
           testID="camera-proof-open-settings"
         >
-          <Txt variant="body" weight="700" color={Colors.LuxuryPureBlack}>Open Settings</Txt>
+          <Txt variant="body" weight="700" color={Colors.canvas}>Open Settings</Txt>
         </Btn>
       </Row>
     </Col>
@@ -308,7 +308,7 @@ function PermissionDeniedCard({ onRequest }: { onRequest: () => void }) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: Colors.LuxuryPureBlack,
+    backgroundColor: Colors.canvas,
   },
   container: {
     flex: 1,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 3,
-    borderColor: Colors.CyberGreen,
+    borderColor: Colors.primary,
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',

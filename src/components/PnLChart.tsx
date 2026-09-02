@@ -3,11 +3,11 @@
  *
  * Three pieces, top to bottom:
  *   1. The interval selector — three `Chip` buttons (3m / 6m / 1y). Active is
- *      a solid CyberGreen fill, inactive is outlined.
+ *      a solid Colors.primary fill, inactive is outlined.
  *   2. Three KPI cards: Total Revenue (green), Total Expenses (red), Net
  *      Profit (large, tinted by sign — green for positive, red for negative).
  *   3. The grouped bar chart: for each month, two bars side-by-side — revenue
- *      in CyberGreen, expenses in StatusRed. Four horizontal gridlines with
+ *      in Colors.primary, expenses in StatusRed. Four horizontal gridlines with
  *      INR labels on the y-axis, month abbreviations on the x-axis.
  *
  * The chart is drawn with `react-native-svg` directly — no charting library.
@@ -25,7 +25,7 @@ import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Svg, Rect, Line, Text as SvgText, G } from 'react-native-svg';
 import { Card, Txt, Row, Col, Chip, Spacer } from '@/components/ui';
-import { Colors, Palette, Radii } from '@/theme';
+import { Colors, Radii } from '@/theme';
 import { formatINR } from '@/utils/format';
 import type { PnLData } from '@/types';
 
@@ -51,7 +51,7 @@ export function PnLChart({ data, interval, onIntervalChange, currency = '₹' }:
   const chartWidth = Math.min(screenWidth, 520) - 32 - 12;
 
   return (
-    <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={Radii.xxl} padding={[16, 16]}>
+    <Card containerColor={Colors.surface} borderRadius={Radii.xxl} padding={[16, 16]}>
       {/* ── Selector ──────────────────────────────────────────────────────── */}
       <Row gap={8}>
         {INTERVALS.map((it) => (
@@ -60,9 +60,9 @@ export function PnLChart({ data, interval, onIntervalChange, currency = '₹' }:
             label={it.label}
             selected={interval === it.key}
             onPress={() => onIntervalChange(it.key)}
-            selectedColor={Colors.CyberGreen}
+            selectedColor={Colors.primary}
             unselectedBg="transparent"
-            unselectedBorder={Colors.LuxuryCardBorder}
+            unselectedBorder={Colors.borderSubtle}
             size={11}
             paddingH={14}
             paddingV={7}
@@ -78,20 +78,20 @@ export function PnLChart({ data, interval, onIntervalChange, currency = '₹' }:
         <KpiCard
           label="Revenue"
           value={data.totals.revenue}
-          tint={Colors.CyberGreen}
-          dotColor={Colors.CyberGreen}
+          tint={Colors.primary}
+          dotColor={Colors.primary}
         />
         <KpiCard
           label="Expenses"
           value={data.totals.expenses}
-          tint={Palette.StatusRed}
-          dotColor={Palette.StatusRed}
+          tint={Colors.danger}
+          dotColor={Colors.danger}
         />
         <KpiCard
           label="Net"
           value={data.totals.net}
-          tint={data.totals.net >= 0 ? Colors.CyberGreen : Palette.StatusRed}
-          dotColor={data.totals.net >= 0 ? Colors.CyberGreen : Palette.StatusRed}
+          tint={data.totals.net >= 0 ? Colors.primary : Colors.danger}
+          dotColor={data.totals.net >= 0 ? Colors.primary : Colors.danger}
           emphasize
         />
       </Row>
@@ -100,7 +100,7 @@ export function PnLChart({ data, interval, onIntervalChange, currency = '₹' }:
 
       {/* ── Chart ─────────────────────────────────────────────────────────── */}
       {data.monthly.length === 0 ? (
-        <Txt variant="caption" color={Colors.SlateMutedText} align="center" style={{ paddingVertical: 32 }}>
+        <Txt variant="caption" color={Colors.textMuted} align="center" style={{ paddingVertical: 32 }}>
           No P&amp;L data for this period.
         </Txt>
       ) : (
@@ -111,12 +111,12 @@ export function PnLChart({ data, interval, onIntervalChange, currency = '₹' }:
       {/* Legend */}
       <Row gap={16} justify="center">
         <Row gap={6}>
-          <View style={[styles.legendDot, { backgroundColor: Colors.CyberGreen }]} />
-          <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Revenue</Txt>
+          <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
+          <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Revenue</Txt>
         </Row>
         <Row gap={6}>
-          <View style={[styles.legendDot, { backgroundColor: Palette.StatusRed }]} />
-          <Txt variant="labelSmall" weight="400" color={Colors.SlateMutedText}>Expenses</Txt>
+          <View style={[styles.legendDot, { backgroundColor: Colors.danger }]} />
+          <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Expenses</Txt>
         </Row>
       </Row>
     </Card>
@@ -150,7 +150,7 @@ function KpiCard({
     >
       <Row gap={5} align="center">
         <View style={[styles.legendDot, { backgroundColor: dotColor }]} />
-        <Txt size={9} color={Colors.SlateMutedText} weight="600">{label.toUpperCase()}</Txt>
+        <Txt size={9} color={Colors.textMuted} weight="600">{label.toUpperCase()}</Txt>
       </Row>
       <Txt
         size={emphasize ? 18 : 14}
@@ -220,7 +220,7 @@ function GroupedBarChart({
               y1={y}
               x2={LEFT_PAD + plotWidth}
               y2={y}
-              stroke={Palette.BorderFaint}
+              stroke={Colors.borderSubtle}
               strokeWidth={1}
               strokeDasharray={step === 0 ? undefined : '3 3'}
             />
@@ -228,7 +228,7 @@ function GroupedBarChart({
               x={LEFT_PAD - 6}
               y={y + 3}
               fontSize={9}
-              fill={Colors.SlateMutedText}
+              fill={Colors.textMuted}
               textAnchor="end"
             >
               {formatAxisLabel(value, currency)}
@@ -258,7 +258,7 @@ function GroupedBarChart({
               width={barWidth}
               height={Math.max(0, revenueHeight)}
               rx={2}
-              fill={Colors.CyberGreen}
+              fill={Colors.primary}
             />
             <Rect
               x={barsStartX + barWidth + barGap}
@@ -266,14 +266,14 @@ function GroupedBarChart({
               width={barWidth}
               height={Math.max(0, expensesHeight)}
               rx={2}
-              fill={Palette.StatusRed}
+              fill={Colors.danger}
             />
             {/* X-axis label — short month name. */}
             <SvgText
               x={groupX + groupWidth / 2}
               y={CHART_HEIGHT - 8}
               fontSize={9}
-              fill={Colors.SlateMutedText}
+              fill={Colors.textMuted}
               textAnchor="middle"
             >
               {shortMonth(d.period)}

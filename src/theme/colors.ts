@@ -1,139 +1,93 @@
 /**
- * 🌿 PGow "Cyber Indigo" Design System — Indigo Redesign
+ * 🌙 PGow Official "LUNA" Design System — STRICT Color Palette
  *
- * Replaces the mint green theme with an ultra-clean,
- * premium Indigo/violet palette.
+ * STRICT Hex Codes:
+ *   - #011C40 : Obsidian Navy Blue (Primary Dark, Headers, Main High-Contrast Text)
+ *   - #023859 : Deep Midnight Blue (Header End, Subtitle Text)
+ *   - #26658C : Deep Ocean Blue (Primary Brand, Main CTA Buttons, Focus Borders)
+ *   - #54ACBF : Cyan Teal (Brand Accents, Secondary Buttons, Active Chips)
+ *   - #A7EBF2 : Soft Ice Cyan (Active Highlights, Soft Badges, Ice Chips)
+ *   - #F4F9FB : Light Ice Canvas (Clean App Background)
+ *   - #FFFFFF : Pure White (Card Surfaces & Floating Bars)
+ *
+ * ZERO cream colors permitted. STRICT LUNA palette enforcement.
  */
 export const Colors = {
   // ── Surfaces & Canvas ─────────────────────────────────────────────────────
-  canvas: '#F7F8FC',              // Light cool background
+  canvas: '#F4F9FB',              // Light ice cyan canvas background
   surface: '#FFFFFF',             // Pure white cards & dialogs
   surfaceCard: '#FFFFFF',         // Card background
-  surfaceElevated: '#EEF2FF',     // Soft highlighted tiles / active indigo chips
+  surfaceElevated: '#EBF7FA',     // Soft highlighted ice tiles / active chips
   surfaceGlass: 'rgba(255, 255, 255, 0.94)', // Glassmorphism modals & floating bars
-  surfaceMuted: '#F3F4F6',        // Secondary background for text fields & disabled states
+  surfaceMuted: '#F4F9FB',        // Secondary background for text fields & disabled states
 
   // ── Brand & Accents ───────────────────────────────────────────────────────
-  primary: '#4F51D5',             // Premium Indigo brand
-  primaryDark: '#4338CA',         // Darker indigo for pressed states & headers
-  primaryGlow: 'rgba(91, 69, 232, 0.12)', // Soft indigo shadow glow
-  secondary: '#4F46E5',           // Deep Indigo for sub-headings
-  tertiary: '#D97706',            // Amber Accent (Alerts, Overdue dues)
-  accentWarm: '#D97706',          // Warm Amber
-  accentCool: '#4F51D5',          // Cool Indigo
+  primary: '#26658C',             // Deep Ocean Blue brand
+  primaryDark: '#011C40',         // Obsidian Navy Blue for pressed states & headers
+  primaryGlow: 'rgba(38, 101, 140, 0.14)', // Soft ocean shadow glow
+  secondary: '#54ACBF',           // Cyan Teal for sub-headings & secondary chips
+  tertiary: '#54ACBF',            // Cyan Teal Accent
+  accentWarm: '#54ACBF',          // Cyan Teal Accent
+  accentCool: '#54ACBF',          // Cyan Teal
   accentRose: '#E11D48',          // Critical / Panic / Expired badges
 
   // ── Status Colors ─────────────────────────────────────────────────────────
   success: '#10B981',             // Active / Paid / Vacant bed green
-  warning: '#F59E0B',             // Pending / Due soon amber
+  warning: '#54ACBF',             // Pending / Due soon cyan teal
   danger: '#EF4444',              // Overdue / Rejected / Panic red
-  info: '#0284C7',                // Notice / Info blue
+  info: '#26658C',                // Notice / Info ocean blue
 
   // ── Typography & Content ───────────────────────────────────────────────────
-  textPrimary: '#15171A',         // Deep charcoal text (High contrast)
-  textSecondary: '#4B5563',       // Subtitle gray text
-  textMuted: '#6B7280',           // Muted caption text
+  textPrimary: '#011C40',         // Obsidian Navy Blue text (High contrast)
+  textSecondary: '#023859',       // Deep Midnight Blue subtitle text
+  textMuted: '#26658C',           // Muted ocean caption text
   textInverse: '#FFFFFF',         // White text on primary buttons
-  textAccent: '#4F51D5',          // Indigo text for links & active tab labels
+  textAccent: '#26658C',          // Ocean blue text for links & active tab labels
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
-  borderSubtle: '#E5E7EB',        // Soft gray border (1px default on cards)
-  borderFocus: '#4F51D5',         // 2px active input focus border
-  borderGlass: 'rgba(91, 69, 232, 0.1)', // Glassmorphic borders
-  borderMuted: '#E5E7EB',         // Divider lines
+  borderSubtle: '#CBEFF4',        // Ice Cyan border
+  borderFocus: '#26658C',         // 2px active input focus border
+  borderGlass: 'rgba(84, 172, 191, 0.18)', // Glassmorphic borders
+  borderMuted: '#CBEFF4',         // Divider lines
 
   // ── Gradients ─────────────────────────────────────────────────────────────
-  heroGradientStart: '#4F51D5',   // Top header & key banner gradient
-  heroGradientEnd: '#8B5CF6',     // Violet end
+  heroGradientStart: '#011C40',   // Top header gradient (Obsidian Navy)
+  heroGradientEnd: '#023859',     // Deep Midnight Blue end
   cardGradientStart: '#FFFFFF',
-  cardGradientEnd: '#F7F8FC',
-  alertGradientStart: '#FFFBEB',
-  alertGradientEnd: '#FEF3C7',
+  cardGradientEnd: '#F4F9FB',
+  alertGradientStart: '#EBF7FA',
+  alertGradientEnd: '#CBEFF4',
   panicGradientStart: '#EF4444',
   panicGradientEnd: '#DC2626',
-
-  // ── Legacy Aliases ────────────────────────────────────────────────────────
-  LuxuryPureBlack: '#F7F8FC',
-  LuxurySurfaceDark: '#FFFFFF',
-  LuxuryCardBorder: '#E5E7EB',
-  SlateMutedText: '#6B7280',
-  IvoryWhiteText: '#15171A',
-  CyberGreen: '#4F51D5',
-  CyberPurple: '#4338CA',
-  CyberPink: '#4F51D5',
-  CyberAmber: '#D97706',
-
-  Teal80: '#4F51D5',
-  TealSecondary80: '#4338CA',
-  Gold80: '#D97706',
-  Teal40: '#4338CA',
-  TealSecondary40: '#4338CA',
-  Gold40: '#B45309',
-  SlateDarkBackground: '#F7F8FC',
-  SlateDarkSurface: '#FFFFFF',
-  LightCreamBackground: '#F7F8FC',
-  LightCreamSurface: '#FFFFFF',
 } as const;
 
 export type ColorToken = keyof typeof Colors;
 
+/**
+ * Palette — a minimal set of values that have no direct Colors.* semantic equivalent.
+ *
+ * Only add to this object if the value genuinely has no semantic home in Colors:
+ *   - BgScrim: a modal dim overlay, not a surface or canvas
+ *   - Status colors with distinct semantic meaning beyond Colors.success / Colors.danger
+ *
+ * Do NOT re-add removed legacy aliases (Luxury*, Cyber*, Slate*, res*) — those were
+ * migrated to their proper Colors.* equivalents and must not return.
+ */
 export const Palette = {
-  // Status colors
+  // Modal background scrim — no semantic Colors.* equivalent
+  BgScrim: 'rgba(1, 28, 64, 0.45)',
+
+  // Gradient pair used in AlertOverlay & panic screens
+  GradientStart: '#011C40',
+  GradientEnd: '#023859',
+
+  // Distinct status variants not covered by Colors.success / Colors.danger
   StatusGreen: '#10B981',
-  StatusGreenSoft: '#34D399',
+  StatusGreenSoft: '#A7EBF2',
   StatusRed: '#EF4444',
-  StatusAmber: '#F59E0B',
-  StatusAmberDeep: '#D97706',
-  StatusPink: '#E11D48',
-  StatusCyan: '#4F51D5',
-  StatusBlue: '#0284C7',
-  StatusPurple: '#4338CA',
-  StatusGold: '#D97706',
-  StatusOrange: '#D97706',
-
-  // Functional gradients
-  GradientStart: '#4F51D5',
-  GradientEnd: '#8B5CF6',
-
-  // Surfaces
-  SurfaceDeepNavy: '#FFFFFF',
-  SurfaceInkDark: '#F3F4F6',
-  SurfaceDarkCard: '#FFFFFF',
-  SurfacePanel: '#F7F8FC',
-  SurfaceInk: '#F3F4F6',
-  SurfaceInkAlt: '#EEF2FF',
-  SurfaceInkDeep: '#EEF2FF',
-  SurfaceMagenta: '#FFFBEB',
-  SurfaceViolet: '#EEF2FF',
-  SurfaceTeal: '#EEF2FF',
-  SurfaceVioletDeep: '#EEF2FF',
-  SurfaceVioletBright: '#EEF2FF',
-  SurfaceInkMagenta: '#FFFBEB',
-  SurfaceInkAmber: '#FFFBEB',
-  SurfaceInkBrown: '#FEF3C7',
-  SurfaceInkCyan: '#EEF2FF',
-  SurfaceInkGreen: '#EEF2FF',
-  SurfaceInkPink: '#FFFBEB',
-  SurfaceInkPurple: '#EEF2FF',
-
-  // Background variants
-  BgCard: '#FFFFFF',
-  BgPaper: '#F7F8FC',
-  BgTerminal: '#F7F8FC',
-  BgScrim: 'rgba(21, 23, 26, 0.45)', // modal scrim
-
-  // Text tints
-  TextMuted: '#6B7280',
-  TextMid: '#4B5563',
-  TextFaint: '#4F51D5',
-
-  // Border variants
-  BorderFaint: '#E5E7EB',
-  BorderMid: '#E5E7EB',
-  BorderStrong: '#4F51D5',
-  BorderPurpleSoft: '#EEF2FF',
-  BorderAmberSoft: '#FEF3C7',
 } as const;
+
+
 
 export const Theme = {
   colors: Colors,
@@ -162,25 +116,25 @@ export const Theme = {
 export type ThemeType = typeof Theme;
 
 export const Layout = {
-  borderRadiusCard: 22,
+  borderRadiusCard: 20,
   borderRadiusButton: 12,
   borderRadiusChip: 20,
   shadowCard: {
-    shadowColor: '#4F51D5',
+    shadowColor: '#011C40',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   } as const,
   shadowHero: {
-    shadowColor: '#4F51D5',
+    shadowColor: '#011C40',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 5,
   } as const,
   shadowFloatingBar: {
-    shadowColor: '#0F172A',
+    shadowColor: '#011C40',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
     shadowRadius: 12,

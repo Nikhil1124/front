@@ -140,7 +140,7 @@ export function OwnerSubscriptionScreen() {
       onBack={() => router.back()}
       rightAction={
         !active ? (
-          <IconBtn onPress={() => logout()} icon="exit" size={20} tint={Colors.SlateMutedText} />
+          <IconBtn onPress={() => logout()} icon="exit" size={20} tint={Colors.textMuted} />
         ) : undefined
       }
     >
@@ -153,13 +153,13 @@ export function OwnerSubscriptionScreen() {
           {/* ── Already subscribed: what am I on, and what do I owe ── */}
           <Card containerColor="#064E3B" borderRadius={16} padding={[16, 16]}>
             <Row justify="space-between" align="center">
-              <Txt size={11} weight="900" color={Colors.IvoryWhiteText} style={{ letterSpacing: 0.5 }}>
+              <Txt size={11} weight="900" color={Colors.textInverse} style={{ letterSpacing: 0.5 }}>
                 CURRENT PLAN
               </Txt>
               <Ionicons name="checkmark-circle" size={18} color="#10B981" />
             </Row>
             <Spacer size={8} />
-            <Txt variant="statValue" weight="900" color={Colors.IvoryWhiteText}>{active.plan_name}</Txt>
+            <Txt variant="statValue" weight="900" color={Colors.textInverse}>{active.plan_name}</Txt>
             <Spacer size={4} />
             <Txt variant="caption" color="rgba(234,242,243,0.9)">
               {Number(active.price) > 0
@@ -172,14 +172,14 @@ export function OwnerSubscriptionScreen() {
           </Card>
 
           <Spacer size={20} />
-          <Txt variant="sectionTitle" weight="800" color={Colors.IvoryWhiteText}>Invoices</Txt>
+          <Txt variant="sectionTitle" weight="800" color={Colors.textInverse}>Invoices</Txt>
           <Spacer size={10} />
 
           {invoices.isLoading ? (
-            <Txt variant="caption" color={Colors.SlateMutedText}>Loading…</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Loading…</Txt>
           ) : !invoices.data?.length ? (
-            <Card containerColor={Colors.LuxurySurfaceDark} borderRadius={12} borderWidth={1} borderColor={Colors.LuxuryCardBorder} padding={[16, 16]}>
-              <Txt variant="caption" color={Colors.SlateMutedText} align="center">
+            <Card containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+              <Txt variant="caption" color={Colors.textMuted} align="center">
                 Nothing billed yet.
               </Txt>
             </Card>
@@ -187,22 +187,22 @@ export function OwnerSubscriptionScreen() {
             invoices.data.map((inv: any) => (
               <Card
                 key={inv.id}
-                containerColor={Colors.LuxurySurfaceDark}
+                containerColor={Colors.surface}
                 borderRadius={12}
                 borderWidth={1}
-                borderColor={inv.status === 'paid' ? 'rgba(16,185,129,0.35)' : Colors.LuxuryCardBorder}
+                borderColor={inv.status === 'paid' ? 'rgba(16,185,129,0.35)' : Colors.borderSubtle}
                 padding={[14, 14]}
                 style={{ marginBottom: 8 }}
               >
                 <Row justify="space-between" align="center">
                   <Col>
-                    <Txt variant="sectionTitle" weight="900" color={Colors.IvoryWhiteText}>{money(inv.amount)}</Txt>
-                    <Txt variant="caption" color={Colors.SlateMutedText}>Period {inv.period}</Txt>
+                    <Txt variant="sectionTitle" weight="900" color={Colors.textInverse}>{money(inv.amount)}</Txt>
+                    <Txt variant="caption" color={Colors.textMuted}>Period {inv.period}</Txt>
                   </Col>
                   <Txt
                     size={11}
                     weight="700"
-                    color={inv.status === 'paid' ? '#10B981' : Colors.CyberAmber}
+                    color={inv.status === 'paid' ? '#10B981' : Colors.secondary}
                   >
                     {inv.status === 'paid' ? 'PAID' : inv.method ? 'AWAITING PGOW' : 'DUE'}
                   </Txt>
@@ -213,12 +213,12 @@ export function OwnerSubscriptionScreen() {
                     <Btn
                       onPress={() => handleReportPayment(inv.id)}
                       containerColor="#10B981"
-                      textColor={Colors.LuxuryPureBlack}
+                      textColor={Colors.canvas}
                       borderRadius={10}
                       height={38}
                       testID={`invoice_pay_${inv.id}`}
                     >
-                      <Txt variant="caption" weight="700" color={Colors.LuxuryPureBlack}>I've paid this</Txt>
+                      <Txt variant="caption" weight="700" color={Colors.canvas}>I've paid this</Txt>
                     </Btn>
                   </>
                 )}
@@ -230,15 +230,15 @@ export function OwnerSubscriptionScreen() {
         <>
           {/* ── Not subscribed: pick a plan ── */}
           <Row gap={6} align="center" style={{ marginBottom: 16 }}>
-            <Txt variant="screenTitle" weight="900" color={Colors.CyberGreen}>Step 1: Select Billing Model</Txt>
+            <Txt variant="screenTitle" weight="900" color={Colors.primary}>Step 1: Select Billing Model</Txt>
             <InfoTip text="Choose how you want to subscribe to the co-living management features. Pay a fixed upfront cost, or pay-as-you-grow based on residents actually added." />
           </Row>
 
           {plans.isLoading && (
-            <Txt variant="caption" color={Colors.SlateMutedText}>Loading plans…</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Loading plans…</Txt>
           )}
           {plans.isError && (
-            <Txt variant="caption" color={Colors.CyberPink}>
+            <Txt variant="caption" color={Colors.accentRose}>
               Could not load plans. Pull back and try again.
             </Txt>
           )}
@@ -261,7 +261,7 @@ export function OwnerSubscriptionScreen() {
                     <Txt variant="labelSmall" color={accent.colour}>{accent.tag}</Txt>
                   </View>
                   <Spacer size={8} />
-                  <Txt variant="cardTitle" weight="900" color={Colors.IvoryWhiteText}>{plan.name}</Txt>
+                  <Txt variant="cardTitle" weight="900" color={Colors.textInverse}>{plan.name}</Txt>
                   <Txt variant="caption" color="#94A3B8" style={{ lineHeight: 14, marginTop: 4 }}>
                     {plan.billing_period === 'one_time'
                       ? `Pay ${money(plan.unit_price ?? 0)} per bed upfront. Add residents up to your limit with ₹0 extra.`
@@ -276,7 +276,7 @@ export function OwnerSubscriptionScreen() {
 
           {selected && (
             <>
-              <Txt variant="sectionTitle" weight="800" color={Colors.IvoryWhiteText} style={{ marginBottom: 12 }}>
+              <Txt variant="sectionTitle" weight="800" color={Colors.textInverse} style={{ marginBottom: 12 }}>
                 {isOneTime
                   ? 'Step 2: Enter PG Bed Capacity'
                   : `Step 2: Starting Seat Size (${selected.included_units} Free Included)`}
@@ -284,14 +284,14 @@ export function OwnerSubscriptionScreen() {
 
               <Card containerColor="#1D1F27" borderRadius={16} borderWidth={1} borderColor="#2C2F3A" padding={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col align="center">
-                  <Txt variant="caption" weight="800" color={Colors.SlateMutedText} style={{ letterSpacing: 0.5 }}>
+                  <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
                     {isOneTime ? 'TOTAL ACTIVE SEATS / BEDS' : 'INITIAL SEAT ALLOCATION'}
                   </Txt>
                   <Spacer size={12} />
                   <Txt size={64} weight="900" color={accentFor(selected).colour}>
                     {isOneTime ? bedsCount : selected.included_units}
                   </Txt>
-                  <Txt size={13} weight="500" color={Colors.SlateMutedText}>
+                  <Txt size={13} weight="500" color={Colors.textMuted}>
                     {isOneTime ? 'Paid Seats Configured' : 'Free Starter Seats Active'}
                   </Txt>
 
@@ -299,17 +299,17 @@ export function OwnerSubscriptionScreen() {
                     <>
                       <Spacer size={20} />
                       <Row gap={8}>
-                        <Btn onPress={() => setBedsCount((c) => (c > 10 ? c - 10 : c > 1 ? 1 : c))} containerColor="#2C2F3A" textColor={Colors.IvoryWhiteText} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>-10</Txt>
+                        <Btn onPress={() => setBedsCount((c) => (c > 10 ? c - 10 : c > 1 ? 1 : c))} containerColor="#2C2F3A" textColor={Colors.textInverse} borderRadius={10} height={40} style={{ flex: 1 }}>
+                          <Txt variant="cardTitle" color={Colors.textInverse}>-10</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => (c > 1 ? c - 1 : c))} containerColor="#2C2F3A" textColor={Colors.IvoryWhiteText} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.IvoryWhiteText}>-1</Txt>
+                        <Btn onPress={() => setBedsCount((c) => (c > 1 ? c - 1 : c))} containerColor="#2C2F3A" textColor={Colors.textInverse} borderRadius={10} height={40} style={{ flex: 1 }}>
+                          <Txt variant="cardTitle" color={Colors.textInverse}>-1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor="#10B981" textColor={Colors.LuxuryPureBlack} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.LuxuryPureBlack}>+1</Txt>
+                        <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor="#10B981" textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
+                          <Txt variant="cardTitle" color={Colors.canvas}>+1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor="#10B981" textColor={Colors.LuxuryPureBlack} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.LuxuryPureBlack}>+10</Txt>
+                        <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor="#10B981" textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
+                          <Txt variant="cardTitle" color={Colors.canvas}>+10</Txt>
                         </Btn>
                       </Row>
                     </>
@@ -328,13 +328,13 @@ export function OwnerSubscriptionScreen() {
 
               <Card containerColor={isUsage ? '#2E1065' : '#064E3B'} borderRadius={16} padding={[16, 16]}>
                 <Row justify="space-between" align="center">
-                  <Txt size={11} weight="900" color={Colors.IvoryWhiteText} style={{ letterSpacing: 0.5 }}>
+                  <Txt size={11} weight="900" color={Colors.textInverse} style={{ letterSpacing: 0.5 }}>
                     DASHBOARD PREVIEW
                   </Txt>
                   <Ionicons name="checkmark-circle" size={18} color={accentFor(selected).colour} />
                 </Row>
                 <Spacer size={8} />
-                <Txt variant="screenTitle" weight="900" color={Colors.IvoryWhiteText}>
+                <Txt variant="screenTitle" weight="900" color={Colors.textInverse}>
                   {previewAmount > 0 ? `${money(previewAmount)} DUE NOW` : '₹0 FREE ACTIVATION'}
                 </Txt>
                 <Spacer size={8} />
@@ -354,19 +354,19 @@ export function OwnerSubscriptionScreen() {
                 disabled={subscribe.isPending}
                 loading={subscribe.isPending}
                 containerColor={accentFor(selected).colour}
-                textColor={isUsage ? Colors.IvoryWhiteText : Colors.LuxuryPureBlack}
+                textColor={isUsage ? Colors.textInverse : Colors.canvas}
                 borderRadius={12}
                 height={54}
                 testID="subscription_submit_button"
               >
-                <Txt variant="sectionTitle" weight="900" color={isUsage ? Colors.IvoryWhiteText : Colors.LuxuryPureBlack}>
+                <Txt variant="sectionTitle" weight="900" color={isUsage ? Colors.textInverse : Colors.canvas}>
                   {subscribe.isPending
                     ? 'Activating...'
                     : previewAmount > 0
                       ? 'Pay Upfront & Activate Portal'
                       : 'Activate Pay-As-You-Grow Portal'}
                 </Txt>
-                <Ionicons name="arrow-forward" size={18} color={isUsage ? Colors.IvoryWhiteText : Colors.LuxuryPureBlack} style={{ marginLeft: 8 }} />
+                <Ionicons name="arrow-forward" size={18} color={isUsage ? Colors.textInverse : Colors.canvas} style={{ marginLeft: 8 }} />
               </Btn>
             </>
           )}

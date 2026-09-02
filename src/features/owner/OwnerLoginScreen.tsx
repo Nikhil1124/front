@@ -38,14 +38,14 @@ import { InfoTip } from '@/components/ui/InfoTip';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const GREEN   = '#4F51D5';      // Indigo primary brand
-const BG      = '#F7F8FC';      // Canvas BG
-const CHARCOAL = '#15171A';     // charcoal text
-const MUTED   = '#6B7280';      // muted text
-const BORDER  = '#E5E7EB';      // subtle border
-const WHITE   = '#FFFFFF';
+const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
+const BG = Colors.canvas;            // Light Ice Canvas BG
+const CHARCOAL = Colors.textPrimary; // Obsidian Navy primary text
+const MUTED = Colors.textMuted;      // Ocean Muted text
+const BORDER = Colors.borderSubtle;  // Ice Cyan subtle border
+const WHITE = Colors.surface;        // Pure White surface
 const FIELD_H = 56;
-const RADIUS  = 22;             // Premium rounded corners
+const RADIUS = 22;            // Premium rounded corners
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 const TABS = [
