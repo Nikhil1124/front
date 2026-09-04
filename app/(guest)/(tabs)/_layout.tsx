@@ -1,47 +1,35 @@
 /**
- * Guest/Resident tabs shell — the chrome shared by every tab: the header (avatar, greeting,
- * rent-status pill, notification bell, logout) and the pill dock at the bottom. Tab-specific
- * state (e.g. the Home tab's KYC upload dialog) lives in that tab's own route file.
+ * Guest/Resident tabs shell — the shared chrome is just the transition wrapper around the
+ * active tab and the pill dock at the bottom. Each screen (home.tsx, etc.) now renders its
+ * own header, notification bell and inbox sheet — see that comment trail in git history.
+ *
+ * This file used to also own a header (avatar, greeting, notification bell) and a profile
+ * photo dialog. Both were dead: the header was removed in a redesign pass and nothing in
+ * this file ever set `showNotif`/`showProfilePhotoDialog` to true, so the notification sheet
+ * and photo dialog could never actually open. The photo dialog was doubly broken underneath
+ * — its "Take Photo" / "Choose from Gallery" / preset-avatar buttons wrote a literal
+ * `sample:selfie_preset_N` string as the photo URI instead of opening a real picker, which
+ * `uploadToPresignedUrl` (kyc/useKyc.ts) explicitly rejects. So even with a working trigger,
+ * every tap would have failed. There is currently no reachable way to change a resident's
+ * profile photo anywhere in the app — see KycUploadDialog.tsx for the real
+ * expo-image-picker pattern to build that against when a real entry point is added.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable } from 'react-native';
-import { router, usePathname } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import { usePathname } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
-import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
-import { TabHeader } from '@/components/TabHeader';
 import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
-import { hapticSuccess } from '@/utils/haptics';
-import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { tabEntering, tabExiting } from '@/theme';
-
-import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
-import { useAuthStore } from '@/store/authStore';
 
 export default function GuestTabsLayout() {
   const pathname = usePathname();
-  const [showNotif, setShowNotif] = useState(false);
-  const [showProfilePhotoDialog, setShowProfilePhotoDialog] = useState(false);
-
-  const guest = usePGowStore((s) => s.loggedInGuest);
-  const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
-  const logout = usePGowStore((s) => s.logout);
-  const updateProfilePhoto = usePGowStore((s) => s.updateGuestProfilePhoto);
-
-  const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
-  const paid = guest?.isBillPaid ?? false;
   const { dockStyle, contentPaddingBottom } = useDock();
 
   return (
     <Tabs style={styles.root}>
       <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
-        {/* Header removed — each screen manages its own header */}
-
         {/* ── Active tab content ─────────────────────────────────────────── */}
         <Animated.View
           key={pathname}
@@ -56,124 +44,25 @@ export default function GuestTabsLayout() {
       {/* Sticky bottom dock — see Dock/useDock in HeadlessDockTabButton.tsx */}
       <Dock style={dockStyle}>
         <TabTrigger name="home" href="/home" asChild>
-          <HeadlessDockTabButton icon="home-outline" label="Home" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
+          <HeadlessDockTabButton icon="home-outline" label="Home" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
         </TabTrigger>
         <TabTrigger name="meals" href="/meals" asChild>
-          <HeadlessDockTabButton icon="restaurant-outline" label="Meals" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
+          <HeadlessDockTabButton icon="restaurant-outline" label="Meals" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
         </TabTrigger>
         <TabTrigger name="guest-payments" href="/guest-payments" asChild>
-          <HeadlessDockTabButton icon="card-outline" label="Payments" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
+          <HeadlessDockTabButton icon="card-outline" label="Payments" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
         </TabTrigger>
         <TabTrigger name="profile" href="/profile" asChild>
-          <HeadlessDockTabButton icon="person-outline" label="Profile" activeTint={Colors.resPrimary} activeBg={Colors.resMint} />
+          <HeadlessDockTabButton icon="person-outline" label="Profile" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
         </TabTrigger>
 
         {/* Hidden trigger to register support route in the tabs navigator */}
         <TabTrigger name="support" href="/support" style={{ display: 'none' }} />
       </Dock>
-
-      {showNotif && <RoleNotificationsCenterSheet roleTitle="RESIDENT" onDismiss={() => setShowNotif(false)} />}
-
-      {/* Profile photo dialog */}
-      <Modal visible={showProfilePhotoDialog} transparent animationType="none" onRequestClose={() => setShowProfilePhotoDialog(false)}>
-        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.backdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowProfilePhotoDialog(false)} />
-          <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={{ width: '92%', zIndex: 2 }}>
-            <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]} style={{ width: '100%' }}>
-            <Row align="center" gap={8}>
-              <Ionicons name="camera" size={22} color={Colors.primary} />
-              <Txt size={18} weight="800" color={Colors.textPrimary}>Personalize Profile Photo</Txt>
-            </Row>
-            <Spacer size={18} />
-            <Col align="center">
-              <View style={styles.photoPreview}>
-                {guest?.profilePhotoUri ? <Txt>📷</Txt> : <Ionicons name="person" size={50} color={Colors.textMuted} />}
-              </View>
-              <Txt size={12} color={Colors.textMuted}>{guest?.profilePhotoUri ? 'Current Profile Photo' : 'No profile photo set yet'}</Txt>
-            </Col>
-            <Spacer size={18} />
-            <Btn onPress={() => { updateProfilePhoto(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`); Alert.alert('Success', 'Sample selfie selected!'); setShowProfilePhotoDialog(false); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={12} height={44} testID="take_camera_photo_btn">
-              <Ionicons name="camera" size={18} color={Colors.textInverse} /><Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Take Photo (Camera)</Txt>
-            </Btn>
-            <Spacer size={8} />
-            <OutlinedBtn onPress={() => { updateProfilePhoto(`sample:selfie_preset_${Math.floor(Math.random() * 5) + 1}`); Alert.alert('Success', 'Sample photo loaded!'); setShowProfilePhotoDialog(false); }} borderColor={Colors.primary} textColor={Colors.primary} borderRadius={12} height={44} testID="choose_gallery_photo_btn">
-              <Ionicons name="images" size={18} color={Colors.primary} /><Txt size={13} weight="700" color={Colors.primary} style={{ marginLeft: 8 }}>Choose from Gallery</Txt>
-            </OutlinedBtn>
-            <Spacer size={12} /><View style={{ height: 1, backgroundColor: Colors.borderMuted }} /><Spacer size={12} />
-            <Txt size={12} weight="700" color={Colors.textPrimary}>Or select a Preset Avatar:</Txt>
-            <Spacer size={8} />
-            <Row gap={8} justify="space-between">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <AnimatedPress key={i} scale={0.9} onPress={() => { updateProfilePhoto(`sample:avatar_preset_${i}`); Alert.alert('Success', `Avatar ${i} selected!`); setShowProfilePhotoDialog(false); }} style={styles.presetAvatar}>
-                  <Ionicons name="happy" size={24} color={Colors.primary} />
-                </AnimatedPress>
-              ))}
-            </Row>
-            {guest?.profilePhotoUri ? (
-              <>
-                <Spacer size={12} />
-                <AnimatedPress scale={0.95} onPress={() => { updateProfilePhoto(''); Alert.alert('Removed', 'Profile photo removed'); setShowProfilePhotoDialog(false); }}>
-                  <Txt size={12} weight="700" color={Colors.danger}>Remove Photo</Txt>
-                </AnimatedPress>
-              </>
-            ) : null}
-            <Spacer size={12} />
-            <Row gap={8}>
-              <Btn onPress={() => { setShowProfilePhotoDialog(false); router.push('/profile'); }} containerColor={Colors.primaryDark} textColor={Colors.textInverse} borderRadius={10} height={36} contentStyle={{ paddingHorizontal: 12 }}>
-                <Ionicons name="ribbon" size={14} color={Colors.textInverse} /><Txt size={12} weight="700" color={Colors.textInverse} style={{ marginLeft: 4 }}>Profile & KYC</Txt>
-              </Btn>
-              <AnimatedPress scale={0.95} onPress={() => setShowProfilePhotoDialog(false)} style={{ padding: 8 }}><Txt size={12} color={Colors.textMuted}>Close</Txt></AnimatedPress>
-            </Row>
-            </Card>
-          </Animated.View>
-        </Animated.View>
-      </Modal>
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
-
-  avatarWrap: { position: 'relative' },
-  avatar: {
-    width: 50, height: 50, borderRadius: 25,
-    backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-  },
-  cameraBadge: {
-    position: 'absolute', bottom: -2, right: -2,
-    width: 18, height: 18, borderRadius: 9, backgroundColor: Colors.surface,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-  },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  billPill: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
-    marginTop: 4, alignSelf: 'flex-start',
-  },
-  bellBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.borderSubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  unreadDot: {
-    position: 'absolute', top: 6, right: 6,
-    width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.danger,
-  },
-  backdrop: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.55)', alignItems: 'center', justifyContent: 'center' },
-  photoPreview: {
-    width: 90, height: 90, borderRadius: 45,
-    backgroundColor: Colors.surfaceMuted,
-    borderWidth: 3, borderColor: Colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  presetAvatar: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1.5, borderColor: Colors.borderSubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
 });

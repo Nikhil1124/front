@@ -30,19 +30,19 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
 
   return (
     <View style={styles.row}>
-      <Text style={[styles.price, styles[`price_${size}`]]}>
+      <Text maxFontSizeMultiplier={1.3} style={[styles.price, styles[`price_${size}`]]}>
         {prefix}{price}
       </Text>
 
       {originalPrice && originalPrice > price ? (
-        <Text style={[styles.strike, styles[`strike_${size}`]]}>
+        <Text maxFontSizeMultiplier={1.3} style={[styles.strike, styles[`strike_${size}`]]}>
           {prefix}{originalPrice}
         </Text>
       ) : null}
 
       {showBadge && discountPercent > 0 ? (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{discountPercent}% off</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.badgeText}>{discountPercent}% off</Text>
         </View>
       ) : null}
     </View>

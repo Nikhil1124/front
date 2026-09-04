@@ -36,7 +36,7 @@ export function OrderStepper({ status }: OrderStepperProps) {
     return (
       <View style={styles.cancelledBox}>
         <Ionicons name="close-circle" size={24} color={Colors.danger} />
-        <Text style={styles.cancelledText}>This order has been cancelled.</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.cancelledText}>This order has been cancelled.</Text>
       </View>
     );
   }
@@ -70,10 +70,10 @@ export function OrderStepper({ status }: OrderStepperProps) {
 
             {/* Right Text Details */}
             <View style={[styles.textColumn, isLast && styles.lastTextColumn]}>
-              <Text style={[styles.stepLabel, done || active ? styles.activeText : styles.inactiveText]}>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.stepLabel, done || active ? styles.activeText : styles.inactiveText]}>
                 {meta.label}
               </Text>
-              <Text style={styles.stepHint}>{meta.hint}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.stepHint}>{meta.hint}</Text>
             </View>
           </View>
         );

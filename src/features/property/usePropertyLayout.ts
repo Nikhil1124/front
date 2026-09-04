@@ -49,9 +49,15 @@ export function createRoom(
   }).then(toPropertyLayout);
 }
 
-/** Raises a room's roommate capacity, adding the extra beds. Same total_beds cap as
- *  createRoom; only ever increases (the server rejects a lower or equal value). */
-export function increaseRoomSharing(
+/**
+ * Set how many beds a room holds, in either direction.
+ *
+ * Raising adds beds and is still capped by the property's `total_beds`. Lowering deletes the
+ * surplus beds — highest-numbered first, so what remains is 1..n — and the server refuses it
+ * with a 422 if any of those beds is still occupied, rather than quietly ending a tenancy.
+ * Setting the value a room already has is a no-op, so this is safe to retry.
+ */
+export function setRoomSharing(
   pgId: string,
   roomId: string,
   sharingType: number,
@@ -108,11 +114,11 @@ export function useCreateRoom(pgId: string | null) {
   });
 }
 
-export function useIncreaseRoomSharing(pgId: string | null) {
+export function useSetRoomSharing(pgId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (params: { roomId: string; sharingType: number }) =>
-      increaseRoomSharing(pgId!, params.roomId, params.sharingType),
+      setRoomSharing(pgId!, params.roomId, params.sharingType),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.properties.layout(pgId ?? "") });
     },

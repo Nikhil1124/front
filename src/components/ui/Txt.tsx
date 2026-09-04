@@ -20,11 +20,30 @@ export interface TxtProps {
   style?: StyleProp<TextStyle>;
   numberOfLines?: number;
   ellipsizeMode?: 'head' | 'middle' | 'tail' | 'clip';
+  /** Raise for text that must stay legible at any system font size and sits in a container
+   *  that can grow with it. Lower (or 1) only for text inside genuinely fixed chrome. */
+  maxFontSizeMultiplier?: number;
 }
+
+/**
+ * Caps how far the OS font-size setting can stretch text: 1.3x, not unlimited.
+ *
+ * The app has ~170 fixed-height containers holding text — 56px fields, 40px chips, the tab
+ * dock. Android and iOS both let a user set text to 200%+ for accessibility, and at that
+ * scale those containers clip their own labels: buttons read "Confir…", stat tiles lose their
+ * numbers. Turning scaling off entirely (`allowFontScaling={false}`) would "fix" the layout by
+ * ignoring an accessibility setting outright, which is worse. A cap keeps the app usable for
+ * someone who needs bigger text without shattering the layout — the standard compromise.
+ *
+ * Per-call override exists for the two ends: prose that should scale further, and fixed chrome
+ * that cannot scale at all.
+ */
+const DEFAULT_MAX_FONT_SCALE = 1.3;
 
 export function Txt({
   children, variant, size, weight, color = Colors.textPrimary,
   align = 'left', lineHeight, letterSpacing, style, numberOfLines, ellipsizeMode,
+  maxFontSizeMultiplier = DEFAULT_MAX_FONT_SCALE,
 }: TxtProps) {
   const base = variant ? Typography[variant] : null;
   const resolvedSize = size ?? base?.fontSize ?? 13;
@@ -43,6 +62,7 @@ export function Txt({
       }, style]}
       numberOfLines={numberOfLines}
       ellipsizeMode={ellipsizeMode}
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
     >
       {children}
     </Text>

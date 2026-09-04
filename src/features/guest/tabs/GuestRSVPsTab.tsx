@@ -3,7 +3,7 @@
  * retaining 100% of existing functionality, persistent meal preferences, ad cards,
  * allergen breakdowns, and state management.
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, ScrollView, StyleSheet, TouchableOpacity, Image,
   RefreshControl, Dimensions,
@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueries } from '@tanstack/react-query';
 
 import { Txt, Row, Col, Spacer, Card } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -22,11 +23,13 @@ import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { hapticSelect, hapticSuccess } from '@/utils/haptics';
 import { formatTime12h } from '@/utils/format';
 import type { MealNotificationEntity, MealToggleState } from '@/types';
-import { useMealsQuery } from '@/features/meals/useMeals';
+import { useMealsQuery, getMyResponse } from '@/features/meals/useMeals';
 import { useAuthStore } from '@/store/authStore';
+import { qk } from '@/data/queryKeys';
+import { useSetAwayMutation } from '@/features/auth/useAuth';
+import { GateNotice, gateCodeOf } from '@/components/GateNotice';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -53,7 +56,14 @@ function cutoffLabel(ms: number): string {
   return `Cut-off ${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
-function buildWeekDays(): { label: string; short: string; date: number; isToday: boolean }[] {
+/** Chef-confirmed only (`MealNotificationEntity.dietaryType`) — null renders nothing. */
+const DIETARY_TAG: Record<'veg' | 'non_veg' | 'pure_veg', { label: string; color: string; bg: string }> = {
+  veg: { label: '🥦 VEG', color: '#15803D', bg: '#DCFCE7' },
+  non_veg: { label: '🍗 NON-VEG', color: '#B91C1C', bg: '#FEE2E2' },
+  pure_veg: { label: '🥗 PURE VEG', color: '#166534', bg: '#DCFCE7' },
+};
+
+function buildWeekDays(): { label: string; short: string; date: number; isToday: boolean; full: Date }[] {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const result = [];
   const today = new Date();
@@ -65,9 +75,21 @@ function buildWeekDays(): { label: string; short: string; date: number; isToday:
       short: days[d.getDay()],
       date: d.getDate(),
       isToday: i === 0,
+      full: d,
     });
   }
   return result;
+}
+
+/** "28 Aug – 3 Sep 2026" across a month boundary, "1 – 7 Sep 2026" within one — never a
+ *  fixed string, which used to read "Sep 2025" no matter what the real dates were. */
+function weekRangeLabel(start: Date, end: Date): string {
+  const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+  const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
+  const year = end.getFullYear();
+  return startMonth === endMonth
+    ? `${start.getDate()} – ${end.getDate()} ${endMonth} ${year}`
+    : `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth} ${year}`;
 }
 
 const MEAL_TABS: { key: string; label: string; icon: any; time: string }[] = [
@@ -94,32 +116,32 @@ export function GuestRSVPsTab() {
   const [detailMeal, setDetailMeal] = useState<MealNotificationEntity | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
 
-  // Persistent B/L/D Opt-In preferences & Vacation Mode
-  const VACATION_MODE_KEY = '@pgow/vacation_mode';
-  const [isAwayFromPg, setIsAwayFromPg] = useState(false);
+  // Persistent B/L/D Opt-In preferences (local-only — see setMealPreference below)
   const [mealPrefs, setMealPrefs] = useState<{ breakfast: boolean; lunch: boolean; dinner: boolean }>({
     breakfast: true,
     lunch: true,
     dinner: true,
   });
 
-  useEffect(() => {
-    AsyncStorage.getItem(VACATION_MODE_KEY)
-      .then((val) => { if (val === 'true') setIsAwayFromPg(true); })
-      .catch(() => {});
-  }, []);
+  // Away/vacation mode — real, server-side (PATCH /v1/me/away): persists across devices and
+  // shows up to staff reading a meal's roster (response.service.roster's `is_away`).
+  const user = useAuthStore((s) => s.user);
+  const guestGrant = user?.memberships.find((m) => m.pg_id === activePgId && m.role === 'guest');
+  const isAwayFromPg = guestGrant?.is_away ?? false;
+  const setAwayMutation = useSetAwayMutation();
 
   const toggleVacationMode = useCallback((away: boolean) => {
-    setIsAwayFromPg(away);
-    AsyncStorage.setItem(VACATION_MODE_KEY, away ? 'true' : 'false').catch(() => {});
-    if (away) {
-      hapticSelect();
-      toast('info', 'Vacation Mode Enabled ✈️', 'Meal notifications & kitchen RSVP reminders are paused while you are away.');
-    } else {
-      hapticSuccess();
-      toast('success', 'Welcome Back! 🏠', 'Meal notifications & daily portion RSVPs resumed.');
-    }
-  }, [toast]);
+    setAwayMutation.mutate(away, {
+      onSuccess: () => {
+        if (away) {
+          toast('info', 'Marked as Away ✈️', 'Staff can see you’re away. RSVP "Not Attending" yourself on each meal — this does not do that automatically.');
+        } else {
+          toast('success', 'Welcome Back! 🏠', "You're marked as home again.");
+        }
+      },
+      onError: () => toast('error', 'Could not update', 'Please try again.'),
+    });
+  }, [setAwayMutation, toast]);
 
   useEffect(() => {
     AsyncStorage.getItem(MEAL_PREF_KEY)
@@ -144,7 +166,9 @@ export function GuestRSVPsTab() {
         AsyncStorage.setItem(MEAL_PREF_KEY, JSON.stringify(next)).catch(() => {});
         return next;
       });
-      toast('success', enabled ? `Opted in to ${mealType}` : `Opted out of ${mealType}`, enabled ? 'Your portion will be reserved.' : 'Skipping this meal today.');
+      // A personal default only — it is not sent anywhere, so it must not claim the kitchen
+      // acts on it. The real signal the kitchen sees is an actual RSVP on a posted meal.
+      toast('success', enabled ? `Opted in to ${mealType}` : `Opted out of ${mealType}`, 'Saved as your personal default — RSVP on each meal to actually notify the kitchen.');
     },
     [toast],
   );
@@ -177,6 +201,32 @@ export function GuestRSVPsTab() {
 
   const weekDays = buildWeekDays();
 
+  // Each meal's REAL response from the server — `rsvpChoices` above is only this-session's
+  // optimistic taps, and used to be the sole source of truth, which meant a meal you already
+  // RSVP'd to (from the Home tab, or an earlier visit here) showed as "Not Decided" until
+  // tapped again in THIS screen. `refreshAll()` (called after every RSVP) invalidates the
+  // whole query cache, so these refetch automatically once a response changes.
+  const myResponseQueries = useQueries({
+    queries: notifications.map((n) => ({
+      queryKey: qk.meals.myResponse(activePgId ?? '', n.id),
+      queryFn: () => getMyResponse(n.id),
+      enabled: !!activePgId,
+    })),
+  });
+  const serverRsvpChoices = useMemo(() => {
+    const map: Record<string, 'REQUIRED' | 'NOT_REQUIRED'> = {};
+    notifications.forEach((n, i) => {
+      const choice = myResponseQueries[i]?.data?.choice;
+      if (choice === 'eating') map[n.id] = 'REQUIRED';
+      else if (choice === 'skipping') map[n.id] = 'NOT_REQUIRED';
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications, myResponseQueries.map((q) => q.data).join('|')]);
+  // This-session taps win immediately (no round trip to wait for); the server view fills in
+  // everything else, including meals RSVP'd to before this screen was ever opened.
+  const effectiveChoices = { ...serverRsvpChoices, ...rsvpChoices };
+
   // Active meal for the selected tab
   const activeMealNotif = notifications.find(
     (n) => n.mealType.toUpperCase() === activeMealTab
@@ -184,23 +234,21 @@ export function GuestRSVPsTab() {
   const cutoffMs = activeMealNotif ? getCutoffMs(activeMealNotif.mealType) : null;
   const cutoffPassed = cutoffMs ? cutoffMs <= Date.now() : false;
 
-  const currentChoice = activeMealNotif ? rsvpChoices[activeMealNotif.id] : undefined;
+  const currentChoice = activeMealNotif ? effectiveChoices[activeMealNotif.id] : undefined;
   const isAttending = currentChoice === 'REQUIRED';
   const isSkipping = currentChoice === 'NOT_REQUIRED';
 
   const totalMealsCount = notifications.length;
-  const answeredMealsCount = notifications.filter((n) => rsvpChoices[n.id] !== undefined).length;
+  const answeredMealsCount = notifications.filter((n) => effectiveChoices[n.id] !== undefined).length;
 
   const handleRSVP = useCallback(
     async (id: string, choice: 'REQUIRED' | 'NOT_REQUIRED') => {
       if (submittingId) return;
       setSubmittingId(id);
-      hapticSelect();
       try {
         const result = await submitRSVP(id, choice);
         if (result.ok) {
           setRsvpChoices((prev) => ({ ...prev, [id]: choice }));
-          hapticSuccess();
           toast('success', choice === 'REQUIRED' ? "You're attending!" : 'Marked as not attending', 'Your portion status updated.');
         }
       } finally { setSubmittingId(null); }
@@ -227,15 +275,15 @@ export function GuestRSVPsTab() {
             </Txt>
           </Col>
           <Row gap={10}>
-            <TouchableOpacity
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button"
               style={[styles.hIconBtn, showPreferences && styles.hIconBtnActive]}
-              onPress={() => { hapticSelect(); setShowPreferences(!showPreferences); }}
+              onPress={() => { setShowPreferences(!showPreferences); }}
             >
               <Ionicons name="options-outline" size={20} color="#FFFFFF" />
             </TouchableOpacity>
-            <TouchableOpacity
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Choose a date" accessibilityRole="button"
               style={styles.hIconBtn}
-              onPress={() => { hapticSelect(); toast('info', 'Meal Calendar', 'Showing your weekly meal schedule.'); }}
+              onPress={() => { toast('info', 'Not Available Yet', 'A weekly meal calendar is coming soon.'); }}
             >
               <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
             </TouchableOpacity>
@@ -263,7 +311,7 @@ export function GuestRSVPsTab() {
           contentContainerStyle={[styles.dayStripContent, { paddingHorizontal: 16 }]}
         >
           {weekDays.map((d, i) => (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               key={i}
               onPress={() => setSelectedDay(i)}
               style={[styles.dayPill, selectedDay === i && styles.dayPillActive]}
@@ -273,7 +321,7 @@ export function GuestRSVPsTab() {
                   Today
                 </Txt>
               )}
-              <Txt size={11} weight="600" color={selectedDay === i ? 'rgba(255,255,255,0.75)' : Colors.textPrimarySecondary}>
+              <Txt size={11} weight="600" color={selectedDay === i ? 'rgba(255,255,255,0.75)' : Colors.textSecondary}>
                 {d.isToday ? d.short : d.label}
               </Txt>
               <Txt size={17} weight="800" color={selectedDay === i ? '#FFFFFF' : Colors.textPrimary}>
@@ -282,9 +330,9 @@ export function GuestRSVPsTab() {
             </TouchableOpacity>
           ))}
           {/* Weekly View button */}
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.weeklyViewBtn}
-            onPress={() => { hapticSelect(); toast('info', 'Weekly View', 'Overview of all 7 days meal menus.'); }}
+            onPress={() => { toast('info', 'Not Available Yet', 'A 7-day meal overview is coming soon.'); }}
           >
             <Ionicons name="calendar" size={16} color={Colors.primary} />
             <Txt size={10} weight="700" color={Colors.primary} style={{ marginTop: 4, textAlign: 'center' }}>
@@ -301,7 +349,7 @@ export function GuestRSVPsTab() {
                 <Ionicons name="restaurant" size={16} color={Colors.primary} />
                 <Txt size={14} weight="800" color={Colors.textPrimary}>Default Daily Meal Preferences</Txt>
               </Row>
-              <InfoTip text="Toggle each meal on/off for today. The kitchen sees your default opt-in and pre-reserves a portion." />
+              <InfoTip text="Toggle each meal on/off as a personal reminder for today. This is saved on your device only — RSVP on the actual posted meal to let the kitchen know." />
             </Row>
             <MealToggleWidget
               breakfast={buildMealToggleState('breakfast')}
@@ -316,12 +364,12 @@ export function GuestRSVPsTab() {
                   <Ionicons name="airplane-outline" size={18} color={Colors.primary} />
                   <Col style={{ flex: 1 }}>
                     <Txt size={13} weight="800" color={Colors.textPrimary}>Away from PG / Vacation Mode</Txt>
-                    <Txt size={10} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
-                      Pause meal notifications & portion booking when visiting home or traveling.
+                    <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                      Staff can see this on the roster. It doesn't change your notifications or auto-submit RSVPs.
                     </Txt>
                   </Col>
                 </Row>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={{
                     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12,
                     backgroundColor: isAwayFromPg ? '#FEF3C7' : '#E0F2F0',
@@ -330,7 +378,7 @@ export function GuestRSVPsTab() {
                   onPress={() => toggleVacationMode(!isAwayFromPg)}
                 >
                   <Txt size={11} weight="900" color={isAwayFromPg ? '#D97706' : Colors.primary}>
-                    {isAwayFromPg ? 'ON (Muted ✈️)' : 'OFF (Active 🔔)'}
+                    {isAwayFromPg ? 'AWAY ✈️' : 'HOME 🏠'}
                   </Txt>
                 </TouchableOpacity>
               </Row>
@@ -350,15 +398,15 @@ export function GuestRSVPsTab() {
                   <Row gap={6} align="center">
                     <Txt size={14} weight="900" color="#92400E">Away from PG (Home Visit)</Txt>
                     <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: '#FEF3C7' }}>
-                      <Txt size={9} weight="800" color="#D97706">MUTED</Txt>
+                      <Txt size={9} weight="800" color="#D97706">NOTED</Txt>
                     </View>
                   </Row>
                   <Txt size={11} color="#B45309" style={{ marginTop: 2, lineHeight: 15 }}>
-                    Meal notifications & kitchen portion reservations are paused. Kitchen won't prepare portions until you return.
+                    Staff can see you're away. Notifications keep coming and the kitchen still plans for you — RSVP "Not Attending" on each meal yourself.
                   </Txt>
                 </Col>
               </Row>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={{ backgroundColor: '#D97706', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}
                 onPress={() => toggleVacationMode(false)}
               >
@@ -378,11 +426,11 @@ export function GuestRSVPsTab() {
               <Txt size={13} weight="800" color={Colors.textPrimary}>RSVP helps us serve better</Txt>
               <InfoTip text="Chefs prepare meals based on precise responses. Tap a meal card to view nutrition details & RSVP!" />
             </Row>
-            <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+            <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
               Please confirm your meals before the cut-off time.
             </Txt>
           </Col>
-          <TouchableOpacity onPress={() => setShowPreferences(!showPreferences)}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => setShowPreferences(!showPreferences)}>
             <Txt size={12} weight="700" color={Colors.primary}>
               {showPreferences ? 'Hide Prefs' : 'How RSVP works >'}
             </Txt>
@@ -397,15 +445,15 @@ export function GuestRSVPsTab() {
           {MEAL_TABS.map((tab) => {
             const active = activeMealTab === tab.key;
             return (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={tab.key}
-                onPress={() => { hapticSelect(); setActiveMealTab(tab.key); }}
+                onPress={() => { setActiveMealTab(tab.key); }}
                 style={[styles.tabPill, active && styles.tabPillActive]}
               >
-                <Ionicons name={tab.icon} size={15} color={active ? '#FFFFFF' : Colors.textPrimarySecondary} />
+                <Ionicons name={tab.icon} size={15} color={active ? '#FFFFFF' : Colors.textSecondary} />
                 <Col style={{ marginLeft: 6 }}>
                   <Txt size={12} weight="800" color={active ? '#FFFFFF' : Colors.textPrimary}>{tab.label}</Txt>
-                  <Txt size={10} color={active ? 'rgba(255,255,255,0.75)' : Colors.textPrimarySecondary}>{tab.time}</Txt>
+                  <Txt size={10} color={active ? 'rgba(255,255,255,0.75)' : Colors.textSecondary}>{tab.time}</Txt>
                 </Col>
               </TouchableOpacity>
             );
@@ -413,7 +461,7 @@ export function GuestRSVPsTab() {
         </Row>
 
         {/* ── 5. MEAL HERO CARD ── */}
-        <TouchableOpacity activeOpacity={0.9} onPress={() => activeMealNotif && setDetailMeal(activeMealNotif)} style={styles.heroCard}>
+        <TouchableOpacity accessibilityRole="button" activeOpacity={0.9} onPress={() => activeMealNotif && setDetailMeal(activeMealNotif)} style={styles.heroCard}>
           {/* Food image - right */}
           <View style={styles.heroImageWrap}>
             <Image
@@ -440,8 +488,8 @@ export function GuestRSVPsTab() {
             </View>
             {cutoffMs && !cutoffPassed && (
               <Row align="center" gap={5}>
-                <Ionicons name="time-outline" size={13} color={Colors.textPrimarySecondary} />
-                <Txt size={12} weight="700" color={Colors.textPrimarySecondary}>{cutoffLabel(cutoffMs)}</Txt>
+                <Ionicons name="time-outline" size={13} color={Colors.textSecondary} />
+                <Txt size={12} weight="700" color={Colors.textSecondary}>{cutoffLabel(cutoffMs)}</Txt>
               </Row>
             )}
           </Row>
@@ -467,21 +515,21 @@ export function GuestRSVPsTab() {
                 {activeMealNotif.menuItems?.split(',')[0] ?? ''}
               </Txt>
               {(activeMealNotif.menuItems?.split(',').length ?? 0) > 1 && (
-                <Txt size={12} color={Colors.textPrimarySecondary} numberOfLines={1} style={{ marginTop: 2 }}>
+                <Txt size={12} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
                   {activeMealNotif.menuItems?.split(',').slice(1).join(' · ')}
                 </Txt>
               )}
               {activeMealNotif.serviceTime && (
                 <Row align="center" gap={6} style={{ marginTop: 10 }}>
-                  <Ionicons name="time-outline" size={13} color={Colors.textPrimarySecondary} />
-                  <Txt size={12} weight="600" color={Colors.textPrimarySecondary}>
+                  <Ionicons name="time-outline" size={13} color={Colors.textSecondary} />
+                  <Txt size={12} weight="600" color={Colors.textSecondary}>
                     {formatServiceTime12h(activeMealNotif.serviceTime)}
                   </Txt>
                 </Row>
               )}
             </Col>
           ) : (
-            <Txt size={13} color={Colors.textPrimarySecondary} style={{ marginTop: 6, maxWidth: '60%' }}>
+            <Txt size={13} color={Colors.textSecondary} style={{ marginTop: 6, maxWidth: '60%' }}>
               No menu posted yet for this slot.
             </Txt>
           )}
@@ -492,12 +540,12 @@ export function GuestRSVPsTab() {
           {activeMealNotif && (
             cutoffPassed ? (
               <View style={styles.rsvpClosed}>
-                <Ionicons name="lock-closed" size={14} color={Colors.textPrimarySecondary} />
-                <Txt size={13} weight="700" color={Colors.textPrimarySecondary} style={{ marginLeft: 8 }}>RSVP window closed</Txt>
+                <Ionicons name="lock-closed" size={14} color={Colors.textSecondary} />
+                <Txt size={13} weight="700" color={Colors.textSecondary} style={{ marginLeft: 8 }}>RSVP window closed</Txt>
               </View>
             ) : (
               <Row gap={12}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.attendBtn, isAttending && styles.attendBtnActive]}
                   onPress={() => handleRSVP(activeMealNotif.id, 'REQUIRED')}
                   disabled={!!submittingId}
@@ -507,12 +555,12 @@ export function GuestRSVPsTab() {
                     {isAttending ? "I'll Attend" : "I'll Attend"}
                   </Txt>
                 </TouchableOpacity>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.skipBtn, isSkipping && styles.skipBtnActive]}
                   onPress={() => handleRSVP(activeMealNotif.id, 'NOT_REQUIRED')}
                   disabled={!!submittingId}
                 >
-                  <Txt size={13} weight="800" color={isSkipping ? '#FFFFFF' : Colors.textPrimarySecondary}>
+                  <Txt size={13} weight="800" color={isSkipping ? '#FFFFFF' : Colors.textSecondary}>
                     Not Attending
                   </Txt>
                 </TouchableOpacity>
@@ -547,10 +595,10 @@ export function GuestRSVPsTab() {
         <Row justify="space-between" align="center" style={{ marginTop: 24, marginBottom: 16 }}>
           <Txt size={17} weight="800" color={Colors.textPrimary}>Weekly Menu</Txt>
           <Row align="center" gap={4}>
-            <Txt size={12} color={Colors.textPrimarySecondary}>
-              {`${weekDays[0].date} – ${weekDays[6].date} Sep 2025`}
+            <Txt size={12} color={Colors.textSecondary}>
+              {weekRangeLabel(weekDays[0].full, weekDays[6].full)}
             </Txt>
-            <Ionicons name="chevron-forward" size={14} color={Colors.textPrimarySecondary} />
+            <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
           </Row>
         </Row>
 
@@ -564,9 +612,9 @@ export function GuestRSVPsTab() {
           contentContainerStyle={{ gap: 12, paddingHorizontal: 16, paddingBottom: 16 }}
         >
           {weekDays.map((d, i) => (
-            <TouchableOpacity key={i} onPress={() => setSelectedDay(i)}>
+            <TouchableOpacity accessibilityRole="button" key={i} onPress={() => setSelectedDay(i)}>
               <Col align="center" style={{ width: 38 }}>
-                <Txt size={11} weight="600" color={Colors.textPrimarySecondary}>{d.label.slice(0, 3).toUpperCase()}</Txt>
+                <Txt size={11} weight="600" color={Colors.textSecondary}>{d.label.slice(0, 3).toUpperCase()}</Txt>
                 <View style={[styles.weekDayCircle, selectedDay === i && styles.weekDayCircleActive]}>
                   <Txt size={13} weight="800" color={selectedDay === i ? '#FFFFFF' : Colors.textPrimary}>
                     {String(d.date).padStart(2, '0')}
@@ -578,17 +626,22 @@ export function GuestRSVPsTab() {
         </ScrollView>
 
         {/* Meal rows */}
-        {notifications.length === 0 ? (
+        {/* The gate check comes first, and before the empty state: a gated resident gets an
+            empty list from a 403, not from an empty kitchen, and telling them "No meals
+            posted yet" is both untrue and a dead end. */}
+        {gateCodeOf(mealsError) ? (
+          <GateNotice error={mealsError} />
+        ) : notifications.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Ionicons name="restaurant-outline" size={28} color={Colors.textPrimarySecondary} />
-            <Txt size={14} weight="700" color={Colors.textPrimarySecondary} style={{ marginTop: 12 }}>
+            <Ionicons name="restaurant-outline" size={28} color={Colors.textSecondary} />
+            <Txt size={14} weight="700" color={Colors.textSecondary} style={{ marginTop: 12 }}>
               {isLoading ? 'Loading meals...' : 'No meals posted yet.'}
             </Txt>
           </View>
         ) : (
           <View style={styles.mealListCard}>
             {notifications.map((n, idx) => {
-              const choice = rsvpChoices[n.id];
+              const choice = effectiveChoices[n.id];
               const isEat = choice === 'REQUIRED';
               const isSkip = choice === 'NOT_REQUIRED';
               const lowerType = n.mealType.toLowerCase();
@@ -604,7 +657,7 @@ export function GuestRSVPsTab() {
               if (isUpcoming) { statusLabel = 'Upcoming'; statusColor = Colors.primary; statusIcon = 'time-outline'; }
 
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={n.id}
                   onPress={() => setDetailMeal(n)}
                   style={[styles.mealRow, !isLast && styles.mealRowBorder]}
@@ -614,7 +667,7 @@ export function GuestRSVPsTab() {
                   </View>
                   <Col style={{ flex: 1, marginLeft: 12 }}>
                     <Txt size={14} weight="800" color={Colors.textPrimary}>{n.mealType[0] + n.mealType.slice(1).toLowerCase()}</Txt>
-                    <Txt size={12} color={Colors.textPrimarySecondary} numberOfLines={1} style={{ marginTop: 2 }}>
+                    <Txt size={12} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
                       {n.menuItems ?? '—'}
                     </Txt>
                   </Col>
@@ -625,7 +678,7 @@ export function GuestRSVPsTab() {
                         {statusLabel}
                       </Txt>
                     </View>
-                    <Ionicons name="chevron-forward" size={14} color={Colors.textPrimarySecondary} />
+                    <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
                   </Row>
                 </TouchableOpacity>
               );
@@ -634,17 +687,17 @@ export function GuestRSVPsTab() {
         )}
 
         {/* ── 7. PAST MEALS & FEEDBACK ── */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           activeOpacity={0.88}
           style={styles.pastCard}
-          onPress={() => { hapticSelect(); toast('info', 'Past Meals & Feedback', 'Your meal feedback rating is 4.8/5. Thank you!'); }}
+          onPress={() => { toast('info', 'Not Available Yet', 'Meal feedback history is coming soon.'); }}
         >
           <View style={styles.pastIcon}>
             <Ionicons name="receipt-outline" size={20} color={Colors.primaryDark} />
           </View>
           <Col style={{ flex: 1, marginLeft: 12 }}>
             <Txt size={14} weight="800" color={Colors.textPrimary}>Past Meals & Feedback</Txt>
-            <Txt size={12} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+            <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
               Rate your meals and help us improve.
             </Txt>
           </Col>
@@ -655,17 +708,17 @@ export function GuestRSVPsTab() {
         </TouchableOpacity>
 
         {/* ── 8. FEEDBACK BANNER ── */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           activeOpacity={0.88}
           style={styles.feedbackBanner}
-          onPress={() => { hapticSelect(); toast('success', 'Kitchen Feedback', 'Your feedback helps the chef prepare better meals daily!'); }}
+          onPress={() => { toast('info', 'Not Available Yet', 'Meal feedback submission is coming soon.'); }}
         >
           <View style={styles.feedbackIcon}>
             <Ionicons name="star-outline" size={20} color={Colors.primaryDark} />
           </View>
           <Col style={{ flex: 1, marginLeft: 12 }}>
             <Txt size={14} weight="800" color={Colors.textPrimary}>Your feedback matters!</Txt>
-            <Txt size={12} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+            <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
               Help us serve you better every day.
             </Txt>
           </Col>
@@ -690,14 +743,14 @@ export function GuestRSVPsTab() {
         footer={
           detailMeal ? (
             <Row gap={10}>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={[styles.sheetBtn, { backgroundColor: Colors.primary }]}
                 onPress={() => { handleRSVP(detailMeal.id, 'REQUIRED'); setDetailMeal(null); }}
               >
                 <Ionicons name="checkmark" size={16} color="#FFF" />
                 <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>I'll Attend ✅</Txt>
               </TouchableOpacity>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={[styles.sheetBtn, { backgroundColor: Colors.danger }]}
                 onPress={() => { handleRSVP(detailMeal.id, 'NOT_REQUIRED'); setDetailMeal(null); }}
               >
@@ -711,9 +764,18 @@ export function GuestRSVPsTab() {
         {detailMeal && (
           <View>
             <Card containerColor="#F7FAFA" borderRadius={12} borderWidth={1} borderColor="#DCE9EA" padding={[14, 14]}>
-              <Row align="center" gap={8}>
-                <Ionicons name="restaurant" size={18} color={Colors.primary} />
-                <Txt size={12} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>MENU DETAILS</Txt>
+              <Row justify="space-between" align="center">
+                <Row align="center" gap={8}>
+                  <Ionicons name="restaurant" size={18} color={Colors.primary} />
+                  <Txt size={12} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>MENU DETAILS</Txt>
+                </Row>
+                {detailMeal.dietaryType && (
+                  <View style={[styles.dietTag, { backgroundColor: DIETARY_TAG[detailMeal.dietaryType].bg }]}>
+                    <Txt size={10} weight="800" color={DIETARY_TAG[detailMeal.dietaryType].color}>
+                      {DIETARY_TAG[detailMeal.dietaryType].label}
+                    </Txt>
+                  </View>
+                )}
               </Row>
               <Spacer size={8} />
               <Txt size={16} weight="800" color={Colors.textPrimary}>{detailMeal.menuItems}</Txt>
@@ -731,39 +793,25 @@ export function GuestRSVPsTab() {
             <Txt size={11} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>SERVICE TIMELINE</Txt>
             <Spacer size={6} />
             <View style={styles.timelineRow}>
-              <Ionicons name="time" size={14} color={Colors.textPrimarySecondary} />
+              <Ionicons name="time" size={14} color={Colors.textSecondary} />
               <Txt size={12} color={Colors.textPrimary}>Service time: {formatServiceTime12h(detailMeal.serviceTime)}</Txt>
             </View>
             <View style={styles.timelineRow}>
-              <Ionicons name={detailMeal.isAlertSent ? 'notifications' : 'notifications-outline'} size={14} color={detailMeal.isAlertSent ? Colors.primary : Colors.textPrimarySecondary} />
-              <Txt size={12} color={detailMeal.isAlertSent ? Colors.primary : Colors.textPrimarySecondary}>
+              <Ionicons name={detailMeal.isAlertSent ? 'notifications' : 'notifications-outline'} size={14} color={detailMeal.isAlertSent ? Colors.primary : Colors.textSecondary} />
+              <Txt size={12} color={detailMeal.isAlertSent ? Colors.primary : Colors.textSecondary}>
                 {detailMeal.isAlertSent ? 'RSVP alert sent — your response is being counted' : `Alert triggers at ${getAlertTriggerTime(detailMeal.serviceTime)}`}
               </Txt>
             </View>
             <View style={styles.timelineRow}>
-              <Ionicons name="calendar" size={14} color={Colors.textPrimarySecondary} />
-              <Txt size={12} color={Colors.textPrimarySecondary}>Posted {formatTime12h(detailMeal.timestamp)}</Txt>
+              <Ionicons name="calendar" size={14} color={Colors.textSecondary} />
+              <Txt size={12} color={Colors.textSecondary}>Posted {formatTime12h(detailMeal.timestamp)}</Txt>
             </View>
-
-            <Spacer size={14} />
-            <Row gap={6} align="center">
-              <Txt size={11} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>NUTRITION & ALLERGEN NOTES</Txt>
-              <InfoTip text="Detailed nutrition and allergen breakdowns are populated by your chef when they broadcast the menu. Declare any allergies under Profile & KYC." />
-            </Row>
-            <Spacer size={10} />
-            <Row gap={8}>
-              {['Dairy-free', 'Gluten-free', 'Vegan option'].map((tag) => (
-                <View key={tag} style={styles.allergenChip}>
-                  <Txt size={11} weight="700" color={Colors.primary}>{tag}</Txt>
-                </View>
-              ))}
-            </Row>
 
             <Spacer size={14} />
             <Txt size={11} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>YOUR RSVP STATUS</Txt>
             <Spacer size={6} />
             {(() => {
-              const choice = detailMeal ? rsvpChoices[detailMeal.id] : null;
+              const choice = detailMeal ? effectiveChoices[detailMeal.id] : null;
               if (choice === 'REQUIRED') {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.12)', borderColor: '#10B981' }]}>
@@ -927,8 +975,8 @@ const styles = StyleSheet.create({
   // Sheet
   sheetBtn: { flex: 1, height: 46, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   chefNote: { marginTop: 10, backgroundColor: '#F0F6F5', borderRadius: 10, padding: 10 },
+  dietTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   sheetTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
-  allergenChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: '#E0F2F0', borderWidth: 1, borderColor: '#BDD8D6' },
   rsvpStatusBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, borderWidth: 1 },
 });

@@ -19,6 +19,7 @@ if (isExpoGo) {
     setNotificationChannelAsync: async () => {},
     setNotificationCategoryAsync: async () => {},
     scheduleNotificationAsync: async () => {},
+    cancelScheduledNotificationAsync: async () => {},
     dismissNotificationAsync: async () => {},
     registerTaskAsync: async () => {},
     getPermissionsAsync: async () => ({ granted: false, canAskAgain: false }),

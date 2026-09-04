@@ -7,10 +7,10 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
-import { hapticSuccess, hapticError } from '@/utils/haptics';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
+import { useBroadcastNotificationMutation, BROADCAST_AUDIENCE_MAP } from '@/features/notifications/useNotifications';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
@@ -31,7 +31,8 @@ export default function ChefKitchenTab() {
 function ChefKitchenView() {
   const [prepState, setPrepState] = useState('PREPPING');
   const [chefBroadcast, setChefBroadcast] = useState('');
-  const sendRoleNotification = usePGowStore((s) => s.sendRoleNotification);
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const broadcastMutation = useBroadcastNotificationMutation(activePgId ?? undefined);
   const { activeMeal } = useActiveMeal();
 
   useEffect(() => {
@@ -39,20 +40,33 @@ function ChefKitchenView() {
   }, [activeMeal?.id]);
 
   const broadcastToResidents = async (title: string, body: string) => {
-    const ok = await sendRoleNotification('RESIDENT', title, body, 'ANNOUNCEMENT', 'HIGH');
-    if (!ok) Alert.alert('Not sent', 'The broadcast did not go out. Check your connection and try again.');
-    return ok;
+    if (!activePgId) {
+      Alert.alert('Not sent', 'No active property.');
+      return false;
+    }
+    try {
+      await broadcastMutation.mutateAsync({
+        pg_id: activePgId,
+        target_role: BROADCAST_AUDIENCE_MAP.RESIDENT,
+        title,
+        body,
+        category: 'announcement',
+        priority: 'high',
+      });
+      return true;
+    } catch (err) {
+      Alert.alert('Not sent', err instanceof Error ? err.message : 'The broadcast did not go out. Check your connection and try again.');
+      return false;
+    }
   };
 
   const sendCustomAnnouncement = async () => {
     if (!chefBroadcast.trim()) {
-      hapticError();
       Alert.alert('Validation', 'Please enter or select a message to send.');
       return;
     }
     const ok = await broadcastToResidents('🍳 Kitchen Update', chefBroadcast.trim());
     if (!ok) return;
-    hapticSuccess();
     setChefBroadcast('');
     Alert.alert('Success', '🔔 Announcement sent to all residents!');
   };
@@ -61,7 +75,7 @@ function ChefKitchenView() {
     <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
       <ChefGroceriesShortcut />
 
-      <TouchableOpacity onPress={() => router.push('/rsvp-trends')} activeOpacity={0.85}>
+      <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/rsvp-trends')} activeOpacity={0.85}>
         <Card containerColor={Colors.surfaceElevated} borderRadius={14} borderWidth={1} borderColor={Colors.borderGlass} padding={[14, 14]}>
           <Row gap={10} align="center">
             <Ionicons name="trending-up" size={20} color={Colors.primary} />
@@ -94,38 +108,10 @@ function ChefKitchenView() {
         )}
       </Card>
 
-      <Spacer size={24} />
-      <Row justify="space-between" align="center">
-        <Txt size={14} weight="900" color={Colors.textPrimary}>Today's Progress</Txt>
-        <Txt size={11} color={Colors.textMuted}>Last updated: 8:45 AM</Txt>
-      </Row>
-      <Spacer size={12} />
-      <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 16]}>
-        {[
-          { label: 'Vegetables Cutting', time: '8:00 AM', pct: 75, icon: '🥕' },
-          { label: 'Batter Preparation', time: '8:30 AM', pct: 60, icon: '🥣' },
-          { label: 'Chutney & Sambar', time: '9:00 AM', pct: 40, icon: '🍲' },
-          { label: 'Roti / Poori Dough', time: '9:15 AM', pct: 30, icon: '🫓' },
-        ].map((item, idx, arr) => (
-          <Row key={item.label} align="center" gap={12} style={{ paddingVertical: 14, borderBottomWidth: idx === arr.length - 1 ? 0 : 1, borderBottomColor: Colors.borderSubtle }}>
-            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-              <Txt size={16}>{item.icon}</Txt>
-            </View>
-            <Col style={{ flex: 1 }}>
-              <Txt size={13} weight="800" color={Colors.textPrimary}>{item.label}</Txt>
-              <Txt size={11} color={Colors.textMuted}>{item.time}</Txt>
-              <Spacer size={6} />
-              <View style={{ height: 6, backgroundColor: Colors.surfaceMuted, borderRadius: 3, width: '100%', overflow: 'hidden' }}>
-                <View style={{ width: `${item.pct}%`, height: '100%', backgroundColor: Colors.primary }} />
-              </View>
-            </Col>
-            <Col align="flex-end" justify="space-between" style={{ height: 36 }}>
-              <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
-              <Txt size={11} weight="800" color={Colors.textSecondary}>{item.pct}%</Txt>
-            </Col>
-          </Row>
-        ))}
-      </Card>
+      {/* A hardcoded "Today's Progress" checklist (fixed fake tasks/times/percentages, a
+          static "Last updated: 8:45 AM") used to render here. pg-backend's Meal model has no
+          prep-task or percentage-complete tracking at all, so there was no real data behind
+          it — removed rather than left showing numbers that never move. */}
 
       <Spacer size={24} />
       <Txt size={15} weight="900" color={Colors.textPrimary}>Broadcast Custom Message</Txt>
@@ -159,7 +145,7 @@ function DeliveryProfileRoute() {
   const { data: realTrips = [] } = useMyTripsQuery();
   
   const activeTrip = realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0];
-  const vehicle = activeTrip?.vehicle_label ?? 'KA-01-AB-1234 (Scooter)';
+  const vehicle = activeTrip?.vehicle_label ?? 'Not assigned';
 
   return (
     <View style={styles.root}>
@@ -172,7 +158,7 @@ function DeliveryProfileRoute() {
           <Txt size={22} weight="900" color={Colors.primaryDark}>{staff?.name ?? 'Name unavailable'}</Txt>
           <Txt size={14} weight="700" color={Colors.primary}>Delivery Agent</Txt>
           <Spacer size={4} />
-          <Txt size={12} color={Colors.textMuted}>Employee ID: DA-{staff?.id ? staff.id.slice(0, 4) : '1001'}</Txt>
+          <Txt size={12} color={Colors.textMuted}>Employee ID: {staff?.id ? `DA-${staff.id.slice(0, 4)}` : 'Unavailable'}</Txt>
         </Col>
 
         <Spacer size={20} />
@@ -193,7 +179,7 @@ function DeliveryProfileRoute() {
               <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="call" size={18} color={Colors.textPrimary} /></View>
               <Txt size={14} weight="800" color={Colors.textPrimary}>Phone</Txt>
             </Row>
-            <Txt size={14} weight="700" color={Colors.textMuted}>{staff?.phone ?? '+91 98765 43210'}</Txt>
+            <Txt size={14} weight="700" color={Colors.textMuted}>{staff?.phone ?? 'Not on file'}</Txt>
           </Row>
           <View style={styles.divider} />
           <Row justify="space-between" align="center" style={styles.profileRow}>
@@ -214,13 +200,13 @@ function DeliveryProfileRoute() {
 
       <Modal transparent visible={showLogoutConfirm} animationType="none" onRequestClose={() => setShowLogoutConfirm(false)}>
         <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowLogoutConfirm(false)} />
+          <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowLogoutConfirm(false)} />
           <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={{ backgroundColor: Colors.surface, borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
             <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="log-out" size={24} color={Colors.danger} />
               </View>
-              <TouchableOpacity onPress={() => setShowLogoutConfirm(false)} activeOpacity={0.8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowLogoutConfirm(false)} activeOpacity={0.8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </Row>
@@ -231,10 +217,10 @@ function DeliveryProfileRoute() {
             </Txt>
             <Spacer size={24} />
             <Row gap={12}>
-              <TouchableOpacity onPress={() => setShowLogoutConfirm(false)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => setShowLogoutConfirm(false)} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setShowLogoutConfirm(false); logout(); router.replace('/'); }} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center' }}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => { setShowLogoutConfirm(false); logout(); router.replace('/'); }} activeOpacity={0.8} style={{ flex: 1, height: 50, borderRadius: 12, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center' }}>
                 <Txt size={15} weight="800" color="#FFF">Sign Out</Txt>
               </TouchableOpacity>
             </Row>

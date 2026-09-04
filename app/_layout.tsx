@@ -24,12 +24,21 @@ import {
   routeFromPushData,
 } from '@/features/notifications/channels';
 import { useRegisterDeviceForPush } from '@/features/devices/useDevices';
+import { useSession } from '@/features/auth/useAuth';
 // Side-effect import: defines BACKGROUND_NOTIFICATION_TASK at module scope, which must happen
 // on every JS launch — including Expo's headless relaunch for a killed app — before the OS can
 // deliver an Eat/Skip button tap to it.
 import { BACKGROUND_NOTIFICATION_TASK } from '@/tasks/backgroundNotificationTask';
 import { Colors } from '@/theme';
 import { AlertOverlay } from '@/components/AlertOverlay';
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
+
+/**
+ * Expo Router's own convention: a route file exporting `ErrorBoundary` gets its subtree
+ * wrapped in one (see `expo-router/views/Try`). Exported from the ROOT layout, so it catches
+ * a render crash anywhere in the app instead of leaving the user on a blank screen.
+ */
+export { AppErrorBoundary as ErrorBoundary };
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -66,6 +75,12 @@ export default function RootLayout() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const activeRole = useAuthStore((s) => s.activeRole);
   const user = useAuthStore((s) => s.user);
+
+  // Keeps `useAuthStore.user` fresh in the background once signed in (5-minute staleTime).
+  // The initial value on login/register/etc comes from each mutation's own `useTokenLanding`,
+  // not from this query directly — but mounting it here is what makes `qk.session()` a live,
+  // observed cache entry those mutations can seed via `setQueryData`.
+  useSession();
 
   // Registers this phone for push once signed in, and re-registers on every property
   // switch — see the hook's own doc for why this single line is load-bearing.
@@ -183,6 +198,10 @@ export default function RootLayout() {
   // role-based guard caught up and corrected it. Requiring a resolved role closes the gap
   // structurally instead of racing it.
   const hasResolvedRole = isOwnerRole || activeRole === 'guest' || isStaffRole;
+  // Groceries is narrower than "every signed-in role" on purpose: owner, manager, guest and
+  // chef are the only ones who actually place a grocery order here — kitchen_staff (chef's
+  // helper, not the meal planner), maintenance and delivery_agent have no reason to.
+  const canOrderGroceries = !!accessToken && (isOwnerRole || activeRole === 'guest' || activeRole === 'chef');
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -194,9 +213,22 @@ export default function RootLayout() {
               light icons rendered white-on-near-white and the status bar disappeared.
               Revisit both together if a real dark theme is ever added. */}
           <StatusBar style="dark" />
-          {/* Single top-edge SafeAreaView for the whole app — every screen in every group
-              trusts this and must not consume the top inset again itself (that was the
-              cause of the double-safe-area header bugs fixed earlier). */}
+          {/* NOT a safe-area boundary — `edges={[]}` applies no inset, deliberately.
+              The app is edge-to-edge (`androidStatusBar.translucent: true`), so content
+              draws under the status bar and the gesture bar, and **each screen owns its own
+              insets**. In practice that means going through one of the shared pieces that
+              already do it: `TabHeader` and `HubScreenWrapper` pad by `insets.top + 14`, and
+              `useDock` pads the bottom by `max(insets.bottom, MIN_BOTTOM_PAD)`.
+
+              This wrapper consumed `edges={['top']}` once; screens that also padded
+              themselves ended up double-inset, and it was emptied rather than removed. The
+              comment left behind said every screen "trusts this and must not consume the top
+              inset again", which was then the exact opposite of what the code did — a screen
+              written against it renders under the notch. That is what put the zoom controls
+              in `LocationPicker` behind the clock.
+
+              Anything rendering in a `<Modal>` needs its own insets regardless: a Modal is a
+              separate native window and nothing here reaches it. */}
           <SafeAreaView style={styles.container} edges={[]}>
             {isHydrated ? (
               <Stack screenOptions={{ headerShown: false, animation: 'none', gestureEnabled: true }}>
@@ -219,12 +251,8 @@ export default function RootLayout() {
                   <Stack.Screen name="(staff)" />
                 </Stack.Protected>
 
-                {/* Shared across every signed-in role (owner/manager/chef/tenant all shop
-                    here) — guarded on "signed in AND role-resolved", not just "has a token".
-                    See hasResolvedRole above: a bare accessToken check here raced the role
-                    fetch on cold launch and could flash this screen before the real
-                    role-based guard above ever got a chance to be true. */}
-                <Stack.Protected guard={!!accessToken && hasResolvedRole}>
+                {/* Owner, manager, guest and chef only — see canOrderGroceries above. */}
+                <Stack.Protected guard={canOrderGroceries}>
                   <Stack.Screen name="groceries" />
                 </Stack.Protected>
 
@@ -267,6 +295,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.LuxuryPureBlack,
+    backgroundColor: Colors.canvas,
   },
 });

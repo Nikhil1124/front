@@ -13,7 +13,7 @@ import {
   Alert,
   TextInput,
   KeyboardAvoidingView,
-  Platform,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,7 +26,6 @@ import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import * as requestsApi from '@/features/requests/useComplaints';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { qk } from '@/data/queryKeys';
@@ -81,11 +80,24 @@ export default function BookTechnicianScreen() {
   // Submission State
   const [submitting, setSubmitting] = useState(false);
   const [createdId, setCreatedId] = useState<string>('');
+  const [createdAt, setCreatedAt] = useState<string>('');
   const [isCancelling, setIsCancelling] = useState(false);
 
   // History / Detail States
   const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'>('ALL');
   const [selectedRequest, setSelectedRequest] = useState<RequestRecord | null>(null);
+
+  // `listComplaints` (used for `rawRequests` below) never hydrates attachments — only the
+  // per-ticket detail endpoint does (same gap `OwnerComplaintsTab.tsx`'s `ActiveItemEvidence`
+  // and `BookTechnicianScreen.tsx` were already built around). Without this, a resident who
+  // photographed their own issue would never see their own photo on their own request's
+  // detail page — `selectedRequest.attachments` from the list fetch is always empty.
+  const { data: selectedRequestDetail } = useQuery<RequestRecord>({
+    queryKey: qk.requests.detail(pgId ?? '', selectedRequest?.id ?? ''),
+    queryFn: () => requestsApi.getComplaint(selectedRequest!.id),
+    enabled: viewMode === 'DETAIL' && !!selectedRequest,
+  });
+  const detailAttachments = selectedRequestDetail?.attachments ?? [];
 
   // Fetch only this resident's repair requests
   const { data: rawRequests = [], refetch: refetchRequests } = useQuery<RequestRecord[]>({
@@ -108,7 +120,6 @@ export default function BookTechnicianScreen() {
   });
 
   const handleAddPhoto = async () => {
-    hapticSelect();
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsMultipleSelection: true,
@@ -120,22 +131,18 @@ export default function BookTechnicianScreen() {
   };
 
   const handleRemovePhoto = (idx: number) => {
-    hapticSelect();
     setPhotos((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleRequestSubmit = async () => {
     if (!category) {
-      hapticError();
       Alert.alert('Validation', 'Please select a service type.');
       return;
     }
     if (!description.trim()) {
-      hapticError();
       Alert.alert('Validation', 'Please describe the problem.');
       return;
     }
-    hapticSelect();
     setSubmitting(true);
     try {
       const created = await requestsApi.submitComplaint({
@@ -167,8 +174,8 @@ export default function BookTechnicianScreen() {
         }
       }
 
-      hapticSuccess();
       setCreatedId(created.id);
+      setCreatedAt(created.created_at);
       setViewMode('SUCCESS');
 
       // Clear Form
@@ -182,7 +189,6 @@ export default function BookTechnicianScreen() {
       refetchRequests();
       qc.invalidateQueries({ queryKey: qk.requests.list(pgId ?? '') });
     } catch (err: any) {
-      hapticError();
       Alert.alert('Error', err?.message ?? 'Failed to submit request. Please try again.');
     } finally {
       setSubmitting(false);
@@ -190,7 +196,6 @@ export default function BookTechnicianScreen() {
   };
 
   const handleCancelRequest = async (requestId: string) => {
-    hapticSelect();
     Alert.alert('Cancel Request', 'Are you sure you want to cancel this technician request?', [
       { text: 'No', style: 'cancel' },
       {
@@ -200,13 +205,11 @@ export default function BookTechnicianScreen() {
           setIsCancelling(true);
           try {
             await requestsApi.cancelComplaint(requestId);
-            hapticSuccess();
             Alert.alert('Success', 'Request has been cancelled.');
             setViewMode('HISTORY');
             refetchRequests();
             qc.invalidateQueries({ queryKey: qk.requests.list(pgId ?? '') });
           } catch (err: any) {
-            hapticError();
             Alert.alert('Error', err?.message ?? 'Failed to cancel request.');
           } finally {
             setIsCancelling(false);
@@ -217,17 +220,18 @@ export default function BookTechnicianScreen() {
   };
 
   const copyToClipboard = async (text: string) => {
-    hapticSuccess();
     await Clipboard.setStringAsync(text);
     Alert.alert('Copied', 'Request ID copied to clipboard.');
   };
 
-  const getDisplayId = (id: string) => {
-    // Generate realistic ID matching reference TRQ-YYYY-MMDD-NNNN
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
+  const getDisplayId = (id: string, createdAtIso: string) => {
+    // Display-only shorthand for the real id, in the reference format TRQ-YYYY-MMDD-NNNN.
+    // Dated off the request's own creation time, not "now" — a reopened older request must
+    // show the same id every time, not one that drifts to today's date on every viewing.
+    const created = createdAtIso ? new Date(createdAtIso) : new Date();
+    const yyyy = created.getFullYear();
+    const mm = String(created.getMonth() + 1).padStart(2, '0');
+    const dd = String(created.getDate()).padStart(2, '0');
     const hash = id.slice(0, 4).toUpperCase();
     return `TRQ-${yyyy}-${mm}${dd}-${hash}`;
   };
@@ -284,13 +288,13 @@ export default function BookTechnicianScreen() {
   const timelineSteps = [
     { label: 'Request Submitted', done: true, time: selectedRequest ? formatDateTime(Date.parse(selectedRequest.created_at)) : '---' },
     { label: 'Review by Property Team', done: selectedRequest ? selectedRequest.status !== 'open' : false, time: selectedRequest && selectedRequest.status !== 'open' ? 'Reviewing' : '---' },
-    { label: 'Assigned to Technician', done: selectedRequest ? ['assigned', 'in_progress', 'resolved'].includes(selectedRequest.status) : false, time: '---' },
+    { label: 'Assigned to Technician', done: selectedRequest ? ['assigned', 'in_progress', 'resolved'].includes(selectedRequest.status) : false, time: selectedRequest?.assigned_at ? formatDateTime(Date.parse(selectedRequest.assigned_at)) : '---' },
     { label: 'Work In Progress', done: selectedRequest ? ['in_progress', 'resolved'].includes(selectedRequest.status) : false, time: '---' },
     { label: 'Resolved', done: selectedRequest ? selectedRequest.status === 'resolved' : false, time: '---' },
   ];
 
   if (viewMode === 'SUCCESS') {
-    const mockId = getDisplayId(createdId);
+    const mockId = getDisplayId(createdId, createdAt);
     return (
       <HubScreenWrapper title="Request Submitted!">
         <View style={{ flex: 1, paddingHorizontal: 24, paddingVertical: 32, justifyContent: 'center', gap: 24 }}>
@@ -310,7 +314,7 @@ export default function BookTechnicianScreen() {
               <Txt size={13} color={Colors.textSecondary} weight="600">Request ID</Txt>
               <Row gap={6} align="center">
                 <Txt size={14} weight="800" color={Colors.textPrimary}>#{mockId}</Txt>
-                <TouchableOpacity onPress={() => copyToClipboard(mockId)}>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(mockId)}>
                   <Ionicons name="copy-outline" size={16} color={Colors.primary} />
                 </TouchableOpacity>
               </Row>
@@ -334,7 +338,7 @@ export default function BookTechnicianScreen() {
               <Ionicons name="document-text-outline" size={16} color={Colors.primary} />
               <Row gap={4} align="center">
                 <Txt size={13} color={Colors.textSecondary}>You can track your request in</Txt>
-                <TouchableOpacity onPress={() => setViewMode('HISTORY')}>
+                <TouchableOpacity accessibilityRole="button" onPress={() => setViewMode('HISTORY')}>
                   <Txt size={13} weight="700" color={Colors.primary} style={{ textDecorationLine: 'underline' }}>
                     My Requests
                   </Txt>
@@ -347,7 +351,7 @@ export default function BookTechnicianScreen() {
           {/* CTA Buttons */}
           <View style={{ gap: 10, marginTop: 12 }}>
             <Btn
-              onPress={() => { hapticSelect(); setViewMode('HISTORY'); }}
+              onPress={() => { setViewMode('HISTORY'); }}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
               borderRadius={Layout.borderRadiusButton}
@@ -356,7 +360,7 @@ export default function BookTechnicianScreen() {
               <Txt variant="body" weight="800" color={Colors.textInverse}>View My Requests</Txt>
             </Btn>
             <OutlinedBtn
-              onPress={() => { hapticSelect(); router.back(); }}
+              onPress={() => { router.back(); }}
               borderColor={Colors.primary}
               textColor={Colors.primary}
               borderRadius={Layout.borderRadiusButton}
@@ -379,13 +383,13 @@ export default function BookTechnicianScreen() {
             {(['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((f) => {
               const isSelected = filter === f;
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={f}
                   style={[
                     styles.chipBtn,
                     isSelected ? { backgroundColor: Colors.primary, borderColor: Colors.primary } : { backgroundColor: Colors.surface, borderColor: Colors.borderSubtle }
                   ]}
-                  onPress={() => { hapticSelect(); setFilter(f); }}
+                  onPress={() => { setFilter(f); }}
                 >
                   <Txt size={11} weight="700" color={isSelected ? Colors.textInverse : Colors.textPrimary}>
                     {f === 'IN_PROGRESS' ? 'In Progress' : f[0] + f.slice(1).toLowerCase()}
@@ -408,15 +412,14 @@ export default function BookTechnicianScreen() {
               filteredRequests.map((item) => {
                 const statusColor = getStatusColor(item.status);
                 const styleAttrs = getCategoryStyle(item.category || '');
-                const itemMockId = getDisplayId(item.id);
+                const itemMockId = getDisplayId(item.id, item.created_at);
                 const formattedDate = new Date(Date.parse(item.created_at)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
                 return (
                   <AnimatedPress
                     key={item.id}
                     scale={0.98}
-                    hapticPattern="light"
-                    onPress={() => { hapticSelect(); setSelectedRequest(item); setViewMode('DETAIL'); }}
+                    onPress={() => { setSelectedRequest(item); setViewMode('DETAIL'); }}
                   >
                     <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                       <Row justify="space-between" align="center">
@@ -458,7 +461,7 @@ export default function BookTechnicianScreen() {
   if (viewMode === 'DETAIL' && selectedRequest) {
     const statusColor = getStatusColor(selectedRequest.status);
     const styleAttrs = getCategoryStyle(selectedRequest.category || '');
-    const itemMockId = getDisplayId(selectedRequest.id);
+    const itemMockId = getDisplayId(selectedRequest.id, selectedRequest.created_at);
     const requestedOnStr = new Date(Date.parse(selectedRequest.created_at)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date(Date.parse(selectedRequest.created_at)).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
     return (
@@ -474,7 +477,7 @@ export default function BookTechnicianScreen() {
                 <Txt size={10} color={Colors.textMuted} weight="700">REQUEST ID</Txt>
                 <Row gap={6} align="center" style={{ marginTop: 2 }}>
                   <Txt size={13} weight="800" color={Colors.textPrimary}>{itemMockId}</Txt>
-                  <TouchableOpacity onPress={() => copyToClipboard(itemMockId)}>
+                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(itemMockId)}>
                     <Ionicons name="copy-outline" size={14} color={Colors.primary} />
                   </TouchableOpacity>
                 </Row>
@@ -524,20 +527,24 @@ export default function BookTechnicianScreen() {
               {selectedRequest.description}
             </Txt>
 
-            {selectedRequest.attachments && selectedRequest.attachments.length > 0 ? (
+            {detailAttachments.length > 0 ? (
               <>
                 <Spacer size={16} />
                 <Txt size={10} color={Colors.textMuted} weight="700">PHOTOS</Txt>
                 <Row gap={8} style={{ marginTop: 6 }}>
-                  {selectedRequest.attachments.slice(0, 3).map((a) => (
-                    <View key={a.id} style={styles.detailThumbnail}>
-                      <Ionicons name="image" size={24} color={Colors.primary} />
-                    </View>
-                  ))}
-                  {selectedRequest.attachments.length > 3 ? (
+                  {detailAttachments.slice(0, 3).map((a) =>
+                    a.url ? (
+                      <Image key={a.id} source={{ uri: a.url }} style={styles.detailThumbnail} resizeMode="cover" />
+                    ) : (
+                      <View key={a.id} style={styles.detailThumbnail}>
+                        <Ionicons name="image" size={24} color={Colors.primary} />
+                      </View>
+                    )
+                  )}
+                  {detailAttachments.length > 3 ? (
                     <View style={styles.detailThumbnailBadge}>
                       <Txt size={12} weight="800" color={Colors.textSecondary}>
-                        +{selectedRequest.attachments.length - 3}
+                        +{detailAttachments.length - 3}
                       </Txt>
                     </View>
                   ) : null}
@@ -558,7 +565,7 @@ export default function BookTechnicianScreen() {
 
           {/* Cancel Request Action */}
           {selectedRequest.status !== 'resolved' && selectedRequest.status !== 'cancelled' && (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={() => handleCancelRequest(selectedRequest.id)}
               disabled={isCancelling}
               style={styles.cancelRequestBtn}
@@ -575,7 +582,7 @@ export default function BookTechnicianScreen() {
 
   return (
     <HubScreenWrapper title="Book a Technician">
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16, gap: 16 }} showsVerticalScrollIndicator={false}>
           {/* Header Row with emoji Illustration */}
           <Row justify="space-between" align="center" style={{ marginBottom: 4 }}>
@@ -591,13 +598,13 @@ export default function BookTechnicianScreen() {
           <Col>
             <Row justify="space-between" align="center">
               <Txt size={13} weight="700" color={Colors.textPrimary}>Service Type *</Txt>
-              <TouchableOpacity onPress={() => { hapticSelect(); setViewMode('HISTORY'); }}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => { setViewMode('HISTORY'); }}>
                 <Txt size={12} weight="700" color={Colors.primary}>History ›</Txt>
               </TouchableOpacity>
             </Row>
             <Spacer size={6} />
-            <TouchableOpacity
-              onPress={() => { hapticSelect(); setShowCategoryMenu(true); }}
+            <TouchableOpacity accessibilityRole="button"
+              onPress={() => { setShowCategoryMenu(true); }}
               style={styles.dropdownBox}
               testID="technician_service_dropdown"
             >
@@ -613,7 +620,7 @@ export default function BookTechnicianScreen() {
             <Txt size={13} weight="700" color={Colors.textPrimary}>What's the problem? *</Txt>
             <Spacer size={6} />
             <View style={styles.textAreaContainer}>
-              <TextInput
+              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Describe the issue in detail"
                 style={styles.textArea}
                 value={description}
                 onChangeText={(v) => v.length <= 500 && setDescription(v)}
@@ -637,7 +644,7 @@ export default function BookTechnicianScreen() {
             <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>Attach photos to help us understand the issue better.</Txt>
             <Spacer size={8} />
             
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={photos.length < 5 ? handleAddPhoto : undefined}
               style={[styles.uploadBox, photos.length >= 5 && { opacity: 0.5 }]}
               disabled={photos.length >= 5}
@@ -657,7 +664,7 @@ export default function BookTechnicianScreen() {
                         <Ionicons name="image" size={24} color={Colors.primary} />
                         <Txt size={8} color={Colors.textMuted}>Image {idx + 1}</Txt>
                       </View>
-                      <TouchableOpacity onPress={() => handleRemovePhoto(idx)} style={styles.removePhotoBtn}>
+                      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => handleRemovePhoto(idx)} style={styles.removePhotoBtn}>
                         <Ionicons name="close" size={10} color={Colors.textInverse} />
                       </TouchableOpacity>
                     </View>
@@ -672,13 +679,13 @@ export default function BookTechnicianScreen() {
             <Txt size={13} weight="700" color={Colors.textPrimary}>Preferred Time (Optional)</Txt>
             <Spacer size={6} />
             <Row gap={10}>
-              <TouchableOpacity style={styles.pickerBtn} onPress={() => { hapticSelect(); setShowDatePicker(true); }}>
+              <TouchableOpacity accessibilityRole="button" style={styles.pickerBtn} onPress={() => { setShowDatePicker(true); }}>
                 <Ionicons name="calendar-outline" size={15} color={Colors.primary} />
                 <Txt size={12} weight="700" color={preferredDate ? Colors.textPrimary : Colors.textMuted} style={{ marginLeft: 6 }}>
                   {preferredDate || 'Select date'}
                 </Txt>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.pickerBtn} onPress={() => { hapticSelect(); setShowTimePicker(true); }}>
+              <TouchableOpacity accessibilityRole="button" style={styles.pickerBtn} onPress={() => { setShowTimePicker(true); }}>
                 <Ionicons name="time-outline" size={15} color={Colors.primary} />
                 <Txt size={12} weight="700" color={preferredTime ? Colors.textPrimary : Colors.textMuted} style={{ marginLeft: 6 }}>
                   {preferredTime || 'Select time'}
@@ -721,15 +728,15 @@ export default function BookTechnicianScreen() {
         <Modal visible transparent animationType="none" onRequestClose={() => setShowCategoryMenu(false)}>
           <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCategoryMenu(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowCategoryMenu(false)} />
             <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
               <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Service</Txt>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
                 {REPAIR_CATEGORIES.map((cat) => (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={cat}
                     style={[styles.dropdownOption, category === cat && styles.dropdownOptionActive]}
-                    onPress={() => { setCategory(cat); setShowCategoryMenu(false); hapticSelect(); }}
+                    onPress={() => { setCategory(cat); setShowCategoryMenu(false); }}
                   >
                     <Txt size={13} weight={category === cat ? '700' : '400'} color={category === cat ? Colors.primary : Colors.textPrimary}>
                       {cat}
@@ -747,15 +754,15 @@ export default function BookTechnicianScreen() {
         <Modal visible transparent animationType="none" onRequestClose={() => setShowDatePicker(false)}>
           <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
             <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
               <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Date</Txt>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
                 {getNext7Days().map((d) => (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={d}
                     style={[styles.dropdownOption, preferredDate === d && styles.dropdownOptionActive]}
-                    onPress={() => { setPreferredDate(d); setShowDatePicker(false); hapticSelect(); }}
+                    onPress={() => { setPreferredDate(d); setShowDatePicker(false); }}
                   >
                     <Txt size={13} weight={preferredDate === d ? '700' : '400'} color={preferredDate === d ? Colors.primary : Colors.textPrimary}>
                       {d}
@@ -773,15 +780,15 @@ export default function BookTechnicianScreen() {
         <Modal visible transparent animationType="none" onRequestClose={() => setShowTimePicker(false)}>
           <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
             <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
               <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Time Slot</Txt>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
                 {TIME_SLOTS.map((t) => (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={t}
                     style={[styles.dropdownOption, preferredTime === t && styles.dropdownOptionActive]}
-                    onPress={() => { setPreferredTime(t); setShowTimePicker(false); hapticSelect(); }}
+                    onPress={() => { setPreferredTime(t); setShowTimePicker(false); }}
                   >
                     <Txt size={13} weight={preferredTime === t ? '700' : '400'} color={preferredTime === t ? Colors.primary : Colors.textPrimary}>
                       {t}

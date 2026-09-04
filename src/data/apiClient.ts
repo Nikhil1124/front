@@ -74,7 +74,30 @@ export class PGowApiError extends Error {
  */
 export type ApiFetchOptions = RequestInit & {
   unauthorized?: "refresh" | "throw";
+  /**
+   * Turn this GET into a conditional request (ADR-008's polling pattern).
+   *
+   * Sends `If-None-Match` from the last response seen on this exact path, and answers a 304
+   * from memory. Only worth setting on a poll: it costs one cached body per path, and it
+   * buys nothing on a request made once.
+   */
+  conditional?: boolean;
 };
+
+/**
+ * The last 200 seen per conditional path, so a 304 has something to return.
+ *
+ * A 304 carries no body by definition, so a caller that polls needs the previous one from
+ * somewhere — without this, every 304 would blank the screen it was supposed to leave alone.
+ * Keyed by full path (query string included), and only ever written for `conditional` GETs,
+ * so it holds a handful of entries at most.
+ */
+const conditionalCache = new Map<string, { etag: string; body: unknown }>();
+
+/** Drop cached bodies on sign-out — they belong to the account that just left. */
+export function clearConditionalCache(): void {
+  conditionalCache.clear();
+}
 
 // ─── Timeouts ────────────────────────────────────────────────────────────────
 
@@ -160,7 +183,7 @@ export async function apiFetch<T = unknown>(
   options: ApiFetchOptions = {},
   retry = true
 ): Promise<T> {
-  const { unauthorized = "refresh", ...requestOptions } = options;
+  const { unauthorized = "refresh", conditional = false, ...requestOptions } = options;
 
   // Read from the store rather than closing over a value: a token refreshed by a concurrent
   // request must be picked up by this one, and a captured token would be the stale one.
@@ -172,10 +195,22 @@ export async function apiFetch<T = unknown>(
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
+  const cached = conditional ? conditionalCache.get(path) : undefined;
+  if (cached) headers["If-None-Match"] = cached.etag;
+
   const res = await fetchWithTimeout(`${BASE_URL}${path}`, { ...requestOptions, headers });
 
-  // 304 from an ETag poll carries no body and is not a failure.
-  if (res.status === 304) return null as unknown as T;
+  // 304 from an ETag poll carries no body and is not a failure — it means "what you already
+  // have is current". Returning the previous body keeps that true for the caller.
+  if (res.status === 304) {
+    if (cached) return cached.body as T;
+    // A 304 with nothing cached should not happen (we only send a validator we hold), but a
+    // null here would blank a screen, so treat it as a miss and let the caller retry.
+    throw new PGowApiError(304, {
+      code: "STALE_VALIDATOR",
+      message: "Please refresh to load the latest.",
+    });
+  }
 
   const text = await res.text();
   let json: any = null;
@@ -185,7 +220,14 @@ export async function apiFetch<T = unknown>(
     json = null;
   }
 
-  if (res.ok) return json as T;
+  if (res.ok) {
+    if (conditional) {
+      const etag = res.headers.get("ETag");
+      if (etag) conditionalCache.set(path, { etag, body: json });
+      else conditionalCache.delete(path);
+    }
+    return json as T;
+  }
 
   const apiError: ApiError = json?.error ?? {
     code: "UNKNOWN",

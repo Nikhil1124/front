@@ -43,10 +43,10 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({ state, onClo
           <View style={[styles.iconCircle, { backgroundColor: iconCfg.bg }]}>
             <Ionicons name={iconCfg.name} size={42} color={iconCfg.color} />
           </View>
-          <Text style={styles.title}>{state.title}</Text>
-          <Text style={styles.message}>{state.message}</Text>
-          <TouchableOpacity style={styles.confirmBtn} onPress={onClose} activeOpacity={0.8}>
-            <Text style={styles.confirmText}>OK</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.title}>{state.title}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.message}>{state.message}</Text>
+          <TouchableOpacity accessibilityRole="button" style={styles.confirmBtn} onPress={onClose} activeOpacity={0.8}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.confirmText}>OK</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -19,7 +19,6 @@ import { Row, Col, Spacer } from '@/components/ui';
 import { Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
-import { hapticSuccess, hapticSelect, hapticError } from '@/utils/haptics';
 import { qk } from '@/data/queryKeys';
 import { listUpiIds, addUpiId, activateUpiId, removeUpiId } from '@/features/properties/useProperties';
 
@@ -81,10 +80,8 @@ export function UpiConfigSection() {
     try {
       await addMutation.mutateAsync(trimmed);
       setNewUpi('');
-      hapticSuccess();
       toast('success', 'UPI Added', `"${trimmed}" was added successfully.`);
     } catch (err: any) {
-      hapticError();
       setErrorMsg(err?.message || 'Could not add UPI handle.');
     }
   };
@@ -105,10 +102,8 @@ export function UpiConfigSection() {
           onPress: async () => {
             try {
               await removeMutation.mutateAsync(upiId);
-              hapticSuccess();
               toast('info', 'UPI Deleted', 'Removed UPI handle successfully.');
             } catch (err: any) {
-              hapticError();
               Alert.alert('Error', err?.message || 'Could not delete UPI handle.');
             }
           },
@@ -120,10 +115,8 @@ export function UpiConfigSection() {
   const handleSetPrimary = async (upiId: string, handleStr: string) => {
     try {
       await activateMutation.mutateAsync(upiId);
-      hapticSuccess();
       toast('success', 'Primary UPI Updated', `Rent collection handle set to "${handleStr}"`);
     } catch (err: any) {
-      hapticError();
       Alert.alert('Error', err?.message || 'Could not update primary handle.');
     }
   };
@@ -132,7 +125,7 @@ export function UpiConfigSection() {
     return (
       <View style={styles.loadingBox}>
         <ActivityIndicator color={GREEN} />
-        <Text style={styles.loadingText}>Loading UPI accounts...</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.loadingText}>Loading UPI accounts...</Text>
       </View>
     );
   }
@@ -142,8 +135,8 @@ export function UpiConfigSection() {
       {/* ── Rent Collection List ── */}
       <Col gap={12}>
         <View>
-          <Text style={styles.sectionTitle}>Rent Collection</Text>
-          <Text style={styles.sectionSub}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Rent Collection</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.sectionSub}>
             Manage the UPI handles used to receive rent payments.
           </Text>
         </View>
@@ -152,8 +145,8 @@ export function UpiConfigSection() {
           /* Empty State */
           <View style={styles.emptyCard}>
             <Ionicons name="card-outline" size={32} color={MUTED} />
-            <Text style={styles.emptyTitle}>No UPI handles added</Text>
-            <Text style={styles.emptySubText}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>No UPI handles added</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.emptySubText}>
               Add a UPI ID to start receiving rent payments.
             </Text>
           </View>
@@ -178,25 +171,25 @@ export function UpiConfigSection() {
                         />
                       </View>
                       <Col style={{ flex: 1 }}>
-                        <Text style={styles.vpaText} numberOfLines={1}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.vpaText} numberOfLines={1}>
                           {item.vpa_address}
                         </Text>
-                        <Text style={[styles.statusLabel, isPrimary && styles.statusLabelActive]}>
+                        <Text maxFontSizeMultiplier={1.3} style={[styles.statusLabel, isPrimary && styles.statusLabelActive]}>
                           {isPrimary ? 'Primary · Active' : 'Secondary'}
                         </Text>
                       </Col>
                     </Row>
                     <Row gap={8} align="center">
                       {!isPrimary && (
-                        <TouchableOpacity
+                        <TouchableOpacity accessibilityRole="button"
                           style={styles.primaryBtnAction}
                           onPress={() => handleSetPrimary(item.id, item.vpa_address)}
                           activeOpacity={0.8}
                         >
-                          <Text style={styles.primaryBtnActionText}>Set as Primary</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnActionText}>Set as Primary</Text>
                         </TouchableOpacity>
                       )}
-                      <TouchableOpacity
+                      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button"
                         style={styles.deleteBtn}
                         onPress={() => handleDeleteUpi(item.id, item.vpa_address)}
                         activeOpacity={0.7}
@@ -214,11 +207,11 @@ export function UpiConfigSection() {
 
       {/* ── Add UPI Handle ── */}
       <Col gap={12}>
-        <Text style={styles.sectionTitle}>Add UPI Handle</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Add UPI Handle</Text>
         <View style={styles.inputWrapper}>
-          <Text style={styles.inputLabel}>Enter UPI ID</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>Enter UPI ID</Text>
           <View style={[styles.inputContainer, !!errorMsg && styles.inputContainerError]}>
-            <TextInput
+            <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="propertyowner@okaxis"
               style={styles.textInput}
               value={newUpi}
               onChangeText={(v) => {
@@ -231,10 +224,10 @@ export function UpiConfigSection() {
               autoCorrect={false}
             />
           </View>
-          {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+          {!!errorMsg && <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>{errorMsg}</Text>}
         </View>
 
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={[styles.submitBtn, addMutation.isPending && styles.submitBtnDisabled]}
           onPress={handleAddUpi}
           activeOpacity={0.85}
@@ -243,7 +236,7 @@ export function UpiConfigSection() {
           {addMutation.isPending ? (
             <ActivityIndicator color={WHITE} />
           ) : (
-            <Text style={styles.submitBtnText}>Add UPI Handle</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Add UPI Handle</Text>
           )}
         </TouchableOpacity>
       </Col>

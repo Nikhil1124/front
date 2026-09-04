@@ -121,6 +121,29 @@ export function useExpensesQuery(
   });
 }
 
+/**
+ * Every expense, not just the newest 200 — see `useAllVerifiedPaymentsQuery`'s comment.
+ * `listExpenses` has no status filter (an entry either stands or is reversed; the caller
+ * filters on the mapped `status` field itself), so this just follows every page.
+ */
+export function useAllExpensesQuery(pgId?: string) {
+  return useQuery<ExpenseEntity[]>({
+    queryKey: [...qk.expenses.list(pgId ?? ""), "all"],
+    queryFn: async () => {
+      if (!pgId) return [];
+      const items: ExpenseEntity[] = [];
+      let cursor: string | undefined;
+      do {
+        const res = await listExpenses(pgId, { limit: 200, cursor });
+        items.push(...res.items.map(map.toExpense));
+        cursor = res.next_cursor ?? undefined;
+      } while (cursor);
+      return items;
+    },
+    enabled: !!pgId,
+  });
+}
+
 export function useExpenseSummaryQuery(pgId?: string, period?: string) {
   const effectivePeriod = period || map.currentPeriod();
   return useQuery<ExpenseSummary>({

@@ -6,21 +6,21 @@
  * Quick Action destination.
  */
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Image, TextInput, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Image, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, LoadingState, ErrorState } from '@/components/ui';
+import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useAuthStore } from '@/store/authStore';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
+import { usePortfolioDetail } from '@/features/properties/usePortfolio';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import type { PGOwnerEntity } from '@/types';
-import { hapticSelect, hapticSuccess } from '@/utils/haptics';
-
 import { Colors } from '@/theme';
 
 // ── Color System (Official LUNA Palette) ───────────────────────────────────
@@ -36,22 +36,48 @@ const WARNING = '#F59E0B';
 const ERROR = '#DC2626';
 
 export function ManagePropertiesScreen() {
-  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
+  const {
+    data: allPGs = [],
+    isLoading: pgsLoading,
+    error: pgsError,
+    refetch: refetchPgs,
+    isRefetching: pgsRefetching,
+  } = usePropertiesEntitiesQuery();
   const activePgId = useAuthStore((s) => s.activePgId);
   const setActivePgId = useAuthStore((s) => s.setActivePgId);
+  // Scoped to whichever property is currently active — correct for a single-PG owner (their
+  // one property IS the active one), but this screen lists EVERY property an owner holds.
+  // `usePortfolioDetail` below fans out per-property instead; these stay as the fallback for
+  // the single-property case, where a portfolio-wide fan-out is redundant per its own doc.
   const { data: allGuests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { data: allPayments = [] } = usePaymentsQuery(activePgId ?? undefined);
   const { data: allComplaints = [] } = useComplaintsQuery(activePgId ?? undefined);
   const currentOwner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const switchPG = (pgId: string) => setActivePgId(pgId);
 
+  // Real per-property revenue/occupancy for a multi-PG owner. Without this, every property
+  // card except the currently active one showed ₹0 collected and 0 occupied beds — not
+  // because that was true, but because `allGuests`/`allPayments` above only ever hold the
+  // active property's rows, and this screen was filtering them by every OTHER property's id
+  // too. `usePortfolioDetail` fans out a real per-property fetch instead (same hook
+  // PortfolioScreen uses), and is also correctly scoped to this month, unlike the "COLLECTED
+  // THIS MONTH" label above the old calculation, which summed a resident's entire payment
+  // history with no period filter at all.
+  const isMultiPg = allPGs.length > 1;
+  const { data: portfolio } = usePortfolioDetail(allPGs);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddPgModal, setShowAddPgModal] = useState(false);
   const [editingPg, setEditingPg] = useState<PGOwnerEntity | null>(null);
 
   const totalBeds = allPGs.reduce((sum, pg) => sum + pg.totalBeds, 0);
-  const totalGuests = allGuests.length;
-  const totalRevenue = allPayments.filter((p) => p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0);
+  const totalGuests = isMultiPg ? (portfolio?.totals.occupiedBeds ?? 0) : allGuests.length;
+  const totalRevenue = isMultiPg
+    ? (portfolio?.totals.collected ?? 0)
+    : allPayments.filter((p) => p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0);
+  // No portfolio-wide complaints aggregate exists yet (unlike guests/payments, there's no
+  // per-property fan-out for requests) — this stays scoped to the active property alone even
+  // for a multi-PG owner, same known gap as before this fix, not a new one introduced by it.
   const totalComplaints = allComplaints.filter((c) => c.status !== 'Resolved').length;
 
   const filtered = allPGs.filter((pg) =>
@@ -64,11 +90,12 @@ export function ManagePropertiesScreen() {
   return (
     <>
       <HubScreenWrapper
+        refreshControl={<RefreshControl refreshing={pgsRefetching} onRefresh={refetchPgs} />}
         title="Manage Properties"
         subtitle={`${allPGs.length} Active PG Propert${allPGs.length === 1 ? 'y' : 'ies'}`}
         rightAction={
           <IconBtn
-            onPress={() => { hapticSelect(); setShowAddPgModal(true); }}
+            onPress={() => { setShowAddPgModal(true); }}
             icon="add"
             size={20}
             tint={WHITE}
@@ -97,7 +124,19 @@ export function ManagePropertiesScreen() {
         <Spacer size={20} />
 
         {/* ── Property List ── */}
-        {filtered.length === 0 ? (
+        {/* This screen is step 1 of OwnerSetupGate, so a silent failure here strands a brand
+            new owner with no way forward and no idea why — the states below are what turn
+            that into something they can retry. */}
+        {pgsLoading ? (
+          <LoadingState label="Loading your properties…" fill={false} />
+        ) : pgsError ? (
+          <ErrorState
+            error={pgsError}
+            title="Could not load your properties"
+            onRetry={refetchPgs}
+            fill={false}
+          />
+        ) : filtered.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="search-outline" size={40} color={MUTED} />
             <Txt size={14} color={MUTED} weight="600" style={{ marginTop: 8 }}>
@@ -108,11 +147,15 @@ export function ManagePropertiesScreen() {
           <View style={{ gap: 20 }}>
             {filtered.map((pg) => {
               const isCurrent = currentOwner?.id === pg.id;
-              const pgGuests = allGuests.filter((g) => g.pgId === pg.id);
-              const pgRevenue = allPayments
-                .filter((p) => p.pgId === pg.id && p.status === 'VERIFIED')
-                .reduce((s, p) => s + p.amount, 0);
-              const occupancyPct = pg.totalBeds > 0 ? Math.min(1, pgGuests.length / pg.totalBeds) : 0;
+              // Real per-property numbers when the portfolio fan-out has them; the
+              // single-property fallback below is only ever reached for the one property
+              // that owner has, where `allGuests`/`allPayments` are already correctly scoped.
+              const portfolioRow = portfolio?.byProperty.find((p) => p.pgId === pg.id);
+              const pgOccupiedBeds = portfolioRow ? portfolioRow.occupiedBeds : allGuests.filter((g) => g.pgId === pg.id).length;
+              const pgRevenue = portfolioRow
+                ? portfolioRow.collected
+                : allPayments.filter((p) => p.pgId === pg.id && p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0);
+              const occupancyPct = pg.totalBeds > 0 ? Math.min(1, pgOccupiedBeds / pg.totalBeds) : 0;
 
               return (
                 <View
@@ -152,7 +195,7 @@ export function ManagePropertiesScreen() {
                         </Row>
                       </View>
                       <IconBtn
-                        onPress={() => { hapticSelect(); setEditingPg(pg); }}
+                        onPress={() => { setEditingPg(pg); }}
                         icon="create-outline"
                         size={18}
                         tint={PRIMARY}
@@ -183,7 +226,6 @@ export function ManagePropertiesScreen() {
                         {pg.managerPhone ? (
                           <IconBtn
                             onPress={() => {
-                              hapticSelect();
                               Linking.openURL(`tel:${pg.managerPhone.replace(/\s+/g, '')}`).catch(() => Alert.alert('Call Manager', pg.managerPhone));
                             }}
                             icon="call"
@@ -210,7 +252,7 @@ export function ManagePropertiesScreen() {
                         <View style={[styles.progressFill, { width: `${occupancyPct * 100}%` }]} />
                       </View>
                       <Txt size={11} color={MUTED} style={{ marginTop: 4 }}>
-                        {pgGuests.length} occupied / {pg.totalBeds} beds
+                        {pgOccupiedBeds} occupied / {pg.totalBeds} beds
                       </Txt>
                     </View>
 
@@ -227,7 +269,6 @@ export function ManagePropertiesScreen() {
                       </Col>
                       <Btn
                         onPress={async () => {
-                          hapticSuccess();
                           await switchPG(pg.id);
                           router.back();
                         }}
@@ -254,7 +295,7 @@ export function ManagePropertiesScreen() {
         <Spacer size={20} />
 
         {/* ── Add Property Empty-Space CTA ── */}
-        <AddPropertyCTA onPress={() => { hapticSelect(); setShowAddPgModal(true); }} />
+        <AddPropertyCTA onPress={() => { setShowAddPgModal(true); }} />
 
         <Spacer size={30} />
       </HubScreenWrapper>
@@ -331,7 +372,7 @@ function PropertySearch({ value, onChangeText }: PropertySearchProps) {
   return (
     <Row style={styles.searchRow}>
       <Ionicons name="search-outline" size={18} color={MUTED} style={{ marginRight: 8 }} />
-      <TextInput
+      <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search PG by name, area, manager"
         style={styles.searchInput}
         placeholder="Search PG by name, area, manager..."
         placeholderTextColor={MUTED}
@@ -340,9 +381,6 @@ function PropertySearch({ value, onChangeText }: PropertySearchProps) {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <TouchableOpacity onPress={() => hapticSelect()} style={styles.filterBtn} activeOpacity={0.7}>
-        <Ionicons name="options-outline" size={18} color={PRIMARY} />
-      </TouchableOpacity>
     </Row>
   );
 }
@@ -436,14 +474,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: CHARCOAL,
     paddingVertical: 0,
-  },
-  filterBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: PRIMARY_SOFT,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // Property Card layout

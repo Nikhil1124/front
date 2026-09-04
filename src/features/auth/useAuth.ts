@@ -10,7 +10,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { API } from "../../config";
-import { apiFetch } from "../../data/apiClient";
+import { apiFetch, clearConditionalCache } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
 import { useAuthStore, type User } from "../../store/authStore";
 import { unregisterDevice } from "../devices/useDevices";
@@ -74,6 +74,28 @@ export function changePassword(params: {
 }
 
 /**
+ * Always resolves, deliberately — same anti-enumeration shape as login: the caller cannot
+ * tell from the response whether the phone belongs to an account, only whether the feature
+ * itself is live (a 503 `DEPENDENCY_UNAVAILABLE` when the backend has no SES config yet).
+ */
+export function requestPasswordReset(phone: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(API.PASSWORD_RESET_REQUEST, {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  });
+}
+
+/** Redeems the token from the emailed reset link. Auto-signs in on success, same as
+ *  `changePassword` — the token itself is what proves it's them. */
+export function confirmPasswordReset(token: string, newPassword: string): Promise<TokenResponse> {
+  return apiFetch<TokenResponse>(API.PASSWORD_RESET_CONFIRM, {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+    unauthorized: "throw",
+  });
+}
+
+/**
  * Step one of setting a profile photo: a presigned PUT.
  *
  * The bytes go straight to storage and never touch our server, same as KYC. Step two is
@@ -97,28 +119,47 @@ export function updateMe(params: {
   return apiFetch<User>(API.ME, { method: "PATCH", body: JSON.stringify(params) });
 }
 
+/** A resident's own away/vacation toggle. Guest-only server-side; see `users.service.set_away`. */
+export function setAway(isAway: boolean): Promise<User> {
+  return apiFetch<User>(API.ME_AWAY, { method: "PATCH", body: JSON.stringify({ is_away: isAway }) });
+}
+
 /**
  * End the session everywhere: unsubscribe this phone from push, tell the server, then clear
  * local tokens. Every step past the first is best effort — a failure must never strand
  * someone inside a session they asked to leave.
  */
 export async function logoutEverywhere(): Promise<void> {
-  // Unsubscribe first, while the access token is still valid — otherwise whoever just
-  // signed out keeps receiving their old property's notifications.
   const { deviceId } = useAuthStore.getState();
+
+  // Both requests are STARTED here, synchronously, before this function suspends even once.
+  // `apiFetch` reads the access token before its first `await`, so a call begun now carries a
+  // valid Authorization header — and callers deliberately do not await this function
+  // (`usePGowStore.logout` fires it and clears the store on the next line, because nobody
+  // should be held on a dashboard waiting for a network round trip to sign out).
+  //
+  // Awaiting them in sequence, as this used to, meant only the FIRST one got a live token:
+  // by the time `await unregisterDevice(...)` resolved, the store was already cleared, so the
+  // logout call went out unauthenticated, 401'd, and had its error swallowed below. The
+  // device was cleaned up and the session never was — the refresh token stayed valid on the
+  // server until it expired on its own.
+  const pending: Promise<unknown>[] = [];
   if (deviceId) {
-    try {
-      await unregisterDevice(deviceId);
-    } catch {
-      // The server reassigns a token when a different account registers it, so a missed
-      // cleanup self-corrects on the next sign-in on this phone.
-    }
+    // A missed device cleanup self-corrects: the server reassigns a token when a different
+    // account registers it.
+    pending.push(unregisterDevice(deviceId));
   }
-  try {
-    await apiFetch(API.LOGOUT, { method: "POST" });
-  } catch {
-    // Clear locally regardless.
-  }
+  // Revokes the refresh token server-side. This is the half that makes signing out mean
+  // something to a token that has already been copied off the device.
+  pending.push(apiFetch(API.LOGOUT, { method: "POST" }));
+
+  // `allSettled`, not `all`: neither failure may strand someone inside a session they asked
+  // to leave, and the local clear below happens either way.
+  await Promise.allSettled(pending);
+
+  // Cached poll bodies are this account's order data — they must not survive into the next
+  // sign-in on the same phone.
+  clearConditionalCache();
   await useAuthStore.getState().logout();
 }
 
@@ -146,16 +187,27 @@ export function useSession() {
   });
 }
 
-/** Shared by every credential mutation: store the pair, then load who it belongs to. */
-function useTokenLanding() {
+/**
+ * Shared by every credential mutation: store the pair, then load who it belongs to.
+ *
+ * Fetches and sets `user` directly rather than just invalidating the session query — nothing
+ * mounts `useSession()` as an active observer at the moment a login mutation resolves (it's
+ * mounted once, at the root, only to keep `user` fresh afterwards), so an invalidate here could
+ * race a not-yet-subscribed query and silently do nothing. `setQueryData` then seeds that query's
+ * cache so the root's `useSession()` reads this same fetch instead of firing a redundant one.
+ */
+export function useTokenLanding() {
   const setTokens = useAuthStore((s) => s.setTokens);
+  const setUser = useAuthStore((s) => s.setUser);
   const queryClient = useQueryClient();
 
   return async (data: TokenResponse) => {
     await setTokens(data.access_token, data.refresh_token);
-    // Refetch rather than reuse: the session query is disabled while signed out, so its
-    // cache holds nothing, and every screen keys off it.
-    await queryClient.invalidateQueries({ queryKey: qk.session() });
+    if (!data.must_change_password) {
+      const user = await fetchMe();
+      setUser(user);
+      queryClient.setQueryData(qk.session(), user);
+    }
     return data;
   };
 }
@@ -197,12 +249,42 @@ export function useChangePassword() {
   });
 }
 
+/** POST /v1/auth/password/reset-request — always resolves; see `requestPasswordReset`. */
+export function useRequestPasswordResetMutation() {
+  return useMutation({
+    mutationFn: requestPasswordReset,
+  });
+}
+
+/** POST /v1/auth/password/reset-confirm — redeems the emailed token, and signs the caller in. */
+export function useConfirmPasswordResetMutation() {
+  const land = useTokenLanding();
+  return useMutation({
+    mutationFn: ({ token, newPassword }: { token: string; newPassword: string }) =>
+      confirmPasswordReset(token, newPassword),
+    onSuccess: land,
+  });
+}
+
 /** PATCH /v1/me — own name and/or email. Not phone (that is the login identity) or role. */
 export function useUpdateMe() {
   const setUser = useAuthStore((s) => s.setUser);
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateMe,
+    onSuccess: (user) => {
+      setUser(user);
+      queryClient.setQueryData(qk.session(), user);
+    },
+  });
+}
+
+/** PATCH /v1/me/away — a resident's own away/vacation toggle. */
+export function useSetAwayMutation() {
+  const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: setAway,
     onSuccess: (user) => {
       setUser(user);
       queryClient.setQueryData(qk.session(), user);
@@ -223,3 +305,4 @@ export function useLogout() {
     },
   });
 }
+

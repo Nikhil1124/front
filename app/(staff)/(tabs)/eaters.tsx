@@ -1,6 +1,7 @@
 /** Chef dashboard "Eaters" tab or Delivery Dashboard Route */
 import { useState } from 'react';
 import { View, StyleSheet, Alert, TouchableOpacity, Linking } from 'react-native';
+import { router } from 'expo-router';
 import { Card, Txt, Spacer, Chip, Col, Row, Btn, IconBtn, OutlinedBtn } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -11,8 +12,8 @@ import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
-import Svg, { Circle, Path, Polyline, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
+import { getGreeting } from '@/utils/format';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -57,7 +58,18 @@ function ChefEatersView() {
 
   const reqCount = mealResponses.filter((r) => r.choice === 'eating').length;
   const notReqCount = mealResponses.filter((r) => r.choice === 'skipping').length;
-  const noResponse = Math.max(0, guests.length - reqCount - notReqCount);
+  // Away, self-reported (PATCH /v1/me/away), is a real reason for silence — split it out of
+  // "no reply" so a chef reading the roster isn't left guessing which unanswered rows are
+  // actually just unanswered.
+  const awayCount = mealResponses.filter((r) => r.choice === null && r.is_away).length;
+  const noResponse = Math.max(0, guests.length - reqCount - notReqCount - awayCount);
+  const totalGuests = guests.length;
+  const pct = (n: number) => (totalGuests > 0 ? Math.round((n / totalGuests) * 1000) / 10 : 0);
+  // Ring circumference for r=64: 2 * PI * 64.
+  const RING_CIRCUMFERENCE = 402.12;
+  const ringOffset = totalGuests > 0
+    ? RING_CIRCUMFERENCE * (1 - reqCount / totalGuests)
+    : RING_CIRCUMFERENCE;
 
   return (
     <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
@@ -75,7 +87,7 @@ function ChefEatersView() {
             {notifications.map((n) => {
               const isSel = activeMeal?.id === n.id;
               return (
-                <TouchableOpacity 
+                <TouchableOpacity accessibilityRole="button" 
                   key={n.id} 
                   onPress={() => setActiveMeal(n)}
                   activeOpacity={0.8}
@@ -100,7 +112,7 @@ function ChefEatersView() {
               <View style={{ width: 140, height: 140, alignItems: 'center', justifyContent: 'center' }}>
                 <Svg height="140" width="140">
                   <Circle stroke={Colors.surfaceElevated} fill="transparent" strokeWidth={6} r={64} cx="70" cy="70" />
-                  <Circle stroke={Colors.primary} fill="transparent" strokeWidth={6} strokeDasharray={402 + ' ' + 402} strokeDashoffset={0} strokeLinecap="round" r={64} cx="70" cy="70" />
+                  <Circle stroke={Colors.primary} fill="transparent" strokeWidth={6} strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`} strokeDashoffset={ringOffset} strokeLinecap="round" r={64} cx="70" cy="70" />
                 </Svg>
                 <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
                   <Txt size={46} weight="900" color={Colors.primaryDark}>{reqCount}</Txt>
@@ -119,7 +131,7 @@ function ChefEatersView() {
               <Txt size={32} weight="900" color="#0EA5E9">{reqCount}</Txt>
               <Row gap={4} align="center" style={{ marginTop: 6 }}>
                 <Ionicons name="people" size={14} color="#0EA5E9" />
-                <Txt size={11} weight="800" color="#0284C7">87.5%</Txt>
+                <Txt size={11} weight="800" color="#0284C7">{pct(reqCount)}%</Txt>
               </Row>
             </View>
             <View style={[styles.metricCard, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}>
@@ -128,7 +140,7 @@ function ChefEatersView() {
               <Txt size={32} weight="900" color={Colors.danger}>{notReqCount}</Txt>
               <Row gap={4} align="center" style={{ marginTop: 6 }}>
                 <Ionicons name="close" size={14} color={Colors.danger} />
-                <Txt size={11} weight="800" color="#991B1B">8.3%</Txt>
+                <Txt size={11} weight="800" color="#991B1B">{pct(notReqCount)}%</Txt>
               </Row>
             </View>
             <View style={[styles.metricCard, { backgroundColor: '#FFFBEB', borderColor: '#FEF3C7' }]}>
@@ -137,83 +149,36 @@ function ChefEatersView() {
               <Txt size={32} weight="900" color={Colors.warning}>{noResponse}</Txt>
               <Row gap={4} align="center" style={{ marginTop: 6 }}>
                 <Ionicons name="time-outline" size={14} color="#B45309" />
-                <Txt size={11} weight="800" color="#92400E">4.2%</Txt>
+                <Txt size={11} weight="800" color="#92400E">{pct(noResponse)}%</Txt>
               </Row>
+              {awayCount > 0 && (
+                <Row gap={4} align="center" style={{ marginTop: 4 }}>
+                  <Ionicons name="airplane-outline" size={12} color="#92400E" />
+                  <Txt size={10} weight="700" color="#92400E">{awayCount} away</Txt>
+                </Row>
+              )}
             </View>
           </Row>
 
           <Spacer size={32} />
-          <Row justify="space-between" align="center">
-            <Row align="center" gap={6}>
-              <Txt size={15} weight="900" color={Colors.textPrimary}>RSVP Trend</Txt>
-              <Txt size={13} weight="600" color={Colors.textSecondary}>(Last 7 Days)</Txt>
-            </Row>
-            <Row align="center" gap={4}>
-              <Txt size={13} weight="800" color={Colors.primary}>View Details</Txt>
-              <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
-            </Row>
-          </Row>
-          
-          <Spacer size={20} />
-          <View style={{ height: 160, width: '100%' }}>
-            <Svg height="100%" width="100%" viewBox="0 0 300 120" preserveAspectRatio="none">
-              {/* Grid lines */}
-              <Path d="M 0 20 L 300 20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
-              <Path d="M 0 60 L 300 60" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
-              <Path d="M 0 100 L 300 100" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
-              
-              {/* Y axis labels */}
-              <SvgText x="0" y="24" fill={Colors.textMuted} fontSize="10" fontWeight="bold">60</SvgText>
-              <SvgText x="0" y="64" fill={Colors.textMuted} fontSize="10" fontWeight="bold">40</SvgText>
-              <SvgText x="0" y="104" fill={Colors.textMuted} fontSize="10" fontWeight="bold">20</SvgText>
-              <SvgText x="0" y="120" fill={Colors.textMuted} fontSize="10" fontWeight="bold">0</SvgText>
-
-              {/* Area fill */}
-              <Path d="M 30 90 L 70 70 L 110 65 L 150 40 L 190 70 L 230 45 L 270 30 L 270 120 L 30 120 Z" fill="rgba(88, 86, 214, 0.05)" />
-              
-              {/* Line */}
-              <Polyline points="30,90 70,70 110,65 150,40 190,70 230,45 270,30" fill="none" stroke={Colors.primary} strokeWidth="2.5" />
-              
-              {/* Data points */}
-              <Circle cx="30" cy="90" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
-              <Circle cx="70" cy="70" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
-              <Circle cx="110" cy="65" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
-              <Circle cx="150" cy="40" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
-              <Circle cx="190" cy="70" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
-              <Circle cx="230" cy="45" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
-              <Circle cx="270" cy="30" r="4.5" fill="#FFFFFF" stroke={Colors.primary} strokeWidth="2" />
-
-              {/* End tooltip */}
-              <Path d="M 258 4 L 282 4 C 284 4 286 6 286 8 L 286 18 C 286 20 284 22 282 22 L 258 22 C 256 22 254 20 254 18 L 254 8 C 254 6 256 4 258 4 Z" fill={Colors.primary} />
-              <SvgText x="270" y="16.5" fill="#FFFFFF" fontSize="11" fontWeight="bold" textAnchor="middle">48</SvgText>
-            </Svg>
-
-            <Row justify="space-between" style={{ marginTop: 10, paddingLeft: 24, paddingRight: 10 }}>
-              {['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'].map((day, idx) => (
-                <Txt key={day} size={11} weight={idx === 6 ? '900' : '700'} color={idx === 6 ? Colors.primaryDark : Colors.textMuted}>{day}</Txt>
-              ))}
-            </Row>
-          </View>
-
-          <Spacer size={32} />
-          <Txt size={15} weight="900" color={Colors.textPrimary}>Today's Top Skipped Items</Txt>
-          <Spacer size={12} />
-          <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 16]}>
-            <Row justify="space-between" align="center" style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle }}>
-              <Row gap={12} align="center">
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textPrimary }} />
-                <Txt size={14} weight="700" color={Colors.textPrimary}>Dosa</Txt>
+          <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/rsvp-trends')} activeOpacity={0.7}>
+            <Row justify="space-between" align="center">
+              <Row align="center" gap={6}>
+                <Txt size={15} weight="900" color={Colors.textPrimary}>RSVP Trend</Txt>
+                <Txt size={13} weight="600" color={Colors.textSecondary}>(Last 7 Days)</Txt>
               </Row>
-              <Txt size={13} weight="800" color={Colors.danger}>3 skips</Txt>
-            </Row>
-            <Row justify="space-between" align="center" style={{ paddingVertical: 14 }}>
-              <Row gap={12} align="center">
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textPrimary }} />
-                <Txt size={14} weight="700" color={Colors.textPrimary}>Idli</Txt>
+              <Row align="center" gap={4}>
+                <Txt size={13} weight="800" color={Colors.primary}>View Details</Txt>
+                <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
               </Row>
-              <Txt size={13} weight="800" color={Colors.danger}>1 skip</Txt>
             </Row>
-          </Card>
+          </TouchableOpacity>
+          {/* The trend chart and a "Today's Top Skipped Items" list used to render here —
+              both were static SVG mockups (fixed points, a fixed "48" tooltip, hardcoded
+              Dosa/Idli skip counts) that never reflected real data. The real 7-day trend,
+              backed by useRSVPTrends, is one tap away via the link above and the button at
+              the top of this screen; there is no backend aggregation for per-dish skip
+              counts, so that list had nothing real to show. */}
 
         </>
       )}
@@ -312,12 +277,10 @@ function DeliveryDashboardRoute() {
           orderId: activeDelivery.id,
           params: { outcome: 'delivered', proof_photo_key: proofKey }
         });
-        hapticSuccess();
         Alert.alert('Delivery Confirmed', `Stop completed for ${activeDelivery.pgName}.`);
         setActiveDeliveryId(null);
         setPhotoUri(null);
       } catch (err: any) {
-        hapticError();
         Alert.alert('Failed to complete delivery', err?.message || 'Could not save.');
       } finally {
         setConfirming(false);
@@ -407,7 +370,7 @@ function DeliveryDashboardRoute() {
   return (
     <View style={styles.root}>
       <FormScroll contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 16 }}>
-        <Txt size={18} weight="900" color={Colors.primaryDark}>Good Morning, {staff?.name?.split(' ')[0] ?? 'Rahul'} 👋</Txt>
+        <Txt size={18} weight="900" color={Colors.primaryDark}>{getGreeting()}, {staff?.name?.split(' ')[0] || 'there'} 👋</Txt>
         
         <Card containerColor={Colors.surface} borderRadius={Radii.lg} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
           <Row justify="space-between" align="center">
@@ -476,7 +439,7 @@ function DeliveryDashboardRoute() {
                       <Spacer size={6} />
                       <Row align="center" gap={6}>
                         <Ionicons name="location-outline" size={14} color={Colors.borderSubtle} />
-                        <Txt size={13} color={Colors.borderSubtle}>{current.location.split(',').slice(-2)[0].trim()}, Bangalore</Txt>
+                        <Txt size={13} color={Colors.borderSubtle}>{current.location.split(',').slice(-2).join(',').trim()}</Txt>
                       </Row>
                       <Spacer size={2} />
                       <Row gap={6} align="center">
@@ -553,7 +516,7 @@ function DeliveryDashboardRoute() {
 
                 {/* Card Column */}
                 <Col style={{ flex: 1, paddingBottom: 12, paddingTop: 12, paddingLeft: 8 }}>
-                  <TouchableOpacity onPress={() => setActiveDeliveryId(r.id)} activeOpacity={0.8}>
+                  <TouchableOpacity accessibilityRole="button" onPress={() => setActiveDeliveryId(r.id)} activeOpacity={0.8}>
                     <Card containerColor={isCurrent ? Colors.surfaceElevated : Colors.surface} borderRadius={Radii.lg} borderWidth={1} borderColor={isCurrent ? Colors.primaryDark : Colors.borderSubtle} padding={[14, 14]} style={isCurrent ? { elevation: 2, shadowColor: Colors.primaryDark, shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } } : {}}>
                       <Row align="center" justify="space-between">
                         <Row gap={12} align="center" style={{ flex: 1 }}>

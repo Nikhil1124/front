@@ -4,8 +4,6 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { hapticSelect } from '@/utils/haptics';
-
 // Official LUNA Design System Tokens
 const BRAND_NAVY = '#011C40';       // Obsidian Navy
 const BRAND_MIDNIGHT = '#023859';   // Deep Midnight Blue
@@ -74,8 +72,7 @@ export function WelcomeScreen() {
           {/* Card 1: PG Owner / Admin Portal */}
           <AnimatedPress
             scale={0.99}
-            hapticPattern="light"
-            onPress={() => { hapticSelect(); router.push('/owner-login'); }}
+            onPress={() => { router.push('/owner-login'); }}
           >
             <Card
               containerColor={CARD_BG}
@@ -105,7 +102,7 @@ export function WelcomeScreen() {
               <Spacer size={10} />
               <Row gap={8}>
                 <Btn
-                  onPress={() => { hapticSelect(); router.push('/owner-register'); }}
+                  onPress={() => { router.push('/owner-register'); }}
                   containerColor={BRAND_OCEAN}
                   textColor="#FFFFFF"
                   borderRadius={10}
@@ -119,7 +116,7 @@ export function WelcomeScreen() {
                   </Row>
                 </Btn>
                 <OutlinedBtn
-                  onPress={() => { hapticSelect(); router.push('/owner-login'); }}
+                  onPress={() => { router.push('/owner-login'); }}
                   borderColor={BRAND_OCEAN}
                   textColor={BRAND_OCEAN}
                   borderRadius={10}
@@ -139,8 +136,7 @@ export function WelcomeScreen() {
           {/* Card 2: Resident / Guest Portal */}
           <AnimatedPress
             scale={0.99}
-            hapticPattern="light"
-            onPress={() => { hapticSelect(); router.push('/guest-join'); }}
+            onPress={() => { router.push('/guest-join'); }}
           >
             <Card
               containerColor={CARD_BG}
@@ -169,7 +165,7 @@ export function WelcomeScreen() {
 
               <Spacer size={10} />
               <Btn
-                onPress={() => { hapticSelect(); router.push('/guest-join'); }}
+                onPress={() => { router.push('/guest-join'); }}
                 containerColor={BRAND_OCEAN}
                 textColor="#FFFFFF"
                 borderRadius={10}
@@ -188,8 +184,7 @@ export function WelcomeScreen() {
           {/* Card 3: Staff & Operations Portal */}
           <AnimatedPress
             scale={0.99}
-            hapticPattern="light"
-            onPress={() => { hapticSelect(); router.push('/staff-login'); }}
+            onPress={() => { router.push('/staff-login'); }}
           >
             <Card
               containerColor={CARD_BG}
@@ -234,7 +229,7 @@ export function WelcomeScreen() {
 
               <Spacer size={10} />
               <OutlinedBtn
-                onPress={() => { hapticSelect(); router.push('/staff-login'); }}
+                onPress={() => { router.push('/staff-login'); }}
                 borderColor={BRAND_OCEAN}
                 textColor={BRAND_OCEAN}
                 borderRadius={10}

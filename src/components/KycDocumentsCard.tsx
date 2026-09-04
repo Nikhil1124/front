@@ -111,7 +111,7 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
               <Txt size={15} weight="900" color="#FFFFFF">{zoomed?.label}</Txt>
               <Txt size={11} color="#A7EBF2" style={{ marginTop: 2 }}>Official KYC Verification Document</Txt>
             </View>
-            <Pressable onPress={() => setZoomed(null)} style={styles.closeBtn} accessibilityRole="button">
+            <Pressable hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" onPress={() => setZoomed(null)} style={styles.closeBtn} accessibilityRole="button">
               <Ionicons name="close" size={24} color="#FFFFFF" />
             </Pressable>
           </View>
@@ -123,7 +123,7 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
           </View>
 
           <View style={styles.zoomFooter}>
-            <Pressable style={styles.closeModalBtn} onPress={() => setZoomed(null)}>
+            <Pressable accessibilityRole="button" style={styles.closeModalBtn} onPress={() => setZoomed(null)}>
               <Ionicons name="checkmark-circle" size={18} color="#FFF" />
               <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>Done Inspecting</Txt>
             </Pressable>

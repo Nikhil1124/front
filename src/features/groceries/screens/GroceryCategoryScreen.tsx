@@ -39,8 +39,11 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNam
 export function GroceryCategoryScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { name: initialSupplyCategory } = useLocalSearchParams<{ name?: string }>();
-  const filter: string | undefined = undefined;
+  // `filter` used to be a hardcoded `undefined` here rather than read from the route —
+  // SECTION_FILTERS.deals and the "Active Filter Chip" UI below were fully built but
+  // unreachable from any real navigation, so "Today's Deals → See All" landed on the
+  // generic browse-all view instead of an actual deals filter.
+  const { name: initialSupplyCategory, filter } = useLocalSearchParams<{ name?: string; filter?: string }>();
 
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: supplyItems = [], refetch: refetchItems, isRefetching: isRefetchingItems } = useSupplyItems(activePgId);
@@ -96,7 +99,7 @@ export function GroceryCategoryScreen() {
 
   // Render a single category item card in the 4-column layout
   const renderSupplyCategoryItem = (cat: SupplyCategory) => (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       key={cat.id}
       style={[styles.catItem, { width: itemWidth }]}
       activeOpacity={0.85}
@@ -109,7 +112,7 @@ export function GroceryCategoryScreen() {
           resizeMode="contain"
         />
       </View>
-      <Text style={styles.catTitle} numberOfLines={2}>
+      <Text maxFontSizeMultiplier={1.3} style={styles.catTitle} numberOfLines={2}>
         {cat.name}
       </Text>
     </TouchableOpacity>
@@ -121,7 +124,7 @@ export function GroceryCategoryScreen() {
       <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
         <View style={[styles.topHeader, { paddingTop: insets.top + 14 }]}>
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
             style={styles.backBtn}
             onPress={() => {
               if (activeSupplyCategory) {
@@ -138,7 +141,7 @@ export function GroceryCategoryScreen() {
 
           <View style={styles.searchBarContainer}>
             <Ionicons name="search" size={20} color={Colors.primary} />
-            <TextInput
+            <TextInput maxFontSizeMultiplier={1.3}
               style={styles.headerSearchInput}
               placeholder={showProductList ? "Search products in category..." : 'Search "eggs", "milk", "rice"...'}
               placeholderTextColor={Colors.textMuted}
@@ -149,7 +152,7 @@ export function GroceryCategoryScreen() {
               <Ionicons name="mic-outline" size={20} color={Colors.textSecondary} />
             )}
             {search.length > 0 && showProductList && (
-              <TouchableOpacity onPress={() => setSearch('')}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSearch('')}>
                 <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
               </TouchableOpacity>
             )}
@@ -160,8 +163,8 @@ export function GroceryCategoryScreen() {
         {!showProductList && sectionFilter && (
           <View style={styles.chipRow}>
             <View style={styles.activeChip}>
-              <Text style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
-              <TouchableOpacity onPress={() => setActiveSupplyCategory(null)}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setActiveSupplyCategory(null)}>
                 <Ionicons name="close" size={14} color={Colors.primary} />
               </TouchableOpacity>
             </View>
@@ -171,8 +174,8 @@ export function GroceryCategoryScreen() {
         {/* Title Banner when viewing an active category product grid */}
         {showProductList && (
           <View style={styles.activeSupplyCategoryHeader}>
-            <Text style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Text>
-            <Text style={styles.activeSupplyCategorySub}>{products.length} items available</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategorySub}>{products.length} items available</Text>
           </View>
         )}
 
@@ -252,7 +255,7 @@ export function GroceryCategoryScreen() {
 
               return grouped.map((g) => (
                 <View key={g.title} style={styles.sectionBlock}>
-                  <Text style={styles.sectionHeading}>{g.title}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>{g.title}</Text>
                   <View style={styles.gridRow}>
                     {g.cats.map(renderSupplyCategoryItem)}
                   </View>
@@ -272,8 +275,8 @@ export function GroceryCategoryScreen() {
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
             ListEmptyComponent={
               <View style={styles.emptyBox}>
-                <Text style={styles.emptyIcon}>🔍</Text>
-                <Text style={styles.emptyText}>No products found</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.emptyIcon}>🔍</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>No products found</Text>
               </View>
             }
             renderItem={({ item }) => (
@@ -293,7 +296,7 @@ export function GroceryCategoryScreen() {
       {/* Floating Cart Bar */}
       {cartItemCount > 0 && (
         <View style={[styles.floatingCartContainer, { bottom: Math.max(insets.bottom + 85, 105) }]}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.floatingCart}
             onPress={() => router.push('/groceries/cart')}
             activeOpacity={0.9}
@@ -308,12 +311,12 @@ export function GroceryCategoryScreen() {
                 <Ionicons name="cart" size={18} color="#fff" />
               </View>
               <View>
-                <Text style={styles.cartTotal}>₹{getCartTotal()}</Text>
-                <Text style={styles.cartSub}>{cartItemCount} item{cartItemCount > 1 ? 's' : ''}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.cartTotal}>₹{getCartTotal()}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.cartSub}>{cartItemCount} item{cartItemCount > 1 ? 's' : ''}</Text>
               </View>
             </View>
             <View style={styles.viewCartBtn}>
-              <Text style={styles.viewCartText}>View Cart →</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart →</Text>
             </View>
           </TouchableOpacity>
         </View>

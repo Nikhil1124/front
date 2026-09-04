@@ -1,5 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
+import { toAmount } from '@/data/mappers';
 import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -86,7 +87,7 @@ export function GroceriesScreen() {
   );
 
   const hasActiveFilters =
-    filters.sort !== 'popular' || filters.dietary.length > 0 || filters.maxPrice !== undefined || filters.onDealOnly === true;
+    filters.sort !== 'popular' || filters.maxPrice !== undefined || filters.onDealOnly === true;
 
   const searchResults = useMemo(() => {
     let list = supplyItems;
@@ -100,6 +101,20 @@ export function GroceriesScreen() {
     }
     if (filters.maxPrice !== undefined) {
       list = list.filter((p) => p.price <= (filters.maxPrice as number));
+    }
+    // Same "on deal" test as useDeals, and the same reason for toAmount() rather than a bare
+    // `>`: mrp/price come back as Decimal-on-the-wire strings despite the SupplyItem type
+    // claiming `number` — comparing them directly is lexicographic ("90.00" > "100.00" is
+    // true because "9" > "1"), which would advertise markups as deals.
+    if (filters.onDealOnly) {
+      list = list.filter((p) => p.mrp != null && toAmount(p.mrp) > toAmount(p.price));
+    }
+    if (filters.sort === 'price-asc') {
+      list = [...list].sort((a, b) => toAmount(a.price) - toAmount(b.price));
+    } else if (filters.sort === 'price-desc') {
+      list = [...list].sort((a, b) => toAmount(b.price) - toAmount(a.price));
+    } else if (filters.sort === 'name') {
+      list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
   }, [searchQuery, filters, hasActiveFilters, supplyItems]);
@@ -122,6 +137,7 @@ export function GroceriesScreen() {
   const openSupplyCategory = (categoryName: string | null) => {
     router.push({ pathname: '/groceries/categories', params: categoryName ? { name: categoryName } : {} });
   };
+  const openDeals = () => router.push({ pathname: '/groceries/categories', params: { filter: 'deals' } });
   const openCart = () => router.push('/groceries/cart');
 
   const dealsTitle = mode === 'owner' ? "🔥 Today's Bulk Deals" : "🔥 Today's Deals";
@@ -161,7 +177,7 @@ export function GroceriesScreen() {
 
           {isSearching ? (
             <View style={styles.searchResultsWrapper}>
-              <Text style={styles.searchResultsTitle}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.searchResultsTitle}>
                 {searchResults.length > 0 ? `${searchResults.length} results for "${searchQuery}"` : `No results for "${searchQuery}"`}
               </Text>
               {itemsLoading ? (
@@ -171,7 +187,7 @@ export function GroceriesScreen() {
               ) : searchResults.length === 0 ? (
                 <View style={styles.noResultsBox}>
                   <Ionicons name="search" size={48} color="#98A39B" />
-                  <Text style={styles.noResultsText}>Try a different keyword</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.noResultsText}>Try a different keyword</Text>
                 </View>
               ) : (
                 <FlatList
@@ -197,17 +213,17 @@ export function GroceriesScreen() {
               <MainBannerCarousel onBannerPress={() => openSupplyCategory(null)} />
 
               {mode === 'owner' && (
-                <TodaysKitchenNeeds onProductPress={openProduct} onSeeAllCategoriesPress={() => openSupplyCategory(null)} products={supplyItems} />
+                <TodaysKitchenNeeds onProductPress={openProduct} onSeeAllCategoriesPress={() => openSupplyCategory(null)} products={supplyItems} pgId={activePgId ?? undefined} />
               )}
 
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeaderRow}>
                   <View>
-                    <Text style={styles.sectionTitle}>{dealsTitle}</Text>
-                    <Text style={styles.sectionSubtitle}>{dealsSub}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{dealsTitle}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>{dealsSub}</Text>
                   </View>
-                  <TouchableOpacity activeOpacity={0.7} onPress={() => openSupplyCategory(null)}>
-                    <Text style={styles.seeAllText}>See All →</Text>
+                  <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={openDeals}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
@@ -220,11 +236,11 @@ export function GroceriesScreen() {
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeaderRow}>
                   <View>
-                    <Text style={styles.sectionTitle}>Daily Essentials</Text>
-                    <Text style={styles.sectionSubtitle}>Must-have daily items for your PG</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Daily Essentials</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>Must-have daily items for your PG</Text>
                   </View>
-                  <TouchableOpacity activeOpacity={0.7} onPress={() => openSupplyCategory(null)}>
-                    <Text style={styles.seeAllText}>See All →</Text>
+                  <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={() => openSupplyCategory(null)}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
@@ -244,22 +260,22 @@ export function GroceriesScreen() {
       </View>
 
       <Animated.View style={[styles.floatingCartContainer, { transform: [{ translateY: cartAnimY }], opacity: cartOpacity, bottom: 24 }]}>
-        <TouchableOpacity style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>
+        <TouchableOpacity accessibilityRole="button" style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>
           <BlurView intensity={80} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} />
           <View style={styles.cartInfo}>
             <View style={styles.cartIconWrapper}>
               <Ionicons name="cart" size={14} color="#fff" />
               <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.cartBadgeText}>{cartItemCount}</Text>
               </View>
             </View>
             <View>
-              <Text style={styles.cartTotalText}>₹{getCartTotal()}</Text>
-              <Text style={styles.cartSubtext}>FREE delivery unlocked!</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.cartTotalText}>₹{getCartTotal()}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.cartSubtext}>FREE delivery unlocked!</Text>
             </View>
           </View>
           <View style={styles.checkoutBtn}>
-            <Text style={styles.checkoutText}>View Cart</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.checkoutText}>View Cart</Text>
             <MaterialIcons name="keyboard-arrow-right" size={18} color="#fff" />
           </View>
         </TouchableOpacity>

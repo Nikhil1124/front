@@ -17,33 +17,77 @@ import {
   TextInput,
 } from 'react-native';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, dialogEntering, dialogExiting, Motion } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { useProcurementCatalog } from '@/features/procurement/useProcurement';
+import { useCreateSubscriptionMutation } from '@/features/subscriptions/useSubscriptions';
 
 // ===== AddPgDailySubscriptionDialog =====
-export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => void }) {
-  const addSub = usePGowStore((s) => s.addPgDailyGrocerySubscription);
-  const [title, setTitle] = useState('Morning Mess Essentials');
-  const [items, setItems] = useState('10L Full Cream Milk, 50 Eggs, 10 Breads');
-  const [time, setTime] = useState('06:30 AM');
-  const [costStr, setCostStr] = useState('1250');
+const DELIVERY_SLOTS: Array<[string, string]> = [
+  ['06:00 AM', '06:00:00'],
+  ['06:30 AM', '06:30:00'],
+  ['07:00 AM', '07:00:00'],
+  ['07:30 AM', '07:30:00'],
+  ['08:00 AM', '08:00:00'],
+];
 
-  const handleSave = () => {
-    const cost = parseFloat(costStr) || 1000;
-    addSub(title, items, time, cost);
-    Alert.alert('Success', 'Daily Auto-Subscription Activated!');
-    onDismiss();
+export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => void }) {
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: catalog = [], isLoading: catalogLoading } = useProcurementCatalog();
+  const createSubscription = useCreateSubscriptionMutation();
+
+  const [note, setNote] = useState('Morning Mess Essentials');
+  const [search, setSearch] = useState('');
+  const [deliverAt, setDeliverAt] = useState(DELIVERY_SLOTS[1][1]);
+  const [cart, setCart] = useState<Record<string, number>>({});
+
+  const filteredCatalog = catalog.filter((it) =>
+    search.trim() === '' || it.itemName.toLowerCase().includes(search.trim().toLowerCase())
+  );
+  const cartItemCount = Object.values(cart).reduce((sum, n) => sum + n, 0);
+  const estimatedDailyCost = Object.entries(cart).reduce((sum, [id, qty]) => {
+    const it = catalog.find((c) => c.id === id);
+    return sum + (it ? it.defaultPrice * qty : 0);
+  }, 0);
+
+  const updateQty = (id: string, delta: number) => {
+    setCart((prev) => {
+      const next = Math.max(0, (prev[id] ?? 0) + delta);
+      const copy = { ...prev };
+      if (next === 0) delete copy[id];
+      else copy[id] = next;
+      return copy;
+    });
+  };
+
+  const handleSave = async () => {
+    if (!activePgId || cartItemCount === 0) return;
+    try {
+      await createSubscription.mutateAsync({
+        pg_id: activePgId,
+        deliver_at: deliverAt,
+        payment_method: 'credit',
+        delivery_note: note.trim(),
+        items: Object.entries(cart).map(([item_id, quantity]) => ({ item_id, quantity })),
+      });
+      Alert.alert('Success', 'Daily Auto-Subscription Activated!');
+      onDismiss();
+    } catch (err: any) {
+      Alert.alert('Could not activate', err?.message ?? 'Please try again.');
+    }
   };
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <View style={{ width: '92%', zIndex: 2 }}>
+        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <View style={{ width: '92%', maxHeight: '85%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
             borderRadius={24}
@@ -61,37 +105,74 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
           </Row>
 
           <OutlinedTextField
-            label="Subscription Title"
-            value={title}
-            onChangeText={setTitle}
+            label="Note (optional)"
+            value={note}
+            onChangeText={setNote}
+            containerColor={Colors.surfaceMuted}
+            style={{ marginBottom: 12 }}
+          />
+
+          <Txt variant="caption" weight="800" color={Colors.textMuted}>Delivery Time</Txt>
+          <Spacer size={6} />
+          <Row gap={6} style={{ flexWrap: 'wrap' }}>
+            {DELIVERY_SLOTS.map(([label, value]) => (
+              <Chip key={value} label={label} selected={deliverAt === value} onPress={() => setDeliverAt(value)} />
+            ))}
+          </Row>
+          <Spacer size={12} />
+
+          <Txt variant="caption" weight="800" color={Colors.textMuted}>Items — from the real Supply catalog</Txt>
+          <Spacer size={6} />
+          <OutlinedTextField
+            placeholder="Search items…"
+            value={search}
+            onChangeText={setSearch}
             containerColor={Colors.surfaceMuted}
             style={{ marginBottom: 8 }}
           />
-          <OutlinedTextField
-            label="Daily Grocery Items List"
-            value={items}
-            onChangeText={setItems}
-            containerColor={Colors.surfaceMuted}
-            style={{ marginBottom: 8 }}
-          />
-          <OutlinedTextField
-            label="Delivery Time Slot (e.g. 06:30 AM)"
-            value={time}
-            onChangeText={setTime}
-            containerColor={Colors.surfaceMuted}
-            style={{ marginBottom: 8 }}
-          />
-          <OutlinedTextField
-            label="Est. Daily Cost (₹)"
-            value={costStr}
-            onChangeText={setCostStr}
-            keyboardType="number-pad"
-            containerColor={Colors.surfaceMuted}
-            style={{ marginBottom: 16 }}
-          />
+
+          <ScrollView style={{ maxHeight: 220 }} keyboardShouldPersistTaps="handled">
+            {catalogLoading ? (
+              <Txt variant="caption" color={Colors.textMuted} align="center">Loading catalog…</Txt>
+            ) : filteredCatalog.length === 0 ? (
+              <Txt variant="caption" color={Colors.textMuted} align="center">No items found.</Txt>
+            ) : (
+              <View style={{ gap: 6 }}>
+                {filteredCatalog.map((item) => {
+                  const qty = cart[item.id] ?? 0;
+                  return (
+                    <Row key={item.id} justify="space-between" align="center" style={styles.catalogRow}>
+                      <Col style={{ flex: 1 }}>
+                        <Txt size={13} weight="800" color={Colors.textPrimary}>{item.itemName}</Txt>
+                        <Txt size={11} color={Colors.textMuted}>{item.unit} • ₹{item.defaultPrice}</Txt>
+                      </Col>
+                      <Row gap={8} align="center">
+                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" onPress={() => updateQty(item.id, -1)} style={styles.qtyBtn} activeOpacity={0.7}>
+                          <Ionicons name="remove" size={14} color={Colors.textPrimary} />
+                        </TouchableOpacity>
+                        <Txt size={13} weight="900" color={Colors.primaryDark}>{qty}</Txt>
+                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => updateQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]} activeOpacity={0.7}>
+                          <Ionicons name="add" size={14} color={Colors.textInverse} />
+                        </TouchableOpacity>
+                      </Row>
+                    </Row>
+                  );
+                })}
+              </View>
+            )}
+          </ScrollView>
+
+          <Spacer size={14} />
+          <Row justify="space-between" align="center">
+            <Txt variant="caption" weight="800" color={Colors.textMuted}>Estimated Daily Cost</Txt>
+            <Txt variant="sectionTitle" weight="900" color={Colors.primaryDark}>₹{estimatedDailyCost.toLocaleString('en-IN')}</Txt>
+          </Row>
+          <Spacer size={16} />
 
           <Btn
             onPress={handleSave}
+            loading={createSubscription.isPending}
+            disabled={createSubscription.isPending || cartItemCount === 0}
             containerColor={Colors.primary}
             textColor={Colors.textInverse}
             borderRadius={12}
@@ -143,13 +224,17 @@ const DIALOG_WHITE = Colors.surface;
 const DIALOG_LIGHT_GREEN = Colors.surfaceElevated;
 
 export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
+  // Bottom sheet inside a Modal: nothing above it pads the gesture bar, and the hardcoded
+  // 34px it used to carry was a guess at the home indicator that under-clears gesture nav.
+  const insets = useSafeAreaInsets();
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
   const [category, setCategory] = useState('Plumbing');
   const [issue, setIssue] = useState('');
   const [urgency, setUrgency] = useState('15-Min Express'); // Maps to backend '15-Min Express' or 'Scheduled Today'
 
-  // Scheduled date/time picker state
-  const [schedDate, setSchedDate] = useState('19 Aug 2026');
+  // Scheduled date/time picker state — defaults to today so an untouched picker never
+  // silently books a stale, already-past date (it used to be hardcoded to a fixed string).
+  const [schedDate, setSchedDate] = useState(() => getNext7Days()[0]);
   const [schedTime, setSchedTime] = useState('11:30 AM - 12:00 PM');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -169,12 +254,12 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   return (
     <>
       <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <View style={styles.backdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
             
             <View
-              style={styles.sheetCard}
+              style={[styles.sheetCard, { paddingBottom: 34 + insets.bottom }]}
             >
               {/* Handlebar */}
               <View style={styles.handlebar} />
@@ -186,29 +271,29 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                     <Ionicons name="construct-outline" size={20} color={DIALOG_GREEN} />
                   </View>
                   <Col>
-                    <Text style={styles.sheetTitle}>Book a Repair</Text>
-                    <Text style={styles.sheetSubtitle}>Tell us what needs fixing</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.sheetTitle}>Book a Repair</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubtitle}>Tell us what needs fixing</Text>
                   </Col>
                 </Row>
-                <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onDismiss} style={styles.closeBtn}>
                   <Ionicons name="close" size={20} color={DIALOG_MUTED} />
                 </TouchableOpacity>
               </Row>
 
               {/* Step 1: What needs repair */}
-              <Text style={styles.stepTitle}>1. What needs repair?</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>1. What needs repair?</Text>
               <Spacer size={8} />
               <View style={styles.chipsRow}>
                 {REPAIR_CATEGORIES.map((cat) => {
                   const isSelected = category === cat;
                   return (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={cat}
                       style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
                       onPress={() => setCategory(cat)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
                         {cat}
                       </Text>
                     </TouchableOpacity>
@@ -219,10 +304,10 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               <Spacer size={16} />
 
               {/* Step 2: What's the issue */}
-              <Text style={styles.stepTitle}>2. What's the issue?</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>2. What's the issue?</Text>
               <Spacer size={8} />
               <View style={styles.textAreaContainer}>
-                <TextInput
+                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Describe the problem briefly"
                   style={styles.textArea}
                   value={issue}
                   onChangeText={(v) => {
@@ -235,16 +320,16 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   maxLength={250}
                   textAlignVertical="top"
                 />
-                <Text style={styles.charCounter}>{issue.length}/250</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.charCounter}>{issue.length}/250</Text>
               </View>
 
               <Spacer size={16} />
 
               {/* Step 3: When do you need help */}
-              <Text style={styles.stepTitle}>3. When do you need help?</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>3. When do you need help?</Text>
               <Spacer size={8} />
               <Row gap={10}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[
                     styles.urgencyBtn,
                     urgency === '15-Min Express' && styles.urgencyBtnActive,
@@ -252,7 +337,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   onPress={() => setUrgency('15-Min Express')}
                   activeOpacity={0.8}
                 >
-                  <Text
+                  <Text maxFontSizeMultiplier={1.3}
                     style={[
                       styles.urgencyBtnText,
                       urgency === '15-Min Express' && styles.urgencyBtnTextActive,
@@ -261,7 +346,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                     Express · 15 min
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[
                     styles.urgencyBtn,
                     urgency === 'Scheduled Today' && styles.urgencyBtnActive,
@@ -269,7 +354,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   onPress={() => setUrgency('Scheduled Today')}
                   activeOpacity={0.8}
                 >
-                  <Text
+                  <Text maxFontSizeMultiplier={1.3}
                     style={[
                       styles.urgencyBtnText,
                       urgency === 'Scheduled Today' && styles.urgencyBtnTextActive,
@@ -286,32 +371,32 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   <Spacer size={12} />
                   <Row gap={10}>
                     {/* Date Selector */}
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.pickerDropdown}
                       onPress={() => setShowDatePicker(true)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.pickerLabel}>Date</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.pickerLabel}>Date</Text>
                       <Row justify="space-between" align="center" style={{ flex: 1 }}>
                         <Row gap={6} align="center">
                           <Ionicons name="calendar-outline" size={15} color={DIALOG_GREEN} />
-                          <Text style={styles.pickerValue}>{schedDate}</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.pickerValue}>{schedDate}</Text>
                         </Row>
                         <Ionicons name="chevron-down" size={14} color={DIALOG_MUTED} />
                       </Row>
                     </TouchableOpacity>
 
                     {/* Time Selector */}
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.pickerDropdown}
                       onPress={() => setShowTimePicker(true)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.pickerLabel}>Time</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.pickerLabel}>Time</Text>
                       <Row justify="space-between" align="center" style={{ flex: 1 }}>
                         <Row gap={6} align="center">
                           <Ionicons name="time-outline" size={15} color={DIALOG_GREEN} />
-                          <Text style={styles.pickerValue}>{schedTime}</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.pickerValue}>{schedTime}</Text>
                         </Row>
                         <Ionicons name="chevron-down" size={14} color={DIALOG_MUTED} />
                       </Row>
@@ -325,7 +410,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               {/* Warning / ETA strip */}
               <Row gap={8} align="center" style={styles.etaStrip}>
                 <Ionicons name={urgency === '15-Min Express' ? 'time-outline' : 'calendar-clear-outline'} size={16} color={DIALOG_GREEN} />
-                <Text style={styles.etaText}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.etaText}>
                   {urgency === '15-Min Express'
                     ? 'Technician will be at your PG in approximately 15 minutes.'
                     : 'You can schedule up to 7 days in advance.'}
@@ -335,12 +420,12 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               <Spacer size={20} />
 
               {/* CTA Button */}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.sheetSubmitBtn}
                 onPress={handleDispatch}
                 activeOpacity={0.85}
               >
-                <Text style={styles.sheetSubmitBtnText}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubmitBtnText}>
                   {urgency === '15-Min Express' ? 'Request Express Repair' : 'Request Repair'}
                 </Text>
               </TouchableOpacity>
@@ -350,7 +435,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               {/* Security Disclaimer */}
               <Row gap={6} justify="center" align="center" style={styles.securityRow}>
                 <Ionicons name="lock-closed-outline" size={12} color={DIALOG_MUTED} />
-                <Text style={styles.securityText}>Your request is secure and confidential</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.securityText}>Your request is secure and confidential</Text>
               </Row>
             </View>
           </View>
@@ -361,17 +446,17 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
       {showDatePicker && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
           <View style={styles.pickerPopupBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
             <View style={styles.pickerPopupCard}>
-              <Text style={styles.pickerPopupTitle}>Select Date</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.pickerPopupTitle}>Select Date</Text>
               <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 10, maxHeight: 220 }}>
                 {getNext7Days().map((d) => (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={d}
                     style={[styles.pickerPopupOption, schedDate === d && styles.pickerPopupOptionActive]}
                     onPress={() => { setSchedDate(d); setShowDatePicker(false); }}
                   >
-                    <Text style={[styles.pickerPopupOptionText, schedDate === d && styles.pickerPopupOptionTextActive]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.pickerPopupOptionText, schedDate === d && styles.pickerPopupOptionTextActive]}>
                       {d}
                     </Text>
                   </TouchableOpacity>
@@ -386,17 +471,17 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
       {showTimePicker && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowTimePicker(false)}>
           <View style={styles.pickerPopupBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
             <View style={styles.pickerPopupCard}>
-              <Text style={styles.pickerPopupTitle}>Select Time Slot</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.pickerPopupTitle}>Select Time Slot</Text>
               <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 10, maxHeight: 220 }}>
                 {TIME_SLOTS.map((t) => (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={t}
                     style={[styles.pickerPopupOption, schedTime === t && styles.pickerPopupOptionActive]}
                     onPress={() => { setSchedTime(t); setShowTimePicker(false); }}
                   >
-                    <Text style={[styles.pickerPopupOptionText, schedTime === t && styles.pickerPopupOptionTextActive]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.pickerPopupOptionText, schedTime === t && styles.pickerPopupOptionTextActive]}>
                       {t}
                     </Text>
                   </TouchableOpacity>
@@ -435,9 +520,9 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <View style={{ width: '92%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
@@ -461,7 +546,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
           <Spacer size={6} />
           <View style={{ gap: 6 }}>
             {Object.entries(LAUNDRY_RATES).map(([srv, rate]) => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={srv}
                 onPress={() => setService(srv)}
                 style={[
@@ -544,6 +629,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     padding: 10,
+  },
+  catalogRow: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.surfaceMuted,
+    padding: 10,
+  },
+  qtyBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: Colors.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Bottom Sheet

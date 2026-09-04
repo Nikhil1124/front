@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import {
   Modal, View, StyleSheet, ScrollView, Pressable, Linking, Platform, BackHandler, Alert, TouchableOpacity
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { BlurView } from 'expo-blur';
@@ -13,7 +14,6 @@ import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/compon
 import { Colors, Layout, Motion } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
-import { hapticSelect } from '@/utils/haptics';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PaymentEntity } from '@/types';
 
@@ -45,6 +45,8 @@ export function PaymentReceiptDialog({
   downloadUrl,
   downloadLabel = 'Download PDF',
 }: Props) {
+  // Bottom-pinned sheet: the receipt's last row would otherwise sit in the gesture strip.
+  const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const roomNo = payment.payerId === guest?.id ? guest?.roomNo : null;
   const isVerified = payment.status === 'VERIFIED';
@@ -61,7 +63,6 @@ export function PaymentReceiptDialog({
   // Wires Android's hardware back button to `onDismiss`.
   useEffect(() => {
     const subscription = () => {
-      hapticSelect();
       onDismiss();
       return true; // we handled it
     };
@@ -72,7 +73,6 @@ export function PaymentReceiptDialog({
   }, [onDismiss]);
 
   const handleDownload = () => {
-    hapticSelect();
     if (onDownload) {
       onDownload();
       return;
@@ -85,7 +85,7 @@ export function PaymentReceiptDialog({
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <View
           style={styles.modalContent}
           onStartShouldSetResponder={() => true}
@@ -113,7 +113,10 @@ export function PaymentReceiptDialog({
           </Row>
 
           {/* Scrollable Content inside Bottom Sheet */}
-          <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={[styles.scrollBody, { paddingBottom: 24 + insets.bottom }]}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Status banner — compact card directly below header */}
             <View
               style={[
@@ -139,6 +142,12 @@ export function PaymentReceiptDialog({
                       ? `Receipt ID: ${payment.receiptId}`
                       : 'Slip unlocks automatically once the owner verifies your payment.'}
                   </Txt>
+                  {isVerified && payment.verifiedByName ? (
+                    <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                      Verified by {payment.verifiedByName}
+                      {payment.verificationDate ? ` on ${formatDateTime(payment.verificationDate)}` : ''}
+                    </Txt>
+                  ) : null}
                 </Col>
               </Row>
             </View>
@@ -156,10 +165,10 @@ export function PaymentReceiptDialog({
               ) : null}
               <Spacer size={6} />
               <Row gap={8} style={{ marginTop: 2 }}>
-                <TouchableOpacity onPress={() => { Clipboard.setStringAsync(payment.pgId); Alert.alert('Copied', 'PG ID copied to clipboard.'); }} style={styles.idChip}>
+                <TouchableOpacity accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.pgId); Alert.alert('Copied', 'PG ID copied to clipboard.'); }} style={styles.idChip}>
                   <Txt size={9} color={Colors.textMuted}>PG ID: {payment.pgId.slice(0, 8)}...</Txt>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { Clipboard.setStringAsync(payment.payerId); Alert.alert('Copied', 'Resident ID copied to clipboard.'); }} style={styles.idChip}>
+                <TouchableOpacity accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.payerId); Alert.alert('Copied', 'Resident ID copied to clipboard.'); }} style={styles.idChip}>
                   <Txt size={9} color={Colors.textMuted}>Res ID: {payment.payerId.slice(0, 8)}...</Txt>
                 </TouchableOpacity>
               </Row>

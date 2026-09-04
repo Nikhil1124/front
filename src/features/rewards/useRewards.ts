@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import { API } from "../../config";
 
@@ -44,6 +45,14 @@ export function getMyRewards(pgId: string): Promise<RewardBalance> {
  */
 export function getLeaderboard(pgId: string, limit = 200): Promise<Leaderboard> {
   return apiFetch<Leaderboard>(`${API.REWARDS}?pg_id=${pgId}&limit=${limit}`);
+}
+
+export function useMyRewardsQuery(pgId?: string) {
+  return useQuery<RewardBalance>({
+    queryKey: ["rewards_me", pgId],
+    queryFn: () => getMyRewards(pgId!),
+    enabled: !!pgId,
+  });
 }
 
 export function useRewards() {

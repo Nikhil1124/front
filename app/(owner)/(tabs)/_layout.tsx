@@ -18,10 +18,9 @@ import { Colors } from '@/theme';
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
-import { hapticSelect, hapticSuccess } from '@/utils/haptics';
-
+import { getGreeting } from '@/utils/format';
 // ── Redesign Theme Colors ───────────────────────────────────────────────────
 const PRIMARY = Colors.primary;
 const BG = Colors.canvas;
@@ -42,7 +41,9 @@ export default function OwnerTabsLayout() {
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  // Derived from the role at the CURRENTLY active property, not a snapshot taken at login —
+  // see useIsManagerMode's own doc for the property-switch bug the snapshot caused.
+  const isManager = useIsManagerMode();
   const logout = usePGowStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
 
@@ -52,7 +53,7 @@ export default function OwnerTabsLayout() {
 
   // Dynamic names
   const ownerName = owner?.ownerName || user?.name || 'Owner';
-  const greeting = `Good morning, ${ownerName.split(' ')[0]} 👋`;
+  const greeting = `${getGreeting()}, ${ownerName.split(' ')[0]} 👋`;
   const location = owner?.address ? owner.address.split(',').slice(0, 2).join(',') : 'Bengaluru';
   const subLabel = `${allPGs.length} PG${allPGs.length === 1 ? '' : 's'} • ${location}`;
 
@@ -85,9 +86,9 @@ export default function OwnerTabsLayout() {
                 <Col style={{ flex: 1 }}>
                   <Txt size={12} weight="600" color="rgba(255, 255, 255, 0.78)">{greeting}</Txt>
                   <Spacer size={2} />
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     activeOpacity={0.7}
-                    onPress={() => { hapticSelect(); setShowProfileMenu(true); }}
+                    onPress={() => { setShowProfileMenu(true); }}
                     style={styles.propertySelectRow}
                   >
                     <Txt size={17} weight="900" color="#FFFFFF" numberOfLines={1}>
@@ -107,14 +108,14 @@ export default function OwnerTabsLayout() {
 
               {/* Right Action Icons */}
               <Row gap={8} align="center">
-                <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/notices'); }}>
+                <AnimatedPress accessibilityLabel="Notifications" scale={0.88} onPress={() => { router.push('/notices'); }}>
                   <View style={styles.headerActionBtn}>
                     <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
                     {unreadCount > 0 && <View style={styles.unreadDot} />}
                   </View>
                 </AnimatedPress>
 
-                <AnimatedPress scale={0.88} hapticPattern="light" onPress={() => router.push('/settings')}>
+                <AnimatedPress accessibilityLabel="Settings" scale={0.88} onPress={() => router.push('/settings')}>
                   <View style={styles.headerActionBtn}>
                     <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
                   </View>
@@ -129,9 +130,9 @@ export default function OwnerTabsLayout() {
             end={{ x: 1, y: 1 }}
             style={[styles.headerContainer, { paddingTop: insets.top + 10, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }]}
           >
-            <TouchableOpacity
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
               style={styles.headerActionBtn}
-              onPress={() => { hapticSelect(); router.push('/overview'); }}
+              onPress={() => { router.push('/overview'); }}
               activeOpacity={0.7}
             >
               <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
@@ -162,7 +163,7 @@ export default function OwnerTabsLayout() {
       <TabList style={[styles.floatingDock, { bottom: Math.max(insets.bottom, 12) }]}>
         {/* Tab 1: Overview */}
         <TabTrigger name="overview" href="/overview" asChild>
-          <TouchableOpacity style={styles.dockItem} activeOpacity={0.8}>
+          <TouchableOpacity accessibilityRole="button" style={styles.dockItem} activeOpacity={0.8}>
             <Ionicons name="grid" size={20} color={isOverviewActive ? PRIMARY : MUTED} />
             <Txt size={10} weight={isOverviewActive ? '800' : '600'} color={isOverviewActive ? PRIMARY : MUTED} style={styles.dockText}>
               Overview
@@ -174,10 +175,10 @@ export default function OwnerTabsLayout() {
 
         {/* Center Action 3: Elevated Floating Plus */}
         <View style={styles.plusBtnContainer}>
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
             style={styles.floatingPlusBtn}
             activeOpacity={0.85}
-            onPress={() => { hapticSuccess(); setShowAddOptions(true); }}
+            onPress={() => { setShowAddOptions(true); }}
 
           >
             <Ionicons name="add" size={28} color={WHITE} />
@@ -186,7 +187,7 @@ export default function OwnerTabsLayout() {
 
         {/* Tab 4: Payments */}
         <TabTrigger name="payments" href="/payments" asChild>
-          <TouchableOpacity style={styles.dockItem} activeOpacity={0.8}>
+          <TouchableOpacity accessibilityRole="button" style={styles.dockItem} activeOpacity={0.8}>
             <Ionicons name="card" size={20} color={isPaymentsActive ? PRIMARY : MUTED} />
             <Txt size={10} weight={isPaymentsActive ? '800' : '600'} color={isPaymentsActive ? PRIMARY : MUTED} style={styles.dockText}>
               Payments
@@ -206,7 +207,7 @@ export default function OwnerTabsLayout() {
       {showProfileMenu && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowProfileMenu(false)}>
           <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowProfileMenu(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowProfileMenu(false)} />
             <View style={styles.swapperMenuCard}>
               <Card
                 containerColor={WHITE}
@@ -229,11 +230,10 @@ export default function OwnerTabsLayout() {
                   {allPGs.map((pg) => {
                     const isCurrent = pg.id === activePgId;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={pg.id}
                         style={[styles.menuRow, isCurrent && styles.menuRowActive]}
                         onPress={async () => {
-                          hapticSuccess();
                           setShowProfileMenu(false);
                           await usePGowStore.getState().switchActivePG(pg);
                         }}
@@ -252,14 +252,14 @@ export default function OwnerTabsLayout() {
 
                 {!isManager && (
                   <>
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.menuRow}
                       onPress={() => { setShowProfileMenu(false); setShowAddPgModal(true); }}
                     >
                       <Ionicons name="add-circle-outline" size={18} color={PRIMARY} />
                       <Txt size={13} weight="700" color={CHARCOAL} style={{ marginLeft: 10 }}>Add Property</Txt>
                     </TouchableOpacity>
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.menuRow}
                       onPress={() => { setShowProfileMenu(false); router.push('/manage-properties'); }}
                     >
@@ -287,18 +287,17 @@ export default function OwnerTabsLayout() {
       {showAddOptions && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowAddOptions(false)}>
           <View style={styles.moreMenuBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowAddOptions(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowAddOptions(false)} />
             <View style={styles.moreMenuSheet}>
               <View style={styles.sheetHandle} />
               <Txt size={16} weight="900" color={CHARCOAL} style={{ marginBottom: 16, textAlign: 'center' }}>Quick Creation</Txt>
               
               <Row justify="space-evenly" align="center" style={{ marginVertical: 10 }}>
                 {/* Add Resident */}
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.addOptionItem}
                   onPress={() => {
                     setShowAddOptions(false);
-                    hapticSelect();
                     setTimeout(() => router.navigate('/guests'), 150);
                   }}
                   activeOpacity={0.7}
@@ -308,11 +307,10 @@ export default function OwnerTabsLayout() {
                 </TouchableOpacity>
 
                 {/* Add Staff */}
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.addOptionItem}
                   onPress={() => {
                     setShowAddOptions(false);
-                    hapticSelect();
                     setTimeout(() => router.navigate('/staff'), 150);
                   }}
                   activeOpacity={0.7}
@@ -322,11 +320,10 @@ export default function OwnerTabsLayout() {
                 </TouchableOpacity>
 
                 {/* Add Property */}
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.addOptionItem}
                   onPress={() => {
                     setShowAddOptions(false);
-                    hapticSelect();
                     setShowAddPgModal(true);
                   }}
                   activeOpacity={0.7}
@@ -337,7 +334,7 @@ export default function OwnerTabsLayout() {
               </Row>
 
               <Spacer size={8} />
-              <TouchableOpacity style={styles.sheetCancelBtn} onPress={() => setShowAddOptions(false)}>
+              <TouchableOpacity accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowAddOptions(false)}>
                 <Txt size={13} weight="800" color={MUTED} align="center">Cancel</Txt>
               </TouchableOpacity>
             </View>

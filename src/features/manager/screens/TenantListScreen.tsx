@@ -30,7 +30,6 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { GuestEntity } from '@/types';
 
 interface KycPillConfig { label: string; color: string; bg: string; }
@@ -71,8 +70,7 @@ export function TenantListScreen() {
             setSubmittingId(guest.id);
             const r = await verifyKyc(guest.id, true);
             setSubmittingId(null);
-            if (r.ok) hapticSuccess();
-            else { hapticError(); Alert.alert('Failed', r.error ?? 'Could not verify.'); }
+            if (!r.ok) Alert.alert('Failed', r.error ?? 'Could not verify.');
           },
         },
       ],
@@ -82,7 +80,6 @@ export function TenantListScreen() {
   const handleRejectSubmit = async () => {
     if (!rejectGuestId) return;
     if (!rejectReason.trim()) {
-      hapticError();
       Alert.alert('Reason required', 'Please provide a short reason for the rejection.');
       return;
     }
@@ -90,11 +87,9 @@ export function TenantListScreen() {
     const r = await verifyKyc(rejectGuestId, false, rejectReason.trim());
     setSubmittingId(null);
     if (r.ok) {
-      hapticSuccess();
       setRejectGuestId(null);
       setRejectReason('');
     } else {
-      hapticError();
       Alert.alert('Failed', r.error ?? 'Could not reject.');
     }
   };
@@ -162,7 +157,7 @@ export function TenantListScreen() {
               borderColor={Colors.borderSubtle}
               padding={[14, 14]}
             >
-              <Pressable onPress={() => setExpandedId(isExpanded ? null : g.id)}>
+              <Pressable accessibilityRole="button" onPress={() => setExpandedId(isExpanded ? null : g.id)}>
                 <Row gap={12} align="center">
                   <View style={[styles.avatar, { backgroundColor: `${pill.color}1A` }]}>
                     <Txt size={14} weight="800" color={pill.color}>{(g.name ?? '?').slice(0, 1).toUpperCase()}</Txt>
@@ -209,7 +204,7 @@ export function TenantListScreen() {
                     </Btn>
                   )}
                   <Btn
-                    onPress={() => { hapticSelect(); setRejectGuestId(g.id); setRejectReason(''); }}
+                    onPress={() => { setRejectGuestId(g.id); setRejectReason(''); }}
                     containerColor={Colors.danger}
                     textColor={Colors.textInverse}
                     borderRadius={Layout.borderRadiusButton}
@@ -232,9 +227,9 @@ export function TenantListScreen() {
       {/* Reject reason modal */}
       <Modal visible={rejectGuestId !== null} transparent animationType="fade" onRequestClose={() => setRejectGuestId(null)}>
         {/* KAV so the text input isn't hidden behind the keyboard on Android */}
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-          <Pressable style={styles.backdrop} onPress={() => setRejectGuestId(null)}>
-            <Pressable onPress={() => {/* swallow */}} style={styles.rejectCardWrap}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <Pressable accessibilityRole="button" style={styles.backdrop} onPress={() => setRejectGuestId(null)}>
+            <Pressable accessibilityRole="button" onPress={() => {/* swallow */}} style={styles.rejectCardWrap}>
               <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
                 <Row gap={8} align="center">
                   <View style={styles.titleIconWrap}>

@@ -70,7 +70,7 @@ export function Card({
   };
   if (onPress) {
     return (
-      <TouchableOpacity testID={testID} activeOpacity={0.92} onPress={onPress} style={[cardStyle, style]}>
+      <TouchableOpacity accessibilityRole="button" testID={testID} activeOpacity={0.92} onPress={onPress} style={[cardStyle, style]}>
         {children}
       </TouchableOpacity>
     );
@@ -106,6 +106,9 @@ export function Btn({
       testID={testID}
       disabled={disabled || loading}
       onPress={onPress}
+      // `disabled` alone leaves a loading button announced as tappable-but-disabled with no
+      // hint that work is in flight; `busy` is what a screen reader uses to say "wait".
+      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
       style={[
         {
           backgroundColor: containerColor,
@@ -293,7 +296,7 @@ export function Chip({
   labelColor, weight = '700', size = 11, paddingH = 12, paddingV = 6, testID,
 }: ChipProps) {
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       testID={testID}
       activeOpacity={0.85}
       onPress={onPress}

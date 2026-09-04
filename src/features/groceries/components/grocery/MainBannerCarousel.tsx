@@ -118,7 +118,7 @@ export const MainBannerCarousel: React.FC<MainBannerCarouselProps> = ({ onBanner
 
   const renderItem = ({ item }: { item: BannerConfig }) => {
     return (
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button"
         style={[styles.bannerContainer, { width: itemWidth, marginRight: gap }]}
         activeOpacity={0.95}
         onPress={() => onBannerPress?.(item)}
@@ -129,7 +129,7 @@ export const MainBannerCarousel: React.FC<MainBannerCarouselProps> = ({ onBanner
           resizeMode="cover"
         />
         <View style={styles.ctaOverlayButton}>
-          <Text style={styles.ctaOverlayText}>{item.cta}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.ctaOverlayText}>{item.cta}</Text>
           <Ionicons name="arrow-forward" size={12} color={Colors.primary} />
         </View>
       </TouchableOpacity>

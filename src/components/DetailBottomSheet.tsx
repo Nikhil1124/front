@@ -11,7 +11,7 @@
  * Pass `title`, optional `accent` color (the icon/header tint), and children.
  * The bottom sheet handles its own dismissal, scroll, and animation.
  */
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Modal,
   View,
@@ -19,15 +19,13 @@ import {
   ScrollView,
   TouchableOpacity,
   Pressable,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 import { Txt, Row } from '@/components/ui';
 import { Colors, Motion } from '@/theme';
-import { haptic } from '@/utils/haptics';
-
 export interface DetailBottomSheetProps {
   visible: boolean;
   title: string;
@@ -54,21 +52,21 @@ export function DetailBottomSheet({
   children,
   testID,
 }: DetailBottomSheetProps) {
-  // Fire a soft tick when the sheet opens, so the user gets an immediate
-  // confirmation that their tap was registered.
-  useEffect(() => {
-    if (visible) haptic('selection');
-  }, [visible]);
-
+  // `paddingBottom` used to be `Platform.OS === 'ios' ? 28 : 16` — a hardcoded guess at the
+  // safe area, which is wrong in three directions at once: too much on an iPhone with no home
+  // indicator, too little on an Android device using gesture navigation (where the inset runs
+  // 24–48px, so the sheet's footer landed inside the swipe-up strip), and unnecessary on
+  // Android 3-button nav. The real number is only known at runtime.
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} testID={testID}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Pressable
+        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <Pressable accessibilityRole="button"
           style={styles.sheetWrapper}
           onPress={(e) => e.stopPropagation()}
         >
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
             {/* Drag handle */}
             <View style={styles.handleBar} />
 
@@ -91,7 +89,7 @@ export function DetailBottomSheet({
                   ) : null}
                 </View>
               </Row>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityLabel="Close" accessibilityRole="button"
                 onPress={onDismiss}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 style={styles.closeBtn}
@@ -141,7 +139,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     borderColor: Colors.borderSubtle,
     maxHeight: '88%',
-    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
   },
   handleBar: {
     width: 44,

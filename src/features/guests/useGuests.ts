@@ -6,6 +6,7 @@ import { API } from "../../config";
 import * as map from "../../data/mappers";
 import type { GuestEntity } from "../../types";
 import { listPayments } from "../payments/usePayments";
+import { useTokenLanding } from "../auth/useAuth";
 
 export interface GuestMember {
   membership_id: string;
@@ -119,6 +120,16 @@ export function joinPg(params: JoinPgParams): Promise<JoinPgResult> {
     body: JSON.stringify(params),
     // There is no session to recover — a failure here is this form's to show.
     unauthorized: "throw",
+  });
+}
+
+/** POST /v1/guests/join — self-signup with the lobby code. No pgId to invalidate by: the
+ *  caller has no session (and no active property) until this resolves. */
+export function useJoinPgMutation() {
+  const land = useTokenLanding();
+  return useMutation({
+    mutationFn: joinPg,
+    onSuccess: land,
   });
 }
 

@@ -63,37 +63,37 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>🍳 Edit PG Menu</Text>
-              <Text style={styles.subtitle}>Customize recipe schedule details</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.title}>🍳 Edit PG Menu</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>Customize recipe schedule details</Text>
             </View>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose}>
               <Ionicons name="close" size={24} color={Colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
           <FormScroll style={styles.scroll} showsVerticalScrollIndicator={false}>
             {/* Current dishes */}
-            <Text style={styles.listHeading}>Current Dishes</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Current Dishes</Text>
             {dishes.map((dish, index) => (
               <View key={index} style={styles.dishRow}>
-                <TextInput
+                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Enter dish name"
                   style={styles.dishInput}
                   value={dish}
                   onChangeText={(text) => onDishTextChange(index, text)}
                   placeholder="Enter dish name..."
                 />
-                <TouchableOpacity style={styles.removeDishBtn} onPress={() => onRemoveDish(index)}>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button" style={styles.removeDishBtn} onPress={() => onRemoveDish(index)}>
                   <Ionicons name="trash-outline" size={16} color={Colors.danger} />
                 </TouchableOpacity>
               </View>
             ))}
 
             {/* Add new dish */}
-            <Text style={styles.listHeading}>Add New Dish</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Add New Dish</Text>
             <View style={styles.addDishRow}>
               <View style={styles.searchBarWrapper}>
                 <Ionicons name="search" size={16} color={Colors.textSecondary} style={styles.searchIcon} />
-                <TextInput
+                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search/Type dish or ingredient"
                   style={styles.dishSearchInput}
                   value={newDishText}
                   onChangeText={onNewDishTextChange}
@@ -101,20 +101,20 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                   placeholderTextColor={Colors.textMuted}
                 />
               </View>
-              <TouchableOpacity style={styles.addDishBtn} onPress={onAddDish} activeOpacity={0.8}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.addDishBtn} onPress={onAddDish} activeOpacity={0.8}>
                 <Ionicons name="add" size={20} color={Colors.surface} />
               </TouchableOpacity>
             </View>
 
             {/* Product suggestions */}
-            <Text style={styles.relatedHeading}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.relatedHeading}>
               {newDishText.trim() ? 'Matching Stock Products' : 'Popular Ingredients'}
             </Text>
             <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
               {suggestions.map((prod) => {
                 const isAdded = dishes.includes(prod.name);
                 return (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={prod.id}
                     style={[styles.relatedCard, isAdded && styles.relatedCardAdded]}
                     activeOpacity={0.8}
@@ -134,7 +134,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                         resizeMode="contain"
                       />
                     </View>
-                    <Text style={styles.relatedName} numberOfLines={1}>{prod.name}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.relatedName} numberOfLines={1}>{prod.name}</Text>
                     <View style={[styles.relatedAddBadge, isAdded && styles.relatedAddBadgeAdded]}>
                       <Ionicons name={isAdded ? 'checkmark' : 'add'} size={10} color={Colors.surface} />
                     </View>
@@ -146,11 +146,11 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
 
           {/* Footer */}
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.cancelBtn} onPress={onClose}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={onSave}>
-              <Text style={styles.saveText}>Save Changes</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.saveBtn} onPress={onSave}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.saveText}>Save Changes</Text>
             </TouchableOpacity>
           </View>
         </View>

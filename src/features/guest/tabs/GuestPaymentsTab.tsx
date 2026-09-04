@@ -21,6 +21,7 @@ import {
   Modal, Pressable, ScrollView, Image, Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -37,9 +38,8 @@ import { useAuthStore } from '@/store/authStore';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
-import { launchUpiPayment, usePaymentsQuery, useRentDueQuery } from '@/features/payments/usePayments';
+import { buildUpiUri, launchUpiPayment, usePaymentsQuery, useRentDueQuery, useSubmitPaymentMutation } from '@/features/payments/usePayments';
 import {
   useTenantInvoices,
   usePayTenantInvoice,
@@ -47,6 +47,7 @@ import {
 } from '@/features/billing/useTenantInvoices';
 import { fetchWithTimeout } from '@/hooks/useApi';
 import { BASE_URL } from '@/config';
+import { useMyRewardsQuery } from '@/features/rewards/useRewards';
 import type { PaymentEntity, TenantInvoice } from '@/types';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
@@ -81,7 +82,8 @@ export function GuestPaymentsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: allPayments = [], isLoading: paymentsLoading, error: paymentsError } = usePaymentsQuery(activePgId ?? undefined);
   const { data: rentDue, isLoading: rentLoading } = useRentDueQuery(activePgId ?? undefined);
-  const submitPayment = usePGowStore((s) => s.submitGuestPayment);
+  const { data: myRewards } = useMyRewardsQuery(activePgId ?? undefined);
+  const submitPaymentMutation = useSubmitPaymentMutation(activePgId ?? undefined);
   const activeMembership = useAuthStore((s) => s.user?.memberships.find((m) => m.role === 'guest')?.membership_id ?? null);
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
@@ -121,16 +123,20 @@ export function GuestPaymentsTab() {
   const utilityComponent = unpaidInvoice ? unpaidInvoice.utilityAmount : 0;
   const penaltyComponent = unpaidInvoice ? unpaidInvoice.penaltyAmount : 0;
 
+  // The same deep link "Pay Online" launches, just encoded as a QR instead of opened directly
+  // — null (falls back to a placeholder) whenever the VPA is missing or incomplete, exactly
+  // the case launchUpiPayment itself refuses to act on.
+  const qrUpiUri = hasUpi ? buildUpiUri({ upiId: ownerUpi, amount: totalAmountDue, note: 'PG Rent Payment' }) : null;
+
   const dueStatus = getDueStatusPill(isBillPaid, latestInvoice?.dueDate);
 
-  const guestPayments = allPayments.filter((p) => p.payerId === guest?.id || true); // show payments
+  const guestPayments = allPayments.filter((p) => p.payerId === guest?.id);
   const totalPaid = allPayments.filter((p) => p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0);
   const verifiedCount = allPayments.filter((p) => p.status === 'VERIFIED').length;
   const onTimePercentage = allPayments.length > 0 ? Math.round((verifiedCount / allPayments.length) * 100) : 100;
 
   const handleUpiLaunch = async () => {
     if (!hasUpi || !rentKnown) return;
-    hapticSelect();
     const result = await launchUpiPayment({
       upiId: ownerUpi,
       payeeName: 'PG Rent Payment',
@@ -140,24 +146,33 @@ export function GuestPaymentsTab() {
     Alert.alert('UPI Payment', result.message);
   };
 
+  // The UI's action labels, in the values the API's CHECK constraints accept.
+  const PAYMENT_METHOD_MAP: Record<string, 'upi_intent' | 'upi_manual' | 'cash'> = {
+    ONLINE_PHONEPE: 'upi_intent', SCAN_QR: 'upi_manual', CASH_HANDOVER: 'cash',
+  };
+
   const handleSubmit = async (mode: string) => {
     if (isSubmitting) return;
     if (!rentKnown && !unpaidInvoice) {
       Alert.alert('Amount unavailable', 'We could not load what you owe this month. Pull down to refresh and try again.');
       return;
     }
+    if (!activePgId) return;
     setIsSubmitting(true);
     try {
-      const r = await submitPayment(mode, totalAmountDue, 'GUEST_RENT', utrNumber, currentMonthYear);
-      if (r.ok) {
-        hapticSuccess();
-        setUtrNumber('');
-        setShowPayForm(false);
-        toast('success', 'Payment submitted!', isBillPaid ? 'Your payment was recorded.' : 'Awaiting owner verification.');
-      } else {
-        hapticError();
-        Alert.alert('Failed', r.error ?? 'Unknown error occurred.');
-      }
+      await submitPaymentMutation.mutateAsync({
+        pg_id: activePgId,
+        amount: totalAmountDue,
+        period: currentPeriod(),
+        purpose: 'rent',
+        method: PAYMENT_METHOD_MAP[mode] ?? 'upi_manual',
+        upi_ref: utrNumber || undefined,
+      });
+      setUtrNumber('');
+      setShowPayForm(false);
+      toast('success', 'Payment submitted!', isBillPaid ? 'Your payment was recorded.' : 'Awaiting owner verification.');
+    } catch (err) {
+      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown error occurred.');
     } finally {
       setIsSubmitting(false);
     }
@@ -167,10 +182,8 @@ export function GuestPaymentsTab() {
     setPayingInvoiceId(inv.id);
     try {
       await payInvoice.mutateAsync({ invoiceId: inv.id, method: 'upi_manual' });
-      hapticSuccess();
       toast('success', 'Invoice paid', `${periodToMonthYear(`${inv.year}-${String(inv.month).padStart(2, '0')}-01`)} invoice marked as paid.`);
     } catch (err: any) {
-      hapticError();
       toast('error', 'Pay failed', err?.message ?? 'Please try again.');
     } finally {
       setPayingInvoiceId(null);
@@ -182,7 +195,6 @@ export function GuestPaymentsTab() {
     try {
       const pdfUrl = await fetchTenantInvoicePdfUrl(inv.id);
       if (!pdfUrl) {
-        hapticError();
         toast('error', 'PDF unavailable', 'The invoice PDF could not be generated.');
         return;
       }
@@ -192,14 +204,11 @@ export function GuestPaymentsTab() {
       }
       try {
         await Clipboard.setStringAsync(pdfUrl);
-        hapticSuccess();
         toast('success', 'PDF link copied', 'The invoice PDF URL has been copied. Open it in a browser to download.');
       } catch {
-        hapticSuccess();
         toast('success', 'PDF ready', 'The invoice PDF is available; check your downloads.');
       }
     } catch (err: any) {
-      hapticError();
       toast('error', 'PDF failed', err?.message ?? 'Please try again later.');
     } finally {
       setDownloadingInvoiceId(null);
@@ -221,7 +230,6 @@ export function GuestPaymentsTab() {
   };
 
   const handleQuickPaySelect = (mode: 'ONLINE_PHONEPE' | 'SCAN_QR' | 'CASH_HANDOVER') => {
-    hapticSelect();
     setPayMode(mode);
     setShowPayForm(true);
     if (mode === 'ONLINE_PHONEPE' && hasUpi) {
@@ -236,7 +244,7 @@ export function GuestPaymentsTab() {
       {/* Resident Card Modal Dialog */}
       {showResidentCard && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowResidentCard(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setShowResidentCard(false)}>
+          <Pressable accessibilityRole="button" style={styles.modalBackdrop} onPress={() => setShowResidentCard(false)}>
             <Card
               containerColor={Colors.primaryDark}
               borderRadius={20}
@@ -250,7 +258,7 @@ export function GuestPaymentsTab() {
                   <Ionicons name="card" size={22} color="#FFFFFF" />
                 </Row>
                 <Spacer size={12} />
-                <Txt size={15} weight="800" color="#FFFFFF">PGOW-RESIDENT-ID: #{guest?.id ?? 101}</Txt>
+                <Txt size={15} weight="800" color="#FFFFFF">PGOW-RESIDENT-ID: #{guest?.id ?? '—'}</Txt>
                 <Spacer size={16} />
                 <Row justify="space-between">
                   <Col>
@@ -259,11 +267,11 @@ export function GuestPaymentsTab() {
                   </Col>
                   <Col align="center">
                     <Txt size={9} color="rgba(255,255,255,0.75)">REWARDS</Txt>
-                    <Txt size={13} weight="800" color="#FDE68A">{guest?.rewardPoints ?? 0} PTS</Txt>
+                    <Txt size={13} weight="800" color="#FDE68A">{myRewards?.balance ?? 0} PTS</Txt>
                   </Col>
                   <Col align="flex-end">
                     <Txt size={9} color="rgba(255,255,255,0.75)">ROOM</Txt>
-                    <Txt size={13} weight="800" color="#FFFFFF">{guest?.roomNo ?? '101'}</Txt>
+                    <Txt size={13} weight="800" color="#FFFFFF">{guest?.roomNo ?? '—'}</Txt>
                   </Col>
                 </Row>
               </Col>
@@ -275,15 +283,15 @@ export function GuestPaymentsTab() {
       {/* How it Works Modal Dialog */}
       {showHowItWorks && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowHowItWorks(false)}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setShowHowItWorks(false)}>
+          <Pressable accessibilityRole="button" style={styles.modalBackdrop} onPress={() => setShowHowItWorks(false)}>
             <Card containerColor="#FFFFFF" borderRadius={20} borderWidth={1} borderColor="#DCE9EA" padding={[20, 20]} style={{ width: '90%', maxWidth: 360 }}>
               <Row justify="space-between" align="center">
                 <Row gap={8} align="center">
                   <Ionicons name="help-circle-outline" size={22} color={Colors.primary} />
                   <Txt size={16} weight="800" color={Colors.textPrimary}>How Payments Work</Txt>
                 </Row>
-                <TouchableOpacity onPress={() => setShowHowItWorks(false)}>
-                  <Ionicons name="close" size={20} color={Colors.textPrimarySecondary} />
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowHowItWorks(false)}>
+                  <Ionicons name="close" size={20} color={Colors.textSecondary} />
                 </TouchableOpacity>
               </Row>
               <Spacer size={16} />
@@ -292,21 +300,21 @@ export function GuestPaymentsTab() {
                   <View style={styles.stepNum}><Txt size={12} weight="800" color="#FFF">1</Txt></View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={13} weight="800" color={Colors.textPrimary}>Choose Method & Pay</Txt>
-                    <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>Pay via UPI app, QR scan, or cash handover to your property manager.</Txt>
+                    <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>Pay via UPI app, QR scan, or cash handover to your property manager.</Txt>
                   </Col>
                 </Row>
                 <Row gap={10} align="flex-start">
                   <View style={styles.stepNum}><Txt size={12} weight="800" color="#FFF">2</Txt></View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={13} weight="800" color={Colors.textPrimary}>Submit UTR Reference</Txt>
-                    <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>Enter the 12-digit UTR/Ref number from your UPI receipt for verification.</Txt>
+                    <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>Enter the 12-digit UTR/Ref number from your UPI receipt for verification.</Txt>
                   </Col>
                 </Row>
                 <Row gap={10} align="flex-start">
                   <View style={styles.stepNum}><Txt size={12} weight="800" color="#FFF">3</Txt></View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={13} weight="800" color={Colors.textPrimary}>Instant Verification</Txt>
-                    <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>Owner verifies payment and a downloadable PDF receipt is generated.</Txt>
+                    <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>Owner verifies payment and a downloadable PDF receipt is generated.</Txt>
                   </Col>
                 </Row>
               </Col>
@@ -335,10 +343,10 @@ export function GuestPaymentsTab() {
             </Txt>
           </Col>
           <Row gap={10}>
-            <TouchableOpacity style={styles.hIconBtn} onPress={() => setShowResidentCard(true)}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="View document" accessibilityRole="button" style={styles.hIconBtn} onPress={() => setShowResidentCard(true)}>
               <Ionicons name="document-text-outline" size={20} color="#FFFFFF" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.hIconBtn} onPress={() => router.push('/support')}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Choose a time" accessibilityRole="button" style={styles.hIconBtn} onPress={() => router.push('/support')}>
               <Ionicons name="time-outline" size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </Row>
@@ -366,18 +374,18 @@ export function GuestPaymentsTab() {
               </View>
               <Spacer size={8} />
               <Txt size={20} weight="900" color={Colors.textPrimary}>You're all paid up!</Txt>
-              <Txt size={12} color={Colors.textPrimarySecondary} style={{ marginTop: 4, textAlign: 'center' }}>
+              <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 4, textAlign: 'center' }}>
                 No outstanding dues for {currentMonthYear}.
               </Txt>
               <Spacer size={14} />
               <Row gap={16} justify="center">
                 <Col align="center">
-                  <Txt size={10} color={Colors.textPrimarySecondary}>TOTAL PAID</Txt>
+                  <Txt size={10} color={Colors.textSecondary}>TOTAL PAID</Txt>
                   <Txt size={15} weight="800" color={Colors.primary}>₹{Math.round(totalPaid).toLocaleString('en-IN')}</Txt>
                 </Col>
                 <View style={styles.vDivider} />
                 <Col align="center">
-                  <Txt size={10} color={Colors.textPrimarySecondary}>STATUS</Txt>
+                  <Txt size={10} color={Colors.textSecondary}>STATUS</Txt>
                   <Txt size={15} weight="800" color={Colors.success}>Verified</Txt>
                 </Col>
               </Row>
@@ -387,7 +395,7 @@ export function GuestPaymentsTab() {
             <View>
               {/* Header row inside card */}
               <Row justify="space-between" align="center">
-                <Txt size={12} weight="700" color={Colors.textPrimarySecondary}>Total Amount Due</Txt>
+                <Txt size={12} weight="700" color={Colors.textSecondary}>Total Amount Due</Txt>
                 <View style={[styles.statusPill, { backgroundColor: dueStatus.bg }]}>
                   <Ionicons name={dueStatus.icon as any} size={12} color={dueStatus.color} style={{ marginRight: 4 }} />
                   <Txt size={11} weight="800" color={dueStatus.color}>{dueStatus.label}</Txt>
@@ -406,11 +414,11 @@ export function GuestPaymentsTab() {
                   <View style={styles.dueDateBadge}>
                     <Ionicons name="calendar-outline" size={12} color={Colors.primary} />
                     <Txt size={11} weight="700" color={Colors.primary} style={{ marginLeft: 4 }}>
-                      Due on {latestInvoice?.dueDate || `05 ${currentMonthYear.slice(0, 3)} 2025`}
+                      Due on {latestInvoice?.dueDate || `05 ${currentMonthYear.slice(0, 3)} ${new Date().getFullYear()}`}
                     </Txt>
                   </View>
                   <Spacer size={16} />
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     activeOpacity={0.88}
                     style={styles.payNowBtn}
                     onPress={handlePrimaryPayPress}
@@ -422,17 +430,17 @@ export function GuestPaymentsTab() {
                 {/* Right: Breakdown Table */}
                 <View style={styles.breakdownBox}>
                   <Row justify="space-between" style={styles.bdRow}>
-                    <Txt size={11} color={Colors.textPrimarySecondary}>Rent</Txt>
+                    <Txt size={11} color={Colors.textSecondary}>Rent</Txt>
                     <Txt size={11} weight="700" color={Colors.textPrimary}>₹{Math.round(rentComponent).toLocaleString('en-IN')}</Txt>
                   </Row>
                   {utilityComponent > 0 && (
                     <Row justify="space-between" style={styles.bdRow}>
-                      <Txt size={11} color={Colors.textPrimarySecondary}>Utilities</Txt>
+                      <Txt size={11} color={Colors.textSecondary}>Utilities</Txt>
                       <Txt size={11} weight="700" color={Colors.textPrimary}>₹{Math.round(utilityComponent).toLocaleString('en-IN')}</Txt>
                     </Row>
                   )}
                   <Row justify="space-between" style={styles.bdRow}>
-                    <Txt size={11} color={Colors.textPrimarySecondary}>Other Charges</Txt>
+                    <Txt size={11} color={Colors.textSecondary}>Other Charges</Txt>
                     <Txt size={11} weight="700" color={Colors.textPrimary}>₹0</Txt>
                   </Row>
                   {penaltyComponent > 0 && (
@@ -459,8 +467,8 @@ export function GuestPaymentsTab() {
               <Txt size={14} weight="800" color={Colors.textPrimary}>
                 {payMode === 'CASH_HANDOVER' ? '💵 Cash Handover Payment' : payMode === 'SCAN_QR' ? '📷 Scan & Pay QR Code' : '📱 Phone UPI Payment'}
               </Txt>
-              <TouchableOpacity onPress={() => setShowPayForm(false)}>
-                <Ionicons name="close-circle" size={20} color={Colors.textPrimarySecondary} />
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowPayForm(false)}>
+                <Ionicons name="close-circle" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
             </Row>
             <Spacer size={12} />
@@ -470,10 +478,10 @@ export function GuestPaymentsTab() {
                 {hasUpi && (
                   <View style={styles.vpaBox}>
                     <Col style={{ flex: 1 }}>
-                      <Txt size={11} weight="700" color={Colors.textPrimarySecondary}>Owner UPI VPA ID</Txt>
+                      <Txt size={11} weight="700" color={Colors.textSecondary}>Owner UPI VPA ID</Txt>
                       <Txt size={13} weight="800" color={Colors.primary}>{ownerUpi}</Txt>
                     </Col>
-                    <TouchableOpacity style={styles.copyChip} onPress={() => { Clipboard.setStringAsync(ownerUpi); toast('success', 'Copied', 'UPI VPA copied to clipboard.'); }}>
+                    <TouchableOpacity accessibilityRole="button" style={styles.copyChip} onPress={() => { Clipboard.setStringAsync(ownerUpi); toast('success', 'Copied', 'UPI VPA copied to clipboard.'); }}>
                       <Ionicons name="copy-outline" size={14} color={Colors.primary} />
                       <Txt size={11} weight="700" color={Colors.primary} style={{ marginLeft: 4 }}>Copy</Txt>
                     </TouchableOpacity>
@@ -498,9 +506,16 @@ export function GuestPaymentsTab() {
             {payMode === 'SCAN_QR' && (
               <Col align="center">
                 <View style={styles.qrBox}>
-                  <Ionicons name="qr-code" size={72} color={Colors.primaryDark} />
-                  <Txt size={10} color={Colors.textPrimarySecondary} style={{ marginTop: 6, textAlign: 'center' }}>{ownerUpi || 'Scan using any UPI App'}</Txt>
+                  {qrUpiUri ? (
+                    <QRCode value={qrUpiUri} size={110} color={Colors.primaryDark} backgroundColor="#FFFFFF" />
+                  ) : (
+                    <Ionicons name="qr-code-outline" size={72} color={Colors.textSecondary} />
+                  )}
                 </View>
+                <Spacer size={6} />
+                <Txt size={10} color={Colors.textSecondary} style={{ textAlign: 'center' }}>
+                  {qrUpiUri ? ownerUpi : 'Owner has not set up a UPI ID yet — use Cash Handover instead.'}
+                </Txt>
                 <Spacer size={12} />
                 <OutlinedTextField
                   label="Enter 12-Digit UTR Transaction Ref"
@@ -520,7 +535,7 @@ export function GuestPaymentsTab() {
 
             {payMode === 'CASH_HANDOVER' && (
               <View>
-                <Txt size={12} color={Colors.textPrimarySecondary} style={{ lineHeight: 17 }}>
+                <Txt size={12} color={Colors.textSecondary} style={{ lineHeight: 17 }}>
                   Handover physical cash of <Txt weight="800" color={Colors.textPrimary}>₹{Math.round(totalAmountDue).toLocaleString('en-IN')}</Txt> directly to your PG Manager {contactPhone ? `(${contactPhone})` : ''}. Once submitted, it will be marked for owner verification.
                 </Txt>
                 <Spacer size={14} />
@@ -535,7 +550,7 @@ export function GuestPaymentsTab() {
         {/* ── 3. QUICK PAY SECTION ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 24, marginBottom: 14 }}>
           <Txt size={17} weight="800" color={Colors.textPrimary}>Quick Pay</Txt>
-          <TouchableOpacity onPress={() => setShowHowItWorks(true)}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => setShowHowItWorks(true)}>
             <Row align="center" gap={4}>
               <Txt size={12} weight="700" color={Colors.primary}>How it works?</Txt>
               <Ionicons name="help-circle-outline" size={14} color={Colors.primary} />
@@ -544,7 +559,7 @@ export function GuestPaymentsTab() {
         </Row>
 
         <Row gap={8} style={{ marginBottom: 14 }}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             activeOpacity={0.88}
             onPress={() => handleQuickPaySelect('ONLINE_PHONEPE')}
             style={[styles.qpCard, payMode === 'ONLINE_PHONEPE' && showPayForm && styles.qpCardActive]}
@@ -555,12 +570,12 @@ export function GuestPaymentsTab() {
             <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
               Pay Online
             </Txt>
-            <Txt size={9} color={Colors.textPrimarySecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
+            <Txt size={9} color={Colors.textSecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
               (UPI / Card)
             </Txt>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             activeOpacity={0.88}
             onPress={() => handleQuickPaySelect('SCAN_QR')}
             style={[styles.qpCard, payMode === 'SCAN_QR' && showPayForm && styles.qpCardActive]}
@@ -571,12 +586,12 @@ export function GuestPaymentsTab() {
             <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
               Scan QR
             </Txt>
-            <Txt size={9} color={Colors.textPrimarySecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
+            <Txt size={9} color={Colors.textSecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
               Pay
             </Txt>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             activeOpacity={0.88}
             onPress={() => handleQuickPaySelect('ONLINE_PHONEPE')}
             style={[styles.qpCard, payMode === 'ONLINE_PHONEPE' && showPayForm && styles.qpCardActive]}
@@ -587,12 +602,12 @@ export function GuestPaymentsTab() {
             <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
               Phone UPI
             </Txt>
-            <Txt size={9} color={Colors.textPrimarySecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
+            <Txt size={9} color={Colors.textSecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
               Pay
             </Txt>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             activeOpacity={0.88}
             onPress={() => handleQuickPaySelect('CASH_HANDOVER')}
             style={[styles.qpCard, payMode === 'CASH_HANDOVER' && showPayForm && styles.qpCardActive]}
@@ -603,7 +618,7 @@ export function GuestPaymentsTab() {
             <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
               Cash Handover
             </Txt>
-            <Txt size={9} color={Colors.textPrimarySecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
+            <Txt size={9} color={Colors.textSecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
               Mark as Paid
             </Txt>
           </TouchableOpacity>
@@ -612,7 +627,7 @@ export function GuestPaymentsTab() {
         {/* ── 4. INVOICES SECTION ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
           <Txt size={17} weight="800" color={Colors.textPrimary}>Invoices</Txt>
-          <TouchableOpacity onPress={() => toast('info', 'Invoices', 'Showing your monthly invoices.')}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => toast('info', 'Not Available Yet', 'A full invoice list is coming soon — every invoice you have is already shown above.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
               <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
@@ -623,12 +638,12 @@ export function GuestPaymentsTab() {
         {invoicesLoading ? (
           <View style={styles.loadingBox}>
             <Spinner size="small" />
-            <Txt size={12} color={Colors.textPrimarySecondary} style={{ marginLeft: 8 }}>Loading invoices...</Txt>
+            <Txt size={12} color={Colors.textSecondary} style={{ marginLeft: 8 }}>Loading invoices...</Txt>
           </View>
         ) : invoices.length === 0 ? (
           <View style={styles.emptyInvoiceCard}>
             <Ionicons name="document-text-outline" size={26} color={Colors.primary} />
-            <Txt size={13} weight="700" color={Colors.textPrimarySecondary} style={{ marginLeft: 10 }}>
+            <Txt size={13} weight="700" color={Colors.textSecondary} style={{ marginLeft: 10 }}>
               No monthly invoices posted yet.
             </Txt>
           </View>
@@ -660,22 +675,22 @@ export function GuestPaymentsTab() {
                     <View style={[styles.invPill, { backgroundColor: statusBg }]}>
                       <Txt size={10} weight="800" color={statusColor}>{statusText}</Txt>
                     </View>
-                    <Txt size={11} color={Colors.textPrimarySecondary}>{monthName.split(' ')[0]} {inv.year}</Txt>
+                    <Txt size={11} color={Colors.textSecondary}>{monthName.split(' ')[0]} {inv.year}</Txt>
                   </Row>
 
                   <Spacer size={10} />
                   <Txt size={22} weight="900" color={Colors.textPrimary}>
                     ₹{Math.round(inv.totalAmount).toLocaleString('en-IN')}
                   </Txt>
-                  <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
-                    {isPaid ? `Paid on ${inv.paidAt ? inv.paidAt.slice(0, 10) : '02 Aug 2025'}` : `Due on ${inv.dueDate}`}
+                  <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                    {isPaid ? (inv.paidAt ? `Paid on ${inv.paidAt.slice(0, 10)}` : 'Paid') : `Due on ${inv.dueDate}`}
                   </Txt>
 
                   <Spacer size={14} />
 
                   <Row gap={8}>
                     {!isPaid && (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         style={styles.invPayBtn}
                         onPress={() => handlePayInvoice(inv)}
                         disabled={payingInvoiceId === inv.id}
@@ -683,7 +698,7 @@ export function GuestPaymentsTab() {
                         <Txt size={11} weight="800" color="#FFFFFF">Pay</Txt>
                       </TouchableOpacity>
                     )}
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.invReceiptBtn}
                       onPress={() => handleDownloadPdf(inv)}
                       disabled={downloadingInvoiceId === inv.id}
@@ -701,7 +716,7 @@ export function GuestPaymentsTab() {
         {/* ── 5. RECENT TRANSACTIONS SECTION ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
           <Txt size={17} weight="800" color={Colors.textPrimary}>Recent Transactions</Txt>
-          <TouchableOpacity onPress={() => toast('info', 'Transactions', 'All recent payment records listed below.')}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => toast('info', 'Not Available Yet', 'A full transaction history is coming soon — only the 6 most recent are shown below.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
               <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
@@ -712,7 +727,7 @@ export function GuestPaymentsTab() {
         {paymentsLoading ? (
           <View style={styles.loadingBox}>
             <Spinner size="small" />
-            <Txt size={12} color={Colors.textPrimarySecondary} style={{ marginLeft: 8 }}>Loading transactions...</Txt>
+            <Txt size={12} color={Colors.textSecondary} style={{ marginLeft: 8 }}>Loading transactions...</Txt>
           </View>
         ) : guestPayments.length === 0 ? (
           <EmptyState
@@ -737,10 +752,10 @@ export function GuestPaymentsTab() {
               if (p.status === 'REJECTED') { iconName = 'close'; iconBg = Colors.danger; }
 
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={p.id}
                   activeOpacity={0.88}
-                  onPress={() => { hapticSelect(); setSelectedReceipt(p); }}
+                  onPress={() => { setSelectedReceipt(p); }}
                   style={[styles.txnRow, !isLast && styles.txnRowBorder]}
                 >
                   <View style={[styles.txnIconWrap, { backgroundColor: iconBg }]}>
@@ -751,7 +766,7 @@ export function GuestPaymentsTab() {
                     <Txt size={13} weight="800" color={Colors.textPrimary}>
                       Payment - Rent ({p.monthYear})
                     </Txt>
-                    <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+                    <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
                       {p.paymentMode ? p.paymentMode.replace(/_/g, ' ') : 'Online Payment'}
                     </Txt>
                   </Col>
@@ -760,12 +775,12 @@ export function GuestPaymentsTab() {
                     <Txt size={14} weight="900" color={isVerified ? Colors.textPrimary : isPending ? '#D97706' : Colors.danger}>
                       ₹{Math.round(p.amount).toLocaleString('en-IN')}
                     </Txt>
-                    <Txt size={10} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+                    <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2 }}>
                       {p.timestamp ? String(p.timestamp).slice(0, 11) : 'Recent'}
                     </Txt>
                   </Col>
 
-                  <Ionicons name="chevron-forward" size={14} color={Colors.textPrimarySecondary} style={{ marginLeft: 8 }} />
+                  <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} style={{ marginLeft: 8 }} />
                 </TouchableOpacity>
               );
             })}
@@ -773,10 +788,10 @@ export function GuestPaymentsTab() {
         )}
 
         {/* ── 6. PAYMENT HISTORY / INSIGHTS CARD ── */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           activeOpacity={0.88}
           style={styles.historyCard}
-          onPress={() => { hapticSelect(); toast('info', 'Payment Insights', `You have made ${verifiedCount} verified payments with an on-time record of ${onTimePercentage}%.`); }}
+          onPress={() => { toast('info', 'Payment Insights', `You have made ${verifiedCount} verified payments with an on-time record of ${onTimePercentage}%.`); }}
         >
           <View style={styles.historyDocWrap}>
             <Ionicons name="document-text" size={24} color="#FFFFFF" />
@@ -800,10 +815,10 @@ export function GuestPaymentsTab() {
         </TouchableOpacity>
 
         {/* ── 7. SUPPORT CARD ── */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           activeOpacity={0.88}
           style={styles.supportCard}
-          onPress={() => { hapticSelect(); router.push('/support'); }}
+          onPress={() => { router.push('/support'); }}
         >
           <View style={styles.supportIconWrap}>
             <Ionicons name="headset-outline" size={22} color={Colors.primaryDark} />
@@ -811,14 +826,14 @@ export function GuestPaymentsTab() {
 
           <Col style={{ flex: 1, marginLeft: 12 }}>
             <Txt size={14} weight="800" color={Colors.textPrimary}>Need help with Payment?</Txt>
-            <Txt size={12} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+            <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
               Contact our support team anytime.
             </Txt>
           </Col>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.contactBtn}
-            onPress={() => { hapticSelect(); router.push('/support'); }}
+            onPress={() => { router.push('/support'); }}
           >
             <Txt size={12} weight="800" color={Colors.primary}>Contact Support</Txt>
           </TouchableOpacity>

@@ -37,15 +37,8 @@ import type {
   PropertyLayoutResponse,
   ProcurementCatalogItem,
   ProcurementOrder,
-  PanicAlert,
-  StaffShift,
-  AttendancePunch,
   TenantInvoice,
   PnLData,
-  MealMenu,
-  TodayMealSummary,
-  MealFeedback,
-  MealTypeSummary,
 } from "../types";
 
 // ─── Small shared conversions ────────────────────────────────────────────────
@@ -238,6 +231,7 @@ export function toMeal(m: MealOut): MealNotificationEntity {
     pgId: m.pg_id,
     mealType: titleCase(m.meal_type),
     menuItems: m.menu_items,
+    dietaryType: m.dietary_type,
     chefNote: m.chef_note,
     timestamp: toMillis(m.service_at),
     isClosed: !m.is_open,
@@ -282,6 +276,7 @@ export function toPayment(p: PaymentRecord): PaymentEntity {
     receiptId: p.status === "verified" ? p.id : "",
     rejectReason: p.rejection_reason ?? "",
     verificationDate: toMillis(p.verified_at),
+    verifiedByName: p.verified_by_name ?? "",
   };
 }
 
@@ -636,62 +631,6 @@ export function toProcurementOrder(dto: any): ProcurementOrder {
   };
 }
 
-// ─── Panic ──────────────────────────────────────────────────────────────────
-
-export function toPanicAlert(dto: any): PanicAlert {
-  return {
-    id: str(dto?.id),
-    pgId: str(dto?.pg_id ?? dto?.pgId),
-    triggeredByMembershipId: str(dto?.triggered_by_membership_id ?? dto?.triggeredByMembershipId),
-    triggeredByUserName: str(
-      dto?.triggered_by_user_name ?? dto?.triggeredByUserName ?? dto?.triggered_by_name ?? dto?.triggeredByName,
-    ),
-    latitude: dto?.latitude != null ? num(dto.latitude) : undefined,
-    longitude: dto?.longitude != null ? num(dto.longitude) : undefined,
-    message: dto?.message != null ? str(dto.message) : undefined,
-    status: (str(dto?.status, "active") as PanicAlert["status"]),
-    acknowledgedBy: dto?.acknowledged_by != null ? str(dto.acknowledged_by) : undefined,
-    acknowledgedAt: dto?.acknowledged_at != null ? str(dto.acknowledged_at) : undefined,
-    resolvedAt: dto?.resolved_at != null ? str(dto.resolved_at) : undefined,
-    resolutionNote: dto?.resolution_note != null ? str(dto.resolution_note) : undefined,
-    createdAt: str(dto?.created_at ?? dto?.createdAt),
-  };
-}
-
-// ─── Staff attendance ───────────────────────────────────────────────────────
-
-export function toStaffShift(dto: any): StaffShift {
-  return {
-    id: str(dto?.id),
-    pgId: str(dto?.pg_id ?? dto?.pgId),
-    staffMembershipId: str(dto?.staff_membership_id ?? dto?.staffMembershipId),
-    shiftDate: str(dto?.shift_date ?? dto?.shiftDate),
-    shiftStart: dto?.shift_start != null ? str(dto.shift_start) : "",
-    shiftEnd: dto?.shift_end != null ? str(dto.shift_end) : "",
-    isOffDay: bool(dto?.is_off_day ?? dto?.isOffDay, false),
-    qrCodeHash: dto?.qr_code_hash != null ? str(dto.qr_code_hash) : undefined,
-  };
-}
-
-export function toAttendancePunch(dto: any): AttendancePunch {
-  return {
-    id: str(dto?.id),
-    pgId: str(dto?.pg_id ?? dto?.pgId),
-    staffMembershipId: str(dto?.staff_membership_id ?? dto?.staffMembershipId),
-    shiftId: str(dto?.shift_id ?? dto?.shiftId),
-    punchInAt: str(dto?.punch_in_at ?? dto?.punchInAt),
-    punchOutAt: dto?.punch_out_at != null ? str(dto.punch_out_at) : undefined,
-    punchInMethod: (str(dto?.punch_in_method ?? dto?.punchInMethod, "manual") as AttendancePunch["punchInMethod"]),
-    punchOutMethod:
-      dto?.punch_out_method != null
-        ? (str(dto.punch_out_method) as "qr" | "geofence" | "manual")
-        : undefined,
-    punchInLatitude: dto?.punch_in_latitude != null ? num(dto.punch_in_latitude) : undefined,
-    punchInLongitude: dto?.punch_in_longitude != null ? num(dto.punch_in_longitude) : undefined,
-    status: (str(dto?.status, "in_progress") as AttendancePunch["status"]),
-  };
-}
-
 // ─── Tenant invoices ────────────────────────────────────────────────────────
 
 export function toTenantInvoice(dto: any): TenantInvoice {
@@ -750,56 +689,5 @@ export function toPnLData(dto: any): PnLData {
       expenses,
       net,
     },
-  };
-}
-
-
-// ─── Meal menus & today-summary ─────────────────────────────────────────────
-
-export function toMealMenu(dto: any): MealMenu {
-  return {
-    id: str(dto?.id),
-    pgId: str(dto?.pg_id ?? dto?.pgId),
-    dayOfWeek: num(dto?.day_of_week ?? dto?.dayOfWeek, 0),
-    mealType: (str(dto?.meal_type ?? dto?.mealType, "breakfast") as MealMenu["mealType"]),
-    menuItems: Array.isArray(dto?.menu_items)
-      ? dto.menu_items.map((s: any) => str(s))
-      : Array.isArray(dto?.menuItems)
-        ? dto.menuItems.map((s: any) => str(s))
-        : dto?.menu_items != null
-          ? str(dto.menu_items).split(",").map((s) => s.trim()).filter(Boolean)
-          : [],
-    servingTime: str(dto?.serving_time ?? dto?.service_time ?? dto?.servingTime ?? dto?.serviceTime),
-    chefNote: dto?.chef_note != null ? str(dto.chef_note) : undefined,
-  };
-}
-
-export function toMealFeedback(dto: any): MealFeedback {
-  return {
-    id: str(dto?.id),
-    mealId: str(dto?.meal_id ?? dto?.mealId),
-    rating: num(dto?.rating),
-    comment: dto?.comment != null ? str(dto.comment) : undefined,
-    createdAt: str(dto?.created_at ?? dto?.createdAt),
-  };
-}
-
-export function toTodayMealSummary(dto: any): TodayMealSummary {
-  const pick = (key: string): any => (dto && dto[key] != null ? dto[key] : undefined);
-  const normalize = (m: any): MealTypeSummary | undefined => {
-    if (!m) return undefined;
-    return {
-      totalAttending: num(m?.total_attending ?? m?.totalAttending ?? m?.attending),
-      vegCount: num(m?.veg_count ?? m?.vegCount),
-      nonVegCount: num(m?.non_veg_count ?? m?.nonVegCount),
-      eggitarianCount: num(m?.eggitarian_count ?? m?.eggitarianCount),
-      allergyCount: num(m?.allergy_count ?? m?.allergyCount),
-      totalSkip: num(m?.total_skip ?? m?.totalSkip ?? m?.skipping),
-    };
-  };
-  return {
-    breakfast: normalize(pick("breakfast")),
-    lunch: normalize(pick("lunch")),
-    dinner: normalize(pick("dinner")),
   };
 }

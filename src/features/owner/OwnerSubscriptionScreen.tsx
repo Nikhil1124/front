@@ -162,8 +162,13 @@ export function OwnerSubscriptionScreen() {
             <Txt variant="statValue" weight="900" color={Colors.textInverse}>{active.plan_name}</Txt>
             <Spacer size={4} />
             <Txt variant="caption" color="rgba(234,242,243,0.9)">
+              {/* `subscribe()` marks the subscription active and issues the invoice in the
+                  same step (billing/service.py) — the invoice starts "issued", not "paid";
+                  actual payment only lands once reported and confirmed (see Invoices below,
+                  which would show this same invoice as DUE right under a card claiming it
+                  was already paid). */}
               {Number(active.price) > 0
-                ? `${money(active.price)} paid at activation`
+                ? `${money(active.price)} billed at activation`
                 : 'No upfront cost — billed as residents are added'}
             </Txt>
             <Txt variant="caption" color="rgba(234,242,243,0.9)">
@@ -248,7 +253,7 @@ export function OwnerSubscriptionScreen() {
               const accent = accentFor(plan);
               const isSelected = plan.code === selectedCode;
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={plan.code}
                   onPress={() => setSelectedCode(plan.code)}
                   style={[

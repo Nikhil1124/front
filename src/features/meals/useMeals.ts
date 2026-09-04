@@ -11,6 +11,8 @@ export interface MealOut {
   pg_id: string;
   meal_type: "breakfast" | "lunch" | "dinner";
   menu_items: string;
+  /** Null for a meal posted before this field existed. */
+  dietary_type: "veg" | "non_veg" | "pure_veg" | null;
   chef_note: string;
   service_at: string;
   response_closes_at: string | null;
@@ -49,6 +51,8 @@ export function createMeal(
     meal_type: "breakfast" | "lunch" | "dinner";
     menu_items: string;
     service_at: string; // ISO 8601 with offset
+    /** Chef-confirmed; omit to leave it unset (renders no badge on the resident side). */
+    dietary_type?: "veg" | "non_veg" | "pure_veg";
     chef_note?: string;
   }
 ): Promise<MealOut> {
@@ -119,6 +123,9 @@ export interface MealResponseRow {
   /** Null means unanswered — not a third choice. Those rows are the point of this endpoint. */
   choice: "eating" | "skipping" | null;
   responded_at: string | null;
+  /** Self-reported (PATCH /v1/me/away). Lets a chef reading an unanswered row tell "away,
+   *  don't wait on them" apart from "hasn't answered yet". */
+  is_away: boolean;
 }
 
 /**

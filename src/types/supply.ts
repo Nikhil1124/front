@@ -25,6 +25,32 @@ export interface SupplyItem {
   hsn_code?: string;
 }
 
+export type KitchenMenuMealType = 'veg' | 'non_veg' | 'pure_veg';
+
+export type KitchenMenuWeekday =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+/** A catalog item plus how many packs one day's recipe needs. Never a name/price snapshot —
+ *  resolved against the live catalog on every read, per pg-backend's `models/kitchen_menu.py`. */
+export interface KitchenMenuIngredient extends SupplyItem {
+  quantity: number;
+}
+
+/** One weekday of a PG's recurring kitchen plan. The server always returns all seven,
+ *  synthesizing an empty one (`meal_type: null`) for a day nobody has configured yet. */
+export interface KitchenMenuDay {
+  weekday: KitchenMenuWeekday;
+  meal_type: KitchenMenuMealType | null;
+  dishes: string[];
+  ingredients: KitchenMenuIngredient[];
+}
+
 export type SupplyOrderStatus =
   | 'draft'
   | 'placed'

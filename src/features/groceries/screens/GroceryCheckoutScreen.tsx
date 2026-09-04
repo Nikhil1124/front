@@ -7,6 +7,7 @@ import { useCartStore } from '../store/useCartStore';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { FormScroll } from '@/components/ui/FormScroll';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 
 interface CheckoutSlot {
   id: string;
@@ -28,8 +29,6 @@ const CHECKOUT_SLOTS: CheckoutSlot[] = [
   { id: '5', day: 'Tomorrow', badge: 'FREE', window: '2:00 PM – 3:00 PM', fee: 0, feeText: 'FREE' },
 ];
 
-const TIPS = [0, 20, 30, 50, 100];
-
 /**
  * Who may pay how, mirroring the server's own matrix (`ordering._METHODS_BY_BILLED_TO`).
  *
@@ -39,17 +38,18 @@ const TIPS = [0, 20, 30, 50, 100];
  * meant an owner picking Cash on Delivery and a guest picking Card both got a flat
  * "Payment method is not available for this order" at submit, and that credit — the whole
  * point of the property's credit line — was never offered to anyone at all.
+ *
+ * ponytail: 'upi' and 'card' are still valid on the server (`PaymentMethodName`), but
+ * neither has a real payment gateway behind it — 'upi' is a manual-UTR-then-ops-verifies
+ * flow and 'card' has no processing path at all — so they're hidden here for now. Only the
+ * two methods that are actually workable end-to-end without a gateway stay offered. Add
+ * them back to these lists once a real processor is wired up.
  */
-const UPI_METHOD = { id: 'upi', label: 'UPI / Google Pay / PhonePe', icon: 'qr-code-outline' };
-
 const PROPERTY_BILLED_METHODS = [
-  UPI_METHOD,
-  { id: 'card', label: 'Credit or Debit Card', icon: 'card-outline' },
   { id: 'credit', label: 'Pay on credit (property account)', icon: 'business-outline' },
 ];
 
 const GUEST_BILLED_METHODS = [
-  UPI_METHOD,
   { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
 ];
 
@@ -72,8 +72,7 @@ export function GroceryCheckoutScreen() {
   const [fulfillmentMode, setFulfillmentMode] = useState<'delivery' | 'pickup'>('delivery');
   const [selectedSlotId, setSelectedSlotId] = useState<string>('1');
   const [driverNote, setDriverNote] = useState<string>('');
-  const [selectedTip, setSelectedTip] = useState<number>(20);
-  const [paymentMethod, setPaymentMethod] = useState<string>('upi');
+  const [paymentMethod, setPaymentMethod] = useState<string>('cod');
 
   // Same rule the server applies in `_placing_membership`: owner/manager bill the property,
   // everyone else bills themselves. Read from the role held at the ACTIVE property, which is
@@ -97,30 +96,25 @@ export function GroceryCheckoutScreen() {
 
   const subtotal = getCartTotal();
   const deliveryFee = fulfillmentMode === 'pickup' ? 0 : selectedSlot.fee;
-  const platformFee = 10;
   // GST is inside `subtotal`, not added to it — supply_items.price is tax-inclusive and the
-  // server splits it the same way (see getBillEstimate). Only the fees and tip are additions.
+  // server splits it the same way (see getBillEstimate). Delivery fee is the only addition —
+  // there used to be a flat ₹10 "platform fee" and a delivery-partner tip selector here too,
+  // but `CreateOrderRequest` has no field for either (extra="forbid" rejects one if sent) and
+  // no tip/platform-fee concept exists anywhere in pg-backend's supply module. Both were pure
+  // client-side numbers added to what looked like the real total and then discarded on
+  // submit — the tip in particular promised "100% goes to your delivery partner" and never
+  // reached one. Estimated Total now matches what the server will actually total.
   const { tax: billTax, taxable: billTaxable } = getBillEstimate();
-  const estimatedTotal = Math.round((subtotal + deliveryFee + platformFee + selectedTip) * 100) / 100;
+  const estimatedTotal = Math.round((subtotal + deliveryFee) * 100) / 100;
   const cartItemCount = getItemCount();
   const totalSavings = getTotalSavings();
 
   useEffect(() => {
-    if (!paymentMethods.some((pm) => pm.id === paymentMethod)) setPaymentMethod('upi');
+    if (!paymentMethods.some((pm) => pm.id === paymentMethod)) setPaymentMethod(paymentMethods[0].id);
   }, [paymentMethods, paymentMethod]);
 
-  const handleUpdateAddress = () => {
-    Alert.prompt(
-      "Change Address",
-      "Enter your delivery address:",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Save", onPress: (text?: string) => text && setDeliveryAddress(text) }
-      ],
-      "plain-text",
-      deliveryAddress
-    );
-  };
+  const [showAddressPrompt, setShowAddressPrompt] = useState(false);
+  const handleUpdateAddress = () => setShowAddressPrompt(true);
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) {
@@ -172,10 +166,10 @@ export function GroceryCheckoutScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Checkout</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Checkout</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -184,14 +178,14 @@ export function GroceryCheckoutScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.stepBadge}>
-              <Text style={styles.stepBadgeText}>1</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>1</Text>
             </View>
-            <Text style={styles.cardTitle}>Delivery</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery</Text>
           </View>
 
           {/* Mode Switch row */}
           <View style={styles.fulfillmentContainer}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={[
                 styles.fulfillmentBtn,
                 fulfillmentMode === 'delivery' && styles.selectedFulfillmentBtn
@@ -204,12 +198,12 @@ export function GroceryCheckoutScreen() {
                 size={16}
                 color={fulfillmentMode === 'delivery' ? Colors.primary : Colors.textSecondary}
               />
-              <Text style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
                 Delivery
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={[
                 styles.fulfillmentBtn,
                 fulfillmentMode === 'pickup' && styles.selectedFulfillmentBtn
@@ -222,7 +216,7 @@ export function GroceryCheckoutScreen() {
                 size={16}
                 color={fulfillmentMode === 'pickup' ? Colors.primary : Colors.textSecondary}
               />
-              <Text style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
                 Store Pickup
               </Text>
             </TouchableOpacity>
@@ -230,7 +224,7 @@ export function GroceryCheckoutScreen() {
 
           {fulfillmentMode === 'delivery' ? (
             <>
-              <Text style={styles.slotListLabel}>Select delivery time</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Select delivery time</Text>
 
               {/* Slots list */}
               <View style={styles.slotList}>
@@ -239,7 +233,7 @@ export function GroceryCheckoutScreen() {
                   const isFastest = slot.badge === 'FASTEST';
 
                   return (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={slot.id}
                       style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
                       onPress={() => setSelectedSlotId(slot.id)}
@@ -254,18 +248,18 @@ export function GroceryCheckoutScreen() {
                         />
                         <View style={styles.slotDetails}>
                           <View style={styles.slotDayBadgeRow}>
-                            <Text style={styles.slotDay}>{slot.day}</Text>
+                            <Text maxFontSizeMultiplier={1.3} style={styles.slotDay}>{slot.day}</Text>
                             <View style={[styles.slotBadge, isFastest ? styles.fastestBadge : styles.freeBadge]}>
-                              <Text style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
+                              <Text maxFontSizeMultiplier={1.3} style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
                                 {slot.badge}
                               </Text>
                             </View>
                           </View>
-                          <Text style={styles.slotWindow}>{slot.window}</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.slotWindow}>{slot.window}</Text>
                         </View>
                       </View>
 
-                      <Text style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
                         {slot.feeText}
                       </Text>
                     </TouchableOpacity>
@@ -274,7 +268,7 @@ export function GroceryCheckoutScreen() {
               </View>
             </>
           ) : (
-            <Text style={styles.slotListLabel}>Pickup is free — collect your order from the store counter, no delivery fee.</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Pickup is free — collect your order from the store counter, no delivery fee.</Text>
           )}
         </View>
 
@@ -283,28 +277,28 @@ export function GroceryCheckoutScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.stepBadge}>
-                <Text style={styles.stepBadgeText}>2</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>2</Text>
               </View>
-              <Text style={styles.cardTitle}>Delivery Address</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery Address</Text>
             </View>
 
             {/* Location card */}
             <View style={styles.locationCard}>
               <Ionicons name="location" size={18} color={Colors.primary} style={styles.locationCardIcon} />
               <View style={styles.locationTextWrapper}>
-                <Text style={styles.locationCardTitle}>Deliver to</Text>
-                <Text style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Text>
               </View>
-              <TouchableOpacity onPress={handleUpdateAddress} style={styles.changeBtn} activeOpacity={0.7}>
-                <Text style={styles.changeBtnText}>Change</Text>
+              <TouchableOpacity accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn} activeOpacity={0.7}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Text>
                 <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
               </TouchableOpacity>
             </View>
 
             {/* Instruction input */}
-            <Text style={styles.inputLabel}>Delivery instructions (optional)</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>Delivery instructions (optional)</Text>
             <View style={styles.inputWrapper}>
-              <TextInput
+              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="e.g. Leave at door, call when arrived"
                 style={styles.textInput}
                 placeholder="e.g. Leave at door, call when arrived..."
                 placeholderTextColor={Colors.textMuted}
@@ -312,48 +306,18 @@ export function GroceryCheckoutScreen() {
                 onChangeText={(text) => text.length <= 120 && setDriverNote(text)}
                 multiline
               />
-              <Text style={styles.charLimitText}>{driverNote.length}/120</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.charLimitText}>{driverNote.length}/120</Text>
             </View>
           </View>
         )}
 
-        {/* Section 3: Delivery Tip */}
-        {fulfillmentMode === 'delivery' && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={styles.stepBadge}>
-                <Text style={styles.stepBadgeText}>3</Text>
-              </View>
-              <Text style={styles.cardTitle}>Delivery Partner Tip</Text>
-            </View>
-            <Text style={styles.tipDesc}>100% of the tip goes to your delivery partner.</Text>
-            <View style={styles.tipChipsRow}>
-              {TIPS.map((tip) => {
-                const isSelected = selectedTip === tip;
-                return (
-                  <TouchableOpacity
-                    key={tip}
-                    style={[styles.tipChip, isSelected && styles.selectedTipChip]}
-                    onPress={() => setSelectedTip(tip)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.tipChipText, isSelected && styles.selectedTipText]}>
-                      {tip === 0 ? 'No Tip' : `₹${tip}`}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* Section 4: Payment Method */}
+        {/* Section 3: Payment Method */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.stepBadge}>
-              <Text style={styles.stepBadgeText}>{fulfillmentMode === 'delivery' ? 4 : 2}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>{fulfillmentMode === 'delivery' ? 3 : 2}</Text>
             </View>
-            <Text style={styles.cardTitle}>Payment Method</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Payment Method</Text>
           </View>
 
           <View style={styles.paymentList}>
@@ -373,7 +337,7 @@ export function GroceryCheckoutScreen() {
                 Number(creditAccount.available) < estimatedTotal;
 
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={pm.id}
                   style={[
                     styles.paymentRow,
@@ -391,11 +355,11 @@ export function GroceryCheckoutScreen() {
                     style={styles.paymentIcon}
                   />
                   <View style={styles.paymentLabelColumn}>
-                    <Text style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
                       {pm.label}
                     </Text>
                     {isCredit && creditAccount && (
-                      <Text style={[styles.paymentSubLabel, overCredit && styles.paymentWarnLabel]}>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, overCredit && styles.paymentWarnLabel]}>
                         {!creditAccount.is_active
                           ? 'This property has no active credit account.'
                           : overCredit
@@ -417,7 +381,7 @@ export function GroceryCheckoutScreen() {
 
         {/* Section 5: Order Summary */}
         <View style={styles.card}>
-          <Text style={styles.summaryTitle}>Order Summary</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.summaryTitle}>Order Summary</Text>
           
           {/* Order preview items list */}
           <View style={styles.summaryList}>
@@ -428,10 +392,10 @@ export function GroceryCheckoutScreen() {
                   style={styles.summaryItemImg}
                 />
                 <View style={styles.summaryItemDetails}>
-                  <Text style={styles.summaryItemName} numberOfLines={1}>{item.name}</Text>
-                  <Text style={styles.summaryItemUnit}>{item.unit} × {item.quantity}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemName} numberOfLines={1}>{item.name}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemUnit}>{item.unit} × {item.quantity}</Text>
                 </View>
-                <Text style={styles.summaryItemPrice}>₹{item.price * item.quantity}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemPrice}>₹{item.price * item.quantity}</Text>
               </View>
             ))}
           </View>
@@ -439,44 +403,32 @@ export function GroceryCheckoutScreen() {
           {/* Pricing breakdown */}
           <View style={styles.billBreakdown}>
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Taxable Value</Text>
-              <Text style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
             </View>
 
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>GST</Text>
-              <Text style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
             </View>
 
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Item Total (incl. GST)</Text>
-              <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total (incl. GST)</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
             </View>
 
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Delivery Fee</Text>
-              <Text style={[styles.billValue, deliveryFee === 0 && styles.greenText]}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, deliveryFee === 0 && styles.greenText]}>
                 {deliveryFee === 0 ? 'FREE' : `₹${deliveryFee.toFixed(2)}`}
               </Text>
             </View>
 
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Platform & Handling Fee</Text>
-              <Text style={styles.billValue}>₹{platformFee.toFixed(2)}</Text>
-            </View>
-
-            {fulfillmentMode === 'delivery' && selectedTip > 0 && (
-              <View style={styles.billRow}>
-                <Text style={styles.billLabel}>Delivery Tip</Text>
-                <Text style={styles.billValue}>₹{selectedTip.toFixed(2)}</Text>
-              </View>
-            )}
-
             <View style={[styles.billRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Estimated Total</Text>
-              <Text style={styles.totalValue}>₹{estimatedTotal.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Estimated Total</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{estimatedTotal.toFixed(2)}</Text>
             </View>
-            <Text style={styles.billLabel}>Item prices include GST. Your final invoice is confirmed when the order is placed.</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item prices include GST. Your final invoice is confirmed when the order is placed.</Text>
           </View>
         </View>
       </FormScroll>
@@ -484,19 +436,19 @@ export function GroceryCheckoutScreen() {
       {/* Sticky Bottom Placement Bar */}
       <View style={[styles.stickyFooter, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.footerLeft}>
-          <Text style={styles.footerPrice}>₹{estimatedTotal.toFixed(2)}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.footerPrice}>₹{estimatedTotal.toFixed(2)}</Text>
           {totalSavings > 0 ? (
             <View style={styles.footerSavings}>
               <Ionicons name="leaf-outline" size={10} color={Colors.primary} />
-              <Text style={styles.footerSavingsText}>You save ₹{totalSavings.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.footerSavingsText}>You save ₹{totalSavings.toFixed(2)}</Text>
             </View>
           ) : (
-            <Text style={styles.footerItemText}>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.footerItemText}>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</Text>
           )}
         </View>
 
         {/* View Cart mini trigger */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={styles.viewCartBadgeBtn}
           onPress={() => router.push('/groceries/cart')}
           activeOpacity={0.8}
@@ -504,13 +456,13 @@ export function GroceryCheckoutScreen() {
           <View style={styles.cartIconWrapper}>
             <Ionicons name="cart-outline" size={14} color={Colors.primary} />
             <View style={styles.cartCountBadge}>
-              <Text style={styles.cartCountText}>{cartItemCount}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.cartCountText}>{cartItemCount}</Text>
             </View>
           </View>
-          <Text style={styles.viewCartText}>View Cart</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={[styles.placeOrderBtn, createOrderMutation.isPending && { opacity: 0.6 }]}
           onPress={handlePlaceOrder}
           activeOpacity={0.8}
@@ -518,12 +470,21 @@ export function GroceryCheckoutScreen() {
           // decrements, two charges. `idempotency_key` below is the second line of defence.
           disabled={createOrderMutation.isPending}
         >
-          <Text style={styles.placeOrderText}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.placeOrderText}>
             {createOrderMutation.isPending ? 'Placing…' : 'Place Order'}
           </Text>
           <Ionicons name="arrow-forward" size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
+      <TextPromptDialog
+        visible={showAddressPrompt}
+        title="Change Address"
+        message="Enter your delivery address:"
+        label="Delivery address"
+        initialValue={deliveryAddress}
+        onCancel={() => setShowAddressPrompt(false)}
+        onSave={(text) => { setDeliveryAddress(text); setShowAddressPrompt(false); }}
+      />
     </View>
   );
 }
@@ -764,37 +725,6 @@ const styles = StyleSheet.create({
     right: 8,
     fontSize: 9,
     color: Colors.textMuted,
-  },
-  // Tip Layout
-  tipDesc: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginBottom: 10,
-  },
-  tipChipsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  tipChip: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectedTipChip: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  tipChipText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  selectedTipText: {
-    color: Colors.surface,
   },
   // Payment List
   paymentList: {

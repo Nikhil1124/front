@@ -23,6 +23,7 @@ export interface PaymentRecord {
   upi_ref?: string | null;
   rejection_reason?: string | null;
   verified_at?: string | null;
+  verified_by_name?: string | null;
   created_at: string;
 }
 
@@ -121,28 +122,24 @@ export function rejectPayment(paymentId: string, reason?: string): Promise<Payme
   });
 }
 
-// Direct NPCI-compliant UPI Intent Launcher with Clipboard Fallback
-export async function launchUpiPayment({
+/**
+ * Builds the same strict NPCI `upi://pay` deep link `launchUpiPayment` opens — pulled out so
+ * the "Scan QR" screen can encode the exact intent a tap on "Pay Online" would send, instead
+ * of carrying a second, driftable copy of this string. Null when the VPA is missing or
+ * incomplete (see the safety note below).
+ */
+export function buildUpiUri({
   upiId,
   payeeName = "PG Co Living",
   amount,
   note = "PG Rent Payment",
-}: LaunchUpiParams): Promise<{ success: boolean; message: string }> {
+}: LaunchUpiParams): string | null {
   const cleanUpi = upiId.trim().toLowerCase();
-  if (!cleanUpi) {
-    return { success: false, message: "Owner has not configured a UPI ID yet." };
-  }
   // Never complete a partial VPA. Appending a default handle here would send the
   // resident's rent to whoever happens to own `<that-handle>@ybl` — a real person, just
   // not this owner. The backend already rejects a VPA without '@', so reaching this means
   // the data is wrong and the only safe move is to stop.
-  if (!cleanUpi.includes("@")) {
-    return {
-      success: false,
-      message:
-        "The owner's UPI ID is incomplete, so payment cannot be started safely. Ask them to re-enter it in property settings.",
-    };
-  }
+  if (!cleanUpi || !cleanUpi.includes("@")) return null;
 
   const cleanName = payeeName.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "PG Co Living";
   const cleanNote = note.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "PG Rent";
@@ -150,19 +147,33 @@ export async function launchUpiPayment({
   const txnRef = `PGOW${Date.now()}`;
   const txnId = `T${Date.now()}`;
 
-  // 1. Copy VPA to clipboard as 100% reliable fallback
-  try {
-    await Clipboard.setStringAsync(cleanUpi);
-  } catch {
-    // ignore clipboard error
-  }
-
-  // 2. Build strict NPCI UPI URI
-  const upiUri = `upi://pay?pa=${encodeURIComponent(cleanUpi)}&pn=${encodeURIComponent(
+  return `upi://pay?pa=${encodeURIComponent(cleanUpi)}&pn=${encodeURIComponent(
     cleanName
   )}&mc=0000&tr=${txnRef}&tid=${txnId}&tn=${encodeURIComponent(
     cleanNote
   )}&am=${formattedAmount}&cu=INR`;
+}
+
+// Direct NPCI-compliant UPI Intent Launcher with Clipboard Fallback
+export async function launchUpiPayment(params: LaunchUpiParams): Promise<{ success: boolean; message: string }> {
+  const upiUri = buildUpiUri(params);
+  if (!upiUri) {
+    if (!params.upiId.trim()) {
+      return { success: false, message: "Owner has not configured a UPI ID yet." };
+    }
+    return {
+      success: false,
+      message:
+        "The owner's UPI ID is incomplete, so payment cannot be started safely. Ask them to re-enter it in property settings.",
+    };
+  }
+
+  // Copy VPA to clipboard as 100% reliable fallback
+  try {
+    await Clipboard.setStringAsync(params.upiId.trim().toLowerCase());
+  } catch {
+    // ignore clipboard error
+  }
 
   try {
     const canOpen = await Linking.canOpenURL(upiUri);
@@ -193,6 +204,32 @@ export function usePaymentsQuery(pgId?: string, status?: PaymentStatus) {
       if (!pgId) return [];
       const res = await listPayments(pgId, { status, limit: 100 });
       return res.items.map(map.toPayment);
+    },
+    enabled: !!pgId,
+  });
+}
+
+/**
+ * Every matching payment, not just the newest 100 — for screens that sum or bucket the
+ * whole set (P&L category breakdown, period-over-period comparison, the owner's Balance
+ * Sheet). Those computations silently undercounted for any property with more than 100
+ * payments, with no indication to the owner that the numbers were partial.
+ */
+export function useAllPaymentsQuery(pgId?: string, status?: PaymentStatus) {
+  return useQuery<PaymentEntity[]>({
+    queryKey: [...(status ? [...qk.payments.list(pgId ?? ""), status] : qk.payments.list(pgId ?? "")), "all-pages"],
+    queryFn: async () => {
+      if (!pgId) return [];
+      const items: PaymentEntity[] = [];
+      let cursor: string | undefined;
+      do {
+        // 100, not 200: `/v1/payments` is the one list route capped at `le=100` (every other
+        // list allows 200) — sending 200 422s every call, silently breaking this hook entirely.
+        const res = await listPayments(pgId, { status, limit: 100, cursor });
+        items.push(...res.items.map(map.toPayment));
+        cursor = res.next_cursor ?? undefined;
+      } while (cursor);
+      return items;
     },
     enabled: !!pgId,
   });

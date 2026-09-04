@@ -13,8 +13,6 @@ export interface MiniProductCardProps {
   onPress: () => void;
   /** Show wishlist heart button. Default: false */
   showWishlist?: boolean;
-  /** Show star rating. Default: false */
-  showRating?: boolean;
 }
 
 /**
@@ -27,7 +25,6 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
   product,
   onPress,
   showWishlist = false,
-  showRating = false,
 }) => {
   const mode = useShoppingModeStore((s) => s.mode);
   const options = [{ price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined }];
@@ -63,13 +60,13 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       {/* Discount badge */}
       {discountPercent > 0 && (
         <View style={styles.discountBadge}>
-          <Text style={styles.discountText}>-{discountPercent}%</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.discountText}>-{discountPercent}%</Text>
         </View>
       )}
 
       {/* Wishlist button */}
       {showWishlist && (
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
           style={styles.wishlistBtn}
           onPress={() => toggleItem(product)}
           activeOpacity={0.7}
@@ -83,7 +80,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       )}
 
       {/* Product image */}
-      <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.imageContainer}>
+      <TouchableOpacity accessibilityRole="button" onPress={onPress} activeOpacity={0.9} style={styles.imageContainer}>
         <Image
           source={product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')}
           style={styles.image}
@@ -92,27 +89,22 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       </TouchableOpacity>
 
       {/* Name & unit */}
-      <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
-      <Text style={styles.unit}>{opt.unit}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={2}>{product.name}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.unit}>{opt.unit}</Text>
 
-      {/* Rating */}
-      {showRating && (
-        <View style={styles.ratingRow}>
-          <Ionicons name="star" size={9} color={Colors.warning} />
-          <Text style={styles.ratingText}>4.8</Text>
-        </View>
-      )}
+      {/* No star rating: SupplyItem carries no rating field and there is no per-product
+          review system in this app. A fixed "4.8" on every card was fabricated, not real. */}
 
       {/* Price */}
       <PriceDisplay price={opt.price} originalPrice={opt.originalPrice} size="sm" />
 
       {/* Add button */}
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button"
         style={[styles.addBtn, inCart && styles.addedBtn]}
         onPress={handleAdd}
         activeOpacity={0.8}
       >
-        <Text style={[styles.addBtnText, inCart && styles.addedBtnText]}>
+        <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addedBtnText]}>
           {inCart ? '✓ Added' : '+ Add'}
         </Text>
       </TouchableOpacity>
@@ -173,16 +165,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: Colors.textSecondary,
     marginBottom: 4,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    marginBottom: 3,
-  },
-  ratingText: {
-    fontSize: 9,
-    color: Colors.textSecondary,
   },
   addBtn: {
     marginTop: 8,

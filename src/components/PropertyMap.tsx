@@ -120,7 +120,7 @@ export default function PropertyMap({
           </View>
         )}
       </View>
-      <TouchableOpacity style={styles.footer} onPress={openInMaps} activeOpacity={0.8}>
+      <TouchableOpacity accessibilityRole="button" style={styles.footer} onPress={openInMaps} activeOpacity={0.8}>
         <Txt variant="caption" color={Colors.textMuted} style={styles.address} numberOfLines={1}>
           {formattedAddress || 'Location'}
         </Txt>

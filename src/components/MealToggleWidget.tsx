@@ -24,7 +24,6 @@ import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
-import { haptic } from '@/utils/haptics';
 import type { MealToggleState } from '@/types';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner';
@@ -116,7 +115,6 @@ function MealRow({ mealType, state, onToggle }: MealRowProps) {
 
   const handleToggle = () => {
     // Medium impact: this is a real opt-in decision, not a tab switch.
-    haptic('medium');
     onToggle(mealType, !state.enabled);
   };
 

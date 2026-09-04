@@ -23,7 +23,6 @@ import { useComplaintQuery, useEscalateComplaintMutation } from '@/features/requ
 import { tradeForComplaint, draftNoteFor } from '@/features/requests/technicianTrades';
 import { useAuthStore } from '@/store/authStore';
 import { PGowApiError } from '@/data/apiClient';
-import { hapticError, hapticSuccess } from '@/utils/haptics';
 import { Colors, Layout } from '@/theme';
 
 export function BookTechnicianScreen() {
@@ -46,20 +45,17 @@ export function BookTechnicianScreen() {
   const submit = async () => {
     if (!id) return;
     if (!value.trim()) {
-      hapticError();
       Alert.alert('Add a brief', 'Describe the job so the area manager can dispatch the right person.');
       return;
     }
     try {
       await escalate.mutateAsync({ id, note: value });
-      hapticSuccess();
       Alert.alert(
         'Sent to PGow support',
         'The area manager covering this property now has the ticket and will arrange a technician. The resident has been told.',
         [{ text: 'Done', onPress: () => router.back() }]
       );
     } catch (err) {
-      hapticError();
       // The server has three distinct refusals here and they mean different things to the
       // person pressing the button — a generic "could not book" would send them round again.
       const message =

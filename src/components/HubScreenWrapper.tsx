@@ -17,7 +17,6 @@ import { Txt, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors } from '@/theme';
-import { hapticSelect } from '@/utils/haptics';
 import { useResponsivePadding } from '@/utils/responsive';
 
 export interface HubScreenWrapperProps {
@@ -49,7 +48,6 @@ export function HubScreenWrapper({
   const responsivePadding = useResponsivePadding();
 
   const handleBack = () => {
-    hapticSelect();
     if (onBack) onBack();
     else router.back();
   };
@@ -63,9 +61,8 @@ export function HubScreenWrapper({
         end={{ x: 1, y: 1 }}
         style={[styles.headerGradient, { paddingTop: insets.top + 12, paddingHorizontal: responsivePadding }]}
       >
-        <AnimatedPress
+        <AnimatedPress accessibilityLabel="Go back"
           scale={0.9}
-          hapticPattern="light"
           onPress={handleBack}
           style={styles.backBtn}
         >
@@ -97,7 +94,23 @@ export function HubScreenWrapper({
           {children}
         </FormScroll>
       ) : (
-        <View style={{ flex: 1, paddingHorizontal: responsivePadding, paddingTop: 16, ...contentContainerStyle }}>{children}</View>
+        // `scrollable={false}` hands scrolling to the child (TenantListScreen's FlatList,
+        // GuestHubServicesTab's grid), so the bottom inset has to be reserved here — the
+        // child has no way to know about it, and without it the last row sits inside the
+        // Android gesture strip, where a tap competes with the swipe-up home gesture.
+        // The scrollable branch above needs nothing: FormScroll appends its own
+        // `paddingBottom: bottomPadding + insets.bottom` after this style object.
+        <View
+          style={{
+            flex: 1,
+            paddingHorizontal: responsivePadding,
+            paddingTop: 16,
+            paddingBottom: insets.bottom,
+            ...contentContainerStyle,
+          }}
+        >
+          {children}
+        </View>
       )}
     </View>
   );

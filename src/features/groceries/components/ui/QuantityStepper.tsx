@@ -23,7 +23,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
 }) => {
   return (
     <View style={[styles.container, compact && styles.compact]}>
-      <TouchableOpacity
+      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
         style={[styles.btn, compact && styles.compactBtn]}
         onPress={onDecrease}
         activeOpacity={0.7}
@@ -31,9 +31,9 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         <Ionicons name="remove" size={compact ? 12 : 14} color={Colors.primary} />
       </TouchableOpacity>
 
-      <Text style={[styles.qty, compact && styles.compactQty]}>{quantity}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={[styles.qty, compact && styles.compactQty]}>{quantity}</Text>
 
-      <TouchableOpacity
+      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
         style={[styles.btn, compact && styles.compactBtn]}
         onPress={onIncrease}
         activeOpacity={0.7}

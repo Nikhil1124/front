@@ -27,19 +27,21 @@ export function useSupplyOrdersQuery(pgId?: string, status?: string) {
   });
 }
 
+/** An order stops changing once it is delivered or cancelled — polling past that is pure cost. */
+const isOrderClosed = (status?: string) =>
+  !!status && ['delivered', 'cancelled'].includes(status);
+
 export function useSupplyOrderDetailQuery(orderId?: string) {
   return useQuery<SupplyOrderDetail>({
     queryKey: ['supply_order_detail', orderId],
-    queryFn: () => apiFetch(`/v1/supply/orders/${orderId}`),
+    // `conditional` makes this an ADR-008 poll: the server answers 304 unless the order
+    // actually moved, which skips its line-item join and its serialisation entirely.
+    queryFn: () => apiFetch(`/v1/supply/orders/${orderId}`, { conditional: true }),
     enabled: !!orderId,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      // Auto-poll while order is active
-      if (status && !['delivered', 'cancelled'].includes(status)) {
-        return 5000;
-      }
-      return false;
-    },
+    // 15s, not 5s. An order passes through roughly four states in its life; polling three
+    // times a second-and-a-half faster does not make a delivery arrive sooner, and at scale
+    // this interval is the single largest source of load in the whole system.
+    refetchInterval: (query) => (isOrderClosed(query.state.data?.status) ? false : 15000),
   });
 }
 
@@ -54,11 +56,15 @@ export interface OrderTrackingInfo {
 }
 
 export function useSupplyTrackingQuery(orderId?: string) {
+  const detail = useSupplyOrderDetailQuery(orderId);
   return useQuery<OrderTrackingInfo>({
     queryKey: ['supply_order_tracking', orderId],
-    queryFn: () => apiFetch(`/v1/supply/orders/${orderId}/tracking`),
+    queryFn: () => apiFetch(`/v1/supply/orders/${orderId}/tracking`, { conditional: true }),
     enabled: !!orderId,
-    refetchInterval: 10000,
+    // Was a flat 10s that never stopped — it kept polling a delivered order for as long as
+    // the screen stayed open. Now it stops with the order, and runs at half the detail
+    // query's rate, since driver and ETA move more slowly than status does.
+    refetchInterval: isOrderClosed(detail.data?.status) ? false : 30000,
   });
 }
 

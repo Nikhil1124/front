@@ -57,7 +57,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
 
   if (picking) {
     return (
-      <Modal visible animationType="slide">
+      <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
         <LocationPicker
           initial={location}
           onConfirm={(picked) => {
@@ -75,7 +75,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <View style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
@@ -103,7 +103,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               chain) is the correct pattern for a scrollable region inside a content-sized
               modal card — it sizes to content up to the cap, then scrolls, with no
               circular dependency on a parent that isn't flex-bounded itself. */}
-          <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+          <KeyboardAvoidingView behavior="padding">
             <ScrollView
               style={{ maxHeight: SCREEN_H * 0.45 }}
               contentContainerStyle={{ gap: 10 }}

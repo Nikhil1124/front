@@ -75,7 +75,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               {itemsToUse[placeholderIndex]}
             </Animated.Text>
           )}
-          <TextInput
+          <TextInput maxFontSizeMultiplier={1.3}
             style={[styles.searchInput, value.length > 0 && styles.inputActive]}
             placeholder=""
             value={value}
@@ -88,19 +88,19 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <View style={styles.divider} />
 
         {onFilterPress ? (
-          <TouchableOpacity activeOpacity={0.7} style={styles.scanBtn} onPress={onFilterPress}>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button" activeOpacity={0.7} style={styles.scanBtn} onPress={onFilterPress}>
             <Ionicons name="options-outline" size={22} color={hasActiveFilters ? Colors.primary : Colors.textSecondary} />
             {hasActiveFilters && <View style={styles.filterDot} />}
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity activeOpacity={0.7} style={styles.scanBtn}>
+          <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} style={styles.scanBtn}>
             <MaterialCommunityIcons name="line-scan" size={22} color={Colors.primary} />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Separate cart circle button */}
-      <TouchableOpacity
+      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Cart" accessibilityRole="button"
         style={styles.cartBtn}
         activeOpacity={0.8}
         onPress={onCartPress}

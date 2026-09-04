@@ -99,7 +99,7 @@ export function AddressAutocompleteField({
             </Txt>
           ) : (
             suggestions.map((s) => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={s.place_id}
                 onPress={() => choose([s.primary, s.secondary].filter(Boolean).join(', '), s.place_id)}
                 style={styles.row}

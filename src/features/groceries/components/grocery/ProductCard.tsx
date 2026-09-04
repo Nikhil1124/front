@@ -69,25 +69,70 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     updateQuantity(compoundId, quantity - 1);
   };
 
+  // Compact layout for dense horizontal rails (e.g. Daily Essentials) — the `simple*`
+  // styles below used to be dead code: this component always rendered the full "deal"
+  // layout regardless of what `layout` was passed, so every caller asking for `simple`
+  // got an oversized card anyway.
+  if (layout === 'simple') {
+    return (
+      <AnimatedPress
+        style={[styles.simpleCard, { width: cardWidth }, style]}
+        scale={0.96}
+        onPress={() => onPress?.(product)}
+      >
+        <View style={styles.simpleImageContainer}>
+          <Image
+            source={product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')}
+            style={styles.simpleImage}
+          />
+        </View>
+        <View style={styles.simpleDetails}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.simpleName} numberOfLines={1}>{product.name}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.simpleUnit}>{selectedOption.unit}</Text>
+          <View style={styles.simpleBottomRow}>
+            <View>
+              <Text maxFontSizeMultiplier={1.3} style={styles.simplePrice}>₹{price}</Text>
+              {originalPrice && <Text maxFontSizeMultiplier={1.3} style={styles.simpleStrikePrice}>₹{originalPrice}</Text>}
+            </View>
+            {quantity > 0 ? (
+              <View style={styles.simpleQuantityControl}>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleDecrease}>
+                  <Ionicons name="remove" size={12} color="#FFFFFF" />
+                </TouchableOpacity>
+                <Text maxFontSizeMultiplier={1.3} style={styles.simpleQtyText}>{quantity}</Text>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleIncrease}>
+                  <Ionicons name="add" size={12} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleAddButton} onPress={handleAdd} activeOpacity={0.85}>
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </AnimatedPress>
+    );
+  }
+
   // Full Layout (Premium Redesign Layout)
   return (
     <AnimatedPress
       style={[styles.card, { width: cardWidth }, style]}
       scale={0.96}
-      hapticPattern="light"
       onPress={() => onPress?.(product)}
     >
       {/* Top row containing Discount and Wishlist heart */}
       <View style={styles.topRow}>
         {discountPercent > 0 ? (
           <View style={styles.discountBadge}>
-            <Text style={styles.discountBadgeText}>-{discountPercent}%</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.discountBadgeText}>-{discountPercent}%</Text>
           </View>
         ) : (
           <View />
         )}
 
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
           style={styles.wishlistBtn}
           onPress={() => toggleItem(product)}
           activeOpacity={0.7}
@@ -115,25 +160,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Product Info */}
       <View style={styles.detailsContainer}>
-        <Text style={styles.name} numberOfLines={1}>
+        <Text maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={1}>
           {product.name}
         </Text>
 
         {/* Selected Unit/Option text */}
-        <Text style={styles.unitText}>{selectedOption.unit}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.unitText}>{selectedOption.unit}</Text>
 
-        {/* Rating and Price Row */}
+        {/* Price Row — no star rating here: SupplyItem carries no rating field, and there
+            is no per-product review system anywhere in this app. A fixed "4.8" on every
+            item was fabricated social proof, not a real number. */}
         <View style={styles.ratingPriceRow}>
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>₹{price}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.price}>₹{price}</Text>
             {originalPrice && (
-              <Text style={styles.strikePrice}>₹{originalPrice}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{originalPrice}</Text>
             )}
-          </View>
-
-          <View style={styles.ratingBadge}>
-            <Ionicons name="star" size={10} color="#F59E0B" />
-            <Text style={styles.ratingText}>4.8</Text>
           </View>
         </View>
 
@@ -141,7 +183,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {options.length > 1 && (
           <View style={styles.optionsWrapper}>
             {options.map((opt, i) => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={opt.unit}
                 style={[
                   styles.optionTab,
@@ -149,7 +191,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ]}
                 onPress={() => setSelectedIdx(i)}
               >
-                <Text
+                <Text maxFontSizeMultiplier={1.3}
                   style={[
                     styles.optionText,
                     selectedIdx === i && styles.selectedOptionText,
@@ -166,17 +208,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <View style={styles.actionContainer}>
           {quantity > 0 ? (
             <View style={styles.qtyControl}>
-              <TouchableOpacity style={styles.qtyBtn} onPress={handleDecrease}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleDecrease}>
                 <Ionicons name="remove" size={16} color="#FFFFFF" />
               </TouchableOpacity>
-              <Text style={styles.qtyText}>{quantity}</Text>
-              <TouchableOpacity style={styles.qtyBtn} onPress={handleIncrease}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{quantity}</Text>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleIncrease}>
                 <Ionicons name="add" size={16} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.85}>
-              <Text style={styles.addBtnText}>Add to Cart</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.addBtn} onPress={handleAdd} activeOpacity={0.85}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.addBtnText}>Add to Cart</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -282,19 +324,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#98A39B',
     textDecorationLine: 'line-through',
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFBEB',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-    gap: 2,
-  },
-  ratingText: {
-    fontSize: 10,
-    color: '#F59E0B',
   },
   optionsWrapper: {
     flexDirection: 'row',

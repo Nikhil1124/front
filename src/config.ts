@@ -23,6 +23,8 @@ export const API = {
   LOGIN: "/v1/auth/login",
   PIN_LOGIN: "/v1/auth/login/pin",
   CHANGE_PASSWORD: "/v1/auth/password",
+  PASSWORD_RESET_REQUEST: "/v1/auth/password/reset-request",
+  PASSWORD_RESET_CONFIRM: "/v1/auth/password/reset-confirm",
   REFRESH: "/v1/auth/refresh",
   LOGOUT: "/v1/auth/logout",
 
@@ -125,6 +127,9 @@ export const API = {
   // Profile photo. Two steps, like KYC: presigned PUT, then PATCH /v1/me with the key.
   ME_AVATAR_UPLOAD_URL: "/v1/me/avatar/upload-url",
 
+  // A resident's own away/vacation toggle.
+  ME_AWAY: "/v1/me/away",
+
   // Ad engagement, recorded as events so the earnings figure is derived rather than a
   // counter that resets with the app.
   ADS_EVENTS: "/v1/ads/events",
@@ -175,6 +180,10 @@ export const API = {
   PROCUREMENT_ORDERS: "/v1/procurement/orders",
   PROCUREMENT_ORDER_APPROVE: (id: string) => `/v1/procurement/orders/${id}/approve`,
   PROCUREMENT_ORDER_REJECT: (id: string) => `/v1/procurement/orders/${id}/reject`,
+
+  SUPPLY_SUBSCRIPTIONS: "/v1/supply/subscriptions",
+  SUPPLY_SUBSCRIPTION_PAUSE: (id: string) => `/v1/supply/subscriptions/${id}/pause`,
+  SUPPLY_SUBSCRIPTION_RESUME: (id: string) => `/v1/supply/subscriptions/${id}/resume`,
 
   MEAL_MENU: "/v1/meals/menu",
   MEAL_TODAY_SUMMARY: (pgId: string) => `/v1/meals/today-summary?pg_id=${pgId}`,

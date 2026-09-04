@@ -96,7 +96,7 @@ export function AlertOverlay() {
 
   return (
     <View style={[styles.overlay, { top: Math.max(insets.top, 8) + 8 }]} pointerEvents="box-none">
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button"
         activeOpacity={0.92}
         onPress={handleDismiss}
         style={[styles.toast, { borderLeftColor: style.accent }]}
@@ -116,10 +116,10 @@ export function AlertOverlay() {
             <View style={{ marginTop: 8 }}>
               {rsvpChoice == null ? (
                 <Row gap={6}>
-                  <TouchableOpacity onPress={handleEat} style={[styles.miniBtn, { backgroundColor: Colors.success }]}>
+                  <TouchableOpacity accessibilityRole="button" onPress={handleEat} style={[styles.miniBtn, { backgroundColor: Colors.success }]}>
                     <Txt size={11} weight="700" color={Colors.textInverse}>I'll eat</Txt>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={handleSkip} style={[styles.miniBtn, { backgroundColor: Colors.danger }]}>
+                  <TouchableOpacity accessibilityRole="button" onPress={handleSkip} style={[styles.miniBtn, { backgroundColor: Colors.danger }]}>
                     <Txt size={11} weight="700" color={Colors.textInverse}>Skip</Txt>
                   </TouchableOpacity>
                 </Row>

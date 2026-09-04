@@ -16,7 +16,7 @@
  *     than a wall of text.
  */
 import { useState } from 'react';
-import { Alert, View, StyleSheet, RefreshControl } from 'react-native';
+import { Alert, Image, View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer, Pill, OutlinedBtn } from '@/components/ui';
@@ -24,7 +24,6 @@ import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { usePGowStore } from '@/store/usePGowStore';
-import { hapticError, hapticSelect } from '@/utils/haptics';
 import type { FeedbackComplaintEntity } from '@/types';
 
 interface Props {
@@ -66,7 +65,6 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
   const canCancel = ticket.status !== 'Resolved';
 
   const handleCancel = () => {
-    hapticSelect();
     Alert.alert(
       'Withdraw this ticket?',
       'This closes it — your manager will no longer act on it. You can always file a new one if the issue comes back.',
@@ -81,7 +79,6 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
               await deleteFeedbackComplaint(ticket.id);
               router.back();
             } catch (err) {
-              hapticError();
               Alert.alert('Could not withdraw', err instanceof Error ? err.message : 'Please try again.');
             } finally {
               setCancelling(false);
@@ -191,10 +188,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
               <Txt variant="body" weight="700" color={Colors.textPrimary}>Photo attachment</Txt>
             </Row>
             <Spacer size={8} />
-            <View style={styles.attachmentBox}>
-              <Ionicons name="image" size={32} color={Colors.textMuted} />
-              <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 6 }}>Attachment on file</Txt>
-            </View>
+            <Image source={{ uri: ticket.mediaUri }} style={styles.attachmentImage} resizeMode="cover" />
           </Card>
         </>
       ) : null}
@@ -268,11 +262,10 @@ const styles = StyleSheet.create({
     height: 2,
     zIndex: 1,
   },
-  attachmentBox: {
-    backgroundColor: Colors.surfaceMuted,
+  attachmentImage: {
+    width: '100%',
+    height: 180,
     borderRadius: Layout.borderRadiusCard,
-    borderWidth: 1, borderColor: Colors.borderMuted, borderStyle: 'dashed',
-    padding: 20,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.surfaceMuted,
   },
 });

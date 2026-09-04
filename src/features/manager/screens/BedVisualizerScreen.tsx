@@ -25,16 +25,20 @@ import {
   useAssignBed,
   useVacateBed,
   useCreateRoom,
-  useIncreaseRoomSharing,
+  useSetRoomSharing,
 } from '@/features/property/usePropertyLayout';
 import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '@/hooks/useToast';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { BedResponse, RoomResponse } from '@/types';
 
 const FLOORPLAN_IMG = require('../../../../assets/room_floorplan_preview.png');
 
 export function BedVisualizerScreen() {
+  // The room-detail sheet below is pinned to the bottom edge inside a `<Modal>`, which
+  // nothing in the layout tree pads — without this its controls sit in the Android
+  // gesture-navigation strip, where a tap competes with the swipe-up home gesture.
+  const insets = useSafeAreaInsets();
   const pgId = useAuthStore((s) => s.activePgId) ?? null;
   const { data: guests = [], refetch: refetchGuests } = useGuestsQuery(pgId ?? undefined);
   const toast = useToast();
@@ -43,7 +47,7 @@ export function BedVisualizerScreen() {
   const assignBed = useAssignBed(pgId);
   const vacateBed = useVacateBed(pgId);
   const createRoom = useCreateRoom(pgId);
-  const increaseSharing = useIncreaseRoomSharing(pgId);
+  const setSharing = useSetRoomSharing(pgId);
 
   // Main screen filter & UI states
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
@@ -52,7 +56,7 @@ export function BedVisualizerScreen() {
 
   // Modal / Detail states
   const [selectedRoomDetail, setSelectedRoomDetail] = useState<RoomResponse | null>(null);
-  const [detailActiveTab, setDetailActiveTab] = useState<'ALLOCATION' | 'DETAILS' | 'AMENITIES'>('ALLOCATION');
+  const [detailActiveTab, setDetailActiveTab] = useState<'ALLOCATION' | 'DETAILS'>('ALLOCATION');
   const [activeBed, setActiveBed] = useState<{ room: RoomResponse; bed: BedResponse } | null>(null);
 
   // Management modals
@@ -60,6 +64,7 @@ export function BedVisualizerScreen() {
   const [newFloor, setNewFloor] = useState('');
   const [newRoomNumber, setNewRoomNumber] = useState('');
   const [newSharing, setNewSharing] = useState('');
+  const [newBaseRent, setNewBaseRent] = useState('');
   const [increasingRoom, setIncreasingRoom] = useState<RoomResponse | null>(null);
   const [increasedSharing, setIncreasedSharing] = useState('');
 
@@ -150,11 +155,9 @@ export function BedVisualizerScreen() {
     if (!activeBed) return;
     try {
       await assignBed.mutateAsync({ bedId: activeBed.bed.id, tenant_membership_id: membershipId });
-      hapticSuccess();
       toast('success', 'Bed assigned', `${guestName} is now assigned to Room ${activeBed.room.roomNumber}, Bed ${activeBed.bed.bedNumber}.`);
       setActiveBed(null);
     } catch (err: any) {
-      hapticError();
       toast('error', 'Assign failed', err?.message ?? 'Please try again.');
     }
   };
@@ -163,11 +166,9 @@ export function BedVisualizerScreen() {
     if (!activeBed) return;
     try {
       await vacateBed.mutateAsync(activeBed.bed.id);
-      hapticSuccess();
       toast('info', 'Bed vacated', `Room ${activeBed.room.roomNumber}, Bed ${activeBed.bed.bedNumber} is free.`);
       setActiveBed(null);
     } catch (err: any) {
-      hapticError();
       toast('error', 'Vacate failed', err?.message ?? 'Please try again.');
     }
   };
@@ -176,39 +177,48 @@ export function BedVisualizerScreen() {
     const floorNum = parseInt(newFloor, 10);
     const sharing = parseInt(newSharing, 10);
     if (!newRoomNumber.trim() || !Number.isFinite(floorNum) || !Number.isFinite(sharing) || sharing < 1) {
-      hapticError();
       toast('error', 'Check the form', 'Floor, room number, and sharing (1+) are required.');
       return;
     }
+    const rent = parseFloat(newBaseRent);
     try {
-      await createRoom.mutateAsync({ floor_number: floorNum, room_number: newRoomNumber.trim(), sharing_type: sharing });
-      hapticSuccess();
+      await createRoom.mutateAsync({
+        floor_number: floorNum,
+        room_number: newRoomNumber.trim(),
+        sharing_type: sharing,
+        base_rent: Number.isFinite(rent) && rent > 0 ? rent : undefined,
+      });
       toast('success', 'Room added', `Room ${newRoomNumber.trim()} (${sharing} Sharing) created on Floor ${floorNum}.`);
       setShowAddRoom(false);
-      setNewFloor(''); setNewRoomNumber(''); setNewSharing('');
+      setNewFloor(''); setNewRoomNumber(''); setNewSharing(''); setNewBaseRent('');
     } catch (err: any) {
-      hapticError();
       toast('error', 'Could not add room', err?.message ?? 'Please try again.');
     }
   };
 
-  const handleIncreaseSharing = async () => {
+  const handleSetSharing = async () => {
     if (!increasingRoom) return;
     const sharing = parseInt(increasedSharing, 10);
-    if (!Number.isFinite(sharing) || sharing <= increasingRoom.sharingType) {
-      hapticError();
-      toast('error', 'Check the value', `Enter a number greater than ${increasingRoom.sharingType}.`);
+    // 1 is a real room size — plenty of PGs have singles — and the server takes 1..20 in
+    // either direction now. It refuses a shrink that would delete an occupied bed, which is
+    // the one case worth surfacing verbatim rather than pre-empting here: whether a surplus
+    // bed is occupied is the server's fact, not this form's.
+    if (!Number.isFinite(sharing) || sharing < 1 || sharing > 20) {
+      toast('error', 'Check the value', 'Enter how many beds this room holds (1–20).');
       return;
     }
+    const shrinking = sharing < increasingRoom.sharingType;
     try {
-      await increaseSharing.mutateAsync({ roomId: increasingRoom.id, sharingType: sharing });
-      hapticSuccess();
-      toast('success', 'Sharing increased', `Room ${increasingRoom.roomNumber} now holds ${sharing} beds.`);
+      await setSharing.mutateAsync({ roomId: increasingRoom.id, sharingType: sharing });
+      toast(
+        'success',
+        shrinking ? 'Sharing reduced' : 'Sharing updated',
+        `Room ${increasingRoom.roomNumber} now holds ${sharing} bed${sharing === 1 ? '' : 's'}.`,
+      );
       setIncreasingRoom(null);
       setIncreasedSharing('');
     } catch (err: any) {
-      hapticError();
-      toast('error', 'Could not increase sharing', err?.message ?? 'Please try again.');
+      toast('error', 'Could not change sharing', err?.message ?? 'Please try again.');
     }
   };
 
@@ -222,9 +232,7 @@ export function BedVisualizerScreen() {
       <AnimatedPress
         key={typeKey}
         scale={0.96}
-        hapticPattern="light"
         onPress={() => {
-          hapticSelect();
           setSelectedRoomType(typeKey);
         }}
       >
@@ -355,7 +363,6 @@ export function BedVisualizerScreen() {
 
             <OutlinedBtn
               onPress={() => {
-                hapticSelect();
                 setShowAddRoom(true);
               }}
               borderColor={Colors.primary}
@@ -450,7 +457,6 @@ export function BedVisualizerScreen() {
                   label="All Floors"
                   selected={selectedFloor === null}
                   onPress={() => {
-                    hapticSelect();
                     setSelectedFloor(null);
                   }}
                 />
@@ -460,7 +466,6 @@ export function BedVisualizerScreen() {
                     label={`Floor ${f.floorNumber}`}
                     selected={selectedFloor === f.floorNumber}
                     onPress={() => {
-                      hapticSelect();
                       setSelectedFloor(f.floorNumber);
                     }}
                   />
@@ -477,9 +482,8 @@ export function BedVisualizerScreen() {
             </Txt>
 
             <Row gap={6}>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={() => {
-                  hapticSelect();
                   setRoomFilterSort((prev) =>
                     prev === 'ALL'
                       ? 'AVAILABLE_FIRST'
@@ -544,9 +548,7 @@ export function BedVisualizerScreen() {
                   <AnimatedPress
                     key={room.id}
                     scale={0.97}
-                    hapticPattern="light"
                     onPress={() => {
-                      hapticSelect();
                       setSelectedRoomDetail(room);
                       setDetailActiveTab('ALLOCATION');
                     }}
@@ -653,12 +655,12 @@ export function BedVisualizerScreen() {
           onRequestClose={() => setSelectedRoomDetail(null)}
         >
           <View style={styles.detailModalBackdrop}>
-            <View style={styles.detailModalCard}>
+            <View style={[styles.detailModalCard, { paddingBottom: insets.bottom }]}>
               {/* Header Bar */}
               <View style={styles.detailHeaderBar}>
                 <Row justify="space-between" align="center">
                   <Row gap={10} align="center">
-                    <TouchableOpacity
+                    <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
                       onPress={() => setSelectedRoomDetail(null)}
                       style={styles.detailBackBtn}
                     >
@@ -731,7 +733,7 @@ export function BedVisualizerScreen() {
 
                 {/* SEGMENTED TAB SELECTOR */}
                 <Row style={styles.detailSegmentedBar}>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     onPress={() => setDetailActiveTab('ALLOCATION')}
                     style={[
                       styles.detailTabBtn,
@@ -753,7 +755,7 @@ export function BedVisualizerScreen() {
                     </Txt>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     onPress={() => setDetailActiveTab('DETAILS')}
                     style={[
                       styles.detailTabBtn,
@@ -774,28 +776,6 @@ export function BedVisualizerScreen() {
                       Room Details
                     </Txt>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setDetailActiveTab('AMENITIES')}
-                    style={[
-                      styles.detailTabBtn,
-                      detailActiveTab === 'AMENITIES' ? styles.detailTabBtnActive : null,
-                    ]}
-                  >
-                    <Ionicons
-                      name="grid-outline"
-                      size={14}
-                      color={detailActiveTab === 'AMENITIES' ? '#FFFFFF' : Colors.primary}
-                    />
-                    <Txt
-                      size={12}
-                      weight="800"
-                      color={detailActiveTab === 'AMENITIES' ? '#FFFFFF' : Colors.primary}
-                      style={{ marginLeft: 6 }}
-                    >
-                      Amenities
-                    </Txt>
-                  </TouchableOpacity>
                 </Row>
 
                 {/* TAB CONTENT: BED ALLOCATION */}
@@ -806,10 +786,10 @@ export function BedVisualizerScreen() {
                         BED ALLOCATION
                       </Txt>
 
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         onPress={() => {
                           setIncreasingRoom(activeRoomDetailObject);
-                          setIncreasedSharing(String(activeRoomDetailObject.sharingType + 1));
+                          setIncreasedSharing(String(activeRoomDetailObject.sharingType));
                         }}
                         style={styles.editBedsBtn}
                       >
@@ -831,7 +811,6 @@ export function BedVisualizerScreen() {
                           <AnimatedPress
                             key={bed.id}
                             scale={0.96}
-                            hapticPattern="light"
                             onPress={() =>
                               setActiveBed({ room: activeRoomDetailObject, bed })
                             }
@@ -949,8 +928,13 @@ export function BedVisualizerScreen() {
 
                     <Spacer size={8} />
 
+                    {/* Transfer Occupant / View History / Report Issue used to sit here too —
+                        each just fired a toast claiming something happened ("Room history &
+                        maintenance log loaded.", "Opened issue ticket form...") with no screen,
+                        query, or mutation behind any of them. Add Occupant is the only one of
+                        the four that ever did anything real. */}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         onPress={() => {
                           const freeBed = activeRoomDetailObject.beds.find((b) => b.status !== 'occupied');
                           if (freeBed) {
@@ -964,36 +948,6 @@ export function BedVisualizerScreen() {
                         <Ionicons name="person-add-outline" size={14} color={Colors.primary} />
                         <Txt size={11} weight="800" color={Colors.textPrimary} style={{ marginLeft: 6 }}>
                           Add Occupant
-                        </Txt>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => toast('info', 'Transfer Occupant', 'Select a resident bed to reassign them to another room.')}
-                        style={styles.detailQuickActionBtn}
-                      >
-                        <Ionicons name="swap-horizontal-outline" size={14} color={Colors.primary} />
-                        <Txt size={11} weight="800" color={Colors.textPrimary} style={{ marginLeft: 6 }}>
-                          Transfer Occupant
-                        </Txt>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => toast('info', 'Room History', 'Room history & maintenance log loaded.')}
-                        style={styles.detailQuickActionBtn}
-                      >
-                        <Ionicons name="time-outline" size={14} color={Colors.primary} />
-                        <Txt size={11} weight="800" color={Colors.textPrimary} style={{ marginLeft: 6 }}>
-                          View History
-                        </Txt>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => toast('info', 'Report Issue', 'Opened issue ticket form for Room ' + activeRoomDetailObject.roomNumber)}
-                        style={styles.detailQuickActionBtn}
-                      >
-                        <Ionicons name="alert-circle-outline" size={14} color={Colors.danger} />
-                        <Txt size={11} weight="800" color={Colors.danger} style={{ marginLeft: 6 }}>
-                          Report Issue
                         </Txt>
                       </TouchableOpacity>
                     </ScrollView>
@@ -1031,64 +985,30 @@ export function BedVisualizerScreen() {
                         </Col>
                       </View>
 
-                      <View style={styles.aboutRoomChip}>
-                        <Ionicons name="resize-outline" size={14} color={Colors.primary} />
-                        <Col>
-                          <Txt size={9} color={Colors.textMuted}>Area</Txt>
-                          <Txt size={11} weight="800" color={Colors.textPrimary}>220 sq.ft</Txt>
-                        </Col>
-                      </View>
                     </Row>
                   </Card>
                 )}
 
-                {/* TAB CONTENT: ROOM DETAILS */}
+                {/* TAB CONTENT: ROOM DETAILS. Used to also carry a generic description
+                    paragraph ("features dedicated personal wardrobes... high-speed Wi-Fi
+                    access") and a fixed "220 sq.ft" area chip — identical text for every
+                    room in every property, with no backend field behind either (pg-backend's
+                    PgRoom model has no amenities or area column). Base Monthly Rent is the
+                    one real fact here. */}
                 {detailActiveTab === 'DETAILS' && (
                   <Card containerColor="#FFFFFF" borderRadius={18} padding={[16, 16]}>
                     <Txt size={14} weight="900" color={Colors.textPrimary}>
                       Room Specifications
                     </Txt>
-                    <Spacer size={8} />
-                    <Txt size={12} color={Colors.textSecondary} style={{ lineHeight: 20 }}>
-                      Room {activeRoomDetailObject.roomNumber} is a spacious {activeRoomDetailObject.sharingType}-sharing room located on Floor {activeRoomDetailObject.floorNumber}. It features dedicated personal wardrobes, power sockets at each bedside, attached bathroom, and high-speed Wi-Fi access.
-                    </Txt>
                     <Spacer size={14} />
                     <Row justify="space-between" align="center" style={styles.aboutRoomChip}>
                       <Txt size={12} color={Colors.textMuted}>Base Monthly Rent</Txt>
-                      <Txt size={14} weight="900" color={Colors.primary}>
-                        ₹{activeRoomDetailObject.baseRent ? activeRoomDetailObject.baseRent.toLocaleString('en-IN') : '8,500'} / mo
+                      <Txt size={14} weight="900" color={activeRoomDetailObject.baseRent ? Colors.primary : Colors.textMuted}>
+                        {activeRoomDetailObject.baseRent
+                          ? `₹${activeRoomDetailObject.baseRent.toLocaleString('en-IN')} / mo`
+                          : 'Not set'}
                       </Txt>
                     </Row>
-                  </Card>
-                )}
-
-                {/* TAB CONTENT: AMENITIES */}
-                {detailActiveTab === 'AMENITIES' && (
-                  <Card containerColor="#FFFFFF" borderRadius={18} padding={[16, 16]}>
-                    <Txt size={14} weight="900" color={Colors.textPrimary}>
-                      Included Room Amenities
-                    </Txt>
-                    <Spacer size={12} />
-                    <View style={{ gap: 10 }}>
-                      {[
-                        { icon: 'wifi', title: 'High-Speed Wi-Fi', desc: 'Unlimited 100 Mbps fiber internet' },
-                        { icon: 'water', title: 'Attached Bathroom', desc: '24/7 hot water supply' },
-                        { icon: 'snow', title: 'Air Conditioner', desc: 'Climate controlled cooling' },
-                        { icon: 'desktop', title: 'Study Desk & Chair', desc: 'Personal ergonomic workstation' },
-                        { icon: 'shirt', title: 'Personal Wardrobe', desc: 'Lockable spacious storage' },
-                        { icon: 'flash', title: 'Power Backup', desc: 'Inverter support for lighting & fans' },
-                      ].map((item, idx) => (
-                        <Row key={idx} gap={10} align="center" style={styles.amenityRow}>
-                          <View style={styles.amenityIconCircle}>
-                            <Ionicons name={item.icon as any} size={16} color={Colors.primary} />
-                          </View>
-                          <Col style={{ flex: 1 }}>
-                            <Txt size={12} weight="800" color={Colors.textPrimary}>{item.title}</Txt>
-                            <Txt size={10} color={Colors.textMuted}>{item.desc}</Txt>
-                          </Col>
-                        </Row>
-                      ))}
-                    </View>
                   </Card>
                 )}
               </ScrollView>
@@ -1101,7 +1021,7 @@ export function BedVisualizerScreen() {
       {activeBed && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setActiveBed(null)}>
           <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveBed(null)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setActiveBed(null)} />
             <Card
               containerColor={Colors.surface}
               borderRadius={20}
@@ -1168,11 +1088,11 @@ export function BedVisualizerScreen() {
                       subtitle="Add a resident from the Guests tab first, then assign them here."
                     />
                   ) : (
-                    <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+                    <KeyboardAvoidingView behavior="padding">
                       <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
                         <View style={{ gap: 8 }}>
                           {unassignedGuests.map((g) => (
-                            <TouchableOpacity
+                            <TouchableOpacity accessibilityRole="button"
                               key={g.id}
                               activeOpacity={0.7}
                               disabled={assignBed.isPending}
@@ -1203,7 +1123,7 @@ export function BedVisualizerScreen() {
       {showAddRoom && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowAddRoom(false)}>
           <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowAddRoom(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowAddRoom(false)} />
             <Card
               containerColor={Colors.surface}
               borderRadius={20}
@@ -1225,7 +1145,8 @@ export function BedVisualizerScreen() {
               <Spacer size={14} />
               <OutlinedTextField label="Floor number" value={newFloor} onChangeText={setNewFloor} keyboardType="number-pad" style={{ marginBottom: 10 }} />
               <OutlinedTextField label="Room number" value={newRoomNumber} onChangeText={setNewRoomNumber} style={{ marginBottom: 10 }} />
-              <OutlinedTextField label="Sharing (beds in this room)" value={newSharing} onChangeText={setNewSharing} keyboardType="number-pad" />
+              <OutlinedTextField label="Sharing (beds in this room)" value={newSharing} onChangeText={setNewSharing} keyboardType="number-pad" style={{ marginBottom: 10 }} />
+              <OutlinedTextField label="Base rent per bed (₹, optional)" value={newBaseRent} onChangeText={setNewBaseRent} keyboardType="number-pad" />
               <Spacer size={16} />
               <Btn
                 onPress={handleAddRoom}
@@ -1249,7 +1170,7 @@ export function BedVisualizerScreen() {
       {increasingRoom && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setIncreasingRoom(null)}>
           <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIncreasingRoom(null)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setIncreasingRoom(null)} />
             <Card
               containerColor={Colors.surface}
               borderRadius={20}
@@ -1260,21 +1181,24 @@ export function BedVisualizerScreen() {
             >
               <Row justify="space-between" align="center">
                 <Txt size={16} weight="900" color={Colors.textPrimary}>
-                  Increase Room Sharing
+                  Change Room Sharing
                 </Txt>
                 <IconBtn onPress={() => setIncreasingRoom(null)} icon="close" size={18} tint={Colors.textMuted} />
               </Row>
               <Spacer size={4} />
               <Txt size={11} color={Colors.textMuted}>
-                Room {increasingRoom.roomNumber} currently holds {increasingRoom.sharingType} beds.
+                Room {increasingRoom.roomNumber} currently holds {increasingRoom.sharingType} bed
+                {increasingRoom.sharingType === 1 ? '' : 's'}. Set it anywhere from 1 (a single
+                room) to 20. Reducing it removes the highest-numbered beds, and is refused if
+                anyone is still in them.
               </Txt>
               <Spacer size={14} />
-              <OutlinedTextField label="New sharing capacity" value={increasedSharing} onChangeText={setIncreasedSharing} keyboardType="number-pad" />
+              <OutlinedTextField label="Beds in this room (1–20)" value={increasedSharing} onChangeText={setIncreasedSharing} keyboardType="number-pad" />
               <Spacer size={16} />
               <Btn
-                onPress={handleIncreaseSharing}
-                loading={increaseSharing.isPending}
-                disabled={increaseSharing.isPending}
+                onPress={handleSetSharing}
+                loading={setSharing.isPending}
+                disabled={setSharing.isPending}
                 containerColor={Colors.primary}
                 textColor={Colors.textInverse}
                 borderRadius={10}
@@ -1514,19 +1438,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CBEFF4',
-  },
-  amenityRow: {
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F4F9FB',
-  },
-  amenityIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F4F9FB',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   modalBackdrop: {
     flex: 1,

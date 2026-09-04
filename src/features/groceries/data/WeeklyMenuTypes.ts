@@ -6,6 +6,8 @@ export interface MenuIngredient {
   price: number;
   originalPrice?: number;
   unit: string;
+  /** How many packs the day's recipe needs — the number `quantity` is a display string of. */
+  packs: number;
 }
 
 export interface DayMenuConfig {

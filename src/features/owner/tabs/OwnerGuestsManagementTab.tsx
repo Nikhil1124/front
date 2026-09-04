@@ -34,7 +34,6 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { formatDateTime } from '@/utils/format';
 import type { GuestEntity } from '@/types';
 
@@ -54,8 +53,9 @@ const KYC_STYLE: Record<string, { bg: string; border: string; text: string; labe
   DEFAULT: { bg: '#F7F8FC', border: '#E5E7EB', text: '#6B7280', label: '⚠️ No KYC' },
 };
 
-import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useGuestsQuery, useAddGuestMutation, useUpdateGuestMutation, useRemoveGuestMutation } from '@/features/guests/useGuests';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
+import * as map from '@/data/mappers';
 
 export function OwnerGuestsManagementTab() {
   const [subTab, setSubTab] = useState(0); // 0: Add Resident, 1: Directory
@@ -66,9 +66,9 @@ export function OwnerGuestsManagementTab() {
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
   const { data: guests = [], isLoading: guestsLoading, error: guestsError } = useGuestsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const createGuestByOwner = usePGowStore((s) => s.createGuestByOwner);
-  const updateGuestByOwner = usePGowStore((s) => s.updateGuestByOwner);
-  const deleteGuest = usePGowStore((s) => s.deleteGuest);
+  const addGuestMutation = useAddGuestMutation(activePgId ?? undefined);
+  const updateGuestMutation = useUpdateGuestMutation(activePgId ?? undefined);
+  const removeGuestMutation = useRemoveGuestMutation(activePgId ?? undefined);
   const verifyGuestKycByOwner = usePGowStore((s) => s.verifyGuestKycByOwner);
   const rotateJoinCode = usePGowStore((s) => s.rotateJoinCode);
   const disableJoinCode = usePGowStore((s) => s.disableJoinCode);
@@ -132,14 +132,13 @@ export function OwnerGuestsManagementTab() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: async () => {
           setIsDeletingGuest(g.id);
-          const result = await deleteGuest(g.id);
-          setIsDeletingGuest(null);
-          if (result?.ok) {
-            hapticSuccess();
+          try {
+            await removeGuestMutation.mutateAsync(g.id);
             toast('success', 'Resident Removed', `${g.name} has been removed.`);
-          } else {
-            hapticError();
-            Alert.alert('Failed', result?.error || 'Could not remove resident.');
+          } catch (err) {
+            Alert.alert('Failed', err instanceof Error ? err.message : 'Could not remove resident.');
+          } finally {
+            setIsDeletingGuest(null);
           }
       } },
     ]);
@@ -156,45 +155,53 @@ export function OwnerGuestsManagementTab() {
       toast('error', 'Monthly rent required', 'Enter the agreed monthly rent for this resident.');
       return;
     }
+    if (!guestName.trim() || !guestRoom.trim()) {
+      toast('error', 'Missing details', 'Name & Room No are required.');
+      return;
+    }
+    if (!guestPhone.trim()) {
+      toast('error', 'Missing details', 'A phone number is required — it is what the resident signs in with.');
+      return;
+    }
+    if (!guestPassword || guestPassword.length < 8) {
+      toast('error', 'Missing details', 'Set a password of at least 8 characters for the resident.');
+      return;
+    }
     setIsCreating(true);
     setErrorField(null);
     try {
-      const result = await createGuestByOwner(
-        guestName,
-        guestEmail,
-        guestPhone,
-        guestRoom,
-        guestPassword,
-        parsedRent
-      );
-      if (result.ok) {
-        hapticSuccess();
-        toast('success', 'Resident Registered', `${guestName} can now log in.`);
-        setGuestName('');
-        setGuestEmail('');
-        setGuestPhone('');
-        setGuestRoom('');
-        setGuestPassword('');
-        setGuestRent('6500');
-        setShowManualForm(false);
-      } else {
-        hapticError();
-        let errorMsg = result.error ?? 'Unknown error occurred.';
-        const lowerError = errorMsg.toLowerCase();
-        
-        if (lowerError.includes('email')) {
-          errorMsg = 'An account with this email already exists.';
-          setErrorField('email');
-        } else if (lowerError.includes('number') || lowerError.includes('phone')) {
-          errorMsg = 'An account with this phone number already exists.';
-          setErrorField('phone');
-        } else if (lowerError.includes('already exists')) {
-          errorMsg = 'An account with these details already exists.';
-          setErrorField('phone');
-        }
-        
-        Alert.alert('Failed', errorMsg);
+      await addGuestMutation.mutateAsync({
+        name: guestName.trim(),
+        phone: map.toE164(guestPhone),
+        password: guestPassword,
+        room_no: guestRoom.trim(),
+        rent_amount: parsedRent,
+        email: guestEmail.trim().toLowerCase() || undefined,
+      });
+      toast('success', 'Resident Registered', `${guestName} can now log in.`);
+      setGuestName('');
+      setGuestEmail('');
+      setGuestPhone('');
+      setGuestRoom('');
+      setGuestPassword('');
+      setGuestRent('6500');
+      setShowManualForm(false);
+    } catch (err) {
+      let errorMsg = err instanceof Error ? err.message : 'Unknown error occurred.';
+      const lowerError = errorMsg.toLowerCase();
+
+      if (lowerError.includes('email')) {
+        errorMsg = 'An account with this email already exists.';
+        setErrorField('email');
+      } else if (lowerError.includes('number') || lowerError.includes('phone')) {
+        errorMsg = 'An account with this phone number already exists.';
+        setErrorField('phone');
+      } else if (lowerError.includes('already exists')) {
+        errorMsg = 'An account with these details already exists.';
+        setErrorField('phone');
       }
+
+      Alert.alert('Failed', errorMsg);
     } finally {
       setIsCreating(false);
     }
@@ -209,22 +216,22 @@ export function OwnerGuestsManagementTab() {
     }
     setIsUpdating(true);
     try {
-      const result = await updateGuestByOwner(
-        editing,
-        editName,
-        editEmail,
-        editPhone,
-        editRoom,
-        parsedEditRent
-      );
-      if (result.ok) {
-        hapticSuccess();
-        toast('success', 'Profile Updated', 'Resident profile & monthly fee updated.');
-        setEditing(null);
-      } else {
-        hapticError();
-        Alert.alert('Failed', result.error ?? 'Unknown');
-      }
+      // Phone is the login identity and is not editable here — the API's update payload has
+      // no field for it. Neither is the password: an owner who could set one could sign in
+      // as the resident and read their payment history.
+      await updateGuestMutation.mutateAsync({
+        membershipId: editing.id,
+        params: {
+          name: editName.trim() || editing.name,
+          email: editEmail.trim().toLowerCase() || undefined,
+          room_no: editRoom.trim() || editing.roomNo,
+          rent_amount: parsedEditRent > 0 ? parsedEditRent : undefined,
+        },
+      });
+      toast('success', 'Profile Updated', 'Resident profile & monthly fee updated.');
+      setEditing(null);
+    } catch (err) {
+      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown');
     } finally {
       setIsUpdating(false);
     }
@@ -232,7 +239,6 @@ export function OwnerGuestsManagementTab() {
 
   const handleApprove = async (g: GuestEntity) => {
     await verifyGuestKycByOwner(g.id, true);
-    hapticSuccess();
     toast('success', 'KYC Approved', `Notification sent to ${g.name}.`);
     setReviewing(null);
   };
@@ -241,14 +247,12 @@ export function OwnerGuestsManagementTab() {
     if (!rejecting) return;
     const reason = rejectionReason.trim() || 'Document or photo unreadable.';
     await verifyGuestKycByOwner(rejecting.id, false, reason);
-    hapticError();
     toast('warning', 'KYC Rejected', 'Resident notified. They can re-upload documents.');
     setRejecting(null);
     setRejectionReason('');
   };
 
   const openEdit = (g: GuestEntity) => {
-    hapticSelect();
     setEditing(g);
     setEditName(g.name);
     setEditEmail(g.email);
@@ -258,7 +262,6 @@ export function OwnerGuestsManagementTab() {
   };
 
   const openDetail = (g: GuestEntity) => {
-    hapticSelect();
     setDetailGuest(g);
   };
 
@@ -329,10 +332,9 @@ export function OwnerGuestsManagementTab() {
       {/* ── Segmented Tab Selector ── */}
       <View style={styles.tabContainer}>
         <Row gap={8} style={styles.segmentedControl}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.segBtn, subTab === 0 && styles.segBtnActive]}
             onPress={() => {
-              hapticSelect();
               setSubTab(0);
             }}
             activeOpacity={0.8}
@@ -343,14 +345,13 @@ export function OwnerGuestsManagementTab() {
               color={subTab === 0 ? WHITE : MUTED}
               style={{ marginRight: 6 }}
             />
-            <Text style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
+            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Add Resident
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.segBtn, subTab === 1 && styles.segBtnActive]}
             onPress={() => {
-              hapticSelect();
               setSubTab(1);
             }}
             activeOpacity={0.8}
@@ -361,7 +362,7 @@ export function OwnerGuestsManagementTab() {
               color={subTab === 1 ? WHITE : MUTED}
               style={{ marginRight: 6 }}
             />
-            <Text style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
+            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Directory
             </Text>
           </TouchableOpacity>
@@ -377,10 +378,10 @@ export function OwnerGuestsManagementTab() {
             showsVerticalScrollIndicator={false}
           >
             <Row align="center" gap={8} style={{ marginBottom: 12 }}>
-              <TouchableOpacity onPress={() => setShowManualForm(false)} style={styles.backBtn}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => setShowManualForm(false)} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={CHARCOAL} />
               </TouchableOpacity>
-              <Text style={styles.sectionTitle}>Manual Registration</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Manual Registration</Text>
             </Row>
 
             <OutlinedTextField
@@ -441,14 +442,14 @@ export function OwnerGuestsManagementTab() {
               style={{ marginBottom: 20 }}
             />
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={styles.submitBtn}
               onPress={handleCreate}
               disabled={isCreating}
               activeOpacity={0.85}
             >
               <Ionicons name="person-add" size={16} color={WHITE} style={{ marginRight: 8 }} />
-              <Text style={styles.submitBtnText}>Register Resident ID & Password</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Register Resident ID & Password</Text>
             </TouchableOpacity>
           </ScrollView>
         ) : (
@@ -457,8 +458,8 @@ export function OwnerGuestsManagementTab() {
             contentContainerStyle={styles.addRosterScroll}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.bodyTitle}>Add a Resident</Text>
-            <Text style={styles.bodySub}>Choose how you want to add a new resident.</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add a Resident</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Choose how you want to add a new resident.</Text>
 
             <Spacer size={16} />
 
@@ -469,17 +470,17 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.choiceIconCircle}>
                   <Ionicons name="link-outline" size={20} color={GREEN} />
                 </View>
-                <Text style={styles.choiceTitle}>Invite Resident</Text>
-                <Text style={styles.choiceDesc}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Invite Resident</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
                   Share a secure sign-up link. Resident registers themselves.
                 </Text>
                 <Spacer size={12} />
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.choiceBtnSolid}
                   onPress={() => setShowInviteModal(true)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.choiceBtnSolidText}>Create Sign-Up Link</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnSolidText}>Create Sign-Up Link</Text>
                 </TouchableOpacity>
               </View>
 
@@ -488,17 +489,17 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.choiceIconCircle}>
                   <Ionicons name="person-add-outline" size={20} color={GREEN} />
                 </View>
-                <Text style={styles.choiceTitle}>Add Manually</Text>
-                <Text style={styles.choiceDesc}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Add Manually</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
                   Enter resident details yourself and create their account.
                 </Text>
                 <Spacer size={12} />
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.choiceBtnOutline}
                   onPress={() => setShowManualForm(true)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.choiceBtnOutlineText}>Add Manually</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnOutlineText}>Add Manually</Text>
                 </TouchableOpacity>
               </View>
             </Row>
@@ -506,7 +507,7 @@ export function OwnerGuestsManagementTab() {
             <Spacer size={24} />
 
             {/* Timeline Workflow Step */}
-            <Text style={styles.workflowTitle}>How it works</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.workflowTitle}>How it works</Text>
             <Spacer size={12} />
             <Row align="center" justify="space-between" style={styles.workflowRow}>
               {/* Step 1 */}
@@ -514,8 +515,8 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.workflowIconBox}>
                   <Ionicons name="link" size={16} color={GREEN} />
                 </View>
-                <Text style={styles.workflowStepTitle}>Choose Method</Text>
-                <Text style={styles.workflowStepDesc}>Invite or add manually</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Choose Method</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Invite or add manually</Text>
               </Col>
               
               <Ionicons name="arrow-forward" size={14} color="#D0D6D2" style={{ marginHorizontal: 2 }} />
@@ -525,8 +526,8 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.workflowIconBox}>
                   <Ionicons name="person" size={16} color={GREEN} />
                 </View>
-                <Text style={styles.workflowStepTitle}>Enter Details</Text>
-                <Text style={styles.workflowStepDesc}>Provide required info</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Enter Details</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Provide required info</Text>
               </Col>
 
               <Ionicons name="arrow-forward" size={14} color="#D0D6D2" style={{ marginHorizontal: 2 }} />
@@ -536,8 +537,8 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.workflowIconBox}>
                   <Ionicons name="shield-checkmark" size={16} color={GREEN} />
                 </View>
-                <Text style={styles.workflowStepTitle}>Account Ready</Text>
-                <Text style={styles.workflowStepDesc}>Account will be created</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Account Ready</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Account will be created</Text>
               </Col>
             </Row>
 
@@ -549,8 +550,8 @@ export function OwnerGuestsManagementTab() {
                 <Ionicons name="shield-checkmark" size={18} color={GREEN} />
               </View>
               <Col style={{ flex: 1 }}>
-                <Text style={styles.securityBannerTitle}>Secure & Private</Text>
-                <Text style={styles.securityBannerText}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.securityBannerTitle}>Secure & Private</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.securityBannerText}>
                   Only you control who can join your PG. All data is encrypted and secure.
                 </Text>
               </Col>
@@ -558,12 +559,17 @@ export function OwnerGuestsManagementTab() {
 
             <Spacer size={16} />
 
-            {/* Need Help Link */}
-            <TouchableOpacity style={styles.helpLinkRow} activeOpacity={0.7}>
+            {/* Need Help Link — there's no residents-management help screen to send this to
+                yet, so it acknowledges the tap honestly instead of doing nothing. */}
+            <TouchableOpacity accessibilityRole="button"
+              style={styles.helpLinkRow}
+              activeOpacity={0.7}
+              onPress={() => Alert.alert('Need help?', 'A residents management guide is not available yet. Contact PGow support if you have questions.')}
+            >
               <Row justify="space-between" align="center" style={{ width: '100%' }}>
                 <Row gap={10} align="center">
                   <Ionicons name="help-circle-outline" size={18} color={MUTED} />
-                  <Text style={styles.helpLinkText}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.helpLinkText}>
                     Need help? Learn more about managing residents
                   </Text>
                 </Row>
@@ -589,9 +595,8 @@ export function OwnerGuestsManagementTab() {
           }
           ListHeaderComponent={
             <View style={{ gap: 14, marginBottom: 12 }}>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={() => {
-                  hapticSelect();
                   router.push('/bed-visualizer');
                 }}
                 activeOpacity={0.7}
@@ -705,14 +710,14 @@ export function OwnerGuestsManagementTab() {
               )}
 
               <Row justify="space-between" align="center">
-                <Text style={styles.directoryTitle}>Registered Residents</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.directoryTitle}>Registered Residents</Text>
                 <View style={styles.countBadge}>
-                  <Text style={styles.countBadgeText}>{guests.length} Guests</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{guests.length} Guests</Text>
                 </View>
               </Row>
 
               {!isManager && (
-                <TouchableOpacity onPress={() => setShowEditProperty(true)} activeOpacity={0.7}>
+                <TouchableOpacity accessibilityRole="button" onPress={() => setShowEditProperty(true)} activeOpacity={0.7}>
                   <Row gap={6} align="center">
                     <Ionicons name="bed-outline" size={14} color={MUTED} />
                     <Txt variant="caption" color={MUTED}>
@@ -739,7 +744,7 @@ export function OwnerGuestsManagementTab() {
           renderItem={({ item: g }) => {
             const kyc = KYC_STYLE[g.kycStatus] ?? KYC_STYLE.DEFAULT;
             return (
-              <AnimatedPress scale={0.985} hapticPattern="light" onPress={() => openDetail(g)}>
+              <AnimatedPress scale={0.985} onPress={() => openDetail(g)}>
                 <Card
                   containerColor={WHITE}
                   borderRadius={14}
@@ -1013,7 +1018,7 @@ export function OwnerGuestsManagementTab() {
       {/* Edit Dialog */}
       <Modal visible={editing != null} transparent animationType="fade">
         {/* KAV platform-aware: padding on Android only, iOS handles it natively */}
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <View style={styles.modalBackdrop}>
             <Card
               containerColor={WHITE}
@@ -1178,7 +1183,7 @@ export function OwnerGuestsManagementTab() {
 
       {/* Reject Reason Dialog */}
       <Modal visible={rejecting != null} transparent animationType="fade">
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <View style={styles.modalBackdrop}>
             <Card
               containerColor={WHITE}
@@ -1240,9 +1245,9 @@ export function OwnerGuestsManagementTab() {
       {showInviteModal && owner && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowInviteModal(false)}>
           {/* behavior="padding" only on Android — iOS handles it natively */}
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <Animated.View entering={FadeIn.duration(200)} style={styles.modalBackdrop}>
-              <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowInviteModal(false)} />
+              <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowInviteModal(false)} />
               
               <Animated.View
                 entering={SlideInDown.duration(180)}
@@ -1258,27 +1263,27 @@ export function OwnerGuestsManagementTab() {
                       <Ionicons name="link" size={18} color={GREEN} />
                     </View>
                     <Col>
-                      <Text style={styles.inviteSheetTitle}>Resident Sign-Up Link</Text>
-                      <Text style={styles.inviteSheetSub}>Let residents register themselves</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteSheetTitle}>Resident Sign-Up Link</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteSheetSub}>Let residents register themselves</Text>
                     </Col>
                   </Row>
-                  <TouchableOpacity onPress={() => setShowInviteModal(false)} style={styles.inviteCloseBtn}>
+                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowInviteModal(false)} style={styles.inviteCloseBtn}>
                     <Ionicons name="close" size={20} color={MUTED} />
                   </TouchableOpacity>
                 </Row>
 
                 {owner.joinCode ? (
                   <>
-                    <Text style={styles.inviteExplain}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
                       Residents who enter this code during self-registration will be added to your PG automatically. You will verify their KYC documents before they are approved.
                     </Text>
 
                     <Spacer size={16} />
 
-                    <TouchableOpacity onPress={handleCopyCode} activeOpacity={0.75} style={styles.inviteCodeBox}>
+                    <TouchableOpacity accessibilityRole="button" onPress={handleCopyCode} activeOpacity={0.75} style={styles.inviteCodeBox}>
                       <Col>
-                        <Text style={styles.inviteCodeLabel}>LOBBY JOIN CODE</Text>
-                        <Text style={styles.inviteCodeText}>{owner.joinCode}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeLabel}>LOBBY JOIN CODE</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeText}>{owner.joinCode}</Text>
                       </Col>
                       <Ionicons name="copy-outline" size={20} color={GREEN} />
                     </TouchableOpacity>
@@ -1286,8 +1291,8 @@ export function OwnerGuestsManagementTab() {
                     <Spacer size={12} />
 
                     <Row align="center" justify="space-between" style={styles.inviteRentRow}>
-                      <Text style={styles.inviteRentLabel}>Monthly rent for self sign-ups</Text>
-                      <Text style={styles.inviteRentValue}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteRentLabel}>Monthly rent for self sign-ups</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteRentValue}>
                         {owner.defaultRentAmount > 0 ? `₹${owner.defaultRentAmount.toLocaleString('en-IN')} / mo` : 'Not set'}
                       </Text>
                     </Row>
@@ -1322,21 +1327,21 @@ export function OwnerGuestsManagementTab() {
                     <Spacer size={20} />
 
                     <Row gap={10}>
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         style={styles.inviteShareBtn}
                         onPress={handleShareCode}
                         activeOpacity={0.8}
                       >
                         <Ionicons name="share-social-outline" size={18} color={WHITE} style={{ marginRight: 6 }} />
-                        <Text style={styles.inviteShareBtnText}>Share Invitation</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteShareBtnText}>Share Invitation</Text>
                       </TouchableOpacity>
                       {!isManager && (
-                        <TouchableOpacity
+                        <TouchableOpacity accessibilityRole="button"
                           style={styles.inviteRotateBtn}
                           onPress={handleRotateCode}
                           activeOpacity={0.8}
                         >
-                          <Text style={styles.inviteRotateBtnText}>New Code</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.inviteRotateBtnText}>New Code</Text>
                         </TouchableOpacity>
                       )}
                     </Row>
@@ -1344,8 +1349,8 @@ export function OwnerGuestsManagementTab() {
                     {!isManager && (
                       <>
                         <Spacer size={14} />
-                        <TouchableOpacity onPress={handleDisableCode} activeOpacity={0.7} style={{ alignSelf: 'center' }}>
-                          <Text style={styles.inviteDisableText}>Turn off self sign-up</Text>
+                        <TouchableOpacity accessibilityRole="button" onPress={handleDisableCode} activeOpacity={0.7} style={{ alignSelf: 'center' }}>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.inviteDisableText}>Turn off self sign-up</Text>
                         </TouchableOpacity>
                       </>
                     )}
@@ -1354,7 +1359,7 @@ export function OwnerGuestsManagementTab() {
                   /* Disabled state */
                   !isManager && (
                     <>
-                      <Text style={styles.inviteExplain}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
                         Self sign-up is currently off. Set the default monthly rent below to turn it on and generate a join code.
                       </Text>
                       <Spacer size={14} />
@@ -1366,20 +1371,20 @@ export function OwnerGuestsManagementTab() {
                         keyboardType="number-pad"
                         style={{ marginBottom: 16 }}
                       />
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         style={styles.inviteEnableBtn}
                         onPress={handleEnableJoinCode}
                         activeOpacity={0.8}
                       >
                         <Ionicons name="key-outline" size={16} color={WHITE} style={{ marginRight: 6 }} />
-                        <Text style={styles.inviteEnableBtnText}>Turn on self sign-up</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteEnableBtnText}>Turn on self sign-up</Text>
                       </TouchableOpacity>
                     </>
                   )
                 )}
 
                 {isManager && !owner.joinCode && (
-                  <Text style={styles.inviteExplain}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
                     Self sign-up is currently disabled. Only the property owner can turn this on.
                   </Text>
                 )}

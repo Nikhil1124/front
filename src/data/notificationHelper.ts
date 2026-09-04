@@ -49,6 +49,32 @@ async function push(title: string, body: string, channelId: string = 'meal_rsvp_
   }
 }
 
+/**
+ * A fixed `identifier` makes this idempotent — scheduling again with the same identifier
+ * replaces the previous request instead of stacking a duplicate, so callers don't need to
+ * track whether a given reminder is already scheduled (across re-renders, tab remounts,
+ * app restarts) before calling this again.
+ */
+async function scheduleRepeating(
+  identifier: string,
+  title: string,
+  body: string,
+  trigger: Record<string, unknown>,
+  channelId: string = 'meal_rsvp_channel'
+): Promise<void> {
+  try {
+    await ensureChannel();
+    await Notifications.scheduleNotificationAsync({
+      identifier,
+      content: { title, body, data: {}, sound: true },
+      trigger: { ...trigger, channelId },
+    });
+  } catch (e) {
+    // Same device without notification permission, or Expo Go — the toggle stays on
+    // screen but nothing is actually scheduled, same soft-fail as every other call here.
+  }
+}
+
 export const NotificationHelper = {
   async showRsvpNotification(notification: MealNotificationEntity, _activeGuestId: string): Promise<void> {
     const title = `⏰ RSVP: ${notification.mealType} is ready!`;
@@ -74,5 +100,25 @@ export const NotificationHelper = {
 
   showRentDueAlertNotification: async function (title: string, message: string): Promise<void> {
     await this.showPaymentNotification(title, message);
+  },
+
+  /** Fires every day at `hour:minute`, device-local time, until `cancelScheduled` is called
+   *  with the same `identifier`. */
+  async scheduleDailyReminder(identifier: string, hour: number, minute: number, title: string, body: string): Promise<void> {
+    await scheduleRepeating(identifier, title, body, { type: 'daily', hour, minute });
+  },
+
+  /** Fires every `intervalSeconds` from now until `cancelScheduled` is called with the same
+   *  `identifier`. iOS ignores a repeating interval under 60 seconds. */
+  async scheduleRepeatingReminder(identifier: string, intervalSeconds: number, title: string, body: string): Promise<void> {
+    await scheduleRepeating(identifier, title, body, { type: 'timeInterval', seconds: intervalSeconds, repeats: true });
+  },
+
+  async cancelScheduled(identifier: string): Promise<void> {
+    try {
+      await Notifications.cancelScheduledNotificationAsync(identifier);
+    } catch (e) {
+      // ignore
+    }
   },
 };

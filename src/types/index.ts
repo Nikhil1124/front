@@ -79,6 +79,9 @@ export interface MealNotificationEntity {
   isClosed: boolean;
   serviceTime: string;
   isAlertSent: boolean;
+  /** Chef-confirmed, never inferred from `menuItems` text. Null for a meal posted before
+   *  this field existed — render nothing for those rather than guess. */
+  dietaryType: 'veg' | 'non_veg' | 'pure_veg' | null;
 }
 
 export interface GuestRSVPEntity {
@@ -106,6 +109,9 @@ export interface PaymentEntity {
   receiptId: string;
   rejectReason: string;
   verificationDate: number;
+  /** Who verified it — empty until verified. Was captured server-side but never resolved to
+   *  a name before; the UI only ever showed a paid/unpaid badge. */
+  verifiedByName: string;
 }
 
 export interface FeedbackComplaintEntity {
@@ -200,19 +206,6 @@ export interface PGGroceryOrder {
   isExpress10Min: boolean;
   riderName: string;
   riderPhone: string;
-}
-
-/** A grocery shopping list the Chef put together for the kitchen — Chef can
- *  only request, not buy; Manager/Owner review it and place the real order. */
-export interface PGDailyGrocerySubscription {
-  id: string;
-  pgId: string;
-  title: string;
-  itemsSummary: string;
-  dailyDeliveryTime: string;
-  estimatedDailyCost: number;
-  isActive: boolean;
-  startDate: number;
 }
 
 export interface PGRepairServiceRequest {
@@ -418,50 +411,6 @@ export interface ProcurementOrder {
   }>;
 }
 
-/** A staff SOS alert. Lifecycle: active → acknowledged → resolved. */
-export interface PanicAlert {
-  id: string;
-  pgId: string;
-  triggeredByMembershipId: string;
-  triggeredByUserName: string;
-  latitude?: number;
-  longitude?: number;
-  message?: string;
-  status: 'active' | 'acknowledged' | 'resolved';
-  acknowledgedBy?: string;
-  acknowledgedAt?: string;
-  resolvedAt?: string;
-  resolutionNote?: string;
-  createdAt: string;
-}
-
-/** A staff member's shift on a given day. Off-days carry no times and no QR. */
-export interface StaffShift {
-  id: string;
-  pgId: string;
-  staffMembershipId: string;
-  shiftDate: string;
-  shiftStart: string;
-  shiftEnd: string;
-  isOffDay: boolean;
-  qrCodeHash?: string;
-}
-
-/** A single clock-in/out record against a shift. */
-export interface AttendancePunch {
-  id: string;
-  pgId: string;
-  staffMembershipId: string;
-  shiftId: string;
-  punchInAt: string;
-  punchOutAt?: string;
-  punchInMethod: 'qr' | 'geofence' | 'manual';
-  punchOutMethod?: 'qr' | 'geofence' | 'manual';
-  punchInLatitude?: number;
-  punchInLongitude?: number;
-  status: 'in_progress' | 'completed' | 'missed';
-}
-
 /** A tenant's monthly rent invoice. Lifecycle: unpaid → paid (or overdue). */
 export interface TenantInvoice {
   id: string;
@@ -484,42 +433,6 @@ export interface TenantInvoice {
 export interface PnLData {
   monthly: Array<{ period: string; revenue: number; expenses: number; net: number }>;
   totals: { revenue: number; expenses: number; net: number };
-}
-
-/** A day-of-week meal menu entry (breakfast/lunch/dinner). */
-export interface MealMenu {
-  id: string;
-  pgId: string;
-  dayOfWeek: number;
-  mealType: 'breakfast' | 'lunch' | 'dinner';
-  menuItems: string[];
-  servingTime: string;
-  chefNote?: string;
-}
-
-/** A rating left on a meal. */
-export interface MealFeedback {
-  id: string;
-  mealId: string;
-  rating: number;
-  comment?: string;
-  createdAt: string;
-}
-
-/** Today's headcount split per meal, for the kitchen dashboard. */
-export interface TodayMealSummary {
-  breakfast?: MealTypeSummary;
-  lunch?: MealTypeSummary;
-  dinner?: MealTypeSummary;
-}
-
-export interface MealTypeSummary {
-  totalAttending: number;
-  vegCount: number;
-  nonVegCount: number;
-  eggitarianCount: number;
-  allergyCount: number;
-  totalSkip: number;
 }
 
 // ─── Supply & Operations ────────────────────────────────────────────────────────────

@@ -14,7 +14,6 @@ import { Card, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/u
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { FeedbackComplaintEntity } from '@/types';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { useComplaintsQuery, useComplaintQuery } from '@/features/requests/useComplaints';
@@ -45,7 +44,6 @@ export function OwnerComplaintsTab() {
   const closedIssues = submissions.filter((s) => s.type === 'COMPLAINT' && !isRequestOpen(s.status));
 
   const openReply = (item: FeedbackComplaintEntity) => {
-    hapticSelect();
     setActiveItem(item);
     setResponseText(item.adminResponse ?? '');
     setResponseStatus(item.status);
@@ -61,17 +59,14 @@ export function OwnerComplaintsTab() {
   const handleSaveReply = async () => {
     if (!activeItem) return;
     if (!responseText.trim()) {
-      hapticError();
       Alert.alert('Validation', 'Please enter a reply.');
       return;
     }
     try {
       await respond(activeItem.id, responseText, responseStatus);
-      hapticSuccess();
       toast('success', 'Issue response saved', `Resident ${activeItem.guestName} notified.`);
       setActiveItem(null);
     } catch {
-      hapticError();
       toast('error', 'Failed to save response', 'Try again.');
     }
   };
@@ -84,12 +79,12 @@ export function OwnerComplaintsTab() {
     >
       <Row justify="space-between" align="center">
         <Col>
-          <Text style={styles.bodyTitle}>Complaints</Text>
-          <Text style={styles.bodySub}>Resident-raised issues awaiting action</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Complaints</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Resident-raised issues awaiting action</Text>
         </Col>
         {openIssues.length > 0 ? (
           <View style={styles.issuesBadge}>
-            <Text style={styles.issuesBadgeText}>{openIssues.length} open</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.issuesBadgeText}>{openIssues.length} open</Text>
           </View>
         ) : null}
       </Row>
@@ -103,8 +98,8 @@ export function OwnerComplaintsTab() {
       ) : openIssues.length === 0 ? (
         <View style={styles.noIssuesRow}>
           <Ionicons name="checkmark-circle" size={18} color={GREEN} />
-          <Text style={styles.noIssuesText}>No open complaints</Text>
-          <Text style={styles.noIssuesSub}>Everything looks good right now.</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.noIssuesText}>No open complaints</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.noIssuesSub}>Everything looks good right now.</Text>
         </View>
       ) : (
         <View style={{ gap: 8 }}>
@@ -114,20 +109,20 @@ export function OwnerComplaintsTab() {
                 <Col style={{ flex: 1 }}>
                   <Row gap={6} align="center">
                     {item.overallRating <= 2 && <View style={styles.urgentDot} />}
-                    <Text style={styles.issueTitleText}>{item.title || 'Guest Request'}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.issueTitleText}>{item.title || 'Guest Request'}</Text>
                   </Row>
-                  <Text style={styles.issueMetaText}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.issueMetaText}>
                     Room {item.roomNo || 'N/A'} · {new Date(item.timestamp).toLocaleDateString('en-IN')}
                   </Text>
                 </Col>
                 <View style={styles.issueStatusBadge}>
-                  <Text style={styles.issueStatusText}>{item.status}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.issueStatusText}>{item.status}</Text>
                 </View>
               </Row>
-              <Text style={styles.issueDescText} numberOfLines={2}>"{item.description}"</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.issueDescText} numberOfLines={2}>"{item.description}"</Text>
               <Spacer size={8} />
-              <TouchableOpacity style={styles.viewIssueActionBtn} onPress={() => openReply(item)} activeOpacity={0.75}>
-                <Text style={styles.viewIssueActionText}>View Issue →</Text>
+              <TouchableOpacity accessibilityRole="button" style={styles.viewIssueActionBtn} onPress={() => openReply(item)} activeOpacity={0.75}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.viewIssueActionText}>View Issue →</Text>
               </TouchableOpacity>
             </Card>
           ))}
@@ -137,23 +132,23 @@ export function OwnerComplaintsTab() {
       {closedIssues.length > 0 ? (
         <>
           <Spacer size={24} />
-          <Text style={styles.sectionHeader}>Resolved</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Resolved</Text>
           <Spacer size={8} />
           <View style={{ gap: 8 }}>
             {closedIssues.map((item) => (
               <Card key={item.id} containerColor={WHITE} borderRadius={RADIUS} borderWidth={1} borderColor={BORDER} padding={[12, 14]}>
                 <Row justify="space-between" align="flex-start">
                   <Col style={{ flex: 1 }}>
-                    <Text style={styles.issueTitleText}>{item.title || 'Guest Request'}</Text>
-                    <Text style={styles.issueMetaText}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.issueTitleText}>{item.title || 'Guest Request'}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.issueMetaText}>
                       Room {item.roomNo || 'N/A'} · {new Date(item.timestamp).toLocaleDateString('en-IN')}
                     </Text>
                   </Col>
                   <View style={styles.issueStatusBadge}>
-                    <Text style={styles.issueStatusText}>{item.status}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.issueStatusText}>{item.status}</Text>
                   </View>
                 </Row>
-                <Text style={styles.issueDescText} numberOfLines={2}>"{item.description}"</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.issueDescText} numberOfLines={2}>"{item.description}"</Text>
               </Card>
             ))}
           </View>
@@ -164,12 +159,12 @@ export function OwnerComplaintsTab() {
       {activeItem && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setActiveItem(null)}>
           {/* KAV: text area hidden under keyboard on Android without this */}
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <View style={styles.modalBackdrop}>
-              <Pressable style={StyleSheet.absoluteFill} onPress={() => setActiveItem(null)} />
+              <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setActiveItem(null)} />
               <Card containerColor={WHITE} borderRadius={20} borderWidth={1} borderColor={BORDER} padding={[20, 20]} style={{ width: '90%' }}>
-                <Text style={styles.dialogTitle}>Review Response & Action</Text>
-                <Text style={styles.dialogSub}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.dialogTitle}>Review Response & Action</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.dialogSub}>
                   Resident: {activeItem.guestName} (Room {activeItem.roomNo})
                 </Text>
 
@@ -182,20 +177,20 @@ export function OwnerComplaintsTab() {
                 {activeItem.type === 'COMPLAINT' && activeItem.status !== 'Resolved' && (
                   <>
                     <Spacer size={12} />
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.bookTechBtn}
                       onPress={() => { setActiveItem(null); router.push(`/book-technician/${activeItem.id}`); }}
                       activeOpacity={0.85}
                     >
                       <Ionicons name="build-outline" size={16} color={GREEN} />
-                      <Text style={styles.bookTechBtnText}>Book a technician for this issue</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.bookTechBtnText}>Book a technician for this issue</Text>
                     </TouchableOpacity>
                   </>
                 )}
 
                 <Spacer size={16} />
 
-                <TextInput
+                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Write resolution notes or replies"
                   style={styles.dialogInput}
                   placeholder="Write resolution notes or replies..."
                   placeholderTextColor={MUTED}
@@ -207,15 +202,15 @@ export function OwnerComplaintsTab() {
 
                 <Spacer size={14} />
 
-                <Text style={styles.inputLabelStyle}>Set Status:</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Set Status:</Text>
                 <Row gap={6} style={{ marginTop: 4 }}>
                   {['Open', 'In Progress', 'Resolved'].map((st) => (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={st}
                       style={[styles.smallChip, responseStatus === st && styles.smallChipActive]}
                       onPress={() => setResponseStatus(st)}
                     >
-                      <Text style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Text>
                     </TouchableOpacity>
                   ))}
                 </Row>
@@ -223,11 +218,11 @@ export function OwnerComplaintsTab() {
                 <Spacer size={20} />
 
                 <Row gap={10}>
-                  <TouchableOpacity style={styles.dialogSaveBtn} onPress={handleSaveReply} activeOpacity={0.8}>
-                    <Text style={styles.dialogSaveBtnText}>Save Response</Text>
+                  <TouchableOpacity accessibilityRole="button" style={styles.dialogSaveBtn} onPress={handleSaveReply} activeOpacity={0.8}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.dialogSaveBtnText}>Save Response</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)} activeOpacity={0.8}>
-                    <Text style={styles.dialogCancelBtnText}>Cancel</Text>
+                  <TouchableOpacity accessibilityRole="button" style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)} activeOpacity={0.8}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.dialogCancelBtnText}>Cancel</Text>
                   </TouchableOpacity>
                 </Row>
               </Card>
@@ -247,7 +242,7 @@ function ActiveItemEvidence({ id, pgId }: { id: string; pgId: string | null }) {
     return (
       <>
         <Spacer size={10} />
-        <Text style={{ fontSize: 11, color: MUTED }}>Loading attachment…</Text>
+        <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, color: MUTED }}>Loading attachment…</Text>
       </>
     );
   }
@@ -255,7 +250,7 @@ function ActiveItemEvidence({ id, pgId }: { id: string; pgId: string | null }) {
   return (
     <>
       <Spacer size={12} />
-      <Text style={{ fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Text>
+      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Text>
       <Spacer size={6} />
       <KycDocumentsCard idPhotoUri={full.mediaUri} selfieUri={null} />
     </>

@@ -50,7 +50,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
 
   if (picking) {
     return (
-      <Modal visible animationType="slide">
+      <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
         <LocationPicker
           initial={
             location ??
@@ -70,7 +70,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
   return (
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <View style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}

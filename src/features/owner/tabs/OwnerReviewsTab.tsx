@@ -7,8 +7,6 @@ import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { Row, Col, Spacer } from '@/components/ui';
 import { Colors } from '@/theme';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { hapticSelect } from '@/utils/haptics';
-
 const GREEN = Colors.primary;        // Deep Ocean Blue
 const BG = Colors.canvas;            // Light Ice Canvas
 const CHARCOAL = Colors.textPrimary; // Obsidian Navy
@@ -88,51 +86,72 @@ export function OwnerReviewsTab() {
     return r.length > 0 ? r.reduce((a, b) => a + b, 0) / r.length : 0;
   }, [staffReviews]);
 
-  // Dynamic Actual Staff Performance Mapping
+  // Dynamic Actual Staff Performance Mapping — grouped by role, not by person. Feedback is
+  // captured per role (manager / kitchen / cleaning), never tied to an individual staff id,
+  // so when 2+ people share a role there is no way to tell them apart. Showing the same
+  // role-wide number on separate per-person cards — each with its own "Needs attention" badge
+  // and identical "Recent Feedback History" — implied a precision the data doesn't have. One
+  // card per role instead; the card names everyone who shares it.
   const staffPerformanceList = useMemo(() => {
-    return staffList.map((s) => {
-      const role = s.role.toLowerCase();
+    const byRole = new Map<string, { id: string; name: string }[]>();
+    staffList.forEach((s) => {
+      if (!byRole.has(s.role)) byRole.set(s.role, []);
+      byRole.get(s.role)!.push({ id: s.id, name: s.name });
+    });
+
+    return Array.from(byRole.entries()).map(([role, members]) => {
+      const roleLower = role.toLowerCase();
       let rating = 0;
       let reviewCount = 0;
       let icon: keyof typeof Ionicons.glyphMap = 'person-outline';
+      let reviews = submissions;
 
-      if (role === 'manager') {
+      if (roleLower === 'manager') {
         rating = avgMgr;
         reviewCount = managerReviews.length;
         icon = 'person-circle-outline';
-      } else if (role === 'chef' || role === 'kitchen_staff') {
+        reviews = managerReviews;
+      } else if (roleLower === 'chef' || roleLower === 'kitchen staff') {
         rating = avgMeals;
         reviewCount = chefReviews.length;
         icon = 'restaurant-outline';
-      } else if (role.includes('maintenance') || role.includes('clean') || role.includes('housekeeping')) {
+        reviews = chefReviews;
+      } else if (roleLower.includes('maintenance') || roleLower.includes('clean') || roleLower.includes('housekeeping')) {
         rating = avgClean;
         reviewCount = staffReviews.length;
         icon = 'sparkles-outline';
+        reviews = staffReviews;
       } else {
         rating = avgOverall;
         reviewCount = totalReviews;
         icon = 'shield-outline';
+        reviews = submissions;
       }
 
       const needsAttention = reviewCount > 0 && rating < 3.5;
+      const isShared = members.length > 1;
 
       return {
-        id: s.id,
-        name: s.name,
-        role: s.role,
+        id: members.map((m) => m.id).join('-'),
+        name: isShared ? `${role} Team (${members.length})` : members[0].name,
+        subtitle: isShared ? members.map((m) => m.name).join(', ') : role,
+        role,
+        isShared,
         rating,
         reviewCount,
         icon,
+        reviews,
         needsAttention,
       };
     });
-  }, [staffList, avgMgr, avgMeals, avgClean, avgOverall, managerReviews, chefReviews, staffReviews, totalReviews]);
+  }, [staffList, avgMgr, avgMeals, avgClean, avgOverall, managerReviews, chefReviews, staffReviews, totalReviews, submissions]);
 
   // Filtered actual staff members
   const displayedStaff = useMemo(() => {
     return staffPerformanceList.filter((staff) => {
-      const matchesSearch = !searchQuery.trim() || staff.name.toLowerCase().includes(searchQuery.toLowerCase());
-      
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery.trim() || staff.name.toLowerCase().includes(q) || staff.subtitle.toLowerCase().includes(q);
+
       let matchesFilter = true;
       if (filterType === 'Highest Rated') {
         matchesFilter = staff.rating >= 4.0 && staff.reviewCount > 0;
@@ -145,13 +164,6 @@ export function OwnerReviewsTab() {
     });
   }, [staffPerformanceList, searchQuery, filterType]);
 
-  const getFilteredReviewsForStaff = (staff: any) => {
-    const role = staff.role.toLowerCase();
-    if (role === 'manager') return managerReviews;
-    if (role === 'chef' || role === 'kitchen_staff') return chefReviews;
-    return staffReviews;
-  };
-
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
@@ -163,16 +175,16 @@ export function OwnerReviewsTab() {
       {/* ── Reviews Title Header ── */}
       <Row justify="space-between" align="center">
         <Col>
-          <Text style={styles.bodyTitle}>Reviews</Text>
-          <Text style={styles.bodySub}>Guest feedback and staff performance</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Reviews</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Guest feedback and staff performance</Text>
         </Col>
         {totalReviews > 0 ? (
           <View style={styles.headerRatingBox}>
-            <Text style={styles.headerRatingText}>★ {avgOverall.toFixed(1)}</Text>
-            <Text style={styles.headerRatingCount}>{totalReviews} reviews</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.headerRatingText}>★ {avgOverall.toFixed(1)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.headerRatingCount}>{totalReviews} reviews</Text>
           </View>
         ) : (
-          <Text style={styles.noRatingText}>No rating yet</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.noRatingText}>No rating yet</Text>
         )}
       </Row>
 
@@ -183,27 +195,27 @@ export function OwnerReviewsTab() {
         <View style={styles.summaryBox}>
           <Row justify="space-between" align="center" style={{ width: '100%' }}>
             <Col style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: BORDER }}>
-              <Text style={styles.summaryValueText}>{ratingSummary.positive.pct}%</Text>
-              <Text style={[styles.summaryLabel, { color: GREEN }]}>Positive</Text>
-              <Text style={styles.summaryCountSub}>{ratingSummary.positive.count} reviews</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.positive.pct}%</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: GREEN }]}>Positive</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.positive.count} reviews</Text>
             </Col>
             <Col style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: BORDER }}>
-              <Text style={styles.summaryValueText}>{ratingSummary.neutral.pct}%</Text>
-              <Text style={[styles.summaryLabel, { color: '#D97706' }]}>Neutral</Text>
-              <Text style={styles.summaryCountSub}>{ratingSummary.neutral.count} reviews</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.neutral.pct}%</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: '#D97706' }]}>Neutral</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.neutral.count} reviews</Text>
             </Col>
             <Col style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={styles.summaryValueText}>{ratingSummary.negative.pct}%</Text>
-              <Text style={[styles.summaryLabel, { color: '#DC2626' }]}>Negative</Text>
-              <Text style={styles.summaryCountSub}>{ratingSummary.negative.count} reviews</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.negative.pct}%</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: '#DC2626' }]}>Negative</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.negative.count} reviews</Text>
             </Col>
           </Row>
         </View>
       ) : (
         <View style={styles.emptySummaryBox}>
           <Ionicons name="chatbox-ellipses-outline" size={24} color={MUTED} />
-          <Text style={styles.emptySummaryTitle}>No reviews yet</Text>
-          <Text style={styles.emptySummaryDesc}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.emptySummaryTitle}>No reviews yet</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.emptySummaryDesc}>
             Guest feedback will appear here once residents submit reviews.
           </Text>
         </View>
@@ -212,13 +224,13 @@ export function OwnerReviewsTab() {
       <Spacer size={20} />
 
       {/* ── Staff Performance ── */}
-      <Text style={styles.sectionHeader}>Staff Performance</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Staff Performance</Text>
       <Spacer size={8} />
 
       {staffPerformanceList.length > 0 ? (
         <>
           {/* Search & Filter */}
-          <TextInput
+          <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search staff"
             style={styles.searchBar}
             placeholder="Search staff..."
             placeholderTextColor={MUTED}
@@ -229,12 +241,12 @@ export function OwnerReviewsTab() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
             <Row gap={6}>
               {(['All', 'Highest Rated', 'Needs Attention', 'No Reviews'] as const).map((opt) => (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={opt}
                   style={[styles.filterChip, filterType === opt && styles.filterChipActive]}
                   onPress={() => setFilterType(opt)}
                 >
-                  <Text style={[styles.filterChipText, filterType === opt && styles.filterChipTextActive]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, filterType === opt && styles.filterChipTextActive]}>
                     {opt}
                   </Text>
                 </TouchableOpacity>
@@ -245,11 +257,10 @@ export function OwnerReviewsTab() {
           {/* Actual Staff List */}
           <View style={styles.staffListBox}>
             {displayedStaff.map((staff) => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={staff.id}
                 style={styles.staffItemRow}
                 onPress={() => {
-                  hapticSelect();
                   setSelectedStaff(staff);
                 }}
                 activeOpacity={0.8}
@@ -260,23 +271,23 @@ export function OwnerReviewsTab() {
                       <Ionicons name={staff.icon} size={18} color={GREEN} />
                     </View>
                     <Col style={{ flex: 1 }}>
-                      <Text style={styles.staffNameText}>{staff.name}</Text>
-                      <Text style={styles.staffRoleSub}>{staff.role}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.staffNameText}>{staff.name}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.staffRoleSub}>{staff.subtitle}</Text>
                     </Col>
                   </Row>
 
                   <Row gap={6} align="center">
                     {staff.needsAttention && (
                       <View style={styles.attentionBadge}>
-                        <Text style={styles.attentionBadgeText}>Needs attention</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.attentionBadgeText}>Needs attention</Text>
                       </View>
                     )}
                     {staff.reviewCount > 0 ? (
-                      <Text style={styles.staffRatingScore}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.staffRatingScore}>
                         ★ {staff.rating.toFixed(1)} ({staff.reviewCount})
                       </Text>
                     ) : (
-                      <Text style={styles.staffNoReviewsText}>No reviews yet</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.staffNoReviewsText}>No reviews yet</Text>
                     )}
                     <Ionicons name="chevron-forward" size={16} color={MUTED} />
                   </Row>
@@ -287,7 +298,7 @@ export function OwnerReviewsTab() {
         </>
       ) : (
         <View style={styles.noStaffBox}>
-          <Text style={styles.noStaffText}>No staff members registered</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.noStaffText}>No staff members registered</Text>
         </View>
       )}
 
@@ -295,7 +306,7 @@ export function OwnerReviewsTab() {
       {selectedStaff && (
         <Modal visible transparent animationType="none" onRequestClose={() => setSelectedStaff(null)}>
           <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedStaff(null)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setSelectedStaff(null)} />
             
             <Animated.View entering={SlideInDown.duration(160)} style={styles.drillDownSheet}>
               <View style={styles.sheetHandle} />
@@ -305,45 +316,54 @@ export function OwnerReviewsTab() {
                   <Ionicons name={selectedStaff.icon} size={20} color={GREEN} />
                 </View>
                 <Col>
-                  <Text style={styles.sheetStaffName}>{selectedStaff.name}</Text>
-                  <Text style={styles.sheetStaffRole}>{selectedStaff.role}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetStaffName}>{selectedStaff.name}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetStaffRole}>{selectedStaff.subtitle}</Text>
                 </Col>
               </Row>
 
-              <Text style={styles.detailSecTitle}>Performance Ratings</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Performance Ratings</Text>
               
               <Row gap={8} style={{ marginBottom: 16 }}>
                 <View style={styles.sheetKpiCard}>
-                  <Text style={styles.sheetKpiVal}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>
                     {selectedStaff.reviewCount > 0 ? `★ ${selectedStaff.rating.toFixed(1)}` : '—'}
                   </Text>
-                  <Text style={styles.sheetKpiLabel}>Overall Rating</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Overall Rating</Text>
                 </View>
                 <View style={styles.sheetKpiCard}>
-                  <Text style={styles.sheetKpiVal}>{selectedStaff.reviewCount}</Text>
-                  <Text style={styles.sheetKpiLabel}>Reviews Count</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>{selectedStaff.reviewCount}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Reviews Count</Text>
                 </View>
               </Row>
 
-              <Text style={styles.detailSecTitle}>Recent Feedback History</Text>
+              {selectedStaff.isShared ? (
+                <>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.sharedNoticeText}>
+                    Feedback is logged per role, not per person — this rating and history are shared across everyone in {selectedStaff.role}.
+                  </Text>
+                  <Spacer size={12} />
+                </>
+              ) : null}
+
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Recent Feedback History</Text>
               <ScrollView style={{ maxHeight: 220, marginBottom: 12 }}>
-                {getFilteredReviewsForStaff(selectedStaff).length === 0 ? (
-                  <Text style={styles.noReviewsAvailableText}>No reviews available</Text>
+                {selectedStaff.reviews.length === 0 ? (
+                  <Text maxFontSizeMultiplier={1.3} style={styles.noReviewsAvailableText}>No reviews available</Text>
                 ) : (
-                  getFilteredReviewsForStaff(selectedStaff).map((rev) => (
+                  selectedStaff.reviews.map((rev: any) => (
                     <View key={rev.id} style={styles.feedbackHistoryItem}>
                       <Row justify="space-between">
-                        <Text style={styles.revGuestName}>{rev.guestName}</Text>
-                        <Text style={styles.revRating}>★ {rev.overallRating}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.revGuestName}>{rev.guestName}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.revRating}>★ {rev.overallRating}</Text>
                       </Row>
-                      <Text style={styles.revDesc}>"{rev.description}"</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.revDesc}>"{rev.description}"</Text>
                     </View>
                   ))
                 )}
               </ScrollView>
 
-              <TouchableOpacity style={styles.sheetCloseBtn} onPress={() => setSelectedStaff(null)}>
-                <Text style={styles.sheetCloseBtnText}>Close</Text>
+              <TouchableOpacity accessibilityRole="button" style={styles.sheetCloseBtn} onPress={() => setSelectedStaff(null)}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sheetCloseBtnText}>Close</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
@@ -493,6 +513,7 @@ const styles = StyleSheet.create({
   sheetKpiVal: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
   sheetKpiLabel: { fontSize: 10, color: MUTED, marginTop: 2 },
   noReviewsAvailableText: { fontSize: 12, color: MUTED, fontStyle: 'italic', paddingVertical: 12 },
+  sharedNoticeText: { fontSize: 11, color: MUTED, lineHeight: 16, backgroundColor: BG, borderRadius: 10, padding: 10 },
   feedbackHistoryItem: {
     backgroundColor: BG,
     borderRadius: 10,

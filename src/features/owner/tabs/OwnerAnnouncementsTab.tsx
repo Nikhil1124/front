@@ -12,7 +12,6 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { formatTimeAgo } from '@/utils/format';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import type { GuestEntity } from '@/types';
 import { OwnerReviewsTab } from './OwnerReviewsTab';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
@@ -28,7 +27,14 @@ const DIVIDER = Colors.borderSubtle;     // Ice Subtle Border
 const WARNING = Colors.warning;
 const DANGER = Colors.danger;
 
-import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import {
+  useRoleNotificationsQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
+  useDismissNotificationMutation,
+  useBroadcastNotificationMutation,
+  BROADCAST_AUDIENCE_MAP,
+} from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAuthStore } from '@/store/authStore';
 
@@ -38,10 +44,10 @@ const NotificationHeader = ({ title, onBack }: { title: string, onBack: () => vo
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.headerContainer, { paddingTop: insets.top + 12 }]}>
-      <TouchableOpacity onPress={onBack} activeOpacity={0.7} style={styles.headerBackBtn}>
+      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={onBack} activeOpacity={0.7} style={styles.headerBackBtn}>
         <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{title}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>{title}</Text>
       <View style={{ width: 40 }} />
     </View>
   );
@@ -49,7 +55,7 @@ const NotificationHeader = ({ title, onBack }: { title: string, onBack: () => vo
 
 const NotificationSummary = ({ total, approvals }: { total: number, approvals: number }) => (
   <View style={styles.summaryContainer}>
-    <Text style={styles.summarySub}>{total} updates · {approvals} approvals</Text>
+    <Text maxFontSizeMultiplier={1.3} style={styles.summarySub}>{total} updates · {approvals} approvals</Text>
   </View>
 );
 
@@ -58,14 +64,14 @@ const NotificationStatusRow = ({ pending }: { pending: number }) => {
     return (
       <View style={[styles.statusRow, styles.statusWarning]}>
         <Ionicons name="alert-circle" size={16} color={WARNING} />
-        <Text style={styles.statusWarningText}>Needs Attention · {pending} pending</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.statusWarningText}>Needs Attention · {pending} pending</Text>
       </View>
     );
   }
   return (
     <View style={[styles.statusRow, styles.statusSuccess]}>
       <Ionicons name="checkmark-circle" size={16} color={PRIMARY} />
-      <Text style={styles.statusSuccessText}>All caught up · No pending approvals</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.statusSuccessText}>All caught up · No pending approvals</Text>
     </View>
   );
 };
@@ -74,13 +80,13 @@ const NotificationFilterRow = ({ tabs, activeTab, onChange }: { tabs: { id: stri
   <View>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
       {tabs.map(tab => (
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           key={tab.id}
           activeOpacity={0.8}
           onPress={() => onChange(tab.id)}
           style={[styles.filterChip, activeTab === tab.id && styles.filterChipActive]}
         >
-          <Text style={[styles.filterChipText, activeTab === tab.id && styles.filterChipTextActive]}>
+          <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, activeTab === tab.id && styles.filterChipTextActive]}>
             {tab.label} {tab.count !== undefined ? tab.count : ''}
           </Text>
         </TouchableOpacity>
@@ -93,18 +99,18 @@ const NotificationEmptyState = () => (
   <View style={styles.emptyContainer}>
     <Ionicons name="notifications-off-outline" size={32} color={TEXT_SECONDARY} />
     <Spacer size={12} />
-    <Text style={styles.emptyTitle}>You're all caught up</Text>
-    <Text style={styles.emptySub}>No new notifications right now.</Text>
+    <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>You're all caught up</Text>
+    <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>No new notifications right now.</Text>
   </View>
 );
 
-const NotificationItem = ({ item, onPress }: { item: any, onPress: () => void }) => {
+const NotificationItem = ({ item, onPress, onDismiss }: { item: any, onPress: () => void, onDismiss?: () => void }) => {
   const isUnread = !item.isRead;
   const isHighPriority = item.priority === 'HIGH';
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.7} 
+    <TouchableOpacity accessibilityRole="button"
+      activeOpacity={0.7}
       onPress={onPress}
       style={[
         styles.notifItemContainer,
@@ -119,16 +125,26 @@ const NotificationItem = ({ item, onPress }: { item: any, onPress: () => void })
           <Row justify="space-between" align="center">
             <Row align="center" gap={6}>
               {isUnread && <View style={styles.unreadIndicator} />}
-              <Text style={[styles.categoryLabel, isHighPriority && { color: WARNING }]}>{item.categoryText}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.categoryLabel, isHighPriority && { color: WARNING }]}>{item.categoryText}</Text>
             </Row>
-            <Text style={styles.timeText}>{formatTimeAgo(item.timestamp)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.timeText}>{formatTimeAgo(item.timestamp)}</Text>
           </Row>
           <Spacer size={4} />
-          <Text style={[styles.titleText, isUnread && styles.titleTextUnread]} numberOfLines={1}>{item.title}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={[styles.titleText, isUnread && styles.titleTextUnread]} numberOfLines={1}>{item.title}</Text>
           <Spacer size={2} />
-          <Text style={styles.descText} numberOfLines={2}>{item.desc}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.descText} numberOfLines={2}>{item.desc}</Text>
         </Col>
-        <Ionicons name="chevron-forward" size={16} color={TEXT_SECONDARY} style={{ marginTop: 24, marginLeft: 8 }} />
+        {onDismiss ? (
+          <TouchableOpacity accessibilityLabel="Close" accessibilityRole="button"
+            onPress={(e) => { e.stopPropagation(); onDismiss(); }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ marginTop: 24, marginLeft: 8, padding: 2 }}
+          >
+            <Ionicons name="close" size={18} color={TEXT_SECONDARY} />
+          </TouchableOpacity>
+        ) : (
+          <Ionicons name="chevron-forward" size={16} color={TEXT_SECONDARY} style={{ marginTop: 24, marginLeft: 8 }} />
+        )}
       </Row>
     </TouchableOpacity>
   );
@@ -169,13 +185,13 @@ const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
         { transform: [{ translateX: pan.x }, { translateY: pan.y }] }
       ]}
     >
-      <TouchableOpacity 
+      <TouchableOpacity accessibilityRole="button" 
         activeOpacity={0.85} 
         onPress={onPress}
         style={styles.fabInner}
       >
         <Ionicons name="megaphone-outline" size={18} color={SURFACE} />
-        <Text style={styles.fabText}>New Announcement</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.fabText}>New Announcement</Text>
       </TouchableOpacity>
     </RNAnimated.View>
   );
@@ -186,12 +202,20 @@ const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
 export function OwnerAnnouncementsTab() {
   const router = useRouter();
   const activePgId = useAuthStore((s) => s.activePgId);
+  const activeRole = useAuthStore((s) => s.activeRole);
+  // This is now the one notification screen every role lands on (see app/notifications/index.tsx).
+  // KYC decisions, the property-wide guest roster they're read from, the Reviews tab (staff
+  // performance) and the broadcast composer are all owner/manager-only data and actions
+  // server-side — a resident or chef opening this screen must see the same generic
+  // notification inbox everyone gets, never another resident's ID photos or the staff roster.
+  const canManage = activeRole === 'owner' || activeRole === 'manager';
   const { data: roleNotifs = [], isLoading: inboxLoading, error: inboxError, refetch: refetchInbox } = useRoleNotificationsQuery(activePgId ?? undefined);
-  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
-  const deleteNotif = usePGowStore((s) => s.deleteRoleNotification);
-  const markAsRead = usePGowStore((s) => s.markRoleNotificationAsRead);
+  const { data: guests = [] } = useGuestsQuery(canManage ? (activePgId ?? undefined) : undefined);
+  const markReadMutation = useMarkNotificationReadMutation(activePgId ?? undefined);
+  const markAllReadMutation = useMarkAllNotificationsReadMutation(activePgId ?? undefined);
+  const dismissMutation = useDismissNotificationMutation(activePgId ?? undefined);
+  const broadcastMutation = useBroadcastNotificationMutation(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
-  const sendNotice = usePGowStore((s) => s.sendRoleNotification);
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
 
   const { refreshing, onRefresh } = usePullToRefresh();
@@ -236,12 +260,24 @@ export function OwnerAnnouncementsTab() {
       const titleLower = (n.title || '').toLowerCase();
       const catUpper = (n.category || '').toUpperCase();
       const descLower = (n.message || '').toLowerCase();
-      
-      let isApproval = catUpper.includes('EXPENSE') || catUpper.includes('FINANCE') || titleLower.includes('approval') || titleLower.includes('procurement') || titleLower.includes('salary');
-      
+
+      // A generic "finance" notification only ever means "Expense logged"
+      // (expense/service.py) — the expense is already spent and recorded, with no status
+      // column to approve or reverse (expense/models.py: "no status column"). Treating that
+      // as an "Approve/Reject" item used to call deleteNotif() and claim "Request Approved"
+      // — a fabricated decision with no effect on the actual expense.
+      //
+      // Procurement is different: create_procurement_request DOES notify the owner now
+      // (title "Procurement request awaiting approval", procurement/service.py), and that
+      // one genuinely has a real, actionable pending request behind it — just not one this
+      // screen can act on directly (approving needs a payment method, chosen on the real
+      // Procurement screen). isProcurementApproval below routes a tap there for real.
+      const isProcurementApproval = titleLower.includes('procurement request awaiting approval');
+      const isFinance = catUpper.includes('EXPENSE') || catUpper.includes('FINANCE') || titleLower.includes('procurement') || titleLower.includes('salary');
+
       let icon: any = 'notifications';
       let categoryText = 'UPDATE';
-      
+
       if (titleLower.includes('payment') || descLower.includes('payment') || titleLower.includes('rent')) {
         icon = 'wallet';
         categoryText = 'PAYMENT';
@@ -254,9 +290,9 @@ export function OwnerAnnouncementsTab() {
       } else if (titleLower.includes('food') || titleLower.includes('meal') || titleLower.includes('rsvp')) {
         icon = 'restaurant';
         categoryText = 'MEAL';
-      } else if (isApproval) {
-        icon = 'flash';
-        categoryText = 'APPROVAL';
+      } else if (isFinance) {
+        icon = 'cash';
+        categoryText = 'FINANCE';
       } else {
         icon = 'megaphone';
         categoryText = 'ANNOUNCEMENT';
@@ -264,13 +300,14 @@ export function OwnerAnnouncementsTab() {
 
       items.push({
         id: `notif_${n.id}`,
-        type: isApproval ? 'APPROVAL' : 'NOTICE',
+        type: 'NOTICE',
+        isProcurementApproval,
         categoryText,
         title: n.title,
         desc: n.message,
         timestamp: n.timestamp,
         isRead: n.isRead,
-        priority: isApproval ? 'HIGH' : 'LOW',
+        priority: isProcurementApproval ? 'MEDIUM' : 'LOW',
         icon,
         raw: n,
       });
@@ -286,21 +323,20 @@ export function OwnerAnnouncementsTab() {
   }, [guests, roleNotifs]);
 
   const totalInboxCount = inboxItems.length;
-  const approvalsCount = inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC').length;
+  // KYC is the only item type with a real approve/reject action behind it — see the
+  // isFinance note in inboxItems above for why "approval"-shaped notifications aren't.
+  const approvalsCount = inboxItems.filter((i) => i.type === 'KYC').length;
   const noticesCount = inboxItems.filter((i) => i.type === 'NOTICE').length;
+  const unreadNoticeCount = inboxItems.filter((i) => i.type === 'NOTICE' && !i.isRead).length;
 
   const displayedItems = useMemo(() => {
-    if (activeSubTab === 'APPROVALS') return inboxItems.filter((i) => i.type === 'APPROVAL' || i.type === 'KYC');
+    if (activeSubTab === 'APPROVALS') return inboxItems.filter((i) => i.type === 'KYC');
     if (activeSubTab === 'ANNOUNCEMENTS') return inboxItems.filter((i) => i.type === 'NOTICE');
     return inboxItems;
   }, [inboxItems, activeSubTab]);
 
   const handleApproveRequest = async (item: any) => {
-    hapticSuccess();
-    if (item.type === 'APPROVAL') {
-      deleteNotif(item.raw.id);
-      toast('success', 'Request Approved', `Approval request "${item.title}" processed.`);
-    } else if (item.type === 'KYC') {
+    if (item.type === 'KYC') {
       await verifyKyc(item.raw.id, true);
       toast('success', 'KYC Approved', `${item.raw.name} is now verified.`);
     }
@@ -308,21 +344,7 @@ export function OwnerAnnouncementsTab() {
   };
 
   const handleRejectRequest = async (item: any) => {
-    hapticSelect();
-    if (item.type === 'APPROVAL') {
-      Alert.alert('Reject Request', `Are you sure you want to reject "${item.title}"?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: () => {
-            deleteNotif(item.raw.id);
-            toast('info', 'Request Rejected', 'Request marked as rejected.');
-            setSelectedInboxItem(null);
-          },
-        },
-      ]);
-    } else if (item.type === 'KYC') {
+    if (item.type === 'KYC') {
       Alert.alert('Reject KYC', 'Are you sure you want to reject this KYC document upload?', [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -339,7 +361,6 @@ export function OwnerAnnouncementsTab() {
   };
 
   const handleBookService = (item: any) => {
-    hapticSuccess();
     const serviceName = item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() || "General Repair";
     bookRepair(serviceName, `Direct booking from notification: ${item.desc}`, 'ASAP', 149);
     toast('success', 'Service Booked!', `Technician assigned for ${serviceName}.`);
@@ -351,40 +372,41 @@ export function OwnerAnnouncementsTab() {
       Alert.alert('Validation', 'Title and message are required.');
       return;
     }
+    if (!activePgId) {
+      Alert.alert('Failed', 'No active property.');
+      return;
+    }
     setIsPublishing(true);
     try {
-      const ok = await sendNotice(
-        noticeAudience.toUpperCase(),
-        noticeTitle.trim(),
-        noticeMessage.trim(),
-        'ANNOUNCEMENT',
-        'NORMAL'
-      );
-      if (ok) {
-        hapticSuccess();
-        toast('success', 'Announcement Published', `Broadcast delivered to target ${noticeAudience}.`);
-        setNoticeTitle('');
-        setNoticeMessage('');
-        setShowBroadcastModal(false);
-      }
-    } catch {
-      hapticError();
+      await broadcastMutation.mutateAsync({
+        pg_id: activePgId,
+        target_role: BROADCAST_AUDIENCE_MAP[noticeAudience.toUpperCase()] ?? 'all',
+        title: noticeTitle.trim(),
+        body: noticeMessage.trim(),
+        category: 'announcement',
+        priority: 'normal',
+      });
+      toast('success', 'Announcement Published', `Broadcast delivered to target ${noticeAudience}.`);
+      setNoticeTitle('');
+      setNoticeMessage('');
+      setShowBroadcastModal(false);
+    } catch (err) {
+      Alert.alert('Failed', err instanceof Error ? err.message : 'Could not publish the announcement.');
     } finally {
       setIsPublishing(false);
     }
   };
 
   const handleOpenItem = (item: any) => {
-    hapticSelect();
     setSelectedInboxItem(item);
-    if (item.type === 'NOTICE' || item.type === 'APPROVAL') markAsRead(item.raw.id);
+    if (item.type === 'NOTICE') markReadMutation.mutate(item.raw.id);
   };
 
   const tabs = [
     { id: 'ALL', label: 'All', count: totalInboxCount },
-    { id: 'APPROVALS', label: 'Approvals', count: approvalsCount },
+    ...(canManage ? [{ id: 'APPROVALS', label: 'Approvals', count: approvalsCount }] : []),
     { id: 'ANNOUNCEMENTS', label: 'Announcements', count: noticesCount },
-    { id: 'REVIEWS', label: 'Reviews' },
+    ...(canManage ? [{ id: 'REVIEWS', label: 'Reviews' }] : []),
   ];
 
   return (
@@ -396,15 +418,31 @@ export function OwnerAnnouncementsTab() {
       >
         <NotificationSummary total={totalInboxCount} approvals={approvalsCount} />
         <Spacer size={16} />
-        <NotificationStatusRow pending={approvalsCount} />
+        {canManage && <NotificationStatusRow pending={approvalsCount} />}
         <Spacer size={20} />
-        <NotificationFilterRow 
-          tabs={tabs} 
-          activeTab={activeSubTab} 
-          onChange={(id) => { hapticSelect(); setActiveSubTab(id as any); }} 
+        <NotificationFilterRow
+          tabs={tabs}
+          activeTab={activeSubTab}
+          onChange={(id) => { setActiveSubTab(id as any); }}
         />
+        {activeSubTab !== 'REVIEWS' && unreadNoticeCount > 0 && (
+          <>
+            <Spacer size={10} />
+            <TouchableOpacity accessibilityRole="button"
+              onPress={() => markAllReadMutation.mutate()}
+              disabled={markAllReadMutation.isPending}
+              style={styles.markAllReadBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="checkmark-done" size={15} color={PRIMARY} />
+              <Text maxFontSizeMultiplier={1.3} style={styles.markAllReadText}>
+                {markAllReadMutation.isPending ? 'Marking…' : `Mark all ${unreadNoticeCount} as read`}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
         <Spacer size={16} />
-        
+
         {activeSubTab === 'REVIEWS' ? (
           <View style={{ marginHorizontal: -20 }}>
             <OwnerReviewsTab />
@@ -421,7 +459,11 @@ export function OwnerAnnouncementsTab() {
               <View style={styles.listContainer}>
                 {displayedItems.map((item, index) => (
                   <View key={item.id}>
-                    <NotificationItem item={item} onPress={() => handleOpenItem(item)} />
+                    <NotificationItem
+                      item={item}
+                      onPress={() => handleOpenItem(item)}
+                      onDismiss={item.type === 'NOTICE' ? () => dismissMutation.mutate(item.raw.id) : undefined}
+                    />
                     {index < displayedItems.length - 1 && <View style={styles.divider} />}
                   </View>
                 ))}
@@ -431,13 +473,13 @@ export function OwnerAnnouncementsTab() {
         )}
       </ScrollView>
 
-      <NotificationFAB onPress={() => { hapticSelect(); setShowBroadcastModal(true); }} />
+      {canManage && <NotificationFAB onPress={() => { setShowBroadcastModal(true); }} />}
 
       {/* ── Inbox Item Detail Modal ── */}
       {selectedInboxItem && (
         <Modal visible transparent animationType="none" onRequestClose={() => setSelectedInboxItem(null)}>
           <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedInboxItem(null)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setSelectedInboxItem(null)} />
             <Animated.View entering={SlideInDown.duration(150)} style={styles.detailSheet}>
               <View style={styles.sheetHandle} />
               
@@ -445,63 +487,48 @@ export function OwnerAnnouncementsTab() {
                 <Row gap={8} align="center">
                   <View style={styles.detailIconCircle}>
                      <Ionicons 
-                        name={selectedInboxItem.type === 'APPROVAL' ? 'checkmark-circle' : selectedInboxItem.type === 'NOTICE' ? 'megaphone' : 'information-circle'} 
+                        name={selectedInboxItem.type === 'NOTICE' ? 'megaphone' : 'information-circle'}
                         size={18} 
                         color={PRIMARY} 
                      />
                   </View>
-                  <Text style={styles.detailCategoryText}>{selectedInboxItem.categoryText}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.detailCategoryText}>{selectedInboxItem.categoryText}</Text>
                 </Row>
-                <TouchableOpacity onPress={() => setSelectedInboxItem(null)} style={styles.closeIconBtn} activeOpacity={0.7}>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSelectedInboxItem(null)} style={styles.closeIconBtn} activeOpacity={0.7}>
                   <Ionicons name="close" size={18} color={TEXT_SECONDARY} />
                 </TouchableOpacity>
               </Row>
 
-              <Text style={styles.detailTitleText}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailTitleText}>
                 {selectedInboxItem.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
               </Text>
               
-              <Text style={styles.detailDateText}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailDateText}>
                 {new Date(selectedInboxItem.timestamp).toLocaleString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
               </Text>
 
               <Spacer size={24} />
 
               <View style={styles.detailMessageCard}>
-                <Text style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
               </View>
 
               <Spacer size={32} />
 
-              {selectedInboxItem.type === 'APPROVAL' && (
-                <View style={styles.actionBlockBox}>
-                  <Text style={styles.actionBlockLabel}>Requires Owner Approval</Text>
-                  <Spacer size={16} />
-                  <Row gap={12}>
-                    <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
-                      <Text style={styles.actionApproveText}>Approve</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
-                      <Text style={styles.actionRejectText}>Reject</Text>
-                    </TouchableOpacity>
-                  </Row>
-                </View>
-              )}
-
               {selectedInboxItem.type === 'KYC' && (() => {
-                const kycGuest = (selectedInboxItem.raw && selectedInboxItem.raw.idProofPhotoUri)
-                  ? selectedInboxItem.raw
-                  : guests.find((g: GuestEntity) => 
-                      (selectedInboxItem.raw?.actionId && g.id === selectedInboxItem.raw.actionId) ||
-                      (selectedInboxItem.raw?.name && g.name.toLowerCase() === selectedInboxItem.raw.name.toLowerCase()) ||
-                      (selectedInboxItem.desc && selectedInboxItem.desc.includes(g.roomNo)) ||
-                      (selectedInboxItem.message && selectedInboxItem.message.toLowerCase().includes(g.name.toLowerCase()))
-                    ) || guests.find((g: GuestEntity) => g.kycStatus === 'PENDING') || selectedInboxItem.raw;
+                // `raw` for a KYC inbox item is always the exact GuestEntity it was built
+                // from (see inboxItems above: `raw: g`) — there is nothing to guess here.
+                // This used to fall back to name/room/text matching and, failing that, to
+                // "any resident with pending KYC" — meaning an owner could be shown a
+                // DIFFERENT resident's ID photo and selfie while Verify/Reject still (via
+                // item.raw.id) correctly acted on the one they opened. A decision made on
+                // the wrong person's identity photo, backend attribution notwithstanding.
+                const kycGuest = selectedInboxItem.raw;
 
                 return (
                   <View style={styles.actionBlockBox}>
-                    <Text style={styles.actionBlockLabel}>Identity Verification Required</Text>
-                    <Text style={styles.actionBlockDesc}>Verify {kycGuest?.name || selectedInboxItem.raw?.name || 'resident'}'s identity documents.</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Identity Verification Required</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Verify {kycGuest?.name || selectedInboxItem.raw?.name || 'resident'}'s identity documents.</Text>
                     <Spacer size={16} />
                     <KycDocumentsCard
                       idPhotoUri={kycGuest?.idProofPhotoUri}
@@ -510,34 +537,52 @@ export function OwnerAnnouncementsTab() {
                     />
                     <Spacer size={16} />
                     <Row gap={12}>
-                      <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
-                        <Text style={styles.actionApproveText}>Verify</Text>
+                      <TouchableOpacity accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
-                        <Text style={styles.actionRejectText}>Reject</Text>
+                      <TouchableOpacity accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
                       </TouchableOpacity>
                     </Row>
                   </View>
                 );
               })()}
 
-              {selectedInboxItem.categoryText === 'MAINTENANCE' && (
+              {selectedInboxItem.isProcurementApproval && (
                 <View style={styles.actionBlockBox}>
-                  <Text style={styles.actionBlockLabel}>Resolve this issue</Text>
-                  <Text style={styles.actionBlockDesc}>Instantly book a technician to fix this problem.</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Awaiting Your Approval</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Choose a payment method and approve or reject on the Procurement screen.</Text>
                   <Spacer size={16} />
-                  <TouchableOpacity style={styles.actionApproveBtn} onPress={() => handleBookService(selectedInboxItem)} activeOpacity={0.85}>
+                  <TouchableOpacity accessibilityRole="button"
+                    style={styles.actionApproveBtn}
+                    onPress={() => { setSelectedInboxItem(null); router.push('/procurement'); }}
+                    activeOpacity={0.85}
+                  >
                     <Row gap={8} align="center">
-                      <Ionicons name="construct" size={16} color={SURFACE} />
-                      <Text style={styles.actionApproveText}>Book Service Now</Text>
+                      <Ionicons name="cart" size={16} color={SURFACE} />
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Text>
                     </Row>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {(selectedInboxItem.type !== 'APPROVAL' && selectedInboxItem.type !== 'KYC' && selectedInboxItem.categoryText !== 'MAINTENANCE') && (
-                <TouchableOpacity style={styles.primaryDismissBtn} onPress={() => setSelectedInboxItem(null)} activeOpacity={0.85}>
-                  <Text style={styles.primaryDismissBtnText}>Got it</Text>
+              {selectedInboxItem.categoryText === 'MAINTENANCE' && (
+                <View style={styles.actionBlockBox}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Resolve this issue</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Instantly book a technician to fix this problem.</Text>
+                  <Spacer size={16} />
+                  <TouchableOpacity accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleBookService(selectedInboxItem)} activeOpacity={0.85}>
+                    <Row gap={8} align="center">
+                      <Ionicons name="construct" size={16} color={SURFACE} />
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Book Service Now</Text>
+                    </Row>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {(selectedInboxItem.type !== 'KYC' && selectedInboxItem.categoryText !== 'MAINTENANCE') && (
+                <TouchableOpacity accessibilityRole="button" style={styles.primaryDismissBtn} onPress={() => setSelectedInboxItem(null)} activeOpacity={0.85}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.primaryDismissBtnText}>Got it</Text>
                 </TouchableOpacity>
               )}
             </Animated.View>
@@ -549,22 +594,22 @@ export function OwnerAnnouncementsTab() {
       {showBroadcastModal && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowBroadcastModal(false)}>
           <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowBroadcastModal(false)} />
-            <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined} style={{ width: '100%', alignItems: 'center' }}>
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowBroadcastModal(false)} />
+            <KeyboardAvoidingView behavior="padding" style={{ width: '100%', alignItems: 'center' }}>
               <Animated.View entering={SlideInDown.duration(150)} style={styles.broadcastSheet}>
                 <View style={styles.sheetHandle} />
-                <Text style={styles.sheetTitle}>New Announcement</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sheetTitle}>New Announcement</Text>
                 <Spacer size={16} />
-                <TextInput style={styles.noticeInput} placeholder="Title (e.g. WiFi Maintenance)" placeholderTextColor={TEXT_SECONDARY} value={noticeTitle} onChangeText={setNoticeTitle} />
+                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Title (e.g. WiFi Maintenance)" style={styles.noticeInput} placeholder="Title (e.g. WiFi Maintenance)" placeholderTextColor={TEXT_SECONDARY} value={noticeTitle} onChangeText={setNoticeTitle} />
                 <Spacer size={12} />
-                <TextInput style={[styles.noticeInput, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]} placeholder="Description..." placeholderTextColor={TEXT_SECONDARY} value={noticeMessage} onChangeText={setNoticeMessage} multiline numberOfLines={3} />
+                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Description" style={[styles.noticeInput, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]} placeholder="Description..." placeholderTextColor={TEXT_SECONDARY} value={noticeMessage} onChangeText={setNoticeMessage} multiline numberOfLines={3} />
                 <Spacer size={16} />
-                <Text style={styles.inputLabelStyle}>Target Audience</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Target Audience</Text>
                 <Spacer size={8} />
                 <Row gap={8}>
                   {(['all', 'guest', 'staff', 'manager'] as const).map((aud) => (
-                    <TouchableOpacity key={aud} style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]} onPress={() => setNoticeAudience(aud)}>
-                      <Text style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
+                    <TouchableOpacity accessibilityRole="button" key={aud} style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]} onPress={() => setNoticeAudience(aud)}>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
                         {aud === 'all' ? 'All' : aud === 'guest' ? 'Residents' : aud === 'staff' ? 'Staff' : 'Managers'}
                       </Text>
                     </TouchableOpacity>
@@ -572,11 +617,11 @@ export function OwnerAnnouncementsTab() {
                 </Row>
                 <Spacer size={24} />
                 <Row gap={12}>
-                  <TouchableOpacity style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing} activeOpacity={0.8}>
-                    <Text style={styles.publishBtnText}>{isPublishing ? 'Publishing...' : 'Publish'}</Text>
+                  <TouchableOpacity accessibilityRole="button" style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing} activeOpacity={0.8}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.publishBtnText}>{isPublishing ? 'Publishing...' : 'Publish'}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)} activeOpacity={0.8}>
-                    <Text style={styles.publishCancelText}>Cancel</Text>
+                  <TouchableOpacity accessibilityRole="button" style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)} activeOpacity={0.8}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.publishCancelText}>Cancel</Text>
                   </TouchableOpacity>
                 </Row>
               </Animated.View>
@@ -601,6 +646,9 @@ const styles = StyleSheet.create({
   summaryTitle: { fontSize: 24, fontWeight: '800', color: TEXT_PRIMARY },
   summarySub: { fontSize: 14, fontWeight: '500', color: TEXT_SECONDARY },
   
+  markAllReadBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: 6, paddingVertical: 4, paddingHorizontal: 4 },
+  markAllReadText: { fontSize: 12.5, fontWeight: '700', color: PRIMARY },
+
   statusRow: { flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 12, borderRadius: 8, backgroundColor: SURFACE },
   statusSuccess: { backgroundColor: '#F0FDF4' },
   statusSuccessText: { fontSize: 13, fontWeight: '600', color: '#166534', marginLeft: 8 },

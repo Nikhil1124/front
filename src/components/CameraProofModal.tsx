@@ -44,8 +44,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Card, Txt, Row, Col, Btn, OutlinedBtn, Spacer } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
-import { haptic } from '@/utils/haptics';
-
 export interface CameraProofModalProps {
   visible: boolean;
   title: string;
@@ -80,7 +78,6 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
   };
 
   const handleCapture = async () => {
-    haptic('light');
     try {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
@@ -92,7 +89,6 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
       if (result.canceled) return;
       const asset = result.assets?.[0];
       if (asset?.uri) {
-        haptic('success');
         setPhotoUri(asset.uri);
       }
     } catch {
@@ -104,14 +100,11 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
 
   const handleSubmit = async () => {
     if (!photoUri || submitting) return;
-    haptic('medium');
     setSubmitting(true);
     try {
       await onCapture(photoUri);
-      haptic('success');
       onClose();
     } catch {
-      haptic('error');
       setSubmitting(false);
       // Stay open with the preview so the user can retry the submit. The
       // capture itself is intact; only the upload failed.
@@ -119,7 +112,6 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
   };
 
   const handleRetake = () => {
-    haptic('light');
     setPhotoUri(null);
   };
 
@@ -139,7 +131,7 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
                 </Txt>
               ) : null}
             </Col>
-            <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}>
+            <Pressable accessibilityRole="button" onPress={onClose} hitSlop={12} style={styles.closeBtn}>
               <MaterialCommunityIcons name="close" size={22} color={Colors.textMuted} />
             </Pressable>
           </Row>

@@ -92,8 +92,6 @@ export async function registerNotificationChannels(): Promise<void> {
  * instead of launching the app to the meals screen.
  */
 export async function registerMealRsvpCategory(): Promise<void> {
-  // Meaningful on iOS and Android, but not implemented at all on web (throws, not a no-op).
-  if (Platform.OS === "web") return;
   await Notifications.setNotificationCategoryAsync(MEAL_RSVP_CATEGORY, [
     { identifier: "EAT", buttonTitle: "I'll eat ✅", options: { opensAppToForeground: false } },
     { identifier: "SKIP", buttonTitle: "Skip ❌", options: { opensAppToForeground: false } },

@@ -22,19 +22,3 @@ export function useResponsiveGap() {
   if (width <= 428) return 16;
   return 20;
 }
-
-/**
- * Determines if the device is considered "large" (e.g. Pro Max, Fold, Tablet)
- */
-export function useIsLargeScreen() {
-  const { width } = useWindowDimensions();
-  return width > 428;
-}
-
-/**
- * Determines if the device is considered "compact" (e.g. older/smaller iPhones, small Androids)
- */
-export function useIsCompactScreen() {
-  const { width } = useWindowDimensions();
-  return width < 380;
-}

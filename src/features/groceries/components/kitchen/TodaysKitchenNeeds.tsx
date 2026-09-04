@@ -1,40 +1,125 @@
 import { SupplyItem } from '@/types';
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../../store/useCartStore';
+import { toAmount } from '@/data/mappers';
 
-import { weeklyMenu } from '../../data/weeklyMenu';
 import { KitchenNeedsBanner } from './KitchenNeedsBanner';
 import { ProductCard } from '../grocery/ProductCard';
 import { AddAllToCartButton } from './AddAllToCartButton';
 import { DayMenuConfig, MenuIngredient } from '../../data/WeeklyMenuTypes';
+import {
+  useKitchenMenuQuery,
+  useSetKitchenMenuDayMutation,
+} from '../../useKitchenMenu';
+import { KitchenMenuDay, KitchenMenuMealType, KitchenMenuWeekday } from '@/types';
 import { Colors } from '@/theme';
 
 // Extracted modal components
 import { CustomAlertModal, CustomAlertState } from './CustomAlertModal';
 import { MenuEditorModal } from './MenuEditorModal';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Weekday / meal-type conversion ────────────────────────────────────────────
+// The server speaks lowercase weekdays ('monday') and 'veg' | 'non_veg' | 'pure_veg'; this
+// screen's view-model (DayMenuConfig) speaks capitalized days and 'veg' | 'nonVeg' | 'pureVeg'
+// so it can key a Record by display name. These maps are the only place the two meet.
 
-const getIngredientsForDish = (dishName: string): string[] => {
-  const d = dishName.toLowerCase();
-  const items: string[] = [];
-  if (d.includes('aloo') || d.includes('potato')) items.push('potato-001', 'onion-001', 'dal-001', 'oil-001');
-  if (d.includes('dal') || d.includes('pulse')) items.push('dal-001', 'onion-001', 'oil-001');
-  if (d.includes('paneer')) items.push('paneer-001', 'onion-001', 'oil-001', 'curd-001', 'leafygreens-001');
-  if (d.includes('chicken') || d.includes('meat') || d.includes('biryani')) {
-    items.push('chicken-001', 'rice-001', 'onion-001', 'oil-001', 'gingargarlic-001', 'greenchilli-001', 'coriander-001', 'curd-001');
-  }
-  if (d.includes('mushroom')) items.push('mushroom-001', 'mixveg-001', 'onion-001', 'oil-001');
-  if (d.includes('veg') || d.includes('sabzi')) items.push('mixveg-001', 'onion-001', 'dal-001', 'oil-001');
-  if (d.includes('curd') || d.includes('raita')) items.push('curd-001');
-  if (d.includes('rice')) items.push('rice-001');
-  if (d.includes('onion') || d.includes('salad')) items.push('onion-001');
-  if (d.includes('oil')) items.push('oil-001');
-  if (d.includes('egg')) items.push('egg-001', 'onion-001', 'oil-001', 'dal-001');
-  return items;
+const WEEKDAY_TO_LABEL: Record<KitchenMenuWeekday, DayMenuConfig['day']> = {
+  monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday',
+  friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
 };
+const LABEL_TO_WEEKDAY: Record<DayMenuConfig['day'], KitchenMenuWeekday> = {
+  Monday: 'monday', Tuesday: 'tuesday', Wednesday: 'wednesday', Thursday: 'thursday',
+  Friday: 'friday', Saturday: 'saturday', Sunday: 'sunday',
+};
+const MEAL_TYPE_TO_UI: Record<KitchenMenuMealType, DayMenuConfig['type']> = {
+  veg: 'veg', non_veg: 'nonVeg', pure_veg: 'pureVeg',
+};
+const MEAL_TYPE_TO_API: Record<DayMenuConfig['type'], KitchenMenuMealType> = {
+  veg: 'veg', nonVeg: 'non_veg', pureVeg: 'pure_veg',
+};
+
+function emptyDay(day: DayMenuConfig['day'], type: DayMenuConfig['type']): DayMenuConfig {
+  return { day, type, title: "Everything for today's PG menu", menu: [], ingredients: [] };
+}
+
+/** Populated before the real fetch resolves, so `menuConfig[day]` is never undefined. */
+const DEFAULT_MENU_CONFIG: Record<string, DayMenuConfig> = {
+  Monday: emptyDay('Monday', 'veg'),
+  Tuesday: emptyDay('Tuesday', 'veg'),
+  Wednesday: emptyDay('Wednesday', 'nonVeg'),
+  Thursday: emptyDay('Thursday', 'veg'),
+  Friday: emptyDay('Friday', 'nonVeg'),
+  Saturday: emptyDay('Saturday', 'pureVeg'),
+  Sunday: emptyDay('Sunday', 'nonVeg'),
+};
+
+function toMenuConfig(days: KitchenMenuDay[] | undefined): Record<string, DayMenuConfig> {
+  const config: Record<string, DayMenuConfig> = { ...DEFAULT_MENU_CONFIG };
+  (days ?? []).forEach((day) => {
+    const label = WEEKDAY_TO_LABEL[day.weekday];
+    if (!label) return;
+    config[label] = {
+      day: label,
+      type: day.meal_type ? MEAL_TYPE_TO_UI[day.meal_type] : config[label].type,
+      title: "Everything for today's PG menu",
+      menu: day.dishes,
+      ingredients: day.ingredients.map((item): MenuIngredient => ({
+        productId: item.id,
+        name: item.name,
+        quantity: `${item.quantity} × ${item.unit_label}`,
+        image: item.image_url ?? null,
+        price: toAmount(item.price),
+        originalPrice: item.mrp != null ? toAmount(item.mrp) : undefined,
+        unit: item.unit_label,
+        packs: item.quantity,
+      })),
+    };
+  });
+  return config;
+}
+
+// ponytail: keyword → real-catalog-term guesses, same spirit as the old hardcoded-ID
+// heuristic it replaces, but resolved against the live product list instead of fictional
+// ids. Upgrade to a real ingredient picker in MenuEditorModal if chefs want precision.
+const DISH_KEYWORD_TO_PRODUCT_TERMS: Record<string, string[]> = {
+  aloo: ['potato'], potato: ['potato'],
+  dal: ['dal'], pulse: ['dal'],
+  paneer: ['paneer'],
+  chicken: ['chicken'], meat: ['chicken'], biryani: ['chicken', 'rice'],
+  mushroom: ['mushroom'],
+  veg: ['vegetable'], sabzi: ['vegetable'],
+  curd: ['curd'], raita: ['curd'],
+  rice: ['rice'],
+  onion: ['onion'], salad: ['onion'],
+  oil: ['oil'],
+  egg: ['egg'],
+  palak: ['spinach'], spinach: ['spinach'],
+};
+
+function inferIngredientsForDish(dishName: string, products: SupplyItem[]): SupplyItem[] {
+  const d = dishName.toLowerCase();
+  const terms = new Set<string>();
+  for (const [kw, productTerms] of Object.entries(DISH_KEYWORD_TO_PRODUCT_TERMS)) {
+    if (d.includes(kw)) productTerms.forEach((t) => terms.add(t));
+  }
+  if (terms.size > 0) {
+    // Every cooked dish this heuristic recognizes calls for these two staples too.
+    terms.add('onion');
+    terms.add('oil');
+  }
+  const matched: SupplyItem[] = [];
+  const seen = new Set<string>();
+  terms.forEach((term) => {
+    const hit = products.find((p) => p.name.toLowerCase().includes(term));
+    if (hit && !seen.has(hit.id)) {
+      seen.add(hit.id);
+      matched.push(hit);
+    }
+  });
+  return matched;
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -42,23 +127,27 @@ interface TodaysKitchenNeedsProps {
   onProductPress: (productId: string) => void;
   onSeeAllCategoriesPress: () => void;
   products?: SupplyItem[];
+  pgId?: string;
 }
 
-export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProductPress, onSeeAllCategoriesPress, products = [] }) => {
+export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
+  onProductPress, onSeeAllCategoriesPress, products = [], pgId,
+}) => {
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
-  const updateQuantity = useCartStore((s) => s.updateQuantity);
 
   const bannerScrollRef = useRef<ScrollView>(null);
   const findProduct = (id: string) => products.find((p) => p.id === id);
+
+  const { data: kitchenMenuDays } = useKitchenMenuQuery(pgId);
+  const setKitchenMenuDay = useSetKitchenMenuDayMutation(pgId);
+  const menuConfig = useMemo(() => toMenuConfig(kitchenMenuDays), [kitchenMenuDays]);
 
   // ── Day setup ──
   const currentDayName = useMemo(() => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[new Date().getDay()];
   }, []);
-
-  const [menuConfig, setMenuConfig] = useState<Record<string, DayMenuConfig>>(weeklyMenu);
 
   const vegConfig = useMemo(() => {
     const t = menuConfig[currentDayName]?.type;
@@ -84,7 +173,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
 
   // ── Menu editor state ──
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [editingConfigKey, setEditingConfigKey] = useState<string>('Saturday');
+  const [editingConfigKey, setEditingConfigKey] = useState<DayMenuConfig['day']>('Saturday');
   const [editingDishes, setEditingDishes] = useState<string[]>([]);
   const [newDishText, setNewDishText] = useState('');
 
@@ -116,16 +205,20 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
     setNewDishText('');
   };
 
-  const handleSaveMenu = () => {
+  const handleSaveMenu = async () => {
     if (editingDishes.length === 0) {
       showAlert('Validation Error', 'A menu must contain at least one dish.', 'error');
+      return;
+    }
+    if (!pgId) {
+      showAlert('No Property Selected', 'Pick a property before editing its kitchen menu.', 'error');
       return;
     }
 
     const updatedIngredients: MenuIngredient[] = [];
     const addedProductIds = new Set<string>();
 
-    // Keep ingredients still relevant to remaining dishes
+    // Keep ingredients still relevant to remaining dishes, packs unchanged.
     const currentIngredients = menuConfig[editingConfigKey].ingredients || [];
     currentIngredients.forEach((ing: MenuIngredient) => {
       const isStillRelevant = editingDishes.some((dish) => {
@@ -143,47 +236,40 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
       if (isStillRelevant) { addedProductIds.add(ing.productId); updatedIngredients.push(ing); }
     });
 
-    // Add new ingredients for new dishes
+    // Add new ingredients for new dishes — a direct product-name match first, the keyword
+    // heuristic otherwise.
     editingDishes.forEach((dish) => {
       const directProduct = products.find((p) => p.name.toLowerCase() === dish.toLowerCase());
-      const productIds: string[] = directProduct ? [directProduct.id] : getIngredientsForDish(dish);
+      const matches = directProduct ? [directProduct] : inferIngredientsForDish(dish, products);
 
-      productIds.forEach((pId) => {
-        if (addedProductIds.has(pId)) return;
-        addedProductIds.add(pId);
-        const product = findProduct(pId);
-        if (product) {
-          const opt = { price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined };
-          updatedIngredients.push({
-            productId: product.id, name: product.name, quantity: opt.unit,
-            image: product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg'), price: opt.price, originalPrice: opt.originalPrice, unit: opt.unit,
-          });
-        }
+      matches.forEach((product) => {
+        if (addedProductIds.has(product.id)) return;
+        addedProductIds.add(product.id);
+        updatedIngredients.push({
+          productId: product.id,
+          name: product.name,
+          quantity: `1 × ${product.unit_label}`,
+          image: product.image_url ?? null,
+          price: toAmount(product.price),
+          originalPrice: product.mrp != null ? toAmount(product.mrp) : undefined,
+          unit: product.unit_label,
+          packs: 1,
+        });
       });
     });
 
-    setMenuConfig({
-      ...menuConfig,
-      [editingConfigKey]: { ...menuConfig[editingConfigKey], menu: editingDishes, ingredients: updatedIngredients },
-    });
-    setIsMenuOpen(false);
-    showAlert('Success', 'PG menu updated successfully!', 'success');
-  };
-
-  const handleAddOne = (ing: MenuIngredient) => {
-    const product = findProduct(ing.productId);
-    if (product) {
-      const option = { unit: ing.unit, price: ing.price, originalPrice: ing.originalPrice };
-      addItem(product, option, 1);
+    try {
+      await setKitchenMenuDay.mutateAsync({
+        weekday: LABEL_TO_WEEKDAY[editingConfigKey],
+        meal_type: MEAL_TYPE_TO_API[menuConfig[editingConfigKey].type],
+        dishes: editingDishes,
+        ingredients: updatedIngredients.map((ing) => ({ item_id: ing.productId, quantity: ing.packs })),
+      });
+      setIsMenuOpen(false);
+      showAlert('Success', 'PG menu updated successfully!', 'success');
+    } catch {
+      showAlert('Could Not Save', 'The menu update did not go through. Please try again.', 'error');
     }
-  };
-
-  const handleIncrement = (ing: MenuIngredient, currentQty: number) => {
-    updateQuantity(`${ing.productId}-${ing.unit}`, currentQty + 1);
-  };
-
-  const handleDecrement = (ing: MenuIngredient, currentQty: number) => {
-    updateQuantity(`${ing.productId}-${ing.unit}`, currentQty - 1);
   };
 
   const handleAddAllToCart = (targetConfig: DayMenuConfig) => {
@@ -194,7 +280,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
         const product = findProduct(ing.productId);
         if (product) {
           const option = { unit: ing.unit, price: ing.price, originalPrice: ing.originalPrice };
-          addItem(product, option, 1);
+          addItem(product, option, ing.packs);
           addedCount++;
         }
       }
@@ -204,8 +290,8 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
   };
 
   const categorizedIngredients = useMemo(() => {
-    const vegList: any[] = [];
-    const nonVegList: any[] = [];
+    const vegList: MenuIngredient[] = [];
+    const nonVegList: MenuIngredient[] = [];
     const addedIds = new Set<string>();
     Object.values(menuConfig).forEach((dayConfig) => {
       dayConfig.ingredients.forEach((ing: MenuIngredient) => {
@@ -219,8 +305,8 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
     return { veg: vegList, nonVeg: nonVegList };
   }, [menuConfig]);
 
-  const totalIngredientsCount = activeConfig.ingredients.length;
-  const totalMenuPrice = activeConfig.ingredients.reduce((sum: number, ing: MenuIngredient) => sum + ing.price, 0);
+  const totalIngredientsCount = activeConfig.ingredients.reduce((sum, ing) => sum + ing.packs, 0);
+  const totalMenuPrice = activeConfig.ingredients.reduce((sum: number, ing: MenuIngredient) => sum + ing.price * ing.packs, 0);
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -228,24 +314,24 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
       {/* Header */}
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>🍽️ Today's Kitchen Needs</Text>
-          <Text style={styles.subtitle}>Everything needed for today's PG menu</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.title}>🍽️ Today's Kitchen Needs</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>Everything needed for today's PG menu</Text>
         </View>
-        <TouchableOpacity activeOpacity={0.7} onPress={onSeeAllCategoriesPress}>
-          <Text style={styles.seeAllText}>See All →</Text>
+        <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllCategoriesPress}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
         </TouchableOpacity>
       </View>
 
       {/* Veg / Non-Veg toggle */}
       <View style={styles.tabContainer}>
         {(['veg', 'nonVeg'] as const).map((type) => (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             key={type}
             style={[styles.tabButton, activeTab === type && styles.activeTabButton]}
             onPress={() => handleTabPress(type)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.tabButtonText, activeTab === type && styles.activeTabButtonText]}>
+            <Text maxFontSizeMultiplier={1.3} style={[styles.tabButtonText, activeTab === type && styles.activeTabButtonText]}>
               {type === 'veg' ? '🥦 Veg Needs' : '🍗 Non-Veg Needs'}
             </Text>
           </TouchableOpacity>
@@ -301,15 +387,15 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
 
       {/* ── See All Bottom Sheet ── */}
       <Modal animationType="slide" transparent visible={isSeeAllOpen} onRequestClose={() => setIsSeeAllOpen(false)}>
-        <TouchableOpacity style={styles.bottomSheetBackdrop} activeOpacity={1} onPress={() => setIsSeeAllOpen(false)}>
-          <TouchableOpacity style={styles.bottomSheetContainer} activeOpacity={1}>
+        <TouchableOpacity accessibilityRole="button" style={styles.bottomSheetBackdrop} activeOpacity={1} onPress={() => setIsSeeAllOpen(false)}>
+          <TouchableOpacity accessibilityRole="button" style={styles.bottomSheetContainer} activeOpacity={1}>
             <View style={styles.grabHandle} />
             <View style={styles.bottomSheetHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.bottomSheetTitle}>Today's Kitchen Needs</Text>
-                <Text style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetTitle}>Today's Kitchen Needs</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Text>
               </View>
-              <TouchableOpacity onPress={() => setIsSeeAllOpen(false)} style={{ padding: 4 }}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setIsSeeAllOpen(false)} style={{ padding: 4 }}>
                 <Ionicons name="close" size={24} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -320,7 +406,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({ onProduc
               ].map(({ label, items }) => (
                 <View key={label} style={styles.categorySection}>
                   <View style={styles.categoryHeadingRow}>
-                    <Text style={styles.categoryName}>{label}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.categoryName}>{label}</Text>
                   </View>
                   <View style={styles.gridContainer}>
                     {items.map((ing: MenuIngredient) => {

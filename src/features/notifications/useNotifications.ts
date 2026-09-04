@@ -130,6 +130,14 @@ export function broadcastNotification(params: BroadcastParams): Promise<Notifica
   });
 }
 
+/** UI-facing audience label → the server's `BroadcastAudience` enum. Shared by every
+ *  broadcast-composer screen so "resident" keeps meaning `guest` in exactly one place. */
+export const BROADCAST_AUDIENCE_MAP: Record<string, BroadcastAudience> = {
+  ALL: "all", OWNER: "owner", MANAGER: "manager", RESIDENT: "guest",
+  GUEST: "guest", CHEF: "chef", STAFF: "kitchen_staff", MAINTENANCE: "maintenance",
+  DELIVERY_AGENT: "delivery_agent", DELIVERY: "delivery_agent",
+};
+
 export function useRoleNotificationsQuery(pgId?: string) {
   return useQuery<AppRoleNotificationEntity[]>({
     queryKey: qk.notifications.list(pgId ?? ""),

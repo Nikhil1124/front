@@ -10,14 +10,11 @@
  */
 import { useState, useCallback } from 'react';
 import { usePGowStore } from '@/store/usePGowStore';
-import { hapticSelect } from '@/utils/haptics';
-
 export function usePullToRefresh() {
   const refreshAll = usePGowStore((s) => s.refreshAll);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
-    hapticSelect();
     setRefreshing(true);
     try {
       await refreshAll();

@@ -12,8 +12,8 @@ let ViewAnnotation: any;
 
 if (isExpoGo) {
   Map = ({ children, style, onDidFinishRenderingMapFully }: any) => {
-    // See the note in maplibreCompat.web.tsx: callers gate a loading overlay on this, so
-    // dropping it would hide this message behind a spinner until their timeout fires.
+    // Callers gate a loading overlay on this callback, so dropping it would hide this
+    // message behind a spinner until their timeout fires.
     useEffect(() => {
       onDidFinishRenderingMapFully?.({ nativeEvent: null });
     }, [onDidFinishRenderingMapFully]);

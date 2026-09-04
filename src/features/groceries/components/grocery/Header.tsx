@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
 import { BlurView } from 'expo-blur';
+import { useAuthStore } from '@/store/authStore';
 
 interface HeaderProps {
   /** Static "delivering to" line — groceries always ship to the PG's own
@@ -19,33 +20,39 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
   // one used a fixed 4/8pt instead, so it sat under the status bar / notch. Same fix, same
   // value, so the grocery mini-app's header lines up with the rest of the app.
   const insets = useSafeAreaInsets();
+  // Same derivation GroceryProfileScreen.tsx uses — this avatar used to be hardcoded "S"
+  // regardless of who was signed in.
+  const userName = useAuthStore((s) => s.user?.name);
+  const avatarLetter = (userName?.trim().charAt(0).toUpperCase()) || 'P';
   return (
     <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 14 }]}>
-      <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
         <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
       </TouchableOpacity>
       <View style={styles.headerLeft}>
         <View style={styles.deliveryContainer}>
           <View style={styles.deliveryBadge}>
             <Ionicons name="time" size={13} color="#fff" />
-            <Text style={styles.deliveryBadgeText}>10 MINS</Text>
+            {/* Matches checkout's actual fastest slot ("Express • 15–25 min") — this used
+                to promise a flat "10 MINS", a number nothing in the order flow can meet. */}
+            <Text maxFontSizeMultiplier={1.3} style={styles.deliveryBadgeText}>EXPRESS</Text>
           </View>
-          <Text style={styles.deliveryText}>Delivery to</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.deliveryText}>Delivery to</Text>
         </View>
         <View style={styles.locationRow}>
-          <Text style={styles.locationTitle} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.locationTitle} numberOfLines={1}>
             {deliveryLabel}
           </Text>
         </View>
       </View>
 
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button"
         style={styles.profileIconBtn}
         onPress={onProfilePress}
         activeOpacity={0.8}
       >
         <View style={styles.profileAvatar}>
-          <Text style={styles.profileAvatarText}>S</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.profileAvatarText}>{avatarLetter}</Text>
         </View>
       </TouchableOpacity>
     </BlurView>

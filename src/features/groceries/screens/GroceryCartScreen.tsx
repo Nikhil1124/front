@@ -17,6 +17,7 @@ import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { getPerUnitRateLabel } from '../utils/pricing';
 import { useSubmitProcurementOrder } from '@/features/procurement/useProcurement';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();
@@ -62,18 +63,8 @@ export function GroceryCartScreen() {
     );
   };
 
-  const handleUpdateAddress = () => {
-    Alert.prompt(
-      "Change Address",
-      "Enter your delivery address:",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Save", onPress: (text?: string) => text && setDeliveryAddress(text) }
-      ],
-      "plain-text",
-      deliveryAddress
-    );
-  };
+  const [showAddressPrompt, setShowAddressPrompt] = useState(false);
+  const handleUpdateAddress = () => setShowAddressPrompt(true);
 
   const isChef = usePGowStore((s) => s.activeRole) === 'CHEF';
   const submitProcurementOrder = useSubmitProcurementOrder();
@@ -118,14 +109,14 @@ export function GroceryCartScreen() {
 
       {/* 2. Cart Header */}
       <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Ionicons name="close" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your Cart ({cartItemCount})</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Your Cart ({cartItemCount})</Text>
         {items.length > 0 ? (
-          <TouchableOpacity onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
+          <TouchableOpacity accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-            <Text style={styles.clearText}>Clear</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 48 }} />
@@ -138,42 +129,42 @@ export function GroceryCartScreen() {
           <View style={styles.emptyIconWrapper}>
             <Ionicons name="cart-outline" size={64} color={Colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>Your cart is empty</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your cart is empty</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.emptySubtitle}>
             Add groceries for your PG kitchen or pick up essentials for your stay.
           </Text>
-          <TouchableOpacity style={styles.shopBtn} onPress={() => router.back()} activeOpacity={0.8}>
-            <Text style={styles.shopBtnText}>Start Shopping</Text>
+          <TouchableOpacity accessibilityRole="button" style={styles.shopBtn} onPress={() => router.back()} activeOpacity={0.8}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             {/* 3. Delivery Information */}
-            <TouchableOpacity style={styles.deliveryCard} onPress={handleUpdateAddress} activeOpacity={0.9}>
+            <TouchableOpacity accessibilityRole="button" style={styles.deliveryCard} onPress={handleUpdateAddress} activeOpacity={0.9}>
               <View style={styles.deliveryLeft}>
                 <View style={styles.deliveryHeaderRow}>
                   <Ionicons name="location-outline" size={16} color={Colors.info} style={styles.locationIcon} />
-                  <Text style={styles.deliveryTitle}>Deliver to</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTitle}>Deliver to</Text>
                 </View>
-                <Text style={styles.deliveryAddress} numberOfLines={1}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryAddress} numberOfLines={1}>
                   {deliveryAddress} <Ionicons name="chevron-down" size={11} color={Colors.textSecondary} />
                 </Text>
               </View>
               <View style={styles.deliveryRight}>
-                <Text style={styles.deliveryRightLabel}>Estimated Delivery</Text>
-                <Text style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Estimated Delivery</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Text>
               </View>
             </TouchableOpacity>
 
             {/* 4. Free Delivery Progress Box */}
             <View style={styles.freeDeliveryCard}>
               <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
-              <Text style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
             </View>
 
             {/* 5. Cart Item Cards */}
-            <Text style={styles.sectionHeading}>Items in Cart</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Items in Cart</Text>
             {items.map((item) => {
               const isEditingReplacement = editingReplacementId === item.id;
               const hasDiscount = item.originalPrice && item.originalPrice > item.price;
@@ -195,37 +186,37 @@ export function GroceryCartScreen() {
 
                     {/* Middle: Product Info */}
                     <View style={styles.itemInfo}>
-                      <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-                      <Text style={styles.itemUnit}>{item.unit}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.itemUnit}>{item.unit}</Text>
                       
                       {perUnitRateText ? (
-                        <Text style={styles.unitRateText}>{perUnitRateText}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.unitRateText}>{perUnitRateText}</Text>
                       ) : null}
 
                       <View style={styles.priceRow}>
-                        <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
                         {item.originalPrice ? (
-                          <Text style={styles.strikePrice}>₹{item.originalPrice * item.quantity}</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{item.originalPrice * item.quantity}</Text>
                         ) : null}
                       </View>
 
                       {itemSavings > 0 ? (
-                        <Text style={styles.itemSavingsText}>Save ₹{itemSavings}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.itemSavingsText}>Save ₹{itemSavings}</Text>
                       ) : null}
                     </View>
 
                     {/* Right: Quantity Adjuster & Delete Action */}
                     <View style={styles.actionsContainer}>
                       <View style={styles.quantityControl}>
-                        <TouchableOpacity
+                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : handleRemoveItem(item.id, item.name)}
                           activeOpacity={0.7}
                         >
                           <Ionicons name="remove" size={14} color={Colors.primary} />
                         </TouchableOpacity>
-                        <Text style={styles.qtyText}>{item.quantity}</Text>
-                        <TouchableOpacity
+                        <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{item.quantity}</Text>
+                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => updateQuantity(item.id, item.quantity + 1)}
                           activeOpacity={0.7}
@@ -234,19 +225,19 @@ export function GroceryCartScreen() {
                         </TouchableOpacity>
                       </View>
 
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         style={styles.removeAction}
                         onPress={() => handleRemoveItem(item.id, item.name)}
                         activeOpacity={0.7}
                       >
                         <Ionicons name="trash-outline" size={12} color={Colors.danger} />
-                        <Text style={styles.removeActionText}>Remove</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.removeActionText}>Remove</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
 
                   {/* Replacement Picker option */}
-                  <TouchableOpacity
+                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
                     style={styles.replacementToggle}
                     onPress={() => setEditingReplacementId(isEditingReplacement ? null : item.id)}
                     activeOpacity={0.8}
@@ -277,53 +268,53 @@ export function GroceryCartScreen() {
             {/* 13. Savings Summary banner card */}
             {totalSavings > 0 && (
               <View style={styles.savingsCard}>
-                <Text style={styles.savingsTagIcon}>🏷️</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.savingsTagIcon}>🏷️</Text>
                 <View style={styles.savingsTextWrapper}>
-                  <Text style={styles.savingsCardTitle}>You save ₹{totalSavings} today!</Text>
-                  <Text style={styles.savingsCardSubtitle}>Great deal for your PG kitchen</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsCardTitle}>You save ₹{totalSavings} today!</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsCardSubtitle}>Great deal for your PG kitchen</Text>
                 </View>
                 <View style={styles.savingsBadge}>
-                  <Text style={styles.savingsBadgeText}>-₹{totalSavings}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsBadgeText}>-₹{totalSavings}</Text>
                 </View>
               </View>
             )}
 
             {/* 12. Bill Details Box */}
             <View style={styles.billCard}>
-              <Text style={styles.billTitle}>Bill Details</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billTitle}>Bill Details</Text>
               
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>Item Total</Text>
-                <Text style={styles.billValue}>₹{subtotal}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal}</Text>
               </View>
 
               {totalSavings > 0 && (
                 <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Discount</Text>
-                  <Text style={[styles.billValue, { color: Colors.danger }]}>-₹{totalSavings}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Discount</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.danger }]}>-₹{totalSavings}</Text>
                 </View>
               )}
 
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>Taxable Value</Text>
-                <Text style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
               </View>
 
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>GST</Text>
-                <Text style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
               </View>
 
               <View style={styles.billRow}>
-                <Text style={styles.billLabel}>Delivery Fee</Text>
-                <Text style={[styles.billValue, { color: Colors.primary }]}>FREE</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.primary }]}>FREE</Text>
               </View>
 
               <View style={[styles.billRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Subtotal</Text>
-                <Text style={styles.totalValue}>₹{billSubtotal}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Subtotal</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{billSubtotal}</Text>
               </View>
-              <Text style={styles.billFootnote}>Item prices are GST-inclusive. Platform fee &amp; tip are added at checkout.</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billFootnote}>Item prices are GST-inclusive.</Text>
             </View>
 
             {/* 14. You May Also Need — shared MiniProductCard */}
@@ -352,15 +343,15 @@ export function GroceryCartScreen() {
             <View style={styles.reassuranceStrip}>
               <View style={styles.reassuranceItem}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Text style={styles.reassuranceText}>Quality Checked</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Quality Checked</Text>
               </View>
               <View style={styles.reassuranceItem}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Text style={styles.reassuranceText}>Hygienically Packed</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Hygienically Packed</Text>
               </View>
               <View style={styles.reassuranceItem}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Text style={styles.reassuranceText}>Easy Replacement</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Easy Replacement</Text>
               </View>
             </View>
           </ScrollView>
@@ -368,19 +359,19 @@ export function GroceryCartScreen() {
           {/* 16 & 17. Sticky Checkout Bar */}
           <View style={[styles.stickyCheckoutBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.checkoutBarLeft}>
-              <Text style={styles.checkoutPrice}>₹{billSubtotal}</Text>
-              <Text style={styles.checkoutInfoText}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutPrice}>₹{billSubtotal}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutInfoText}>
                 {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}
               </Text>
             </View>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={[styles.checkoutBtn, submittingRequisition && { opacity: 0.6 }]}
               onPress={handleCheckoutOrRequest}
               activeOpacity={0.8}
               disabled={submittingRequisition}
             >
-              <Text style={styles.checkoutBtnText}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutBtnText}>
                 {isChef ? (submittingRequisition ? 'Sending…' : 'Request via Manager') : 'Proceed to Checkout'}
               </Text>
               <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
@@ -388,6 +379,15 @@ export function GroceryCartScreen() {
           </View>
         </>
       )}
+      <TextPromptDialog
+        visible={showAddressPrompt}
+        title="Change Address"
+        message="Enter your delivery address:"
+        label="Delivery address"
+        initialValue={deliveryAddress}
+        onCancel={() => setShowAddressPrompt(false)}
+        onSave={(text) => { setDeliveryAddress(text); setShowAddressPrompt(false); }}
+      />
     </View>
   );
 }

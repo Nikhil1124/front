@@ -109,7 +109,7 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
         <View style={[styles.iconBox, boxStyle]}>
           <Ionicons name={icon} size={18} style={iconStyle} />
         </View>
-        <Text
+        <Text maxFontSizeMultiplier={1.3}
           style={[{
             fontSize: 10,
             textAlign: 'center',

@@ -30,9 +30,9 @@ export const ProductRow: React.FC<ProductRowProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <TouchableOpacity activeOpacity={0.7} onPress={onSeeAllPress}>
-          <Text style={styles.seeAllText}>See All →</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{title}</Text>
+        <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllPress}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
         </TouchableOpacity>
       </View>
       <FlatList

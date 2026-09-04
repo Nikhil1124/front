@@ -34,7 +34,6 @@ import { usePGowStore } from '@/store/usePGowStore';
 import type { FeedbackComplaintEntity } from '@/types';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { useToast } from '@/hooks/useToast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
@@ -80,7 +79,6 @@ export function GuestFeedbackComplaintsTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const attach = async (kind: 'photo' | 'video') => {
-    hapticSelect();
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (perm.status !== 'granted') {
       Alert.alert('Permission required', 'Allow media library access to attach photo or video evidence.');
@@ -104,24 +102,20 @@ export function GuestFeedbackComplaintsTab() {
   const handleSubmit = async () => {
     if (isSubmitting) return;
     if (!title.trim() || !description.trim()) {
-      hapticError();
       Alert.alert('Validation Error', 'Please provide a title and detailed description.');
       return;
     }
     setIsSubmitting(true);
-    hapticSelect();
     try {
       const r = await submit(
         title, description, category, submissionType,
         mediaUri, mediaIsVideo, mealRating, cleanRating, mgrRating, staffRating, otherRating
       );
       if (r.ok) {
-        hapticSuccess();
         toast('success', submissionType === 'COMPLAINT' ? 'Complaint Broadcast' : 'Feedback Submitted', 'Your ticket has been sent to property management.');
         setTitle(''); setDescription(''); setMediaUri(null); setMediaName(null);
         refetchSubmissions();
       } else {
-        hapticError();
         Alert.alert('Submission Failed', r.error ?? 'Unknown error occurred.');
       }
     } finally {
@@ -152,7 +146,7 @@ export function GuestFeedbackComplaintsTab() {
               We listen. We act. We improve.
             </Txt>
           </Col>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.helpBtn}
             onPress={() => toast('info', 'Support Desk', 'Property management receives and acts on all grievances within 24h.')}
           >
@@ -176,9 +170,9 @@ export function GuestFeedbackComplaintsTab() {
         {/* ── 2. TOP ACTION CARDS (Complaint vs Feedback) ── */}
         <Row gap={12} style={styles.topCardsRow}>
           {/* Card 1: Raise Complaint */}
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             activeOpacity={0.88}
-            onPress={() => { hapticSelect(); setSubmissionType('COMPLAINT'); }}
+            onPress={() => { setSubmissionType('COMPLAINT'); }}
             style={[styles.actionCard, styles.complaintCard, submissionType === 'COMPLAINT' && styles.complaintCardActive]}
           >
             <Row justify="space-between" align="flex-start">
@@ -198,9 +192,9 @@ export function GuestFeedbackComplaintsTab() {
           </TouchableOpacity>
 
           {/* Card 2: Write Feedback */}
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             activeOpacity={0.88}
-            onPress={() => { hapticSelect(); setSubmissionType('FEEDBACK'); }}
+            onPress={() => { setSubmissionType('FEEDBACK'); }}
             style={[styles.actionCard, styles.feedbackCard, submissionType === 'FEEDBACK' && styles.feedbackCardActive]}
           >
             <Row justify="space-between" align="flex-start">
@@ -214,7 +208,7 @@ export function GuestFeedbackComplaintsTab() {
             </Row>
             <Spacer size={12} />
             <Txt size={15} weight="900" color={Colors.textPrimary}>Write Feedback</Txt>
-            <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 3, lineHeight: 15 }}>
+            <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 3, lineHeight: 15 }}>
               Share your experience and suggestions
             </Txt>
           </TouchableOpacity>
@@ -238,13 +232,13 @@ export function GuestFeedbackComplaintsTab() {
               {COMPLAINT_CATEGORIES.map((c) => {
                 const active = category === c.label;
                 return (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={c.label}
                     activeOpacity={0.88}
-                    onPress={() => { hapticSelect(); setCategory(c.label); }}
+                    onPress={() => { setCategory(c.label); }}
                     style={[styles.catPill, active && styles.catPillActive]}
                   >
-                    <Ionicons name={c.icon as any} size={16} color={active ? '#FFFFFF' : Colors.textPrimarySecondary} />
+                    <Ionicons name={c.icon as any} size={16} color={active ? '#FFFFFF' : Colors.textSecondary} />
                     <Txt size={12} weight="800" color={active ? '#FFFFFF' : Colors.textPrimary} style={{ marginLeft: 6 }}>
                       {c.label}
                     </Txt>
@@ -288,24 +282,24 @@ export function GuestFeedbackComplaintsTab() {
 
             {/* ATTACH PHOTO/VIDEO EVIDENCE */}
             <Spacer size={14} />
-            <Txt size={12} weight="800" color={Colors.textPrimarySecondary}>
-              Attach Photo or Video Evidence <Txt weight="400" color={Colors.textPrimarySecondary}>(Optional)</Txt>
+            <Txt size={12} weight="800" color={Colors.textSecondary}>
+              Attach Photo or Video Evidence <Txt weight="400" color={Colors.textSecondary}>(Optional)</Txt>
             </Txt>
             <Spacer size={8} />
             <Row gap={10}>
-              <TouchableOpacity activeOpacity={0.85} onPress={() => attach('photo')} style={styles.attachBtn}>
+              <TouchableOpacity accessibilityRole="button" activeOpacity={0.85} onPress={() => attach('photo')} style={styles.attachBtn}>
                 <Ionicons name="image-outline" size={20} color="#EF4444" />
                 <Col style={{ marginLeft: 8 }}>
                   <Txt size={12} weight="800" color={Colors.textPrimary}>Add Photo</Txt>
-                  <Txt size={9} color={Colors.textPrimarySecondary}>Upload from gallery</Txt>
+                  <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
                 </Col>
               </TouchableOpacity>
 
-              <TouchableOpacity activeOpacity={0.85} onPress={() => attach('video')} style={styles.attachBtn}>
+              <TouchableOpacity accessibilityRole="button" activeOpacity={0.85} onPress={() => attach('video')} style={styles.attachBtn}>
                 <Ionicons name="videocam-outline" size={20} color="#EF4444" />
                 <Col style={{ marginLeft: 8 }}>
                   <Txt size={12} weight="800" color={Colors.textPrimary}>Add Video</Txt>
-                  <Txt size={9} color={Colors.textPrimarySecondary}>Upload from gallery</Txt>
+                  <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
                 </Col>
               </TouchableOpacity>
             </Row>
@@ -316,7 +310,7 @@ export function GuestFeedbackComplaintsTab() {
                 <Txt size={11} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ flex: 1, marginLeft: 6 }}>
                   {mediaName ?? 'Attached Asset'}
                 </Txt>
-                <TouchableOpacity onPress={() => { setMediaUri(null); setMediaName(null); }}>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => { setMediaUri(null); setMediaName(null); }}>
                   <Ionicons name="close-circle" size={18} color={Colors.danger} />
                 </TouchableOpacity>
               </View>
@@ -324,7 +318,7 @@ export function GuestFeedbackComplaintsTab() {
 
             {/* COMPLAINT SUBMIT CTA */}
             <Spacer size={18} />
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               activeOpacity={0.9}
               onPress={handleSubmit}
               disabled={isSubmitting}
@@ -404,7 +398,7 @@ export function GuestFeedbackComplaintsTab() {
 
             {/* FEEDBACK SUBMIT CTA */}
             <Spacer size={18} />
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               activeOpacity={0.9}
               onPress={handleSubmit}
               disabled={isSubmitting}
@@ -426,7 +420,7 @@ export function GuestFeedbackComplaintsTab() {
         {/* ── 4. MY RECENT SUBMISSIONS WITH DYNAMIC FILTERING ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 12 }}>
           <Txt size={17} weight="800" color={Colors.textPrimary}>My Recent Submissions</Txt>
-          <TouchableOpacity onPress={() => toast('info', 'Submissions', 'Showing your grievance & review tickets.')}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => toast('info', 'Submissions', 'Showing your grievance & review tickets.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
               <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
@@ -436,27 +430,27 @@ export function GuestFeedbackComplaintsTab() {
 
         {/* SUBMISSION LIST FILTER TABS */}
         <Row gap={8} style={{ marginBottom: 14 }}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.filterChip, listFilter === 'ALL' && styles.filterChipActive]}
-            onPress={() => { hapticSelect(); setListFilter('ALL'); }}
+            onPress={() => { setListFilter('ALL'); }}
           >
-            <Txt size={11} weight="800" color={listFilter === 'ALL' ? '#FFFFFF' : Colors.textPrimarySecondary}>
+            <Txt size={11} weight="800" color={listFilter === 'ALL' ? '#FFFFFF' : Colors.textSecondary}>
               All ({submissions.length})
             </Txt>
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.filterChip, listFilter === 'COMPLAINT' && styles.filterChipComplaintActive]}
-            onPress={() => { hapticSelect(); setListFilter('COMPLAINT'); }}
+            onPress={() => { setListFilter('COMPLAINT'); }}
           >
-            <Txt size={11} weight="800" color={listFilter === 'COMPLAINT' ? '#FFFFFF' : Colors.textPrimarySecondary}>
+            <Txt size={11} weight="800" color={listFilter === 'COMPLAINT' ? '#FFFFFF' : Colors.textSecondary}>
               Complaints 🚨 ({submissions.filter((s) => s.type === 'COMPLAINT').length})
             </Txt>
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.filterChip, listFilter === 'FEEDBACK' && styles.filterChipFeedbackActive]}
-            onPress={() => { hapticSelect(); setListFilter('FEEDBACK'); }}
+            onPress={() => { setListFilter('FEEDBACK'); }}
           >
-            <Txt size={11} weight="800" color={listFilter === 'FEEDBACK' ? '#FFFFFF' : Colors.textPrimarySecondary}>
+            <Txt size={11} weight="800" color={listFilter === 'FEEDBACK' ? '#FFFFFF' : Colors.textSecondary}>
               Feedback 🌟 ({submissions.filter((s) => s.type === 'FEEDBACK').length})
             </Txt>
           </TouchableOpacity>
@@ -469,7 +463,7 @@ export function GuestFeedbackComplaintsTab() {
         ) : filteredSubmissions.length === 0 ? (
           <View style={styles.emptySubmissionsCard}>
             <Ionicons name="chatbubbles-outline" size={28} color={Colors.primary} />
-            <Txt size={13} weight="700" color={Colors.textPrimarySecondary} style={{ marginTop: 8 }}>
+            <Txt size={13} weight="700" color={Colors.textSecondary} style={{ marginTop: 8 }}>
               No {listFilter === 'ALL' ? 'submissions' : listFilter === 'COMPLAINT' ? 'complaints' : 'feedback'} logged yet.
             </Txt>
           </View>
@@ -490,7 +484,7 @@ export function GuestFeedbackComplaintsTab() {
             if (item.type === 'FEEDBACK') catIcon = 'star-outline';
 
             return (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={item.id}
                 activeOpacity={0.9}
                 onPress={() => router.push({ pathname: '/ticket/[id]', params: { id: item.id } })}
@@ -511,7 +505,7 @@ export function GuestFeedbackComplaintsTab() {
                       <Txt size={14} weight="800" color={Colors.textPrimary} numberOfLines={1} style={{ marginTop: 2 }}>
                         {item.title}
                       </Txt>
-                      <Txt size={11} color={Colors.textPrimarySecondary} numberOfLines={2} style={{ marginTop: 2 }}>
+                      <Txt size={11} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2 }}>
                         {item.description}
                       </Txt>
                     </Col>
@@ -521,7 +515,7 @@ export function GuestFeedbackComplaintsTab() {
                     <View style={[styles.subStatusPill, { backgroundColor: statusBg }]}>
                       <Txt size={10} weight="800" color={statusColor}>{item.status.toUpperCase()}</Txt>
                     </View>
-                    <Ionicons name="chevron-forward" size={14} color={Colors.textPrimarySecondary} />
+                    <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
                   </Row>
                 </Row>
 
@@ -554,7 +548,7 @@ export function GuestFeedbackComplaintsTab() {
             {preview && (
               <>
                 <Row justify="space-between" align="center">
-                  <Txt size={12} weight="800" color={Colors.textPrimarySecondary}>{preview.isVideo ? 'VIDEO ATTACHMENT' : 'PHOTO EVIDENCE'}</Txt>
+                  <Txt size={12} weight="800" color={Colors.textSecondary}>{preview.isVideo ? 'VIDEO ATTACHMENT' : 'PHOTO EVIDENCE'}</Txt>
                   <IconBtn onPress={() => setPreview(null)} icon="close" size={20} tint={Colors.textPrimary} />
                 </Row>
                 <Spacer size={12} />
@@ -586,7 +580,7 @@ function RatingCard({
       </Txt>
       <Row gap={2} style={{ marginTop: 6 }}>
         {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity key={star} onPress={() => { hapticSelect(); onChange(star); }}>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" key={star} onPress={() => { onChange(star); }}>
             <Ionicons name={star <= rating ? "star" : "star-outline"} size={14} color="#F59E0B" />
           </TouchableOpacity>
         ))}

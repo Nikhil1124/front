@@ -32,26 +32,26 @@ export function GroceryWishlistScreen() {
       <View style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Wishlist</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
             <View style={{ width: 28 }} />
           </View>
           <View style={styles.emptyContainer}>
             <View style={styles.iconCircle}>
               <Ionicons name="heart" size={60} color={Colors.danger} />
             </View>
-            <Text style={styles.emptyTitle}>Your wishlist is empty</Text>
-            <Text style={styles.emptySub}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your wishlist is empty</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>
               Tap the ♡ on any product to save it here.
             </Text>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={styles.shopBtn}
               onPress={() => router.push('/groceries')}
               activeOpacity={0.8}
             >
-              <Text style={styles.shopBtnText}>Start Shopping</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -64,12 +64,12 @@ export function GroceryWishlistScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Wishlist</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
           </View>
-          <Text style={styles.headerCount}>{items.length} items</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.headerCount}>{items.length} items</Text>
         </View>
 
         <FlatList
@@ -84,7 +84,7 @@ export function GroceryWishlistScreen() {
             const compoundId = `${item.id}-${option.unit}`;
             const inCart = cartItems.find((c) => c.id === compoundId);
             return (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.card}
                 activeOpacity={0.9}
                 onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: item.id } })}
@@ -94,29 +94,29 @@ export function GroceryWishlistScreen() {
                   style={styles.cardImage}
                 />
                 <View style={styles.cardInfo}>
-                  <Text style={styles.cardName} numberOfLines={2}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.cardName} numberOfLines={2}>
                     {item.name}
                   </Text>
-                  <Text style={styles.cardUnit}>{option.unit}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.cardUnit}>{option.unit}</Text>
                   <View style={styles.cardBottom}>
                     <View>
-                      <Text style={styles.cardPrice}>₹{option.price}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.cardPrice}>₹{option.price}</Text>
                       {option.originalPrice && (
-                        <Text style={styles.cardMRP}>₹{option.originalPrice}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.cardMRP}>₹{option.originalPrice}</Text>
                       )}
                     </View>
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={[styles.addBtn, inCart && styles.addBtnFilled]}
                       onPress={() => handleAddToCart(item, option)}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.addBtnText, inCart && styles.addBtnTextFilled]}>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addBtnTextFilled]}>
                         {inCart ? `In Cart (${inCart.quantity})` : '+ Add'}
                       </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-                <TouchableOpacity
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Save to wishlist" accessibilityRole="button"
                   style={styles.removeBtn}
                   onPress={() => toggleItem(item)}
                   activeOpacity={0.7}

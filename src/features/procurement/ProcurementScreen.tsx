@@ -11,7 +11,6 @@ import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { FormScroll } from '@/components/ui/FormScroll';
 import {
   useProcurementCatalog,
@@ -73,16 +72,16 @@ export function ProcurementScreen() {
     <HubScreenWrapper title="Procurement & Supplies" icon="cart-outline">
       {canApprove && (
         <Row gap={8} style={{ marginBottom: 14 }}>
-          <TouchableOpacity
-            onPress={() => { hapticSelect(); setTab('order'); }}
+          <TouchableOpacity accessibilityRole="button"
+            onPress={() => { setTab('order'); }}
             style={[styles.tabBtn, tab === 'order' && styles.tabBtnActive]}
           >
             <Txt size={12} weight="800" color={tab === 'order' ? Colors.textInverse : Colors.textPrimary}>
               Order Supplies
             </Txt>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => { hapticSelect(); setTab('approvals'); }}
+          <TouchableOpacity accessibilityRole="button"
+            onPress={() => { setTab('approvals'); }}
             style={[styles.tabBtn, tab === 'approvals' && styles.tabBtnActive]}
           >
             <Txt size={12} weight="800" color={tab === 'approvals' ? Colors.textInverse : Colors.textPrimary}>
@@ -129,7 +128,6 @@ function OrderSuppliesSection() {
   }, 0);
 
   const updateQty = (id: string, delta: number) => {
-    hapticSelect();
     setCart((prev) => {
       const next = Math.max(0, (prev[id] ?? 0) + delta);
       const copy = { ...prev };
@@ -146,12 +144,10 @@ function OrderSuppliesSection() {
     const items = Object.entries(cart).map(([id, qty]) => ({ item_id: id, quantity: qty }));
     try {
       await submitOrder.mutateAsync({ pg_id: pgId, order_type: 'supplies', items });
-      hapticSuccess();
       toast('success', 'Requisition Sent', `Requisition for ₹${cartTotalAmount.toLocaleString('en-IN')} sent for approval.`);
       setCart({});
       setShowCartModal(false);
     } catch (err: any) {
-      hapticError();
       toast('error', 'Submit failed', err?.message ?? 'Please try again.');
     }
   };
@@ -175,8 +171,7 @@ function OrderSuppliesSection() {
             <AnimatedPress
               key={tab.key}
               scale={0.96}
-              hapticPattern="light"
-              onPress={() => { hapticSelect(); setSelectedCat(tab.key); }}
+              onPress={() => { setSelectedCat(tab.key); }}
             >
               <View style={[styles.catPill, isSel && styles.catPillActive]}>
                 <Txt size={12} weight="800" color={isSel ? Colors.textInverse : Colors.textPrimary}>
@@ -200,7 +195,7 @@ function OrderSuppliesSection() {
             <Ionicons name="cloud-offline" size={20} color={Colors.danger} />
             <Col style={{ flex: 1 }}>
               <Txt variant="body" weight="700" color={Colors.danger}>Couldn't load the catalog</Txt>
-              <TouchableOpacity onPress={() => refetch()}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => refetch()}>
                 <Txt variant="caption" color={Colors.primary} weight="700">Tap to retry</Txt>
               </TouchableOpacity>
             </Col>
@@ -247,8 +242,7 @@ function OrderSuppliesSection() {
       {cartItemCount > 0 && (
         <AnimatedPress
           scale={0.92}
-          hapticPattern="medium"
-          onPress={() => { hapticSelect(); setShowCartModal(true); }}
+          onPress={() => { setShowCartModal(true); }}
           style={styles.floatingCart}
         >
           <Row gap={8} align="center">
@@ -265,7 +259,7 @@ function OrderSuppliesSection() {
 
       <Modal visible={showCartModal} transparent animationType="slide" onRequestClose={() => setShowCartModal(false)}>
         <View style={styles.modalBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCartModal(false)} />
+          <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowCartModal(false)} />
           <Card
             containerColor={Colors.surface}
             borderRadius={24}
@@ -289,7 +283,7 @@ function OrderSuppliesSection() {
                 Card sizes to its own content (maxHeight: '80%' is a cap, not flex: 1), so
                 flex: 1 collapsed to zero the same way flex: 0 did. Plain maxHeight-bounded
                 ScrollView instead, no flex anywhere in the chain. */}
-            <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+            <KeyboardAvoidingView behavior="padding">
               <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={{ gap: 8 }}>
                 {Object.entries(cart).map(([id, qty]) => {
@@ -373,13 +367,13 @@ function CatalogRow({
         <Row gap={6} align="center">
           {qty > 0 ? (
             <>
-              <TouchableOpacity onPress={() => onChangeQty(item.id, -1)} style={styles.qtyBtn} activeOpacity={0.7}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" onPress={() => onChangeQty(item.id, -1)} style={styles.qtyBtn} activeOpacity={0.7}>
                 <Ionicons name="remove" size={16} color={Colors.textPrimary} />
               </TouchableOpacity>
               <View style={styles.qtyBox}>
                 <Txt size={13} weight="900" color={Colors.primaryDark}>{qty}</Txt>
               </View>
-              <TouchableOpacity onPress={() => onChangeQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]} activeOpacity={0.7}>
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => onChangeQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]} activeOpacity={0.7}>
                 <Ionicons name="add" size={16} color={Colors.textInverse} />
               </TouchableOpacity>
             </>
@@ -432,14 +426,16 @@ function ApprovalsSection() {
   // Approving buys the goods for real — the server turns the requisition into a supply
   // order charged on this method — so it is asked for, never assumed. (It also has to be
   // sent at all: omitting it made every approval a 422.)
+  // ponytail: 'upi' and 'card' are still valid server-side (`ProcurementPaymentMethod`), but
+  // neither has a real payment gateway behind it yet, so only 'credit' is offered here for
+  // now — see the matching note in GroceryCheckoutScreen. Bring them back once a processor
+  // is wired up.
   const handleApprove = (orderId: string) => {
     Alert.alert(
       'Approve and buy',
-      'This places the order now. How should it be paid?',
+      'This places the order now, charged to the property credit account.',
       [
-        { text: 'UPI', onPress: () => submitApproval(orderId, 'upi') },
-        { text: 'Card', onPress: () => submitApproval(orderId, 'card') },
-        { text: 'On credit', onPress: () => submitApproval(orderId, 'credit') },
+        { text: 'Approve on credit', onPress: () => submitApproval(orderId, 'credit') },
         { text: 'Cancel', style: 'cancel' },
       ],
       { cancelable: true },
@@ -449,10 +445,8 @@ function ApprovalsSection() {
   const submitApproval = async (orderId: string, paymentMethod: ProcurementPaymentMethod) => {
     try {
       await approveOrder.mutateAsync({ orderId, paymentMethod });
-      hapticSuccess();
       toast('success', 'Requisition Approved', 'Manager has been notified with approval.');
     } catch (err: any) {
-      hapticError();
       toast('error', 'Approve failed', err?.message ?? 'Please try again.');
     }
   };
@@ -461,12 +455,10 @@ function ApprovalsSection() {
     if (!rejectingId) return;
     try {
       await rejectOrder.mutateAsync({ orderId: rejectingId, reason: rejectReason.trim() || 'No reason given' });
-      hapticError();
       toast('warning', 'Requisition Rejected', 'Manager notified.');
       setRejectingId(null);
       setRejectReason('');
     } catch (err: any) {
-      hapticError();
       toast('error', 'Reject failed', err?.message ?? 'Please try again.');
     }
   };
@@ -483,7 +475,7 @@ function ApprovalsSection() {
             <Ionicons name="cloud-offline" size={20} color={Colors.danger} />
             <Col style={{ flex: 1 }}>
               <Txt variant="body" weight="700" color={Colors.danger}>Couldn't load requisitions</Txt>
-              <TouchableOpacity onPress={() => refetch()}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => refetch()}>
                 <Txt variant="caption" color={Colors.primary} weight="700">Tap to retry</Txt>
               </TouchableOpacity>
             </Col>
@@ -570,7 +562,7 @@ function ApprovalsSection() {
       {rejectingId && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setRejectingId(null)}>
           <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setRejectingId(null)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setRejectingId(null)} />
             <Card
               containerColor={Colors.surface}
               borderRadius={20}

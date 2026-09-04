@@ -2,6 +2,15 @@
  * Time & formatting helpers ported from Kotlin MainActivity.kt helpers.
  */
 
+/** "Good morning/afternoon/evening" from the device clock — was hardcoded to "Good morning"
+ *  on the owner, chef, and maintenance dashboards regardless of when they were opened. */
+export function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export function formatTimeAgo(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
   if (diffSec < 60) return 'Just now';
@@ -11,11 +20,6 @@ export function formatTimeAgo(timestamp: number): string {
 }
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-export function formatShortDate(timestamp: number): string {
-  const d = new Date(timestamp);
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
-}
 
 export function formatDateTime(timestamp: number): string {
   const d = new Date(timestamp);
@@ -35,11 +39,6 @@ export function formatTime12h(timestamp: number): string {
   h = h % 12;
   if (h === 0) h = 12;
   return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
-}
-
-export function formatLongDate(timestamp: number): string {
-  const d = new Date(timestamp);
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 /** Parse "HH:mm" 24h into {hour, minute}. */
@@ -68,24 +67,8 @@ export function todayLocalISO(date: Date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
-/** Format hour+minute to "HH:mm" 24h. */
-export function formatTime24h(hour: number, minute: number): string {
-  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-}
-
-/** Convert 24h hour to 12h display hour. */
-export function to12h(hour: number): number {
-  if (hour === 0) return 12;
-  if (hour > 12) return hour - 12;
-  return hour;
-}
-
 export function formatINR(amount: number): string {
   return `₹${Math.round(amount).toLocaleString('en-IN')}`;
-}
-
-export function formatUSD(amount: number): string {
-  return `$${amount.toFixed(2)}`;
 }
 
 /** Toast callback type expected by ViewModel-style actions. */

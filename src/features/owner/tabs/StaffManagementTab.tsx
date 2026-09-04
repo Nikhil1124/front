@@ -29,11 +29,16 @@ import { EmptyState } from '@/components/EmptyState';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import * as staffApi from '@/features/staff/useStaff';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
-import { useStaffQuery } from '@/features/staff/useStaff';
+import {
+  useStaffQuery,
+  useAddStaffMutation,
+  useUpdateStaffMutation,
+  useRemoveStaffMutation,
+} from '@/features/staff/useStaff';
 import { FormScroll } from '@/components/ui/FormScroll';
+import * as map from '@/data/mappers';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG
@@ -104,9 +109,9 @@ export function StaffManagementTab() {
   const staffSalaryInput = usePGowStore((s) => s.staffSalaryInput);
   const set = usePGowStore((s) => s.set);
 
-  const registerStaff = usePGowStore((s) => s.registerStaffMember);
-  const deleteStaff = usePGowStore((s) => s.deleteStaffMember);
-  const refreshAll = usePGowStore((s) => s.refreshAll);
+  const addStaffMutation = useAddStaffMutation(activePgId ?? undefined);
+  const updateStaffMutation = useUpdateStaffMutation(activePgId ?? undefined);
+  const removeStaffMutation = useRemoveStaffMutation(activePgId ?? undefined);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPin, setShowPin] = useState(false);
@@ -152,6 +157,14 @@ export function StaffManagementTab() {
     }
   }, [isManager, owner?.id]);
 
+  // The label is display text; the backend takes the underlying role enum.
+  const REGISTER_ROLE_MAP: Record<string, 'manager' | 'chef' | 'kitchen_staff' | 'maintenance' | 'delivery_agent'> = {
+    Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
+    'Kitchen Staff': 'kitchen_staff',
+    Maintenance: 'maintenance', 'Maintenance Staff': 'maintenance', Cleaner: 'maintenance',
+    'Delivery Agent': 'delivery_agent', Delivery: 'delivery_agent', Rider: 'delivery_agent',
+  };
+
   const handleRegister = async () => {
     if (isSubmitting) return;
     if (!staffNameInput.trim()) {
@@ -166,35 +179,45 @@ export function StaffManagementTab() {
       Alert.alert('Validation', 'Login PIN must be exactly 4 digits.');
       return;
     }
+    if (isManager && staffRoleInput === 'Manager') {
+      Alert.alert('Validation', 'Managers cannot register other managers.');
+      return;
+    }
+    if (!activePgId) {
+      Alert.alert('Validation', 'No active property.');
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorField(null);
     try {
-      const result = await registerStaff();
-      if (result.ok) {
-        hapticSuccess();
-        Alert.alert('Success', 'Staff member account registered successfully!');
-        set('staffNameInput', '');
-        set('staffPhoneInput', '');
-        set('staffPinInput', '');
-        set('staffShiftInput', 'Day Shift (8 AM - 5 PM)');
-        set('staffSalaryInput', '15000');
-        setSubTab(1); // Go to directory
-      } else {
-        hapticError();
-        let errorMsg = result.error ?? 'Unknown error occurred.';
-        const lowerError = errorMsg.toLowerCase();
-        
-        if (lowerError.includes('number') || lowerError.includes('phone')) {
-          errorMsg = 'An account with this phone number already exists.';
-          setErrorField('phone');
-        } else if (lowerError.includes('already exists')) {
-          errorMsg = 'An account with these details already exists.';
-          setErrorField('phone');
-        }
-        
-        Alert.alert('Failed', errorMsg);
+      await addStaffMutation.mutateAsync({
+        name: staffNameInput.trim(),
+        phone: map.toE164(staffPhoneInput),
+        role: REGISTER_ROLE_MAP[staffRoleInput] ?? 'kitchen_staff',
+        pin: staffPinInput,
+        monthly_salary: parseFloat(staffSalaryInput) || undefined,
+      });
+      Alert.alert('Success', 'Staff member account registered successfully!');
+      set('staffNameInput', '');
+      set('staffPhoneInput', '');
+      set('staffPinInput', '');
+      set('staffShiftInput', 'Day Shift (8 AM - 5 PM)');
+      set('staffSalaryInput', '15000');
+      setSubTab(1); // Go to directory
+    } catch (err) {
+      let errorMsg = err instanceof Error ? err.message : 'Unknown error occurred.';
+      const lowerError = errorMsg.toLowerCase();
+
+      if (lowerError.includes('number') || lowerError.includes('phone')) {
+        errorMsg = 'An account with this phone number already exists.';
+        setErrorField('phone');
+      } else if (lowerError.includes('already exists')) {
+        errorMsg = 'An account with these details already exists.';
+        setErrorField('phone');
       }
+
+      Alert.alert('Failed', errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -211,14 +234,13 @@ export function StaffManagementTab() {
           style: 'destructive',
           onPress: async () => {
             setIsDeletingStaff(staff.id);
-            const result = await deleteStaff(staff.id);
-            setIsDeletingStaff(null);
-            if (result?.ok) {
-              hapticSuccess();
+            try {
+              await removeStaffMutation.mutateAsync(staff.id);
               Alert.alert('Success', `${staff.name} has been deleted.`);
-            } else {
-              hapticError();
-              Alert.alert('Failed', result?.error || 'Could not delete staff member.');
+            } catch (err) {
+              Alert.alert('Failed', err instanceof Error ? err.message : 'Could not delete staff member.');
+            } finally {
+              setIsDeletingStaff(null);
             }
           },
         },
@@ -270,13 +292,10 @@ export function StaffManagementTab() {
         ...(shift ?? {}),
       };
 
-      await staffApi.updateStaff(selectedStaff.id, payload);
-      hapticSuccess();
+      await updateStaffMutation.mutateAsync({ membershipId: selectedStaff.id, params: payload });
       Alert.alert('Success', 'Staff member details updated.');
-      await refreshAll();
       setShowEditModal(false);
     } catch (err) {
-      hapticError();
       Alert.alert('Error', 'Could not update staff member.');
     } finally {
       setIsUpdating(false);
@@ -293,11 +312,9 @@ export function StaffManagementTab() {
     setIsResettingPin(true);
     try {
       await staffApi.resetStaffCredentials(selectedStaff.id, { pin: newPin });
-      hapticSuccess();
       Alert.alert('Success', 'Login PIN reset successfully.');
       setNewPin('');
     } catch (err: any) {
-      hapticError();
       Alert.alert('Error', err?.message || 'Could not reset PIN.');
     } finally {
       setIsResettingPin(false);
@@ -336,30 +353,28 @@ export function StaffManagementTab() {
       {/* ── Segmented Control Sub-tabs ── */}
       <View style={styles.tabContainer}>
         <Row gap={8} style={styles.segmentedControl}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.segBtn, subTab === 0 && styles.segBtnActive]}
             onPress={() => {
-              hapticSelect();
               setSubTab(0);
             }}
             activeOpacity={0.8}
           >
             <Ionicons name="person-add-outline" size={16} color={subTab === 0 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Text style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
+            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Add Staff
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.segBtn, subTab === 1 && styles.segBtnActive]}
             onPress={() => {
-              hapticSelect();
               setSubTab(1);
             }}
             activeOpacity={0.8}
           >
             <Ionicons name="people-outline" size={16} color={subTab === 1 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Text style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
+            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Staff Directory
             </Text>
           </TouchableOpacity>
@@ -373,8 +388,8 @@ export function StaffManagementTab() {
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.bodyTitle}>Add Staff Member</Text>
-          <Text style={styles.bodySub}>Assign their role, work details, and login PIN.</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add Staff Member</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Assign their role, work details, and login PIN.</Text>
 
           <Spacer size={8} />
 
@@ -403,19 +418,19 @@ export function StaffManagementTab() {
           <Spacer size={10} />
 
           {/* Staff Role Chips */}
-          <Text style={styles.inputLabelStyle}>Staff Role</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Staff Role</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 42 }}>
             <Row gap={6} align="center">
               {selectableRoles.map((role) => {
                 const isSelected = staffRoleInput === role;
                 return (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={role}
                     style={[styles.roleChip, isSelected && styles.roleChipActive]}
                     onPress={() => set('staffRoleInput', role)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
                       {role}
                     </Text>
                   </TouchableOpacity>
@@ -429,19 +444,19 @@ export function StaffManagementTab() {
           {/* Row 2: Shift & Salary */}
           <Row gap={10}>
             <Col style={{ flex: 1.2 }}>
-              <Text style={styles.inputLabelStyle}>Shift *</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift *</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 46 }}>
                 <Row gap={6} align="center">
                   {SHIFT_OPTIONS.map((opt) => {
                     const isSelected = staffShiftInput === opt;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={opt}
                         style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                         onPress={() => set('staffShiftInput', opt)}
                         activeOpacity={0.85}
                       >
-                        <Text style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+                        <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
                           {opt.replace(' Shift', '').split(' ')[0]}
                         </Text>
                       </TouchableOpacity>
@@ -476,7 +491,7 @@ export function StaffManagementTab() {
                 secureTextEntry={!showPin}
                 containerColor={WHITE}
               />
-              <TouchableOpacity
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
                 style={[styles.eyeBtn, { top: 32 }]}
                 onPress={() => setShowPin(!showPin)}
                 activeOpacity={0.7}
@@ -487,7 +502,7 @@ export function StaffManagementTab() {
 
             <Row gap={6} align="center" style={[styles.securityStrip, { flex: 1.2, height: 48, marginTop: 16 }]}>
               <Ionicons name="shield-checkmark-outline" size={14} color={GREEN} />
-              <Text style={[styles.securityText, { fontSize: 9.5 }]} numberOfLines={2}>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.securityText, { fontSize: 9.5 }]} numberOfLines={2}>
                 Access is limited according to the role.
               </Text>
             </Row>
@@ -496,13 +511,13 @@ export function StaffManagementTab() {
           <Spacer size={16} />
 
           {/* Primary CTA */}
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={[styles.primaryBtn, { height: 48 }]}
             onPress={handleRegister}
             disabled={isSubmitting}
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryBtnText}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>
               {isSubmitting ? 'Registering...' : 'Create Staff Account'}
             </Text>
           </TouchableOpacity>
@@ -522,14 +537,14 @@ export function StaffManagementTab() {
           ListHeaderComponent={
             <View style={{ gap: 14, marginBottom: 12 }}>
               <Row justify="space-between" align="center">
-                <Text style={styles.bodyTitle}>Staff Directory</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Staff Directory</Text>
                 <View style={styles.countBadge}>
-                  <Text style={styles.countBadgeText}>{activeStaffCount} Active</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{activeStaffCount} Active</Text>
                 </View>
               </Row>
 
               {/* Search staff input */}
-              <TextInput
+              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search staff by name or phone"
                 style={styles.searchBar}
                 placeholder="Search staff by name or phone..."
                 placeholderTextColor={MUTED}
@@ -541,12 +556,12 @@ export function StaffManagementTab() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <Row gap={6}>
                   {['All', 'Managers', 'Kitchen', 'Maintenance'].map((filter) => (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={filter}
                       style={[styles.filterChip, roleFilter === filter && styles.filterChipActive]}
                       onPress={() => setRoleFilter(filter)}
                     >
-                      <Text style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
                         {filter}
                       </Text>
                     </TouchableOpacity>
@@ -583,23 +598,22 @@ export function StaffManagementTab() {
                     </View>
                     <Col style={{ flex: 1 }}>
                       <Row align="center" gap={6}>
-                        <Text style={styles.staffNameText}>{staff.name}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.staffNameText}>{staff.name}</Text>
                         <View style={styles.roleBadge}>
-                          <Text style={styles.roleBadgeText}>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.roleBadgeText}>
                             {ROLE_DISPLAY_NAMES[staff.role] || staff.role}
                           </Text>
                         </View>
                       </Row>
-                      <Text style={styles.staffPhone}>{staff.phone}</Text>
-                      <Text style={styles.staffBranch}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.staffPhone}>{staff.phone}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.staffBranch}>
                         {branchName} · {staff.shiftTime || 'Day Shift'}
                       </Text>
                     </Col>
                   </Row>
 
-                  <TouchableOpacity
+                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button"
                     onPress={() => {
-                      hapticSelect();
                       setSelectedStaff(staff);
                       setShowActionMenu(true);
                     }}
@@ -623,19 +637,19 @@ export function StaffManagementTab() {
       {showActionMenu && selectedStaff && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowActionMenu(false)}>
           <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowActionMenu(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowActionMenu(false)} />
             
             <Animated.View entering={SlideInDown.duration(160)} style={styles.actionSheet}>
               <View style={styles.sheetHandle} />
               
-              <Text style={styles.actionSheetTitle}>{selectedStaff.name}</Text>
-              <Text style={styles.actionSheetSub}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.actionSheetTitle}>{selectedStaff.name}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.actionSheetSub}>
                 {ROLE_DISPLAY_NAMES[selectedStaff.role] || selectedStaff.role}
               </Text>
               
               <Spacer size={16} />
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.sheetOptionRow}
                 onPress={() => {
                   setShowActionMenu(false);
@@ -643,28 +657,28 @@ export function StaffManagementTab() {
                 }}
               >
                 <Ionicons name="information-circle-outline" size={20} color={CHARCOAL} />
-                <Text style={styles.sheetOptionText}>View Details</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>View Details</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.sheetOptionRow}
                 onPress={() => handleOpenEdit(selectedStaff)}
               >
                 <Ionicons name="create-outline" size={20} color={CHARCOAL} />
-                <Text style={styles.sheetOptionText}>Edit Staff</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>Edit Staff</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={[styles.sheetOptionRow, { borderBottomWidth: 0 }]}
                 onPress={() => confirmDeleteStaff(selectedStaff)}
               >
                 <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                <Text style={[styles.sheetOptionText, { color: '#EF4444' }]}>Delete Staff</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: '#EF4444' }]}>Delete Staff</Text>
               </TouchableOpacity>
 
               <Spacer size={8} />
-              <TouchableOpacity style={styles.sheetCancelBtn} onPress={() => setShowActionMenu(false)}>
-                <Text style={styles.sheetCancelText}>Cancel</Text>
+              <TouchableOpacity accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowActionMenu(false)}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sheetCancelText}>Cancel</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
@@ -684,49 +698,49 @@ export function StaffManagementTab() {
               style={{ width: '90%' }}
             >
               <Row justify="space-between" align="center">
-                <Text style={styles.modalTitle}>Staff Profile</Text>
-                <TouchableOpacity onPress={() => setShowDetails(false)}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Staff Profile</Text>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowDetails(false)}>
                   <Ionicons name="close" size={20} color={MUTED} />
                 </TouchableOpacity>
               </Row>
               
               <Spacer size={16} />
               
-              <Text style={styles.detailSecLabel}>PERSONAL DETAILS</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>PERSONAL DETAILS</Text>
               <Spacer size={4} />
-              <Text style={styles.detailLabel}>Name</Text>
-              <Text style={styles.detailValue}>{selectedStaff.name}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Name</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.name}</Text>
               <Spacer size={8} />
-              <Text style={styles.detailLabel}>Phone</Text>
-              <Text style={styles.detailValue}>{selectedStaff.phone}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Phone</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.phone}</Text>
 
               <Spacer size={16} />
               
-              <Text style={styles.detailSecLabel}>ROLE</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ROLE</Text>
               <Spacer size={4} />
-              <Text style={styles.detailLabel}>Assigned Role</Text>
-              <Text style={styles.detailValue}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Assigned Role</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>
                 {ROLE_DISPLAY_NAMES[selectedStaff.role] || selectedStaff.role}
               </Text>
 
               <Spacer size={16} />
 
-              <Text style={styles.detailSecLabel}>WORK DETAILS</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>WORK DETAILS</Text>
               <Spacer size={4} />
-              <Text style={styles.detailLabel}>Shift</Text>
-              <Text style={styles.detailValue}>{selectedStaff.shiftTime || 'Day Shift'}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Shift</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.shiftTime || 'Day Shift'}</Text>
               <Spacer size={8} />
-              <Text style={styles.detailLabel}>Monthly Salary</Text>
-              <Text style={styles.detailValue}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Monthly Salary</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>
                 ₹{Math.round(selectedStaff.monthlySalary).toLocaleString('en-IN')}
               </Text>
 
               <Spacer size={16} />
 
-              <Text style={styles.detailSecLabel}>ACCOUNT ACCESS</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ACCOUNT ACCESS</Text>
               <Spacer size={4} />
-              <Text style={styles.detailLabel}>Account Status</Text>
-              <Text style={[styles.detailValue, { color: GREEN }]}>Active</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Account Status</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.detailValue, { color: GREEN }]}>Active</Text>
 
               <Spacer size={14} />
 
@@ -741,22 +755,22 @@ export function StaffManagementTab() {
                   containerColor={BG}
                   style={{ flex: 1, marginRight: 8 }}
                 />
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.resetPinBtn}
                   onPress={handleResetPin}
                   disabled={isResettingPin}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.resetPinBtnText}>Save</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.resetPinBtnText}>Save</Text>
                 </TouchableOpacity>
               </View>
 
               <Spacer size={16} />
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.sheetCancelBtn}
                 onPress={() => setShowDetails(false)}
               >
-                <Text style={styles.sheetCancelText}>Close</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sheetCancelText}>Close</Text>
               </TouchableOpacity>
             </Card>
           </View>
@@ -766,10 +780,7 @@ export function StaffManagementTab() {
       {/* ── Edit Staff Modal ── */}
       {showEditModal && selectedStaff && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setShowEditModal(false)}>
-          {/* behavior="padding" only on Android — iOS handles keyboard avoidance natively via
-              automaticallyAdjustKeyboardInsets on the inner ScrollView.  Using "padding" on iOS
-              double-counts the keyboard height and leaves a blank gap above the keyboard. */}
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <View style={styles.modalBackdrop}>
               <Card
                 containerColor={WHITE}
@@ -780,8 +791,8 @@ export function StaffManagementTab() {
                 style={{ width: '90%' }}
               >
                 <Row justify="space-between" align="center">
-                  <Text style={styles.modalTitle}>Edit Staff Details</Text>
-                  <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Edit Staff Details</Text>
+                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowEditModal(false)}>
                     <Ionicons name="close" size={20} color={MUTED} />
                   </TouchableOpacity>
                 </Row>
@@ -826,18 +837,18 @@ export function StaffManagementTab() {
                     />
                     
                     <Col style={{ flex: 1.2 }}>
-                      <Text style={styles.inputLabelStyle}>Shift</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                         <Row gap={6} align="center">
                           {SHIFT_OPTIONS.map((opt) => {
                             const isSelected = editShift === opt;
                             return (
-                              <TouchableOpacity
+                              <TouchableOpacity accessibilityRole="button"
                                 key={opt}
                                 style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                                 onPress={() => setEditShift(opt)}
                               >
-                                <Text style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+                                <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
                                   {opt.replace(' Shift', '').split(' ')[0]}
                                 </Text>
                               </TouchableOpacity>
@@ -850,18 +861,18 @@ export function StaffManagementTab() {
 
                   <Spacer size={8} />
 
-                  <Text style={styles.inputLabelStyle}>Role</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Role</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
                     <Row gap={6}>
                       {selectableRoles.map((r) => {
                         const isSelected = editRole === r;
                         return (
-                          <TouchableOpacity
+                          <TouchableOpacity accessibilityRole="button"
                             key={r}
                             style={[styles.roleChip, isSelected && styles.roleChipActive]}
                             onPress={() => setEditRole(r)}
                           >
-                            <Text style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+                            <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
                               {r}
                             </Text>
                           </TouchableOpacity>
@@ -874,23 +885,23 @@ export function StaffManagementTab() {
                 <Spacer size={12} />
 
                 <Row gap={10}>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={styles.editModalSaveBtn}
                     onPress={handleUpdateStaff}
                     disabled={isUpdating}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.editModalSaveText}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
                       {isUpdating ? 'Saving...' : 'Save Changes'}
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={styles.editModalCancelBtn}
                     onPress={() => setShowEditModal(false)}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.editModalCancelText}>Cancel</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Text>
                   </TouchableOpacity>
                 </Row>
               </Card>
@@ -909,7 +920,7 @@ function roleIconName(role: string): keyof typeof Ionicons.glyphMap {
   if (r === 'chef') return 'restaurant-outline';
   if (r === 'kitchen_staff') return 'egg-outline';
   if (r.includes('maintenance')) return 'build-outline';
-  if (r === 'delivery') return 'bicycle-outline';
+  if (r === 'delivery_agent') return 'bicycle-outline';
   return 'person-outline';
 }
 

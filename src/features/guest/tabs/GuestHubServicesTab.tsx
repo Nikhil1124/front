@@ -14,8 +14,6 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GuestLaundryBookingDialog } from '@/components/dialogs/HubDialogs';
-import { hapticSelect } from '@/utils/haptics';
-
 export function GuestHubServicesTab() {
   const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
@@ -73,15 +71,15 @@ export function GuestHubServicesTab() {
               </View>
               <Col style={{ flex: 1 }}>
                 <Txt size={15} weight="900" color={Colors.textPrimary}>EXPRESS PG LAUNDRY</Txt>
-                <Txt size={12} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+                <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
                   Wash & Fold • Wash & Iron • Dry Cleaning
                 </Txt>
               </Col>
             </Row>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={() => { hapticSelect(); setShowLaundryDialog(true); }}
+              onPress={() => { setShowLaundryDialog(true); }}
               style={styles.bookBtn}
             >
               <Txt size={11} weight="800" color="#FFFFFF">Book Pickup</Txt>
@@ -101,7 +99,7 @@ export function GuestHubServicesTab() {
                 <View key={req.id} style={styles.laundryItem}>
                   <Col style={{ flex: 1 }}>
                     <Txt size={13} weight="800" color={Colors.textPrimary}>{req.serviceType} • {req.weightOrCount}</Txt>
-                    <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2 }}>
+                    <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
                       Slot: {req.preferredSlot} • {req.paymentStatus}
                     </Txt>
                   </Col>
@@ -161,7 +159,7 @@ export function GuestHubServicesTab() {
             <Txt size={20}>⚡</Txt>
             <Col style={{ flex: 1 }}>
               <Txt size={13} weight="800" color={Colors.textPrimary}>PGow Smart Hub Integrated</Txt>
-              <Txt size={11} color={Colors.textPrimarySecondary} style={{ marginTop: 2, lineHeight: 15 }}>
+              <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2, lineHeight: 15 }}>
                 All services are synchronized directly with your PG landlord's main control panel.
               </Txt>
             </Col>
@@ -189,20 +187,20 @@ function HubServiceCard({
   title: string; desc: string; icon: keyof typeof Ionicons.glyphMap; statusText: string; buttonText: string; onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       activeOpacity={0.88}
-      onPress={() => { hapticSelect(); onPress(); }}
+      onPress={() => { onPress(); }}
       style={styles.gridCard}
     >
       <Row justify="space-between" align="center">
         <View style={styles.gridIconWrap}>
           <Ionicons name={icon} size={20} color={Colors.primary} />
         </View>
-        <Ionicons name="chevron-forward" size={14} color={Colors.textPrimarySecondary} />
+        <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
       </Row>
       <Spacer size={10} />
       <Txt size={13} weight="900" color={Colors.textPrimary}>{title}</Txt>
-      <Txt size={10} color={Colors.textPrimarySecondary} style={{ marginTop: 2, height: 28 }} numberOfLines={2}>
+      <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2, height: 28 }} numberOfLines={2}>
         {desc}
       </Txt>
       <Spacer size={8} />

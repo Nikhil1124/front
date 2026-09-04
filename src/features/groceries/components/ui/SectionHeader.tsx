@@ -19,10 +19,10 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 }) => {
   return (
     <View style={styles.row}>
-      <Text style={styles.title}>{title}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.title}>{title}</Text>
       {actionLabel && onAction ? (
-        <TouchableOpacity onPress={onAction} activeOpacity={0.7}>
-          <Text style={styles.action}>{actionLabel}</Text>
+        <TouchableOpacity accessibilityRole="button" onPress={onAction} activeOpacity={0.7}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.action}>{actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
     </View>

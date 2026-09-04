@@ -32,10 +32,8 @@ import { Svg, Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg'
 import { Card, Txt, Row, Col, Spacer, Btn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
-import { hapticSelect, hapticSuccess } from '@/utils/haptics';
-
 function AnimatedNumber({ value, duration = 500, decimals = 0 }: { value: number; duration?: number; decimals?: number }) {
   if (decimals > 0) {
     return <>{value.toFixed(decimals)}</>;
@@ -45,11 +43,27 @@ function AnimatedNumber({ value, duration = 500, decimals = 0 }: { value: number
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { useSendRentRemindersMutation, type RentReminderResult } from '@/features/payments/usePayments';
+
+/** Three numbers, because "0 sent" alone cannot tell an owner whether everybody paid or
+ *  everybody was already reminded an hour ago. */
+function rentReminderAlert(result: RentReminderResult) {
+  const description =
+    result.reminded > 0
+      ? `${result.reminded} resident(s) reminded.`
+        + (result.already_paid ? ` ${result.already_paid} already paid.` : '')
+        + (result.on_cooldown ? ` ${result.on_cooldown} reminded recently.` : '')
+      : result.on_cooldown > 0
+        ? `Everyone who owes rent was already reminded in the last day — nothing sent.`
+        : "Every resident has cleared this month's rent. Nothing to send.";
+  return { title: result.reminded > 0 ? '📤 REMINDERS SENT' : '✅ NOTHING TO SEND', description };
+}
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { usePnL } from '@/features/billing/usePnL';
 import { useMealSavings } from '@/features/meals/useMealSavings';
-import { todayLocalISO } from '@/utils/format';
+import { usePropertyLayout } from '@/features/property/usePropertyLayout';
+import { todayLocalISO, formatTimeAgo, formatINR } from '@/utils/format';
 import { BookRepairDialog } from '@/components/dialogs/HubDialogs';
 import { useResponsivePadding } from '@/utils/responsive';
 
@@ -116,7 +130,8 @@ export default function OwnerOverviewTab() {
   }, [hasNoMemberships, responsivePadding]);
 
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
-  const isManager = usePGowStore((s) => s.isManagerMode);
+  // Derived, not a login-time snapshot — see useIsManagerMode.
+  const isManager = useIsManagerMode();
 
   // Dynamic calculations
   const occupiedCount = guests.length;
@@ -133,6 +148,7 @@ export default function OwnerOverviewTab() {
 
   // Fetch P&L data
   const { data: pnlData } = usePnL(activePgId, pnlInterval);
+  const sendRentRemindersMutation = useSendRentRemindersMutation(activePgId ?? undefined);
 
   // Fetch Food Savings data
   const { monthStart, monthEnd } = useMemo(() => {
@@ -144,42 +160,50 @@ export default function OwnerOverviewTab() {
   }, []);
   const { data: savingsData } = useMealSavings(activePgId, monthStart, monthEnd);
 
-  const fallbackDaily = useMemo(() => [
-    { date: '2026-08-30', meal_type: 'dinner', skipped_portions: 12, saved: 600 },
-    { date: '2026-08-30', meal_type: 'lunch', skipped_portions: 8, saved: 400 },
-    { date: '2026-08-29', meal_type: 'breakfast', skipped_portions: 15, saved: 750 },
-  ], []);
+  // Property's real bed layout — same hook BedVisualizerScreen uses — so the maintenance
+  // count on the hero card is a real number, not a placeholder that never changes.
+  const { data: layout } = usePropertyLayout(activePgId);
+  const maintenanceBedsCount = useMemo(
+    () =>
+      (layout?.floors ?? [])
+        .flatMap((f) => f.rooms)
+        .flatMap((r) => r.beds)
+        .filter((b) => b.status === 'maintenance').length,
+    [layout]
+  );
 
-  const totalSkippedPortions = savingsData?.total_skipped_portions ?? 35;
-  const totalSavedAmount = savingsData?.total_saved ?? 1750;
-  const costPerPlate = savingsData?.cost_per_plate ?? 50;
-  const dailySavings = savingsData ? savingsData.daily : fallbackDaily;
+  // No fallback numbers here on purpose: an owner with a genuinely quiet mess (nobody has
+  // skipped a meal this month) must see 0, not an invented ₹1,750 that looks like real
+  // revenue they never earned.
+  const totalSkippedPortions = savingsData?.total_skipped_portions ?? 0;
+  const totalSavedAmount = savingsData?.total_saved ?? 0;
+  const costPerPlate = savingsData?.cost_per_plate ?? 0;
 
   // Quick Action Grid Items — Cool LUNA Design System Icons
   const quickActions = useMemo(() => {
     const top4: QuickActionItem[] = [
-      { label: 'Groceries', icon: 'basket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/groceries'); } },
-      { label: 'Procurement', icon: 'cube', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/procurement'); } },
-      { label: 'Services', icon: 'sparkles', color: '#023859', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/services'); } },
-      { label: 'Residents', icon: 'people', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/guests'); } },
+      { label: 'Groceries', icon: 'basket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/groceries'); } },
+      { label: 'Procurement', icon: 'cube', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { router.navigate('/procurement'); } },
+      { label: 'Services', icon: 'sparkles', color: '#023859', bgColor: '#EBF7FA', onPress: () => { router.navigate('/services'); } },
+      { label: 'Residents', icon: 'people', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/guests'); } },
     ];
 
     const rest: QuickActionItem[] = [
-      { label: 'Add Room', icon: 'bed', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/bed-visualizer'); } },
-      { label: 'Ads', icon: 'rocket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/manage-ad'); } },
-      { label: 'Complaints', icon: 'alert-circle', color: '#DC2626', bgColor: '#FEF2F2', onPress: () => { hapticSelect(); router.navigate('/complaints'); } },
-      { label: 'Food RSVP', icon: 'fast-food', color: '#023859', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/rsvp-trends'); } },
-      { label: 'Managers', icon: 'ribbon', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/manager-provisioning'); } },
-      { label: 'Portfolio', icon: 'stats-chart', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/portfolio'); } },
-      { label: 'Reviews', icon: 'star', color: '#D97706', bgColor: '#FEF3C7', onPress: () => { hapticSelect(); router.navigate('/reviews'); } },
-      { label: 'Settings', icon: 'options', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/settings'); } },
-      { label: 'Staff', icon: 'id-card', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/staff'); } },
-      { label: 'Technicians', icon: 'construct', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); setShowBookRepair(true); } },
-      { label: 'UPI Setup', icon: 'qr-code', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/upi-settings'); } },
+      { label: 'Add Room', icon: 'bed', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { router.navigate('/bed-visualizer'); } },
+      { label: 'Ads', icon: 'rocket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/manage-ad'); } },
+      { label: 'Complaints', icon: 'alert-circle', color: '#DC2626', bgColor: '#FEF2F2', onPress: () => { router.navigate('/complaints'); } },
+      { label: 'Food RSVP', icon: 'fast-food', color: '#023859', bgColor: '#EBF7FA', onPress: () => { router.navigate('/rsvp-trends'); } },
+      { label: 'Managers', icon: 'ribbon', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/manager-provisioning'); } },
+      { label: 'Portfolio', icon: 'stats-chart', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { router.navigate('/portfolio'); } },
+      { label: 'Reviews', icon: 'star', color: '#D97706', bgColor: '#FEF3C7', onPress: () => { router.navigate('/reviews'); } },
+      { label: 'Settings', icon: 'options', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { router.navigate('/settings'); } },
+      { label: 'Staff', icon: 'id-card', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/staff'); } },
+      { label: 'Technicians', icon: 'construct', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { setShowBookRepair(true); } },
+      { label: 'UPI Setup', icon: 'qr-code', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { router.navigate('/upi-settings'); } },
     ];
 
     if (!isManager) {
-      rest.push({ label: 'Add Property', icon: 'business', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { hapticSelect(); router.navigate('/manage-properties'); } });
+      rest.push({ label: 'Add Property', icon: 'business', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { router.navigate('/manage-properties'); } });
     }
 
     rest.sort((a, b) => a.label.localeCompare(b.label));
@@ -200,14 +224,21 @@ export default function OwnerOverviewTab() {
     if (pnlData?.monthly && pnlData.monthly.length > 0) {
       return pnlData.monthly.map(m => ({ label: m.period.slice(5, 7) || m.period, val: m.revenue }));
     }
-    // Fallback static points for premium presentation
-    return [
-      { label: '1 May', val: 320000 },
-      { label: '8 May', val: 410000 },
-      { label: '15 May', val: 380000 },
-      { label: '22 May', val: 482000 },
-      { label: '31 May', val: 450000 },
-    ];
+    // No real data yet — empty, not an invented ₹4.8L trend that never happened. The chart
+    // below already renders nothing sensible for zero points, so this is the honest answer.
+    return [];
+  }, [pnlData]);
+
+  // The revenue figure and its month-over-month change, both real: the fixed "₹4,82,000 ↑
+  // 12.4%" this card used to show never moved no matter what the property actually earned.
+  const revenueTotal = pnlData?.totals.revenue ?? 0;
+  const revenueGrowthPct = useMemo(() => {
+    const m = pnlData?.monthly;
+    if (!m || m.length < 2) return null;
+    const prev = m[m.length - 2].revenue;
+    const curr = m[m.length - 1].revenue;
+    if (prev <= 0) return null;
+    return ((curr - prev) / prev) * 100;
   }, [pnlData]);
 
   const maxVal = Math.max(...areaData.map(d => d.val), 1) * 1.15;
@@ -233,17 +264,20 @@ export default function OwnerOverviewTab() {
     return `${pathD} L ${chartWidth} ${CHART_HEIGHT} L 0 ${CHART_HEIGHT} Z`;
   }, [points, pathD, chartWidth]);
 
-  // Donut Chart calculations
-  const totalTickets = complaints.length || 22; // default fallback if empty
-  const urgentCount = complaints.filter(c => c.status === 'Open').length || 3;
-  const progressCount = complaints.filter(c => c.status === 'In Progress').length || 7;
-  const resolvedCount = complaints.filter(c => c.status === 'Resolved').length || 12;
+  // Donut Chart calculations. No fallback counts: a property with zero complaints is good
+  // news, not a reason to draw 22 invented tickets on the owner's own dashboard.
+  const totalTickets = complaints.length;
+  const urgentCount = complaints.filter(c => c.status === 'Open').length;
+  const progressCount = complaints.filter(c => c.status === 'In Progress').length;
+  const resolvedCount = complaints.filter(c => c.status === 'Resolved').length;
 
   const donutRadius = 32;
   const donutCircum = 2 * Math.PI * donutRadius; // ~201
-  const urgentPct = urgentCount / totalTickets;
-  const progressPct = progressCount / totalTickets;
-  const resolvedPct = resolvedCount / totalTickets;
+  // Guard the empty-property case — dividing by a zero totalTickets would draw every slice
+  // as NaN% instead of the plain, uncoloured ring the empty state already handles below.
+  const urgentPct = totalTickets > 0 ? urgentCount / totalTickets : 0;
+  const progressPct = totalTickets > 0 ? progressCount / totalTickets : 0;
+  const resolvedPct = totalTickets > 0 ? resolvedCount / totalTickets : 0;
 
   // Recent Requests with categories mapping
   const recentRequests = useMemo(() => {
@@ -280,14 +314,14 @@ export default function OwnerOverviewTab() {
               <Ionicons name="business" size={24} color={PRIMARY} />
             </View>
             <Spacer size={16} />
-            <Text style={styles.noMembershipTitle}>Get Started</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.noMembershipTitle}>Get Started</Text>
             <Spacer size={8} />
-            <Text style={styles.noMembershipDesc}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.noMembershipDesc}>
               Welcome to PGow! Add your first PG property to start managing staff, rooms, and payments.
             </Text>
             <Spacer size={20} />
             <Btn
-              onPress={() => { hapticSelect(); router.push('/manage-properties'); }}
+              onPress={() => { router.push('/manage-properties'); }}
               containerColor={PRIMARY}
               textColor={WHITE}
               borderRadius={14}
@@ -295,7 +329,7 @@ export default function OwnerOverviewTab() {
             >
               <Row align="center" gap={6}>
                 <Ionicons name="add-circle" size={18} color={WHITE} />
-                <Text style={styles.btnText}>Add First Property</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.btnText}>Add First Property</Text>
               </Row>
             </Btn>
           </Card>
@@ -334,14 +368,11 @@ export default function OwnerOverviewTab() {
                     {/* Right side stats panel with subtle gradient */}
                     <View style={styles.heroStatsPanel}>
                       <Row justify="space-between" align="center">
-                        <Text style={styles.heroLabel}>Occupancy</Text>
-                        <View style={styles.trendBadge}>
-                          <Text style={styles.trendBadgeText}>↑ 6%</Text>
-                        </View>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.heroLabel}>Occupancy</Text>
                       </Row>
 
-                      <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
-                      <Text style={styles.heroStatusText}>Excellent occupancy</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.heroStatusText}>Excellent occupancy</Text>
 
                       {/* Custom Progress Bar */}
                       <View style={styles.progressBarTrack}>
@@ -351,18 +382,18 @@ export default function OwnerOverviewTab() {
                       <View style={styles.heroSummaryContainer}>
                         <View style={styles.summaryItem}>
                           <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
-                          <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
-                          <Text style={styles.summaryLabel}>Occupied</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Occupied</Text>
                         </View>
                         <View style={styles.summaryItem}>
                           <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
-                          <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
-                          <Text style={styles.summaryLabel}>Available</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Available</Text>
                         </View>
                         <View style={styles.summaryItem}>
                           <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
-                          <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
-                          <Text style={styles.summaryLabel}>Maintenance</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryValue}><AnimatedNumber value={maintenanceBedsCount} /></Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Maintenance</Text>
                         </View>
                       </View>
                     </View>
@@ -381,26 +412,30 @@ export default function OwnerOverviewTab() {
                 >
                   <Row justify="space-between" align="center">
                     <Col>
-                      <Text style={styles.chartTitle}>Revenue Overview</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.chartTitle}>Revenue Overview</Text>
                       <Spacer size={4} />
                       <Row align="center" gap={6}>
-                        <Text style={styles.chartAmountText}>₹4,82,000</Text>
-                        <View style={styles.growthBadge}>
-                          <Text style={styles.growthBadgeText}>↑ 12.4%</Text>
-                        </View>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.chartAmountText}>{formatINR(revenueTotal)}</Text>
+                        {revenueGrowthPct !== null && (
+                          <View style={[styles.growthBadge, revenueGrowthPct < 0 && { backgroundColor: '#FEF2F2' }]}>
+                            <Text maxFontSizeMultiplier={1.3} style={[styles.growthBadgeText, revenueGrowthPct < 0 && { color: DANGER }]}>
+                              {revenueGrowthPct >= 0 ? '↑' : '↓'} {Math.abs(revenueGrowthPct).toFixed(1)}%
+                            </Text>
+                          </View>
+                        )}
                       </Row>
-                      <Text style={styles.chartSubtext}>vs last month</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.chartSubtext}>vs last month</Text>
                     </Col>
 
                     {/* Interval Selector */}
                     <Row gap={4} style={styles.intervalRow}>
                       {(['3m', '6m', '1y'] as const).map(i => (
-                        <TouchableOpacity
+                        <TouchableOpacity accessibilityRole="button"
                           key={i}
                           style={[styles.intervalBtn, pnlInterval === i && styles.intervalBtnActive]}
-                          onPress={() => { hapticSelect(); setPnlInterval(i); }}
+                          onPress={() => { setPnlInterval(i); }}
                         >
-                          <Text style={[styles.intervalBtnText, pnlInterval === i && styles.intervalBtnTextActive]}>
+                          <Text maxFontSizeMultiplier={1.3} style={[styles.intervalBtnText, pnlInterval === i && styles.intervalBtnTextActive]}>
                             {i.toUpperCase()}
                           </Text>
                         </TouchableOpacity>
@@ -455,7 +490,7 @@ export default function OwnerOverviewTab() {
 
                   <Row justify="space-between" style={{ marginTop: 8 }}>
                     {areaData.map((d, i) => (
-                      <Text key={i} style={styles.xAxisLabel}>{d.label}</Text>
+                      <Text maxFontSizeMultiplier={1.3} key={i} style={styles.xAxisLabel}>{d.label}</Text>
                     ))}
                   </Row>
                 </Card>
@@ -550,14 +585,11 @@ export default function OwnerOverviewTab() {
                     {/* Right side stats panel with subtle gradient */}
                     <View style={styles.heroStatsPanel}>
                       <Row justify="space-between" align="center">
-                        <Text style={styles.heroLabel}>Occupancy</Text>
-                        <View style={styles.trendBadge}>
-                          <Text style={styles.trendBadgeText}>↑ 6%</Text>
-                        </View>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.heroLabel}>Occupancy</Text>
                       </Row>
 
-                      <Text style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
-                      <Text style={styles.heroStatusText}>Excellent occupancy</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.heroPercentText}><AnimatedNumber value={occupancyPercent} />%</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.heroStatusText}>Excellent occupancy</Text>
 
                       {/* Custom Progress Bar */}
                       <View style={styles.progressBarTrack}>
@@ -567,18 +599,18 @@ export default function OwnerOverviewTab() {
                       <View style={styles.heroSummaryContainer}>
                         <View style={styles.summaryItem}>
                           <View style={[styles.summaryDot, { backgroundColor: PRIMARY }]} />
-                          <Text style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
-                          <Text style={styles.summaryLabel}>Occupied</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryValue}><AnimatedNumber value={occupiedCount} /></Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Occupied</Text>
                         </View>
                         <View style={styles.summaryItem}>
                           <View style={[styles.summaryDot, { backgroundColor: SUCCESS }]} />
-                          <Text style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
-                          <Text style={styles.summaryLabel}>Available</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryValue}><AnimatedNumber value={availableCount} /></Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Available</Text>
                         </View>
                         <View style={styles.summaryItem}>
                           <View style={[styles.summaryDot, { backgroundColor: WARNING }]} />
-                          <Text style={styles.summaryValue}><AnimatedNumber value={3} /></Text>
-                          <Text style={styles.summaryLabel}>Maintenance</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryValue}><AnimatedNumber value={maintenanceBedsCount} /></Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Maintenance</Text>
                         </View>
                       </View>
                     </View>
@@ -593,71 +625,68 @@ export default function OwnerOverviewTab() {
             {/* ── 2. Key Metrics Grid ────────────────────────────────────────── */}
             <View style={styles.metricsGrid}>
               {/* Properties Card */}
-              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/manage-properties'); }} style={{ flex: 1, minWidth: 150 }}>
+              <AnimatedPress scale={0.96} onPress={() => { router.push('/manage-properties'); }} style={{ flex: 1, minWidth: 150 }}>
                 <View style={styles.metricCard}>
                   <View style={[styles.metricIconCircle, { backgroundColor: '#EBF7FA', borderColor: '#CBEFF4', borderWidth: 1 }]}>
                     <Ionicons name="business" size={18} color="#011C40" />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Row justify="space-between" align="center">
-                      <Text style={styles.metricValue}><AnimatedNumber value={allPGs.length} /></Text>
-                      <View style={styles.metricBadgePrimary}><Text style={styles.metricBadgeTextPrimary}>ACTIVE</Text></View>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}><AnimatedNumber value={allPGs.length} /></Text>
+                      <View style={styles.metricBadgePrimary}><Text maxFontSizeMultiplier={1.3} style={styles.metricBadgeTextPrimary}>ACTIVE</Text></View>
                     </Row>
-                    <Text style={styles.metricTitle}>Properties</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.metricTitle}>Properties</Text>
                   </Col>
                 </View>
               </AnimatedPress>
 
               {/* Residents Card */}
-              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/guests'); }} style={{ flex: 1, minWidth: 150 }}>
+              <AnimatedPress scale={0.96} onPress={() => { router.push('/guests'); }} style={{ flex: 1, minWidth: 150 }}>
                 <View style={styles.metricCard}>
                   <View style={[styles.metricIconCircle, { backgroundColor: '#EBF7FA', borderColor: '#CBEFF4', borderWidth: 1 }]}>
                     <Ionicons name="people" size={18} color="#26658C" />
                   </View>
                   <Col style={{ flex: 1 }}>
-                    <Row justify="space-between" align="center">
-                      <Text style={styles.metricValue}><AnimatedNumber value={guests.length} /></Text>
-                      <View style={styles.metricBadgeSuccess}><Text style={styles.metricBadgeTextSuccess}>+6%</Text></View>
-                    </Row>
-                    <Text style={styles.metricTitle}>Residents</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}><AnimatedNumber value={guests.length} /></Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.metricTitle}>Residents</Text>
                   </Col>
                 </View>
               </AnimatedPress>
 
               {/* Revenue Card */}
-              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push('/pnl-analytics'); }} style={{ flex: 1, minWidth: 150 }}>
+              <AnimatedPress scale={0.96} onPress={() => { router.push('/pnl-analytics'); }} style={{ flex: 1, minWidth: 150 }}>
                 <View style={styles.metricCard}>
                   <View style={[styles.metricIconCircle, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A', borderWidth: 1 }]}>
                     <Ionicons name="wallet" size={18} color="#D97706" />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Row justify="space-between" align="center">
-                      <Text style={styles.metricValue} numberOfLines={1}>
-                        ₹<AnimatedNumber value={overdueAmount > 0 ? overdueAmount / 1000 : 482} decimals={1} />k
+                      <Text maxFontSizeMultiplier={1.3} style={styles.metricValue} numberOfLines={1}>
+                        ₹<AnimatedNumber value={revenueTotal / 1000} decimals={1} />k
                       </Text>
-                      <View style={styles.metricBadgeWarning}><Text style={styles.metricBadgeTextWarning}>CYC</Text></View>
+                      <View style={styles.metricBadgeWarning}><Text maxFontSizeMultiplier={1.3} style={styles.metricBadgeTextWarning}>CYC</Text></View>
                     </Row>
-                    <Text style={styles.metricTitle} numberOfLines={1}>Revenue (Cycle)</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.metricTitle} numberOfLines={1}>Revenue (Cycle)</Text>
                   </Col>
                 </View>
               </AnimatedPress>
 
               {/* Pending Issues Card */}
-              <AnimatedPress scale={0.96} hapticPattern="light" onPress={() => { hapticSelect(); router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } }); }} style={{ flex: 1, minWidth: 150 }}>
+              <AnimatedPress scale={0.96} onPress={() => { router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } }); }} style={{ flex: 1, minWidth: 150 }}>
                 <View style={styles.metricCard}>
                   <View style={[styles.metricIconCircle, { backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1 }]}>
                     <Ionicons name="alert-circle" size={18} color="#DC2626" />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Row justify="space-between" align="center">
-                      <Text style={styles.metricValue}><AnimatedNumber value={openRequests} /></Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}><AnimatedNumber value={openRequests} /></Text>
                       {openRequests > 0 ? (
-                        <View style={styles.metricBadgeDanger}><Text style={styles.metricBadgeTextDanger}>OPEN</Text></View>
+                        <View style={styles.metricBadgeDanger}><Text maxFontSizeMultiplier={1.3} style={styles.metricBadgeTextDanger}>OPEN</Text></View>
                       ) : (
-                        <View style={styles.metricBadgeSuccess}><Text style={styles.metricBadgeTextSuccess}>CLEAR</Text></View>
+                        <View style={styles.metricBadgeSuccess}><Text maxFontSizeMultiplier={1.3} style={styles.metricBadgeTextSuccess}>CLEAR</Text></View>
                       )}
                     </Row>
-                    <Text style={styles.metricTitle}>Pending Issues</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.metricTitle}>Pending Issues</Text>
                   </Col>
                 </View>
               </AnimatedPress>
@@ -670,9 +699,9 @@ export default function OwnerOverviewTab() {
             <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
               <Row gap={6} align="center">
                 <Ionicons name="flash" size={16} color="#26658C" />
-                <Text style={styles.sectionHeading}>Quick Actions</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Quick Actions</Text>
               </Row>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 activeOpacity={0.7}
                 onPress={() => {
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -681,7 +710,7 @@ export default function OwnerOverviewTab() {
                 style={{ paddingHorizontal: 8, paddingVertical: 4 }}
               >
                 <Row align="center" gap={4}>
-                  <Text style={styles.viewAllText}>{isQuickActionsExpanded ? 'Show less' : 'View all'}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.viewAllText}>{isQuickActionsExpanded ? 'Show less' : 'View all'}</Text>
                   <Ionicons name={isQuickActionsExpanded ? "chevron-up" : "chevron-down"} size={16} color={PRIMARY} />
                 </Row>
               </TouchableOpacity>
@@ -690,12 +719,12 @@ export default function OwnerOverviewTab() {
             <View style={[styles.actionsBox, { paddingHorizontal: 14, paddingVertical: 18 }]}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 18 }}>
                 {(isQuickActionsExpanded ? quickActions : quickActions.slice(0, 4)).map(act => (
-                  <AnimatedPress key={act.label} scale={0.92} hapticPattern="light" onPress={act.onPress} style={{ width: '22%', alignItems: 'center' }}>
+                  <AnimatedPress key={act.label} scale={0.92} onPress={act.onPress} style={{ width: '22%', alignItems: 'center' }}>
                     <View style={{ alignItems: 'center', gap: 6, width: '100%' }}>
                       <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor, borderColor: '#CBEFF4', borderWidth: 1 }]}>
                         <Ionicons name={act.icon} size={22} color={act.color} />
                       </View>
-                      <Text style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
                     </View>
                   </AnimatedPress>
                 ))}
@@ -714,7 +743,7 @@ export default function OwnerOverviewTab() {
               padding={[18, 18]}
               style={styles.cardShadow}
             >
-              <Text style={styles.chartTitle}>Maintenance Overview</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.chartTitle}>Maintenance Overview</Text>
               <Spacer size={16} />
 
               <Row align="center" justify="space-between">
@@ -754,8 +783,8 @@ export default function OwnerOverviewTab() {
                     />
                   </Svg>
                   <View style={styles.donutCenter}>
-                    <Text style={styles.donutCenterValue}><AnimatedNumber value={totalTickets} /></Text>
-                    <Text style={styles.donutCenterLabel}>Total</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.donutCenterValue}><AnimatedNumber value={totalTickets} /></Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.donutCenterLabel}>Total</Text>
                   </View>
                 </View>
 
@@ -764,25 +793,25 @@ export default function OwnerOverviewTab() {
                   <Row align="center" justify="space-between">
                     <Row gap={6} align="center">
                       <View style={[styles.legendDot, { backgroundColor: DANGER }]} />
-                      <Text style={styles.legendText}>Urgent</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.legendText}>Urgent</Text>
                     </Row>
-                    <Text style={styles.legendCount}><AnimatedNumber value={urgentCount} /></Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.legendCount}><AnimatedNumber value={urgentCount} /></Text>
                   </Row>
 
                   <Row align="center" justify="space-between">
                     <Row gap={6} align="center">
                       <View style={[styles.legendDot, { backgroundColor: WARNING }]} />
-                      <Text style={styles.legendText}>In Progress</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.legendText}>In Progress</Text>
                     </Row>
-                    <Text style={styles.legendCount}><AnimatedNumber value={progressCount} /></Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.legendCount}><AnimatedNumber value={progressCount} /></Text>
                   </Row>
 
                   <Row align="center" justify="space-between">
                     <Row gap={6} align="center">
                       <View style={[styles.legendDot, { backgroundColor: SUCCESS }]} />
-                      <Text style={styles.legendText}>Resolved</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.legendText}>Resolved</Text>
                     </Row>
-                    <Text style={styles.legendCount}><AnimatedNumber value={resolvedCount} /></Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.legendCount}><AnimatedNumber value={resolvedCount} /></Text>
                   </Row>
                 </Col>
               </Row>
@@ -791,9 +820,9 @@ export default function OwnerOverviewTab() {
               <View style={styles.dividerLine} />
               <Spacer size={12} />
 
-              <TouchableOpacity activeOpacity={0.7} onPress={() => router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } })}>
+              <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={() => router.push({ pathname: '/services', params: { tab: 'BOOKINGS' } })}>
                 <Row align="center" justify="center" gap={4}>
-                  <Text style={styles.viewAllRequestsText}>View All Requests</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.viewAllRequestsText}>View All Requests</Text>
                   <Ionicons name="arrow-forward" size={14} color={PRIMARY} />
                 </Row>
               </TouchableOpacity>
@@ -803,9 +832,9 @@ export default function OwnerOverviewTab() {
 
             {/* ── 6. Recent Requests List ────────────────────────────────────── */}
             <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionHeading}>Recent Requests</Text>
-              <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/reviews')}>
-                <Text style={styles.viewAllText}>View all →</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Recent Requests</Text>
+              <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={() => router.push('/complaints')}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.viewAllText}>View all →</Text>
               </TouchableOpacity>
             </Row>
 
@@ -819,14 +848,14 @@ export default function OwnerOverviewTab() {
               {recentRequests.length === 0 ? (
                 <View style={styles.emptyRequestsBox}>
                   <Ionicons name="checkmark-circle-outline" size={28} color={SUCCESS} />
-                  <Text style={styles.emptyRequestsText}>All requests resolved!</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.emptyRequestsText}>All requests resolved!</Text>
                 </View>
               ) : (
                 recentRequests.map((req, index) => (
                   <View key={req.id}>
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       activeOpacity={0.75}
-                      onPress={() => router.push('/reviews')}
+                      onPress={() => router.push('/complaints')}
                       style={styles.requestRow}
                     >
                       <Row gap={12} align="center" style={{ flex: 1 }}>
@@ -834,9 +863,9 @@ export default function OwnerOverviewTab() {
                           <Ionicons name={req.icon} size={20} color={PRIMARY} />
                         </View>
                         <Col style={{ flex: 1 }}>
-                          <Text style={styles.requestTitle}>{req.title}</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.requestTitle}>{req.title}</Text>
                           <Spacer size={2} />
-                          <Text style={styles.requestMeta}>Room {req.roomNo} • {req.guestName}</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.requestMeta}>Room {req.roomNo} • {req.guestName}</Text>
                         </Col>
                       </Row>
 
@@ -849,7 +878,7 @@ export default function OwnerOverviewTab() {
                                 req.status === 'In Progress' ? '#FEF3C7' : '#ECFDF5',
                           }
                         ]}>
-                          <Text style={[
+                          <Text maxFontSizeMultiplier={1.3} style={[
                             styles.statusBadgeText,
                             {
                               color:
@@ -861,7 +890,7 @@ export default function OwnerOverviewTab() {
                           </Text>
                         </View>
                         <Spacer size={4} />
-                        <Text style={styles.requestTime}>Today, 10:30 AM</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.requestTime}>{formatTimeAgo(req.timestamp)}</Text>
                       </Col>
                     </TouchableOpacity>
                     {index < recentRequests.length - 1 && <View style={styles.dividerLine} />}
@@ -873,7 +902,7 @@ export default function OwnerOverviewTab() {
             <Spacer size={24} />
 
             {/* ── 7. Recent Activity Timeline ────────────────────────────────── */}
-            <Text style={[styles.sectionHeading, styles.sectionHeaderRow]}>Recent Activity</Text>
+            <Text maxFontSizeMultiplier={1.3} style={[styles.sectionHeading, styles.sectionHeaderRow]}>Recent Activity</Text>
 
             <Card
               containerColor={WHITE}
@@ -886,8 +915,8 @@ export default function OwnerOverviewTab() {
                 <Row gap={10} align="center">
                   <View style={styles.timelineEmptyDot} />
                   <Col>
-                    <Text style={styles.timelineEmptyTitle}>No recent activity</Text>
-                    <Text style={styles.timelineEmptySub}>Everything is clean and silent.</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.timelineEmptyTitle}>No recent activity</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.timelineEmptySub}>Everything is clean and silent.</Text>
                   </Col>
                 </Row>
               ) : (
@@ -921,11 +950,11 @@ export default function OwnerOverviewTab() {
                           </View>
                           <Col style={{ flex: 1 }}>
                             <Row justify="space-between" align="center">
-                              <Text style={styles.timelineTitle}>{feed.title}</Text>
-                              <Text style={styles.timelineTime}>10:20 AM</Text>
+                              <Text maxFontSizeMultiplier={1.3} style={styles.timelineTitle}>{feed.title}</Text>
+                              <Text maxFontSizeMultiplier={1.3} style={styles.timelineTime}>{formatTimeAgo(feed.timestamp)}</Text>
                             </Row>
                             <Spacer size={2} />
-                            <Text style={styles.timelineDesc}>{feed.message}</Text>
+                            <Text maxFontSizeMultiplier={1.3} style={styles.timelineDesc}>{feed.message}</Text>
                           </Col>
                         </Row>
                       );
@@ -939,9 +968,9 @@ export default function OwnerOverviewTab() {
 
             {/* ── 8. Important Notices ────────────────────────────────────────── */}
             <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionHeading}>Important Notices</Text>
-              <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/notices')}>
-                <Text style={styles.viewAllText}>View all →</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Important Notices</Text>
+              <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={() => router.push('/notices')}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.viewAllText}>View all →</Text>
               </TouchableOpacity>
             </Row>
 
@@ -953,34 +982,53 @@ export default function OwnerOverviewTab() {
               padding={[20, 20]}
               style={styles.noticeHeroCard}
             >
-              <Row gap={14} align="center">
-                <View style={styles.noticeIconBox}>
-                  <Ionicons name="notifications" size={24} color={PRIMARY} />
-                </View>
-                <Col style={{ flex: 1 }}>
-                  <Text style={styles.noticeHeroTitle}>Rent collection reminder</Text>
-                  <Spacer size={4} />
-                  <Text style={styles.noticeHeroDesc}>Send friendly notifications to outstanding residents.</Text>
-                </Col>
-              </Row>
+              <TouchableOpacity accessibilityRole="button"
+                disabled={overdueCount === 0}
+                onPress={() => setShowOverdueModal(true)}
+                activeOpacity={0.7}
+              >
+                <Row gap={14} align="center">
+                  <View style={styles.noticeIconBox}>
+                    <Ionicons name="notifications" size={24} color={PRIMARY} />
+                  </View>
+                  <Col style={{ flex: 1 }}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.noticeHeroTitle}>Rent collection reminder</Text>
+                    <Spacer size={4} />
+                    <Text maxFontSizeMultiplier={1.3} style={styles.noticeHeroDesc}>
+                      {overdueCount > 0
+                        ? `${overdueCount} resident${overdueCount === 1 ? '' : 's'} with pending dues — tap to review.`
+                        : 'No outstanding residents right now.'}
+                    </Text>
+                  </Col>
+                  {overdueCount > 0 && <Ionicons name="chevron-forward" size={18} color={MUTED} />}
+                </Row>
+              </TouchableOpacity>
 
               <Spacer size={16} />
 
-              <TouchableOpacity
-                style={styles.remindBtn}
+              <TouchableOpacity accessibilityRole="button"
+                style={[styles.remindBtn, overdueCount === 0 && { opacity: 0.5 }]}
                 activeOpacity={0.8}
+                disabled={overdueCount === 0}
                 onPress={async () => {
-                  hapticSuccess();
-                  await usePGowStore.getState().dispatchAutomatedRentAlerts();
-                  usePGowStore.getState().set('activeAlert', {
-                    title: '🔔 Reminders Dispatched',
-                    description: `Sent payment notices to all overdue residents.`,
-                    type: 'SUCCESS',
-                    timestamp: Date.now(),
-                  });
+                  try {
+                    const result = await sendRentRemindersMutation.mutateAsync();
+                    usePGowStore.getState().set('activeAlert', {
+                      ...rentReminderAlert(result),
+                      type: 'PAYMENT',
+                      timestamp: Date.now(),
+                    });
+                  } catch (err) {
+                    usePGowStore.getState().set('activeAlert', {
+                      title: '❌ REMINDERS NOT SENT',
+                      description: err instanceof Error ? err.message : 'Nothing was sent. Try again.',
+                      type: 'PAYMENT',
+                      timestamp: Date.now(),
+                    });
+                  }
                 }}
               >
-                <Text style={styles.remindBtnText}>Send Reminder</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.remindBtnText}>Send Reminder</Text>
               </TouchableOpacity>
             </Card>
 
@@ -996,12 +1044,18 @@ export default function OwnerOverviewTab() {
             >
               <Row align="center" gap={12} style={{ paddingBottom: 12 }}>
                 <View style={styles.noticeBulletDot} />
-                <Text style={styles.quickNoticeText}>No pending dues from verified residents.</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.quickNoticeText}>
+                  {overdueCount > 0
+                    ? `${overdueCount} resident${overdueCount === 1 ? '' : 's'} with pending dues.`
+                    : 'No pending dues from verified residents.'}
+                </Text>
               </Row>
               <View style={styles.dividerLine} />
               <Row align="center" gap={12} style={{ paddingTop: 12 }}>
                 <View style={styles.noticeBulletDot} />
-                <Text style={styles.quickNoticeText}>3 rooms vacant across your properties.</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.quickNoticeText}>
+                  {availableCount} room{availableCount === 1 ? '' : 's'} vacant across your properties.
+                </Text>
               </Row>
             </Card>
 
@@ -1015,7 +1069,7 @@ export default function OwnerOverviewTab() {
       {showOverdueModal && (
         <Modal visible transparent animationType="none" onRequestClose={() => setShowOverdueModal(false)}>
           <View style={styles.modalBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOverdueModal(false)} />
+            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowOverdueModal(false)} />
             <View style={styles.modalCard}>
               <Row justify="space-between" align="center">
                 <Row gap={10} align="center">
@@ -1023,13 +1077,13 @@ export default function OwnerOverviewTab() {
                     <Ionicons name="alert-circle" size={20} color={WARNING} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.modalTitle}>Pending Rent Dues</Text>
-                    <Text style={styles.modalSub}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Pending Rent Dues</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.modalSub}>
                       {overdueCount} Unpaid Resident{overdueCount === 1 ? '' : 's'}
                     </Text>
                   </View>
                 </Row>
-                <TouchableOpacity onPress={() => setShowOverdueModal(false)} style={styles.closeBtn}>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowOverdueModal(false)} style={styles.closeBtn}>
                   <Ionicons name="close" size={18} color={MUTED} />
                 </TouchableOpacity>
               </Row>
@@ -1040,29 +1094,29 @@ export default function OwnerOverviewTab() {
                 {guests.filter(g => !g.isBillPaid).length === 0 ? (
                   <View style={styles.allPaidBox}>
                     <Ionicons name="checkmark-circle" size={32} color={SUCCESS} />
-                    <Text style={styles.allPaidTitle}>All Rent Collected!</Text>
-                    <Text style={styles.allPaidSub}>Zero overdue residents in this property.</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.allPaidTitle}>All Rent Collected!</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.allPaidSub}>Zero overdue residents in this property.</Text>
                   </View>
                 ) : (
                   guests.filter(g => !g.isBillPaid).map(g => (
                     <View key={g.id} style={styles.overdueRow}>
                       <View style={{ flex: 1 }}>
                         <Row gap={8} align="center">
-                          <Text style={styles.overdueGuestName}>{g.name}</Text>
+                          <Text maxFontSizeMultiplier={1.3} style={styles.overdueGuestName}>{g.name}</Text>
                           <View style={styles.roomPill}>
-                            <Text style={styles.roomPillText}>Room {g.roomNo}</Text>
+                            <Text maxFontSizeMultiplier={1.3} style={styles.roomPillText}>Room {g.roomNo}</Text>
                           </View>
                         </Row>
-                        <Text style={styles.overdueGuestSub}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.overdueGuestSub}>
                           {g.phone || 'No phone'} · Due since 1st
                         </Text>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.overdueAmount}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.overdueAmount}>
                           {g.rentAmount ? `₹${Math.round(g.rentAmount)}` : '—'}
                         </Text>
                         {g.phone && (
-                          <TouchableOpacity
+                          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Call" accessibilityRole="button"
                             onPress={() => Linking.openURL(`tel:${g.phone.replace(/\s+/g, '')}`)}
                             style={styles.callBtn}
                           >
@@ -1077,28 +1131,36 @@ export default function OwnerOverviewTab() {
 
               <View style={styles.menuDivider} />
               <Row gap={10}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.modalPrimaryBtn, { flex: 1 }]}
                   onPress={async () => {
-                    await usePGowStore.getState().dispatchAutomatedRentAlerts();
-                    setShowOverdueModal(false);
-                    usePGowStore.getState().set('activeAlert', {
-                      title: '🔔 Reminders Dispatched',
-                      description: `Sent payment notices to all ${overdueCount} overdue residents.`,
-                      type: 'SUCCESS',
-                      timestamp: Date.now(),
-                    });
+                    try {
+                      const result = await sendRentRemindersMutation.mutateAsync();
+                      setShowOverdueModal(false);
+                      usePGowStore.getState().set('activeAlert', {
+                        ...rentReminderAlert(result),
+                        type: 'PAYMENT',
+                        timestamp: Date.now(),
+                      });
+                    } catch (err) {
+                      usePGowStore.getState().set('activeAlert', {
+                        title: '❌ REMINDERS NOT SENT',
+                        description: err instanceof Error ? err.message : 'Nothing was sent. Try again.',
+                        type: 'PAYMENT',
+                        timestamp: Date.now(),
+                      });
+                    }
                   }}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.modalPrimaryBtnText}>⚡ Remind All Unpaid</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.modalPrimaryBtnText}>⚡ Remind All Unpaid</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.modalSecondaryBtn, { flex: 1 }]}
                   onPress={() => { setShowOverdueModal(false); router.push('/guests'); }}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.modalSecondaryBtnText}>Open Ledger ›</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.modalSecondaryBtnText}>Open Ledger ›</Text>
                 </TouchableOpacity>
               </Row>
             </View>

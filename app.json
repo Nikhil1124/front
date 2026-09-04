@@ -32,10 +32,6 @@
       "translucent": true,
       "backgroundColor": "transparent"
     },
-    "web": {
-      "bundler": "metro",
-      "favicon": "./assets/favicon.png"
-    },
     "plugins": [
       [
         "expo-notifications",

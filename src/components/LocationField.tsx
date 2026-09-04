@@ -31,7 +31,7 @@ export function LocationField({ value, onPress, placeholder }: Props) {
     : (placeholder ?? 'Pin the location on the map *');
 
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       onPress={onPress}
       activeOpacity={0.8}
       style={[styles.row, picked && styles.rowPicked]}

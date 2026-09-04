@@ -1,22 +1,15 @@
 /**
  * The scroll container every form/screen with text inputs should use, so the field someone is
- * typing into is never hidden under the keyboard.
+ * typing into ends up ABOVE the keyboard, not hidden behind it.
  *
- * Why this is not just `<ScrollView>`:
+ * `KeyboardAvoidingView behavior="padding"` on both platforms: it pads the bottom of the view
+ * by the keyboard's height, shrinking the ScrollView's own viewport, and the ScrollView's
+ * native "scroll the focused input into view" behavior then does the rest — scrolling up
+ * inside that shrunk viewport until the focused field clears the keyboard.
  *
- * **Android.** Expo's edge-to-edge display (on by default since SDK 54, and not something
- * `app.json` can turn off) means the window no longer resizes when the keyboard opens — the
- * old `windowSoftInputMode="adjustResize"` behavior is effectively decorative now, and the
- * keyboard is instead drawn as an inset *over* the content. Without a real
- * `KeyboardAvoidingView`, a field near the bottom of the screen just disappears behind it.
- *
- * **iOS.** `automaticallyAdjustKeyboardInsets` on the ScrollView itself already handles this
- * correctly and natively (matches how Messages/Mail scroll content above the keyboard).
- *
- * Each platform gets exactly one mechanism, not both: running `KeyboardAvoidingView`'s
- * `behavior="padding"` *and* the automatic insets on the same screen double-counts the
- * keyboard height, leaving a gap the size of the keyboard above it — a second bug that reads
- * as a layout error and is harder to notice than the one it "fixes."
+ * This used to be iOS-only-via-`automaticallyAdjustKeyboardInsets`, Android-only-via-`padding`
+ * — the automatic-insets path did not reliably bring the focused field above the keyboard, so
+ * both platforms now share the one mechanism that does.
  */
 import { KeyboardAvoidingView, Platform, ScrollView, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,7 +50,7 @@ export function FormScroll({
     // a default: putting it first in the array lets the caller's own `style` override it.
     <KeyboardAvoidingView
       style={[{ flex: 1 }, style]}
-      behavior={Platform.OS === 'android' ? 'padding' : undefined}
+      behavior="padding"
     >
       <ScrollView
         style={{ flex: 1 }}
@@ -68,8 +61,6 @@ export function FormScroll({
           { paddingBottom: bottomPadding + insets.bottom },
         ]}
         keyboardShouldPersistTaps="handled"
-        // iOS only; a no-op on Android, where the KeyboardAvoidingView above does the work.
-        automaticallyAdjustKeyboardInsets
         // Drag down over the form to dismiss, rather than hunting for a Done button.
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         showsVerticalScrollIndicator={false}

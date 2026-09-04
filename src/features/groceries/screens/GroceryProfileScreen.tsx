@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,7 +38,7 @@ export function GroceryProfileScreen() {
       >
         <Row justify="space-between" align="center" style={styles.hRow}>
           <Row gap={10} align="center">
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
             </TouchableOpacity>
             <Txt size={22} weight="900" color="#FFFFFF">Grocery Account</Txt>
@@ -49,33 +49,43 @@ export function GroceryProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{avatarLetter}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.avatarText}>{avatarLetter}</Text>
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{name}</Text>
-            {!!phone && <Text style={styles.userPhone}>{phone}</Text>}
+            <Text maxFontSizeMultiplier={1.3} style={styles.userName}>{name}</Text>
+            {!!phone && <Text maxFontSizeMultiplier={1.3} style={styles.userPhone}>{phone}</Text>}
           </View>
         </View>
 
         <View style={styles.menuContainer}>
           {MENU_ITEMS.map((item, index) => (
             <View key={item.id}>
-              <TouchableOpacity style={styles.menuItem}>
+              {/* This tab is shared by every signed-in role (owner, guest, staff...), and
+                  none of these four have a real screen to route to yet — "Manage Addresses"
+                  and "Payment Methods" have no dedicated concept anywhere in the app (grocery
+                  delivery always goes to the PG's own address), and "Need Help?"/"Settings"
+                  do exist, but only for some roles, at routes ('/support', '/profile') that
+                  don't exist for the others. Rather than silently do nothing on tap, or guess
+                  wrong and send someone to a route their role doesn't have, this says so. */}
+              <TouchableOpacity accessibilityRole="button"
+                style={styles.menuItem}
+                onPress={() => Alert.alert(item.title, 'Not available yet — coming soon.')}
+              >
                 <View style={styles.menuLeft}>
                   <View style={styles.menuIconContainer}>
                     <Ionicons name={item.icon} size={20} color={Colors.primary} />
                   </View>
-                  <Text style={styles.menuTitle}>{item.title}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.menuTitle}>{item.title}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.textPrimarySecondary} />
+                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
               {index < MENU_ITEMS.length - 1 && <View style={styles.divider} />}
             </View>
           ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => logout()}>
-          <Text style={styles.logoutText}>Log Out</Text>
+        <TouchableOpacity accessibilityRole="button" style={styles.logoutBtn} onPress={() => logout()}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -145,7 +155,7 @@ const styles = StyleSheet.create({
   },
   userPhone: {
     fontSize: 13,
-    color: Colors.textPrimarySecondary,
+    color: Colors.textSecondary,
   },
   menuContainer: {
     backgroundColor: '#FFFFFF',

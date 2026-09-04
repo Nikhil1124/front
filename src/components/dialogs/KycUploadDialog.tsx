@@ -34,8 +34,6 @@ import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/compon
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
-
 const ID_TYPES = ['Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID'];
 
 interface Props {
@@ -92,14 +90,6 @@ export function KycUploadDialog({
   };
 
   const choosePhoto = (onPicked: (uri: string) => void, label: string) => {
-    hapticSelect();
-    // react-native-web's Alert.alert is a no-op stub, so the Take Photo / Choose from
-    // Library action sheet below never appears on web — go straight to the file picker,
-    // which is the only source a desktop browser has anyway.
-    if (Platform.OS === 'web') {
-      pickImage('library').then((u) => { if (u) onPicked(u); });
-      return;
-    }
     Alert.alert(label, 'Choose a source', [
       { text: 'Take Photo', onPress: async () => { const u = await pickImage('camera'); if (u) onPicked(u); } },
       { text: 'Choose from Library', onPress: async () => { const u = await pickImage('library'); if (u) onPicked(u); } },
@@ -144,28 +134,23 @@ export function KycUploadDialog({
 
   const handleSubmit = async () => {
     if (isAadhaar && aadhaarDigits.length < 4) {
-      hapticError();
       Alert.alert('Validation', 'Enter your 12-digit Aadhaar number. Only the last four digits are stored.');
       return;
     }
     if (!idPhotoUri || !profilePhotoUri) {
-      hapticError();
       Alert.alert('Validation', 'Please attach both a selfie and a clear photo of your ID document.');
       return;
     }
-    hapticSelect();
     setSubmitting(true);
     const r = await submitKyc(selectedIdType, idNumber, idPhotoUri, profilePhotoUri);
     setSubmitting(false);
     if (r.ok) {
-      hapticSuccess();
       Alert.alert(
         'Submitted',
         'Your KYC documents have been sent to your property manager for verification. You will receive a notification once reviewed.'
       );
       onDismiss();
     } else {
-      hapticError();
       Alert.alert('Submission Failed', r.error ?? 'Please try again.');
     }
   };
@@ -175,10 +160,10 @@ export function KycUploadDialog({
       {/* behavior="padding" only on Android — iOS natively handles keyboard avoidance via
           automaticallyAdjustKeyboardInsets. Using "padding" on iOS double-counts the
           keyboard height and leaves a blank gap above the keyboard instead. */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <Pressable accessibilityRole="button" style={styles.backdrop} onPress={onDismiss}>
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-        <Pressable onPress={() => {/* swallow tap so it doesn't bubble */}} style={styles.cardWrap}>
+        <Pressable accessibilityRole="button" onPress={() => {/* swallow tap so it doesn't bubble */}} style={styles.cardWrap}>
           <Card
             containerColor={Colors.surface}
             borderRadius={20}
@@ -273,7 +258,7 @@ export function KycUploadDialog({
             {/* 2. ID type dropdown */}
             <Txt variant="body" weight="700" color={Colors.primary}>2. ID Document Type</Txt>
             <Spacer size={8} />
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={() => setShowDropdown(true)}
               style={styles.dropdownBox}
               testID="kyc_id_type_dropdown"
@@ -283,13 +268,13 @@ export function KycUploadDialog({
             </TouchableOpacity>
             {/* Dropdown modal — for clean tap-outside-to-close */}
             <Modal visible={showDropdown} transparent animationType="fade" onRequestClose={() => setShowDropdown(false)}>
-              <Pressable style={styles.dropdownBackdrop} onPress={() => setShowDropdown(false)}>
+              <Pressable accessibilityRole="button" style={styles.dropdownBackdrop} onPress={() => setShowDropdown(false)}>
                 <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
                 <View style={styles.dropdownMenu}>
                   {ID_TYPES.map((t) => (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={t}
-                      onPress={() => { setSelectedIdType(t); setShowDropdown(false); hapticSelect(); }}
+                      onPress={() => { setSelectedIdType(t); setShowDropdown(false); }}
                       style={styles.dropdownItem}
                     >
                       <Txt variant="body" color={Colors.textPrimary}>{t}</Txt>

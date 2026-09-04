@@ -18,8 +18,8 @@ import { Card, Row, Col, Spacer } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { PnLChart as PnLChartPresentational } from '@/components/PnLChart';
 import { usePnL } from '@/features/billing/usePnL';
-import { usePaymentsQuery } from '@/features/payments/usePayments';
-import { useExpensesQuery } from '@/features/expenses/useExpenses';
+import { useAllPaymentsQuery } from '@/features/payments/usePayments';
+import { useAllExpensesQuery } from '@/features/expenses/useExpenses';
 import { Colors } from '@/theme';
 import type { PnLInterval, PaymentEntity, ExpenseEntity } from '@/types';
 
@@ -42,10 +42,24 @@ const TABS = [
 
 import { useActiveProperty } from '@/features/properties/useProperties';
 
+/** "YYYY-MM-DD" for the custom-range text fields, in local time. */
+function isoDay(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function PnLAnalyticsDetailScreen() {
   const [interval, setInterval] = useState<AnalyticsInterval>('3m');
-  const [customStart, setCustomStart] = useState('2026-06-01');
-  const [customEnd, setCustomEnd] = useState('2026-08-19');
+  // Three months back to today, computed fresh — not a fixed 2026 date that goes stale the
+  // moment the calendar moves past it.
+  const [customStart, setCustomStart] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 3);
+    return isoDay(d);
+  });
+  const [customEnd, setCustomEnd] = useState(() => isoDay(new Date()));
 
   // `loggedInOwner` (usePGowStore) is a snapshot taken at login and never refreshed —
   // switching properties (ManagePropertiesScreen) calls authStore.setActivePgId directly, so
@@ -55,9 +69,11 @@ export function PnLAnalyticsDetailScreen() {
   // useActiveProperty derives the same shape live from activePgId instead.
   const { activeEntity: owner, activePgId } = useActiveProperty();
   const pgId = activePgId;
-  // Real store data collections via React Query
-  const { data: allPaymentsState = [] } = usePaymentsQuery(pgId ?? undefined);
-  const { data: allExpensesState = [] } = useExpensesQuery(pgId ?? undefined);
+  // Full history, not just the newest page — the category breakdown and period-over-period
+  // comparison below sum this whole set, and capping it silently undercounted for any
+  // property with more than a page of payments/expenses.
+  const { data: allPaymentsState = [] } = useAllPaymentsQuery(pgId ?? undefined, 'verified');
+  const { data: allExpensesState = [] } = useAllExpensesQuery(pgId ?? undefined);
 
   // Fetch standard intervals via React Query
   const { data: apiData, isLoading: isApiLoading, isError: isApiError, error: apiError } = usePnL(
@@ -304,17 +320,16 @@ export function PnLAnalyticsDetailScreen() {
         {TABS.map((t) => {
           const isSel = interval === t.key;
           return (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               key={t.key}
               style={[styles.tabButton, isSel && styles.tabButtonSel]}
               onPress={() => {
-                hapticSelect();
                 setInterval(t.key);
               }}
               activeOpacity={0.7}
               testID={`pnl_interval_${t.key}`}
             >
-              <Text style={[styles.tabLabel, isSel && styles.tabLabelSel]}>{t.label}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.tabLabel, isSel && styles.tabLabelSel]}>{t.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -324,16 +339,16 @@ export function PnLAnalyticsDetailScreen() {
       {interval === 'custom' && (
         <View style={styles.customCard}>
           <Row justify="space-between" align="center">
-            <Text style={styles.customTitle}>📅 Custom Date Range</Text>
-            <Text style={styles.customDateDisplay}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.customTitle}>📅 Custom Date Range</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.customDateDisplay}>
               {formatDateLabel(customStart)} → {formatDateLabel(customEnd)}
             </Text>
           </Row>
           <Spacer size={12} />
           <Row gap={12}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
-              <TextInput
+              <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
+              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="YYYY-MM-DD"
                 style={styles.dateInput}
                 value={customStart}
                 onChangeText={setCustomStart}
@@ -344,8 +359,8 @@ export function PnLAnalyticsDetailScreen() {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.inputLabel}>End Date (YYYY-MM-DD)</Text>
-              <TextInput
+              <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>End Date (YYYY-MM-DD)</Text>
+              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="YYYY-MM-DD"
                 style={styles.dateInput}
                 value={customEnd}
                 onChangeText={setCustomEnd}
@@ -358,12 +373,20 @@ export function PnLAnalyticsDetailScreen() {
           </Row>
           <Spacer size={10} />
           <Row gap={6}>
-            {[
-              { label: 'Current Month', start: '2026-08-01', end: '2026-08-31' },
-              { label: 'Last 30 Days', start: '2026-07-20', end: '2026-08-19' },
-              { label: 'Q2 2026', start: '2026-04-01', end: '2026-06-30' },
-            ].map((p) => (
-              <TouchableOpacity
+            {(() => {
+              const today = new Date();
+              const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+              const last30Start = new Date(today);
+              last30Start.setDate(today.getDate() - 29);
+              const last90Start = new Date(today);
+              last90Start.setDate(today.getDate() - 89);
+              return [
+                { label: 'Current Month', start: isoDay(monthStart), end: isoDay(today) },
+                { label: 'Last 30 Days', start: isoDay(last30Start), end: isoDay(today) },
+                { label: 'Last 90 Days', start: isoDay(last90Start), end: isoDay(today) },
+              ];
+            })().map((p) => (
+              <TouchableOpacity accessibilityRole="button"
                 key={p.label}
                 style={styles.presetChip}
                 onPress={() => {
@@ -371,7 +394,7 @@ export function PnLAnalyticsDetailScreen() {
                   setCustomEnd(p.end);
                 }}
               >
-                <Text style={styles.presetChipText}>{p.label}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>{p.label}</Text>
               </TouchableOpacity>
             ))}
           </Row>
@@ -384,12 +407,12 @@ export function PnLAnalyticsDetailScreen() {
       {isApiLoading && !isCustomMode ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator color={GREEN} />
-          <Text style={styles.loadingText}>Loading financials...</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.loadingText}>Loading financials...</Text>
         </View>
       ) : isApiError && !isCustomMode ? (
         <View style={styles.errorBox}>
           <Ionicons name="alert-circle" size={24} color="#B91C1C" />
-          <Text style={styles.errorText}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>
             {(apiError as Error)?.message ?? 'Failed to load P&L'}
           </Text>
         </View>
@@ -397,8 +420,8 @@ export function PnLAnalyticsDetailScreen() {
         /* Empty State */
         <View style={styles.emptyBox}>
           <Ionicons name="bar-chart-outline" size={40} color={MUTED} />
-          <Text style={styles.emptyTitle}>No financial data available</Text>
-          <Text style={styles.emptySub}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>No financial data available</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>
             There is no recorded revenue or expense data for this period.
           </Text>
         </View>
@@ -409,18 +432,18 @@ export function PnLAnalyticsDetailScreen() {
             <View style={[styles.kpiCard, { minWidth: 100 }]}>
               <Row gap={4} align="center">
                 <Ionicons name="trending-up" size={14} color={GREEN} />
-                <Text style={styles.kpiLabel}>REVENUE</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>REVENUE</Text>
               </Row>
-              <Text style={[styles.kpiValue, { color: GREEN }]}>{formatMoney(revenueVal)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: GREEN }]}>{formatMoney(revenueVal)}</Text>
               {compData && <ComparisonBadge value={compData.revenue} />}
             </View>
 
             <View style={[styles.kpiCard, { minWidth: 100 }]}>
               <Row gap={4} align="center">
                 <Ionicons name="trending-down" size={14} color="#B91C1C" />
-                <Text style={styles.kpiLabel}>EXPENSES</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>EXPENSES</Text>
               </Row>
-              <Text style={[styles.kpiValue, { color: '#B91C1C' }]}>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: '#B91C1C' }]}>
                 {formatMoney(expensesVal)}
               </Text>
               {compData && <ComparisonBadge value={compData.expenses} isExpense />}
@@ -429,9 +452,9 @@ export function PnLAnalyticsDetailScreen() {
             <View style={[styles.kpiCard, { minWidth: 100 }]}>
               <Row gap={4} align="center">
                 <Ionicons name="cash" size={14} color={netVal >= 0 ? GREEN : '#B91C1C'} />
-                <Text style={styles.kpiLabel}>NET PROFIT</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>NET PROFIT</Text>
               </Row>
-              <Text style={[styles.kpiValue, { color: netVal >= 0 ? GREEN : '#B91C1C' }]}>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: netVal >= 0 ? GREEN : '#B91C1C' }]}>
                 {formatMoney(netVal)}
               </Text>
               {compData && <ComparisonBadge value={compData.net} />}
@@ -449,27 +472,27 @@ export function PnLAnalyticsDetailScreen() {
 
           {/* Monthly Breakdown Table */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeaderTitle}>📅 Monthly Breakdown</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeaderTitle}>📅 Monthly Breakdown</Text>
             <Spacer size={12} />
             <View style={styles.tableWrap}>
               <View style={styles.tableHeader}>
-                <Text style={[styles.thCell, { flex: 1.5 }]}>Month</Text>
-                <Text style={[styles.thCell, styles.thRight]}>Revenue</Text>
-                <Text style={[styles.thCell, styles.thRight]}>Expenses</Text>
-                <Text style={[styles.thCell, styles.thRight]}>Net Profit</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, { flex: 1.5 }]}>Month</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, styles.thRight]}>Revenue</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, styles.thRight]}>Expenses</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, styles.thRight]}>Net Profit</Text>
               </View>
               {monthlyBreakdown.map((row, idx) => (
                 <View key={row.period || idx} style={styles.tableRow}>
-                  <Text style={[styles.tdCell, { flex: 1.5, fontWeight: '700' }]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.tdCell, { flex: 1.5, fontWeight: '700' }]}>
                     {row.period}
                   </Text>
-                  <Text style={[styles.tdCell, styles.tdRight, { color: GREEN }]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.tdCell, styles.tdRight, { color: GREEN }]}>
                     {formatMoney(row.revenue)}
                   </Text>
-                  <Text style={[styles.tdCell, styles.tdRight, { color: '#B91C1C' }]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.tdCell, styles.tdRight, { color: '#B91C1C' }]}>
                     {formatMoney(row.expenses)}
                   </Text>
-                  <Text
+                  <Text maxFontSizeMultiplier={1.3}
                     style={[
                       styles.tdCell,
                       styles.tdRight,
@@ -485,40 +508,40 @@ export function PnLAnalyticsDetailScreen() {
 
           {/* P&L Summary (Category Breakdown) */}
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeaderTitle}>📊 P&L Summary</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeaderTitle}>📊 P&L Summary</Text>
             <Spacer size={12} />
             <Row justify="space-between" style={styles.pnlSummaryRow}>
               <View>
-                <Text style={styles.summaryLabel}>Collected</Text>
-                <Text style={[styles.summaryVal, { color: GREEN }]}>{formatMoney(revenueVal)}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Collected</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.summaryVal, { color: GREEN }]}>{formatMoney(revenueVal)}</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View>
-                <Text style={styles.summaryLabel}>Spent</Text>
-                <Text style={[styles.summaryVal, { color: '#B91C1C' }]}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Spent</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.summaryVal, { color: '#B91C1C' }]}>
                   {formatMoney(expensesVal)}
                 </Text>
               </View>
               <View style={styles.summaryDivider} />
               <View>
-                <Text style={styles.summaryLabel}>Net Profit</Text>
-                <Text style={[styles.summaryVal, { color: netVal >= 0 ? GREEN : '#B91C1C' }]}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Net Profit</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.summaryVal, { color: netVal >= 0 ? GREEN : '#B91C1C' }]}>
                   {formatMoney(netVal)}
                 </Text>
               </View>
             </Row>
 
             <Spacer size={20} />
-            <Text style={styles.subSectionTitle}>Expense Categories</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.subSectionTitle}>Expense Categories</Text>
             <Spacer size={10} />
             <Col gap={8}>
               {categoriesList.map((c) => (
                 <View key={c.key} style={styles.categoryRow}>
-                  <Text style={styles.categoryLabel}>{c.label}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.categoryLabel}>{c.label}</Text>
                   <Row gap={8} align="center">
-                    <Text style={styles.categoryAmount}>{formatMoney(c.amount)}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.categoryAmount}>{formatMoney(c.amount)}</Text>
                     <View style={styles.categoryPercentagePill}>
-                      <Text style={styles.categoryPercentageText}>{c.percentage.toFixed(1)}%</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.categoryPercentageText}>{c.percentage.toFixed(1)}%</Text>
                     </View>
                   </Row>
                 </View>
@@ -530,11 +553,11 @@ export function PnLAnalyticsDetailScreen() {
           <View style={[styles.sectionCard, { backgroundColor: '#F0FDF4', borderColor: '#C6E8D4' }]}>
             <Row gap={8} align="center">
               <Ionicons name="bulb" size={18} color={GREEN} />
-              <Text style={styles.insightHeaderTitle}>Dynamic Insights</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.insightHeaderTitle}>Dynamic Insights</Text>
             </Row>
             <Spacer size={12} />
             {insights.length === 0 ? (
-              <Text style={styles.insightEmptyText}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>
                 Not enough data to generate insights for this period.
               </Text>
             ) : (
@@ -542,9 +565,9 @@ export function PnLAnalyticsDetailScreen() {
                 {insights.map((item, idx) => (
                   <View key={idx} style={styles.insightRow}>
                     <View style={styles.insightBullet} />
-                    <Text style={styles.insightText}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.insightText}>
                       {item.split('**').map((chunk, i) => (
-                        <Text key={i} style={i % 2 === 1 ? { fontWeight: '700' } : null}>
+                        <Text maxFontSizeMultiplier={1.3} key={i} style={i % 2 === 1 ? { fontWeight: '700' } : null}>
                           {chunk}
                         </Text>
                       ))}
@@ -571,8 +594,8 @@ function ComparisonBadge({ value, isExpense = false }: { value: number | null; i
   const color = isGood ? GREEN : '#9F1239';
 
   return (
-    <Text style={[styles.compText, { color }]}>
-      {formatted} <Text style={{ color: MUTED }}>vs prev</Text>
+    <Text maxFontSizeMultiplier={1.3} style={[styles.compText, { color }]}>
+      {formatted} <Text maxFontSizeMultiplier={1.3} style={{ color: MUTED }}>vs prev</Text>
     </Text>
   );
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,12 +7,21 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderStepper } from '../components/grocery/OrderStepper';
-import { useSupplyOrderDetailQuery, useSupplyTrackingQuery } from '../useSupplyOrders';
+import {
+  useSupplyOrderDetailQuery,
+  useSupplyTrackingQuery,
+  useCancelSupplyOrderMutation,
+  useSubmitUpiPaymentMutation,
+} from '../useSupplyOrders';
 import { Colors, Layout } from '@/theme';
 
 const STATUS_HERO: Record<string, string> = {
@@ -30,6 +39,42 @@ export function GroceryOrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: order, isLoading, refetch, isRefetching } = useSupplyOrderDetailQuery(id as string);
   const { data: tracking, refetch: refetchTracking } = useSupplyTrackingQuery(id as string);
+  const cancelOrder = useCancelSupplyOrderMutation();
+  const submitUpiPayment = useSubmitUpiPaymentMutation();
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [upiRef, setUpiRef] = useState('');
+
+  const handleCancel = async () => {
+    if (!order) return;
+    if (!cancelReason.trim()) {
+      Alert.alert('Reason required', "Please tell us why you're cancelling this order.");
+      return;
+    }
+    try {
+      await cancelOrder.mutateAsync({ orderId: order.id, reason: cancelReason.trim() });
+      setShowCancelModal(false);
+      setCancelReason('');
+    } catch (err) {
+      Alert.alert('Could not cancel', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
+
+  const handleSubmitUpiRef = async () => {
+    if (!order) return;
+    const ref = upiRef.trim();
+    if (ref.length < 6) {
+      Alert.alert('Enter a valid reference', 'Enter the UTR / UPI transaction reference from your payment app.');
+      return;
+    }
+    try {
+      await submitUpiPayment.mutateAsync({ orderId: order.id, upiRef: ref });
+      setUpiRef('');
+      Alert.alert('Submitted', 'Your payment reference has been sent for verification.');
+    } catch (err) {
+      Alert.alert('Could not submit', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,15 +88,15 @@ export function GroceryOrderDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Order Tracking</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Order Tracking</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.emptyBox}>
           <Ionicons name="receipt-outline" size={64} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>Order not found</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>Order not found</Text>
         </View>
       </View>
     );
@@ -59,15 +104,19 @@ export function GroceryOrderDetailScreen() {
 
   const isDelivered = order.status === 'delivered';
   const isCancelled = order.status === 'cancelled';
+  // The server is the real authority on when a cancel is still allowed (e.g. once dispatched)
+  // — this just avoids offering the button on the two states where it obviously can't apply.
+  const canCancel = !isDelivered && !isCancelled;
+  const needsUpiRef = order.payment_method === 'upi' && order.payment_status === 'pending';
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order #{order.order_no || order.id.slice(-6)}</Text>
-        <TouchableOpacity onPress={() => refetch()}>
+        <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Order #{order.order_no || order.id.slice(-6)}</Text>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Refresh" accessibilityRole="button" onPress={() => refetch()}>
           <Ionicons name="refresh-outline" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -79,8 +128,8 @@ export function GroceryOrderDetailScreen() {
       >
         {/* Status Card */}
         <View style={styles.statusHeroCard}>
-          <Text style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || order.status.toUpperCase()}</Text>
-          <Text style={styles.statusHeroSub}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || order.status.toUpperCase()}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.statusHeroSub}>
             {isDelivered
               ? `Delivered on ${new Date(order.updated_at || order.created_at).toLocaleDateString()}`
               : isCancelled
@@ -93,7 +142,7 @@ export function GroceryOrderDetailScreen() {
           {isDelivered && (
             <View style={styles.deliveredBadgeRow}>
               <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
-              <Text style={styles.deliveredText}>Order Completed Successfully 🎉</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.deliveredText}>Order Completed Successfully 🎉</Text>
             </View>
           )}
 
@@ -101,8 +150,8 @@ export function GroceryOrderDetailScreen() {
             <View style={styles.tripInfoBox}>
               <Ionicons name="car-outline" size={18} color={Colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.tripTitle}>Delivery Vehicle: {tracking.trip.vehicle_label}</Text>
-                <Text style={styles.tripSub}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.tripTitle}>Delivery Vehicle: {tracking.trip.vehicle_label}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.tripSub}>
                   Driver: {tracking.trip.driver_name} ({tracking.trip.driver_phone})
                 </Text>
               </View>
@@ -112,44 +161,107 @@ export function GroceryOrderDetailScreen() {
 
         {/* Order Details & Summary */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Order Summary</Text>
-          <Text style={styles.summaryMeta}>Placed on {new Date(order.created_at).toLocaleString()}</Text>
-          {order.delivery_note ? <Text style={styles.summaryMeta}>{order.delivery_note}</Text> : null}
-          <Text style={styles.summaryMeta}>Payment Method: {order.payment_method.toUpperCase()}</Text>
-          <Text style={styles.summaryMeta}>Payment Status: {order.payment_status.toUpperCase()}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order Summary</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Placed on {new Date(order.created_at).toLocaleString()}</Text>
+          {order.delivery_note ? <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>{order.delivery_note}</Text> : null}
+          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Method: {order.payment_method.toUpperCase()}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Status: {order.payment_status.toUpperCase()}</Text>
 
           <View style={styles.divider} />
 
           {order.items?.map((item) => (
             <View key={item.id} style={styles.lineItem}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.lineName}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.lineName}>
                   {item.item_name} ({item.unit_label}) x {item.quantity}
                 </Text>
                 {item.status ? (
-                  <Text style={styles.lineStatusText}>Status: {item.status}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.status}</Text>
                 ) : null}
               </View>
-              <Text style={styles.linePrice}>₹{Number(item.total_price).toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.linePrice}>₹{Number(item.total_price).toFixed(2)}</Text>
             </View>
           ))}
 
           <View style={styles.divider} />
 
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Taxable Value</Text>
-            <Text style={styles.billVal}>₹{Number(order.taxable_amount).toFixed(2)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>₹{Number(order.taxable_amount).toFixed(2)}</Text>
           </View>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>GST</Text>
-            <Text style={styles.billVal}>₹{Number(order.tax_amount).toFixed(2)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>₹{Number(order.tax_amount).toFixed(2)}</Text>
           </View>
           <View style={[styles.billRow, { marginTop: 6 }]}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalVal}>₹{Number(order.total_amount).toFixed(2)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.totalVal}>₹{Number(order.total_amount).toFixed(2)}</Text>
           </View>
         </View>
+
+        {needsUpiRef && (
+          <View style={styles.sectionCard}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Confirm UPI Payment</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Paid via UPI? Enter the reference so it can be verified.</Text>
+            <View style={styles.upiRow}>
+              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="12-digit UTR / UPI Ref"
+                style={styles.upiInput}
+                placeholder="12-digit UTR / UPI Ref"
+                placeholderTextColor={Colors.textMuted}
+                value={upiRef}
+                onChangeText={setUpiRef}
+                keyboardType="number-pad"
+                maxLength={22}
+              />
+              <TouchableOpacity accessibilityRole="button"
+                style={[styles.upiSubmitBtn, (!upiRef.trim() || submitUpiPayment.isPending) && styles.btnDisabled]}
+                onPress={handleSubmitUpiRef}
+                disabled={!upiRef.trim() || submitUpiPayment.isPending}
+                activeOpacity={0.8}
+              >
+                <Text maxFontSizeMultiplier={1.3} style={styles.upiSubmitText}>{submitUpiPayment.isPending ? 'Submitting…' : 'Submit'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {canCancel && (
+          <TouchableOpacity accessibilityRole="button" style={styles.cancelOrderBtn} onPress={() => setShowCancelModal(true)} activeOpacity={0.8}>
+            <Ionicons name="close-circle-outline" size={18} color={Colors.danger} />
+            <Text maxFontSizeMultiplier={1.3} style={styles.cancelOrderBtnText}>Cancel Order</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
+
+      <Modal visible={showCancelModal} transparent animationType="fade" onRequestClose={() => setShowCancelModal(false)}>
+        <KeyboardAvoidingView style={styles.modalBackdrop} behavior="padding">
+          <View style={styles.modalCard}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Cancel this order?</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.modalSub}>This can't be undone. Let us know why.</Text>
+            <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Reason for cancelling"
+              style={styles.modalInput}
+              placeholder="Reason for cancelling"
+              placeholderTextColor={Colors.textMuted}
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity accessibilityRole="button" style={styles.modalKeepBtn} onPress={() => setShowCancelModal(false)} activeOpacity={0.8}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.modalKeepText}>Keep Order</Text>
+              </TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button"
+                style={[styles.modalConfirmBtn, cancelOrder.isPending && styles.btnDisabled]}
+                onPress={handleCancel}
+                disabled={cancelOrder.isPending}
+                activeOpacity={0.8}
+              >
+                <Text maxFontSizeMultiplier={1.3} style={styles.modalConfirmText}>{cancelOrder.isPending ? 'Cancelling…' : 'Cancel Order'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -311,5 +423,118 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: Colors.primary,
+  },
+  upiRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  upiInput: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: Colors.textPrimary,
+  },
+  upiSubmitBtn: {
+    height: 44,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upiSubmitText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  cancelOrderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    marginTop: 4,
+  },
+  cancelOrderBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.danger,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  modalSub: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
+  modalInput: {
+    marginTop: 14,
+    height: 80,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    padding: 12,
+    fontSize: 13,
+    color: Colors.textPrimary,
+    textAlignVertical: 'top',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  modalKeepBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: Colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalKeepText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  modalConfirmBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: Colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalConfirmText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

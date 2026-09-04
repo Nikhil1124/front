@@ -28,9 +28,9 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
     <View style={[styles.bannerCard, { backgroundColor: cardBg, borderColor: accentBorder }]}>
       {/* Top Header Row */}
       <View style={styles.headerRow}>
-        <Text style={styles.dayLabel}>{day.toUpperCase()}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.dayLabel}>{day.toUpperCase()}</Text>
         <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-          <Text style={[styles.badgeText, { color: badgeText }]}>
+          <Text maxFontSizeMultiplier={1.3} style={[styles.badgeText, { color: badgeText }]}>
             {isVeg ? '🥗 PURE VEG DAY' : '🍗 NON-VEG DAY'}
           </Text>
         </View>
@@ -38,20 +38,20 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
 
       {/* Menu Dishes List */}
       <View style={styles.menuContainer}>
-        <Text style={[styles.dishesText, { color: dishText }]} numberOfLines={2}>
+        <Text maxFontSizeMultiplier={1.3} style={[styles.dishesText, { color: dishText }]} numberOfLines={2}>
           {menu.slice(0, 4).join(' • ')}
         </Text>
-        <Text style={styles.supportingText}>Fresh ingredients for today's kitchen</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.supportingText}>Fresh ingredients for today's kitchen</Text>
       </View>
 
       {/* Bottom View Menu Button */}
       <View style={styles.footerRow}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={[styles.viewMenuBtn, { backgroundColor: isVeg ? '#15803D' : '#F97316' }]}
           activeOpacity={0.8}
           onPress={onViewMenuPress}
         >
-          <Text style={styles.viewMenuText}>View Menu</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.viewMenuText}>View Menu</Text>
         </TouchableOpacity>
       </View>
     </View>

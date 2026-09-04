@@ -15,6 +15,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { Map, Camera, type CameraRef } from '@/components/maplibreCompat';
@@ -42,6 +43,12 @@ interface Props {
 const FALLBACK = { latitude: 17.4401, longitude: 78.3489 };
 
 export default function LocationPicker({ initial, onConfirm }: Props) {
+  // This renders inside a full-screen `<Modal>` (OwnerRegisterScreen, Add/EditPgPropertyDialog).
+  // A Modal is its own native window drawn over everything — the root layout's safe-area
+  // wrapper does not apply to it — and `androidStatusBar.translucent` puts its top edge behind
+  // the status bar. Without these insets the zoom buttons sat 12px from the physical top,
+  // under the clock and battery, and the Confirm button sat in the Android gesture-bar strip.
+  const insets = useSafeAreaInsets();
   const { locating, requestPermission, getCurrentCoordinates } = useDeviceLocation();
   const cameraRef = useRef<CameraRef>(null);
   const [centre, setCentre] = useState(initial ?? FALLBACK);
@@ -182,14 +189,14 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
           </View>
         )}
 
-        <View style={styles.zoomStack}>
-          <TouchableOpacity
+        <View style={[styles.zoomStack, { top: insets.top + Spacing.md }]}>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom in" accessibilityRole="button"
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.min(20, zoom + 1), { duration: 200 })}
           >
             <Ionicons name="add" size={20} color={Colors.textInverse} />
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom out" accessibilityRole="button"
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.max(3, zoom - 1), { duration: 200 })}
           >
@@ -197,7 +204,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.gpsBtn} onPress={useMyLocation} disabled={locating}>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Use my current location" accessibilityRole="button" style={styles.gpsBtn} onPress={useMyLocation} disabled={locating}>
           {locating ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
@@ -206,7 +213,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.sheet}>
+      <View style={[styles.sheet, { paddingBottom: Spacing.lg + insets.bottom }]}>
         <Txt variant="labelSmall" color={Colors.textMuted} style={styles.sheetLabel}>
           SELECTED LOCATION
         </Txt>
@@ -229,7 +236,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
           {centre.latitude}, {centre.longitude}
         </Txt>
 
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           style={styles.confirm}
           onPress={() =>
             onConfirm({

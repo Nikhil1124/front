@@ -18,11 +18,11 @@ export function InfoTip({ text, size = 15 }: Props) {
 
   return (
     <>
-      <Pressable onPress={() => setVisible(true)} onHoverIn={() => setVisible(true)} hitSlop={8}>
+      <Pressable accessibilityLabel="More information" accessibilityRole="button" onPress={() => setVisible(true)} onHoverIn={() => setVisible(true)} hitSlop={8}>
         <Ionicons name="information-circle-outline" size={size} color={Colors.textMuted} />
       </Pressable>
       <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>
+        <Pressable accessibilityRole="button" style={styles.backdrop} onPress={() => setVisible(false)}>
           <Card
             containerColor={Colors.surface}
             borderRadius={14}

@@ -68,6 +68,13 @@ export function OutlinedTextField({
         )}
         <TextInput
           testID={testID}
+          // The `label` above is a sibling <Txt>, so a screen reader reads it as loose text
+          // and announces the field itself with nothing but its placeholder. Naming the input
+          // is what ties the two together — "Phone Number, edit box" instead of "edit box".
+          accessibilityLabel={label}
+          // Same 1.3x ceiling as Txt: this field has a fixed 56px minHeight, so unbounded
+          // system font scaling clips what the user is typing.
+          maxFontSizeMultiplier={1.3}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

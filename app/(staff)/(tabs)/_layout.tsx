@@ -4,7 +4,7 @@
  * background on the active tab) is distinct enough from the Owner/Guest dock that it isn't
  * built from the shared HeadlessDockTabButton — a bespoke button local to this one layout.
  */
-import { forwardRef, useState } from 'react';
+import { forwardRef } from 'react';
 import { View, StyleSheet, type View as RNView, type PressableProps, Pressable } from 'react-native';
 import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,9 +15,7 @@ import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockT
 import { TabHeader } from '@/components/TabHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
-import { hapticSuccess } from '@/utils/haptics';
-import { RoleNotificationsCenterSheet } from '@/components/dialogs/RoleNotificationsCenterSheet';
-import { usePathname } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { tabEntering, tabExiting } from '@/theme';
 
@@ -25,7 +23,6 @@ import { useRoleNotificationsQuery } from '@/features/notifications/useNotificat
 
 export default function StaffTabsLayout() {
   const pathname = usePathname();
-  const [showNotif, setShowNotif] = useState(false);
 
   const staff = usePGowStore((s) => s.loggedInStaff);
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -50,13 +47,16 @@ export default function StaffTabsLayout() {
           }
           actions={
             <>
-              <AnimatedPress scale={0.85} hapticPattern="light" onPress={() => setShowNotif(true)}>
+              <AnimatedPress accessibilityLabel="Notifications"
+                scale={0.85}
+                onPress={() => router.push('/notifications')}
+              >
                 <View style={styles.bellBtn}>
                   <Ionicons name="notifications" size={20} color={Colors.primary} />
                   {unreadCount > 0 && <View style={styles.unreadDot} />}
                 </View>
               </AnimatedPress>
-              <AnimatedPress scale={0.85} hapticPattern="medium" onPress={() => { hapticSuccess(); logout(); }}>
+              <AnimatedPress accessibilityLabel="Log out" scale={0.85} onPress={() => { logout(); }}>
                 <View style={styles.bellBtn}>
                   <Ionicons name="exit" size={20} color={Colors.danger} />
                 </View>
@@ -70,8 +70,8 @@ export default function StaffTabsLayout() {
             </Txt>
             <Txt size={11} color={Colors.textMuted}>
               {activeRole === 'delivery_agent'
-                ? `${staff?.name ?? 'Rahul Kumar'} · Delivery Agent`
-                : `Chef: ${staff?.name ?? 'Ramesh Kumar'}`}
+                ? `${staff?.name ?? 'Delivery Agent'} · Delivery Agent`
+                : `Chef: ${staff?.name ?? 'Staff'}`}
             </Txt>
           </Col>
         </TabHeader>
@@ -114,8 +114,6 @@ export default function StaffTabsLayout() {
           />
         </TabTrigger>
       </Dock>
-
-      {showNotif && <RoleNotificationsCenterSheet roleTitle={activeRole === 'delivery_agent' ? 'DELIVERY' : staff?.role === 'Chef' ? 'CHEF' : 'MANAGER'} onDismiss={() => setShowNotif(false)} />}
     </Tabs>
   );
 }

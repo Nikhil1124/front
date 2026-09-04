@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import * as SecureStore from "@/utils/secureStorage";
+import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ─── Types (matching /v1/me response) ────────────────────────────────────────
@@ -13,6 +13,9 @@ export interface Membership {
    *  resident learns their own room number — the roster is the owner's and they cannot
    *  read it. */
   room_no: string | null;
+  /** A resident's own away/vacation flag (`PATCH /v1/me/away`). Null for owners and staff —
+   *  guest-only, same reasoning as `room_no` above. */
+  is_away: boolean | null;
 }
 
 /** A PGow-staff role, not a property role. `area_id` is null for super_admin and support. */
@@ -37,20 +40,6 @@ export interface User {
   memberships: Membership[];
   platform_roles: PlatformGrant[];
   gate: Gate;
-}
-
-/** A fresh self-registered owner has no membership until property #1 is created. */
-export function canCreateProperty(user: User | null): boolean {
-  return !!user && (
-    user.memberships.length === 0 || user.memberships.some((m) => m.role === "owner")
-  );
-}
-
-/** Property settings and property metadata are owner-only, including on deep links. */
-export function isPropertyOwner(user: User | null, pgId: string | null | undefined): boolean {
-  return !!user && !!pgId && user.memberships.some(
-    (membership) => membership.pg_id === pgId && membership.role === "owner"
-  );
 }
 
 // ─── Store shape ─────────────────────────────────────────────────────────────

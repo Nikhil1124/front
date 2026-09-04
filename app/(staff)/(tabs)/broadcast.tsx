@@ -1,6 +1,7 @@
 /** Chef dashboard "Broadcast" tab or Delivery History Route */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, Chip, IconBtn, Spacer } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -8,16 +9,37 @@ import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { EmptyState } from '@/components/EmptyState';
-import { hapticSuccess, hapticError } from '@/utils/haptics';
 import type { VisualDishItem } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { Ionicons } from '@expo/vector-icons';
 import { useGuestsQuery } from '@/features/guests/useGuests';
-import { useMealResponsesQuery } from '@/features/meals/useMeals';
+import {
+  useMealResponsesQuery,
+  useMealsQuery,
+  useCreateMealMutation,
+  useUpdateMealMutation,
+  useBroadcastMealMutation,
+} from '@/features/meals/useMeals';
 import { useMyTripsQuery } from '@/features/staff/useTrips';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { NotificationHelper } from '@/data/notificationHelper';
+import { parseTime, todayLocalISO } from '@/utils/format';
+import type { MealNotificationEntity } from '@/types';
+
+// Fixed identifiers so (re)scheduling — a toggle flip, a tab remount, a fresh app launch —
+// replaces the existing OS-level schedule instead of stacking a duplicate reminder.
+const CHEF_ALARM_ROWS = [
+  { key: 'chefAlarm9amEnabled' as const, id: 'pgow-chef-alarm-9am', time: '9:00 AM', hour: 9, minute: 0, label: 'Remind to post lunch' },
+  { key: 'chefAlarm1pmEnabled' as const, id: 'pgow-chef-alarm-1pm', time: '1:00 PM', hour: 13, minute: 0, label: 'Remind to post dinner' },
+  { key: 'chefAlarm330pmEnabled' as const, id: 'pgow-chef-alarm-330pm', time: '3:30 PM', hour: 15, minute: 30, label: "Remind tomorrow's breakfast" },
+];
+const FOLLOWUP_REMINDER_ID = 'pgow-chef-followup-reminder';
+const FOLLOWUP_INTERVAL_SECONDS = 15 * 60;
+const FOLLOWUP_REMINDER_TITLE = '🚨 15-Min RSVP Check';
+const FOLLOWUP_REMINDER_BODY = "Check who hasn't responded to the active meal, and tap Send Follow-up Now if it's worth another nudge.";
 
 const PRESET_DISHES: VisualDishItem[] = [
   { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/poori.png') },
@@ -53,52 +75,189 @@ function ChefBroadcastView() {
   const [showAutomation, setShowAutomation] = useState(false);
   const [selectedCat, setSelectedCat] = useState('All');
   const [selectedDishes, setSelectedDishes] = useState<string[]>([]);
+  const [editingMealId, setEditingMealId] = useState<string | null>(null);
 
   const activePgId = useAuthStore((s) => s.activePgId);
+  const staff = usePGowStore((s) => s.loggedInStaff);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { activeMeal } = useActiveMeal();
+  const { data: allMeals = [] } = useMealsQuery(activePgId ?? undefined);
+  // Editing an old meal from a prior day is asking for trouble (a stale service_at, a
+  // menu nobody eating today cares about) — today's own meals are the only sane edit set.
+  const todaysMeals = allMeals.filter((m) => todayLocalISO(new Date(m.timestamp)) === todayLocalISO());
   const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
+  // This tab hides the shared staff layout header (see app/(staff)/(tabs)/_layout.tsx —
+  // "Hide on the broadcast (Menu) tab to allow for a custom personal header") and builds its
+  // own instead, so it needs its own copy of the bell/unread-count/sheet the shared header
+  // already provides everywhere else, rather than a bell that looks real but does nothing.
+  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
 
   const alarm9 = usePGowStore((s) => s.chefAlarm9amEnabled);
   const alarm1 = usePGowStore((s) => s.chefAlarm1pmEnabled);
   const alarm3 = usePGowStore((s) => s.chefAlarm330pmEnabled);
   const autoFollowup = usePGowStore((s) => s.auto15MinFollowupEnabled);
   const mealTypeSelected = usePGowStore((s) => s.mealTypeSelected);
+  const mealDietaryTypeSelected = usePGowStore((s) => s.mealDietaryTypeSelected);
   const menuItemsInput = usePGowStore((s) => s.menuItemsInput);
   const chefNoteInput = usePGowStore((s) => s.chefNoteInput);
+  const serviceTimeInput = usePGowStore((s) => s.serviceTimeInput);
+  const formatServiceTime12h = usePGowStore((s) => s.formatServiceTime12h);
+  const getAlertTriggerTime = usePGowStore((s) => s.getAlertTriggerTime);
   const selectMealType = usePGowStore((s) => s.selectMealType);
   const triggerChefAlarm = usePGowStore((s) => s.triggerChefAlarm);
   const triggerFollowup = usePGowStore((s) => s.trigger15MinUnresponsiveFollowup);
-  const sendMealNotification = usePGowStore((s) => s.sendMealNotification);
+  const createMealMutation = useCreateMealMutation(activePgId ?? undefined);
+  const updateMealMutation = useUpdateMealMutation(activePgId ?? undefined);
+  const broadcastMealMutation = useBroadcastMealMutation(activePgId ?? undefined);
   const set = usePGowStore((s) => s.set);
+  const scheduleChefAlarm = usePGowStore((s) => s.scheduleChefAlarm);
+
+  // Re-arms whichever reminders are already toggled on — scheduling is idempotent (fixed
+  // identifiers), so this is safe to run on every mount, including the remount this tab gets
+  // every time the chef switches tabs and back (app/(staff)/(tabs)/_layout.tsx keys its
+  // content view on pathname).
+  useEffect(() => {
+    CHEF_ALARM_ROWS.forEach((row) => {
+      if (usePGowStore.getState()[row.key]) {
+        scheduleChefAlarm(row.id, row.time, row.hour, row.minute);
+      }
+    });
+    if (usePGowStore.getState().auto15MinFollowupEnabled) {
+      NotificationHelper.scheduleRepeatingReminder(FOLLOWUP_REMINDER_ID, FOLLOWUP_INTERVAL_SECONDS, FOLLOWUP_REMINDER_TITLE, FOLLOWUP_REMINDER_BODY);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleChefAlarmRow = async (row: (typeof CHEF_ALARM_ROWS)[number], enabled: boolean) => {
+    if (enabled) {
+      await NotificationHelper.cancelScheduled(row.id);
+      set(row.key, false);
+    } else {
+      await scheduleChefAlarm(row.id, row.time, row.hour, row.minute);
+      set(row.key, true);
+    }
+  };
+
+  const toggleFollowupReminder = async (enabled: boolean) => {
+    if (enabled) {
+      await NotificationHelper.cancelScheduled(FOLLOWUP_REMINDER_ID);
+      set('auto15MinFollowupEnabled', false);
+    } else {
+      await NotificationHelper.scheduleRepeatingReminder(FOLLOWUP_REMINDER_ID, FOLLOWUP_INTERVAL_SECONDS, FOLLOWUP_REMINDER_TITLE, FOLLOWUP_REMINDER_BODY);
+      set('auto15MinFollowupEnabled', true);
+    }
+  };
 
   const reqCount = mealResponses.filter((r) => r.choice === 'eating').length;
   const notReqCount = mealResponses.filter((r) => r.choice === 'skipping').length;
   const noResponse = Math.max(0, guests.length - reqCount - notReqCount);
 
   const toggleDish = (dish: string) => {
-    setSelectedDishes((cur) => cur.includes(dish) ? cur.filter((d) => d !== dish) : [...cur, dish]);
+    setSelectedDishes((cur) => {
+      const next = cur.includes(dish) ? cur.filter((d) => d !== dish) : [...cur, dish];
+      // Suggests veg/non-veg from what's actually on the plate — the chef can still
+      // override with the chips below, e.g. to mark a veg-only selection "Pure Veg".
+      if (next.length > 0) {
+        const hasNonVeg = next.some((name) => PRESET_DISHES.find((d) => d.name === name)?.isVeg === false);
+        set('mealDietaryTypeSelected', hasNonVeg ? 'non_veg' : 'veg');
+      }
+      return next;
+    });
   };
 
   const filteredDishes = selectedCat === 'All' ? PRESET_DISHES : PRESET_DISHES.filter((d) => d.category === selectedCat);
 
-  const handleBroadcast = async () => {
+  const startEditingMeal = (meal: MealNotificationEntity) => {
+    setEditingMealId(meal.id);
+    setSelectedDishes([]);
+    // The meal's own text rarely matches a preset dish name exactly — the free-text field is
+    // what can actually show it back, so open that rather than leaving the chef staring at an
+    // empty dish grid for a menu that already has words in it.
+    setShowManualInput(true);
+    set('mealTypeSelected', meal.mealType);
+    set('mealDietaryTypeSelected', meal.dietaryType ?? 'veg');
+    set('menuItemsInput', meal.menuItems);
+    set('chefNoteInput', meal.chefNote ?? '');
+    set('serviceTimeInput', meal.serviceTime);
+  };
+
+  const cancelEditingMeal = () => {
+    setEditingMealId(null);
+    setSelectedDishes([]);
+    set('menuItemsInput', '');
+    set('chefNoteInput', '');
+  };
+
+  const handleSubmit = async () => {
     if (selectedDishes.length > 0) {
       set('menuItemsInput', selectedDishes.join(', '));
     }
-    if (!menuItemsInput.trim() && selectedDishes.length === 0) {
-      hapticError();
+    const menuItems = selectedDishes.length > 0 ? selectedDishes.join(', ') : menuItemsInput;
+    if (!menuItems.trim()) {
       Alert.alert('Validation', 'Please enter food items first!');
       return;
     }
-    const r = await sendMealNotification();
-    if (r.ok) {
-      hapticSuccess();
-      Alert.alert('Success', '🔔 Menu & Food Push Alert Broadcasted to Residents!');
+    if (!activePgId) {
+      Alert.alert('Failed', 'No active property.');
+      return;
+    }
+    // "HH:mm" is today's service time in this phone's timezone; the API wants an instant.
+    const { hour, minute } = parseTime(serviceTimeInput);
+    const serviceAt = new Date();
+    serviceAt.setHours(hour, minute, 0, 0);
+
+    try {
+      let meal;
+      if (editingMealId) {
+        meal = await updateMealMutation.mutateAsync({
+          mealId: editingMealId,
+          params: {
+            menu_items: menuItems.trim(),
+            chef_note: chefNoteInput.trim() || undefined,
+            service_at: serviceAt.toISOString(),
+          },
+        });
+        // Residents who already RSVP'd deserve to hear about a real change — but
+        // re-announcing would read as a brand new meal and reset what "already broadcast"
+        // means to them. `menu_update` is the server's own middle ground: a fresh push,
+        // same RSVP untouched. A meal nobody has seen yet (still a draft) has no RSVPs to
+        // preserve and no audience to notify.
+        if (meal.is_broadcast) {
+          await broadcastMealMutation.mutateAsync({ mealId: editingMealId, params: { kind: 'menu_update' } });
+        }
+      } else {
+        const mealType = mealTypeSelected.toLowerCase() as 'breakfast' | 'lunch' | 'dinner';
+        meal = await createMealMutation.mutateAsync({
+          meal_type: ['breakfast', 'lunch', 'dinner'].includes(mealType) ? mealType : 'lunch',
+          menu_items: menuItems.trim(),
+          dietary_type: mealDietaryTypeSelected,
+          chef_note: chefNoteInput.trim() || undefined,
+          service_at: serviceAt.toISOString(),
+        });
+        // Creating a meal writes a draft; the broadcast is what residents actually receive.
+        await broadcastMealMutation.mutateAsync({ mealId: meal.id, params: { kind: 'announce' } });
+      }
+
+      usePGowStore.getState().patch({
+        menuItemsInput: '', chefNoteInput: '', mealDietaryTypeSelected: 'veg',
+        activeAlert: editingMealId
+          ? {
+              title: '✏️ Meal Updated',
+              description: `${mealTypeSelected} at ${formatServiceTime12h(serviceTimeInput)}\nMenu: ${meal.menu_items}`,
+              type: 'MEAL', notificationId: meal.id, timestamp: Date.now(),
+            }
+          : {
+              title: '🍴 New Meal Broadcasted!',
+              description: `${mealTypeSelected} at ${formatServiceTime12h(serviceTimeInput)}\nMenu: ${meal.menu_items}\nScheduled RSVP alert: ${getAlertTriggerTime(serviceTimeInput)}`,
+              type: 'MEAL', notificationId: meal.id, timestamp: Date.now(),
+            },
+      });
+      Alert.alert('Success', editingMealId ? '✏️ Menu updated — residents already RSVP’d were told about the change.' : '🔔 Menu & Food Push Alert Broadcasted to Residents!');
       setSelectedDishes([]);
-    } else {
-      hapticError();
-      Alert.alert('Failed', r.error ?? 'Unknown');
+      setEditingMealId(null);
+    } catch (err) {
+      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown');
     }
   };
 
@@ -113,18 +272,22 @@ function ChefBroadcastView() {
             </View>
             <View>
               <Row gap={4} align="center">
-                <Txt size={18} weight="900" color={Colors.textPrimary}>Hi Chef Ramesh</Txt>
+                <Txt size={18} weight="900" color={Colors.textPrimary}>Hi Chef {staff?.name?.split(' ')[0] ?? 'there'}</Txt>
                 <Txt size={18}>👋</Txt>
               </Row>
               <Txt size={12} color={Colors.textSecondary}>Plan today's menu & keep everyone happy</Txt>
             </View>
           </Row>
           <Row gap={8} align="center">
-            <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Notifications" accessibilityRole="button"
+              style={styles.headerBtn}
+              activeOpacity={0.7}
+              onPress={() => router.push('/notifications')}
+            >
               <Ionicons name="notifications-outline" size={20} color={Colors.textPrimary} />
-              <View style={styles.headerUnreadDot} />
+              {unreadCount > 0 && <View style={styles.headerUnreadDot} />}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7} onPress={() => { hapticSuccess(); usePGowStore.getState().logout(); }}>
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Log out" accessibilityRole="button" style={styles.headerBtn} activeOpacity={0.7} onPress={() => { usePGowStore.getState().logout(); }}>
               <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
             </TouchableOpacity>
           </Row>
@@ -135,16 +298,41 @@ function ChefBroadcastView() {
         <ChefGroceriesShortcut />
 
         <Spacer size={4} />
-        <Row justify="space-between" align="center">
-          <Row gap={6} align="center">
-            <Txt size={18} weight="900" color={Colors.textPrimary}>Plan &amp; Broadcast Food Alert</Txt>
-            <InfoTip text="Tap dishes to build menu plate. Registered residents will receive instant push notifications." />
-          </Row>
-          <TouchableOpacity activeOpacity={0.7} style={styles.howItWorksBtn}>
-            <Ionicons name="play-circle-outline" size={14} color={Colors.primary} />
-            <Txt size={11} weight="700" color={Colors.primary}>How it works?</Txt>
-          </TouchableOpacity>
+        {/* "How it works?" used to sit here with no onPress — dead, and redundant with the
+            InfoTip right below anyway, which already explains the mechanic. */}
+        <Row gap={6} align="center">
+          <Txt size={18} weight="900" color={Colors.textPrimary}>Plan &amp; Broadcast Food Alert</Txt>
+          <InfoTip text="Tap dishes to build menu plate. Registered residents will receive instant push notifications." />
         </Row>
+
+        {editingMealId ? (
+          <View style={styles.editingBanner}>
+            <Row gap={8} align="center" style={{ flex: 1 }}>
+              <Ionicons name="create-outline" size={16} color={Colors.primary} />
+              <Txt size={12} weight="700" color={Colors.primaryDark} style={{ flex: 1 }}>
+                Editing today's {mealTypeSelected.toLowerCase()} — Save Changes updates this meal instead of posting a new one.
+              </Txt>
+            </Row>
+            <TouchableOpacity accessibilityRole="button" onPress={cancelEditingMeal} activeOpacity={0.7}>
+              <Txt size={12} weight="800" color={Colors.textSecondary}>Cancel</Txt>
+            </TouchableOpacity>
+          </View>
+        ) : todaysMeals.length > 0 ? (
+          <>
+            <Spacer size={10} />
+            <Txt size={12} weight="800" color={Colors.textSecondary}>Today's meals — tap to edit</Txt>
+            <Spacer size={6} />
+            <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {todaysMeals.map((meal) => (
+                <TouchableOpacity accessibilityRole="button" key={meal.id} onPress={() => startEditingMeal(meal)} activeOpacity={0.8} style={styles.mealEditChip}>
+                  <Ionicons name="pencil" size={12} color={Colors.primaryDark} />
+                  <Txt size={12} weight="700" color={Colors.primaryDark}>{meal.mealType}</Txt>
+                  {meal.isAlertSent && <View style={styles.mealEditChipDot} />}
+                </TouchableOpacity>
+              ))}
+            </FormScroll>
+          </>
+        ) : null}
 
         <Spacer size={8} />
         <Txt size={13} weight="800" color={Colors.textPrimary}>Meal Type</Txt>
@@ -156,7 +344,7 @@ function ChefBroadcastView() {
           ].map((m) => {
             const isSel = mealTypeSelected === m.id;
             return (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={m.id}
                 onPress={() => selectMealType(m.id)}
                 style={[
@@ -167,6 +355,35 @@ function ChefBroadcastView() {
               >
                 <Ionicons name={m.icon as any} size={16} color={isSel ? '#FFFFFF' : Colors.textSecondary} />
                 <Txt size={13} weight="700" color={isSel ? '#FFFFFF' : Colors.textPrimary}>{m.id}</Txt>
+              </TouchableOpacity>
+            );
+          })}
+        </Row>
+
+        <Spacer size={12} />
+        <Row gap={6} align="center">
+          <Txt size={13} weight="800" color={Colors.textPrimary}>Dietary Tag</Txt>
+          <InfoTip text="Shown to residents on the meal card. Suggested from the dishes you pick below — tap to override." />
+        </Row>
+        <Row gap={8} style={{ marginTop: 6 }}>
+          {[
+            { id: 'veg' as const, label: 'Veg', icon: '🥦' },
+            { id: 'non_veg' as const, label: 'Non-Veg', icon: '🍗' },
+            { id: 'pure_veg' as const, label: 'Pure Veg', icon: '🥗' },
+          ].map((d) => {
+            const isSel = mealDietaryTypeSelected === d.id;
+            return (
+              <TouchableOpacity accessibilityRole="button"
+                key={d.id}
+                onPress={() => set('mealDietaryTypeSelected', d.id)}
+                style={[
+                  styles.mealPill,
+                  isSel ? styles.mealPillActive : styles.mealPillInactive
+                ]}
+                activeOpacity={0.8}
+              >
+                <Txt size={14}>{d.icon}</Txt>
+                <Txt size={13} weight="700" color={isSel ? '#FFFFFF' : Colors.textPrimary}>{d.label}</Txt>
               </TouchableOpacity>
             );
           })}
@@ -191,7 +408,7 @@ function ChefBroadcastView() {
               <Txt size={13} color={Colors.textMuted}>{selectedDishes.length > 0 ? `${selectedDishes.length} items selected for ${mealTypeSelected}` : `Tap dishes below to build menu`}</Txt>
             </View>
           </Row>
-          <TouchableOpacity onPress={() => { setSelectedDishes([]); set('menuItemsInput', ''); }}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => { setSelectedDishes([]); set('menuItemsInput', ''); }}>
             <Row align="center" gap={2}>
               <Txt size={12} weight="800" color={Colors.primaryDark}>View Menu</Txt>
               <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
@@ -201,15 +418,9 @@ function ChefBroadcastView() {
       </Card>
 
       <Spacer size={16} />
-      <Row justify="space-between" align="center">
-        <Txt size={14} weight="900" color={Colors.textPrimary}>👋 Tap dishes to add to today's menu</Txt>
-        <TouchableOpacity activeOpacity={0.7}>
-          <Row align="center" gap={2}>
-            <Txt size={12} weight="800" color={Colors.primary}>See all</Txt>
-            <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
-          </Row>
-        </TouchableOpacity>
-      </Row>
+      {/* "See all" used to sit here with no onPress — dead, and redundant: the category
+          chips below default to "All", which already shows every dish. */}
+      <Txt size={14} weight="900" color={Colors.textPrimary}>👋 Tap dishes to add to today's menu</Txt>
       <Spacer size={10} />
       <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {['All', '🍞 Breakfast', '🍚 Rice & Dal', '🌶 Curry & Fry', '🍬 Sweets', '🥤 Beverages'].map((c) => {
@@ -218,7 +429,7 @@ function ChefBroadcastView() {
           const matchCat = c === 'All' ? 'All' : rawCat;
           const isSel = selectedCat === matchCat;
           return (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               key={c}
               onPress={() => setSelectedCat(matchCat)}
               style={[
@@ -239,7 +450,7 @@ function ChefBroadcastView() {
         {filteredDishes.map((dish) => {
           const isSel = selectedDishes.includes(dish.name);
           return (
-            <TouchableOpacity 
+            <TouchableOpacity accessibilityRole="button" 
               key={dish.name} 
               onPress={() => toggleDish(dish.name)} 
               activeOpacity={0.9}
@@ -288,7 +499,7 @@ function ChefBroadcastView() {
 
       <Spacer size={14} />
       {/* Add Custom Item */}
-      <TouchableOpacity 
+      <TouchableOpacity accessibilityRole="button" 
         onPress={() => setShowManualInput(!showManualInput)}
         activeOpacity={0.7}
         style={styles.addCustomBtn}
@@ -317,7 +528,7 @@ function ChefBroadcastView() {
 
       <Spacer size={16} />
       {/* Automation settings */}
-      <TouchableOpacity onPress={() => setShowAutomation(!showAutomation)} activeOpacity={0.7}>
+      <TouchableOpacity accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)} activeOpacity={0.7}>
         <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 16]}>
           <Row justify="space-between" align="center">
             <Row gap={12} align="center">
@@ -330,7 +541,7 @@ function ChefBroadcastView() {
                 <Txt variant="labelSmall" weight="600" color={Colors.textMuted}>3 daily alarms • Follow-up {autoFollowup ? 'ON' : 'OFF'}</Txt>
               </View>
             </Row>
-            <TouchableOpacity onPress={() => setShowAutomation(!showAutomation)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primaryGlow, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primaryGlow, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }}>
                <Txt size={12} weight="800" color={Colors.primaryDark}>Manage</Txt>
                <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
             </TouchableOpacity>
@@ -342,27 +553,26 @@ function ChefBroadcastView() {
         <>
           <Spacer size={10} />
           <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[6, 6]}>
-            {([
-              { key: 'chefAlarm9amEnabled', time: '9:00 AM', label: 'Remind to post lunch', enabled: alarm9 },
-              { key: 'chefAlarm1pmEnabled', time: '1:00 PM', label: 'Remind to post dinner', enabled: alarm1 },
-              { key: 'chefAlarm330pmEnabled', time: '3:30 PM', label: "Remind tomorrow's breakfast", enabled: alarm3 },
-            ] as const).map((a) => (
-              <View key={a.time} style={styles.automationRow}>
-                <Row gap={8} style={{ flex: 1 }} align="center">
-                  <Txt size={18}>⏰</Txt>
-                  <View style={{ flex: 1 }}>
-                    <Txt size={12} weight="800" color={Colors.textPrimary}>{a.time}</Txt>
-                    <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{a.label}</Txt>
-                  </View>
-                </Row>
-                <Row gap={10} align="center">
-                  <IconBtn onPress={() => triggerChefAlarm(a.time)} icon="notifications-outline" size={16} tint={Colors.primary} containerColor={Colors.surfaceElevated} />
-                  <TouchableOpacity onPress={() => set(a.key, !a.enabled)} style={[styles.switchTrack, { backgroundColor: a.enabled ? Colors.primary : '#CBD5E1', justifyContent: a.enabled ? 'flex-end' : 'flex-start' }]}>
-                    <View style={styles.switchThumb} />
-                  </TouchableOpacity>
-                </Row>
-              </View>
-            ))}
+            {CHEF_ALARM_ROWS.map((row) => {
+              const enabled = row.key === 'chefAlarm9amEnabled' ? alarm9 : row.key === 'chefAlarm1pmEnabled' ? alarm1 : alarm3;
+              return (
+                <View key={row.time} style={styles.automationRow}>
+                  <Row gap={8} style={{ flex: 1 }} align="center">
+                    <Txt size={18}>⏰</Txt>
+                    <View style={{ flex: 1 }}>
+                      <Txt size={12} weight="800" color={Colors.textPrimary}>{row.time}</Txt>
+                      <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{row.label}</Txt>
+                    </View>
+                  </Row>
+                  <Row gap={10} align="center">
+                    <IconBtn onPress={() => triggerChefAlarm(row.time)} icon="notifications-outline" size={16} tint={Colors.primary} containerColor={Colors.surfaceElevated} />
+                    <TouchableOpacity accessibilityRole="button" onPress={() => toggleChefAlarmRow(row, enabled)} style={[styles.switchTrack, { backgroundColor: enabled ? Colors.primary : '#CBD5E1', justifyContent: enabled ? 'flex-end' : 'flex-start' }]}>
+                      <View style={styles.switchThumb} />
+                    </TouchableOpacity>
+                  </Row>
+                </View>
+              );
+            })}
 
             <View style={styles.automationDivider} />
 
@@ -371,13 +581,13 @@ function ChefBroadcastView() {
                 <Txt size={18}>🚨</Txt>
                 <View style={{ flex: 1 }}>
                   <Row gap={4} align="center">
-                    <Txt size={12} weight="800" color={Colors.textPrimary}>15-Min Follow-up</Txt>
-                    <InfoTip text="Every 15 minutes, residents who haven't responded to the active meal get an automatic reminder. Responded residents stop receiving them." />
+                    <Txt size={12} weight="800" color={Colors.textPrimary}>15-Min Check-in Reminder</Txt>
+                    <InfoTip text="Nudges your phone every 15 minutes to check who hasn't responded — it doesn't notify residents by itself. Tap Send Follow-up Now below to actually re-notify them." />
                   </Row>
                   <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{noResponse} not responded</Txt>
                 </View>
               </Row>
-              <TouchableOpacity onPress={() => set('auto15MinFollowupEnabled', !autoFollowup)} style={[styles.switchTrack, { backgroundColor: autoFollowup ? Colors.primary : '#CBD5E1', justifyContent: autoFollowup ? 'flex-end' : 'flex-start' }]}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => toggleFollowupReminder(autoFollowup)} style={[styles.switchTrack, { backgroundColor: autoFollowup ? Colors.primary : '#CBD5E1', justifyContent: autoFollowup ? 'flex-end' : 'flex-start' }]}>
                 <View style={styles.switchThumb} />
               </TouchableOpacity>
             </View>
@@ -398,8 +608,10 @@ function ChefBroadcastView() {
       </Row>
 
       <Spacer size={20} />
-      <Btn onPress={handleBroadcast} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={16} height={56} style={styles.broadcastBtn}>
-        <Txt size={14} weight="900" color="#FFFFFF">Broadcast Menu & Send Food Alerts to Guests 🚀</Txt>
+      <Btn onPress={handleSubmit} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={16} height={56} style={styles.broadcastBtn}>
+        <Txt size={14} weight="900" color="#FFFFFF">
+          {editingMealId ? 'Save Changes ✏️' : 'Broadcast Menu & Send Food Alerts to Guests 🚀'}
+        </Txt>
       </Btn>
     </FormScroll>
     </View>
@@ -477,6 +689,9 @@ const styles = StyleSheet.create({
   switchTrack: { width: 44, height: 24, borderRadius: 12, padding: 2, flexDirection: 'row' },
   switchThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFFFFF' },
   historyThumbBox: { width: 44, height: 44, borderRadius: 8, backgroundColor: Colors.surfaceMuted, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
+  editingBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.surfaceElevated, borderRadius: 12, borderWidth: 1, borderColor: Colors.primary, padding: 10, marginTop: 10 },
+  mealEditChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.surfaceElevated, borderRadius: 20, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: 12, paddingVertical: 8 },
+  mealEditChipDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
   headerContainer: {
     paddingHorizontal: 18,
     paddingTop: 16, // Assuming safe area is handled by Tabs wrapper or add inset if needed
@@ -514,15 +729,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: Colors.danger,
-  },
-  howItWorksBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: Colors.primaryGlow,
   },
   mealPill: {
     flex: 1,

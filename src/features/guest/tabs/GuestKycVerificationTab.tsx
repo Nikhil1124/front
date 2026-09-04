@@ -27,8 +27,6 @@ import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
-import { hapticSelect } from '@/utils/haptics';
-
 interface Props {
   scrollable?: boolean;
 }
@@ -111,7 +109,6 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
   const banner = bannerFor(kycStatus, guest?.kycRejectReason);
 
   const openUpload = () => {
-    hapticSelect();
     setShowUpload(true);
   };
 

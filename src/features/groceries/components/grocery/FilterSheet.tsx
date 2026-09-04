@@ -9,20 +9,23 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii } from '@/theme';
 
+// A "Dietary Preferences" chip row (Organic/Gluten-Free/Vegan/Dairy-Free) used to live here.
+// `SupplyItem` (types/supply.ts) carries no dietary/tag field at all, so those chips filtered
+// nothing — picking one and tapping Apply changed the result list not at all. Removed rather
+// than wired up: there's no real per-item data to filter on without a backend schema change.
 export type ProductSort = 'popular' | 'price-asc' | 'price-desc' | 'name';
 
 export interface FilterState {
   sort: ProductSort;
-  dietary: string[];
   maxPrice?: number;
   onDealOnly?: boolean;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
   sort: 'popular',
-  dietary: [],
   maxPrice: undefined,
   onDealOnly: false,
 };
@@ -34,7 +37,6 @@ const SORTS: { value: ProductSort; label: string }[] = [
   { value: 'name', label: 'Name A–Z' },
 ];
 
-const DIETARY_OPTIONS = ['Organic', 'Gluten-Free', 'Vegan', 'Dairy-Free'];
 const PRICE_CAPS = [100, 200, 500];
 
 export interface FilterSheetProps {
@@ -45,6 +47,9 @@ export interface FilterSheetProps {
 }
 
 export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetProps) {
+  // Pinned to the bottom edge inside a Modal — nothing above pads it, so without this the
+  // Apply button sits inside the Android gesture strip.
+  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<FilterState>(value);
 
   useEffect(() => {
@@ -54,43 +59,34 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
     }
   }, [visible, value]);
 
-  const toggleDietary = (tag: string) => {
-    setDraft((prev) => ({
-      ...prev,
-      dietary: prev.dietary.includes(tag)
-        ? prev.dietary.filter((t) => t !== tag)
-        : [...prev.dietary, tag],
-    }));
-  };
-
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.sheetContainer}>
+            <View style={[styles.sheetContainer, { paddingBottom: 24 + insets.bottom }]}>
               {/* Header */}
               <View style={styles.header}>
-                <Text style={styles.headerTitle}>Sort & Filter</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Sort & Filter</Text>
+                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose} style={styles.closeBtn}>
                   <Ionicons name="close" size={22} color={Colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
                 {/* Sort Section */}
-                <Text style={styles.sectionTitle}>Sort by</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Sort by</Text>
                 <View style={styles.sortList}>
                   {SORTS.map((s) => {
                     const selected = draft.sort === s.value;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={s.value}
                         style={styles.sortRow}
                         onPress={() => setDraft((prev) => ({ ...prev, sort: s.value }))}
                         activeOpacity={0.8}
                       >
-                        <Text style={[styles.sortLabel, selected && styles.selectedSortLabel]}>
+                        <Text maxFontSizeMultiplier={1.3} style={[styles.sortLabel, selected && styles.selectedSortLabel]}>
                           {s.label}
                         </Text>
                         <Ionicons
@@ -103,33 +99,15 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                   })}
                 </View>
 
-                {/* Dietary Tags */}
-                <Text style={styles.sectionTitle}>Dietary Preferences</Text>
-                <View style={styles.chipRow}>
-                  {DIETARY_OPTIONS.map((tag) => {
-                    const active = draft.dietary.includes(tag);
-                    return (
-                      <TouchableOpacity
-                        key={tag}
-                        style={[styles.chip, active && styles.activeChip]}
-                        onPress={() => toggleDietary(tag)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.chipText, active && styles.activeChipText]}>{tag}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
                 {/* Max Price */}
-                <Text style={styles.sectionTitle}>Max Price</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Max Price</Text>
                 <View style={styles.chipRow}>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.chip, draft.maxPrice === undefined && styles.activeChip]}
                     onPress={() => setDraft((prev) => ({ ...prev, maxPrice: undefined }))}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.chipText, draft.maxPrice === undefined && styles.activeChipText]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.maxPrice === undefined && styles.activeChipText]}>
                       Any
                     </Text>
                   </TouchableOpacity>
@@ -137,13 +115,13 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                   {PRICE_CAPS.map((cap) => {
                     const active = draft.maxPrice === cap;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={cap}
                         style={[styles.chip, active && styles.activeChip]}
                         onPress={() => setDraft((prev) => ({ ...prev, maxPrice: cap }))}
                         activeOpacity={0.8}
                       >
-                        <Text style={[styles.chipText, active && styles.activeChipText]}>
+                        <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, active && styles.activeChipText]}>
                           Under ₹{cap}
                         </Text>
                       </TouchableOpacity>
@@ -152,8 +130,8 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                 </View>
 
                 {/* Deal Filter */}
-                <Text style={styles.sectionTitle}>Offers</Text>
-                <TouchableOpacity
+                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Offers</Text>
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.chip, draft.onDealOnly && styles.activeChip, { alignSelf: 'flex-start' }]}
                   onPress={() => setDraft((prev) => ({ ...prev, onDealOnly: !prev.onDealOnly }))}
                   activeOpacity={0.8}
@@ -164,7 +142,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                     color={draft.onDealOnly ? '#fff' : Colors.primary}
                     style={{ marginRight: 6 }}
                   />
-                  <Text style={[styles.chipText, draft.onDealOnly && styles.activeChipText]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.onDealOnly && styles.activeChipText]}>
                     On Deal Only
                   </Text>
                 </TouchableOpacity>
@@ -172,21 +150,21 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
 
               {/* Action Footer */}
               <View style={styles.footer}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.resetBtn}
                   onPress={() => setDraft(DEFAULT_FILTERS)}
                 >
-                  <Text style={styles.resetText}>Reset</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.resetText}>Reset</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.applyBtn}
                   onPress={() => {
                     onApply(draft);
                     onClose();
                   }}
                 >
-                  <Text style={styles.applyText}>Apply Filters</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.applyText}>Apply Filters</Text>
                 </TouchableOpacity>
               </View>
             </View>

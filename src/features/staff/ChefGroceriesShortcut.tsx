@@ -15,7 +15,7 @@ export function ChefGroceriesShortcut() {
   if (activeRole !== 'CHEF') return null;
 
   return (
-    <AnimatedPress scale={0.98} hapticPattern="light" onPress={() => router.push('/groceries')}>
+    <AnimatedPress scale={0.98} onPress={() => router.push('/groceries')}>
       <Card containerColor={Colors.surfaceElevated} borderRadius={16} borderWidth={0} padding={[14, 14]} style={styles.shadow}>
         <Row justify="space-between" align="center">
           <Row gap={12} align="center">

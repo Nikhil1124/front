@@ -14,12 +14,12 @@ export const AddAllToCartButton: React.FC<AddAllToCartButtonProps> = ({
   onPress,
 }) => {
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       style={styles.button}
       activeOpacity={0.85}
       onPress={onPress}
     >
-      <Text style={styles.text}>
+      <Text maxFontSizeMultiplier={1.3} style={styles.text}>
         🛒 Add All • {totalItems} items • ₹{totalPrice}
       </Text>
     </TouchableOpacity>

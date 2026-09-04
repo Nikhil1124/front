@@ -11,6 +11,7 @@ import { useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
 
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
+import { useActiveProperty } from '@/features/properties/useProperties';
 import { Colors } from '@/theme';
 
 // Extracted shared components
@@ -22,43 +23,19 @@ import { parseUnitQuantity } from '../utils/pricing';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Returns category-specific product attribute rows */
+/**
+ * Product attribute rows — real fields only. This used to invent a brand name, a rice
+ * variety, a shelf life and an "origin" per category regardless of what the actual product
+ * was (every rice item claimed to be "Sona Masoori" from "Agri-Gold Premium" with a 12-month
+ * shelf life, even when it wasn't) — specifications a buyer could reasonably rely on, made
+ * up. `SupplyItem` only actually carries `description`, `unit_label`, `gst_rate` and
+ * `hsn_code`; this shows those, and nothing this screen doesn't actually know.
+ */
 const getProductDetails = (prod: SupplyItem, selectedUnit: string) => {
-  const cat = prod.category_id.toLowerCase();
-  if (prod.name.toLowerCase().includes('rice')) {
-    return [
-      { label: 'Brand', value: 'Agri-Gold Premium' },
-      { label: 'Net Weight', value: selectedUnit },
-      { label: 'Rice Type', value: 'Sona Masoori' },
-      { label: 'Grain Type', value: 'Extra Long Grain' },
-      { label: 'Packaging', value: 'Hygienic Jute Bag' },
-      { label: 'Shelf Life', value: '12 Months' },
-    ];
-  }
-  if (cat.includes('oil') || prod.name.toLowerCase().includes('oil')) {
-    return [
-      { label: 'Brand', value: 'PG Gold Pure' },
-      { label: 'Volume', value: selectedUnit },
-      { label: 'Oil Type', value: prod.name.includes('Sunflower') ? 'Refined Sunflower Oil' : 'Cooking Vegetable Oil' },
-      { label: 'Packaging', value: 'Leak-proof Can / Pouch' },
-      { label: 'Shelf Life', value: '9 Months' },
-    ];
-  }
-  if (cat.includes('veg') || cat.includes('fruit')) {
-    return [
-      { label: 'Type', value: 'Fresh Farm Produce' },
-      { label: 'Weight', value: selectedUnit },
-      { label: 'Freshness', value: 'Checked & Handpicked' },
-      { label: 'Origin', value: 'Local Farms Bangalore' },
-    ];
-  }
-  return [
-    { label: 'Brand', value: 'Premium Quality' },
-    { label: 'Net Weight', value: selectedUnit },
-    { label: 'Packaging', value: 'Hygienically Sealed Pack' },
-    { label: 'Shelf Life', value: '6 Months' },
-    { label: 'Storage', value: 'Store in a cool, dry place' },
-  ];
+  const rows: { label: string; value: string }[] = [{ label: 'Pack Size', value: selectedUnit }];
+  if (prod.gst_rate != null) rows.push({ label: 'GST', value: `${prod.gst_rate}%` });
+  if (prod.hsn_code) rows.push({ label: 'HSN Code', value: prod.hsn_code });
+  return rows;
 };
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -69,6 +46,7 @@ export function GroceryProductScreen() {
 
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: supplyItems = [] } = useSupplyItems(activePgId);
+  const { activeEntity: property } = useActiveProperty();
 
   const product = supplyItems.find((p) => p.id === id);
   const mode = useShoppingModeStore((s) => s.mode);
@@ -111,9 +89,9 @@ export function GroceryProductScreen() {
       <View style={styles.errorContainer}>
         <View style={styles.errorState}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textSecondary} />
-          <Text style={styles.errorText}>Product not found</Text>
-          <TouchableOpacity style={styles.backBtnError} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>Go Back</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>Product not found</Text>
+          <TouchableOpacity accessibilityRole="button" style={styles.backBtnError} onPress={() => router.back()}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.backBtnText}>Go Back</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -157,21 +135,21 @@ export function GroceryProductScreen() {
           for the notch/status bar directly rather than sitting in normal flow under it.
           insets.top + 14 matches every other grocery screen's header. */}
       <View style={[styles.floatingHeader, { paddingTop: insets.top + 14 }]}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.headerBtn} onPress={handleShare} activeOpacity={0.7}>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Share" accessibilityRole="button" style={styles.headerBtn} onPress={handleShare} activeOpacity={0.7}>
             <Ionicons name="share-social-outline" size={18} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/groceries/categories')} activeOpacity={0.7}>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Search" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/categories')} activeOpacity={0.7}>
             <Ionicons name="search" size={18} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/groceries/cart')} activeOpacity={0.7}>
+          <TouchableOpacity accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/cart')} activeOpacity={0.7}>
             <Ionicons name="cart-outline" size={18} color={Colors.textPrimary} />
             {cartItemCount > 0 && (
               <View style={styles.headerCartBadge}>
-                <Text style={styles.headerCartBadgeText}>{cartItemCount}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.headerCartBadgeText}>{cartItemCount}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -188,10 +166,10 @@ export function GroceryProductScreen() {
           <View style={styles.leftImageColumn}>
             {discountPercent > 0 && (
               <View style={styles.discountBadge}>
-                <Text style={styles.discountBadgeText}>-{discountPercent}%</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.discountBadgeText}>-{discountPercent}%</Text>
               </View>
             )}
-            <TouchableOpacity
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
               style={styles.wishlistBtn}
               onPress={() => toggleWishlist(product)}
               activeOpacity={0.8}
@@ -222,31 +200,28 @@ export function GroceryProductScreen() {
             )}
           </View>
 
-          {/* Right: title, rating, price */}
+          {/* Right: title, price. No "HIGH DEMAND" badge or star rating here — neither was
+              real: every product showed the identical fixed "4.8 | 1K+ ratings" and the same
+              demand badge regardless of the actual item, and `SupplyItem` has no rating or
+              demand field to base either on. The subtitle now shows the product's real
+              `description` when the catalog has one, instead of a fabricated one guessed
+              from whether the name contains "rice". */}
           <View style={styles.rightInfoColumn}>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>🌿 HIGH DEMAND</Text>
-            </View>
-            <Text style={styles.productTitle} numberOfLines={2}>{product.name}</Text>
-            <Text style={styles.productSubtitle} numberOfLines={2}>
-              {product.name.toLowerCase().includes('rice') ? 'Extra Long Grain • Premium Quality' : 'Hygienically Sorted • Best Fresh Quality'}
-            </Text>
-            <View style={styles.ratingsRow}>
-              <Ionicons name="star" size={12} color={Colors.warning} />
-              <Text style={styles.ratingScore}>4.8</Text>
-              <Text style={styles.ratingTotal}> | 1K+ ratings</Text>
-            </View>
-            <Text style={styles.currentPrice}>₹{price}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.productTitle} numberOfLines={2}>{product.name}</Text>
+            {!!product.description && (
+              <Text maxFontSizeMultiplier={1.3} style={styles.productSubtitle} numberOfLines={2}>{product.description}</Text>
+            )}
+            <Text maxFontSizeMultiplier={1.3} style={styles.currentPrice}>₹{price}</Text>
             {originalPrice ? (
               <View style={styles.mrpRow}>
-                <Text style={styles.mrpText}>MRP: ₹{originalPrice}</Text>
-                <Text style={styles.savingsAmountText}> (Save ₹{savingsAmount})</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.mrpText}>MRP: ₹{originalPrice}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.savingsAmountText}> (Save ₹{savingsAmount})</Text>
               </View>
             ) : null}
             {savingsAmount > 0 && (
               <View style={styles.miniWholesaleCard}>
-                <Text style={styles.miniWholesaleText} numberOfLines={2}>
-                  🎉 Special PG Wholesale Deal  <Text style={styles.greenBold}>Saved ₹{savingsAmount}!</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.miniWholesaleText} numberOfLines={2}>
+                  🎉 Special PG Wholesale Deal  <Text maxFontSizeMultiplier={1.3} style={styles.greenBold}>Saved ₹{savingsAmount}!</Text>
                 </Text>
               </View>
             )}
@@ -259,18 +234,18 @@ export function GroceryProductScreen() {
           {/* Pack size + quantity row */}
           <View style={styles.packQtyCard}>
             <View style={styles.packLeftSection}>
-              <Text style={styles.sectionHeading}>Choose Pack Size</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Choose Pack Size</Text>
               <View style={styles.packSizesRow}>
                 {options.map((opt, i) => {
                   const isSelected = selectedIdx === i;
                   return (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={opt.unit}
                       style={[styles.packTab, isSelected && styles.selectedPackTab]}
                       onPress={() => setSelectedIdx(i)}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.packText, isSelected && styles.selectedPackText]}>
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.packText, isSelected && styles.selectedPackText]}>
                         {opt.unit}{isSelected ? ' ✓' : ''}
                       </Text>
                     </TouchableOpacity>
@@ -279,12 +254,12 @@ export function GroceryProductScreen() {
               </View>
             </View>
             <View style={styles.qtyRightSection}>
-              <Text style={styles.quantityLabel}>Quantity</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.quantityLabel}>Quantity</Text>
               {quantity > 0 ? (
                 <QuantityStepper quantity={quantity} onIncrease={handleIncrease} onDecrease={handleDecrease} />
               ) : (
-                <TouchableOpacity style={styles.inlineAddBtn} onPress={handleAdd} activeOpacity={0.8}>
-                  <Text style={styles.inlineAddText}>Add to Cart</Text>
+                <TouchableOpacity accessibilityRole="button" style={styles.inlineAddBtn} onPress={handleAdd} activeOpacity={0.8}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.inlineAddText}>Add to Cart</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -300,20 +275,26 @@ export function GroceryProductScreen() {
             />
           )}
 
-          {/* Delivery card */}
+          {/* Delivery card — this used to show a fixed "HSR Layout, Bangalore - 560102" and
+              "Today, 6:00 PM - 8:00 PM" on every product page regardless of which property
+              or resident was looking, which is simply the wrong address for almost everyone
+              who ever saw it. The real address is the active property's own (same source
+              GroceryCheckoutScreen uses); the specific delivery window is dropped rather
+              than replaced with a different invented one — checkout is where a real slot is
+              actually chosen. */}
           <View style={styles.deliveryCard}>
             <View style={styles.deliveryLeft}>
               <View style={styles.deliveryHeaderRow}>
                 <Ionicons name="bicycle" size={16} color={Colors.info} />
-                <Text style={styles.deliveryTitle}>Delivery to</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTitle}>Delivery to</Text>
               </View>
-              <Text style={styles.deliveryAddress} numberOfLines={1}>
-                HSR Layout, Bangalore - 560102
+              <Text maxFontSizeMultiplier={1.3} style={styles.deliveryAddress} numberOfLines={1}>
+                {property?.address || 'Your PG address'}
               </Text>
             </View>
             <View style={styles.deliveryRight}>
-              <Text style={styles.deliveryRightLabel}>Estimated delivery</Text>
-              <Text style={styles.deliveryTimeText}>Today, 6:00 PM - 8:00 PM</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Delivery</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Slots available at checkout</Text>
             </View>
           </View>
 
@@ -322,19 +303,19 @@ export function GroceryProductScreen() {
             {['Quality Checked', 'Hygienically Packed', 'Easy Replacement'].map((item) => (
               <View key={item} style={styles.reassuranceItem}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Text style={styles.reassuranceText}>{item}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>{item}</Text>
               </View>
             ))}
           </View>
 
           {/* Collapsible product details */}
           <View style={styles.detailsAccordionCard}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={styles.accordionHeader}
               onPress={() => setIsDetailsExpanded(!isDetailsExpanded)}
               activeOpacity={0.7}
             >
-              <Text style={styles.accordionHeading}>Product Details</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.accordionHeading}>Product Details</Text>
               <Ionicons
                 name={isDetailsExpanded ? 'chevron-up' : 'chevron-down'}
                 size={18}
@@ -345,8 +326,8 @@ export function GroceryProductScreen() {
               <View style={styles.accordionContent}>
                 {productDetails.map((detail, idx) => (
                   <View key={idx} style={styles.accordionRow}>
-                    <Text style={styles.accordionLabel}>{detail.label}</Text>
-                    <Text style={styles.accordionValue}>{detail.value}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.accordionLabel}>{detail.label}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.accordionValue}>{detail.value}</Text>
                   </View>
                 ))}
               </View>
@@ -367,7 +348,6 @@ export function GroceryProductScreen() {
                   product={p}
                   onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })}
                   showWishlist
-                  showRating
                 />
               ))}
             </ScrollView>
@@ -378,26 +358,26 @@ export function GroceryProductScreen() {
       {/* Sticky purchase bar */}
       <View style={[styles.stickyPurchaseBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.stickyBarLeft}>
-          <Text style={styles.stickyPrice}>₹{price}</Text>
-          <Text style={styles.stickyInfoText}>{selectedOption.unit} • Qty: {quantity || 1}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.stickyPrice}>₹{price}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.stickyInfoText}>{selectedOption.unit} • Qty: {quantity || 1}</Text>
         </View>
 
         {cartItemCount > 0 && (
-          <TouchableOpacity style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
+          <TouchableOpacity accessibilityRole="button" style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
             <Ionicons name="cart-outline" size={14} color={Colors.primary} />
-            <Text style={styles.stickyCartText}>View Cart ({cartItemCount})</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.stickyCartText}>View Cart ({cartItemCount})</Text>
           </TouchableOpacity>
         )}
 
         {quantity > 0 ? (
-          <TouchableOpacity style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
+          <TouchableOpacity accessibilityRole="button" style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
             <Ionicons name="checkmark-circle-outline" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
-            <Text style={styles.stickyAddBtnText}>Added ✓</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Added ✓</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.stickyAddBtn} onPress={handleAdd} activeOpacity={0.8}>
+          <TouchableOpacity accessibilityRole="button" style={styles.stickyAddBtn} onPress={handleAdd} activeOpacity={0.8}>
             <Ionicons name="cart" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
-            <Text style={styles.stickyAddBtnText}>Add to Cart</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Add to Cart</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -430,8 +410,6 @@ const styles = StyleSheet.create({
   activeDot: { width: 10, backgroundColor: Colors.primary },
 
   rightInfoColumn: { width: '52%', justifyContent: 'center' },
-  statusBadge: { alignSelf: 'flex-start', backgroundColor: '#DCFCE7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 6 },
-  ratingsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   mrpRow: { flexDirection: 'row', alignItems: 'center' },
   miniWholesaleCard: { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 6 },
 
@@ -471,11 +449,8 @@ const styles = StyleSheet.create({
   backBtnText: { color: Colors.surface, fontWeight: '700' as const, fontSize: 13 },
   headerCartBadgeText: { color: Colors.surface, fontSize: 9, fontWeight: '700' as const },
   discountBadgeText: { color: Colors.surface, fontSize: 9, fontWeight: '700' as const },
-  statusBadgeText: { color: Colors.primary, fontSize: 8, fontWeight: '700' as const },
   productTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.textPrimary, marginBottom: 2 },
   productSubtitle: { fontSize: 12, color: Colors.textSecondary, fontWeight: '400' as const, marginBottom: 8 },
-  ratingScore: { fontSize: 12, fontWeight: '700' as const, color: Colors.textPrimary, marginLeft: 3 },
-  ratingTotal: { fontSize: 11, color: Colors.textSecondary, fontWeight: '400' as const },
   currentPrice: { fontSize: 20, fontWeight: '700' as const, color: Colors.primary, marginBottom: 4 },
   mrpText: { fontSize: 11, color: Colors.textMuted, textDecorationLine: 'line-through' as const, fontWeight: '400' as const },
   savingsAmountText: { fontSize: 11, color: Colors.danger, fontWeight: '700' as const },

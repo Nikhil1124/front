@@ -13,19 +13,19 @@ export default function NotFoundScreen() {
         options={{
           title: 'Page Not Found',
           headerShown: true,
-          headerStyle: { backgroundColor: Colors.LuxurySurfaceDark },
-          headerTintColor: Colors.IvoryWhiteText,
+          headerStyle: { backgroundColor: Colors.surface },
+          headerTintColor: Colors.textPrimary,
         }}
       />
       <View style={styles.container}>
-        <Ionicons name="alert-circle-sharp" size={64} color={Colors.CyberGreen} style={styles.icon} />
-        <Text style={styles.title}>404 - Screen Not Found</Text>
-        <Text style={styles.subtitle}>The page or route you requested does not exist in PGow App.</Text>
+        <Ionicons name="alert-circle-sharp" size={64} color={Colors.primary} style={styles.icon} />
+        <Text maxFontSizeMultiplier={1.3} style={styles.title}>404 - Screen Not Found</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>The page or route you requested does not exist in PGow App.</Text>
 
         <Link href="/" asChild>
-          <TouchableOpacity style={styles.button}>
-            <Ionicons name="home-sharp" size={18} color={Colors.LuxuryPureBlack} />
-            <Text style={styles.buttonText}>Return to Home</Text>
+          <TouchableOpacity accessibilityRole="button" style={styles.button}>
+            <Ionicons name="home-sharp" size={18} color={Colors.canvas} />
+            <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>Return to Home</Text>
           </TouchableOpacity>
         </Link>
       </View>
@@ -36,7 +36,7 @@ export default function NotFoundScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.LuxuryPureBlack,
+    backgroundColor: Colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -47,20 +47,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: Colors.IvoryWhiteText,
+    color: Colors.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
-    color: Colors.SlateMutedText,
+    color: Colors.textMuted,
     textAlign: 'center',
     marginBottom: 24,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.CyberGreen,
+    backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
@@ -69,6 +69,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: Colors.LuxuryPureBlack,
+    color: Colors.canvas,
   },
 });

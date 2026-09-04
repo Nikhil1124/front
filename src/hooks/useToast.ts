@@ -10,8 +10,6 @@
  */
 import { useCallback } from 'react';
 import { usePGowStore } from '@/store/usePGowStore';
-import { hapticSuccess, hapticError, hapticWarning } from '@/utils/haptics';
-
 export type ToastTone = 'success' | 'warning' | 'error' | 'info' | 'meal' | 'payment';
 
 const TONE_TO_TYPE: Record<ToastTone, 'MEAL' | 'PAYMENT' | 'SUCCESS' | 'ERROR' | 'ANNOUNCEMENT'> = {
@@ -28,12 +26,6 @@ export function useToast() {
 
   const toast = useCallback(
     (tone: ToastTone, title: string, description?: string) => {
-      // Haptic synchronously with the toast so the user feels + sees the
-      // confirmation at the same instant.
-      if (tone === 'success') hapticSuccess();
-      else if (tone === 'error') hapticError();
-      else if (tone === 'warning') hapticWarning();
-
       set('activeAlert', {
         title,
         description: description ?? '',

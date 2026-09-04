@@ -29,7 +29,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
 }) => {
   return (
     <View style={styles.card}>
-      <Text style={styles.heading}>🏢 Best Value for PG Owners</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.heading}>🏢 Best Value for PG Owners</Text>
       <View style={styles.gridRow}>
         <View style={styles.columnsWrapper}>
           {options.map((opt, i) => {
@@ -42,23 +42,23 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
             const calcSavings = Math.round(expected - opt.price);
 
             return (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={opt.unit}
                 style={[styles.column, isSelected && styles.selectedColumn]}
                 onPress={() => onSelect(i)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.columnUnit}>{opt.unit}</Text>
-                <Text style={styles.columnPrice}>₹{opt.price}</Text>
-                <Text style={styles.columnRate}>{perUnitRate}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.columnUnit}>{opt.unit}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.columnPrice}>₹{opt.price}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.columnRate}>{perUnitRate}</Text>
 
                 {isBestValue ? (
                   <View style={styles.bestValueTag}>
-                    <Text style={styles.bestValueTagText}>Best Value</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.bestValueTagText}>Best Value</Text>
                   </View>
                 ) : calcSavings > 0 ? (
                   <View style={styles.savingsTag}>
-                    <Text style={styles.savingsTagText}>Save ₹{calcSavings}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.savingsTagText}>Save ₹{calcSavings}</Text>
                   </View>
                 ) : null}
               </TouchableOpacity>
@@ -68,9 +68,9 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
 
         {/* Savings highlight block */}
         <View style={styles.savingsBlock}>
-          <Text style={styles.savingsTitle}>You Save</Text>
-          <Text style={styles.savingsPrice}>₹{currentSavings || 0}</Text>
-          <Text style={styles.savingsSubtitle}>
+          <Text maxFontSizeMultiplier={1.3} style={styles.savingsTitle}>You Save</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.savingsPrice}>₹{currentSavings || 0}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.savingsSubtitle}>
             {currentSavings > 0
               ? `on ${options[selectedIdx]?.unit} pack`
               : 'Buy bulk to save'}

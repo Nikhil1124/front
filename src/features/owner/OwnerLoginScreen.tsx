@@ -29,9 +29,13 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
-import { usePGowStore } from '@/store/usePGowStore';
+import { usePGowStore, toUserRole } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { PGowApiError } from '@/data/apiClient';
+import * as map from '@/data/mappers';
+import { useLogin, usePinLogin, useChangePassword } from '@/features/auth/useAuth';
+import { useJoinPgMutation } from '@/features/guests/useGuests';
 import { useToast } from '@/hooks/useToast';
-import { hapticSelect, hapticSuccess, hapticError } from '@/utils/haptics';
 import { Colors } from '@/theme';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -80,7 +84,7 @@ function Field({
 
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.fieldLabel}>{label}</Text>
       <View style={[
         styles.fieldWrap,
         focused && styles.fieldWrapFocused,
@@ -94,7 +98,7 @@ function Field({
             style={styles.fieldIcon}
           />
         )}
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.3}
           style={styles.fieldInput}
           value={value}
           onChangeText={onChangeText}
@@ -110,7 +114,7 @@ function Field({
           autoCorrect={false}
         />
         {secure && (
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
             onPress={() => setVisible(v => !v)}
             style={styles.eyeBtn}
             activeOpacity={0.7}
@@ -123,19 +127,18 @@ function Field({
           </TouchableOpacity>
         )}
       </View>
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
+      {!!error && <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
 
 // ── Main screen ────────────────────────────────────────────────────────────────
 export function OwnerLoginScreen({ initialTab = 0 }: Props) {
-  const loginOwner   = usePGowStore(s => s.loginOwner);
-  const loginManager = usePGowStore(s => s.loginManager);
-  const loginStaff   = usePGowStore(s => s.loginStaff);
-  const loginGuest   = usePGowStore(s => s.loginGuest);
-  const resetGuestPassword = usePGowStore(s => s.resetGuestPassword);
-  const joinPG       = usePGowStore(s => s.joinPG);
+  const loginMutation = useLogin();
+  const pinLoginMutation = usePinLogin();
+  const joinMutation = useJoinPgMutation();
+  const changePasswordMutation = useChangePassword();
+  const refreshAll = usePGowStore(s => s.refreshAll);
   const guestScanCodeInput = usePGowStore(s => s.guestScanCodeInput);
   const set          = usePGowStore(s => s.set);
   const guestNameInput    = usePGowStore(s => s.guestNameInput);
@@ -143,9 +146,26 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const guestPhoneInput   = usePGowStore(s => s.guestPhoneInput);
   const guestRoomInput    = usePGowStore(s => s.guestRoomInput);
   const guestPasswordInput = usePGowStore(s => s.guestPasswordInput);
-  const completeFirstTimePasswordChange = usePGowStore(s => s.completeFirstTimePasswordChange);
   const toast = useToast();
   const insets = useSafeAreaInsets();
+
+  // Bridges the freshly-derived role into this store's own mirrors for the app's other,
+  // not-yet-migrated screens that read `activeRole`/`isManagerMode` off it — navigation
+  // itself only needs `useAuthStore.activeRole`, which the login/PIN/change-password
+  // mutations already set via `useTokenLanding`.
+  const applyRoleBridge = async () => {
+    const role = toUserRole(useAuthStore.getState().activeRole);
+    usePGowStore.getState().patch({ activeRole: role, isManagerMode: role === 'MANAGER' });
+    await refreshAll();
+  };
+
+  const failureMessage = (err: unknown, invalidCredsMsg: string) =>
+    err instanceof PGowApiError && err.httpStatus === 401
+      ? invalidCredsMsg
+      : err instanceof Error ? err.message : 'Unknown error';
+
+  const isPasswordChangeRequired = (err: unknown) =>
+    err instanceof PGowApiError && err.httpStatus === 403 && err.message.toLowerCase().includes('password');
 
   // ── Tab state ────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState(initialTab);
@@ -153,7 +173,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const offset = useSharedValue(initialTab);
 
   const handleTabPress = (idx: number) => {
-    hapticSelect();
     setTab(idx);
     offset.value = withSpring(idx, { damping: 22, stiffness: 220, mass: 0.8 });
   };
@@ -191,10 +210,6 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const [guestMode,    setGuestMode]    = useState<'LOGIN' | 'JOIN'>('LOGIN');
   const [guestPhone,   setGuestPhone]   = useState('');
   const [guestPass,    setGuestPass]    = useState('');
-  const [showReset,    setShowReset]    = useState(false);
-  const [resetEmail,   setResetEmail]   = useState('');
-  const [resetRoom,    setResetRoom]    = useState('');
-  const [resetNew,     setResetNew]     = useState('');
   const [isScanSim,    setIsScanSim]    = useState(false);
 
   // ── First-time password modal ────────────────────────────────────────────────
@@ -207,115 +222,131 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
   const handleOwnerLogin = async () => {
     if (!phone.trim() || !password.trim()) return;
     setOwnerLoading(true);
-    const result = await loginOwner(phone, password);
-    setOwnerLoading(false);
-    if (result.ok) {
-      hapticSuccess();
+    try {
+      const data = await loginMutation.mutateAsync({ phone: map.toE164(phone), password });
+      if (data.must_change_password) {
+        setTempPass(password);
+        setShowFTP(true);
+        return;
+      }
+      await applyRoleBridge();
       toast('success', 'Welcome back!', 'Owner dashboard loading…');
       router.replace('/');
-    } else if (result.mustChangePassword) {
-      hapticSelect();
-      setTempPass(password);
-      setShowFTP(true);
-    } else {
-      hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown error');
+    } catch (err) {
+      if (isPasswordChangeRequired(err)) {
+        setTempPass(password);
+        setShowFTP(true);
+        return;
+      }
+      Alert.alert('Login Failed', failureMessage(err, 'Invalid phone number or password.'));
+    } finally {
+      setOwnerLoading(false);
     }
   };
 
   const handleManagerLogin = async () => {
     if (!mgrPhone.trim() || !mgrPin.trim()) return;
     setManagerLoading(true);
-    const result = await loginManager(mgrPhone, mgrPin);
-    setManagerLoading(false);
-    if (result.ok) {
-      hapticSuccess();
+    try {
+      await pinLoginMutation.mutateAsync({ phone: map.toE164(mgrPhone), pin: mgrPin.trim() });
+      await applyRoleBridge();
       toast('success', 'Welcome Manager!', 'Manager dashboard loading…');
       router.replace('/');
-    } else {
-      hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown error');
+    } catch (err) {
+      Alert.alert('Login Failed', failureMessage(err, 'Invalid phone number or PIN.'));
+    } finally {
+      setManagerLoading(false);
     }
   };
 
   const handleStaffLogin = async () => {
     if (!staffPhone.trim() || !staffPin.trim()) return;
     setStaffLoading(true);
-    const result = await loginStaff(staffPhone, staffPin);
-    setStaffLoading(false);
-    if (result.ok) {
-      hapticSuccess();
+    try {
+      await pinLoginMutation.mutateAsync({ phone: map.toE164(staffPhone), pin: staffPin.trim() });
+      await applyRoleBridge();
       toast('success', 'Welcome!', 'Staff dashboard loading…');
       router.replace('/');
-    } else {
-      hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown error');
+    } catch (err) {
+      Alert.alert('Login Failed', failureMessage(err, 'Invalid phone number or PIN.'));
+    } finally {
+      setStaffLoading(false);
     }
   };
 
   const handleGuestLogin = async () => {
     if (!guestPhone.trim() || !guestPass.trim()) return;
     setGuestLoading(true);
-    const result = await loginGuest(guestPhone, guestPass);
-    setGuestLoading(false);
-    if (result.ok) {
-      hapticSuccess();
+    try {
+      const data = await loginMutation.mutateAsync({ phone: map.toE164(guestPhone), password: guestPass, asGuest: true });
+      if (data.must_change_password) {
+        setTempPass(guestPass);
+        setShowFTP(true);
+        return;
+      }
+      await applyRoleBridge();
       toast('success', 'Welcome Resident!', 'Your resident dashboard is ready.');
       router.replace('/');
-    } else if (result.mustChangePassword) {
-      hapticSelect();
-      setTempPass(guestPass);
-      setShowFTP(true);
-    } else {
-      hapticError();
-      Alert.alert('Login Failed', result.error ?? 'Unknown error');
+    } catch (err) {
+      if (isPasswordChangeRequired(err)) {
+        setTempPass(guestPass);
+        setShowFTP(true);
+        return;
+      }
+      Alert.alert('Login Failed', failureMessage(err, 'Invalid phone number or password.'));
+    } finally {
+      setGuestLoading(false);
     }
   };
 
   const handleJoin = async () => {
-    const result = await joinPG();
-    if (result.ok) {
-      hapticSuccess();
+    if (!guestNameInput.trim() || !guestPhoneInput.trim() || !guestScanCodeInput.trim()) {
+      Alert.alert('Failed', 'Please fill your name, phone number and the PG code.');
+      return;
+    }
+    if (!guestRoomInput.trim()) {
+      Alert.alert('Failed', 'Please enter your room number.');
+      return;
+    }
+    if (guestPasswordInput.length < 8) {
+      Alert.alert('Failed', 'Choose a password of at least 8 characters.');
+      return;
+    }
+    try {
+      await joinMutation.mutateAsync({
+        join_code: guestScanCodeInput.trim(),
+        name: guestNameInput.trim(),
+        phone: map.toE164(guestPhoneInput),
+        password: guestPasswordInput,
+        room_no: guestRoomInput.trim(),
+        email: guestEmailInput.trim().toLowerCase() || undefined,
+      });
+      set('guestPasswordInput', '');
+      await applyRoleBridge();
       toast('success', 'QR Verified!', 'Resident profile created.');
       router.replace('/');
-    } else {
-      hapticError();
-      Alert.alert('Failed', result.error ?? 'Unknown error');
-    }
-  };
-
-  const handleReset = async () => {
-    const result = await resetGuestPassword(resetEmail, resetRoom, resetNew);
-    if (result.ok) {
-      hapticSuccess();
-      toast('success', 'Passcode updated', 'You can log in now.');
-      setShowReset(false);
-    } else {
-      hapticError();
-      Alert.alert('Failed', result.error ?? 'Unknown error');
+    } catch (err) {
+      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
   const handleFTPSubmit = async () => {
     if (!ftpNew.trim() || ftpNew.length < 8) {
-      hapticError();
       Alert.alert('Error', 'New password must be at least 8 characters.');
       return;
     }
     if (ftpNew !== ftpConfirm) {
-      hapticError();
       Alert.alert('Error', 'Passwords do not match.');
       return;
     }
-    const result = await completeFirstTimePasswordChange(tempPass, ftpNew);
-    if (result.ok) {
-      hapticSuccess();
+    try {
+      await changePasswordMutation.mutateAsync({ current_password: tempPass, new_password: ftpNew });
+      await applyRoleBridge();
       setShowFTP(false);
       toast('success', 'Password updated', 'Welcome to your dashboard.');
       router.replace('/');
-    } else {
-      hapticError();
-      Alert.alert('Password Change Failed', result.error ?? 'Could not update password');
+    } catch (err) {
+      Alert.alert('Password Change Failed', err instanceof Error ? err.message : 'Could not update password');
     }
   };
 
@@ -336,36 +367,17 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
         <View style={styles.backdrop}>
           <View style={styles.modalCard}>
             <Row gap={6} align="center" style={{ marginBottom: 16 }}>
-              <Text style={styles.modalTitle}>🔒 Set New Password</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>🔒 Set New Password</Text>
               <InfoTip text="Your account was created with a temporary password. Please set your own secret password (min 8 characters) to continue." />
             </Row>
             <Field label="New Password *" value={ftpNew} onChangeText={setFtpNew} secure testID="first_time_new_password" />
             <Field label="Confirm Password *" value={ftpConfirm} onChangeText={setFtpConfirm} secure testID="first_time_confirm_password" />
             <View style={{ height: 4 }} />
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleFTPSubmit} activeOpacity={0.85}>
-              <Text style={styles.primaryBtnText}>Set Password & Log In</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.primaryBtn} onPress={handleFTPSubmit} activeOpacity={0.85}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>Set Password & Log In</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.ghostBtn} onPress={() => setShowFTP(false)} activeOpacity={0.7}>
-              <Text style={styles.ghostBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* ── Reset passcode modal ──────────────────────────────────────────── */}
-      <Modal visible={showReset} transparent animationType="fade">
-        <View style={styles.backdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Reset Guest Passcode</Text>
-            <View style={{ height: 12 }} />
-            <Field label="Registered Email" value={resetEmail} onChangeText={setResetEmail} keyboard="email-address" testID="reset_email_input" />
-            <Field label="Registered Room No" value={resetRoom} onChangeText={setResetRoom} testID="reset_room_input" />
-            <Field label="New Passcode / Password" value={resetNew} onChangeText={setResetNew} secure testID="reset_new_password_input" />
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleReset} activeOpacity={0.85}>
-              <Text style={styles.primaryBtnText}>Update Passcode</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.ghostBtn} onPress={() => setShowReset(false)} activeOpacity={0.7}>
-              <Text style={styles.ghostBtnText}>Cancel</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.ghostBtn} onPress={() => setShowFTP(false)} activeOpacity={0.7}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.ghostBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -375,10 +387,10 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
       <Modal visible={isScanSim} transparent animationType="fade">
         <View style={styles.backdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Lobby QR Code Scanner</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Lobby QR Code Scanner</Text>
             <View style={{ height: 12 }} />
             <View style={styles.scannerFrame}>
-              <Text style={{ color: MUTED, fontSize: 12 }}>[ simulated camera frame ]</Text>
+              <Text maxFontSizeMultiplier={1.3} style={{ color: MUTED, fontSize: 12 }}>[ simulated camera frame ]</Text>
             </View>
             <View style={{ height: 16 }} />
             <Field
@@ -388,15 +400,15 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
               onChangeText={v => set('guestScanCodeInput', v)}
               testID="manual_qr_input"
             />
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={styles.primaryBtn}
               onPress={() => { setIsScanSim(false); handleJoin(); }}
               activeOpacity={0.85}
             >
-              <Text style={styles.primaryBtnText}>Verify & Link PG</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>Verify & Link PG</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.ghostBtn} onPress={() => setIsScanSim(false)} activeOpacity={0.7}>
-              <Text style={styles.ghostBtnText}>Cancel</Text>
+            <TouchableOpacity accessibilityRole="button" style={styles.ghostBtn} onPress={() => setIsScanSim(false)} activeOpacity={0.7}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.ghostBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -404,20 +416,20 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
 
       {/* ── Compact nav bar ───────────────────────────────────────────────── */}
       <View style={[styles.navBar, { paddingTop: insets.top, height: 60 + insets.top }]}>
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
           onPress={() => router.back()}
           style={styles.backBtn}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={22} color={CHARCOAL} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>PG Portal Login</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.navTitle}>PG Portal Login</Text>
         <View style={styles.backBtn} />
       </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'android' ? 'padding' : undefined}
+        behavior="padding"
       >
         <ScrollView
           style={{ flex: 1 }}
@@ -437,13 +449,13 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
               {TABS.map((t, idx) => {
                 const sel = tab === idx;
                 return (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={t.label}
                     style={styles.segTab}
                     onPress={() => handleTabPress(idx)}
                     activeOpacity={0.75}
                   >
-                    <Text style={[styles.segLabel, sel && styles.segLabelSel]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.segLabel, sel && styles.segLabelSel]}>
                       {t.label}
                     </Text>
                   </TouchableOpacity>
@@ -459,9 +471,9 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
             exiting={FadeOut.duration(100)}
             style={{ marginTop: 28, marginBottom: 4 }}
           >
-            <Text style={styles.welcomeText}>Welcome back</Text>
-            <Text style={styles.roleTitle}>{intro.title}</Text>
-            <Text style={styles.roleSub}>{intro.sub}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.welcomeText}>Welcome back</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.roleTitle}>{intro.title}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.roleSub}>{intro.sub}</Text>
           </Animated.View>
 
           <View style={styles.divider} />
@@ -494,11 +506,15 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                   secure
                   testID="owner_login_password"
                 />
-                <TouchableOpacity style={styles.forgotLink} activeOpacity={0.7}>
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                <TouchableOpacity accessibilityRole="button"
+                  style={styles.forgotLink}
+                  activeOpacity={0.7}
+                  onPress={() => router.push('/(auth)/reset-password')}
+                >
+                  <Text maxFontSizeMultiplier={1.3} style={styles.forgotText}>Forgot Password?</Text>
                 </TouchableOpacity>
                 <View style={{ height: 24 }} />
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.primaryBtn, (!phone.trim() || !password.trim()) && styles.primaryBtnDisabled]}
                   onPress={handleOwnerLogin}
                   activeOpacity={0.85}
@@ -507,13 +523,13 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 >
                   {ownerLoading
                     ? <ActivityIndicator color={WHITE} />
-                    : <Text style={styles.primaryBtnText}>Log In as Owner</Text>
+                    : <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>Log In as Owner</Text>
                   }
                 </TouchableOpacity>
                 <View style={styles.registerRow}>
-                  <Text style={styles.registerText}>Don't have an account? </Text>
-                  <TouchableOpacity onPress={() => router.push('/(auth)/owner-register')} activeOpacity={0.7}>
-                    <Text style={styles.registerLink}>Register your PG</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.registerText}>Don't have an account? </Text>
+                  <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/(auth)/owner-register')} activeOpacity={0.7}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.registerLink}>Register your PG</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -543,9 +559,9 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                   maxLength={4}
                   testID="manager_login_pin_input"
                 />
-                <Text style={styles.hintText}>Your PG owner sets this PIN when they add you.</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.hintText}>Your PG owner sets this PIN when they add you.</Text>
                 <View style={{ height: 24 }} />
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.primaryBtn, (!mgrPhone.trim() || !mgrPin.trim()) && styles.primaryBtnDisabled]}
                   onPress={handleManagerLogin}
                   activeOpacity={0.85}
@@ -554,7 +570,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 >
                   {managerLoading
                     ? <ActivityIndicator color={WHITE} />
-                    : <Text style={styles.primaryBtnText}>Log In as Manager</Text>
+                    : <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>Log In as Manager</Text>
                   }
                 </TouchableOpacity>
               </View>
@@ -567,9 +583,9 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 <View style={styles.routeInfoBox}>
                   <Row gap={6} align="center" style={{ marginBottom: 6 }}>
                     <Ionicons name="information-circle-outline" size={16} color={GREEN} />
-                    <Text style={styles.routeInfoTitle}>Unified Dynamic Routing</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.routeInfoTitle}>Unified Dynamic Routing</Text>
                   </Row>
-                  <Text style={styles.routeInfoSub}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.routeInfoSub}>
                     Enter your credentials. The system automatically detects your role
                     and routes you to the correct portal.
                   </Text>
@@ -581,7 +597,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                     ].map(item => (
                       <View key={item.label} style={styles.routeChip}>
                         <Ionicons name={item.icon} size={13} color={GREEN} />
-                        <Text style={styles.routeChipLabel}>{item.label}</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.routeChipLabel}>{item.label}</Text>
                       </View>
                     ))}
                   </Row>
@@ -608,9 +624,9 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                   maxLength={4}
                   testID="staff_login_pin"
                 />
-                <Text style={styles.hintText}>Your PG owner sets this PIN when they add you.</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.hintText}>Your PG owner sets this PIN when they add you.</Text>
                 <View style={{ height: 24 }} />
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.primaryBtn, (!staffPhone.trim() || !staffPin.trim()) && styles.primaryBtnDisabled]}
                   onPress={handleStaffLogin}
                   activeOpacity={0.85}
@@ -619,7 +635,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                 >
                   {staffLoading
                     ? <ActivityIndicator color={WHITE} />
-                    : <Text style={styles.primaryBtnText}>Access Staff Dashboard</Text>
+                    : <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>Access Staff Dashboard</Text>
                   }
                 </TouchableOpacity>
               </View>
@@ -630,21 +646,21 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
               <View>
                 {/* Login / Join sub-toggle */}
                 <View style={styles.subToggle}>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.subToggleBtn, guestMode === 'LOGIN' && styles.subToggleBtnSel]}
-                    onPress={() => { hapticSelect(); setGuestMode('LOGIN'); }}
+                    onPress={() => { setGuestMode('LOGIN'); }}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.subToggleLabel, guestMode === 'LOGIN' && styles.subToggleLabelSel]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.subToggleLabel, guestMode === 'LOGIN' && styles.subToggleLabelSel]}>
                       Resident Login
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.subToggleBtn, guestMode === 'JOIN' && styles.subToggleBtnSel]}
-                    onPress={() => { hapticSelect(); setGuestMode('JOIN'); }}
+                    onPress={() => { setGuestMode('JOIN'); }}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.subToggleLabel, guestMode === 'JOIN' && styles.subToggleLabelSel]}>
+                    <Text maxFontSizeMultiplier={1.3} style={[styles.subToggleLabel, guestMode === 'JOIN' && styles.subToggleLabelSel]}>
                       Join via QR Code
                     </Text>
                   </TouchableOpacity>
@@ -671,15 +687,15 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                       secure
                       testID="guest_login_password"
                     />
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.forgotLink}
-                      onPress={() => setShowReset(true)}
+                      onPress={() => router.push('/(auth)/reset-password')}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.forgotText}>Forgot Password?</Text>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.forgotText}>Forgot Password?</Text>
                     </TouchableOpacity>
                     <View style={{ height: 24 }} />
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={[styles.primaryBtn, (!guestPhone.trim() || !guestPass.trim()) && styles.primaryBtnDisabled]}
                       onPress={handleGuestLogin}
                       activeOpacity={0.85}
@@ -688,7 +704,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                     >
                       {guestLoading
                         ? <ActivityIndicator color={WHITE} />
-                        : <Text style={styles.primaryBtnText}>Access Resident Account</Text>
+                        : <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>Access Resident Account</Text>
                       }
                     </TouchableOpacity>
                   </View>
@@ -708,7 +724,7 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                     <Field label="PG Code (from lobby poster) *" placeholder="DZQP9899" value={guestScanCodeInput} onChangeText={v => set('guestScanCodeInput', v.toUpperCase())} icon="qr-code-outline" testID="guest_join_code_input" />
 
                     {/* QR scan shortcut */}
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.qrCard}
                       onPress={() => {
                         setIsScanSim(true);
@@ -718,16 +734,16 @@ export function OwnerLoginScreen({ initialTab = 0 }: Props) {
                     >
                       <Ionicons name="qr-code-sharp" size={36} color={GREEN} />
                       <View style={{ marginLeft: 14 }}>
-                        <Text style={styles.qrCardTitle}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.qrCardTitle}>
                           {guestScanCodeInput ? `Code: ${guestScanCodeInput} ✅` : 'Enter PG Lobby Code'}
                         </Text>
-                        <Text style={styles.qrCardSub}>Tap to simulate lobby code capture</Text>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.qrCardSub}>Tap to simulate lobby code capture</Text>
                       </View>
                     </TouchableOpacity>
 
                     <View style={{ height: 16 }} />
-                    <TouchableOpacity style={styles.primaryBtn} onPress={handleJoin} activeOpacity={0.85} testID="guest_join_submit">
-                      <Text style={styles.primaryBtnText}>Join This PG</Text>
+                    <TouchableOpacity accessibilityRole="button" style={styles.primaryBtn} onPress={handleJoin} activeOpacity={0.85} testID="guest_join_submit">
+                      <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>Join This PG</Text>
                     </TouchableOpacity>
                   </View>
                 )}

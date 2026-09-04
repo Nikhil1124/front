@@ -1,4 +1,4 @@
-import { SupplyItem, SupplyOrderSummary } from '@/types';
+import { SupplyOrderSummary } from '@/types';
 import React from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
@@ -6,10 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSupplyOrdersQuery } from '../useSupplyOrders';
-import { useCartStore } from '../store/useCartStore';
-import { useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
-import { Colors, Layout, Radii } from '@/theme';
+import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 export function GroceryOrdersScreen() {
@@ -26,31 +24,31 @@ export function GroceryOrdersScreen() {
   };
 
   const renderOrder = ({ item }: { item: SupplyOrderSummary }) => (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       style={styles.orderCard}
       onPress={() => openOrder(item.id)}
       activeOpacity={0.9}
     >
       <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>Order #{item.order_no || item.id.slice(0, 8)}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.orderId}>Order #{item.order_no || item.id.slice(0, 8)}</Text>
         <View style={[styles.statusBadge, item.status !== 'delivered' && styles.activeStatusBadge]}>
-          <Text style={[styles.statusText, item.status !== 'delivered' && styles.activeStatusText]}>
+          <Text maxFontSizeMultiplier={1.3} style={[styles.statusText, item.status !== 'delivered' && styles.activeStatusText]}>
             {item.status.toUpperCase()}
           </Text>
         </View>
       </View>
 
-      <Text style={styles.orderDate}>
+      <Text maxFontSizeMultiplier={1.3} style={styles.orderDate}>
         {new Date(item.created_at).toLocaleDateString()} · {item.item_count} items
       </Text>
 
       <View style={styles.divider} />
 
       <View style={styles.orderFooter}>
-        <Text style={styles.orderTotal}>₹{Number(item.total_amount).toFixed(2)}</Text>
-        <TouchableOpacity style={styles.reorderBtn} onPress={() => openOrder(item.id)}>
+        <Text maxFontSizeMultiplier={1.3} style={styles.orderTotal}>₹{Number(item.total_amount).toFixed(2)}</Text>
+        <TouchableOpacity accessibilityRole="button" style={styles.reorderBtn} onPress={() => openOrder(item.id)}>
           <Ionicons name="eye-outline" size={15} color={Colors.primary} />
-          <Text style={styles.reorderText}>View Status</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.reorderText}>View Status</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -63,12 +61,12 @@ export function GroceryOrdersScreen() {
           pushed under anything, so it sat directly under the notch. */}
       <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Your Orders</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Your Orders</Text>
         </View>
-        <TouchableOpacity onPress={logout}>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Log out" accessibilityRole="button" onPress={logout}>
           <Ionicons name="log-out-outline" size={24} color={Colors.danger} />
         </TouchableOpacity>
       </View>
@@ -90,7 +88,7 @@ export function GroceryOrdersScreen() {
             <>
               {/* Active Order Banner */}
               {activeOrder && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.activeBanner}
                   onPress={() => openOrder(activeOrder.id)}
                   activeOpacity={0.9}
@@ -98,10 +96,10 @@ export function GroceryOrdersScreen() {
                   <View style={styles.activeBannerLeft}>
                     <View style={styles.pulseDot} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.activeBannerTitle}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.activeBannerTitle}>
                         Order #{activeOrder.order_no || activeOrder.id.slice(0, 8)} is {activeOrder.status.toUpperCase()}
                       </Text>
-                      <Text style={styles.activeBannerSub}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.activeBannerSub}>
                         Tap to track live updates
                       </Text>
                     </View>
@@ -110,13 +108,13 @@ export function GroceryOrdersScreen() {
                 </TouchableOpacity>
               )}
 
-              <Text style={styles.sectionTitle}>Order History</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order History</Text>
             </>
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
               <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No orders yet</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>No orders yet</Text>
             </View>
           }
         />
@@ -201,51 +199,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     marginBottom: 12,
-  },
-  buyAgainSection: {
-    marginBottom: 16,
-  },
-  buyAgainList: {
-    gap: 10,
-  },
-  buyAgainCard: {
-    width: 120,
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.xl,
-    padding: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    ...Layout.shadowCard,
-  },
-  buyAgainImg: {
-    width: 50,
-    height: 50,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.surfaceMuted,
-    marginBottom: 6,
-  },
-  buyAgainName: {
-    fontSize: 12,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  buyAgainPrice: {
-    fontSize: 12,
-    color: Colors.textPrimary,
-    marginVertical: 4,
-  },
-  addAgainBtn: {
-    backgroundColor: Colors.surfaceElevated,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  addAgainText: {
-    color: Colors.primary,
-    fontSize: 11,
   },
   orderCard: {
     backgroundColor: Colors.surface,

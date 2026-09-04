@@ -12,10 +12,16 @@ import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
 import { Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
+import { fetchMe, useRegister } from '@/features/auth/useAuth';
+import { useCreatePropertyMutation } from '@/features/properties/useProperties';
+import * as map from '@/data/mappers';
 
 export function OwnerRegisterScreen() {
-  const registerOwner = usePGowStore((s) => s.registerOwner);
+  const registerMutation = useRegister();
+  const createPropertyMutation = useCreatePropertyMutation();
+  const refreshAll = usePGowStore((s) => s.refreshAll);
   const [picking, setPicking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const insets = useSafeAreaInsets();
@@ -28,26 +34,65 @@ export function OwnerRegisterScreen() {
   const ownerPasswordInput = usePGowStore((s) => s.ownerPasswordInput);
   const ownerAddressInput = usePGowStore((s) => s.ownerAddressInput);
   const ownerLocationInput = usePGowStore((s) => s.ownerLocationInput);
+  const pgTotalBedsInput = usePGowStore((s) => s.pgTotalBedsInput);
   const set = usePGowStore((s) => s.set);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
+    // Checked before the account is created, not after: registering and then failing on the
+    // property would leave a signed-in owner with no PG and no obvious way back.
+    if (!pgNameInput.trim() || !ownerNameInput.trim() || !ownerPhoneInput.trim()) {
+      Alert.alert('Registration Failed', 'Please fill all required fields.');
+      return;
+    }
+    if (ownerPasswordInput.length < 8) {
+      Alert.alert('Registration Failed', 'Password must be at least 8 characters.');
+      return;
+    }
+    if (!ownerLocationInput) {
+      Alert.alert('Registration Failed', 'Pin your PG on the map before registering.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const result = await registerOwner();
-      if (result.ok) {
-        Alert.alert('Registration Successful!', 'Configure bed capacity.');
-      } else {
-        Alert.alert('Registration Failed', result.error ?? 'Unknown error');
-      }
+      await registerMutation.mutateAsync({
+        name: ownerNameInput.trim(),
+        phone: map.toE164(ownerPhoneInput),
+        password: ownerPasswordInput,
+        email: ownerEmailInput.trim().toLowerCase() || undefined,
+      });
+      // The account exists now; the property is what makes them an owner.
+      const pg = await createPropertyMutation.mutateAsync({
+        name: pgNameInput.trim(),
+        total_beds: parseInt(pgTotalBedsInput, 10) || 30,
+        address: ownerAddressInput.trim() || undefined,
+        latitude: ownerLocationInput.latitude,
+        longitude: ownerLocationInput.longitude,
+      });
+      // Resync: `useAuthStore.activeRole` was set from a membership-less user right after
+      // register, and `usePGowStore`'s own mirrors (loggedInOwner, etc.) are still empty —
+      // both need the fresh property before this screen hands off to the dashboard.
+      useAuthStore.getState().setUser(await fetchMe());
+      await useAuthStore.getState().setActivePgId(pg.id);
+      await refreshAll();
+      set('ownerPasswordInput', '');
+      set('ownerLocationInput', null);
+      router.replace('/');
+    } catch (err) {
+      Alert.alert('Registration Failed', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (picking) {
+    // Explicitly edge-to-edge, rather than riding on the platform default: LocationPicker
+    // pads its own controls by the safe-area insets, and those insets only describe this
+    // modal if the modal actually extends under the system bars. Pinning both keeps the two
+    // halves of that contract in step. RN warns if the nav bar is translucent without the
+    // status bar, so they are set together.
     return (
-      <Modal visible animationType="slide">
+      <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
         <LocationPicker
           initial={ownerLocationInput}
           onConfirm={(picked) => {
@@ -116,6 +161,15 @@ export function OwnerRegisterScreen() {
         leadingIcon="lock-closed"
         secureTextEntry
         testID="owner_password_input"
+        style={{ marginBottom: 12 }}
+      />
+      <OutlinedTextField
+        label="Total Bed Capacity *"
+        value={pgTotalBedsInput}
+        onChangeText={(v) => set('pgTotalBedsInput', v.replace(/\D/g, ''))}
+        leadingIcon="bed"
+        keyboardType="number-pad"
+        testID="pg_total_beds_input"
         style={{ marginBottom: 12 }}
       />
       <AddressAutocompleteField

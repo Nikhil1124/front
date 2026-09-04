@@ -104,12 +104,13 @@ assert.equal(staff.loginPin, "", "a PIN must never come back from the server");
 // ─── Meals ──────────────────────────────────────────────────────────────────
 const meal = toMeal({
   id: "meal-1", pg_id: "pg-1", meal_type: "breakfast",
-  menu_items: "Idli, Sambar", chef_note: "", service_at: "2026-08-06T08:30:00+05:30",
+  menu_items: "Idli, Sambar", dietary_type: "veg", chef_note: "", service_at: "2026-08-06T08:30:00+05:30",
   response_closes_at: null, is_open: false, is_broadcast: true, created_by: "u-2",
 });
 assert.equal(meal.mealType, "Breakfast");
 assert.equal(meal.isClosed, true, "is_open inverts into isClosed");
 assert.equal(meal.isAlertSent, true);
+assert.equal(meal.dietaryType, "veg");
 assert.match(meal.serviceTime, /^\d{2}:\d{2}$/, "HH:mm, zero-padded");
 
 // ─── Payments ───────────────────────────────────────────────────────────────

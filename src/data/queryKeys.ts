@@ -149,6 +149,10 @@ export const qk = {
     ordersAll: () => ["procurement", "orders"] as const,
   },
 
+  subscriptions: {
+    list: (pgId: string) => ["subscriptions", pgId] as const,
+  },
+
   panic: {
     // The active queue (active + acknowledged). Resolved history is a separate
     // query the manager fetches on demand, so it does not need its own key here

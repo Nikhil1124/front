@@ -22,19 +22,19 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
     return (
       <View style={styles.compactRow}>
         <Ionicons name={current.icon} size={12} color={Colors.primary} />
-        <Text style={styles.compactText}>{current.label}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.compactText}>{current.label}</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>If item is unavailable:</Text>
+      <Text maxFontSizeMultiplier={1.3} style={styles.title}>If item is unavailable:</Text>
       <View style={styles.optionsList}>
         {OPTIONS.map((opt) => {
           const selected = opt.value === value;
           return (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               key={opt.value}
               style={[styles.optionCard, selected && styles.selectedOptionCard]}
               onPress={() => onChange(opt.value)}
@@ -45,7 +45,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
                 size={18}
                 color={selected ? Colors.primary : Colors.textSecondary}
               />
-              <Text style={[styles.optionLabel, selected && styles.selectedLabel]}>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.optionLabel, selected && styles.selectedLabel]}>
                 {opt.label}
               </Text>
               <Ionicons
