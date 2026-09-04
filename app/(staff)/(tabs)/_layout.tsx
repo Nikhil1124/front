@@ -8,11 +8,11 @@ import { forwardRef } from 'react';
 import { View, StyleSheet, type View as RNView, type PressableProps, Pressable } from 'react-native';
 import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { Txt, Col } from '@/components/ui';
+import { Row, Txt, Col } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors } from '@/theme';
 import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
-import { TabHeader } from '@/components/TabHeader';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { router, usePathname } from 'expo-router';
@@ -41,40 +41,23 @@ export default function StaffTabsLayout() {
           so it reads as fixed chrome rather than the first card in the list.
           Hide on the broadcast (Menu) tab to allow for a custom personal header. */}
       {pathname !== '/broadcast' && (
-        <TabHeader
+        <AppHeader
+          title={activeRole === 'delivery_agent' ? 'Delivery Dashboard' : 'Chef Dashboard'}
+          subtitle={activeRole === 'delivery_agent'
+            ? `${staff?.name ?? 'Delivery Agent'} · Delivery Agent`
+            : `Chef: ${staff?.name ?? 'Staff'}`}
           leading={
-            <View style={styles.chefIcon}><Ionicons name={activeRole === 'delivery_agent' ? 'bicycle' : 'restaurant'} size={24} color={Colors.primary} /></View>
+            <View style={styles.chefIcon}>
+              <Ionicons name={activeRole === 'delivery_agent' ? 'bicycle' : 'restaurant'} size={20} color={Colors.primary} />
+            </View>
           }
           actions={
-            <>
-              <AnimatedPress accessibilityLabel="Notifications"
-                scale={0.85}
-                onPress={() => router.push('/notifications')}
-              >
-                <View style={styles.bellBtn}>
-                  <Ionicons name="notifications" size={20} color={Colors.primary} />
-                  {unreadCount > 0 && <View style={styles.unreadDot} />}
-                </View>
-              </AnimatedPress>
-              <AnimatedPress accessibilityLabel="Log out" scale={0.85} onPress={() => { logout(); }}>
-                <View style={styles.bellBtn}>
-                  <Ionicons name="exit" size={20} color={Colors.danger} />
-                </View>
-              </AnimatedPress>
-            </>
+            <Row gap={8}>
+              <HeaderChip icon="notifications" label="Notifications" badge={unreadCount > 0} onPress={() => router.push('/notifications')} />
+              <HeaderChip icon="exit" label="Log out" onPress={() => { logout(); }} />
+            </Row>
           }
-        >
-          <Col style={{ marginLeft: 12 }}>
-            <Txt size={18} weight="900" color={Colors.primaryDark} style={{ letterSpacing: 0.5 }}>
-              {activeRole === 'delivery_agent' ? 'Delivery Dashboard' : 'CHEF DASHBOARD'}
-            </Txt>
-            <Txt size={11} color={Colors.textMuted}>
-              {activeRole === 'delivery_agent'
-                ? `${staff?.name ?? 'Delivery Agent'} · Delivery Agent`
-                : `Chef: ${staff?.name ?? 'Staff'}`}
-            </Txt>
-          </Col>
-        </TabHeader>
+        />
       )}
 
       <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
@@ -122,6 +105,4 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
 
   chefIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
-  bellBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
-  unreadDot: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.danger },
 });

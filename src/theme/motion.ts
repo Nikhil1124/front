@@ -65,3 +65,29 @@ export const dialogExiting = new Keyframe({
     transform: [{ scale: 0.96 }],
   },
 }).duration(Motion.timing.modal);
+
+// Toast banner transitions:
+// Drops in from 12dp above with a fade, leaves the same way. The vertical direction matters —
+// it reads as "arrived from off-screen", which is what separates a transient notice from a
+// card that was always part of the layout.
+export const toastEntering = new Keyframe({
+  0: {
+    opacity: 0,
+    transform: [{ translateY: -12 }],
+  },
+  100: {
+    opacity: 1,
+    transform: [{ translateY: 0 }],
+  },
+}).duration(Motion.timing.modal);
+
+export const toastExiting = new Keyframe({
+  0: {
+    opacity: 1,
+    transform: [{ translateY: 0 }],
+  },
+  100: {
+    opacity: 0,
+    transform: [{ translateY: -12 }],
+  },
+}).duration(Motion.timing.small);

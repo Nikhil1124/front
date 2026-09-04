@@ -1,0 +1,178 @@
+/**
+ * The app's header. One component, two variants, every screen.
+ *
+ * Before this there were three header components and eighteen hand-rolled copies alongside
+ * them — a gradient hero pasted into seven screens, a flat bar pasted into seven grocery
+ * screens, and four one-offs. They had drifted on corner radius, notch gap, row padding, title
+ * size, subtitle opacity and chip diameter, none of which was ever decided.
+ *
+ * ── The two variants ────────────────────────────────────────────────────────────────────────
+ *   root   — a tab root. Brand rule, optional eyebrow line, title, optional actions.
+ *   back   — anything you can navigate out of. Back arrow replaces the rule, no eyebrow.
+ * Pass `onBack` to get the second one. That is the whole decision.
+ *
+ * ── Why light, not the old navy gradient ────────────────────────────────────────────────────
+ * The app renders edge-to-edge with `StatusBar style="dark"`, so the clock and battery draw in
+ * dark ink. Against the old `#011C40` header that was dark-on-dark and effectively unreadable.
+ * A light header is what that status bar style has always assumed.
+ *
+ * ── Where the brand lives ───────────────────────────────────────────────────────────────────
+ * `Colors.primary` appears in this file in exactly one meaningful place: `styles.brandRule`.
+ * The action chips take their tint from `Colors.surfaceElevated` and their icon colour from the
+ * same token. There is no brand name or logo yet, so when one arrives the header follows it by
+ * editing `Colors.primary` alone — nothing here needs to be touched, and no screen hardcodes it.
+ */
+import { type ReactNode } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+
+import { Txt } from '@/components/ui';
+import { Colors } from '@/theme';
+
+const TOP_GAP = 8;
+const ROW_MIN_HEIGHT = 38;
+const PAD_BOTTOM = 13;
+
+/** Height below the safe-area inset. Pinned by `ROW_MIN_HEIGHT` so it is exact, and read by
+ *  anything that floats over a screen — today `AlertOverlay`. */
+export const HEADER_BAND_HEIGHT = TOP_GAP + ROW_MIN_HEIGHT + PAD_BOTTOM + 1;
+
+interface AppHeaderProps {
+  title: string;
+  /** Small muted line above the title — "Good morning, Nikhil". Root variant only. */
+  eyebrow?: string;
+  /** Small muted line below the title — "All your payments in one place". */
+  subtitle?: string;
+  /** Rendered right of the title, inside its tap target: the property-switcher chevron. */
+  titleAdornment?: ReactNode;
+  /** Makes the title itself a button — the owner's PG switcher. */
+  onTitlePress?: () => void;
+  /** Right-hand affordances. Use `HeaderChip` so every screen's buttons match. */
+  actions?: ReactNode;
+  /** Present ⇒ back variant: an arrow replaces the brand rule and the eyebrow is dropped. */
+  onBack?: () => void;
+  /** Replaces the brand rule with something of your own — the resident home's avatar. Ignored
+   *  when `onBack` is given, because a screen you can leave needs its back button more. */
+  leading?: ReactNode;
+  testID?: string;
+}
+
+export function AppHeader({
+  title, eyebrow, subtitle, titleAdornment, onTitlePress, actions, onBack, leading, testID,
+}: AppHeaderProps) {
+  const insets = useSafeAreaInsets();
+
+  const titleBlock = (
+    <View style={styles.titleCol}>
+      {eyebrow && !onBack ? (
+        <Txt size={12} weight="500" color={Colors.textMuted} numberOfLines={1}>{eyebrow}</Txt>
+      ) : null}
+      <View style={styles.titleRow}>
+        <Txt size={17} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ flexShrink: 1 }}>
+          {title}
+        </Txt>
+        {titleAdornment}
+      </View>
+      {subtitle ? (
+        <Txt size={12} weight="500" color={Colors.textMuted} numberOfLines={1}>{subtitle}</Txt>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View
+      testID={testID}
+      style={[styles.header, { paddingTop: insets.top + TOP_GAP }]}
+    >
+      {onBack ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={onBack}
+          style={styles.back}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      ) : (
+        leading ?? <View style={styles.brandRule} />
+      )}
+
+      {onTitlePress ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityHint="Opens the property switcher"
+          onPress={onTitlePress}
+          style={styles.titleCol}
+          activeOpacity={0.7}
+        >
+          {titleBlock}
+        </TouchableOpacity>
+      ) : titleBlock}
+
+      {actions}
+    </View>
+  );
+}
+
+/**
+ * The circular action button in the header's right-hand slot. It exists so the bell on one
+ * screen is the same size as the bell on every other — that was 38px in three places and 36 in
+ * a fourth before. 38 plus hitSlop clears the 48dp minimum target without looking like it does.
+ */
+export function HeaderChip({
+  icon, onPress, label, badge = false,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  label: string;
+  badge?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      onPress={onPress}
+      style={styles.chip}
+      activeOpacity={0.7}
+    >
+      <Ionicons name={icon} size={18} color={Colors.primary} />
+      {badge ? <View style={styles.badge} /> : null}
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    paddingHorizontal: 16,
+    paddingBottom: PAD_BOTTOM,
+    minHeight: ROW_MIN_HEIGHT,
+    backgroundColor: Colors.surface,
+    // A flat bottom edge, deliberately: the old 24px bottom radius left the canvas showing
+    // through at the corners, which read as a rendering seam rather than a shape.
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderSubtle,
+  },
+  // The single place the brand appears. Swap `Colors.primary` and the whole app follows.
+  brandRule: { width: 3, height: 34, backgroundColor: Colors.primary },
+  back: { width: 34, height: ROW_MIN_HEIGHT, alignItems: 'flex-start', justifyContent: 'center' },
+  titleCol: { flex: 1, minWidth: 0, justifyContent: 'center', minHeight: ROW_MIN_HEIGHT },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  chip: {
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.surfaceElevated,
+  },
+  badge: {
+    position: 'absolute', top: 8, right: 8,
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: Colors.danger,
+    borderWidth: 1.5, borderColor: Colors.surface,
+  },
+});

@@ -32,6 +32,12 @@ import * as requestsApi from '@/features/requests/useComplaints';
 import * as rewardsApi from '@/features/rewards/useRewards';
 import * as staffApi from '@/features/staff/useStaff';
 import { useAuthStore, type Membership } from '@/store/authStore';
+// Re-exported so `toUserRole` keeps its established import path (OwnerLoginScreen and
+// others import it from this store); the implementation lives in a module a plain
+// `node` check can reach.
+import { toUserRole } from '@/store/roles';
+
+export { toUserRole };
 import type {
   UserRole,
   PGOwnerEntity,
@@ -83,19 +89,6 @@ async function safeList<T>(label: string, run: () => Promise<T[]>): Promise<T[]>
     }
     return [];
   }
-}
-
-/** Backend membership role → the four roles this UI knows about. Exported so a screen that
- *  signs in via a React Query auth hook (rather than a Zustand action) can still bridge the
- *  result into `activeRole`/`isManagerMode` for the app's other, not-yet-migrated screens
- *  that read those two fields off this store instead of `useAuthStore.activeRole` directly. */
-export function toUserRole(role: Membership['role'] | null): UserRole | null {
-  if (!role) return null;
-  if (role === 'owner') return 'OWNER';
-  if (role === 'manager') return 'MANAGER';
-  if (role === 'guest') return 'GUEST';
-  if (role === 'chef') return 'CHEF';
-  return 'STAFF';
 }
 
 /**

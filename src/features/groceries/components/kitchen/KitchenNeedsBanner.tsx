@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { DayMenuConfig } from '../../data/WeeklyMenuTypes';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 
 interface KitchenNeedsBannerProps {
   config: DayMenuConfig;
@@ -18,11 +18,11 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
   // Dynamic styles based on food type matching:
   // - Green + Cream for Pure Veg
   // - Green + Orange + Cream for Non-Veg
-  const cardBg = isVeg ? '#F0FDF4' : '#FFF7ED';
-  const accentBorder = isVeg ? '#15803D' : '#F97316';
-  const badgeBg = isVeg ? '#DCFCE7' : '#FFEFD6';
-  const badgeText = isVeg ? '#166534' : '#C2410C';
-  const dishText = isVeg ? '#166534' : '#7C2D12';
+  const cardBg = isVeg ? Colors.surfaceElevated : Palette.TintAmber;
+  const accentBorder = isVeg ? Colors.success : Colors.warning;
+  const badgeBg = isVeg ? Colors.surfaceElevated : Palette.TintAmber;
+  const badgeText = isVeg ? Colors.success : Colors.warning;
+  const dishText = isVeg ? Colors.success : Colors.warning;
 
   return (
     <View style={[styles.bannerCard, { backgroundColor: cardBg, borderColor: accentBorder }]}>
@@ -47,7 +47,7 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
       {/* Bottom View Menu Button */}
       <View style={styles.footerRow}>
         <TouchableOpacity accessibilityRole="button"
-          style={[styles.viewMenuBtn, { backgroundColor: isVeg ? '#15803D' : '#F97316' }]}
+          style={[styles.viewMenuBtn, { backgroundColor: isVeg ? Colors.success : Colors.warning }]}
           activeOpacity={0.8}
           onPress={onViewMenuPress}
         >
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignSelf: 'center',
     marginVertical: 10,
-    shadowColor: '#17201A',
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 12,
-    color: '#647067',
+    color: Colors.textSecondary,
     letterSpacing: 1,
   },
   badge: {
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   supportingText: {
     fontSize: 12,
-    color: '#647067',
+    color: Colors.textSecondary,
   },
   footerRow: {
     flexDirection: 'row',

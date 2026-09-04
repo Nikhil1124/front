@@ -4,16 +4,17 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Colors } from '@/theme';
 // Official LUNA Design System Tokens
-const BRAND_NAVY = '#011C40';       // Obsidian Navy
-const BRAND_MIDNIGHT = '#023859';   // Deep Midnight Blue
-const BRAND_OCEAN = '#26658C';      // Deep Ocean Blue
-const BRAND_CYAN = '#54ACBF';       // Cyan Teal
+const BRAND_NAVY = Colors.primaryDark;       // Obsidian Navy
+const BRAND_MIDNIGHT = Colors.textSecondary;   // Deep Midnight Blue
+const BRAND_OCEAN = Colors.primary;      // Deep Ocean Blue
+const BRAND_CYAN = Colors.secondary;       // Cyan Teal
 const BRAND_ICE = '#A7EBF2';        // Soft Ice Cyan
-const BRAND_BG = '#F4F9FB';         // Light Ice Canvas
-const CHARCOAL = '#011C40';         // Dark Navy Text
-const TEXT_MUTED = '#26658C';       // Ocean Text Muted
-const BORDER_COLOR = '#CBEFF4';     // Ice Cyan Border
+const BRAND_BG = Colors.canvas;         // Light Ice Canvas
+const CHARCOAL = Colors.textPrimary;  // Body/heading text — softened from the 15.94:1 navy
+const TEXT_MUTED = Colors.primary;       // Ocean Text Muted
+const BORDER_COLOR = Colors.borderSubtle;     // Ice Cyan Border
 const CARD_BG = '#FFFFFF';
 
 export function WelcomeScreen() {
@@ -34,11 +35,11 @@ export function WelcomeScreen() {
       </View>
 
       <View style={styles.bottomLeftHouse} pointerEvents="none">
-        <Ionicons name="home-outline" size={90} color="#EBF7FA" />
+        <Ionicons name="home-outline" size={90} color={Colors.surfaceElevated} />
       </View>
 
       <View style={styles.bottomRightHouse} pointerEvents="none">
-        <Ionicons name="business-outline" size={100} color="#EBF7FA" />
+        <Ionicons name="business-outline" size={100} color={Colors.surfaceElevated} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.root, { paddingTop: insets.top + 24 }]}>
@@ -196,7 +197,7 @@ export function WelcomeScreen() {
             >
               <Row align="center" justify="space-between" style={{ width: '100%' }}>
                 <Row align="center" gap={12} style={{ flex: 1 }}>
-                  <View style={[styles.iconCircle, { backgroundColor: '#EBF7FA' }]}>
+                  <View style={[styles.iconCircle, { backgroundColor: Colors.surfaceElevated }]}>
                     <Ionicons name="people" size={18} color={BRAND_CYAN} />
                   </View>
                   <Col style={{ flex: 1 }}>
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#EBF7FA',
+    backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
-    backgroundColor: '#EBF7FA',
+    backgroundColor: Colors.surfaceElevated,
   },
   cardShadow: {
     shadowColor: BRAND_NAVY,
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderWidth: 1.5,
-    borderColor: '#EBF7FA',
+    borderColor: Colors.surfaceElevated,
     zIndex: -1,
   },
   dotGrid: {

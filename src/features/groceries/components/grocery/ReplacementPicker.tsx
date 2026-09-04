@@ -34,7 +34,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
         {OPTIONS.map((opt) => {
           const selected = opt.value === value;
           return (
-            <TouchableOpacity accessibilityRole="button"
+            <TouchableOpacity accessibilityState={{ selected: !!selected }} accessibilityRole="button"
               key={opt.value}
               style={[styles.optionCard, selected && styles.selectedOptionCard]}
               onPress={() => onChange(opt.value)}

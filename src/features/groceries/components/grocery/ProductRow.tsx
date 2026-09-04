@@ -67,11 +67,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    color: '#17201A',
+    color: Colors.textPrimary,
   },
   seeAllText: {
     fontSize: 13,
-    color: '#15803D',
+    color: Colors.primary,
   },
   listContent: {
     paddingHorizontal: 16,

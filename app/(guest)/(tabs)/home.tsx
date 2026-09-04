@@ -20,7 +20,6 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card, Txt, Btn, Row, Col, Spacer, LoadingState, ErrorState, OutlinedBtn } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -39,6 +38,7 @@ import { useAuthStore } from '@/store/authStore';
 import { usePropertyQuery } from '@/features/properties/useProperties';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CUTOFF_HOURS: Record<string, number> = { BREAKFAST: 10, LUNCH: 14, DINNER: 21 };
@@ -67,7 +67,6 @@ const DIETARY_TAG: Record<'veg' | 'non_veg' | 'pure_veg', { label: string; color
 };
 
 export default function GuestHomeTab() {
-  const insets = useSafeAreaInsets();
   const [showKycDialog, setShowKycDialog] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -159,58 +158,30 @@ export default function GuestHomeTab() {
     <View style={styles.root}>
 
       {/* ══════════════ HEADER ══════════════ */}
-      <LinearGradient
-        colors={['#011C40', '#023859']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
-      >
-        {/* Decorative wave circles bottom-right */}
-        <View style={styles.hWave1} />
-        <View style={styles.hWave2} />
-        <View style={styles.hWave3} />
-
-        <Row justify="space-between" align="center" style={styles.hRow}>
-          {/* Avatar with white ring */}
+      <AppHeader
+        eyebrow={`${getGreeting()}, ${guest?.name?.split(' ')[0] ?? 'Resident'}`}
+        title={`Room ${guest?.roomNo ?? '—'}`}
+        subtitle="Premium Resident"
+        leading={
           <AnimatedPress accessibilityLabel="Profile" scale={0.93} onPress={() => router.push('/profile')}>
-            <View style={styles.hAvatarRing}>
-              <View style={styles.hAvatar}>
-                {guest?.profilePhotoUri
-                  ? <Image source={{ uri: guest.profilePhotoUri }} style={{ width: '100%', height: '100%' }} />
-                  : <Ionicons name="person" size={28} color={Colors.primaryDark} />
-                }
-              </View>
+            <View style={styles.hAvatar}>
+              {guest?.profilePhotoUri
+                ? <Image source={{ uri: guest.profilePhotoUri }} style={{ width: '100%', height: '100%' }} />
+                : <Ionicons name="person" size={20} color={Colors.primary} />
+              }
             </View>
           </AnimatedPress>
+        }
+        actions={
+          <HeaderChip
+            icon="notifications-outline"
+            label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            badge={unreadCount > 0}
+            onPress={() => router.push('/notifications')}
+          />
+        }
+      />
 
-          {/* Greeting text */}
-          <Col style={{ flex: 1, marginLeft: 14 }}>
-            <Txt size={20} weight="800" color="#FFFFFF" numberOfLines={1}>
-              {getGreeting()}, {guest?.name?.split(' ')[0] ?? 'Resident'} 👋
-            </Txt>
-            <Txt size={13} weight="500" color="rgba(255,255,255,0.75)" style={{ marginTop: 3 }}>
-              Room {guest?.roomNo ?? '—'} • Premium Resident
-            </Txt>
-          </Col>
-
-
-
-          {/* Bell */}
-          <AnimatedPress scale={0.88} onPress={() => router.push('/notifications')}>
-            <View style={styles.hBell}>
-              <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-              {unreadCount > 0 && (
-                <View style={styles.hBellBadge}>
-                  <Txt size={9} weight="900" color="#FFFFFF">{unreadCount}</Txt>
-                </View>
-              )}
-            </View>
-          </AnimatedPress>
-        </Row>
-
-        {/* Rounded bottom that the card overlaps */}
-        <View style={styles.hCurve} />
-      </LinearGradient>
 
       {/* ══════════════ SCROLLABLE CONTENT ══════════════ */}
       <ScrollView
@@ -296,7 +267,7 @@ export default function GuestHomeTab() {
                   <Txt size={13} weight="800" color={isAwayFromPg ? "#92400E" : Colors.textPrimary}>
                     {isAwayFromPg ? "Away from PG (Home Visit)" : "Meal Notifications"}
                   </Txt>
-                  <View style={[styles.vacationChip, { backgroundColor: isAwayFromPg ? '#FEF3C7' : '#EBF7FA' }]}>
+                  <View style={[styles.vacationChip, { backgroundColor: isAwayFromPg ? '#FEF3C7' : Colors.surfaceElevated }]}>
                     <Txt size={9} weight="900" color={isAwayFromPg ? '#D97706' : Colors.primary}>
                       {isAwayFromPg ? "MUTED ✈️" : "ACTIVE 🔔"}
                     </Txt>
@@ -352,13 +323,13 @@ export default function GuestHomeTab() {
             />
             {/* Horizontal left-fade */}
             <LinearGradient
-              colors={['#EBF7FA', 'transparent']}
+              colors={[Colors.surfaceElevated, 'transparent']}
               start={{ x: 0, y: 0.5 }} end={{ x: 0.6, y: 0.5 }}
               style={StyleSheet.absoluteFill}
             />
             {/* Bottom fade */}
             <LinearGradient
-              colors={['transparent', '#EBF7FA']}
+              colors={['transparent', Colors.surfaceElevated]}
               start={{ x: 0.5, y: 0.6 }} end={{ x: 0.5, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
@@ -674,56 +645,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
 
   // ── Header
-  header: {
-    overflow: 'hidden',
-    zIndex: 10,
-  },
-  hRow: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-  },
   // Decorative bubbles
-  hWave1: {
-    position: 'absolute', bottom: -30, right: -40,
-    width: 160, height: 160, borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-  },
-  hWave2: {
-    position: 'absolute', bottom: 5, right: 50,
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  hWave3: {
-    position: 'absolute', bottom: 20, right: -20,
-    width: 70, height: 70, borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
   // Avatar ring
-  hAvatarRing: {
-    width: 62, height: 62, borderRadius: 31,
-    borderWidth: 3, borderColor: '#FFFFFF',
-    padding: 3,
-  },
   hAvatar: {
-    flex: 1, borderRadius: 27,
-    backgroundColor: '#B8DDD9',
-    overflow: 'hidden',
+    width: 38, height: 38, borderRadius: 19, overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.surfaceElevated,
   },
   // Bell
-  hBell: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  hBellBadge: {
-    position: 'absolute', top: -3, right: -3,
-    minWidth: 16, height: 16, borderRadius: 8,
-    backgroundColor: Colors.danger,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 1.5, borderColor: '#0A6E72',
-  },
   vacationHomeCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
@@ -753,12 +682,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#D97706', borderColor: '#D97706',
   },
   // Rounded bottom of header
-  hCurve: {
-    height: 28,
-    backgroundColor: '#F8FAFB',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
 
   // ── Scroll
   scroll: { flex: 1 },

@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   addedBtn: {
     backgroundColor: Colors.surfaceElevated,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
   },
   addBtnText: {
     color: Colors.primary,

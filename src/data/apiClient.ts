@@ -12,7 +12,8 @@
  * screen that means.
  */
 
-import { API, BASE_URL, GATE_CODES, GateCode } from "../config";
+import { API, BASE_URL } from "../config";
+import { gateCodeFrom, type GateCode } from "./gateCodes";
 import { useAuthStore } from "../store/authStore";
 
 // ─── Error shape from every endpoint ─────────────────────────────────────────
@@ -269,8 +270,11 @@ export async function apiFetch<T = unknown>(
   }
 
   // ── 403 gate codes → tell the app, still throw ────────────────────────────
-  if (res.status === 403 && GATE_CODES.includes(apiError.code as GateCode)) {
-    onGate(apiError.code as GateCode);
+  // Same rule the UI uses to decide whether to render a gate notice — one implementation, so
+  // the network layer and the screens can never disagree about what counts as a gate.
+  const gate = gateCodeFrom(res.status, apiError.code);
+  if (gate) {
+    onGate(gate);
     throw new PGowApiError(403, apiError);
   }
 

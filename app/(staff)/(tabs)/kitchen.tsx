@@ -1,6 +1,6 @@
 /** Chef dashboard "Kitchen" tab or Delivery Agent Profile */
 import { useEffect, useState } from 'react';
-import { Alert, View, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native';
+import { Alert, View, StyleSheet, Modal, TouchableOpacity, Pressable, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, Spacer, Col } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -142,14 +142,22 @@ function DeliveryProfileRoute() {
   const staff = usePGowStore((s) => s.loggedInStaff);
   const logout = usePGowStore((s) => s.logout);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { data: realTrips = [] } = useMyTripsQuery();
+  const { data: realTrips = [], error: tripsError, refetch: refetchTrips, isRefetching: tripsRefetching } = useMyTripsQuery();
   
   const activeTrip = realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0];
-  const vehicle = activeTrip?.vehicle_label ?? 'Not assigned';
+  // On a failed fetch this said "Not assigned", telling an agent they have no vehicle when
+  // the truth is the trip list never loaded. Pull down to retry.
+  const vehicle = tripsError
+    ? 'Unavailable — pull to refresh'
+    : (activeTrip?.vehicle_label ?? 'Not assigned');
 
   return (
     <View style={styles.root}>
-      <FormScroll bottomPadding={120} contentContainerStyle={{ padding: 18, gap: 16 }}>
+      <FormScroll
+        bottomPadding={120}
+        contentContainerStyle={{ padding: 18, gap: 16 }}
+        refreshControl={<RefreshControl refreshing={tripsRefetching} onRefresh={refetchTrips} tintColor={Colors.primary} />}
+      >
         <Col align="center" style={{ marginTop: 20 }}>
           <View style={styles.avatarBox}>
             <Txt size={32}>👨‍✈️</Txt>

@@ -14,7 +14,7 @@
  * header (tap the PG name to open it). This screen is analytics only.
  */
 import { View, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
-import { Txt, Row, Spacer } from '@/components/ui';
+import { Txt, Row, Spacer, ErrorState } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Spacing } from '@/theme';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
@@ -30,7 +30,7 @@ function formatINR(n: number): string {
 
 export function PortfolioScreen() {
   const { data: allPGs = [], refetch, isRefetching } = usePropertiesEntitiesQuery();
-  const { data, isLoading } = usePortfolioDetail(allPGs);
+  const { data, isLoading, error: portfolioError, refetch: refetchPortfolio } = usePortfolioDetail(allPGs);
   const responsivePadding = useResponsivePadding();
   const responsiveGap = useResponsiveGap();
 
@@ -40,7 +40,17 @@ export function PortfolioScreen() {
       subtitle={`${allPGs.length} active PG propert${allPGs.length === 1 ? 'y' : 'ies'}`}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
     >
-      {isLoading || !data ? (
+      {/* `isLoading || !data` alone spun forever on a failed fetch: the query settles into an
+          error state, `data` stays undefined, and the spinner never resolves — which reads as
+          a hung app rather than a failure worth retrying. */}
+      {portfolioError ? (
+        <ErrorState
+          error={portfolioError}
+          title="Could not add up your properties"
+          onRetry={refetchPortfolio}
+          fill={false}
+        />
+      ) : isLoading || !data ? (
         <View style={styles.loading}>
           <ActivityIndicator color={Colors.primary} />
           <Txt variant="caption" color={Colors.textMuted} style={{ marginTop: 10 }}>

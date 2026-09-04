@@ -37,7 +37,7 @@ function accentFor(plan: Plan): { colour: string; tag: string; tagBg: string } {
   if (plan.billing_period === 'usage') {
     return { colour: '#8B5CF6', tag: 'DYNAMIC', tagBg: 'rgba(139,92,246,0.15)' };
   }
-  return { colour: '#10B981', tag: 'PREPAID', tagBg: 'rgba(16,185,129,0.15)' };
+  return { colour: Colors.success, tag: 'PREPAID', tagBg: 'rgba(16,185,129,0.15)' };
 }
 
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -156,7 +156,7 @@ export function OwnerSubscriptionScreen() {
               <Txt size={11} weight="900" color={Colors.textInverse} style={{ letterSpacing: 0.5 }}>
                 CURRENT PLAN
               </Txt>
-              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
             </Row>
             <Spacer size={8} />
             <Txt variant="statValue" weight="900" color={Colors.textInverse}>{active.plan_name}</Txt>
@@ -207,7 +207,7 @@ export function OwnerSubscriptionScreen() {
                   <Txt
                     size={11}
                     weight="700"
-                    color={inv.status === 'paid' ? '#10B981' : Colors.secondary}
+                    color={inv.status === 'paid' ? Colors.success : Colors.secondary}
                   >
                     {inv.status === 'paid' ? 'PAID' : inv.method ? 'AWAITING PGOW' : 'DUE'}
                   </Txt>
@@ -217,7 +217,7 @@ export function OwnerSubscriptionScreen() {
                     <Spacer size={10} />
                     <Btn
                       onPress={() => handleReportPayment(inv.id)}
-                      containerColor="#10B981"
+                      containerColor={Colors.success}
                       textColor={Colors.canvas}
                       borderRadius={10}
                       height={38}
@@ -253,7 +253,7 @@ export function OwnerSubscriptionScreen() {
               const accent = accentFor(plan);
               const isSelected = plan.code === selectedCode;
               return (
-                <TouchableOpacity accessibilityRole="button"
+                <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                   key={plan.code}
                   onPress={() => setSelectedCode(plan.code)}
                   style={[
@@ -310,10 +310,10 @@ export function OwnerSubscriptionScreen() {
                         <Btn onPress={() => setBedsCount((c) => (c > 1 ? c - 1 : c))} containerColor="#2C2F3A" textColor={Colors.textInverse} borderRadius={10} height={40} style={{ flex: 1 }}>
                           <Txt variant="cardTitle" color={Colors.textInverse}>-1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor="#10B981" textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
+                        <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor={Colors.success} textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
                           <Txt variant="cardTitle" color={Colors.canvas}>+1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor="#10B981" textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
+                        <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor={Colors.success} textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
                           <Txt variant="cardTitle" color={Colors.canvas}>+10</Txt>
                         </Btn>
                       </Row>

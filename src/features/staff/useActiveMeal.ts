@@ -13,9 +13,15 @@ import type { MealNotificationEntity } from '@/types';
 export function useActiveMeal(): {
   activeMeal: MealNotificationEntity | null;
   setActiveMeal: (meal: MealNotificationEntity) => void;
+  /** Forwarded from the meals query so callers can tell "no meal posted yet" apart from
+   *  "the meal list hasn't loaded" — this hook used to collapse both into `activeMeal: null`,
+   *  and all three chef screens rendered the same "no active meals" copy for either. */
+  isLoading: boolean;
+  error: unknown;
+  refetch: () => void;
 } {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  const { data: notifications = [], isLoading, error, refetch } = useMealsQuery(activePgId ?? undefined);
   const activeId = usePGowStore((s) => s.activeNotificationId);
   const setActiveNotificationId = usePGowStore((s) => s.setActiveNotificationId);
 
@@ -24,5 +30,8 @@ export function useActiveMeal(): {
   return {
     activeMeal,
     setActiveMeal: (meal) => setActiveNotificationId(meal.id),
+    isLoading,
+    error,
+    refetch,
   };
 }

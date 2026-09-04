@@ -1,54 +1,58 @@
 /**
- * 🌙 PGow Official "LUNA" Design System — STRICT Color Palette
+ * 🌙 PGow "LUNA" Design System — palette.
  *
- * STRICT Hex Codes:
- *   - #011C40 : Obsidian Navy Blue (Primary Dark, Headers, Main High-Contrast Text)
- *   - #023859 : Deep Midnight Blue (Header End, Subtitle Text)
- *   - #26658C : Deep Ocean Blue (Primary Brand, Main CTA Buttons, Focus Borders)
- *   - #54ACBF : Cyan Teal (Brand Accents, Secondary Buttons, Active Chips)
- *   - #A7EBF2 : Soft Ice Cyan (Active Highlights, Soft Badges, Ice Chips)
- *   - #F4F9FB : Light Ice Canvas (Clean App Background)
- *   - #FFFFFF : Pure White (Card Surfaces & Floating Bars)
+ * Ocean blue stays the brand; what changed is that every value is now measured rather than
+ * chosen by eye. Three rules it holds to, and the reasons they exist here:
  *
- * ZERO cream colors permitted. STRICT LUNA palette enforcement.
+ * 1. **Anything carrying white text clears 4.5:1.** The previous teal, green and cyan-warning
+ *    fills sat at 2.5–2.6:1 — a white label on them was barely legible in daylight.
+ * 2. **Status colours are different HUES, not different blues.** `warning` was `#54ACBF`,
+ *    the exact same cyan as `secondary`, so "pay your rent" and "here's an accent" rendered
+ *    identically. Amber now means caution, green means good, red means stop.
+ * 3. **Body text is softened, not maximised.** `textPrimary` was 15.94:1 — near the maximum
+ *    possible, and that near-black-on-near-white is a well-known source of eye strain over a
+ *    long session. 12.5:1 is still crisp and considerably kinder.
+ *
+ * Ratios below are against `canvas` (#F6F9FB) for text, and against white for fills.
+ * If you change a value here, re-check it — the three rules above are the contract.
  */
 export const Colors = {
   // ── Surfaces & Canvas ─────────────────────────────────────────────────────
-  canvas: '#F4F9FB',              // Light ice cyan canvas background
+  canvas: '#F6F9FB',              // Light ice cyan canvas background
   surface: '#FFFFFF',             // Pure white cards & dialogs
   surfaceCard: '#FFFFFF',         // Card background
-  surfaceElevated: '#EBF7FA',     // Soft highlighted ice tiles / active chips
+  surfaceElevated: '#EDF4F8',     // Soft highlighted ice tiles / active chips
   surfaceGlass: 'rgba(255, 255, 255, 0.94)', // Glassmorphism modals & floating bars
-  surfaceMuted: '#F4F9FB',        // Secondary background for text fields & disabled states
+  surfaceMuted: '#F6F9FB',        // Secondary background for text fields & disabled states
 
   // ── Brand & Accents ───────────────────────────────────────────────────────
   primary: '#26658C',             // Deep Ocean Blue brand
   primaryDark: '#011C40',         // Obsidian Navy Blue for pressed states & headers
   primaryGlow: 'rgba(38, 101, 140, 0.14)', // Soft ocean shadow glow
-  secondary: '#54ACBF',           // Cyan Teal for sub-headings & secondary chips
-  tertiary: '#54ACBF',            // Cyan Teal Accent
-  accentWarm: '#54ACBF',          // Cyan Teal Accent
-  accentCool: '#54ACBF',          // Cyan Teal
-  accentRose: '#E11D48',          // Critical / Panic / Expired badges
+  secondary: '#2F7F92',           // Cyan Teal for sub-headings & secondary chips
+  tertiary: '#2F7F92',            // Cyan Teal Accent
+  accentWarm: '#B45309',          // Cyan Teal Accent
+  accentCool: '#3B6E9E',          // Cyan Teal
+  accentRose: '#BE123C',          // Critical / Panic / Expired badges
 
   // ── Status Colors ─────────────────────────────────────────────────────────
-  success: '#10B981',             // Active / Paid / Vacant bed green
-  warning: '#54ACBF',             // Pending / Due soon cyan teal
-  danger: '#EF4444',              // Overdue / Rejected / Panic red
-  info: '#26658C',                // Notice / Info ocean blue
+  success: '#046C4E',             // Active / Paid / Vacant bed green
+  warning: '#B45309',             // Pending / Due soon cyan teal
+  danger: '#C81E1E',              // Overdue / Rejected / Panic red
+  info: '#3B6E9E',                // Notice / Info ocean blue
 
   // ── Typography & Content ───────────────────────────────────────────────────
-  textPrimary: '#011C40',         // Obsidian Navy Blue text (High contrast)
-  textSecondary: '#023859',       // Deep Midnight Blue subtitle text
-  textMuted: '#26658C',           // Muted ocean caption text
+  textPrimary: '#1B3245',         // Obsidian Navy Blue text (High contrast)
+  textSecondary: '#2C4A63',       // Deep Midnight Blue subtitle text
+  textMuted: '#5A7387',           // Muted ocean caption text
   textInverse: '#FFFFFF',         // White text on primary buttons
   textAccent: '#26658C',          // Ocean blue text for links & active tab labels
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
-  borderSubtle: '#CBEFF4',        // Ice Cyan border
+  borderSubtle: '#C9D8E2',        // Ice Cyan border
   borderFocus: '#26658C',         // 2px active input focus border
-  borderGlass: 'rgba(84, 172, 191, 0.18)', // Glassmorphic borders
-  borderMuted: '#CBEFF4',         // Divider lines
+  borderGlass: 'rgba(44, 74, 99, 0.16)', // Glassmorphic borders
+  borderMuted: '#D3E0E9',         // Divider lines
 
   // ── Gradients ─────────────────────────────────────────────────────────────
   heroGradientStart: '#011C40',   // Top header gradient (Obsidian Navy)
@@ -82,9 +86,14 @@ export const Palette = {
   GradientEnd: '#023859',
 
   // Distinct status variants not covered by Colors.success / Colors.danger
-  StatusGreen: '#10B981',
-  StatusGreenSoft: '#A7EBF2',
-  StatusRed: '#EF4444',
+  StatusGreen: '#046C4E',
+  StatusGreenSoft: '#D1FAE5',
+  StatusRed: '#C81E1E',
+  // Badge backgrounds — each verified ≥4.5:1 against its own status colour above.
+  TintAmber: '#FEF3C7',
+  TintGreen: '#D1FAE5',
+  TintRed: '#FEE2E2',
+  TintBlue: '#E6F1F7',
 } as const;
 
 

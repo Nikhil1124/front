@@ -287,7 +287,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                 {REPAIR_CATEGORIES.map((cat) => {
                   const isSelected = category === cat;
                   return (
-                    <TouchableOpacity accessibilityRole="button"
+                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={cat}
                       style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
                       onPress={() => setCategory(cat)}

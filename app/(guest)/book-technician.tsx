@@ -273,7 +273,7 @@ export default function BookTechnicianScreen() {
     if (c.includes('fan') || c.includes('carpenter')) {
       return {
         icon: 'construct-outline' as const,
-        color: '#10B981', // green
+        color: Colors.success, // green
         bg: '#D1FAE5',
       };
     }
@@ -383,7 +383,7 @@ export default function BookTechnicianScreen() {
             {(['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((f) => {
               const isSelected = filter === f;
               return (
-                <TouchableOpacity accessibilityRole="button"
+                <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                   key={f}
                   style={[
                     styles.chipBtn,

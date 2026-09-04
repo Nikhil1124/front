@@ -6,10 +6,9 @@
  * "reduce motion" without any work here. The only thing worth owning is the colour, which
  * defaults to the brand green so a spinner never shows up in iOS grey on a mint canvas.
  */
-import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme';
-import { Txt } from './Txt';
 
 export interface SpinnerProps {
   /** 'small' ≈ 20dp, 'large' ≈ 36dp — the two sizes RN actually supports on both platforms. */
@@ -37,9 +36,9 @@ export function LoadingState({ label, size = 'large', fill = true, style }: Load
     <View style={[fill ? styles.fill : styles.block, style]}>
       <Spinner size={size} />
       {label ? (
-        <Txt size={12} weight="600" color={Colors.textMuted} style={styles.label}>
+        <Text maxFontSizeMultiplier={1.3} style={[styles.label, { fontSize: 12, fontWeight: '600', color: Colors.textMuted }]}>
           {label}
-        </Txt>
+        </Text>
       ) : null}
     </View>
   );
@@ -66,17 +65,17 @@ export function ErrorState({ error, title = 'Could not load this', onRetry, fill
       <View style={styles.errIcon}>
         <Ionicons name="cloud-offline-outline" size={28} color={Colors.danger} />
       </View>
-      <Txt size={14} weight="800" color={Colors.textPrimary} style={styles.label}>
+      <Text maxFontSizeMultiplier={1.3} style={[styles.label, { fontSize: 14, fontWeight: '800', color: Colors.textPrimary }]}>
         {title}
-      </Txt>
-      <Txt size={12} color={Colors.textMuted} style={styles.message}>
+      </Text>
+      <Text maxFontSizeMultiplier={1.3} style={[styles.message, { fontSize: 12, color: Colors.textMuted }]}>
         {message}
-      </Txt>
+      </Text>
       {onRetry ? (
         <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Retry loading" style={styles.retry}>
-          <Txt size={12} weight="800" color={Colors.primary}>
+          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: Colors.primary }}>
             Tap to retry
-          </Txt>
+          </Text>
         </Pressable>
       ) : null}
     </View>

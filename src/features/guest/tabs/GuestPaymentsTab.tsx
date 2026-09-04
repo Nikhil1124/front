@@ -22,8 +22,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 
@@ -51,6 +49,7 @@ import { useMyRewardsQuery } from '@/features/rewards/useRewards';
 import type { PaymentEntity, TenantInvoice } from '@/types';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -76,7 +75,6 @@ function getDueStatusPill(isPaid: boolean, dueDateStr?: string) {
 }
 
 export function GuestPaymentsTab() {
-  const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const { activeEntity: ownerForGuest } = useActiveProperty();
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -328,30 +326,16 @@ export function GuestPaymentsTab() {
       )}
 
       {/* ── 1. COMPACT TEAL GRADIENT HEADER ── */}
-      <LinearGradient
-        colors={['#011C40', '#023859']}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
-      >
-        <View style={styles.hWave1} />
-        <View style={styles.hWave2} />
-        <Row justify="space-between" align="center" style={styles.hRow}>
-          <Col>
-            <Txt size={26} weight="900" color="#FFFFFF">Payments</Txt>
-            <Txt size={13} weight="500" color="rgba(255,255,255,0.78)" style={{ marginTop: 2 }}>
-              All your payments in one place.
-            </Txt>
-          </Col>
-          <Row gap={10}>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="View document" accessibilityRole="button" style={styles.hIconBtn} onPress={() => setShowResidentCard(true)}>
-              <Ionicons name="document-text-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Choose a time" accessibilityRole="button" style={styles.hIconBtn} onPress={() => router.push('/support')}>
-              <Ionicons name="time-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+      <AppHeader
+        title="Payments"
+        subtitle="All your payments in one place."
+        actions={
+          <Row gap={8}>
+            <HeaderChip icon="document-text-outline" label="Resident card" onPress={() => setShowResidentCard(true)} />
+            <HeaderChip icon="time-outline" label="Support" onPress={() => router.push('/support')} />
           </Row>
-        </Row>
-      </LinearGradient>
+        }
+      />
 
       {/* ── SCROLLABLE CONTENT ── */}
       <ScrollView
@@ -849,11 +833,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
 
   // Header
-  header: { overflow: 'hidden', borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  hRow: { paddingHorizontal: 20, paddingBottom: 24 },
-  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.07)' },
-  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)' },
-  hIconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 16 },

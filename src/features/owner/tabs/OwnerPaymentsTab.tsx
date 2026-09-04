@@ -814,7 +814,7 @@ export function OwnerPaymentsTab() {
                     style={{ marginTop: 4 }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                    <Ionicons name="trash-outline" size={14} color={Colors.danger} />
                   </TouchableOpacity>
                 </Col>
               </Row>
@@ -1031,7 +1031,7 @@ export function OwnerPaymentsTab() {
                 {getPast12Months().map((m) => {
                   const isSelected = customLabel === m.label;
                   return (
-                    <TouchableOpacity accessibilityRole="button"
+                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={m.label}
                       style={[styles.pickerPopupOption, isSelected && styles.pickerPopupOptionActive]}
                       onPress={() => {

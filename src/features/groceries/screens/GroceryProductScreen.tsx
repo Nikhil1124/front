@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { useActiveProperty } from '@/features/properties/useProperties';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 
 // Extracted shared components
 import { MiniProductCard } from '../components/ui/MiniProductCard';
@@ -239,7 +239,7 @@ export function GroceryProductScreen() {
                 {options.map((opt, i) => {
                   const isSelected = selectedIdx === i;
                   return (
-                    <TouchableOpacity accessibilityRole="button"
+                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={opt.unit}
                       style={[styles.packTab, isSelected && styles.selectedPackTab]}
                       onPress={() => setSelectedIdx(i)}
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
 
   rightInfoColumn: { width: '52%', justifyContent: 'center' },
   mrpRow: { flexDirection: 'row', alignItems: 'center' },
-  miniWholesaleCard: { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 6 },
+  miniWholesaleCard: { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 6 },
 
   bodyContent: { paddingHorizontal: 16, paddingTop: 16 },
 
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   qtyRightSection: { width: 100, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: Colors.borderSubtle, paddingLeft: 8 },
   inlineAddBtn: { backgroundColor: Colors.primary, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
 
-  deliveryCard: { flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
+  deliveryCard: { flexDirection: 'row', backgroundColor: Palette.TintBlue, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
   deliveryLeft: { flex: 1.2, justifyContent: 'center' },
   deliveryHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
   deliveryRight: { flex: 1, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: Colors.borderSubtle, justifyContent: 'center' },

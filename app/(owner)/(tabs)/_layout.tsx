@@ -9,7 +9,6 @@ import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView } from
 import { router, usePathname } from 'expo-router';
 import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
@@ -21,6 +20,7 @@ import { useRoleNotificationsQuery } from '@/features/notifications/useNotificat
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { getGreeting } from '@/utils/format';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 // ── Redesign Theme Colors ───────────────────────────────────────────────────
 const PRIMARY = Colors.primary;
 const BG = Colors.canvas;
@@ -53,7 +53,10 @@ export default function OwnerTabsLayout() {
 
   // Dynamic names
   const ownerName = owner?.ownerName || user?.name || 'Owner';
-  const greeting = `${getGreeting()}, ${ownerName.split(' ')[0]} 👋`;
+  const greeting = `${getGreeting()}, ${ownerName.split(' ')[0]}`;
+  // Initials rather than the 🤵 emoji that used to sit here: an emoji renders differently on
+  // every Android version and told you nothing about whose dashboard you were looking at.
+  const ownerInitials = ownerName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const location = owner?.address ? owner.address.split(',').slice(0, 2).join(',') : 'Bengaluru';
   const subLabel = `${allPGs.length} PG${allPGs.length === 1 ? '' : 's'} • ${location}`;
 
@@ -65,87 +68,47 @@ export default function OwnerTabsLayout() {
     <Tabs style={styles.root}>
       {/* ── Main Layout Wrapper ── */}
       <View style={{ flex: 1, backgroundColor: BG, paddingBottom: 68 + insets.bottom }}>
-        {/* ── Personalized LUNA Gradient Header (Replicating Resident Design) ───── */}
+        {/* ── Header: one component, two variants ─────────────────────────────── */}
         {isOverviewActive ? (
-          <LinearGradient
-            colors={['#011C40', '#023859']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}
-          >
-            <View style={styles.hWave1} />
-            <View style={styles.hWave2} />
-            <Row justify="space-between" align="center" style={{ width: '100%' }}>
-              {/* Left Avatar + User Greeting & Property swapper */}
-              <Row gap={12} align="center" style={{ flex: 1 }}>
-                {/* Owner Avatar Frame */}
-                <View style={styles.avatarFrame}>
-                  <Txt size={18}>🤵</Txt>
-                </View>
-                
-                <Col style={{ flex: 1 }}>
-                  <Txt size={12} weight="600" color="rgba(255, 255, 255, 0.78)">{greeting}</Txt>
-                  <Spacer size={2} />
-                  <TouchableOpacity accessibilityRole="button"
-                    activeOpacity={0.7}
-                    onPress={() => { setShowProfileMenu(true); }}
-                    style={styles.propertySelectRow}
-                  >
-                    <Txt size={17} weight="900" color="#FFFFFF" numberOfLines={1}>
-                      {owner?.pgName ?? 'Select PG'}
-                    </Txt>
-                    <Ionicons name="chevron-down" size={14} color="#A7EBF2" />
-                    {isManager && (
-                      <View style={styles.managerBadge}>
-                        <Txt size={8} weight="900" color="#011C40">MANAGER</Txt>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                  <Spacer size={1} />
-                  <Txt size={11} color="rgba(255, 255, 255, 0.75)">{subLabel}</Txt>
-                </Col>
-              </Row>
-
-              {/* Right Action Icons */}
+          <AppHeader
+            eyebrow={greeting}
+            title={owner?.pgName ?? 'Select PG'}
+            subtitle={subLabel}
+            onTitlePress={() => { setShowProfileMenu(true); }}
+            titleAdornment={
+              <>
+                <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
+                {isManager && (
+                  <View style={styles.managerBadge}>
+                    <Txt size={8} weight="900" color={Colors.primary}>MANAGER</Txt>
+                  </View>
+                )}
+              </>
+            }
+            leading={
+              <View style={styles.avatarFrame}>
+                <Txt size={13} weight="700" color={Colors.primary}>{ownerInitials}</Txt>
+              </View>
+            }
+            actions={
               <Row gap={8} align="center">
-                <AnimatedPress accessibilityLabel="Notifications" scale={0.88} onPress={() => { router.push('/notices'); }}>
-                  <View style={styles.headerActionBtn}>
-                    <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
-                    {unreadCount > 0 && <View style={styles.unreadDot} />}
-                  </View>
-                </AnimatedPress>
-
-                <AnimatedPress accessibilityLabel="Settings" scale={0.88} onPress={() => router.push('/settings')}>
-                  <View style={styles.headerActionBtn}>
-                    <Ionicons name="settings-outline" size={20} color="#FFFFFF" />
-                  </View>
-                </AnimatedPress>
+                <HeaderChip icon="notifications-outline" label="Notifications" badge={unreadCount > 0} onPress={() => { router.push('/notices'); }} />
+                <HeaderChip icon="settings-outline" label="Settings" onPress={() => router.push('/settings')} />
               </Row>
-            </Row>
-          </LinearGradient>
+            }
+          />
         ) : (
-          <LinearGradient
-            colors={['#011C40', '#023859']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.headerContainer, { paddingTop: insets.top + 10, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }]}
-          >
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
-              style={styles.headerActionBtn}
-              onPress={() => { router.push('/overview'); }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Txt size={20} weight="900" color="#FFFFFF">
-              {pathname === '/guests' ? 'Residents Directory' :
-               pathname === '/payments' ? 'Payments & Revenue' :
-               pathname === '/staff' ? 'Staff Management' :
-               pathname === '/complaints' ? 'Complaints & Requests' :
-               pathname === '/notices' ? 'Notifications' :
-               pathname === '/reviews' ? 'Reviews & Feedback' : 'Details'}
-            </Txt>
-          </LinearGradient>
+          <AppHeader
+            onBack={() => { router.push('/overview'); }}
+            title={
+              pathname === '/guests' ? 'Residents Directory' :
+              pathname === '/payments' ? 'Payments & Revenue' :
+              pathname === '/staff' ? 'Staff Management' :
+              pathname === '/complaints' ? 'Complaints & Requests' :
+              pathname === '/notices' ? 'Notifications' :
+              pathname === '/reviews' ? 'Reviews & Feedback' : 'Details'
+            }
+          />
         )}
         {/* ── Active Tab Content View Slot ────────────────────────────────────── */}
         <View
@@ -302,7 +265,7 @@ export default function OwnerTabsLayout() {
                   }}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.moreIconBox, { backgroundColor: '#ECFDF5' }]}><Ionicons name="person-add-outline" size={22} color="#10B981" /></View>
+                  <View style={[styles.moreIconBox, { backgroundColor: '#ECFDF5' }]}><Ionicons name="person-add-outline" size={22} color={Colors.success} /></View>
                   <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Resident</Txt>
                 </TouchableOpacity>
 
@@ -349,52 +312,16 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
   // LUNA Gradient Header (Matching Resident Design)
-  headerContainer: {
-    paddingHorizontal: 18,
-    paddingBottom: 22,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    overflow: 'hidden',
-  },
-  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255, 255, 255, 0.07)' },
-  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255, 255, 255, 0.05)' },
   avatarFrame: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  propertySelectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.surfaceElevated,
   },
   managerBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
     backgroundColor: '#A7EBF2',
-  },
-  headerActionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: DANGER,
   },
 
   // Custom Floating Dock styled directly onto TabList

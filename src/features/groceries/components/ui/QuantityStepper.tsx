@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
     borderRadius: 8,
     height: 36,
     paddingHorizontal: 4,

@@ -15,7 +15,7 @@ import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { SupplyItem } from '@/types';
-import { Colors, Layout, Radii } from '@/theme';
+import { Palette, Colors, Layout, Radii } from '@/theme';
 
 export function GroceryWishlistScreen() {
   const mode = useShoppingModeStore((s) => s.mode);
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Palette.TintRed,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,

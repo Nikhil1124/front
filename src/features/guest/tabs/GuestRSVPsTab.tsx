@@ -11,7 +11,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueries } from '@tanstack/react-query';
 
 import { Txt, Row, Col, Spacer, Card } from '@/components/ui';
@@ -30,6 +29,7 @@ import { useAuthStore } from '@/store/authStore';
 import { qk } from '@/data/queryKeys';
 import { useSetAwayMutation } from '@/features/auth/useAuth';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -100,7 +100,6 @@ const MEAL_TABS: { key: string; label: string; icon: any; time: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 export function GuestRSVPsTab() {
-  const insets = useSafeAreaInsets();
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: notifications = [], isLoading, error: mealsError } = useMealsQuery(activePgId ?? undefined);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
@@ -260,37 +259,16 @@ export function GuestRSVPsTab() {
   return (
     <View style={styles.root}>
       {/* ── 1. HEADER ── */}
-      <LinearGradient
-        colors={['#011C40', '#023859']}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
-      >
-        <View style={styles.hWave1} />
-        <View style={styles.hWave2} />
-        <Row justify="space-between" align="center" style={styles.hRow}>
-          <Col>
-            <Txt size={26} weight="900" color="#FFFFFF">Meals</Txt>
-            <Txt size={13} weight="500" color="rgba(255,255,255,0.72)" style={{ marginTop: 2 }}>
-              Eat well. Stay healthy.
-            </Txt>
-          </Col>
-          <Row gap={10}>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button"
-              style={[styles.hIconBtn, showPreferences && styles.hIconBtnActive]}
-              onPress={() => { setShowPreferences(!showPreferences); }}
-            >
-              <Ionicons name="options-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Choose a date" accessibilityRole="button"
-              style={styles.hIconBtn}
-              onPress={() => { toast('info', 'Not Available Yet', 'A weekly meal calendar is coming soon.'); }}
-            >
-              <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+      <AppHeader
+        title="Meals"
+        subtitle="Eat well. Stay healthy."
+        actions={
+          <Row gap={8}>
+            <HeaderChip icon="options-outline" label="Meal preferences" onPress={() => { setShowPreferences(!showPreferences); }} />
+            <HeaderChip icon="calendar-outline" label="Choose a date" onPress={() => { toast('info', 'Not Available Yet', 'A weekly meal calendar is coming soon.'); }} />
           </Row>
-        </Row>
-        <View style={styles.hCurve} />
-      </LinearGradient>
+        }
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -445,7 +423,7 @@ export function GuestRSVPsTab() {
           {MEAL_TABS.map((tab) => {
             const active = activeMealTab === tab.key;
             return (
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity accessibilityState={{ selected: !!active }} accessibilityRole="button"
                 key={tab.key}
                 onPress={() => { setActiveMealTab(tab.key); }}
                 style={[styles.tabPill, active && styles.tabPillActive]}
@@ -814,17 +792,17 @@ export function GuestRSVPsTab() {
               const choice = detailMeal ? effectiveChoices[detailMeal.id] : null;
               if (choice === 'REQUIRED') {
                 return (
-                  <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.12)', borderColor: '#10B981' }]}>
-                    <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                    <Txt size={12} weight="800" color="#10B981" style={{ marginLeft: 8 }}>You're eating! Your portion is reserved.</Txt>
+                  <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.12)', borderColor: Colors.success }]}>
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                    <Txt size={12} weight="800" color={Colors.success} style={{ marginLeft: 8 }}>You're eating! Your portion is reserved.</Txt>
                   </View>
                 );
               }
               if (choice === 'NOT_REQUIRED') {
                 return (
-                  <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(239,68,68,0.12)', borderColor: '#EF4444' }]}>
-                    <Ionicons name="close-circle" size={18} color="#EF4444" />
-                    <Txt size={12} weight="800" color="#EF4444" style={{ marginLeft: 8 }}>You're skipping. Thank you for helping reduce waste!</Txt>
+                  <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(239,68,68,0.12)', borderColor: Colors.danger }]}>
+                    <Ionicons name="close-circle" size={18} color={Colors.danger} />
+                    <Txt size={12} weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>You're skipping. Thank you for helping reduce waste!</Txt>
                   </View>
                 );
               }
@@ -846,13 +824,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
 
   // Header
-  header: { overflow: 'hidden', borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  hRow: { paddingHorizontal: 20, paddingBottom: 20 },
-  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.07)' },
-  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)' },
-  hIconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   hIconBtnActive: { backgroundColor: 'rgba(255,255,255,0.35)' },
-  hCurve: { height: 0 },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
@@ -930,7 +902,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9',
   },
-  skipBtnActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
+  skipBtnActive: { backgroundColor: Colors.danger, borderColor: Colors.danger },
   dotInd: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#D5E8E6' },
   dotIndActive: { width: 20, backgroundColor: Colors.primaryDark },
 

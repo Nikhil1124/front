@@ -68,7 +68,7 @@ setSessionExpiredHandler(() => {
 // receives the PGowApiError and shows it where the action was taken.
 setGateHandler(() => {});
 
-export default function RootLayout() {
+function RootLayoutNav() {
   const init = usePGowStore((s) => s.init);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
@@ -204,89 +204,95 @@ export default function RootLayout() {
   const canOrderGroceries = !!accessToken && (isOwnerRole || activeRole === 'guest' || activeRole === 'chef');
 
   return (
+    <SafeAreaProvider>
+      {/* "dark" means dark ICONS, which is what a light background needs. This was
+          flipped to "light" alongside userInterfaceStyle: "dark" in app.json, but the
+          palette is light-only (Colors.canvas = '#F7F9F7', textPrimary = '#17201A'), so
+          light icons rendered white-on-near-white and the status bar disappeared.
+          Revisit both together if a real dark theme is ever added. */}
+      <StatusBar style="dark" />
+      {/* NOT a safe-area boundary — `edges={[]}` applies no inset, deliberately.
+          The app is edge-to-edge (`androidStatusBar.translucent: true`), so content
+          draws under the status bar and the gesture bar, and **each screen owns its own
+          insets**. In practice that means going through one of the shared pieces that
+          already do it: `TabHeader` and `HubScreenWrapper` pad by `insets.top + 14`, and
+          `useDock` pads the bottom by `max(insets.bottom, MIN_BOTTOM_PAD)`.
+
+          This wrapper consumed `edges={['top']}` once; screens that also padded
+          themselves ended up double-inset, and it was emptied rather than removed. The
+          comment left behind said every screen "trusts this and must not consume the top
+          inset again", which was then the exact opposite of what the code did — a screen
+          written against it renders under the notch. That is what put the zoom controls
+          in `LocationPicker` behind the clock.
+
+          Anything rendering in a `<Modal>` needs its own insets regardless: a Modal is a
+          separate native window and nothing here reaches it. */}
+      <SafeAreaView style={styles.container} edges={[]}>
+        {isHydrated ? (
+          <Stack screenOptions={{ headerShown: false, animation: 'none', gestureEnabled: true }}>
+            {/* The root index route must be explicitly included because we are providing manual children to Stack */}
+            <Stack.Screen name="index" />
+
+            <Stack.Protected guard={!accessToken || needsPropertyJoin}>
+              <Stack.Screen name="(auth)" />
+            </Stack.Protected>
+
+            <Stack.Protected guard={!!accessToken && isOwnerRole}>
+              <Stack.Screen name="(owner)" />
+            </Stack.Protected>
+
+            <Stack.Protected guard={!!accessToken && activeRole === 'guest'}>
+              <Stack.Screen name="(guest)" />
+            </Stack.Protected>
+
+            <Stack.Protected guard={!!accessToken && isStaffRole}>
+              <Stack.Screen name="(staff)" />
+            </Stack.Protected>
+
+            {/* Owner, manager, guest and chef only — see canOrderGroceries above. */}
+            <Stack.Protected guard={canOrderGroceries}>
+              <Stack.Screen name="groceries" />
+            </Stack.Protected>
+
+            {/* The notifications screen (replaces the old bottom-sheet inbox) — shared
+                the same way groceries is: every signed-in, role-resolved user can reach
+                it, the screen itself reads which role from the `role` param the bell
+                button passes. */}
+            <Stack.Protected guard={!!accessToken && hasResolvedRole}>
+              <Stack.Screen name="notifications" />
+            </Stack.Protected>
+
+            {/* Was under (owner) — owner/manager only. Moved here because a chef can
+                raise a requisition too (create_order accepts OWNER/MANAGER/CHEF as
+                raiser; list_orders scopes a chef to their own requests automatically).
+                ProcurementScreen decides which tabs a given role actually sees. */}
+            <Stack.Protected guard={!!accessToken && hasResolvedRole}>
+              <Stack.Screen name="procurement" />
+            </Stack.Protected>
+
+            {/* Moved from (auth) — that group is unregistered once accessToken exists, so
+                it was unreachable for any real signed-in owner/manager (Settings' link to
+                it silently went nowhere). require_manage on the backend, so gated the same
+                as the (owner) group itself rather than the broader hasResolvedRole. */}
+            <Stack.Protected guard={!!accessToken && isOwnerRole}>
+              <Stack.Screen name="owner-subscription" />
+            </Stack.Protected>
+
+            {/* Diagnostic screen for unmatched routes */}
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        ) : null}
+        <AlertOverlay />
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={styles.container}>
-        <SafeAreaProvider>
-          {/* "dark" means dark ICONS, which is what a light background needs. This was
-              flipped to "light" alongside userInterfaceStyle: "dark" in app.json, but the
-              palette is light-only (Colors.canvas = '#F7F9F7', textPrimary = '#17201A'), so
-              light icons rendered white-on-near-white and the status bar disappeared.
-              Revisit both together if a real dark theme is ever added. */}
-          <StatusBar style="dark" />
-          {/* NOT a safe-area boundary — `edges={[]}` applies no inset, deliberately.
-              The app is edge-to-edge (`androidStatusBar.translucent: true`), so content
-              draws under the status bar and the gesture bar, and **each screen owns its own
-              insets**. In practice that means going through one of the shared pieces that
-              already do it: `TabHeader` and `HubScreenWrapper` pad by `insets.top + 14`, and
-              `useDock` pads the bottom by `max(insets.bottom, MIN_BOTTOM_PAD)`.
-
-              This wrapper consumed `edges={['top']}` once; screens that also padded
-              themselves ended up double-inset, and it was emptied rather than removed. The
-              comment left behind said every screen "trusts this and must not consume the top
-              inset again", which was then the exact opposite of what the code did — a screen
-              written against it renders under the notch. That is what put the zoom controls
-              in `LocationPicker` behind the clock.
-
-              Anything rendering in a `<Modal>` needs its own insets regardless: a Modal is a
-              separate native window and nothing here reaches it. */}
-          <SafeAreaView style={styles.container} edges={[]}>
-            {isHydrated ? (
-              <Stack screenOptions={{ headerShown: false, animation: 'none', gestureEnabled: true }}>
-                {/* The root index route must be explicitly included because we are providing manual children to Stack */}
-                <Stack.Screen name="index" />
-
-                <Stack.Protected guard={!accessToken || needsPropertyJoin}>
-                  <Stack.Screen name="(auth)" />
-                </Stack.Protected>
-
-                <Stack.Protected guard={!!accessToken && isOwnerRole}>
-                  <Stack.Screen name="(owner)" />
-                </Stack.Protected>
-
-                <Stack.Protected guard={!!accessToken && activeRole === 'guest'}>
-                  <Stack.Screen name="(guest)" />
-                </Stack.Protected>
-
-                <Stack.Protected guard={!!accessToken && isStaffRole}>
-                  <Stack.Screen name="(staff)" />
-                </Stack.Protected>
-
-                {/* Owner, manager, guest and chef only — see canOrderGroceries above. */}
-                <Stack.Protected guard={canOrderGroceries}>
-                  <Stack.Screen name="groceries" />
-                </Stack.Protected>
-
-                {/* The notifications screen (replaces the old bottom-sheet inbox) — shared
-                    the same way groceries is: every signed-in, role-resolved user can reach
-                    it, the screen itself reads which role from the `role` param the bell
-                    button passes. */}
-                <Stack.Protected guard={!!accessToken && hasResolvedRole}>
-                  <Stack.Screen name="notifications" />
-                </Stack.Protected>
-
-                {/* Was under (owner) — owner/manager only. Moved here because a chef can
-                    raise a requisition too (create_order accepts OWNER/MANAGER/CHEF as
-                    raiser; list_orders scopes a chef to their own requests automatically).
-                    ProcurementScreen decides which tabs a given role actually sees. */}
-                <Stack.Protected guard={!!accessToken && hasResolvedRole}>
-                  <Stack.Screen name="procurement" />
-                </Stack.Protected>
-
-                {/* Moved from (auth) — that group is unregistered once accessToken exists, so
-                    it was unreachable for any real signed-in owner/manager (Settings' link to
-                    it silently went nowhere). require_manage on the backend, so gated the same
-                    as the (owner) group itself rather than the broader hasResolvedRole. */}
-                <Stack.Protected guard={!!accessToken && isOwnerRole}>
-                  <Stack.Screen name="owner-subscription" />
-                </Stack.Protected>
-
-                {/* Diagnostic screen for unmatched routes */}
-                <Stack.Screen name="+not-found" />
-              </Stack>
-            ) : null}
-            <AlertOverlay />
-          </SafeAreaView>
-        </SafeAreaProvider>
+        <RootLayoutNav />
       </GestureHandlerRootView>
     </QueryClientProvider>
   );

@@ -5,7 +5,7 @@ import { SupplyItem } from '@/types';
 import { useCartStore } from '../../store/useCartStore';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 interface ProductCardProps {
@@ -140,7 +140,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Ionicons
             name={isWishlisted ? 'heart' : 'heart-outline'}
             size={18}
-            color={isWishlisted ? '#E53935' : '#98A39B'}
+            color={isWishlisted ? Colors.danger : Colors.textMuted}
           />
         </TouchableOpacity>
       </View>
@@ -252,13 +252,13 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   discountBadge: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Palette.TintRed,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   discountBadgeText: {
-    color: '#E53935',
+    color: Colors.danger,
     fontSize: 9,
   },
   wishlistBtn: {
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     right: 2,
     backgroundColor: '#FFFFFF',
     borderRadius: 9,
-    shadowColor: '#17201A',
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   unitText: {
     fontSize: 11,
-    color: '#647067',
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   ratingPriceRow: {
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   strikePrice: {
     fontSize: 11,
-    color: '#98A39B',
+    color: Colors.textMuted,
     textDecorationLine: 'line-through',
   },
   optionsWrapper: {
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#E4E9E5',
+    borderColor: Colors.borderSubtle,
     backgroundColor: '#FFFFFF',
   },
   selectedOptionTab: {
@@ -418,11 +418,11 @@ const styles = StyleSheet.create({
   },
   simpleName: {
     fontSize: 12,
-    color: '#17201A',
+    color: Colors.textPrimary,
   },
   simpleUnit: {
     fontSize: 10,
-    color: '#647067',
+    color: Colors.textSecondary,
   },
   simpleBottomRow: {
     flexDirection: 'row',
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   },
   simpleStrikePrice: {
     fontSize: 9,
-    color: '#98A39B',
+    color: Colors.textMuted,
     textDecorationLine: 'line-through',
   },
   simpleAddButton: {

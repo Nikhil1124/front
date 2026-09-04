@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Row, Col, Spacer } from '@/components/ui';
+import { Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { Colors } from '@/theme';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 const GREEN = Colors.primary;        // Deep Ocean Blue
@@ -29,7 +29,12 @@ import { useAuthStore } from '@/store/authStore';
 
 export function OwnerReviewsTab() {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: staffList = [] } = useStaffQuery(activePgId ?? undefined);
+  const {
+    data: staffList = [],
+    isLoading: staffLoading,
+    error: staffError,
+    refetch: refetchStaff,
+  } = useStaffQuery(activePgId ?? undefined);
   const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const { refreshing, onRefresh } = usePullToRefresh();
 
@@ -227,7 +232,19 @@ export function OwnerReviewsTab() {
       <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Staff Performance</Text>
       <Spacer size={8} />
 
-      {staffPerformanceList.length > 0 ? (
+      {/* Without these, a failed or in-flight staff fetch fell straight through to the
+          "no reviews yet" branch — an owner whose roster simply hadn't loaded was told there
+          was nothing to review, with no retry. */}
+      {staffLoading ? (
+        <LoadingState label="Loading staff performance…" fill={false} />
+      ) : staffError ? (
+        <ErrorState
+          error={staffError}
+          title="Could not load staff performance"
+          onRetry={refetchStaff}
+          fill={false}
+        />
+      ) : staffPerformanceList.length > 0 ? (
         <>
           {/* Search & Filter */}
           <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search staff"

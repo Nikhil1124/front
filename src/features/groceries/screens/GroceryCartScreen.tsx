@@ -10,7 +10,7 @@ import { useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -18,6 +18,8 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { getPerUnitRateLabel } from '../utils/pricing';
 import { useSubmitProcurementOrder } from '@/features/procurement/useProcurement';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
+import { formatINR } from '@/utils/format';
+import { AppHeader } from '@/components/AppHeader';
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();
@@ -108,20 +110,16 @@ export function GroceryCartScreen() {
     <View style={styles.container}>
 
       {/* 2. Cart Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="close" size={20} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Your Cart ({cartItemCount})</Text>
-        {items.length > 0 ? (
+      <AppHeader
+        title={`Your Cart (${cartItemCount})`}
+        onBack={() => router.back()}
+        actions={items.length > 0 ? (
           <TouchableOpacity accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
             <Text maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Text>
           </TouchableOpacity>
-        ) : (
-          <View style={{ width: 48 }} />
-        )}
-      </View>
+        ) : undefined}
+      />
 
       {items.length === 0 ? (
         /* 18. Empty Cart State */
@@ -297,12 +295,12 @@ export function GroceryCartScreen() {
 
               <View style={styles.billRow}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Text>
               </View>
 
               <View style={styles.billRow}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Text>
               </View>
 
               <View style={styles.billRow}>
@@ -398,35 +396,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.canvas,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.textPrimary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
   clearBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -446,7 +415,7 @@ const styles = StyleSheet.create({
   // Delivery layout (Split Row)
   deliveryCard: {
     flexDirection: 'row',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: Palette.TintBlue,
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
@@ -496,7 +465,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -594,7 +563,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
     borderRadius: 8,
     height: 32,
     paddingHorizontal: 2,
@@ -642,7 +611,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
     borderRadius: 14,
     padding: 12,
     marginBottom: 16,
@@ -899,7 +868,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
     borderWidth: 1.5,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
   },
   emptyTitle: {
     fontSize: 18,

@@ -5,11 +5,13 @@
  * activity timeline, and overdue modals.
  * All existing dynamic data bindings and navigation actions are preserved.
  */
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
+  RefreshControl,
+  ActivityIndicator,
   TouchableOpacity,
   Modal,
   Pressable,
@@ -99,10 +101,15 @@ export default function OwnerOverviewTab() {
   const responsivePadding = useResponsivePadding();
 
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: allPGs = [] } = usePropertiesEntitiesQuery();
-  const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
-  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
-  const { data: complaints = [] } = useComplaintsQuery(activePgId ?? undefined);
+  const { data: allPGs = [], refetch: refetchPGs, error: pgsError } = usePropertiesEntitiesQuery();
+  const { data: roleNotifs = [], refetch: refetchNotifs } = useRoleNotificationsQuery(activePgId ?? undefined);
+  const {
+    data: guests = [],
+    refetch: refetchGuests,
+    error: guestsError,
+    isLoading: guestsLoading,
+  } = useGuestsQuery(activePgId ?? undefined);
+  const { data: complaints = [], refetch: refetchComplaints } = useComplaintsQuery(activePgId ?? undefined);
 
 
   const carouselRef = useRef<ScrollView>(null);
@@ -163,6 +170,26 @@ export default function OwnerOverviewTab() {
   // Property's real bed layout — same hook BedVisualizerScreen uses — so the maintenance
   // count on the hero card is a real number, not a placeholder that never changes.
   const { data: layout } = usePropertyLayout(activePgId);
+
+  // A dashboard is the first thing anyone pulls down on, and this one had no way to refresh
+  // short of leaving the tab and coming back. Refetches the four queries the tiles are
+  // actually built from; the derived ones (P&L, savings, layout) follow their own keys.
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.allSettled([refetchPGs(), refetchNotifs(), refetchGuests(), refetchComplaints()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchPGs, refetchNotifs, refetchGuests, refetchComplaints]);
+
+  // The tiles default to 0 on a failed fetch, which reads as "you have no residents and no
+  // revenue" rather than "this didn't load" — the banner below is what tells them apart.
+  const coreLoadFailed = !!(pgsError || guestsError);
+  // First load only — `isLoading` is false on every refetch, so the tiles keep their last
+  // values during a pull-to-refresh instead of flashing back to a spinner.
+  const showFirstLoad = guestsLoading && guests.length === 0 && !coreLoadFailed;
   const maintenanceBedsCount = useMemo(
     () =>
       (layout?.floors ?? [])
@@ -182,28 +209,28 @@ export default function OwnerOverviewTab() {
   // Quick Action Grid Items — Cool LUNA Design System Icons
   const quickActions = useMemo(() => {
     const top4: QuickActionItem[] = [
-      { label: 'Groceries', icon: 'basket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/groceries'); } },
-      { label: 'Procurement', icon: 'cube', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { router.navigate('/procurement'); } },
-      { label: 'Services', icon: 'sparkles', color: '#023859', bgColor: '#EBF7FA', onPress: () => { router.navigate('/services'); } },
-      { label: 'Residents', icon: 'people', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/guests'); } },
+      { label: 'Groceries', icon: 'basket', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/groceries'); } },
+      { label: 'Procurement', icon: 'cube', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/procurement'); } },
+      { label: 'Services', icon: 'sparkles', color: Colors.textSecondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/services'); } },
+      { label: 'Residents', icon: 'people', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/guests'); } },
     ];
 
     const rest: QuickActionItem[] = [
-      { label: 'Add Room', icon: 'bed', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { router.navigate('/bed-visualizer'); } },
-      { label: 'Ads', icon: 'rocket', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/manage-ad'); } },
+      { label: 'Add Room', icon: 'bed', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/bed-visualizer'); } },
+      { label: 'Ads', icon: 'rocket', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/manage-ad'); } },
       { label: 'Complaints', icon: 'alert-circle', color: '#DC2626', bgColor: '#FEF2F2', onPress: () => { router.navigate('/complaints'); } },
-      { label: 'Food RSVP', icon: 'fast-food', color: '#023859', bgColor: '#EBF7FA', onPress: () => { router.navigate('/rsvp-trends'); } },
-      { label: 'Managers', icon: 'ribbon', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/manager-provisioning'); } },
-      { label: 'Portfolio', icon: 'stats-chart', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { router.navigate('/portfolio'); } },
+      { label: 'Food RSVP', icon: 'fast-food', color: Colors.textSecondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/rsvp-trends'); } },
+      { label: 'Managers', icon: 'ribbon', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/manager-provisioning'); } },
+      { label: 'Portfolio', icon: 'stats-chart', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/portfolio'); } },
       { label: 'Reviews', icon: 'star', color: '#D97706', bgColor: '#FEF3C7', onPress: () => { router.navigate('/reviews'); } },
-      { label: 'Settings', icon: 'options', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { router.navigate('/settings'); } },
-      { label: 'Staff', icon: 'id-card', color: '#26658C', bgColor: '#EBF7FA', onPress: () => { router.navigate('/staff'); } },
-      { label: 'Technicians', icon: 'construct', color: '#54ACBF', bgColor: '#EBF7FA', onPress: () => { setShowBookRepair(true); } },
-      { label: 'UPI Setup', icon: 'qr-code', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { router.navigate('/upi-settings'); } },
+      { label: 'Settings', icon: 'options', color: Colors.primaryDark, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/settings'); } },
+      { label: 'Staff', icon: 'id-card', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/staff'); } },
+      { label: 'Technicians', icon: 'construct', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { setShowBookRepair(true); } },
+      { label: 'UPI Setup', icon: 'qr-code', color: Colors.primaryDark, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/upi-settings'); } },
     ];
 
     if (!isManager) {
-      rest.push({ label: 'Add Property', icon: 'business', color: '#011C40', bgColor: '#EBF7FA', onPress: () => { router.navigate('/manage-properties'); } });
+      rest.push({ label: 'Add Property', icon: 'business', color: Colors.primaryDark, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/manage-properties'); } });
     }
 
     rest.sort((a, b) => a.label.localeCompare(b.label));
@@ -301,7 +328,33 @@ export default function OwnerOverviewTab() {
         keyboardShouldPersistTaps="handled"
         canCancelContentTouches
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
+        }
       >
+        {showFirstLoad && (
+          <View style={styles.firstLoadBox}>
+            <ActivityIndicator color={PRIMARY} />
+            <Text maxFontSizeMultiplier={1.3} style={styles.firstLoadText}>Loading your dashboard…</Text>
+          </View>
+        )}
+
+        {coreLoadFailed && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Some data could not be loaded. Tap to retry."
+            onPress={handleRefresh}
+            activeOpacity={0.8}
+            style={styles.loadFailedBanner}
+          >
+            <Ionicons name="cloud-offline-outline" size={18} color={Colors.danger} />
+            <Text maxFontSizeMultiplier={1.3} style={styles.loadFailedText} numberOfLines={2}>
+              Some figures below couldn&apos;t be loaded, so they may read as zero. Tap to retry.
+            </Text>
+            <Ionicons name="refresh" size={16} color={Colors.danger} />
+          </TouchableOpacity>
+        )}
+
         {hasNoMemberships ? (
           <Card
             containerColor={WHITE}
@@ -529,21 +582,21 @@ export default function OwnerOverviewTab() {
                         <Txt size={9} color={Colors.textMuted} numberOfLines={1} style={{ marginTop: 1 }}>Portions saved from resident skips</Txt>
                       </View>
 
-                      <Row justify="space-between" align="center" style={{ backgroundColor: '#F4F9FB', paddingHorizontal: 6, paddingVertical: 8, borderRadius: 10, marginVertical: 4, borderWidth: 1, borderColor: '#CBEFF4' }}>
+                      <Row justify="space-between" align="center" style={{ backgroundColor: Colors.canvas, paddingHorizontal: 6, paddingVertical: 8, borderRadius: 10, marginVertical: 4, borderWidth: 1, borderColor: Colors.borderSubtle }}>
                         <Col align="center" style={{ flex: 1 }}>
                           <Txt size={8} weight="700" color={Colors.textMuted}>PORTIONS</Txt>
                           <Txt size={13} weight="900" color={Colors.primary} style={{ marginTop: 1 }}>
                             <AnimatedNumber value={totalSkippedPortions} />
                           </Txt>
                         </Col>
-                        <View style={{ width: 1, height: 18, backgroundColor: '#CBEFF4' }} />
+                        <View style={{ width: 1, height: 18, backgroundColor: Colors.borderSubtle }} />
                         <Col align="center" style={{ flex: 1 }}>
                           <Txt size={8} weight="700" color={Colors.textMuted}>SAVED</Txt>
                           <Txt size={13} weight="900" color={Colors.success} style={{ marginTop: 1 }}>
                             ₹<AnimatedNumber value={totalSavedAmount} />
                           </Txt>
                         </Col>
-                        <View style={{ width: 1, height: 18, backgroundColor: '#CBEFF4' }} />
+                        <View style={{ width: 1, height: 18, backgroundColor: Colors.borderSubtle }} />
                         <Col align="center" style={{ flex: 1 }}>
                           <Txt size={8} weight="700" color={Colors.textMuted}>PLATE</Txt>
                           <Txt size={13} weight="900" color={Colors.textPrimary} style={{ marginTop: 1 }}>
@@ -627,8 +680,8 @@ export default function OwnerOverviewTab() {
               {/* Properties Card */}
               <AnimatedPress scale={0.96} onPress={() => { router.push('/manage-properties'); }} style={{ flex: 1, minWidth: 150 }}>
                 <View style={styles.metricCard}>
-                  <View style={[styles.metricIconCircle, { backgroundColor: '#EBF7FA', borderColor: '#CBEFF4', borderWidth: 1 }]}>
-                    <Ionicons name="business" size={18} color="#011C40" />
+                  <View style={[styles.metricIconCircle, { backgroundColor: Colors.surfaceElevated, borderColor: Colors.borderSubtle, borderWidth: 1 }]}>
+                    <Ionicons name="business" size={18} color={Colors.primaryDark} />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Row justify="space-between" align="center">
@@ -643,8 +696,8 @@ export default function OwnerOverviewTab() {
               {/* Residents Card */}
               <AnimatedPress scale={0.96} onPress={() => { router.push('/guests'); }} style={{ flex: 1, minWidth: 150 }}>
                 <View style={styles.metricCard}>
-                  <View style={[styles.metricIconCircle, { backgroundColor: '#EBF7FA', borderColor: '#CBEFF4', borderWidth: 1 }]}>
-                    <Ionicons name="people" size={18} color="#26658C" />
+                  <View style={[styles.metricIconCircle, { backgroundColor: Colors.surfaceElevated, borderColor: Colors.borderSubtle, borderWidth: 1 }]}>
+                    <Ionicons name="people" size={18} color={Colors.primary} />
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Text maxFontSizeMultiplier={1.3} style={styles.metricValue}><AnimatedNumber value={guests.length} /></Text>
@@ -698,7 +751,7 @@ export default function OwnerOverviewTab() {
             {/* ── 3. Quick Actions ───────────────────────────────────────────── */}
             <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
               <Row gap={6} align="center">
-                <Ionicons name="flash" size={16} color="#26658C" />
+                <Ionicons name="flash" size={16} color={Colors.primary} />
                 <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Quick Actions</Text>
               </Row>
               <TouchableOpacity accessibilityRole="button"
@@ -721,7 +774,7 @@ export default function OwnerOverviewTab() {
                 {(isQuickActionsExpanded ? quickActions : quickActions.slice(0, 4)).map(act => (
                   <AnimatedPress key={act.label} scale={0.92} onPress={act.onPress} style={{ width: '22%', alignItems: 'center' }}>
                     <View style={{ alignItems: 'center', gap: 6, width: '100%' }}>
-                      <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor, borderColor: '#CBEFF4', borderWidth: 1 }]}>
+                      <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor, borderColor: Colors.borderSubtle, borderWidth: 1 }]}>
                         <Ionicons name={act.icon} size={22} color={act.color} />
                       </View>
                       <Text maxFontSizeMultiplier={1.3} style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
@@ -1179,11 +1232,26 @@ export default function OwnerOverviewTab() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
   scroll: { paddingTop: 16, paddingBottom: 40 },
+  firstLoadBox: { alignItems: 'center', paddingVertical: 28, gap: 10 },
+  firstLoadText: { fontSize: 12.5, fontWeight: '600', color: MUTED },
+  loadFailedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  loadFailedText: { flex: 1, fontSize: 12.5, fontWeight: '700', color: Colors.danger, lineHeight: 17 },
 
   // Get Started / empty state cards
   cardShadow: {
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
@@ -1201,7 +1269,7 @@ const styles = StyleSheet.create({
   // 1. Property Hero Card
   heroCardShadow: {
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
     shadowColor: PRIMARY,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -1307,12 +1375,12 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    shadowColor: '#011C40',
+    shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
     shadowRadius: 10,
@@ -1336,8 +1404,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 1,
   },
-  metricBadgePrimary: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#EBF7FA' },
-  metricBadgeTextPrimary: { fontSize: 8, fontWeight: '900', color: '#011C40' },
+  metricBadgePrimary: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: Colors.surfaceElevated },
+  metricBadgeTextPrimary: { fontSize: 8, fontWeight: '900', color: Colors.primaryDark },
   metricBadgeSuccess: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#ECFDF5' },
   metricBadgeTextSuccess: { fontSize: 8, fontWeight: '900', color: SUCCESS },
   metricBadgeWarning: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#FEF3C7' },

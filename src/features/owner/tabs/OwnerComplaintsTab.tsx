@@ -19,6 +19,7 @@ import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { useComplaintsQuery, useComplaintQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
 import { isRequestOpen } from '@/data/mappers';
+import { Colors } from '@/theme';
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
   noIssuesText: { fontSize: 12, fontWeight: '700', color: GREEN, marginLeft: 8 },
   noIssuesSub: { fontSize: 11, color: MUTED, marginLeft: 6 },
 
-  urgentDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#EF4444', marginRight: 4 },
+  urgentDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.danger, marginRight: 4 },
   issueTitleText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   issueMetaText: { fontSize: 10, color: MUTED, marginTop: 2 },
   issueStatusBadge: {

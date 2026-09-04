@@ -28,7 +28,7 @@ export const AddAllToCartButton: React.FC<AddAllToCartButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#15803D',
+    backgroundColor: Colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 16,
     marginVertical: 10,
-    shadowColor: '#17201A',
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,

@@ -37,19 +37,14 @@ import {
 } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAuthStore } from '@/store/authStore';
+import { AppHeader } from '@/components/AppHeader';
 
 // === HELPER COMPONENTS ===
 
 const NotificationHeader = ({ title, onBack }: { title: string, onBack: () => void }) => {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.headerContainer, { paddingTop: insets.top + 12 }]}>
-      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={onBack} activeOpacity={0.7} style={styles.headerBackBtn}>
-        <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-      </TouchableOpacity>
-      <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>{title}</Text>
-      <View style={{ width: 40 }} />
-    </View>
+    <AppHeader title={title} onBack={onBack} />
   );
 };
 
@@ -636,9 +631,6 @@ export function OwnerAnnouncementsTab() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: BG },
-  headerBackBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
   
   mainScroll: { paddingHorizontal: 20, paddingTop: 8 },
   

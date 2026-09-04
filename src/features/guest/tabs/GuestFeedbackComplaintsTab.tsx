@@ -22,8 +22,6 @@ import {
   RefreshControl, Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -36,6 +34,7 @@ import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 
 const COMPLAINT_CATEGORIES = [
   { label: 'Food Quality', icon: 'restaurant-outline' },
@@ -47,7 +46,6 @@ const COMPLAINT_CATEGORIES = [
 ];
 
 export function GuestFeedbackComplaintsTab() {
-  const insets = useSafeAreaInsets();
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
     data: submissions = [],
@@ -131,30 +129,17 @@ export function GuestFeedbackComplaintsTab() {
   return (
     <View style={styles.root}>
       {/* ── 1. COMPACT TEAL GRADIENT HEADER ── */}
-      <LinearGradient
-        colors={['#011C40', '#023859']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
-      >
-        <View style={styles.hWave1} />
-        <View style={styles.hWave2} />
-        <Row justify="space-between" align="center" style={styles.hRow}>
-          <Col>
-            <Txt size={24} weight="900" color="#FFFFFF">Grievance & Feedback</Txt>
-            <Txt size={12} weight="500" color="rgba(255,255,255,0.78)" style={{ marginTop: 2 }}>
-              We listen. We act. We improve.
-            </Txt>
-          </Col>
-          <TouchableOpacity accessibilityRole="button"
-            style={styles.helpBtn}
+      <AppHeader
+        title="Grievance & Feedback"
+        subtitle="We listen. We act. We improve."
+        actions={
+          <HeaderChip
+            icon="headset-outline"
+            label="Support desk"
             onPress={() => toast('info', 'Support Desk', 'Property management receives and acts on all grievances within 24h.')}
-          >
-            <Ionicons name="headset-outline" size={15} color="#FFFFFF" />
-            <Txt size={12} weight="800" color="#FFFFFF" style={{ marginLeft: 6 }}>Help</Txt>
-          </TouchableOpacity>
-        </Row>
-      </LinearGradient>
+          />
+        }
+      />
 
       {/* ── SCROLLABLE CONTENT ── */}
       <ScrollView
@@ -177,12 +162,12 @@ export function GuestFeedbackComplaintsTab() {
           >
             <Row justify="space-between" align="flex-start">
               <View style={styles.complaintIconWrap}>
-                <Ionicons name="document-text-outline" size={22} color="#EF4444" />
+                <Ionicons name="document-text-outline" size={22} color={Colors.danger} />
                 <View style={styles.alertBadgeDot}>
                   <Ionicons name="alert" size={10} color="#FFFFFF" />
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#EF4444" />
+              <Ionicons name="chevron-forward" size={16} color={Colors.danger} />
             </Row>
             <Spacer size={12} />
             <Txt size={15} weight="900" color="#DC2626">Raise Complaint</Txt>
@@ -232,7 +217,7 @@ export function GuestFeedbackComplaintsTab() {
               {COMPLAINT_CATEGORIES.map((c) => {
                 const active = category === c.label;
                 return (
-                  <TouchableOpacity accessibilityRole="button"
+                  <TouchableOpacity accessibilityState={{ selected: !!active }} accessibilityRole="button"
                     key={c.label}
                     activeOpacity={0.88}
                     onPress={() => { setCategory(c.label); }}
@@ -251,13 +236,13 @@ export function GuestFeedbackComplaintsTab() {
             <Spacer size={18} />
             <View style={styles.inputWrapper}>
               <View style={styles.inputIconPrefix}>
-                <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
+                <Ionicons name="alert-circle-outline" size={18} color={Colors.danger} />
               </View>
               <OutlinedTextField
                 label="Issue Title (e.g. Broken Fan in Room 204)"
                 value={title}
                 onChangeText={setTitle}
-                focusedBorderColor="#EF4444"
+                focusedBorderColor={Colors.danger}
                 borderRadius={14}
                 style={{ flex: 1 }}
               />
@@ -266,7 +251,7 @@ export function GuestFeedbackComplaintsTab() {
             <Spacer size={12} />
             <View style={styles.inputWrapper}>
               <View style={[styles.inputIconPrefix, { alignSelf: 'flex-start', marginTop: 12 }]}>
-                <Ionicons name="document-text-outline" size={18} color="#EF4444" />
+                <Ionicons name="document-text-outline" size={18} color={Colors.danger} />
               </View>
               <OutlinedTextField
                 label="Describe the issue in detail..."
@@ -274,7 +259,7 @@ export function GuestFeedbackComplaintsTab() {
                 onChangeText={setDescription}
                 multiline
                 numberOfLines={4}
-                focusedBorderColor="#EF4444"
+                focusedBorderColor={Colors.danger}
                 borderRadius={14}
                 style={{ flex: 1, minHeight: 90 }}
               />
@@ -288,7 +273,7 @@ export function GuestFeedbackComplaintsTab() {
             <Spacer size={8} />
             <Row gap={10}>
               <TouchableOpacity accessibilityRole="button" activeOpacity={0.85} onPress={() => attach('photo')} style={styles.attachBtn}>
-                <Ionicons name="image-outline" size={20} color="#EF4444" />
+                <Ionicons name="image-outline" size={20} color={Colors.danger} />
                 <Col style={{ marginLeft: 8 }}>
                   <Txt size={12} weight="800" color={Colors.textPrimary}>Add Photo</Txt>
                   <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
@@ -296,7 +281,7 @@ export function GuestFeedbackComplaintsTab() {
               </TouchableOpacity>
 
               <TouchableOpacity accessibilityRole="button" activeOpacity={0.85} onPress={() => attach('video')} style={styles.attachBtn}>
-                <Ionicons name="videocam-outline" size={20} color="#EF4444" />
+                <Ionicons name="videocam-outline" size={20} color={Colors.danger} />
                 <Col style={{ marginLeft: 8 }}>
                   <Txt size={12} weight="800" color={Colors.textPrimary}>Add Video</Txt>
                   <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
@@ -306,7 +291,7 @@ export function GuestFeedbackComplaintsTab() {
 
             {mediaUri && (
               <View style={styles.mediaPreviewChip}>
-                <Ionicons name={mediaIsVideo ? "videocam" : "image"} size={16} color="#EF4444" />
+                <Ionicons name={mediaIsVideo ? "videocam" : "image"} size={16} color={Colors.danger} />
                 <Txt size={11} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ flex: 1, marginLeft: 6 }}>
                   {mediaName ?? 'Attached Asset'}
                 </Txt>
@@ -596,10 +581,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
 
   // Header
-  header: { overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  hRow: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 },
-  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.07)' },
-  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)' },
   helpBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 },
 
   scroll: { flex: 1 },
@@ -613,13 +594,13 @@ const styles = StyleSheet.create({
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
   },
   complaintCard: { backgroundColor: '#FFF5F5', borderColor: '#FECACA' },
-  complaintCardActive: { borderWidth: 2, borderColor: '#EF4444' },
+  complaintCardActive: { borderWidth: 2, borderColor: Colors.danger },
   feedbackCard: { backgroundColor: '#F0F6F5', borderColor: '#BDD8D6' },
   feedbackCardActive: { borderWidth: 2, borderColor: Colors.primary },
 
   complaintIconWrap: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
   feedbackIconWrap: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center' },
-  alertBadgeDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center' },
+  alertBadgeDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center' },
   starBadgeDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
 
   // Category pills

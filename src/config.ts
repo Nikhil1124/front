@@ -210,11 +210,7 @@ export const API = {
 } as const;
 
 // The five gate codes — switches on error.code, never error.message
-export const GATE_CODES = [
-  "PASSWORD_CHANGE_REQUIRED",
-  "KYC_REQUIRED",
-  "KYC_PENDING",
-  "KYC_REJECTED",
-  "RENT_UNPAID",
-] as const;
-export type GateCode = (typeof GATE_CODES)[number];
+// GATE_CODES and GateCode live in `data/gateCodes.ts`, beside the rule that reads them.
+// Deliberately NOT re-exported from here: this file is read directly by
+// `scripts/check-api-compatibility.mjs` under plain node, so it must stay free of runtime
+// imports — a re-export is a runtime import, and it broke that check the moment it landed.

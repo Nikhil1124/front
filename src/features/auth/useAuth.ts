@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API } from "../../config";
 import { apiFetch, clearConditionalCache } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
+import { queryClient } from "../../data/queryClient";
 import { useAuthStore, type User } from "../../store/authStore";
 import { unregisterDevice } from "../devices/useDevices";
 
@@ -174,17 +175,20 @@ export function useSession() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const setUser = useAuthStore((s) => s.setUser);
 
-  return useQuery({
-    queryKey: qk.session(),
-    enabled: !!accessToken,
-    retry: false,
-    staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const user = await fetchMe();
-      setUser(user);
-      return user;
+  return useQuery(
+    {
+      queryKey: qk.session(),
+      enabled: !!accessToken,
+      retry: false,
+      staleTime: 5 * 60_000,
+      queryFn: async () => {
+        const user = await fetchMe();
+        setUser(user);
+        return user;
+      },
     },
-  });
+    queryClient
+  );
 }
 
 /**

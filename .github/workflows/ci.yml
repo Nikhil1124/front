@@ -1,0 +1,88 @@
+# Frontend CI — the gates this repo already had, but which only ran when somebody remembered.
+#
+# Every step is an existing npm script (`typecheck`, `check`, `check:api`). Nothing here is new
+# tooling; what is new is that they run on every push, which is the difference between a gate
+# and a suggestion. pg-backend has had this from day one, and it is a large part of why the two
+# repos drifted apart in quality.
+#
+# Deliberately no EAS/native build: that needs credentials, takes ~20 minutes, and would not
+# catch anything the steps below miss. This is the fast loop.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# A newer push makes the previous run irrelevant — cancel it rather than queueing behind work
+# nobody is waiting on.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      # `npm ci`, not `npm install`: installs exactly the lockfile, so CI can never go green on
+      # a dependency tree nobody else has.
+      - name: Install
+        run: npm ci
+
+      # Strict TS over ~49k lines. With no component tests, this is the widest net the repo
+      # has — it caught every mistake in the recent codemods.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # mappers.check.ts + logic.check.ts — plain node, no runner, no mocks. Covers the DTO→UI
+      # mapping layer and the pure logic whose failures are silent and expensive: the UPI deep
+      # link, role routing, the ADR-004 gate, rent periods.
+      - name: Logic checks
+        run: npm run check
+
+      # ── API contract ────────────────────────────────────────────────────────
+      # Diffs this app's API constants against the real backend's OpenAPI spec: endpoints that
+      # don't exist, response fields the app reads but the server never sends, `limit:` values
+      # above the server's cap, enum values the server would 422 on. This is the check that
+      # would have caught the `limit: 200` bug that silently broke the P&L screen.
+      #
+      # Needs the backend checked out. Fails SOFT: a sibling repo that isn't reachable is not a
+      # broken frontend, and a step that goes red for an unrelated reason is one people learn to
+      # ignore. If this is skipping and you want it running, set the repo name in
+      # `BACKEND_REPO` (repo variable) and, for a private backend, a PAT in `BACKEND_REPO_TOKEN`.
+      - name: Check out backend for the API spec
+        id: backend
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.BACKEND_REPO || format('{0}/pg-backend', github.repository_owner) }}
+          path: pg-backend
+          token: ${{ secrets.BACKEND_REPO_TOKEN || github.token }}
+
+      - name: Set up Python
+        if: steps.backend.outcome == 'success'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate the OpenAPI spec
+        if: steps.backend.outcome == 'success'
+        working-directory: pg-backend
+        run: |
+          pip install -r requirements.txt
+          # No database and no network: `app.openapi()` only reads the route table.
+          python -c "import json; from app.main import app; print(json.dumps(app.openapi()))" \
+            > "$GITHUB_WORKSPACE/openapi.json"
+
+      - name: API contract check
+        if: steps.backend.outcome == 'success'
+        env:
+          PGOW_SPEC: ${{ github.workspace }}/openapi.json
+        run: npm run check:api

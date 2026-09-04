@@ -1,14 +1,13 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
-import { Colors, Radii } from '@/theme';
+import { Palette, Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { Row, Col, Txt } from '@/components/ui';
+import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 
 const MENU_ITEMS = [
   { id: '1', title: 'Manage Addresses', icon: 'location-outline' as const },
@@ -19,7 +18,6 @@ const MENU_ITEMS = [
 
 /** The groceries mini-app's profile screen — styled with the official LUNA palette */
 export function GroceryProfileScreen() {
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const logout = usePGowStore((s) => s.logout);
 
@@ -28,24 +26,7 @@ export function GroceryProfileScreen() {
   const avatarLetter = name.trim().charAt(0).toUpperCase() || 'P';
 
   return (
-    <View style={styles.container}>
-      {/* ── 1. LUNA GRADIENT HEADER ── */}
-      <LinearGradient
-        colors={['#011C40', '#023859']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.headerGradient, { paddingTop: insets.top + 12 }]}
-      >
-        <Row justify="space-between" align="center" style={styles.hRow}>
-          <Row gap={10} align="center">
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Txt size={22} weight="900" color="#FFFFFF">Grocery Account</Txt>
-          </Row>
-        </Row>
-      </LinearGradient>
-
+    <HubScreenWrapper title="Grocery Account" scrollable={false} contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 0 }}>
       <ScrollView showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
@@ -88,32 +69,11 @@ export function GroceryProfileScreen() {
           <Text maxFontSizeMultiplier={1.3} style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </HubScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.canvas,
-  },
-  headerGradient: {
-    overflow: 'hidden',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  hRow: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,7 +144,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#EBF7FA',
+    backgroundColor: Colors.surfaceElevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -201,12 +161,12 @@ const styles = StyleSheet.create({
   logoutBtn: {
     marginTop: 24,
     marginBottom: 40,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: Palette.TintRed,
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#FECACA',
+    borderColor: Palette.TintRed,
   },
   logoutText: {
     color: Colors.danger,

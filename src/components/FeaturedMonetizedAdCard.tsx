@@ -111,7 +111,7 @@ export function FeaturedMonetizedAdCard() {
         <View style={styles.backdrop}>
           <Card containerColor="#0F0B21" borderRadius={20} borderWidth={1} borderColor={Colors.accentRose} padding={[20, 20]} style={{ width: '92%' }}>
             <Col align="center">
-              <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color="#10B981" /></View>
+              <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={Colors.success} /></View>
               <Spacer size={16} />
               <Txt variant="sectionTitle" weight="900" color="#FFFFFF" align="center">{ad.brand_name}</Txt>
               <Txt variant="caption" color={Colors.textMuted}>Exclusive PG Partner Integration</Txt>
@@ -119,7 +119,7 @@ export function FeaturedMonetizedAdCard() {
               {!!ad.discount_code && (
                 <Row justify="space-between" style={{ width: '100%' }}>
                   <Txt variant="caption" color={Colors.textMuted}>Resident Meal Voucher</Txt>
-                  <Txt variant="caption" weight="700" color="#10B981">
+                  <Txt variant="caption" weight="700" color={Colors.success}>
                     {ad.discount_percent > 0 ? `- ${ad.discount_percent}% Off Applied` : 'Applied'}
                   </Txt>
                 </Row>

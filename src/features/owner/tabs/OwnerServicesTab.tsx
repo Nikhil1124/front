@@ -3,7 +3,7 @@ import { ScrollView, View, StyleSheet, TouchableOpacity, Text, TextInput, Modal,
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInDown, ZoomIn } from 'react-native-reanimated';
-import { Row, Col, Spacer } from '@/components/ui';
+import { Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useRepairRequestsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
@@ -13,6 +13,7 @@ import { useSubscriptionsQuery, useSetSubscriptionActiveMutation } from '@/featu
 import { AddPgDailySubscriptionDialog } from '@/components/dialogs/HubDialogs';
 
 import { Colors } from '@/theme';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 
 // ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
 const PRIMARY = Colors.primary;       // Deep Ocean Blue
@@ -82,7 +83,12 @@ export function OwnerServicesTab() {
   const [showAddSubscription, setShowAddSubscription] = useState(false);
 
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: repairs = [] } = useRepairRequestsQuery(activePgId ?? undefined);
+  const {
+    data: repairs = [],
+    isLoading: repairsLoading,
+    error: repairsError,
+    refetch: refetchRepairs,
+  } = useRepairRequestsQuery(activePgId ?? undefined);
   const isManagerMode = useIsManagerMode();
 
   const { data: pendingOrders = [] } = useProcurementOrders({
@@ -172,7 +178,19 @@ export function OwnerServicesTab() {
     <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingHorizontal: 20 }]} showsVerticalScrollIndicator={false}>
       <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Active & Past Requests</Text>
       <Spacer size={12} />
-      {repairs.length === 0 ? (
+      {/* "No active repair requests" is only true once the fetch has actually succeeded —
+          before these branches it was also what an owner saw while it was still loading, and
+          when it had failed outright. */}
+      {repairsLoading ? (
+        <LoadingState label="Loading requests…" fill={false} />
+      ) : repairsError ? (
+        <ErrorState
+          error={repairsError}
+          title="Could not load repair requests"
+          onRetry={refetchRepairs}
+          fill={false}
+        />
+      ) : repairs.length === 0 ? (
         <View style={styles.emptyLegacyCard}><Text maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repair requests.</Text></View>
       ) : (
         <Col gap={10}>
@@ -268,31 +286,14 @@ export function OwnerServicesTab() {
 
   return (
     <View style={styles.root}>
-      {/* ── Page Header (Solid Primary Background) ── */}
-      <View style={[styles.headerArea, { paddingTop: insets.top + 16 }]}>
-        <Row justify="space-between" align="flex-start">
-          <Col>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={{ marginBottom: 16 }}>
-              <Ionicons name="arrow-back" size={24} color={SURFACE} />
-            </TouchableOpacity>
-            <Text maxFontSizeMultiplier={1.3} style={styles.pageTitle}>Services</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.pageSub}>Get your PG problems fixed quickly</Text>
-          </Col>
-          <Row gap={12} align="center" style={{ marginTop: 40 }}>
-            <View style={styles.headerAvatarBtn}>
-              <Ionicons name="person" size={20} color={PRIMARY} />
-            </View>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Notifications" accessibilityRole="button" 
-              style={[styles.headerIconBtn, { backgroundColor: 'transparent' }]}
-              activeOpacity={0.7}
-              onPress={() => { router.push('/notices'); }}
-            >
-              <Ionicons name="notifications" size={24} color={SURFACE} />
-              <View style={styles.headerNotifDot} />
-            </TouchableOpacity>
-          </Row>
-        </Row>
-      </View>
+      <AppHeader
+        title="Services"
+        subtitle="Get your PG problems fixed quickly"
+        onBack={() => router.back()}
+        actions={
+          <HeaderChip icon="notifications" label="Notifications" badge onPress={() => { router.push('/notices'); }} />
+        }
+      />
 
       {/* ── Main Content Sheet (White Background with Rounded Top) ── */}
       <View style={styles.mainSheet}>
@@ -469,13 +470,6 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: PRIMARY },
-  
-  headerArea: { paddingHorizontal: 20, paddingBottom: 40 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: SURFACE },
-  pageSub: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-  headerAvatarBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center' },
-  headerIconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerNotifDot: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: PRIMARY },
   
   mainSheet: { flex: 1, backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -20 },
   

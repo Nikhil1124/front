@@ -424,7 +424,7 @@ export function StaffManagementTab() {
               {selectableRoles.map((role) => {
                 const isSelected = staffRoleInput === role;
                 return (
-                  <TouchableOpacity accessibilityRole="button"
+                  <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                     key={role}
                     style={[styles.roleChip, isSelected && styles.roleChipActive]}
                     onPress={() => set('staffRoleInput', role)}
@@ -450,7 +450,7 @@ export function StaffManagementTab() {
                   {SHIFT_OPTIONS.map((opt) => {
                     const isSelected = staffShiftInput === opt;
                     return (
-                      <TouchableOpacity accessibilityRole="button"
+                      <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                         key={opt}
                         style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                         onPress={() => set('staffShiftInput', opt)}
@@ -672,8 +672,8 @@ export function StaffManagementTab() {
                 style={[styles.sheetOptionRow, { borderBottomWidth: 0 }]}
                 onPress={() => confirmDeleteStaff(selectedStaff)}
               >
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                <Text maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: '#EF4444' }]}>Delete Staff</Text>
+                <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+                <Text maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: Colors.danger }]}>Delete Staff</Text>
               </TouchableOpacity>
 
               <Spacer size={8} />
@@ -843,7 +843,7 @@ export function StaffManagementTab() {
                           {SHIFT_OPTIONS.map((opt) => {
                             const isSelected = editShift === opt;
                             return (
-                              <TouchableOpacity accessibilityRole="button"
+                              <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                                 key={opt}
                                 style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                                 onPress={() => setEditShift(opt)}
@@ -867,7 +867,7 @@ export function StaffManagementTab() {
                       {selectableRoles.map((r) => {
                         const isSelected = editRole === r;
                         return (
-                          <TouchableOpacity accessibilityRole="button"
+                          <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                             key={r}
                             style={[styles.roleChip, isSelected && styles.roleChipActive]}
                             onPress={() => setEditRole(r)}

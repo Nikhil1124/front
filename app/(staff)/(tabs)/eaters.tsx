@@ -447,9 +447,9 @@ function DeliveryDashboardRoute() {
                         <Txt size={14} weight="800" color="#FFFFFF">{current.orders} Orders</Txt>
                       </Row>
                       <Spacer size={10} />
-                      <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 1, borderColor: '#10B981', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981', marginRight: 6 }} />
-                        <Txt size={10} weight="700" color="#10B981">Ready for Delivery</Txt>
+                      <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 1, borderColor: Colors.success, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success, marginRight: 6 }} />
+                        <Txt size={10} weight="700" color={Colors.success}>Ready for Delivery</Txt>
                       </View>
                     </Col>
                   </Row>
@@ -506,7 +506,7 @@ function DeliveryDashboardRoute() {
               <Row key={r.id} style={{ minHeight: 70 }}>
                 {/* Timeline Column */}
                 <Col align="center" style={{ width: 40, position: 'relative' }}>
-                  <View style={{ position: 'absolute', top: 0, bottom: 0, left: 19, width: 2, backgroundColor: isCompleted || isCurrent ? '#10B981' : '#E2E8F0', zIndex: 0, marginTop: i === 0 ? 30 : 0, marginBottom: isLast ? '50%' : 0 }} />
+                  <View style={{ position: 'absolute', top: 0, bottom: 0, left: 19, width: 2, backgroundColor: isCompleted || isCurrent ? Colors.success : '#E2E8F0', zIndex: 0, marginTop: i === 0 ? 30 : 0, marginBottom: isLast ? '50%' : 0 }} />
                   
                   <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: isCompleted ? Colors.success : (isCurrent ? Colors.primaryDark : '#FFFFFF'), borderWidth: isPending ? 2 : 0, borderColor: Colors.warning, alignItems: 'center', justifyContent: 'center', zIndex: 2, marginTop: 26 }}>
                     {isCompleted && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}

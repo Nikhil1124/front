@@ -3,9 +3,7 @@
  * Visual System: Unified Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
@@ -14,11 +12,15 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GuestLaundryBookingDialog } from '@/components/dialogs/HubDialogs';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 export function GuestHubServicesTab() {
-  const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: laundryRequests = [] } = useLaundryRequestsQuery(activePgId ?? undefined);
+  const {
+    data: laundryRequests = [],
+    refetch: refetchLaundry,
+    isRefetching: laundryRefetching,
+  } = useLaundryRequestsQuery(activePgId ?? undefined);
   const [showLaundryDialog, setShowLaundryDialog] = useState(false);
 
   const myLaundry = laundryRequests.filter((r) => r.guestId === guest?.id);
@@ -26,33 +28,21 @@ export function GuestHubServicesTab() {
   return (
     <View style={styles.root}>
       {/* ── 1. LUXURY EMERALD GRADIENT HEADER ── */}
-      <LinearGradient
-        colors={['#011C40', '#023859']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
-      >
-        <View style={styles.hWave1} />
-        <View style={styles.hWave2} />
-        <Row justify="space-between" align="center" style={styles.hRow}>
-          <Col>
-            <Txt size={26} weight="900" color="#FFFFFF">Hub Services</Txt>
-            <Txt size={13} weight="500" color="rgba(255,255,255,0.78)" style={{ marginTop: 2 }}>
-              Laundry, Groceries & PG Conveniences
-            </Txt>
-          </Col>
-          <View style={styles.badgeWrap}>
-            <Ionicons name="storefront-outline" size={20} color="#FFFFFF" />
-          </View>
-        </Row>
-      </LinearGradient>
+      <AppHeader
+        title="Hub Services"
+        subtitle="Laundry, Groceries & PG Conveniences"
+      />
 
       {/* ── SCROLLABLE CONTENT ── */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        bounces={false}
+        // `bounces={false}` also kills the pull-to-refresh gesture on iOS, so the two have to
+        // change together — a RefreshControl on a non-bouncing ScrollView never fires.
+        refreshControl={
+          <RefreshControl refreshing={laundryRefetching} onRefresh={refetchLaundry} tintColor={Colors.primary} />
+        }
         overScrollMode="never"
       >
         {/* ── 2. EXPRESS LAUNDRY CARD ── */}
@@ -215,11 +205,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
 
   // Header
-  header: { overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  hRow: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 24 },
-  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.07)' },
-  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)' },
-  badgeWrap: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 16 },

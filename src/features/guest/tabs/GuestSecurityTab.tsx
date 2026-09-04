@@ -9,8 +9,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, Alert, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
@@ -22,6 +20,7 @@ import { useKycStatus } from '@/features/kyc/useKycStatus';
 import { useToast } from '@/hooks/useToast';
 import { useChangePassword } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
+import { AppHeader, HeaderChip } from '@/components/AppHeader';
 
 /**
  * Same camera/gallery pattern as KycUploadDialog's `pickImage`/`choosePhoto` — real
@@ -63,7 +62,6 @@ function kycPill(status: KycStatus): KycPillConfig {
 }
 
 export function GuestSecurityTab() {
-  const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const changePasswordMutation = useChangePassword();
   const updateProfilePhoto = usePGowStore((s) => s.updateGuestProfilePhoto);
@@ -131,26 +129,10 @@ export function GuestSecurityTab() {
   return (
     <View style={styles.root}>
       {/* ── 1. LUXURY EMERALD GRADIENT HEADER ── */}
-      <LinearGradient
-        colors={['#011C40', '#023859']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
-      >
-        <View style={styles.hWave1} />
-        <View style={styles.hWave2} />
-        <Row justify="space-between" align="center" style={styles.hRow}>
-          <Col>
-            <Txt size={26} weight="900" color="#FFFFFF">My Account & Profile</Txt>
-            <Txt size={13} weight="500" color="rgba(255,255,255,0.78)" style={{ marginTop: 2 }}>
-              Personal Identity, Security & Verification
-            </Txt>
-          </Col>
-          <View style={styles.badgeWrap}>
-            <Ionicons name="ribbon" size={20} color="#FFFFFF" />
-          </View>
-        </Row>
-      </LinearGradient>
+      <AppHeader
+        title="My Account & Profile"
+        subtitle="Personal Identity, Security & Verification"
+      />
 
       {/* ── SCROLLABLE CONTENT ── */}
       <ScrollView
@@ -313,11 +295,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
 
   // Header
-  header: { overflow: 'hidden', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  hRow: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 24 },
-  hWave1: { position: 'absolute', bottom: -30, right: -40, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.07)' },
-  hWave2: { position: 'absolute', bottom: 10, right: 50, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)' },
-  badgeWrap: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 16 },

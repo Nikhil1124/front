@@ -1432,7 +1432,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#EF4444',
+    backgroundColor: Colors.danger,
     position: 'absolute',
     top: 10,
     right: 10,

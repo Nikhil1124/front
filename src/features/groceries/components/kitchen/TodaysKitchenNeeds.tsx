@@ -453,8 +453,8 @@ const styles = StyleSheet.create({
   bannerWrapper: { width: 320, marginRight: 10 },
 
   bottomSheetBackdrop: { flex: 1, backgroundColor: 'rgba(12,46,78,0.55)', justifyContent: 'flex-end' },
-  bottomSheetContainer: { height: '65%', backgroundColor: '#F3F4F6', borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 10, overflow: 'hidden' },
-  grabHandle: { width: 40, height: 5, backgroundColor: '#D1D5DB', borderRadius: 2.5, alignSelf: 'center', marginTop: 8, marginBottom: 4 },
+  bottomSheetContainer: { height: '65%', backgroundColor: Colors.surfaceMuted, borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 10, overflow: 'hidden' },
+  grabHandle: { width: 40, height: 5, backgroundColor: Colors.borderMuted, borderRadius: 2.5, alignSelf: 'center', marginTop: 8, marginBottom: 4 },
   bottomSheetHeader: { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   bottomSheetScroll: { flex: 1, padding: 16 },
   categorySection: { marginBottom: 20 },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SupplyCategory } from '@/types';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 
 const gap = 10;
 const totalPadding = 32;
@@ -16,30 +16,30 @@ interface SupplyCategoryGridProps {
 const getSupplyCategoryBgColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('rice') || n.includes('grain') || n.includes('atta') || n.includes('flour')) {
-    return '#F0FDF4'; // Rice & Grains
+    return Colors.surfaceElevated; // Rice & Grains
   }
   if (n.includes('pulse') || n.includes('dal') || n.includes('cereal') || n.includes('dry fruits')) {
-    return '#FFF7ED'; // Pulses & Dal
+    return Palette.TintAmber; // Pulses & Dal
   }
   if (n.includes('oil') || n.includes('masala') || n.includes('ghee') || n.includes('spice')) {
-    return '#FFFBEB'; // Oil & Masala
+    return Palette.TintAmber; // Oil & Masala
   }
   if (n.includes('veg') || n.includes('fruit')) {
-    return '#ECFDF5'; // Vegetables
+    return Colors.surfaceElevated; // Vegetables
   }
   if (n.includes('dairy') || n.includes('bread') || n.includes('bakery') || n.includes('biscuit')) {
-    return '#EFF6FF'; // Dairy & Bread
+    return Palette.TintBlue; // Dairy & Bread
   }
   if (n.includes('egg') || n.includes('chicken') || n.includes('fish') || n.includes('meat')) {
-    return '#FFF7ED'; // Eggs
+    return Palette.TintAmber; // Eggs
   }
   if (n.includes('beverage') || n.includes('drink') || n.includes('juice') || n.includes('tea') || n.includes('coffee')) {
-    return '#EFF6FF'; // Beverages
+    return Palette.TintBlue; // Beverages
   }
   if (n.includes('clean') || n.includes('hygiene') || n.includes('essential')) {
-    return '#F0FDF4'; // Cleaning
+    return Colors.surfaceElevated; // Cleaning
   }
-  return '#F0FDF4'; // Fallback very light green
+  return Colors.surfaceElevated; // Fallback very light green
 };
 
 export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categories, onSupplyCategoryPress, onSeeAllPress }) => {
@@ -101,11 +101,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    color: '#17201A',
+    color: Colors.textPrimary,
   },
   seeAllText: {
     fontSize: 13,
-    color: '#15803D',
+    color: Colors.primary,
   },
   grid: {
     flexDirection: 'row',
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   },
   cardText: {
     fontSize: 11,
-    color: '#17201A',
+    color: Colors.textPrimary,
     textAlign: 'center',
     lineHeight: 14,
     minHeight: 28,

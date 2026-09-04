@@ -8,6 +8,12 @@ import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
 import * as map from "../../data/mappers";
 import type { PaymentEntity } from "../../types";
+// Re-exported: this module stays the public entry point for payments, while the pure
+// URI builder lives somewhere a plain `node` check can import it.
+import { buildUpiUri, type LaunchUpiParams } from "./upiUri";
+
+export { buildUpiUri };
+export type { LaunchUpiParams };
 
 export interface PaymentRecord {
   id: string;
@@ -48,13 +54,6 @@ export interface SubmitPaymentParams {
   method?: "upi_intent" | "upi_manual" | "cash";
   upi_ref?: string;
   idempotency_key?: string;
-}
-
-export interface LaunchUpiParams {
-  upiId: string;
-  payeeName?: string;
-  amount: number;
-  note?: string;
 }
 
 // GET /v1/payments/due?pg_id=
@@ -120,38 +119,6 @@ export function rejectPayment(paymentId: string, reason?: string): Promise<Payme
     method: "POST",
     body: JSON.stringify({ reason }),
   });
-}
-
-/**
- * Builds the same strict NPCI `upi://pay` deep link `launchUpiPayment` opens — pulled out so
- * the "Scan QR" screen can encode the exact intent a tap on "Pay Online" would send, instead
- * of carrying a second, driftable copy of this string. Null when the VPA is missing or
- * incomplete (see the safety note below).
- */
-export function buildUpiUri({
-  upiId,
-  payeeName = "PG Co Living",
-  amount,
-  note = "PG Rent Payment",
-}: LaunchUpiParams): string | null {
-  const cleanUpi = upiId.trim().toLowerCase();
-  // Never complete a partial VPA. Appending a default handle here would send the
-  // resident's rent to whoever happens to own `<that-handle>@ybl` — a real person, just
-  // not this owner. The backend already rejects a VPA without '@', so reaching this means
-  // the data is wrong and the only safe move is to stop.
-  if (!cleanUpi || !cleanUpi.includes("@")) return null;
-
-  const cleanName = payeeName.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "PG Co Living";
-  const cleanNote = note.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "PG Rent";
-  const formattedAmount = Number(amount).toFixed(2);
-  const txnRef = `PGOW${Date.now()}`;
-  const txnId = `T${Date.now()}`;
-
-  return `upi://pay?pa=${encodeURIComponent(cleanUpi)}&pn=${encodeURIComponent(
-    cleanName
-  )}&mc=0000&tr=${txnRef}&tid=${txnId}&tn=${encodeURIComponent(
-    cleanNote
-  )}&am=${formattedAmount}&cu=INR`;
 }
 
 // Direct NPCI-compliant UPI Intent Launcher with Clipboard Fallback

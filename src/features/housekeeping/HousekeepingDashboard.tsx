@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn, LoadingState, ErrorState } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
@@ -66,7 +66,13 @@ export function HousekeepingDashboard() {
   // OwnerAnnouncementsTab already read — a maintenance staffer is in `_QUEUE_ROLES`
   // server-side (pg-backend request/service/crud.py), so this is the property's actual
   // open-issue queue, not a filtered slice of it.
-  const { data: complaints = [], refetch: refetchComplaints, isRefetching: isRefetchingComplaints } = useComplaintsQuery(activePgId ?? undefined);
+  const {
+    data: complaints = [],
+    isLoading: complaintsLoading,
+    error: complaintsError,
+    refetch: refetchComplaints,
+    isRefetching: isRefetchingComplaints,
+  } = useComplaintsQuery(activePgId ?? undefined);
   // The query includes both complaint and feedback tickets (that split is what a resident's
   // Support tab shows); a facility issue is only ever the former.
   const issues = complaints.filter((c) => c.type === 'COMPLAINT').map(toIssueView);
@@ -95,7 +101,16 @@ export function HousekeepingDashboard() {
         />
       )}
       {activeTab === 'check' && <FacilityCheckView inspections={inspections} setItemStatus={setItemStatus} selectedCat={checkTabCategory} setSelectedCat={setCheckTabCategory} />}
-      {activeTab === 'issues' && <IssuesSupervisionView issues={issues} pgId={activePgId} refreshControl={refreshCtrl} />}
+      {activeTab === 'issues' && (
+        <IssuesSupervisionView
+          issues={issues}
+          pgId={activePgId}
+          refreshControl={refreshCtrl}
+          isLoading={complaintsLoading}
+          error={complaintsError}
+          onRetry={refetchComplaints}
+        />
+      )}
       {activeTab === 'profile' && <MaintenanceProfileView staff={staff} logout={logout} inspections={inspections} issues={issues} />}
       <View style={dockStyle as any}>
         <HeadlessDockTabButton icon="home" label="Dash" isFocused={activeTab === 'dash'} onPress={() => setActiveTab('dash')} />
@@ -505,7 +520,17 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
   );
 }
 
-function IssuesSupervisionView({ issues, pgId, refreshControl }: { issues: any[]; pgId: string | null; refreshControl?: React.ReactNode }) {
+function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error, onRetry }: {
+  issues: any[];
+  pgId: string | null;
+  refreshControl?: React.ReactNode;
+  // Passed down rather than re-queried here: the parent owns the complaints query, and a
+  // second `useComplaintsQuery` in this child would be a separate cache subscriber that can
+  // disagree with the list it is describing.
+  isLoading?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
+}) {
   const submitIssue = useSubmitComplaintMutation(pgId ?? undefined);
   const resolveIssue = useResolveComplaintMutation(pgId ?? undefined);
 
@@ -841,7 +866,18 @@ function IssuesSupervisionView({ issues, pgId, refreshControl }: { issues: any[]
         </FormScroll>
       </View>
       <FormScroll bottomPadding={180} contentContainerStyle={{ padding: 18, gap: 16 }} refreshControl={refreshControl as any}>
-        {displayedIssues.length === 0 ? (
+        {/* "No issues found" is good news to a maintenance worker, so it must not also be what
+            a failed or still-loading fetch looks like — that is how a real ticket gets missed. */}
+        {isLoading ? (
+          <LoadingState label="Loading issues…" fill={false} />
+        ) : error ? (
+          <ErrorState
+            error={error}
+            title="Could not load issues"
+            onRetry={onRetry}
+            fill={false}
+          />
+        ) : displayedIssues.length === 0 ? (
           <Txt size={14} color={Colors.textMuted} align="center" style={{ marginTop: 40 }}>No issues found</Txt>
         ) : (
           displayedIssues.map((iss: any) => {
@@ -960,7 +996,7 @@ function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues
   return (
     <FormScroll bottomPadding={120} contentContainerStyle={{ padding: 18, gap: 16 }}>
       <LinearGradient
-        colors={['#011C40', '#023859']}
+        colors={[Colors.heroGradientStart, Colors.heroGradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ borderRadius: 24, padding: 20, alignItems: 'center' }}

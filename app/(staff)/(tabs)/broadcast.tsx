@@ -344,7 +344,7 @@ function ChefBroadcastView() {
           ].map((m) => {
             const isSel = mealTypeSelected === m.id;
             return (
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
                 key={m.id}
                 onPress={() => selectMealType(m.id)}
                 style={[
@@ -373,7 +373,7 @@ function ChefBroadcastView() {
           ].map((d) => {
             const isSel = mealDietaryTypeSelected === d.id;
             return (
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
                 key={d.id}
                 onPress={() => set('mealDietaryTypeSelected', d.id)}
                 style={[
@@ -429,7 +429,7 @@ function ChefBroadcastView() {
           const matchCat = c === 'All' ? 'All' : rawCat;
           const isSel = selectedCat === matchCat;
           return (
-            <TouchableOpacity accessibilityRole="button"
+            <TouchableOpacity accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
               key={c}
               onPress={() => setSelectedCat(matchCat)}
               style={[
@@ -450,7 +450,7 @@ function ChefBroadcastView() {
         {filteredDishes.map((dish) => {
           const isSel = selectedDishes.includes(dish.name);
           return (
-            <TouchableOpacity accessibilityRole="button" 
+            <TouchableOpacity accessibilityState={{ selected: !!isSel }} accessibilityRole="button" 
               key={dish.name} 
               onPress={() => toggleDish(dish.name)} 
               activeOpacity={0.9}
@@ -480,7 +480,7 @@ function ChefBroadcastView() {
                 
                 <Row justify="space-between" align="center" style={{ marginTop: 4 }}>
                   <Row gap={4} align="center">
-                    <View style={[styles.vegDotSmall, { backgroundColor: dish.isVeg ? '#10B981' : '#EF4444' }]} />
+                    <View style={[styles.vegDotSmall, { backgroundColor: dish.isVeg ? Colors.success : Colors.danger }]} />
                     <Txt size={10} weight="700" color={Colors.textMuted}>{dish.isVeg ? 'Veg' : 'Non-Veg'}</Txt>
                   </Row>
                   
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   foodAddBtnSelected: {
-    backgroundColor: '#10B981',
+    backgroundColor: Colors.success,
   },
   foodCardBody: {
     padding: 10,

@@ -80,8 +80,8 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
             <Txt size={10} weight="800" color="#FFF">{label}</Txt>
           </View>
           <View style={styles.inspectHint}>
-            <Ionicons name="scan-outline" size={11} color="#54ACBF" />
-            <Txt size={9} weight="800" color="#54ACBF">TAP TO ENLARGE</Txt>
+            <Ionicons name="scan-outline" size={11} color={Colors.secondary} />
+            <Txt size={9} weight="800" color={Colors.secondary}>TAP TO ENLARGE</Txt>
           </View>
         </View>
       </Pressable>
@@ -143,19 +143,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
     padding: 14,
   },
   thumbEmptyCard: {
     flex: 1,
     height: 135,
     borderRadius: 16,
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     borderWidth: 1.5,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
@@ -165,10 +165,10 @@ const styles = StyleSheet.create({
     height: 135,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#011C40',
+    backgroundColor: Colors.primaryDark,
     borderWidth: 1.5,
-    borderColor: '#CBEFF4',
-    shadowColor: '#011C40',
+    borderColor: Colors.borderSubtle,
+    shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -203,14 +203,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   securityNoteBox: {
-    backgroundColor: '#EBF7FA',
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   zoomBackdrop: {
     flex: 1,
-    backgroundColor: '#011C40',
+    backgroundColor: Colors.primaryDark,
     justifyContent: 'space-between',
   },
   zoomHeader: {
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#26658C',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 14,

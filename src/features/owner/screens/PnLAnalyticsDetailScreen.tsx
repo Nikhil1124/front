@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Row, Col, Spacer } from '@/components/ui';
+import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { PnLChart as PnLChartPresentational } from '@/components/PnLChart';
 import { usePnL } from '@/features/billing/usePnL';
@@ -76,7 +77,14 @@ export function PnLAnalyticsDetailScreen() {
   const { data: allExpensesState = [] } = useAllExpensesQuery(pgId ?? undefined);
 
   // Fetch standard intervals via React Query
-  const { data: apiData, isLoading: isApiLoading, isError: isApiError, error: apiError } = usePnL(
+  const {
+    data: apiData,
+    isLoading: isApiLoading,
+    isError: isApiError,
+    error: apiError,
+    refetch: refetchPnl,
+    isRefetching: isPnlRefetching,
+  } = usePnL(
     pgId,
     interval === 'custom' ? '3m' : interval
   );
@@ -311,6 +319,7 @@ export function PnLAnalyticsDetailScreen() {
   // ── Main Render ─────────────────────────────────────────────────────────────
   return (
     <HubScreenWrapper
+      refreshControl={<RefreshControl refreshing={isPnlRefetching} onRefresh={refetchPnl} />}
       title="P&L Analytics"
       subtitle={owner?.pgName ?? 'Property Financials'}
       icon="stats-chart"
@@ -320,7 +329,7 @@ export function PnLAnalyticsDetailScreen() {
         {TABS.map((t) => {
           const isSel = interval === t.key;
           return (
-            <TouchableOpacity accessibilityRole="button"
+            <TouchableOpacity accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
               key={t.key}
               style={[styles.tabButton, isSel && styles.tabButtonSel]}
               onPress={() => {

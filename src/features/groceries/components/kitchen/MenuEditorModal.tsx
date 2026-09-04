@@ -10,7 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 
 import { FormScroll } from '@/components/ui/FormScroll';
 
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textPrimary,
   },
-  removeDishBtn: { padding: 8, backgroundColor: '#FEF2F2', borderRadius: 8 },
+  removeDishBtn: { padding: 8, backgroundColor: Palette.TintRed, borderRadius: 8 },
 
   addDishRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   searchBarWrapper: {

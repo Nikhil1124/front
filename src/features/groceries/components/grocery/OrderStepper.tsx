@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyOrderStatus } from '@/types/supply';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 
 export const SUPPLY_ORDER_STATUS_SEQUENCE: SupplyOrderStatus[] = [
   'placed',
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Palette.TintRed,
     borderRadius: 8,
   },
   cancelledText: {

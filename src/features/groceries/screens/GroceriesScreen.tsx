@@ -1,6 +1,7 @@
 import { SupplyItem } from '@/types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
+import { useQueryClient } from '@tanstack/react-query';
 import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -49,8 +50,18 @@ export function GroceriesScreen() {
   const { data: categories = [], refetch: refetchCategories } = useSupplyCategories(activePgId ?? undefined);
   const { data: deals = [], refetch: refetchDeals } = useDeals(activePgId ?? undefined);
 
+  const queryClient = useQueryClient();
+
   const handleRefresh = async () => {
-    await Promise.all([refetchItems(), refetchCategories(), refetchDeals()]);
+    // `kitchen_menu` is owned by TodaysKitchenNeeds further down this screen, so pulling to
+    // refresh used to reload everything except the one section a chef comes here to check.
+    // Invalidated by key rather than lifting that query up a level for one call site.
+    await Promise.all([
+      refetchItems(),
+      refetchCategories(),
+      refetchDeals(),
+      queryClient.invalidateQueries({ queryKey: ['kitchen_menu', activePgId ?? undefined] }),
+    ]);
   };
 
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -186,7 +197,7 @@ export function GroceriesScreen() {
                 <ErrorState error={itemsError} title="Could not load the catalog" onRetry={refetchItems} fill={false} />
               ) : searchResults.length === 0 ? (
                 <View style={styles.noResultsBox}>
-                  <Ionicons name="search" size={48} color="#98A39B" />
+                  <Ionicons name="search" size={48} color={Colors.textMuted} />
                   <Text maxFontSizeMultiplier={1.3} style={styles.noResultsText}>Try a different keyword</Text>
                 </View>
               ) : (
@@ -291,7 +302,7 @@ const styles = StyleSheet.create({
   searchContainer: { paddingHorizontal: 16, marginTop: 12, marginBottom: 8 },
   floatingCartContainer: {
     position: 'absolute', alignSelf: 'center', width: '85%',
-    shadowColor: '#17201A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8,
+    shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8,
   },
   floatingCart: {
     backgroundColor: 'rgba(255, 255, 255, 0.65)', borderRadius: 32, flexDirection: 'row',

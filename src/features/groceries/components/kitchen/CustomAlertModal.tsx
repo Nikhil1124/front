@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
+import { Palette, Colors } from '@/theme';
 
 export type AlertType = 'success' | 'info' | 'error';
 
@@ -18,9 +18,9 @@ interface CustomAlertModalProps {
 }
 
 const ICON_CONFIG: Record<AlertType, { name: 'checkmark-circle' | 'alert-circle' | 'information-circle'; color: string; bg: string }> = {
-  success: { name: 'checkmark-circle', color: '#2E7D32', bg: '#E8F5E9' },
-  error: { name: 'alert-circle', color: Colors.danger, bg: '#FEF2F2' },
-  info: { name: 'information-circle', color: Colors.info, bg: '#EFF6FF' },
+  success: { name: 'checkmark-circle', color: Colors.primary, bg: Colors.surfaceElevated },
+  error: { name: 'alert-circle', color: Colors.danger, bg: Palette.TintRed },
+  info: { name: 'information-circle', color: Colors.info, bg: Palette.TintBlue },
 };
 
 /**

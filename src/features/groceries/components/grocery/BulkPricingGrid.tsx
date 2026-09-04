@@ -42,7 +42,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
             const calcSavings = Math.round(expected - opt.price);
 
             return (
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                 key={opt.unit}
                 style={[styles.column, isSelected && styles.selectedColumn]}
                 onPress={() => onSelect(i)}
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceElevated,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
     padding: 14,
     marginBottom: 14,
   },
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   },
   selectedColumn: {
     borderColor: Colors.primary,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: Colors.surfaceElevated,
   },
   columnUnit: {
     fontSize: 11,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   savingsTitle: {
     fontSize: 10,
-    color: '#DCFCE7',
+    color: Colors.surfaceElevated,
   },
   savingsPrice: {
     fontSize: 20,
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   savingsSubtitle: {
     fontSize: 8,
-    color: '#DCFCE7',
+    color: Colors.surfaceElevated,
     textAlign: 'center',
     marginTop: 2,
   },

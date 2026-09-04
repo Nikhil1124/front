@@ -105,7 +105,7 @@ export function GroceryCategoryScreen() {
       activeOpacity={0.85}
       onPress={() => setActiveSupplyCategory(cat.name)}
     >
-      <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: '#EBF6F6' }]}>
+      <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: Colors.surfaceElevated }]}>
         <Image
           source={require('../../../../assets/img_app_icon.jpg')}
           style={styles.catImage}

@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderStepper } from '../components/grocery/OrderStepper';
 import {
   useSupplyOrderDetailQuery,
@@ -22,7 +21,10 @@ import {
   useCancelSupplyOrderMutation,
   useSubmitUpiPaymentMutation,
 } from '../useSupplyOrders';
+import { ErrorState } from '@/components/ui';
 import { Colors, Layout } from '@/theme';
+import { formatINR } from '@/utils/format';
+import { AppHeader } from '@/components/AppHeader';
 
 const STATUS_HERO: Record<string, string> = {
   placed: 'Order Placed',
@@ -35,9 +37,8 @@ const STATUS_HERO: Record<string, string> = {
 };
 
 export function GroceryOrderDetailScreen() {
-  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: order, isLoading, refetch, isRefetching } = useSupplyOrderDetailQuery(id as string);
+  const { data: order, isLoading, error, refetch, isRefetching } = useSupplyOrderDetailQuery(id as string);
   const { data: tracking, refetch: refetchTracking } = useSupplyTrackingQuery(id as string);
   const cancelOrder = useCancelSupplyOrderMutation();
   const submitUpiPayment = useSubmitUpiPaymentMutation();
@@ -84,16 +85,27 @@ export function GroceryOrderDetailScreen() {
     );
   }
 
+  // Before this, a failed request fell through to the `!order` branch below and told the
+  // customer their order was "not found" — i.e. that it no longer exists — when the truth was
+  // that the request never arrived. Distinguishing the two is the difference between "retry"
+  // and "panic about a delivery you already paid for".
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <AppHeader title="Order Tracking" onBack={() => router.back()} />
+        <ErrorState
+          error={error}
+          title="Could not load this order"
+          onRetry={refetch}
+        />
+      </View>
+    );
+  }
+
   if (!order) {
     return (
       <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Order Tracking</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <AppHeader title="Order Tracking" onBack={() => router.back()} />
         <View style={styles.emptyBox}>
           <Ionicons name="receipt-outline" size={64} color={Colors.textMuted} />
           <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>Order not found</Text>
@@ -111,15 +123,15 @@ export function GroceryOrderDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Order #{order.order_no || order.id.slice(-6)}</Text>
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Refresh" accessibilityRole="button" onPress={() => refetch()}>
-          <Ionicons name="refresh-outline" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
+      <AppHeader
+        title={`Order #${order.order_no || order.id.slice(-6)}`}
+        onBack={() => router.back()}
+        actions={
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Refresh" accessibilityRole="button" onPress={() => refetch()}>
+            <Ionicons name="refresh-outline" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -179,7 +191,7 @@ export function GroceryOrderDetailScreen() {
                   <Text maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.status}</Text>
                 ) : null}
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.linePrice}>₹{Number(item.total_price).toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.linePrice}>{formatINR(Number(item.total_price), 2)}</Text>
             </View>
           ))}
 
@@ -187,15 +199,15 @@ export function GroceryOrderDetailScreen() {
 
           <View style={styles.billRow}>
             <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>₹{Number(order.taxable_amount).toFixed(2)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.taxable_amount), 2)}</Text>
           </View>
           <View style={styles.billRow}>
             <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>₹{Number(order.tax_amount).toFixed(2)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.tax_amount), 2)}</Text>
           </View>
           <View style={[styles.billRow, { marginTop: 6 }]}>
             <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.totalVal}>₹{Number(order.total_amount).toFixed(2)}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.totalVal}>{formatINR(Number(order.total_amount), 2)}</Text>
           </View>
         </View>
 
@@ -275,21 +287,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
   emptyBox: {
     flex: 1,
     alignItems: 'center',
@@ -330,7 +327,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 12,
     padding: 10,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: 8,
   },
   deliveredText: {
@@ -344,7 +341,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 12,
     padding: 10,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Colors.surfaceMuted,
     borderRadius: 8,
   },
   tripTitle: {

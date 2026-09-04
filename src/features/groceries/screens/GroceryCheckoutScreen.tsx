@@ -56,6 +56,8 @@ const GUEST_BILLED_METHODS = [
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { useAuthStore } from '@/store/authStore';
 import { useCreateSupplyOrderMutation, useCreditAccountQuery } from '../useSupplyOrders';
+import { formatINR } from '@/utils/format';
+import { AppHeader } from '@/components/AppHeader';
 
 export function GroceryCheckoutScreen() {
   const { activeEntity: owner } = useActiveProperty();
@@ -83,7 +85,7 @@ export function GroceryCheckoutScreen() {
 
   // Only someone who manages the PG may read its credit line — the same people who may pay
   // with it — so this never fires for a guest.
-  const { data: creditAccount } = useCreditAccountQuery(
+  const { data: creditAccount, error: creditError } = useCreditAccountQuery(
     activePgId ?? owner?.id,
     billsToProperty
   );
@@ -165,13 +167,7 @@ export function GroceryCheckoutScreen() {
 
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Checkout</Text>
-        <View style={{ width: 32 }} />
-      </View>
+      <AppHeader title="Checkout" onBack={() => router.back()} />
 
       <FormScroll showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Section 1: Fulfillment & Time Slot */}
@@ -233,7 +229,7 @@ export function GroceryCheckoutScreen() {
                   const isFastest = slot.badge === 'FASTEST';
 
                   return (
-                    <TouchableOpacity accessibilityRole="button"
+                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={slot.id}
                       style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
                       onPress={() => setSelectedSlotId(slot.id)}
@@ -337,7 +333,7 @@ export function GroceryCheckoutScreen() {
                 Number(creditAccount.available) < estimatedTotal;
 
               return (
-                <TouchableOpacity accessibilityRole="button"
+                <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                   key={pm.id}
                   style={[
                     styles.paymentRow,
@@ -358,6 +354,15 @@ export function GroceryCheckoutScreen() {
                     <Text maxFontSizeMultiplier={1.3} style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
                       {pm.label}
                     </Text>
+                    {/* The gating above deliberately fails open — a failed status check must
+                        not remove a payment method. But silently showing nothing implies the
+                        limit was checked and was fine, which at a payment step is the wrong
+                        impression to leave. */}
+                    {isCredit && !creditAccount && creditError && (
+                      <Text maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, styles.paymentWarnLabel]}>
+                        Balance couldn&apos;t be checked just now — this order may be refused.
+                      </Text>
+                    )}
                     {isCredit && creditAccount && (
                       <Text maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, overCredit && styles.paymentWarnLabel]}>
                         {!creditAccount.is_active
@@ -404,29 +409,29 @@ export function GroceryCheckoutScreen() {
           <View style={styles.billBreakdown}>
             <View style={styles.billRow}>
               <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTaxable.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Text>
             </View>
 
             <View style={styles.billRow}>
               <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billTax.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Text>
             </View>
 
             <View style={styles.billRow}>
               <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total (incl. GST)</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(subtotal, 2)}</Text>
             </View>
 
             <View style={styles.billRow}>
               <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Text>
               <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, deliveryFee === 0 && styles.greenText]}>
-                {deliveryFee === 0 ? 'FREE' : `₹${deliveryFee.toFixed(2)}`}
+                {deliveryFee === 0 ? 'FREE' : formatINR(deliveryFee, 2)}
               </Text>
             </View>
 
             <View style={[styles.billRow, styles.totalRow]}>
               <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Estimated Total</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{estimatedTotal.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>{formatINR(estimatedTotal, 2)}</Text>
             </View>
             <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item prices include GST. Your final invoice is confirmed when the order is placed.</Text>
           </View>
@@ -436,11 +441,11 @@ export function GroceryCheckoutScreen() {
       {/* Sticky Bottom Placement Bar */}
       <View style={[styles.stickyFooter, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.footerLeft}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.footerPrice}>₹{estimatedTotal.toFixed(2)}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.footerPrice}>{formatINR(estimatedTotal, 2)}</Text>
           {totalSavings > 0 ? (
             <View style={styles.footerSavings}>
               <Ionicons name="leaf-outline" size={10} color={Colors.primary} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.footerSavingsText}>You save ₹{totalSavings.toFixed(2)}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.footerSavingsText}>You save {formatINR(totalSavings, 2)}</Text>
             </View>
           ) : (
             <Text maxFontSizeMultiplier={1.3} style={styles.footerItemText}>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</Text>
@@ -494,35 +499,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.canvas,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.textPrimary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -565,7 +541,7 @@ const styles = StyleSheet.create({
   },
   fulfillmentContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Colors.surfaceMuted,
     borderRadius: 12,
     padding: 4,
     marginBottom: 12,
@@ -637,12 +613,12 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   fastestBadge: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: Colors.surfaceElevated,
   },
   freeBadge: {
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
   },
   slotBadgeText: {
     fontSize: 8,
@@ -672,7 +648,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceElevated,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
     padding: 10,
     marginBottom: 12,
   },
@@ -740,7 +716,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   selectedPaymentRow: {
-    borderColor: '#DCFCE7',
+    borderColor: Colors.borderSubtle,
     backgroundColor: Colors.surfaceElevated,
   },
   paymentIcon: {

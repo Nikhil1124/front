@@ -5,16 +5,19 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/ui';
 import { useSupplyOrdersQuery } from '../useSupplyOrders';
 import { useAuthStore } from '@/store/authStore';
 import { Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { formatINR } from '@/utils/format';
+import { AppHeader } from '@/components/AppHeader';
 
 export function GroceryOrdersScreen() {
   const insets = useSafeAreaInsets();
   const logout = usePGowStore((s) => s.logout);
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
-  const { data: ordersData, isLoading, refetch } = useSupplyOrdersQuery(activePgId);
+  const { data: ordersData, isLoading, error, refetch } = useSupplyOrdersQuery(activePgId);
   const orders = ordersData?.items || [];
 
   const activeOrder = orders.find((o) => o.status !== 'delivered' && o.status !== 'cancelled');
@@ -45,7 +48,7 @@ export function GroceryOrdersScreen() {
       <View style={styles.divider} />
 
       <View style={styles.orderFooter}>
-        <Text maxFontSizeMultiplier={1.3} style={styles.orderTotal}>₹{Number(item.total_amount).toFixed(2)}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.orderTotal}>{formatINR(Number(item.total_amount), 2)}</Text>
         <TouchableOpacity accessibilityRole="button" style={styles.reorderBtn} onPress={() => openOrder(item.id)}>
           <Ionicons name="eye-outline" size={15} color={Colors.primary} />
           <Text maxFontSizeMultiplier={1.3} style={styles.reorderText}>View Status</Text>
@@ -59,22 +62,29 @@ export function GroceryOrdersScreen() {
       {/* Header — had no safe-area handling at all (fixed paddingVertical:12 only), unlike
           every other grocery screen's header (insets.top + 14). This is a dock tab root, not
           pushed under anything, so it sat directly under the notch. */}
-      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-            <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
+      <AppHeader
+        title="Your Orders"
+        onBack={() => router.back()}
+        actions={
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Log out" accessibilityRole="button" onPress={logout}>
+            <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
           </TouchableOpacity>
-          <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Your Orders</Text>
-        </View>
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Log out" accessibilityRole="button" onPress={logout}>
-          <Ionicons name="log-out-outline" size={24} color={Colors.danger} />
-        </TouchableOpacity>
-      </View>
+        }
+      />
 
       {isLoading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
+      ) : error ? (
+        /* Without this the list just renders empty on a failed fetch, which reads as "you
+           have never ordered anything" to someone waiting on a delivery. */
+        <ErrorState
+          error={error}
+          title="Could not load your orders"
+          onRetry={refetch}
+          fill={false}
+        />
       ) : (
         <FlatList
           data={orders}
@@ -128,35 +138,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.canvas,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.canvas,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: Colors.textPrimary,
   },
   listContainer: {
     padding: 16,

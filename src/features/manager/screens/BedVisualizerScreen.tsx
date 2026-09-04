@@ -310,7 +310,7 @@ export function BedVisualizerScreen() {
             containerColor={Colors.surface}
             borderRadius={20}
             borderWidth={1.5}
-            borderColor="#CBEFF4"
+            borderColor={Colors.borderSubtle}
             padding={[18, 18]}
             style={styles.overviewCardShadow}
           >
@@ -405,10 +405,10 @@ export function BedVisualizerScreen() {
 
           {/* 3. AVAILABILITY SNAPSHOT / INSIGHT BAR */}
           <Card
-            containerColor="#F4F9FB"
+            containerColor={Colors.canvas}
             borderRadius={16}
             borderWidth={1}
-            borderColor="#CBEFF4"
+            borderColor={Colors.borderSubtle}
             padding={[14, 14]}
           >
             <Row justify="space-between" align="center">
@@ -557,7 +557,7 @@ export function BedVisualizerScreen() {
                       containerColor={Colors.surface}
                       borderRadius={18}
                       borderWidth={1.5}
-                      borderColor="#CBEFF4"
+                      borderColor={Colors.borderSubtle}
                       padding={[16, 16]}
                     >
                       <Row justify="space-between" align="center">
@@ -687,7 +687,7 @@ export function BedVisualizerScreen() {
 
               <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
                 {/* ROOM OVERVIEW CARD */}
-                <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor="#CBEFF4" padding={[16, 16]}>
+                <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                   <Row gap={14} align="center">
                     {/* 2D Floorplan Preview */}
                     <Image source={FLOORPLAN_IMG} style={styles.floorplanImage} resizeMode="cover" />
@@ -780,7 +780,7 @@ export function BedVisualizerScreen() {
 
                 {/* TAB CONTENT: BED ALLOCATION */}
                 {detailActiveTab === 'ALLOCATION' && (
-                  <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor="#CBEFF4" padding={[16, 16]}>
+                  <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                     <Row justify="space-between" align="center">
                       <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
                         BED ALLOCATION
@@ -894,7 +894,7 @@ export function BedVisualizerScreen() {
                     <Spacer size={16} />
 
                     {/* Room Capacity Card */}
-                    <Card containerColor="#F4F9FB" borderRadius={12} padding={[12, 12]}>
+                    <Card containerColor={Colors.canvas} borderRadius={12} padding={[12, 12]}>
                       <Row justify="space-between" align="center">
                         <Row gap={8} align="center">
                           <Ionicons name="people-circle" size={24} color={Colors.primary} />
@@ -1218,7 +1218,7 @@ export function BedVisualizerScreen() {
 
 const styles = StyleSheet.create({
   overviewCardShadow: {
-    shadowColor: '#011C40',
+    shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -1260,13 +1260,13 @@ const styles = StyleSheet.create({
   },
   roomTypeCardUnselected: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
   },
   roomTypeIconBox: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1287,18 +1287,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
   },
   roomBadgeIcon: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1324,13 +1324,13 @@ const styles = StyleSheet.create({
   detailModalCard: {
     width: '100%',
     maxHeight: '92%',
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: 'hidden',
   },
   detailHeaderBar: {
-    backgroundColor: '#011C40',
+    backgroundColor: Colors.primaryDark,
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 16,
@@ -1356,11 +1356,11 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
   },
   overviewMiniPill: {
     flex: 1,
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     borderRadius: 10,
     padding: 8,
     alignItems: 'center',
@@ -1370,7 +1370,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 4,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
   },
   detailTabBtn: {
     flex: 1,
@@ -1386,12 +1386,12 @@ const styles = StyleSheet.create({
   editBedsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
   },
   allocationBedCard: {
     padding: 12,
@@ -1425,7 +1425,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
   },
   aboutRoomChip: {
     flex: 1,
@@ -1433,11 +1433,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F4F9FB',
+    backgroundColor: Colors.canvas,
     padding: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#CBEFF4',
+    borderColor: Colors.borderSubtle,
   },
   modalBackdrop: {
     flex: 1,

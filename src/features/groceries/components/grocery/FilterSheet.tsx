@@ -115,7 +115,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                   {PRICE_CAPS.map((cap) => {
                     const active = draft.maxPrice === cap;
                     return (
-                      <TouchableOpacity accessibilityRole="button"
+                      <TouchableOpacity accessibilityState={{ selected: !!active }} accessibilityRole="button"
                         key={cap}
                         style={[styles.chip, active && styles.activeChip]}
                         onPress={() => setDraft((prev) => ({ ...prev, maxPrice: cap }))}

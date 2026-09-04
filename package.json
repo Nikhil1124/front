@@ -7,7 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
-    "check": "node src/data/mappers.check.ts",
+    "check": "node src/data/mappers.check.ts && node src/data/logic.check.ts && node src/data/headers.check.ts",
     "check:api": "node scripts/check-api-compatibility.mjs"
   },
   "dependencies": {
@@ -46,6 +46,7 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
     "react-native-worklets": "0.10.1",
     "zustand": "^5.0.14"
   },

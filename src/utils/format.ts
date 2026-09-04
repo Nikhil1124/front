@@ -67,8 +67,11 @@ export function todayLocalISO(date: Date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
-export function formatINR(amount: number): string {
-  return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+export function formatINR(amount: number, decimals: 0 | 2 = 0): string {
+  return `₹${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })}`;
 }
 
 /** Toast callback type expected by ViewModel-style actions. */

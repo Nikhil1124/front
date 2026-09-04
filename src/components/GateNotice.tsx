@@ -20,14 +20,13 @@ import { router } from 'expo-router';
 
 import { Colors } from '@/theme';
 import { PGowApiError } from '@/data/apiClient';
-import { GATE_CODES, type GateCode } from '@/config';
+import { gateCodeFrom, type GateCode } from '@/data/gateCodes';
 
-/** The gate code behind an error, or null when it is an ordinary failure. */
+/** The gate code behind an error, or null when it is an ordinary failure. The rule itself
+ *  lives in `data/gateCodes.ts` so it can be checked without a react-native import. */
 export function gateCodeOf(error: unknown): GateCode | null {
-  if (error instanceof PGowApiError && error.httpStatus === 403) {
-    return GATE_CODES.includes(error.code as GateCode) ? (error.code as GateCode) : null;
-  }
-  return null;
+  if (!(error instanceof PGowApiError)) return null;
+  return gateCodeFrom(error.httpStatus, error.code);
 }
 
 interface GateCopy {

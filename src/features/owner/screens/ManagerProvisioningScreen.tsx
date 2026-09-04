@@ -14,7 +14,8 @@
  */
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
+import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Layout } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
@@ -24,7 +25,13 @@ import { StaffManagementTab } from '@/features/owner/tabs/StaffManagementTab';
 
 export function ManagerProvisioningScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);
-  const { data: staff = [] } = useStaffQuery(activePgId ?? undefined);
+  const {
+    data: staff = [],
+    isLoading: staffLoading,
+    error: staffError,
+    refetch: refetchStaff,
+    isRefetching: staffRefetching,
+  } = useStaffQuery(activePgId ?? undefined);
   const { data: allPGs = [] } = usePropertiesEntitiesQuery();
 
   // Filter to managers — `currentStaff` carries everyone on the active
@@ -34,6 +41,7 @@ export function ManagerProvisioningScreen() {
 
   return (
     <HubScreenWrapper
+      refreshControl={<RefreshControl refreshing={staffRefetching} onRefresh={refetchStaff} />}
       title="Manager Provisioning"
       subtitle={`${managers.length} active manager${managers.length === 1 ? '' : 's'}`}
       icon="people-outline"
@@ -53,7 +61,12 @@ export function ManagerProvisioningScreen() {
           </View>
         </Row>
         <Spacer size={10} />
-        {managers.length === 0 ? (
+        {/* "No managers yet" was also what a failed or in-flight staff fetch looked like. */}
+        {staffLoading ? (
+          <LoadingState label="Loading managers…" fill={false} />
+        ) : staffError ? (
+          <ErrorState error={staffError} title="Could not load managers" onRetry={refetchStaff} fill={false} />
+        ) : managers.length === 0 ? (
           <Row gap={8} align="center">
             <Ionicons name="information-circle" size={16} color={Colors.textMuted} />
             <Txt variant="caption" color={Colors.textMuted}>No managers provisioned yet. Use the form below to invite one.</Txt>
