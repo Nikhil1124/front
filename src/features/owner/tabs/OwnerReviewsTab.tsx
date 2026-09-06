@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { View, StyleSheet, RefreshControl, ScrollView, Text, BackHandler } from 'react-native';
+import { View, StyleSheet, RefreshControl, ScrollView, BackHandler } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -176,16 +176,16 @@ export function OwnerReviewsTab() {
       {/* ── Reviews Title Header ── */}
       <Row justify="space-between" align="center">
         <Col>
-          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Reviews</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Guest feedback and staff performance</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Reviews</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.bodySub}>Guest feedback and staff performance</Txt>
         </Col>
         {totalReviews > 0 ? (
           <View style={styles.headerRatingBox}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.headerRatingText}>★ {avgOverall.toFixed(1)}</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.headerRatingCount}>{totalReviews} reviews</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.headerRatingText}>★ {avgOverall.toFixed(1)}</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.headerRatingCount}>{totalReviews} reviews</Txt>
           </View>
         ) : (
-          <Text maxFontSizeMultiplier={1.3} style={styles.noRatingText}>No rating yet</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.noRatingText}>No rating yet</Txt>
         )}
       </Row>
 
@@ -196,36 +196,36 @@ export function OwnerReviewsTab() {
         <View style={styles.summaryBox}>
           <Row justify="space-between" align="center" style={{ width: '100%' }}>
             <Col style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: BORDER }}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.positive.pct}%</Text>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: GREEN }]}>Positive</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.positive.count} reviews</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.positive.pct}%</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: GREEN }]}>Positive</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.positive.count} reviews</Txt>
             </Col>
             <Col style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: BORDER }}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.neutral.pct}%</Text>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.warning }]}>Neutral</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.neutral.count} reviews</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.neutral.pct}%</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.warning }]}>Neutral</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.neutral.count} reviews</Txt>
             </Col>
             <Col style={{ flex: 1, alignItems: 'center' }}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.negative.pct}%</Text>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.danger }]}>Negative</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.negative.count} reviews</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.negative.pct}%</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.danger }]}>Negative</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.negative.count} reviews</Txt>
             </Col>
           </Row>
         </View>
       ) : (
         <View style={styles.emptySummaryBox}>
           <Ionicons name="chatbox-ellipses-outline" size={24} color={MUTED} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.emptySummaryTitle}>No reviews yet</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.emptySummaryDesc}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.emptySummaryTitle}>No reviews yet</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.emptySummaryDesc}>
             Guest feedback will appear here once residents submit reviews.
-          </Text>
+          </Txt>
         </View>
       )}
 
       <Spacer size={20} />
 
       {/* ── Staff Performance ── */}
-      <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Staff Performance</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Staff Performance</Txt>
       <Spacer size={8} />
 
       {/* Without these, a failed or in-flight staff fetch fell straight through to the
@@ -257,9 +257,9 @@ export function OwnerReviewsTab() {
                   style={[styles.filterChip, filterType === opt && styles.filterChipActive]}
                   onPress={() => setFilterType(opt)}
                 >
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, filterType === opt && styles.filterChipTextActive]}>
+                  <Txt maxFontSizeMultiplier={1.3} style={[styles.filterChipText, filterType === opt && styles.filterChipTextActive]}>
                     {opt}
-                  </Text>
+                  </Txt>
                 </AnimatedPress>
               ))}
             </Row>
@@ -289,7 +289,7 @@ export function OwnerReviewsTab() {
         </>
       ) : (
         <View style={styles.noStaffBox}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.noStaffText}>No staff members registered</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.noStaffText}>No staff members registered</Txt>
         </View>
       )}
 
@@ -304,42 +304,42 @@ export function OwnerReviewsTab() {
           accent={GREEN}
           onDismiss={() => setSelectedStaff(null)}
         >
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Performance Ratings</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Performance Ratings</Txt>
               
               <Row gap={8} style={{ marginBottom: 16 }}>
                 <View style={styles.sheetKpiCard}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>
                     {selectedStaff.reviewCount > 0 ? `★ ${selectedStaff.rating.toFixed(1)}` : '—'}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Overall Rating</Text>
+                  </Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Overall Rating</Txt>
                 </View>
                 <View style={styles.sheetKpiCard}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>{selectedStaff.reviewCount}</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Reviews Count</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>{selectedStaff.reviewCount}</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Reviews Count</Txt>
                 </View>
               </Row>
 
               {selectedStaff.isShared ? (
                 <>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sharedNoticeText}>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.sharedNoticeText}>
                     Feedback is logged per role, not per person — this rating and history are shared across everyone in {selectedStaff.role}.
-                  </Text>
+                  </Txt>
                   <Spacer size={12} />
                 </>
               ) : null}
 
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Recent Feedback History</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Recent Feedback History</Txt>
               <View style={{ marginBottom: 12 }}>
                 {selectedStaff.reviews.length === 0 ? (
-                  <Text maxFontSizeMultiplier={1.3} style={styles.noReviewsAvailableText}>No reviews available</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.noReviewsAvailableText}>No reviews available</Txt>
                 ) : (
                   selectedStaff.reviews.map((rev: any) => (
                     <View key={rev.id} style={styles.feedbackHistoryItem}>
                       <Row justify="space-between">
-                        <Text maxFontSizeMultiplier={1.3} style={styles.revGuestName}>{rev.guestName}</Text>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.revRating}>★ {rev.overallRating}</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.revGuestName}>{rev.guestName}</Txt>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.revRating}>★ {rev.overallRating}</Txt>
                       </Row>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.revDesc}>"{rev.description}"</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.revDesc}>"{rev.description}"</Txt>
                     </View>
                   ))
                 )}

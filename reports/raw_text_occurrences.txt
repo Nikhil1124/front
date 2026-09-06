@@ -1,0 +1,439 @@
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:346:            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:358:            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:373:          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add Staff Member</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:374:          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Assign their role, work details, and login PIN.</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:402:          <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Staff Role</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:413:                    <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:427:              <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift *</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:438:                        <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:483:              <Text maxFontSizeMultiplier={1.3} style={[styles.securityText, { fontSize: 9.5 }]} numberOfLines={2}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:497:            <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:518:                <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Staff Directory</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:520:                  <Text maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{activeStaffCount} Active</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:540:                      <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:593:                <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>View Details</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:601:                <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>Edit Staff</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:609:                <Text maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: Colors.danger }]}>Delete Staff</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:624:              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>PERSONAL DETAILS</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:626:              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Name</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:627:              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.name}</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:629:              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Phone</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:630:              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.phone}</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:634:              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ROLE</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:636:              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Assigned Role</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:637:              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:643:              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>WORK DETAILS</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:645:              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Shift</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:646:              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.shiftTime || 'Day Shift'}</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:648:              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Monthly Salary</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:649:              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:655:              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ACCOUNT ACCESS</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:657:              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Account Status</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:658:              <Text maxFontSizeMultiplier={1.3} style={[styles.detailValue, { color: GREEN }]}>Active</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:678:                  <Text maxFontSizeMultiplier={1.3} style={styles.resetPinBtnText}>Save</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:699:                <Text maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:704:                <Text maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:737:                      <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:748:                                <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:761:                  <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Role</Text>
+pgowfrontend/src/features/owner/tabs/StaffManagementTab.tsx:772:                            <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:87:          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Complaints</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:88:          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Resident-raised issues awaiting action</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:92:            <Text maxFontSizeMultiplier={1.3} style={styles.issuesBadgeText}>{openIssues.length} open</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:106:          <Text maxFontSizeMultiplier={1.3} style={styles.noIssuesText}>No open complaints</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:107:          <Text maxFontSizeMultiplier={1.3} style={styles.noIssuesSub}>Everything looks good right now.</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:129:          <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Resolved</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:170:                <Text maxFontSizeMultiplier={1.3} style={styles.dialogSaveBtnText}>Save response</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:173:                <Text maxFontSizeMultiplier={1.3} style={styles.dialogCancelBtnText}>Cancel</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:193:                      <Text maxFontSizeMultiplier={1.3} style={styles.bookTechBtnText}>Book a technician for this issue</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:213:                <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Set Status:</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:221:                      <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:240:        <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, color: MUTED }}>Loading attachment…</Text>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:248:      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:179:          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Reviews</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:180:          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Guest feedback and staff performance</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:184:            <Text maxFontSizeMultiplier={1.3} style={styles.headerRatingText}>★ {avgOverall.toFixed(1)}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:185:            <Text maxFontSizeMultiplier={1.3} style={styles.headerRatingCount}>{totalReviews} reviews</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:188:          <Text maxFontSizeMultiplier={1.3} style={styles.noRatingText}>No rating yet</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:199:              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.positive.pct}%</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:200:              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: GREEN }]}>Positive</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:201:              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.positive.count} reviews</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:204:              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.neutral.pct}%</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:205:              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.warning }]}>Neutral</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:206:              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.neutral.count} reviews</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:209:              <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.negative.pct}%</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:210:              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.danger }]}>Negative</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:211:              <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.negative.count} reviews</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:218:          <Text maxFontSizeMultiplier={1.3} style={styles.emptySummaryTitle}>No reviews yet</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:219:          <Text maxFontSizeMultiplier={1.3} style={styles.emptySummaryDesc}>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:228:      <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Staff Performance</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:260:                  <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, filterType === opt && styles.filterChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:292:          <Text maxFontSizeMultiplier={1.3} style={styles.noStaffText}>No staff members registered</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:307:              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Performance Ratings</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:311:                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:314:                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Overall Rating</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:317:                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiVal}>{selectedStaff.reviewCount}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:318:                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetKpiLabel}>Reviews Count</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:324:                  <Text maxFontSizeMultiplier={1.3} style={styles.sharedNoticeText}>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:331:              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Recent Feedback History</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:334:                  <Text maxFontSizeMultiplier={1.3} style={styles.noReviewsAvailableText}>No reviews available</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:339:                        <Text maxFontSizeMultiplier={1.3} style={styles.revGuestName}>{rev.guestName}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:340:                        <Text maxFontSizeMultiplier={1.3} style={styles.revRating}>★ {rev.overallRating}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerReviewsTab.tsx:342:                      <Text maxFontSizeMultiplier={1.3} style={styles.revDesc}>"{rev.description}"</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:348:            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:364:            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:384:              <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Manual Registration</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:442:              <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Register Resident ID & Password</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:452:            <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add a Resident</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:453:            <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Choose how you want to add a new resident.</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:464:                <Text maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Invite Resident</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:465:                <Text maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:473:                  <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnSolidText}>Create Sign-Up Link</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:482:                <Text maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Add Manually</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:483:                <Text maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:491:                  <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnOutlineText}>Add Manually</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:499:            <Text maxFontSizeMultiplier={1.3} style={styles.workflowTitle}>How it works</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:507:                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Choose Method</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:508:                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Invite or add manually</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:518:                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Enter Details</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:519:                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Provide required info</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:529:                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Account Ready</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:530:                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Account will be created</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:542:                <Text maxFontSizeMultiplier={1.3} style={styles.securityBannerTitle}>Secure & Private</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:543:                <Text maxFontSizeMultiplier={1.3} style={styles.securityBannerText}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:560:                  <Text maxFontSizeMultiplier={1.3} style={styles.helpLinkText}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:705:                <Text maxFontSizeMultiplier={1.3} style={styles.directoryTitle}>Registered Residents</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:707:                  <Text maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{guests.length} Guests</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1108:                    <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1133:                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeLabel}>LOBBY JOIN CODE</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1134:                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeText}>{owner.joinCode}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1142:                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteRentLabel}>Monthly rent for self sign-ups</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1143:                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteRentValue}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1183:                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteShareBtnText}>Share Invitation</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1190:                          <Text maxFontSizeMultiplier={1.3} style={styles.inviteRotateBtnText}>New Code</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1199:                          <Text maxFontSizeMultiplier={1.3} style={styles.inviteDisableText}>Turn off self sign-up</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1208:                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1226:                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteEnableBtnText}>Turn on self sign-up</Text>
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1233:                  <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:110:      <Text maxFontSizeMultiplier={1.3} style={styles.serviceName}>{item.name}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:111:      <Text maxFontSizeMultiplier={1.3} style={styles.serviceDesc} numberOfLines={2}>{item.desc}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:113:        <Text maxFontSizeMultiplier={1.3} style={styles.priceText}>₹{item.cost}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:114:        <Text maxFontSizeMultiplier={1.3} style={styles.originalPriceText}>₹{item.originalCost}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:127:        <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, styles.sectionHeaderRow]}>{title}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:139:          <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Search Results</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:159:            <View style={styles.speechBubble}><Text maxFontSizeMultiplier={1.3} style={{fontSize: 8, fontWeight: '700', color: PRIMARY}}>...</Text></View>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:162:            <Text maxFontSizeMultiplier={1.3} style={styles.fallbackTitle}>Can't find what you need?</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:163:            <Text maxFontSizeMultiplier={1.3} style={styles.fallbackSub}>Tell us what's wrong and we'll find the right service.</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:167:            <Text maxFontSizeMultiplier={1.3} style={styles.requestBtnText}>Request a Service</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:176:      <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Active & Past Requests</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:191:        <View style={styles.emptyLegacyCard}><Text maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repair requests.</Text></View>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:212:      <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Procurement & Supplies</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:219:              <Text maxFontSizeMultiplier={1.3} style={styles.legacyId}>View All Orders</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:220:              <Text maxFontSizeMultiplier={1.3} style={styles.legacyCategory}>{pendingCount} pending approvals</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:230:          <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Pending Approvals</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:251:        <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Daily Subscriptions</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:253:          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>+ Add</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:258:        <View style={styles.emptyLegacyCard}><Text maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No standing grocery orders yet.</Text></View>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:317:            <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'SERVICES' && styles.navTabTextActive]}>Services</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:321:            <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'BOOKINGS' && styles.navTabTextActive]}>Bookings</Text>
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:325:            <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'PROCUREMENT' && styles.navTabTextActive]}>Supplies</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:499:                <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, activeSubTab === tab.id && styles.filterChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:512:              <Text maxFontSizeMultiplier={1.3} style={styles.markAllReadText}>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:586:                      <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:593:                  <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:597:                  <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:605:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Identity Verification Required</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:606:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Verify {selectedInboxItem.guest.name}'s identity documents.</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:616:                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:619:                      <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:627:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Payment Awaiting Verification</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:628:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Confirm the money actually arrived before verifying.</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:632:                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:635:                      <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:643:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Awaiting Your Approval</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:644:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Choose a payment method and approve or reject on the Procurement screen.</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:649:                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:657:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>{selectedInboxItem.isMaintenanceFlavoured ? 'Resolve this issue' : 'Follow up'}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:658:                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:667:                          <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>View Ticket</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:673:                        <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Book Service</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:724:                <Text maxFontSizeMultiplier={1.3} style={styles.publishBtnText}>{isPublishing ? 'Publishing…' : 'Publish'}</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:727:                <Text maxFontSizeMultiplier={1.3} style={styles.publishCancelText}>Cancel</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:754:                <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Target Audience</Text>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:759:                      <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:822:          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onApproveKyc}><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text></AnimatedPress>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:823:          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectKyc}><Text maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Text></AnimatedPress>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:828:          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onVerifyPayment}><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text></AnimatedPress>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:829:          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectPayment}><Text maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Text></AnimatedPress>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:834:          <Row gap={6} align="center" justify="center"><Ionicons name="cart" size={14} color={SURFACE} /><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Text></Row>
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:896:          <Text maxFontSizeMultiplier={1.3} style={styles.fabText}>New Announcement</Text>
+pgowfrontend/src/features/owner/OwnerSetupGate.tsx:93:        <Text maxFontSizeMultiplier={1.3} style={styles.stepLabel}>STEP {step === 'property' ? '1' : '2'} OF 2</Text>
+pgowfrontend/src/features/owner/OwnerSetupGate.tsx:94:        <Text maxFontSizeMultiplier={1.3} style={styles.title}>{copy.title}</Text>
+pgowfrontend/src/features/owner/OwnerSetupGate.tsx:95:        <Text maxFontSizeMultiplier={1.3} style={styles.body}>{copy.body}</Text>
+pgowfrontend/src/features/owner/OwnerSetupGate.tsx:101:          <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>{copy.cta}</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:418:              <Text maxFontSizeMultiplier={1.3} style={[styles.tabLabel, isSel && styles.tabLabelSel]}>{t.label}</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:428:            <Text maxFontSizeMultiplier={1.3} style={styles.customTitle}>Custom range</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:429:            <Text maxFontSizeMultiplier={1.3} style={styles.customDateDisplay}>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:448:                <Text maxFontSizeMultiplier={1.3} style={[styles.presetChipText, isSel && styles.presetChipTextSel]}>{p.label}</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:462:          <Text maxFontSizeMultiplier={1.3} style={styles.loadingText}>Loading financials...</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:467:          <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:475:          <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>No financial data available</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:476:          <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:505:                <Text maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>No expenses logged for this period.</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:514:              <Text maxFontSizeMultiplier={1.3} style={styles.insightHeaderTitle}>Dynamic Insights</Text>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:518:              <Text maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:526:                    <Text maxFontSizeMultiplier={1.3} style={styles.insightText}>
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:528:                        <Text maxFontSizeMultiplier={1.3} key={i} style={i % 2 === 1 ? { fontWeight: '700' } : null}>
+pgowfrontend/src/features/groceries/screens/GroceryOrdersScreen.tsx:95:                      <Text maxFontSizeMultiplier={1.3} style={styles.activeBannerTitle}>
+pgowfrontend/src/features/groceries/screens/GroceryOrdersScreen.tsx:98:                      <Text maxFontSizeMultiplier={1.3} style={styles.activeBannerSub}>
+pgowfrontend/src/features/groceries/screens/GroceryOrdersScreen.tsx:107:              <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order History</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrdersScreen.tsx:113:              <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>No orders yet</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:38:            <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:45:            <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your wishlist is empty</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:46:            <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:54:              <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:70:            <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:72:          <Text maxFontSizeMultiplier={1.3} style={styles.headerCount}>{items.length} items</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:97:                  <Text maxFontSizeMultiplier={1.3} style={styles.cardName} numberOfLines={2}>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:100:                  <Text maxFontSizeMultiplier={1.3} style={styles.cardUnit}>{option.unit}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:103:                      <Text maxFontSizeMultiplier={1.3} style={styles.cardPrice}>₹{option.price}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:105:                        <Text maxFontSizeMultiplier={1.3} style={styles.cardMRP}>₹{option.originalPrice}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryWishlistScreen.tsx:113:                      <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addBtnTextFilled]}>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:111:          <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>Order not found</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:143:          <Text maxFontSizeMultiplier={1.3} style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || order.status.toUpperCase()}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:144:          <Text maxFontSizeMultiplier={1.3} style={styles.statusHeroSub}>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:157:              <Text maxFontSizeMultiplier={1.3} style={styles.deliveredText}>Order Completed Successfully 🎉</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:165:                <Text maxFontSizeMultiplier={1.3} style={styles.tripTitle}>Delivery Vehicle: {tracking.trip.vehicle_label}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:166:                <Text maxFontSizeMultiplier={1.3} style={styles.tripSub}>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:176:          <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order Summary</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:177:          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Placed on {new Date(order.created_at).toLocaleString()}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:178:          {order.delivery_note ? <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>{order.delivery_note}</Text> : null}
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:179:          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Method: {order.payment_method.toUpperCase()}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:180:          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Status: {order.payment_status.toUpperCase()}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:187:                <Text maxFontSizeMultiplier={1.3} style={styles.lineName}>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:191:                  <Text maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.status}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:194:              <Text maxFontSizeMultiplier={1.3} style={styles.linePrice}>{formatINR(Number(item.total_price), 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:201:            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:202:            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.taxable_amount), 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:205:            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:206:            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.tax_amount), 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:209:            <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:210:            <Text maxFontSizeMultiplier={1.3} style={styles.totalVal}>{formatINR(Number(order.total_amount), 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:216:            <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Confirm UPI Payment</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:217:            <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Paid via UPI? Enter the reference so it can be verified.</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:234:                <Text maxFontSizeMultiplier={1.3} style={styles.upiSubmitText}>{submitUpiPayment.isPending ? 'Submitting…' : 'Submit'}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryOrderDetailScreen.tsx:243:            <Text maxFontSizeMultiplier={1.3} style={styles.cancelOrderBtnText}>Cancel Order</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:119:            <Text maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:130:          <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your cart is empty</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:131:          <Text maxFontSizeMultiplier={1.3} style={styles.emptySubtitle}>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:135:            <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:146:                  <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTitle}>Deliver to</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:148:                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryAddress} numberOfLines={1}>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:153:                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Estimated Delivery</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:154:                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:161:              <Text maxFontSizeMultiplier={1.3} style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:165:            <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Items in Cart</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:187:                      <Text maxFontSizeMultiplier={1.3} style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:188:                      <Text maxFontSizeMultiplier={1.3} style={styles.itemUnit}>{item.unit}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:191:                        <Text maxFontSizeMultiplier={1.3} style={styles.unitRateText}>{perUnitRateText}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:195:                        <Text maxFontSizeMultiplier={1.3} style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:197:                          <Text maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{item.originalPrice * item.quantity}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:202:                        <Text maxFontSizeMultiplier={1.3} style={styles.itemSavingsText}>Save ₹{itemSavings}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:216:                        <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{item.quantity}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:232:                        <Text maxFontSizeMultiplier={1.3} style={styles.removeActionText}>Remove</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:269:                <Text maxFontSizeMultiplier={1.3} style={styles.savingsTagIcon}>🏷️</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:271:                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsCardTitle}>You save ₹{totalSavings} today!</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:272:                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsCardSubtitle}>Great deal for your PG kitchen</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:275:                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsBadgeText}>-₹{totalSavings}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:282:              <Text maxFontSizeMultiplier={1.3} style={styles.billTitle}>Bill Details</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:285:                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:286:                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:291:                  <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Discount</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:292:                  <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.danger }]}>-₹{totalSavings}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:297:                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:298:                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:302:                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:303:                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:307:                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:308:                <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.primary }]}>FREE</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:312:                <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Subtotal</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:313:                <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{billSubtotal}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:315:              <Text maxFontSizeMultiplier={1.3} style={styles.billFootnote}>Item prices are GST-inclusive.</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:344:                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Quality Checked</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:348:                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Hygienically Packed</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:352:                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Easy Replacement</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:360:              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutPrice}>₹{billSubtotal}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:361:              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutInfoText}>
+pgowfrontend/src/features/groceries/screens/GroceryCartScreen.tsx:372:              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutBtnText}>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:191:              <Text maxFontSizeMultiplier={1.3} style={styles.searchResultsTitle}>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:201:                  <Text maxFontSizeMultiplier={1.3} style={styles.noResultsText}>Try a different keyword</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:233:                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{dealsTitle}</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:234:                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>{dealsSub}</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:237:                    <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:250:                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Daily Essentials</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:251:                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>Must-have daily items for your PG</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:254:                    <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:280:                <Text maxFontSizeMultiplier={1.3} style={styles.cartBadgeText}>{cartItemCount}</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:284:              <Text maxFontSizeMultiplier={1.3} style={styles.cartTotalText}>₹{getCartTotal()}</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:285:              <Text maxFontSizeMultiplier={1.3} style={styles.cartSubtext}>FREE delivery unlocked!</Text>
+pgowfrontend/src/features/groceries/screens/GroceriesScreen.tsx:289:            <Text maxFontSizeMultiplier={1.3} style={styles.checkoutText}>View Cart</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:94:          <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>Product not found</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:96:            <Text maxFontSizeMultiplier={1.3} style={styles.backBtnText}>Go Back</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:154:                <Text maxFontSizeMultiplier={1.3} style={styles.headerCartBadgeText}>{cartItemCount}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:171:                <Text maxFontSizeMultiplier={1.3} style={styles.discountBadgeText}>-{discountPercent}%</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:212:            <Text maxFontSizeMultiplier={1.3} style={styles.productTitle} numberOfLines={2}>{product.name}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:214:              <Text maxFontSizeMultiplier={1.3} style={styles.productSubtitle} numberOfLines={2}>{product.description}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:216:            <Text maxFontSizeMultiplier={1.3} style={styles.currentPrice}>₹{price}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:219:                <Text maxFontSizeMultiplier={1.3} style={styles.mrpText}>MRP: ₹{originalPrice}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:220:                <Text maxFontSizeMultiplier={1.3} style={styles.savingsAmountText}> (Save ₹{savingsAmount})</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:225:                <Text maxFontSizeMultiplier={1.3} style={styles.miniWholesaleText} numberOfLines={2}>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:226:                  🎉 Special PG Wholesale Deal  <Text maxFontSizeMultiplier={1.3} style={styles.greenBold}>Saved ₹{savingsAmount}!</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:239:              <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Choose Pack Size</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:250:                      <Text maxFontSizeMultiplier={1.3} style={[styles.packText, isSelected && styles.selectedPackText]}>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:259:              <Text maxFontSizeMultiplier={1.3} style={styles.quantityLabel}>Quantity</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:264:                  <Text maxFontSizeMultiplier={1.3} style={styles.inlineAddText}>Add to Cart</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:291:                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTitle}>Delivery to</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:293:              <Text maxFontSizeMultiplier={1.3} style={styles.deliveryAddress} numberOfLines={1}>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:298:              <Text maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Delivery</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:299:              <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Slots available at checkout</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:308:                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>{item}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:320:              <Text maxFontSizeMultiplier={1.3} style={styles.accordionHeading}>Product Details</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:331:                    <Text maxFontSizeMultiplier={1.3} style={styles.accordionLabel}>{detail.label}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:332:                    <Text maxFontSizeMultiplier={1.3} style={styles.accordionValue}>{detail.value}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:363:          <Text maxFontSizeMultiplier={1.3} style={styles.stickyPrice}>₹{price}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:364:          <Text maxFontSizeMultiplier={1.3} style={styles.stickyInfoText}>{selectedOption.unit} • Qty: {quantity || 1}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:370:            <Text maxFontSizeMultiplier={1.3} style={styles.stickyCartText}>View Cart ({cartItemCount})</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:377:            <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Added ✓</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProductScreen.tsx:382:            <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Add to Cart</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProfileScreen.tsx:33:            <Text maxFontSizeMultiplier={1.3} style={styles.avatarText}>{avatarLetter}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProfileScreen.tsx:36:            <Text maxFontSizeMultiplier={1.3} style={styles.userName}>{name}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProfileScreen.tsx:37:            {!!phone && <Text maxFontSizeMultiplier={1.3} style={styles.userPhone}>{phone}</Text>}
+pgowfrontend/src/features/groceries/screens/GroceryProfileScreen.tsx:59:                  <Text maxFontSizeMultiplier={1.3} style={styles.menuTitle}>{item.title}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryProfileScreen.tsx:69:          <Text maxFontSizeMultiplier={1.3} style={styles.logoutText}>Log Out</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:113:      <Text maxFontSizeMultiplier={1.3} style={styles.catTitle} numberOfLines={2}>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:164:              <Text maxFontSizeMultiplier={1.3} style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:175:            <Text maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:176:            <Text maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategorySub}>{products.length} items available</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:253:                  <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>{g.title}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:273:                <Text maxFontSizeMultiplier={1.3} style={styles.emptyIcon}>🔍</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:274:                <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>No products found</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:309:                <Text maxFontSizeMultiplier={1.3} style={styles.cartTotal}>₹{getCartTotal()}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:310:                <Text maxFontSizeMultiplier={1.3} style={styles.cartSub}>{cartItemCount} item{cartItemCount > 1 ? 's' : ''}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCategoryScreen.tsx:314:              <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart →</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:178:              <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>1</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:180:            <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:198:              <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:216:              <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:224:              <Text maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Select delivery time</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:248:                            <Text maxFontSizeMultiplier={1.3} style={styles.slotDay}>{slot.day}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:250:                              <Text maxFontSizeMultiplier={1.3} style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:255:                          <Text maxFontSizeMultiplier={1.3} style={styles.slotWindow}>{slot.window}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:259:                      <Text maxFontSizeMultiplier={1.3} style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:268:            <Text maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Pickup is free — collect your order from the store counter, no delivery fee.</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:277:                <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>2</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:279:              <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery Address</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:286:                <Text maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:287:                <Text maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:290:                <Text maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:311:              <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>{fulfillmentMode === 'delivery' ? 3 : 2}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:313:            <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Payment Method</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:351:                    <Text maxFontSizeMultiplier={1.3} style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:359:                      <Text maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, styles.paymentWarnLabel]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:364:                      <Text maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, overCredit && styles.paymentWarnLabel]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:386:          <Text maxFontSizeMultiplier={1.3} style={styles.summaryTitle}>Order Summary</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:397:                  <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemName} numberOfLines={1}>{item.name}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:398:                  <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemUnit}>{item.unit} × {item.quantity}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:400:                <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemPrice}>₹{item.price * item.quantity}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:408:              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:409:              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:413:              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:414:              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:418:              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total (incl. GST)</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:419:              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(subtotal, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:423:              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:424:              <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, deliveryFee === 0 && styles.greenText]}>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:430:              <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Estimated Total</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:431:              <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>{formatINR(estimatedTotal, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:433:            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item prices include GST. Your final invoice is confirmed when the order is placed.</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:441:          <Text maxFontSizeMultiplier={1.3} style={styles.footerPrice}>{formatINR(estimatedTotal, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:445:              <Text maxFontSizeMultiplier={1.3} style={styles.footerSavingsText}>You save {formatINR(totalSavings, 2)}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:448:            <Text maxFontSizeMultiplier={1.3} style={styles.footerItemText}>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:461:              <Text maxFontSizeMultiplier={1.3} style={styles.cartCountText}>{cartItemCount}</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:464:          <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart</Text>
+pgowfrontend/src/features/groceries/screens/GroceryCheckoutScreen.tsx:475:          <Text maxFontSizeMultiplier={1.3} style={styles.placeOrderText}>
+pgowfrontend/src/features/groceries/components/ui/MiniProductCard.tsx:64:          <Text maxFontSizeMultiplier={1.3} style={styles.discountText}>-{discountPercent}%</Text>
+pgowfrontend/src/features/groceries/components/ui/MiniProductCard.tsx:93:      <Text maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={2}>{product.name}</Text>
+pgowfrontend/src/features/groceries/components/ui/MiniProductCard.tsx:94:      <Text maxFontSizeMultiplier={1.3} style={styles.unit}>{opt.unit}</Text>
+pgowfrontend/src/features/groceries/components/ui/MiniProductCard.tsx:108:        <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addedBtnText]}>
+pgowfrontend/src/features/groceries/components/ui/SectionHeader.tsx:24:      <Text maxFontSizeMultiplier={1.3} style={styles.title}>{title}</Text>
+pgowfrontend/src/features/groceries/components/ui/SectionHeader.tsx:27:          <Text maxFontSizeMultiplier={1.3} style={styles.action}>{actionLabel}</Text>
+pgowfrontend/src/features/groceries/components/ui/PriceDisplay.tsx:33:      <Text maxFontSizeMultiplier={1.3} style={[styles.price, styles[`price_${size}`]]}>
+pgowfrontend/src/features/groceries/components/ui/PriceDisplay.tsx:38:        <Text maxFontSizeMultiplier={1.3} style={[styles.strike, styles[`strike_${size}`]]}>
+pgowfrontend/src/features/groceries/components/ui/PriceDisplay.tsx:45:          <Text maxFontSizeMultiplier={1.3} style={styles.badgeText}>{discountPercent}% off</Text>
+pgowfrontend/src/features/groceries/components/ui/QuantityStepper.tsx:36:      <Text maxFontSizeMultiplier={1.3} style={[styles.qty, compact && styles.compactQty]}>{quantity}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ReplacementPicker.tsx:26:        <Text maxFontSizeMultiplier={1.3} style={styles.compactText}>{current.label}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ReplacementPicker.tsx:33:      <Text maxFontSizeMultiplier={1.3} style={styles.title}>If item is unavailable:</Text>
+pgowfrontend/src/features/groceries/components/grocery/ReplacementPicker.tsx:49:              <Text maxFontSizeMultiplier={1.3} style={[styles.optionLabel, selected && styles.selectedLabel]}>
+pgowfrontend/src/features/groceries/components/grocery/CategoryGrid.tsx:61:        <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Shop by Category</Text>
+pgowfrontend/src/features/groceries/components/grocery/CategoryGrid.tsx:63:          <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+pgowfrontend/src/features/groceries/components/grocery/CategoryGrid.tsx:82:              <Text maxFontSizeMultiplier={1.3} style={styles.cardText} numberOfLines={2}>
+pgowfrontend/src/features/groceries/components/grocery/MainBannerCarousel.tsx:134:          <Text maxFontSizeMultiplier={1.3} style={styles.ctaOverlayText}>{item.cta}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductRow.tsx:34:        <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{title}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductRow.tsx:36:          <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:90:          <Text maxFontSizeMultiplier={1.3} style={styles.simpleName} numberOfLines={1}>{product.name}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:91:          <Text maxFontSizeMultiplier={1.3} style={styles.simpleUnit}>{selectedOption.unit}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:94:              <Text maxFontSizeMultiplier={1.3} style={styles.simplePrice}>₹{price}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:95:              {originalPrice && <Text maxFontSizeMultiplier={1.3} style={styles.simpleStrikePrice}>₹{originalPrice}</Text>}
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:102:                <Text maxFontSizeMultiplier={1.3} style={styles.simpleQtyText}>{quantity}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:129:            <Text maxFontSizeMultiplier={1.3} style={styles.discountBadgeText}>-{discountPercent}%</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:163:        <Text maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={1}>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:168:        <Text maxFontSizeMultiplier={1.3} style={styles.unitText}>{selectedOption.unit}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:175:            <Text maxFontSizeMultiplier={1.3} style={styles.price}>₹{price}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:177:              <Text maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{originalPrice}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:194:                <Text maxFontSizeMultiplier={1.3}
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:214:              <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{quantity}</Text>
+pgowfrontend/src/features/groceries/components/grocery/ProductCard.tsx:221:              <Text maxFontSizeMultiplier={1.3} style={styles.addBtnText}>Add to Cart</Text>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:92:                <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Sort & Filter</Text>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:100:                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Sort by</Text>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:111:                        <Text maxFontSizeMultiplier={1.3} style={[styles.sortLabel, selected && styles.selectedSortLabel]}>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:125:                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Max Price</Text>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:132:                    <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.maxPrice === undefined && styles.activeChipText]}>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:146:                        <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, active && styles.activeChipText]}>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:155:                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Offers</Text>
+pgowfrontend/src/features/groceries/components/grocery/FilterSheet.tsx:167:                  <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.onDealOnly && styles.activeChipText]}>
+pgowfrontend/src/features/groceries/components/grocery/OrderStepper.tsx:39:        <Text maxFontSizeMultiplier={1.3} style={styles.cancelledText}>This order has been cancelled.</Text>
+pgowfrontend/src/features/groceries/components/grocery/OrderStepper.tsx:73:              <Text maxFontSizeMultiplier={1.3} style={[styles.stepLabel, done || active ? styles.activeText : styles.inactiveText]}>
+pgowfrontend/src/features/groceries/components/grocery/OrderStepper.tsx:76:              <Text maxFontSizeMultiplier={1.3} style={styles.stepHint}>{meta.hint}</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:34:      <Text maxFontSizeMultiplier={1.3} style={styles.heading}>🏢 Best Value for PG Owners</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:53:                <Text maxFontSizeMultiplier={1.3} style={styles.columnUnit}>{opt.unit}</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:54:                <Text maxFontSizeMultiplier={1.3} style={styles.columnPrice}>₹{opt.price}</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:55:                <Text maxFontSizeMultiplier={1.3} style={styles.columnRate}>{perUnitRate}</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:59:                    <Text maxFontSizeMultiplier={1.3} style={styles.bestValueTagText}>Best Value</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:63:                    <Text maxFontSizeMultiplier={1.3} style={styles.savingsTagText}>Save ₹{calcSavings}</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:73:          <Text maxFontSizeMultiplier={1.3} style={styles.savingsTitle}>You Save</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:74:          <Text maxFontSizeMultiplier={1.3} style={styles.savingsPrice}>₹{currentSavings || 0}</Text>
+pgowfrontend/src/features/groceries/components/grocery/BulkPricingGrid.tsx:75:          <Text maxFontSizeMultiplier={1.3} style={styles.savingsSubtitle}>
+pgowfrontend/src/features/groceries/components/grocery/Header.tsx:40:            <Text maxFontSizeMultiplier={1.3} style={styles.deliveryBadgeText}>EXPRESS</Text>
+pgowfrontend/src/features/groceries/components/grocery/Header.tsx:42:          <Text maxFontSizeMultiplier={1.3} style={styles.deliveryText}>Delivery to</Text>
+pgowfrontend/src/features/groceries/components/grocery/Header.tsx:45:          <Text maxFontSizeMultiplier={1.3} style={styles.locationTitle} numberOfLines={1}>
+pgowfrontend/src/features/groceries/components/grocery/Header.tsx:57:          <Text maxFontSizeMultiplier={1.3} style={styles.profileAvatarText}>{avatarLetter}</Text>
+pgowfrontend/src/features/groceries/components/kitchen/MenuEditorModal.tsx:93:          <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Current Dishes</Text>
+pgowfrontend/src/features/groceries/components/kitchen/MenuEditorModal.tsx:109:          <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Add New Dish</Text>
+pgowfrontend/src/features/groceries/components/kitchen/MenuEditorModal.tsx:123:          <Text maxFontSizeMultiplier={1.3} style={styles.relatedHeading}>
+pgowfrontend/src/features/groceries/components/kitchen/MenuEditorModal.tsx:150:                  <Text maxFontSizeMultiplier={1.3} style={styles.relatedName} numberOfLines={1}>{prod.name}</Text>
+pgowfrontend/src/features/groceries/components/kitchen/AddAllToCartButton.tsx:24:      <Text maxFontSizeMultiplier={1.3} style={styles.text}>
+pgowfrontend/src/features/groceries/components/kitchen/KitchenNeedsBanner.tsx:33:        <Text maxFontSizeMultiplier={1.3} style={styles.dayLabel}>{day.toUpperCase()}</Text>
+pgowfrontend/src/features/groceries/components/kitchen/KitchenNeedsBanner.tsx:35:          <Text maxFontSizeMultiplier={1.3} style={[styles.badgeText, { color: badgeText }]}>
+pgowfrontend/src/features/groceries/components/kitchen/KitchenNeedsBanner.tsx:43:        <Text maxFontSizeMultiplier={1.3} style={[styles.dishesText, { color: dishText }]} numberOfLines={2}>
+pgowfrontend/src/features/groceries/components/kitchen/KitchenNeedsBanner.tsx:46:        <Text maxFontSizeMultiplier={1.3} style={styles.supportingText}>Fresh ingredients for today's kitchen</Text>
+pgowfrontend/src/features/groceries/components/kitchen/KitchenNeedsBanner.tsx:56:          <Text maxFontSizeMultiplier={1.3} style={styles.viewMenuText}>View Menu</Text>
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:320:          <Text maxFontSizeMultiplier={1.3} style={styles.title}>🍽️ Today's Kitchen Needs</Text>
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:321:          <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>Everything needed for today's PG menu</Text>
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:324:          <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:337:            <Text maxFontSizeMultiplier={1.3} style={[styles.tabButtonText, activeTab === type && styles.activeTabButtonText]}>
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:403:              <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetTitle}>Today's Kitchen Needs</Text>
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:404:              <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Text>
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:417:                  <Text maxFontSizeMultiplier={1.3} style={styles.categoryName}>{label}</Text>
+pgowfrontend/src/components/ui/AnimatedPress.tsx:74:  // spoken label from the child <Text maxFontSizeMultiplier={1.3}> on its own, so only icon-only buttons still need an
+pgowfrontend/src/components/ui/Txt.tsx:59:    <Text
+pgowfrontend/src/components/AppErrorBoundary.tsx:30:        <Text maxFontSizeMultiplier={1.3} style={styles.emoji}>⚠️</Text>

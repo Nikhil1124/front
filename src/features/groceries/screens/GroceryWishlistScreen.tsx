@@ -1,12 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View } from 'react-native';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { AnimatedPress } from '@/components/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,23 +29,23 @@ export function GroceryWishlistScreen() {
             <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </AnimatedPress>
-            <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Txt>
             <View style={{ width: 28 }} />
           </View>
           <View style={styles.emptyContainer}>
             <View style={styles.iconCircle}>
               <Ionicons name="heart" size={60} color={Colors.danger} />
             </View>
-            <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your wishlist is empty</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your wishlist is empty</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.emptySub}>
               Tap the ♡ on any product to save it here.
-            </Text>
+            </Txt>
             <AnimatedPress accessibilityRole="button"
               style={styles.shopBtn}
               onPress={() => router.push('/groceries')}
 
             >
-              <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Txt>
             </AnimatedPress>
           </View>
         </SafeAreaView>
@@ -67,9 +61,9 @@ export function GroceryWishlistScreen() {
             <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </AnimatedPress>
-            <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Txt>
           </View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.headerCount}>{items.length} items</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.headerCount}>{items.length} items</Txt>
         </View>
 
         <FlatList
@@ -94,15 +88,15 @@ export function GroceryWishlistScreen() {
                   style={styles.cardImage}
                 />
                 <View style={styles.cardInfo}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.cardName} numberOfLines={2}>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.cardName} numberOfLines={2}>
                     {item.name}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.cardUnit}>{option.unit}</Text>
+                  </Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.cardUnit}>{option.unit}</Txt>
                   <View style={styles.cardBottom}>
                     <View>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.cardPrice}>₹{option.price}</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.cardPrice}>₹{option.price}</Txt>
                       {option.originalPrice && (
-                        <Text maxFontSizeMultiplier={1.3} style={styles.cardMRP}>₹{option.originalPrice}</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.cardMRP}>₹{option.originalPrice}</Txt>
                       )}
                     </View>
                     <AnimatedPress accessibilityRole="button"
@@ -110,9 +104,9 @@ export function GroceryWishlistScreen() {
                       onPress={() => handleAddToCart(item, option)}
 
                     >
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addBtnTextFilled]}>
+                      <Txt maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addBtnTextFilled]}>
                         {inCart ? `In Cart (${inCart.quantity})` : '+ Add'}
-                      </Text>
+                      </Txt>
                     </AnimatedPress>
                   </View>
                 </View>

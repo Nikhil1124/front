@@ -1,5 +1,5 @@
 import { SupplyOrderSummary } from '@/types';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 import { AnimatedPress } from '@/components/ui';
 import { router } from 'expo-router';
@@ -92,25 +92,25 @@ export function GroceryOrdersScreen() {
                   <View style={styles.activeBannerLeft}>
                     <View style={styles.pulseDot} />
                     <View style={{ flex: 1 }}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.activeBannerTitle}>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.activeBannerTitle}>
                         Order #{activeOrder.order_no || activeOrder.id.slice(0, 8)} is {activeOrder.status.toUpperCase()}
-                      </Text>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.activeBannerSub}>
+                      </Txt>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.activeBannerSub}>
                         Tap to track live updates
-                      </Text>
+                      </Txt>
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
                 </AnimatedPress>
               )}
 
-              <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order History</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order History</Txt>
             </>
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
               <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>No orders yet</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.emptyText}>No orders yet</Txt>
             </View>
           }
         />

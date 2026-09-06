@@ -20,3 +20,4 @@ ios/
 # Local Claude Code workspace config (launch profiles, settings) — machine-specific,
 # not part of the app.
 .claude/
+*.md

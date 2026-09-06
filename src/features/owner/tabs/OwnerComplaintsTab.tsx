@@ -5,8 +5,7 @@
  * sentiment. Same underlying query (`useComplaintsQuery`), two different jobs.
  */
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, RefreshControl, FlatList,
-  Text, BackHandler } from 'react-native';
+import { View, StyleSheet, RefreshControl, FlatList, BackHandler } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -84,12 +83,12 @@ export function OwnerComplaintsTab() {
     <>
       <Row justify="space-between" align="center">
         <Col>
-          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Complaints</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Resident-raised issues awaiting action</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Complaints</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.bodySub}>Resident-raised issues awaiting action</Txt>
         </Col>
         {openIssues.length > 0 ? (
           <View style={styles.issuesBadge}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.issuesBadgeText}>{openIssues.length} open</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.issuesBadgeText}>{openIssues.length} open</Txt>
           </View>
         ) : null}
       </Row>
@@ -103,8 +102,8 @@ export function OwnerComplaintsTab() {
       ) : openIssues.length === 0 ? (
         <View style={styles.noIssuesRow}>
           <Ionicons name="checkmark-circle" size={18} color={GREEN} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.noIssuesText}>No open complaints</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.noIssuesSub}>Everything looks good right now.</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.noIssuesText}>No open complaints</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.noIssuesSub}>Everything looks good right now.</Txt>
         </View>
       ) : (
         <View>
@@ -126,7 +125,7 @@ export function OwnerComplaintsTab() {
       {closedIssues.length > 0 ? (
         <>
           <Spacer size={24} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Resolved</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Resolved</Txt>
           <Spacer size={8} />
         </>
       ) : null}
@@ -167,10 +166,10 @@ export function OwnerComplaintsTab() {
           footer={
             <Row gap={10}>
               <AnimatedPress accessibilityRole="button" style={styles.dialogSaveBtn} onPress={handleSaveReply}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.dialogSaveBtnText}>Save response</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.dialogSaveBtnText}>Save response</Txt>
               </AnimatedPress>
               <AnimatedPress accessibilityRole="button" style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.dialogCancelBtnText}>Cancel</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.dialogCancelBtnText}>Cancel</Txt>
               </AnimatedPress>
             </Row>
           }
@@ -190,7 +189,7 @@ export function OwnerComplaintsTab() {
                       onPress={() => { setActiveItem(null); router.push(`/book-technician/${activeItem.id}`); }}
                     >
                       <Ionicons name="build-outline" size={16} color={GREEN} />
-                      <Text maxFontSizeMultiplier={1.3} style={styles.bookTechBtnText}>Book a technician for this issue</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.bookTechBtnText}>Book a technician for this issue</Txt>
                     </AnimatedPress>
                   </>
                 )}
@@ -210,7 +209,7 @@ export function OwnerComplaintsTab() {
 
                 <Spacer size={14} />
 
-                <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Set Status:</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Set Status:</Txt>
                 <Row gap={6} style={{ marginTop: 4 }}>
                   {['Open', 'In Progress', 'Resolved'].map((st) => (
                     <AnimatedPress accessibilityRole="button"
@@ -218,7 +217,7 @@ export function OwnerComplaintsTab() {
                       style={[styles.smallChip, responseStatus === st && styles.smallChipActive]}
                       onPress={() => setResponseStatus(st)}
                     >
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Txt>
                     </AnimatedPress>
                   ))}
                 </Row>
@@ -237,7 +236,7 @@ function ActiveItemEvidence({ id, pgId }: { id: string; pgId: string | null }) {
     return (
       <>
         <Spacer size={10} />
-        <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, color: MUTED }}>Loading attachment…</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={{ fontSize: 11, color: MUTED }}>Loading attachment…</Txt>
       </>
     );
   }
@@ -245,7 +244,7 @@ function ActiveItemEvidence({ id, pgId }: { id: string; pgId: string | null }) {
   return (
     <>
       <Spacer size={12} />
-      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Txt>
       <Spacer size={6} />
       <KycDocumentsCard idPhotoUri={full.mediaUri} selfieUri={null} />
     </>

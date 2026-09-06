@@ -1,0 +1,269 @@
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:163:          <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:175:          <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:187:          <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:202:          <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:214:          <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:228:        <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ flex: 1, minWidth: 140, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:233:        <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ flex: 1, minWidth: 140, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:364:      <View style={{ padding: 18, paddingBottom: 16, backgroundColor: Colors.canvas, zIndex: 10, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:439:                        {item.status === 'Needs Attention' && <Ionicons name="warning" size={16} color="#F97316" />}
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:441:                        <Txt size={13} weight="700" color={item.status === 'Working' ? Colors.success : item.status === 'Needs Attention' ? '#F97316' : Colors.danger}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:455:                        <Ionicons name="warning" size={18} color="#F97316" /><Txt size={14} weight="700" color={Colors.textPrimary}>Needs Attention</Txt>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:471:        <Btn containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={56} onPress={saveProgress} style={{ shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:717:            <AnimatedPress accessibilityRole="button" onPress={() => setNewPriority('Medium')} style={{ flex: 1, height: 46, borderRadius: Radii.control, backgroundColor: newPriority === 'Medium' ? '#FFEDD5' : Colors.surface, borderWidth: 2, borderColor: newPriority === 'Medium' ? '#F97316' : Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:718:              {newPriority === 'Medium' && <Ionicons name="checkmark" size={16} color="#F97316" />}
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:719:              <Txt size={14} weight="700" color={newPriority === 'Medium' ? '#F97316' : Colors.textPrimary}>Medium</Txt>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:734:            <View style={{ height: 160, borderRadius: Radii.card, backgroundColor: '#E5E7EB', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.borderSubtle }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:805:            else if (f === 'Medium') color = '#F97316';
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:806:            else if (f === 'Low') color = '#EAB308';
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:836:            if (iss.priority === 'Medium') { color = '#F97316'; bgColor = '#FFEDD5'; icon = "water-outline"; }
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:837:            if (iss.priority === 'Low') { color = '#EAB308'; bgColor = '#FEF9C3'; icon = "briefcase-outline"; }
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:841:                <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={0} padding={[0, 0]} style={{ overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:876:          style={{ width: 60, height: 60, borderRadius: Radii.pill, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 }}
+pgowfrontend/src/features/housekeeping/HousekeepingDashboard.tsx:960:            <View style={[styles.iconBox, { backgroundColor: '#F0FDF4' }]}><Ionicons name="radio-button-on" size={18} color={Colors.success} /></View>
+pgowfrontend/src/features/owner/tabs/OwnerPaymentsTab.tsx:585:                <View style={[styles.kpiCard, { borderColor: '#EFF6FF' }]}>
+pgowfrontend/src/features/owner/tabs/OwnerPaymentsTab.tsx:587:                    <View style={[styles.kpiIconCircle, { backgroundColor: '#EFF6FF' }]}>
+pgowfrontend/src/features/owner/tabs/OwnerPaymentsTab.tsx:588:                      <Ionicons name="trending-up-outline" size={16} color="#2563EB" />
+pgowfrontend/src/features/owner/tabs/OwnerPaymentsTab.tsx:592:                  <Txt variant="metric" color="#2563EB" tabular style={styles.kpiValue}>
+pgowfrontend/src/features/owner/tabs/OwnerPaymentsTab.tsx:671:                  <Txt variant="body" weight="600" color="#2563EB" tabular>
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:26:const GREEN = '#176B3A';
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:27:const BG = '#F7FAF7';
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:28:const CHARCOAL = '#17201A';
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:29:const MUTED = '#66736B';
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:30:const BORDER = '#DDE8E0';
+pgowfrontend/src/features/owner/tabs/OwnerComplaintsTab.tsx:267:    borderColor: '#FECACA' },
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:511:              <Ionicons name="arrow-forward" size={14} color="#D0D6D2" style={{ marginHorizontal: 2 }} />
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:522:              <Ionicons name="arrow-forward" size={14} color="#D0D6D2" style={{ marginHorizontal: 2 }} />
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:630:                    <Txt size={13} weight="700" color="#92400E">
+pgowfrontend/src/features/owner/tabs/OwnerGuestsManagementTab.tsx:1443:    borderColor: '#FECACA',
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:458:  serviceIconFrame: { height: 90, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB', borderRadius: Radii.card, marginBottom: 12 },
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:466:  fallbackBanner: { flexDirection: 'row', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 16, marginHorizontal: 20, marginTop: 24, borderWidth: 1, borderColor: '#D1EAE0' },
+pgowfrontend/src/features/owner/tabs/OwnerServicesTab.tsx:468:  speechBubble: { position: 'absolute', top: -4, right: -12, backgroundColor: SURFACE, paddingHorizontal: 4, paddingVertical: 2, borderRadius: Radii.control, borderWidth: 1, borderColor: '#D1EAE0' },
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:194: *  (both `#FFFFFF`) in colors.ts, which is what makes them read correctly whether this sits
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:934:  detailMessageCard: { backgroundColor: '#F9FAFB', padding: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: DIVIDER },
+pgowfrontend/src/features/owner/tabs/OwnerAnnouncementsTab.tsx:935:  detailDescText: { fontSize: 15, color: '#374151', lineHeight: 24 },
+pgowfrontend/src/features/owner/tabs/UpiConfigSection.tsx:3: * Redesigned for minimal, consistent flat styling: #176B3A green, #F7FAF7 canvas.
+pgowfrontend/src/features/owner/tabs/UpiConfigSection.tsx:166:                          isPrimary ? { backgroundColor: '#EEF2FF' } : { backgroundColor: BG },
+pgowfrontend/src/features/owner/tabs/UpiConfigSection.tsx:257:    borderColor: '#C6E8D4' },
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:4: * Pure flat design system: deep forest green (#176B3A) and off-white/canvas (#F7FAF7).
+pgowfrontend/src/features/owner/screens/PnLAnalyticsDetailScreen.tsx:629:    backgroundColor: '#EEF2FF' },
+pgowfrontend/src/features/owner/screens/ManageAdScreen.tsx:131:            <Btn onPress={confirmRemove} loading={remove.isPending} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={Radii.control} height={42} borderWidth={1} borderColor="#FECACA" style={{ flex: 1 }}>
+pgowfrontend/src/features/owner/screens/SettingsScreen.tsx:156:      <Btn onPress={confirmLogout} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={Radii.card} height={48} borderWidth={1} borderColor="#FECACA">
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:33:const SUCCESS = '#16A34A';
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:323:        <View style={[styles.statIconWrapper, { backgroundColor: '#EEF2FF' }]}>
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:432:    shadowColor: '#000',
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:453:    shadowColor: '#000',
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:463:    backgroundColor: '#E5E7EB' },
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:478:    shadowColor: '#000',
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:500:    backgroundColor: '#F9FAFB',
+pgowfrontend/src/features/owner/screens/ManagePropertiesScreen.tsx:527:    shadowColor: '#000',
+pgowfrontend/src/features/owner/OwnerSubscriptionScreen.tsx:5: * (`#0F172A`, `#1E293B`, `#2E1065`…) — a design generation earlier than everything around it,
+pgowfrontend/src/features/auth/QrScanner.tsx:111:  root: { flex: 1, backgroundColor: '#000000' },
+pgowfrontend/src/features/manager/screens/BedVisualizerScreen.tsx:511:                              ? { backgroundColor: Palette.TintAmber, borderColor: '#FCD34D' }
+pgowfrontend/src/features/manager/screens/BedVisualizerScreen.tsx:600:                      <Txt size={11} color="#A7EBF2">
+pgowfrontend/src/features/manager/screens/BedVisualizerScreen.tsx:1131:    backgroundColor: '#EAF7F5',
+pgowfrontend/src/features/manager/screens/BedVisualizerScreen.tsx:1257:    shadowColor: '#000',
+pgowfrontend/src/features/procurement/ProcurementScreen.tsx:350:          <View style={[styles.itemIconWrap, { backgroundColor: qty > 0 ? '#F0FDF9' : Colors.surfaceElevated }]}>
+pgowfrontend/src/features/procurement/ProcurementScreen.tsx:608:    backgroundColor: '#F0FDF9',
+pgowfrontend/src/features/procurement/ProcurementScreen.tsx:623:    shadowColor: '#000',
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:175:            <Txt size={11} color="#991B1B" style={{ marginTop: 3, lineHeight: 15 }}>
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:522:          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[16, 16]} style={{ width: '92%' }}>
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:570:  root: { flex: 1, backgroundColor: '#F8FAFB' },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:581:    borderWidth: 1, borderColor: '#DCE9EA', padding: 14,
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:582:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:583:  complaintCard: { backgroundColor: '#FFF5F5', borderColor: '#FECACA' },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:585:  feedbackCard: { backgroundColor: '#F0F6F5', borderColor: '#BDD8D6' },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:597:    borderWidth: 1, borderColor: '#DCE9EA',
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:607:    borderWidth: 1, borderColor: '#DCE9EA',
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:609:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:619:  attachBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1.5, borderColor: '#DCE9EA', borderStyle: 'dashed', padding: 12 },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:630:  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.card, backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9EA' },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:636:  submissionCard: { backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA', padding: 14, marginBottom: 10, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:639:  emptySubmissionsCard: { alignItems: 'center', paddingVertical: 32, backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA' },
+pgowfrontend/src/features/guest/tabs/GuestFeedbackComplaintsTab.tsx:642:  previewBox: { height: 180, backgroundColor: '#F8FAFC', borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' } });
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:5: *   - Dark Forest to Rich Emerald Header (#173A33 → #0F5E4A)
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:6: *   - Champagne Canvas (#F6F1E9), Pure White Cards (#FFFFFF), Soft Sage Borders (#B8C4B2)
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:7: *   - High-Contrast Dark Forest Typography (#173A33)
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:310:    backgroundColor: '#F6F1E9', borderWidth: 2, borderColor: Colors.borderSubtle,
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:322:    borderTopWidth: 1, borderTopColor: '#F6F1E9' },
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:329:    backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:338:    backgroundColor: '#FFF5F5', borderRadius: Radii.card,
+pgowfrontend/src/features/guest/tabs/GuestSecurityTab.tsx:339:    borderWidth: 1.5, borderColor: '#FECACA',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:60:  veg: { label: '🥦 VEG', color: '#15803D', bg: '#DCFCE7' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:62:  pure_veg: { label: '🥗 PURE VEG', color: Colors.success, bg: '#DCFCE7' } };
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:332:            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#DCE9EA' }}>
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:347:                    borderWidth: 1, borderColor: isAwayFromPg ? Palette.TintAmber : '#BDD8D6' }}
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:369:                    <Txt size={14} weight="700" color="#92400E">Away from PG (Home Visit)</Txt>
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:730:            <Card containerColor="#F7FAFA" borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[14, 14]}>
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:810:  root: { flex: 1, backgroundColor: '#F8FAFB' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:823:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:825:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:829:    backgroundColor: '#EAF5F4', borderWidth: 1, borderColor: '#BDD8D6',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:834:    backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:836:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:842:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:844:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:852:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:859:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:861:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 5,
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:871:  rsvpClosed: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F6F5', borderRadius: Radii.card, height: 44, paddingHorizontal: 16 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:875:    backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9E9' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:880:    backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9E9' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:882:  dotInd: { width: 7, height: 7, borderRadius: Radii.pill, backgroundColor: '#D5E8E6' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:886:  progressBox: { marginTop: 16, backgroundColor: Colors.surface, borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: '#DCE9E9' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:891:  weekDayCircle: { width: 38, height: 38, borderRadius: Radii.pill, alignItems: 'center', justifyContent: 'center', marginTop: 4, backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9E9' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:895:  mealListCard: { backgroundColor: Colors.surface, borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', overflow: 'hidden', marginBottom: 16, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:897:  mealRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F0F6F5' },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:899:  emptyBox: { alignItems: 'center', paddingVertical: 40, backgroundColor: Colors.surface, borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', marginBottom: 16 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:905:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:907:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:909:  viewAllChip: { flexDirection: 'row', alignItems: 'center', borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#BDD8D6', paddingHorizontal: 12, paddingVertical: 7 },
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:914:    backgroundColor: '#EAF5F4', borderRadius: Radii.sheet,
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:915:    borderWidth: 1, borderColor: '#BDD8D6',
+pgowfrontend/src/features/guest/tabs/GuestRSVPsTab.tsx:922:  chefNote: { marginTop: 10, backgroundColor: '#F0F6F5', borderRadius: Radii.control, padding: 10 },
+pgowfrontend/src/features/guest/tabs/GuestHubServicesTab.tsx:3: * Visual System: Unified Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
+pgowfrontend/src/features/guest/tabs/GuestHubServicesTab.tsx:80:              <View style={{ height: 1, backgroundColor: '#F6F1E9' }} />
+pgowfrontend/src/features/guest/tabs/GuestHubServicesTab.tsx:212:  laundryIconWrap: { width: 44, height: 44, borderRadius: Radii.pill, backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
+pgowfrontend/src/features/guest/tabs/GuestHubServicesTab.tsx:222:  gridIconWrap: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:4: * Visual System: Premium Teal (#087F86), Deep Teal (#06656B), Soft Mint (#EAF7F5),
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:5: * Background (#F8FAFB), Dark Navy Typography (#14252B), Light Borders (#DCE9EA).
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:58: * (`#E0F2F0`, `#D97706`…) that the palette pass never reached, and are now tones on the one
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:447:          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[16, 16]} style={{ marginTop: 14 }}>
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:775:  root: { flex: 1, backgroundColor: '#F8FAFB' },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:787:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:789:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 6,
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:806:    backgroundColor: '#F7FAFA',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:807:    borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:810:  bdDivider: { height: 1, backgroundColor: '#DCE9EA', marginVertical: 4 },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:816:  vDivider: { width: 1, height: 28, backgroundColor: '#DCE9EA' },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:823:    borderWidth: 1, borderColor: '#D9EDED',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:826:    shadowColor: '#0C3B3E', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:828:    borderColor: Colors.primary, borderWidth: 1.5, backgroundColor: '#EAF7F5' },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:831:    backgroundColor: Palette.TintGreen, borderWidth: 1, borderColor: '#BDD8D6',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:839:    backgroundColor: '#F0F6F5', borderRadius: Radii.control, borderWidth: 1, borderColor: '#DCE9EA',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:843:    backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#BDD8D6',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:847:    borderWidth: 1.5, borderColor: '#BDD8D6', padding: 8,
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:854:    borderWidth: 1, borderColor: '#D9EDED',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:856:    shadowColor: '#0C3B3E', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:867:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:868:    overflow: 'hidden', shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:876:    borderWidth: 1, borderColor: '#DCE9E9',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:878:    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:881:    borderRadius: Radii.card, borderWidth: 1, borderColor: '#BDD8D6',
+pgowfrontend/src/features/guest/tabs/GuestPaymentsTab.tsx:888:  emptyInvoiceCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA' } });
+pgowfrontend/src/features/groceries/components/grocery/MainBannerCarousel.tsx:192:    shadowColor: '#000',
+pgowfrontend/src/features/groceries/components/grocery/MainBannerCarousel.tsx:214:    shadowColor: '#000',
+pgowfrontend/src/features/groceries/components/kitchen/MenuEditorModal.tsx:178:    shadowColor: '#000',
+pgowfrontend/src/features/groceries/components/kitchen/CustomAlertModal.tsx:73:    shadowColor: '#000',
+pgowfrontend/src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx:463:  bottomSheetContainer: { height: '65%', backgroundColor: Colors.surfaceMuted, borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 10, overflow: 'hidden' },
+pgowfrontend/src/components/ui/StatusChip.tsx:11: * They also bypassed the palette: `#047857`, `#B91C1C`, `#1D4ED8`, `#6B7280` and friends are
+pgowfrontend/src/components/maplibreCompat.tsx:60:    backgroundColor: '#0E171B',
+pgowfrontend/src/components/AlertOverlay.tsx:202:    shadowColor: '#0F172A',
+pgowfrontend/src/components/AppHeader.tsx:16: * dark ink. Against the old `#011C40` header that was dark-on-dark and effectively unreadable.
+pgowfrontend/src/components/dialogs/EditPgPropertyDialog.tsx:199:    backgroundColor: '#EEF2FF',
+pgowfrontend/src/components/dialogs/TextPromptDialog.tsx:130:    shadowColor: '#000',
+pgowfrontend/src/components/dialogs/AddPgPropertyDialog.tsx:213:    backgroundColor: '#EEF2FF',
+pgowfrontend/src/components/dialogs/HubDialogs.tsx:510:  stepTitle: { fontSize: 14, fontWeight: '700', color: '#17201A' },
+pgowfrontend/src/components/dialogs/HubDialogs.tsx:521:    borderColor: '#E6EFEA' },
+pgowfrontend/src/components/dialogs/HubDialogs.tsx:533:    borderColor: '#E6EFEA',
+pgowfrontend/src/components/HeadlessDockTabButton.tsx:352:    shadowColor: '#0F172A',
+pgowfrontend/src/components/HeadlessDockTabButton.tsx:417:    shadowColor: '#0F172A',
+pgowfrontend/src/components/KycDocumentsCard.tsx:112:              <Txt size={11} color="#A7EBF2" style={{ marginTop: 2 }}>Official KYC Verification Document</Txt>
+pgowfrontend/src/components/FeaturedMonetizedAdCard.tsx:39:          <View style={styles.sponsoredTag}><Txt variant="caption" weight="600" color="#FFD700">SPONSORED PARTNER</Txt></View>
+pgowfrontend/src/components/FeaturedMonetizedAdCard.tsx:83:              containerColor="#1A1F36"
+pgowfrontend/src/components/FeaturedMonetizedAdCard.tsx:84:              textColor="#FFD700"
+pgowfrontend/src/components/FeaturedMonetizedAdCard.tsx:91:              <Ionicons name="copy" size={14} color="#FFD700" />
+pgowfrontend/src/components/FeaturedMonetizedAdCard.tsx:92:              <Txt variant="meta" weight="600" color="#FFD700" tabular style={{ marginLeft: 6 }}>{ad.discount_code}</Txt>
+pgowfrontend/src/components/FeaturedMonetizedAdCard.tsx:162:  sponsoredTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radii.badge, backgroundColor: 'rgba(255,215,0,0.15)', borderWidth: 1, borderColor: '#FFD700' },
+pgowfrontend/src/components/FeaturedMonetizedAdCard.tsx:163:  bannerBox: { height: 130, backgroundColor: '#1A1F36', position: 'relative', overflow: 'hidden' },
+pgowfrontend/src/theme/colors.ts:5:  // White, not a tint. The old `#F6F9FB` put a white card at 1.06:1 against its own page —
+pgowfrontend/src/theme/colors.ts:11:  canvas: '#FDFCFA',
+pgowfrontend/src/theme/colors.ts:12:  surface: '#FDFCFA',
+pgowfrontend/src/theme/colors.ts:13:  surfaceCard: '#FDFCFA',
+pgowfrontend/src/theme/colors.ts:14:  surfaceElevated: '#EDEFE8',
+pgowfrontend/src/theme/colors.ts:16:  surfaceMuted: '#F5F3EF',
+pgowfrontend/src/theme/colors.ts:19:  brandPale: '#EAF2E6',
+pgowfrontend/src/theme/colors.ts:20:  brandSoft: '#74926D',
+pgowfrontend/src/theme/colors.ts:21:  brand: '#4C7246',
+pgowfrontend/src/theme/colors.ts:22:  brandDeep: '#2C452A',
+pgowfrontend/src/theme/colors.ts:23:  terracottaPale: '#F9F0E8',
+pgowfrontend/src/theme/colors.ts:24:  terracotta: '#A0572E',
+pgowfrontend/src/theme/colors.ts:25:  terracottaDeep: '#6E3A22',
+pgowfrontend/src/theme/colors.ts:27:  primary: '#4C7246',
+pgowfrontend/src/theme/colors.ts:28:  primaryDark: '#2C452A',
+pgowfrontend/src/theme/colors.ts:30:  secondary: '#A0572E',
+pgowfrontend/src/theme/colors.ts:31:  tertiary: '#A0572E',
+pgowfrontend/src/theme/colors.ts:32:  accentWarm: '#A0572E',
+pgowfrontend/src/theme/colors.ts:33:  accentCool: '#4E4C44',
+pgowfrontend/src/theme/colors.ts:34:  accentRose: '#A6474E',
+pgowfrontend/src/theme/colors.ts:37:  successPale: '#E4EFEA',
+pgowfrontend/src/theme/colors.ts:38:  success: '#2E6A54',
+pgowfrontend/src/theme/colors.ts:39:  successDeep: '#1D4738',
+pgowfrontend/src/theme/colors.ts:40:  pendingPale: '#F7EEDC',
+pgowfrontend/src/theme/colors.ts:41:  pending: '#836731',
+pgowfrontend/src/theme/colors.ts:42:  pendingDeep: '#57441F',
+pgowfrontend/src/theme/colors.ts:43:  dangerPale: '#F9E9E9',
+pgowfrontend/src/theme/colors.ts:44:  danger: '#A6474E',
+pgowfrontend/src/theme/colors.ts:45:  dangerDeep: '#6E2E33',
+pgowfrontend/src/theme/colors.ts:46:  neutralPale: '#EFEDE7',
+pgowfrontend/src/theme/colors.ts:47:  neutral: '#6E6A5F',
+pgowfrontend/src/theme/colors.ts:49:  warning: '#836731',
+pgowfrontend/src/theme/colors.ts:50:  info: '#6E6A5F',
+pgowfrontend/src/theme/colors.ts:53:  textPrimary: '#33322C',
+pgowfrontend/src/theme/colors.ts:54:  textSecondary: '#4E4C44',
+pgowfrontend/src/theme/colors.ts:55:  textMuted: '#726E64',
+pgowfrontend/src/theme/colors.ts:56:  textInverse: '#FDFCFA',
+pgowfrontend/src/theme/colors.ts:57:  textAccent: '#4C7246',
+pgowfrontend/src/theme/colors.ts:64:  separator: '#E8E5DE',
+pgowfrontend/src/theme/colors.ts:65:  borderSubtle: '#D6D2C8',
+pgowfrontend/src/theme/colors.ts:66:  borderFocus: '#4C7246',
+pgowfrontend/src/theme/colors.ts:68:  borderMuted: '#E8E5DE',
+pgowfrontend/src/theme/colors.ts:86:  StatusGreen: '#2E6A54',
+pgowfrontend/src/theme/colors.ts:87:  StatusGreenSoft: '#E4EFEA',
+pgowfrontend/src/theme/colors.ts:88:  StatusRed: '#A6474E',
+pgowfrontend/src/theme/colors.ts:89:  TintAmber: '#F7EEDC',
+pgowfrontend/src/theme/colors.ts:90:  TintGreen: '#E4EFEA',
+pgowfrontend/src/theme/colors.ts:91:  TintRed: '#F9E9E9',
+pgowfrontend/src/theme/colors.ts:92:  TintBlue: '#EFEDE7',
+pgowfrontend/src/theme/colors.ts:109:  brand: { fill: '#EAF2E6', ink: '#2C452A', sub: '#4C7246' },
+pgowfrontend/src/theme/colors.ts:110:  green: { fill: '#E4EFEA', ink: '#1D4738', sub: '#2E6A54' },
+pgowfrontend/src/theme/colors.ts:111:  amber: { fill: '#F7EEDC', ink: '#57441F', sub: '#836731' },
+pgowfrontend/src/theme/colors.ts:112:  slate: { fill: '#EFEDE7', ink: '#33322C', sub: '#6E6A5F' },
+pgowfrontend/src/theme/colors.ts:136:    shadowColor: '#2C452A',
+pgowfrontend/src/theme/colors.ts:143:    shadowColor: '#2C452A',
+pgowfrontend/src/theme/colors.ts:150:    shadowColor: '#2C452A',
+pgowfrontend/src/data/notificationHelper.ts:19:      lightColor: '#14E2B1',
+pgowfrontend/src/data/colors.check.ts:12:  '#D97706': 'Colors.warning', '#B45309': 'Colors.warning', '#F59E0B': 'Colors.warning',
+pgowfrontend/src/data/colors.check.ts:13:  '#047857': 'Colors.success', '#166534': 'Colors.success', '#059669': 'Colors.success',
+pgowfrontend/src/data/colors.check.ts:14:  '#B91C1C': 'Colors.danger', '#DC2626': 'Colors.danger',
+pgowfrontend/src/data/colors.check.ts:15:  '#FEF3C7': 'Palette.TintAmber', '#FDE68A': 'Palette.TintAmber', '#FFFBEB': 'Palette.TintAmber',
+pgowfrontend/src/data/colors.check.ts:16:  '#FEF2F2': 'Palette.TintRed', '#FEE2E2': 'Palette.TintRed', '#FCA5A5': 'Palette.TintRed',
+pgowfrontend/src/data/colors.check.ts:17:  '#ECFDF5': 'Palette.TintGreen', '#E0F2F0': 'Palette.TintGreen', '#D1FAE5': 'Palette.TintGreen',
+pgowfrontend/src/data/colors.check.ts:18:  '#A7F3D0': 'Palette.TintGreen', '#EEF8F1': 'Palette.TintGreen',
+pgowfrontend/src/data/colors.check.ts:19:  '#1D4ED8': 'Colors.info',
+pgowfrontend/src/data/colors.check.ts:22:  '#FFFFFF': 'Colors.surface or Colors.textInverse', '#FFF': 'Colors.surface or Colors.textInverse',
+pgowfrontend/src/data/colors.check.ts:24:  '#26658C': 'Colors.brand',
+pgowfrontend/src/data/colors.check.ts:25:  '#1B3245': 'Colors.textPrimary',
+pgowfrontend/src/data/colors.check.ts:26:  '#5A7387': 'Colors.textMuted',
+pgowfrontend/src/data/colors.check.ts:27:  '#6B7280': 'Colors.textMuted', '#9CA3AF': 'Colors.textMuted',
+pgowfrontend/src/data/colors.check.ts:28:  '#F3F4F6': 'Colors.surfaceMuted',
+pgowfrontend/src/data/colors.check.ts:29:  '#E2E8F0': 'Colors.borderMuted',
+pgowfrontend/src/data/colors.check.ts:30:  '#F6F9FB': 'Colors.canvas', '#FFFCF9': 'Colors.canvas',
+pgowfrontend/src/data/colors.check.ts:31:  '#DCEAF2': 'DeckTints.brand.fill', '#011C40': 'DeckTints.brand.ink', '#3A5D75': 'DeckTints.brand.sub',
+pgowfrontend/src/data/colors.check.ts:32:  '#D8EDE3': 'DeckTints.green.fill', '#03402C': 'DeckTints.green.ink', '#2E5F4C': 'DeckTints.green.sub',
+pgowfrontend/src/data/colors.check.ts:33:  '#F7E8CE': 'DeckTints.amber.fill', '#6B3705': 'DeckTints.amber.ink', '#7A5227': 'DeckTints.amber.sub',
+pgowfrontend/src/data/colors.check.ts:34:  '#EDEFF2': 'DeckTints.slate.fill', '#0F1B2A': 'DeckTints.slate.ink', '#55677A': 'DeckTints.slate.sub',
+pgowfrontend/src/data/colors.check.ts:35:  '#E1E7EC': 'Colors.separator (old cool hairline)',
+pgowfrontend/src/data/colors.check.ts:37:  '#A24A2A': 'Colors.brand', '#5C2B18': 'Colors.brandDeep', '#7A3A22': 'Colors.terracottaDeep',
+pgowfrontend/src/data/colors.check.ts:38:  '#F2EAE3': 'Colors.surfaceElevated', '#F7F2ED': 'Colors.surfaceMuted', '#EBE2DA': 'Colors.separator',
+pgowfrontend/src/data/colors.check.ts:39:  '#DCD0C5': 'Colors.borderSubtle', '#E3D9D0': 'Colors.separator', '#2C6248': 'Colors.success',
+pgowfrontend/src/data/colors.check.ts:40:  '#8A5A15': 'Colors.pending', '#A83226': 'Colors.danger', '#F6E9E1': 'DeckTints.brand.fill',
+pgowfrontend/src/data/colors.check.ts:41:  '#E6F0E9': 'DeckTints.green.fill', '#F9EEDA': 'DeckTints.amber.fill', '#F2EDE8': 'DeckTints.slate.fill',
+pgowfrontend/src/data/colors.check.ts:43:  '#EAF2E6': 'DeckTints.brand.fill', '#2C452A': 'DeckTints.brand.ink', '#4C7246': 'DeckTints.brand.sub',
+pgowfrontend/src/data/colors.check.ts:44:  '#E4EFEA': 'DeckTints.green.fill', '#1D4738': 'DeckTints.green.ink', '#2E6A54': 'DeckTints.green.sub',
+pgowfrontend/src/data/colors.check.ts:45:  '#F7EEDC': 'DeckTints.amber.fill', '#57441F': 'DeckTints.amber.ink', '#836731': 'DeckTints.amber.sub',
+pgowfrontend/src/data/colors.check.ts:46:  '#EFEDE7': 'DeckTints.slate.fill', '#33322C': 'DeckTints.slate.ink', '#6E6A5F': 'DeckTints.slate.sub',
+pgowfrontend/src/data/colors.check.ts:47:  '#F9F0E8': 'Colors.terracottaPale', '#A0572E': 'Colors.terracotta', '#6E3A22': 'Colors.terracottaDeep',
+pgowfrontend/src/data/colors.check.ts:48:  '#F9E9E9': 'Colors.dangerPale', '#6E2E33': 'Colors.dangerDeep', '#FDFCFA': 'Colors.canvas',
+pgowfrontend/src/data/colors.check.ts:49:  '#F5F3EF': 'Colors.surfaceMuted', '#EDEFE8': 'Colors.surfaceElevated', '#E8E5DE': 'Colors.separator',
+pgowfrontend/src/data/colors.check.ts:50:  '#D6D2C8': 'Colors.borderSubtle', '#4E4C44': 'Colors.textSecondary', '#726E64': 'Colors.textMuted',

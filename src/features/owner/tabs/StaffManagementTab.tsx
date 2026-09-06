@@ -1,12 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-  Alert,
-  FlatList,
-  Text,
-  ScrollView,
-  BackHandler } from 'react-native';
+import { View, StyleSheet, Alert, FlatList, ScrollView, BackHandler } from 'react-native';
 import { router } from 'expo-router';
 
 
@@ -343,9 +336,9 @@ export function StaffManagementTab() {
             }}
           >
             <Ionicons name="person-add-outline" size={16} color={subTab === 0 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Add Staff
-            </Text>
+            </Txt>
           </AnimatedPress>
 
           <AnimatedPress accessibilityRole="button"
@@ -355,9 +348,9 @@ export function StaffManagementTab() {
             }}
           >
             <Ionicons name="people-outline" size={16} color={subTab === 1 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Staff Directory
-            </Text>
+            </Txt>
           </AnimatedPress>
         </Row>
       </View>
@@ -370,8 +363,8 @@ export function StaffManagementTab() {
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
         >
-          <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add Staff Member</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Assign their role, work details, and login PIN.</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add Staff Member</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.bodySub}>Assign their role, work details, and login PIN.</Txt>
 
           <Spacer size={8} />
 
@@ -399,7 +392,7 @@ export function StaffManagementTab() {
           <Spacer size={10} />
 
           {/* Staff Role Chips */}
-          <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Staff Role</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Staff Role</Txt>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 42 }}>
             <Row gap={6} align="center">
               {selectableRoles.map((role) => {
@@ -410,9 +403,9 @@ export function StaffManagementTab() {
                     style={[styles.roleChip, isSelected && styles.roleChipActive]}
                     onPress={() => set('staffRoleInput', role)}
                   >
-                    <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+                    <Txt maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
                       {role}
-                    </Text>
+                    </Txt>
                   </AnimatedPress>
                 );
               })}
@@ -424,7 +417,7 @@ export function StaffManagementTab() {
           {/* Row 2: Shift & Salary */}
           <Row gap={10}>
             <Col style={{ flex: 1.2 }}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift *</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift *</Txt>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 46 }}>
                 <Row gap={6} align="center">
                   {SHIFT_OPTIONS.map((opt) => {
@@ -435,9 +428,9 @@ export function StaffManagementTab() {
                         style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                         onPress={() => set('staffShiftInput', opt)}
                       >
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+                        <Txt maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
                           {opt.replace(' Shift', '').split(' ')[0]}
-                        </Text>
+                        </Txt>
                       </AnimatedPress>
                     );
                   })}
@@ -480,9 +473,9 @@ export function StaffManagementTab() {
 
             <Row gap={6} align="center" style={[styles.securityStrip, { flex: 1.2, height: 48, marginTop: 16 }]}>
               <Ionicons name="shield-checkmark-outline" size={14} color={GREEN} />
-              <Text maxFontSizeMultiplier={1.3} style={[styles.securityText, { fontSize: 9.5 }]} numberOfLines={2}>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.securityText, { fontSize: 9.5 }]} numberOfLines={2}>
                 Access is limited according to the role.
-              </Text>
+              </Txt>
             </Row>
           </Row>
 
@@ -494,9 +487,9 @@ export function StaffManagementTab() {
             onPress={handleRegister}
             disabled={isSubmitting}
           >
-            <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>
               {isSubmitting ? 'Registering...' : 'Create Staff Account'}
-            </Text>
+            </Txt>
           </AnimatedPress>
         </ScrollView>
       )}
@@ -515,9 +508,9 @@ export function StaffManagementTab() {
           ListHeaderComponent={
             <View style={{ gap: 14, marginBottom: 12 }}>
               <Row justify="space-between" align="center">
-                <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Staff Directory</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Staff Directory</Txt>
                 <View style={styles.countBadge}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{activeStaffCount} Active</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{activeStaffCount} Active</Txt>
                 </View>
               </Row>
 
@@ -537,9 +530,9 @@ export function StaffManagementTab() {
                       style={[styles.filterChip, roleFilter === filter && styles.filterChipActive]}
                       onPress={() => setRoleFilter(filter)}
                     >
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
+                      <Txt maxFontSizeMultiplier={1.3} style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
                         {filter}
-                      </Text>
+                      </Txt>
                     </AnimatedPress>
                   ))}
                 </Row>
@@ -590,7 +583,7 @@ export function StaffManagementTab() {
                 }}
               >
                 <Ionicons name="information-circle-outline" size={20} color={CHARCOAL} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>View Details</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>View Details</Txt>
               </AnimatedPress>
 
               <AnimatedPress accessibilityRole="button"
@@ -598,7 +591,7 @@ export function StaffManagementTab() {
                 onPress={() => handleOpenEdit(selectedStaff)}
               >
                 <Ionicons name="create-outline" size={20} color={CHARCOAL} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>Edit Staff</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>Edit Staff</Txt>
               </AnimatedPress>
 
               <AnimatedPress accessibilityRole="button"
@@ -606,7 +599,7 @@ export function StaffManagementTab() {
                 onPress={() => confirmDeleteStaff(selectedStaff)}
               >
                 <Ionicons name="trash-outline" size={20} color={Colors.danger} />
-                <Text maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: Colors.danger }]}>Delete Staff</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: Colors.danger }]}>Delete Staff</Txt>
               </AnimatedPress>
 
         </Sheet>
@@ -621,41 +614,41 @@ export function StaffManagementTab() {
           icon="id-card-outline"
           onDismiss={() => setShowDetails(false)}
         >
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>PERSONAL DETAILS</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>PERSONAL DETAILS</Txt>
               <Spacer size={4} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Name</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.name}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Name</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.name}</Txt>
               <Spacer size={8} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Phone</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.phone}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Phone</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.phone}</Txt>
 
               <Spacer size={16} />
               
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ROLE</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ROLE</Txt>
               <Spacer size={4} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Assigned Role</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Assigned Role</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>
                 {ROLE_DISPLAY_NAMES[selectedStaff.role] || selectedStaff.role}
-              </Text>
+              </Txt>
 
               <Spacer size={16} />
 
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>WORK DETAILS</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>WORK DETAILS</Txt>
               <Spacer size={4} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Shift</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.shiftTime || 'Day Shift'}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Shift</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.shiftTime || 'Day Shift'}</Txt>
               <Spacer size={8} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Monthly Salary</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailValue}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Monthly Salary</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>
                 ₹{Math.round(selectedStaff.monthlySalary).toLocaleString('en-IN')}
-              </Text>
+              </Txt>
 
               <Spacer size={16} />
 
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ACCOUNT ACCESS</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ACCOUNT ACCESS</Txt>
               <Spacer size={4} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Account Status</Text>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.detailValue, { color: GREEN }]}>Active</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Account Status</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.detailValue, { color: GREEN }]}>Active</Txt>
 
               <Spacer size={14} />
 
@@ -675,7 +668,7 @@ export function StaffManagementTab() {
                   onPress={handleResetPin}
                   disabled={isResettingPin}
                 >
-                  <Text maxFontSizeMultiplier={1.3} style={styles.resetPinBtnText}>Save</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.resetPinBtnText}>Save</Txt>
                 </AnimatedPress>
               </View>
 
@@ -696,12 +689,12 @@ export function StaffManagementTab() {
           footer={
             <Row gap={10}>
               <AnimatedPress accessibilityRole="button" style={styles.editModalSaveBtn} onPress={handleUpdateStaff} disabled={isUpdating}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
                   {isUpdating ? 'Saving…' : 'Save changes'}
-                </Text>
+                </Txt>
               </AnimatedPress>
               <AnimatedPress accessibilityRole="button" style={styles.editModalCancelBtn} onPress={() => setShowEditModal(false)}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Txt>
               </AnimatedPress>
             </Row>
           }
@@ -734,7 +727,7 @@ export function StaffManagementTab() {
                     />
                     
                     <Col style={{ flex: 1.2 }}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift</Txt>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                         <Row gap={6} align="center">
                           {SHIFT_OPTIONS.map((opt) => {
@@ -745,9 +738,9 @@ export function StaffManagementTab() {
                                 style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                                 onPress={() => setEditShift(opt)}
                               >
-                                <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+                                <Txt maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
                                   {opt.replace(' Shift', '').split(' ')[0]}
-                                </Text>
+                                </Txt>
                               </AnimatedPress>
                             );
                           })}
@@ -758,7 +751,7 @@ export function StaffManagementTab() {
 
                   <Spacer size={8} />
 
-                  <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Role</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Role</Txt>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
                     <Row gap={6}>
                       {selectableRoles.map((r) => {
@@ -769,9 +762,9 @@ export function StaffManagementTab() {
                             style={[styles.roleChip, isSelected && styles.roleChipActive]}
                             onPress={() => setEditRole(r)}
                           >
-                            <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+                            <Txt maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
                               {r}
-                            </Text>
+                            </Txt>
                           </AnimatedPress>
                         );
                       })}

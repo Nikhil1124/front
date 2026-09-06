@@ -41,7 +41,7 @@
  * on money someone already verified from the Payments tab.
  */
 import { useMemo, useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, RefreshControl, Text, ScrollView, useWindowDimensions, BackHandler } from 'react-native';
+import { View, StyleSheet, Alert, RefreshControl, ScrollView, useWindowDimensions, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -496,9 +496,9 @@ export function OwnerAnnouncementsTab() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
             {tabs.map((tab) => (
               <AnimatedPress accessibilityRole="button" key={tab.id} onPress={() => setActiveSubTab(tab.id as any)} style={[styles.filterChip, activeSubTab === tab.id && styles.filterChipActive]}>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, activeSubTab === tab.id && styles.filterChipTextActive]}>
+                <Txt maxFontSizeMultiplier={1.3} style={[styles.filterChipText, activeSubTab === tab.id && styles.filterChipTextActive]}>
                   {tab.label}{tab.count !== undefined ? ` ${tab.count}` : ''}
-                </Text>
+                </Txt>
               </AnimatedPress>
             ))}
           </ScrollView>
@@ -509,9 +509,9 @@ export function OwnerAnnouncementsTab() {
             <Spacer size={10} />
             <AnimatedPress accessibilityRole="button" onPress={() => markAllReadMutation.mutate()} disabled={markAllReadMutation.isPending} style={styles.markAllReadBtn}>
               <Ionicons name="checkmark-done" size={15} color={PRIMARY} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.markAllReadText}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.markAllReadText}>
                 {markAllReadMutation.isPending ? 'Marking…' : `Mark all ${unreadInformationalCount} as read`}
-              </Text>
+              </Txt>
             </AnimatedPress>
           </>
         )}
@@ -583,18 +583,18 @@ export function OwnerAnnouncementsTab() {
                   {!selectedInboxItem.payment && (
                     <>
                       <Spacer size={10} />
-                      <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Txt>
                     </>
                   )}
                 </View>
               ) : selectedInboxItem.kind === 'ANNOUNCEMENT' ? (
                 <View style={[styles.detailMessageCard, styles.pinnedNoticeCard]}>
                   <Ionicons name="pin" size={16} color={Colors.textMuted} style={styles.pinnedGlyph} />
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Txt>
                 </View>
               ) : (
                 <View style={styles.detailMessageCard}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Txt>
                 </View>
               )}
 
@@ -602,8 +602,8 @@ export function OwnerAnnouncementsTab() {
 
               {selectedInboxItem.kind === 'KYC' && selectedInboxItem.guest && (
                 <View style={styles.actionBlockBox}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Identity Verification Required</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Verify {selectedInboxItem.guest.name}'s identity documents.</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Identity Verification Required</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Verify {selectedInboxItem.guest.name}'s identity documents.</Txt>
                   <Spacer size={16} />
                   <KycDocumentsCard
                     idPhotoUri={selectedInboxItem.guest.idProofPhotoUri}
@@ -613,10 +613,10 @@ export function OwnerAnnouncementsTab() {
                   <Spacer size={16} />
                   <Row gap={12}>
                     <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleApproveKyc(selectedInboxItem)}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Txt>
                     </AnimatedPress>
                     <AnimatedPress accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => handleRejectKyc(selectedInboxItem)}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Txt>
                     </AnimatedPress>
                   </Row>
                 </View>
@@ -624,15 +624,15 @@ export function OwnerAnnouncementsTab() {
 
               {selectedInboxItem.kind === 'PAYMENT' && selectedInboxItem.payment && (
                 <View style={styles.actionBlockBox}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Payment Awaiting Verification</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Confirm the money actually arrived before verifying.</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Payment Awaiting Verification</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Confirm the money actually arrived before verifying.</Txt>
                   <Spacer size={16} />
                   <Row gap={12}>
                     <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleVerifyPayment(selectedInboxItem)}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Txt>
                     </AnimatedPress>
                     <AnimatedPress accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => openRejectPayment(selectedInboxItem)}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Txt>
                     </AnimatedPress>
                   </Row>
                 </View>
@@ -640,13 +640,13 @@ export function OwnerAnnouncementsTab() {
 
               {selectedInboxItem.kind === 'PROCUREMENT' && (
                 <View style={styles.actionBlockBox}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Awaiting Your Approval</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Choose a payment method and approve or reject on the Procurement screen.</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Awaiting Your Approval</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Choose a payment method and approve or reject on the Procurement screen.</Txt>
                   <Spacer size={16} />
                   <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleReviewProcurement(selectedInboxItem)}>
                     <Row gap={8} align="center">
                       <Ionicons name="cart" size={16} color={SURFACE} />
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Txt>
                     </Row>
                   </AnimatedPress>
                 </View>
@@ -654,23 +654,23 @@ export function OwnerAnnouncementsTab() {
 
               {selectedInboxItem.kind === 'REQUEST' && (
                 <View style={styles.actionBlockBox}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>{selectedInboxItem.isMaintenanceFlavoured ? 'Resolve this issue' : 'Follow up'}</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>{selectedInboxItem.isMaintenanceFlavoured ? 'Resolve this issue' : 'Follow up'}</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>
                     {canOpenTicket ? 'Open the full ticket for history and photos.' : 'A resolution here needs someone with access to the ticket.'}
-                  </Text>
+                  </Txt>
                   <Spacer size={16} />
                   <Row gap={12}>
                     {canOpenTicket && (
                       <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleViewTicket(selectedInboxItem)}>
                         <Row gap={8} align="center">
                           <Ionicons name="document-text" size={16} color={SURFACE} />
-                          <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>View Ticket</Text>
+                          <Txt maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>View Ticket</Txt>
                         </Row>
                       </AnimatedPress>
                     )}
                     {canManage && selectedInboxItem.isMaintenanceFlavoured && (
                       <AnimatedPress accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => handleBookService(selectedInboxItem)}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Book Service</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Book Service</Txt>
                       </AnimatedPress>
                     )}
                   </Row>
@@ -721,10 +721,10 @@ export function OwnerAnnouncementsTab() {
           footer={
             <Row gap={12}>
               <AnimatedPress accessibilityRole="button" style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.publishBtnText}>{isPublishing ? 'Publishing…' : 'Publish'}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.publishBtnText}>{isPublishing ? 'Publishing…' : 'Publish'}</Txt>
               </AnimatedPress>
               <AnimatedPress accessibilityRole="button" style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.publishCancelText}>Cancel</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.publishCancelText}>Cancel</Txt>
               </AnimatedPress>
             </Row>
           }
@@ -751,14 +751,14 @@ export function OwnerAnnouncementsTab() {
                   error={noticeErrors.message}
                 />
                 <Spacer size={16} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Target Audience</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Target Audience</Txt>
                 <Spacer size={8} />
                 <Row gap={8}>
                   {(['all', 'guest', 'staff', 'manager'] as const).map((aud) => (
                     <AnimatedPress accessibilityRole="button" key={aud} style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]} onPress={() => setNoticeAudience(aud)}>
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
+                      <Txt maxFontSizeMultiplier={1.3} style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
                         {aud === 'all' ? 'All' : aud === 'guest' ? 'Residents' : aud === 'staff' ? 'Staff' : 'Managers'}
-                      </Text>
+                      </Txt>
                     </AnimatedPress>
                   ))}
                 </Row>
@@ -819,19 +819,19 @@ function DecisionCard({
       <Spacer size={14} />
       {item.kind === 'KYC' && (
         <Row gap={10}>
-          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onApproveKyc}><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text></AnimatedPress>
-          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectKyc}><Text maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Text></AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onApproveKyc}><Txt maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Txt></AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectKyc}><Txt maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Txt></AnimatedPress>
         </Row>
       )}
       {item.kind === 'PAYMENT' && (
         <Row gap={10}>
-          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onVerifyPayment}><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text></AnimatedPress>
-          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectPayment}><Text maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Text></AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onVerifyPayment}><Txt maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Txt></AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectPayment}><Txt maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Txt></AnimatedPress>
         </Row>
       )}
       {item.kind === 'PROCUREMENT' && (
         <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onReviewProcurement}>
-          <Row gap={6} align="center" justify="center"><Ionicons name="cart" size={14} color={SURFACE} /><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Text></Row>
+          <Row gap={6} align="center" justify="center"><Ionicons name="cart" size={14} color={SURFACE} /><Txt maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Txt></Row>
         </AnimatedPress>
       )}
     </Card>
@@ -893,7 +893,7 @@ const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
       >
         <AnimatedPress accessibilityRole="button" onPress={onPress} style={styles.fabInner}>
           <Ionicons name="megaphone-outline" size={18} color={SURFACE} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.fabText}>New Announcement</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.fabText}>New Announcement</Txt>
         </AnimatedPress>
       </Animated.View>
     </GestureDetector>

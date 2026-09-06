@@ -4,11 +4,7 @@
  * Pure flat design system: deep forest green (#176B3A) and off-white/canvas (#F7FAF7).
  */
 import { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Text,
-  ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Row, Col, Spacer, MetricDeck, TrendChart, MetricRow, ListSectionHeader,
@@ -415,7 +411,7 @@ export function PnLAnalyticsDetailScreen() {
               }}
               testID={`pnl_interval_${t.key}`}
             >
-              <Text maxFontSizeMultiplier={1.3} style={[styles.tabLabel, isSel && styles.tabLabelSel]}>{t.label}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.tabLabel, isSel && styles.tabLabelSel]}>{t.label}</Txt>
             </AnimatedPress>
           );
         })}
@@ -425,10 +421,10 @@ export function PnLAnalyticsDetailScreen() {
       {interval === 'custom' && (
         <View style={styles.customCard}>
           <Row justify="space-between" align="center">
-            <Text maxFontSizeMultiplier={1.3} style={styles.customTitle}>Custom range</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.customDateDisplay}>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.customTitle}>Custom range</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.customDateDisplay}>
               {formatDateLabel(customStart)} → {formatDateLabel(customEnd)}
-            </Text>
+            </Txt>
           </Row>
           <Spacer size={12} />
           <Row gap={6} style={{ flexWrap: 'wrap' }}>
@@ -445,7 +441,7 @@ export function PnLAnalyticsDetailScreen() {
                   setCustomEnd(p.end);
                 }}
               >
-                <Text maxFontSizeMultiplier={1.3} style={[styles.presetChipText, isSel && styles.presetChipTextSel]}>{p.label}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={[styles.presetChipText, isSel && styles.presetChipTextSel]}>{p.label}</Txt>
               </AnimatedPress>
               );
             })}
@@ -459,23 +455,23 @@ export function PnLAnalyticsDetailScreen() {
       {isApiLoading && !isCustomMode ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator color={GREEN} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.loadingText}>Loading financials...</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.loadingText}>Loading financials...</Txt>
         </View>
       ) : isApiError && !isCustomMode ? (
         <View style={styles.errorBox}>
           <Ionicons name="alert-circle" size={24} color={Colors.danger} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.errorText}>
             {(apiError as Error)?.message ?? 'Failed to load P&L'}
-          </Text>
+          </Txt>
         </View>
       ) : revenueVal === 0 && expensesVal === 0 && monthlyBreakdown.length === 0 ? (
         /* Empty State */
         <View style={styles.emptyBox}>
           <Ionicons name="bar-chart-outline" size={40} color={MUTED} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>No financial data available</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>No financial data available</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.emptySub}>
             There is no recorded revenue or expense data for this period.
-          </Text>
+          </Txt>
         </View>
       ) : (
         <Col gap={20}>
@@ -502,7 +498,7 @@ export function PnLAnalyticsDetailScreen() {
                 />
               ))}
               {categoriesList.every((c) => c.amount === 0) && (
-                <Text maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>No expenses logged for this period.</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>No expenses logged for this period.</Txt>
               )}
             </View>
           </View>
@@ -511,25 +507,25 @@ export function PnLAnalyticsDetailScreen() {
           <View style={styles.sectionCard}>
             <Row gap={8} align="center">
               <Ionicons name="bulb" size={18} color={GREEN} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.insightHeaderTitle}>Dynamic Insights</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.insightHeaderTitle}>Dynamic Insights</Txt>
             </Row>
             <Spacer size={12} />
             {insights.length === 0 ? (
-              <Text maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>
                 Not enough data to generate insights for this period.
-              </Text>
+              </Txt>
             ) : (
               <Col gap={8}>
                 {insights.map((item, idx) => (
                   <View key={idx} style={styles.insightRow}>
                     <View style={styles.insightBullet} />
-                    <Text maxFontSizeMultiplier={1.3} style={styles.insightText}>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.insightText}>
                       {item.split('**').map((chunk, i) => (
-                        <Text maxFontSizeMultiplier={1.3} key={i} style={i % 2 === 1 ? { fontWeight: '700' } : null}>
+                        <Txt maxFontSizeMultiplier={1.3} key={i} style={i % 2 === 1 ? { fontWeight: '700' } : null}>
                           {chunk}
-                        </Text>
+                        </Txt>
                       ))}
-                    </Text>
+                    </Txt>
                   </View>
                 ))}
               </Col>

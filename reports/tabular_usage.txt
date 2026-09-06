@@ -1,0 +1,1 @@
+pgowfrontend/src/components/ui/Txt.tsx:81:const styles = { tabular: { fontVariant: ['tabular-nums'] as TextStyle['fontVariant'] } };

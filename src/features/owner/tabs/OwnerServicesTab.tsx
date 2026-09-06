@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Text, Alert } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Row, Col, Spacer, LoadingState, ErrorState, ListRow, toneFor, ChoiceChips, SearchField, AnimatedPress, Sheet, Txt, Btn } from '@/components/ui';
@@ -107,11 +107,11 @@ export function OwnerServicesTab() {
       <View style={styles.serviceIconFrame}>
         <Ionicons name={item.icon} size={48} color={CHARCOAL} />
       </View>
-      <Text maxFontSizeMultiplier={1.3} style={styles.serviceName}>{item.name}</Text>
-      <Text maxFontSizeMultiplier={1.3} style={styles.serviceDesc} numberOfLines={2}>{item.desc}</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.serviceName}>{item.name}</Txt>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.serviceDesc} numberOfLines={2}>{item.desc}</Txt>
       <Row align="center" style={styles.priceRow}>
-        <Text maxFontSizeMultiplier={1.3} style={styles.priceText}>₹{item.cost}</Text>
-        <Text maxFontSizeMultiplier={1.3} style={styles.originalPriceText}>₹{item.originalCost}</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.priceText}>₹{item.cost}</Txt>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.originalPriceText}>₹{item.originalCost}</Txt>
       </Row>
     </AnimatedPress>
   );
@@ -124,7 +124,7 @@ export function OwnerServicesTab() {
         {/* No "View all" here: the horizontal scroll below already renders every item in
             this section (see `items` above — it's the full filtered list, not a slice), so
             there was never anything more for that button to reveal. */}
-        <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, styles.sectionHeaderRow]}>{title}</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, styles.sectionHeaderRow]}>{title}</Txt>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
           {items.map(s => renderServiceCard(s))}
         </ScrollView>
@@ -136,7 +136,7 @@ export function OwnerServicesTab() {
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {searchQuery.trim().length > 0 ? (
         <View style={styles.sectionContainer}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Search Results</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Search Results</Txt>
           <Spacer size={12} />
           <View style={styles.gridContainer}>
             {SERVICES.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => renderServiceCard(s))}
@@ -156,15 +156,15 @@ export function OwnerServicesTab() {
         <Row align="center" style={{ flex: 1 }}>
           <View style={styles.fallbackIconWrap}>
             <Ionicons name="construct" size={28} color={CHARCOAL} />
-            <View style={styles.speechBubble}><Text maxFontSizeMultiplier={1.3} style={{fontSize: 8, fontWeight: '700', color: PRIMARY}}>...</Text></View>
+            <View style={styles.speechBubble}><Txt maxFontSizeMultiplier={1.3} style={{fontSize: 8, fontWeight: '700', color: PRIMARY}}>...</Txt></View>
           </View>
           <Col style={{ flex: 1, paddingLeft: 12, paddingRight: 8 }}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.fallbackTitle}>Can't find what you need?</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.fallbackSub}>Tell us what's wrong and we'll find the right service.</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.fallbackTitle}>Can't find what you need?</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.fallbackSub}>Tell us what's wrong and we'll find the right service.</Txt>
           </Col>
           <AnimatedPress accessibilityRole="button" style={styles.requestBtn} onPress={() => setShowCustomRequest(true)}>
             <Ionicons name="add" size={16} color={SURFACE} />
-            <Text maxFontSizeMultiplier={1.3} style={styles.requestBtnText}>Request a Service</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.requestBtnText}>Request a Service</Txt>
           </AnimatedPress>
         </Row>
       </View>
@@ -173,7 +173,7 @@ export function OwnerServicesTab() {
 
   const renderBookings = () => (
     <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingHorizontal: 20 }]} showsVerticalScrollIndicator={false}>
-      <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Active & Past Requests</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Active & Past Requests</Txt>
       <Spacer size={12} />
       {/* "No active repair requests" is only true once the fetch has actually succeeded —
           before these branches it was also what an owner saw while it was still loading, and
@@ -188,7 +188,7 @@ export function OwnerServicesTab() {
           fill={false}
         />
       ) : repairs.length === 0 ? (
-        <View style={styles.emptyLegacyCard}><Text maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repair requests.</Text></View>
+        <View style={styles.emptyLegacyCard}><Txt maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repair requests.</Txt></View>
       ) : (
         <View>
           {repairs.map((rep, i) => (
@@ -209,15 +209,15 @@ export function OwnerServicesTab() {
 
   const renderProcurement = () => (
     <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingHorizontal: 20 }]} showsVerticalScrollIndicator={false}>
-      <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Procurement & Supplies</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Procurement & Supplies</Txt>
       <Spacer size={12} />
       <AnimatedPress accessibilityRole="button" style={styles.legacyCard} onPress={() => { router.push('/procurement'); }}>
         <Row justify="space-between" align="center">
           <Row gap={12} align="center">
             <Ionicons name="cube-outline" size={24} color={MUTED} />
             <Col>
-              <Text maxFontSizeMultiplier={1.3} style={styles.legacyId}>View All Orders</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.legacyCategory}>{pendingCount} pending approvals</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.legacyId}>View All Orders</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.legacyCategory}>{pendingCount} pending approvals</Txt>
             </Col>
           </Row>
           <Ionicons name="chevron-forward" size={16} color={MUTED} />
@@ -227,7 +227,7 @@ export function OwnerServicesTab() {
       {pendingOrders.length > 0 && (
         <>
           <Spacer size={24} />
-          <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Pending Approvals</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Pending Approvals</Txt>
           <Spacer size={12} />
           <View>
             {pendingOrders.map((ord, i) => (
@@ -248,14 +248,14 @@ export function OwnerServicesTab() {
 
       <Spacer size={24} />
       <Row justify="space-between" align="center">
-        <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Daily Subscriptions</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Daily Subscriptions</Txt>
         <AnimatedPress accessibilityRole="button" onPress={() => setShowAddSubscription(true)}>
-          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>+ Add</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>+ Add</Txt>
         </AnimatedPress>
       </Row>
       <Spacer size={12} />
       {subscriptions.length === 0 ? (
-        <View style={styles.emptyLegacyCard}><Text maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No standing grocery orders yet.</Text></View>
+        <View style={styles.emptyLegacyCard}><Txt maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No standing grocery orders yet.</Txt></View>
       ) : (
         <View>
           {subscriptions.map((sub, i) => (
@@ -314,15 +314,15 @@ export function OwnerServicesTab() {
         <View style={[styles.bottomNavBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('SERVICES'); }}>
             <Ionicons name={activeSubTab === 'SERVICES' ? "grid" : "grid-outline"} size={22} color={activeSubTab === 'SERVICES' ? PRIMARY : MUTED} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'SERVICES' && styles.navTabTextActive]}>Services</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'SERVICES' && styles.navTabTextActive]}>Services</Txt>
           </AnimatedPress>
           <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('BOOKINGS'); }}>
             <Ionicons name={activeSubTab === 'BOOKINGS' ? "calendar" : "calendar-outline"} size={22} color={activeSubTab === 'BOOKINGS' ? PRIMARY : MUTED} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'BOOKINGS' && styles.navTabTextActive]}>Bookings</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'BOOKINGS' && styles.navTabTextActive]}>Bookings</Txt>
           </AnimatedPress>
           <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('PROCUREMENT'); }}>
             <Ionicons name={activeSubTab === 'PROCUREMENT' ? "cube" : "cube-outline"} size={22} color={activeSubTab === 'PROCUREMENT' ? PRIMARY : MUTED} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'PROCUREMENT' && styles.navTabTextActive]}>Supplies</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'PROCUREMENT' && styles.navTabTextActive]}>Supplies</Txt>
           </AnimatedPress>
         </View>
       </View>

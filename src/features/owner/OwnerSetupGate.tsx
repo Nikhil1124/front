@@ -17,7 +17,7 @@
  * gating them on "create a property" would lock them out of an app they cannot fix (D-06
  * makes property creation owner-only server-side).
  */
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -90,15 +90,15 @@ export function OwnerSetupGate() {
           <Ionicons name={copy.icon} size={30} color={Colors.primary} />
         </View>
 
-        <Text maxFontSizeMultiplier={1.3} style={styles.stepLabel}>STEP {step === 'property' ? '1' : '2'} OF 2</Text>
-        <Text maxFontSizeMultiplier={1.3} style={styles.title}>{copy.title}</Text>
-        <Text maxFontSizeMultiplier={1.3} style={styles.body}>{copy.body}</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.stepLabel}>STEP {step === 'property' ? '1' : '2'} OF 2</Txt>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.title}>{copy.title}</Txt>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.body}>{copy.body}</Txt>
 
         <AnimatedPress accessibilityRole="button"
           style={styles.button}
           onPress={() => router.push(copy.href as never)}
         >
-          <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>{copy.cta}</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.buttonText}>{copy.cta}</Txt>
           <Ionicons name="arrow-forward" size={16} color={Colors.textInverse} />
         </AnimatedPress>
 

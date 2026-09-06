@@ -1,14 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import {
-  SectionList,
-  View,
-  StyleSheet,
-  Alert,
-  RefreshControl,
-  Text,
-  ScrollView,
-  Share,
-  BackHandler } from 'react-native';
+import { SectionList, View, StyleSheet, Alert, RefreshControl, ScrollView, Share, BackHandler } from 'react-native';
 
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -345,9 +336,9 @@ export function OwnerGuestsManagementTab() {
               color={subTab === 0 ? WHITE : MUTED}
               style={{ marginRight: 6 }}
             />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Add Resident
-            </Text>
+            </Txt>
           </AnimatedPress>
           <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 1 && styles.segBtnActive]}
@@ -361,9 +352,9 @@ export function OwnerGuestsManagementTab() {
               color={subTab === 1 ? WHITE : MUTED}
               style={{ marginRight: 6 }}
             />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Directory
-            </Text>
+            </Txt>
           </AnimatedPress>
         </Row>
       </View>
@@ -381,7 +372,7 @@ export function OwnerGuestsManagementTab() {
               <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => setShowManualForm(false)} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={CHARCOAL} />
               </AnimatedPress>
-              <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Manual Registration</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Manual Registration</Txt>
             </Row>
 
             <OutlinedTextField
@@ -439,7 +430,7 @@ export function OwnerGuestsManagementTab() {
               disabled={isCreating}
             >
               <Ionicons name="person-add" size={16} color={WHITE} style={{ marginRight: 8 }} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Register Resident ID & Password</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Register Resident ID & Password</Txt>
             </AnimatedPress>
           </ScrollView>
         ) : (
@@ -449,8 +440,8 @@ export function OwnerGuestsManagementTab() {
             contentContainerStyle={styles.addRosterScroll}
             showsVerticalScrollIndicator={false}
           >
-            <Text maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add a Resident</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.bodySub}>Choose how you want to add a new resident.</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add a Resident</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.bodySub}>Choose how you want to add a new resident.</Txt>
 
             <Spacer size={16} />
 
@@ -461,16 +452,16 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.choiceIconCircle}>
                   <Ionicons name="link-outline" size={20} color={GREEN} />
                 </View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Invite Resident</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Invite Resident</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
                   Share a secure sign-up link. Resident registers themselves.
-                </Text>
+                </Txt>
                 <Spacer size={12} />
                 <AnimatedPress accessibilityRole="button"
                   style={styles.choiceBtnSolid}
                   onPress={() => setShowInviteModal(true)}
                 >
-                  <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnSolidText}>Create Sign-Up Link</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.choiceBtnSolidText}>Create Sign-Up Link</Txt>
                 </AnimatedPress>
               </View>
 
@@ -479,16 +470,16 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.choiceIconCircle}>
                   <Ionicons name="person-add-outline" size={20} color={GREEN} />
                 </View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Add Manually</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.choiceTitle}>Add Manually</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.choiceDesc}>
                   Enter resident details yourself and create their account.
-                </Text>
+                </Txt>
                 <Spacer size={12} />
                 <AnimatedPress accessibilityRole="button"
                   style={styles.choiceBtnOutline}
                   onPress={() => setShowManualForm(true)}
                 >
-                  <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnOutlineText}>Add Manually</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.choiceBtnOutlineText}>Add Manually</Txt>
                 </AnimatedPress>
               </View>
             </Row>
@@ -496,7 +487,7 @@ export function OwnerGuestsManagementTab() {
             <Spacer size={24} />
 
             {/* Timeline Workflow Step */}
-            <Text maxFontSizeMultiplier={1.3} style={styles.workflowTitle}>How it works</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.workflowTitle}>How it works</Txt>
             <Spacer size={12} />
             <Row align="center" justify="space-between" style={styles.workflowRow}>
               {/* Step 1 */}
@@ -504,8 +495,8 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.workflowIconBox}>
                   <Ionicons name="link" size={16} color={GREEN} />
                 </View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Choose Method</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Invite or add manually</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Choose Method</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Invite or add manually</Txt>
               </Col>
               
               <Ionicons name="arrow-forward" size={14} color="#D0D6D2" style={{ marginHorizontal: 2 }} />
@@ -515,8 +506,8 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.workflowIconBox}>
                   <Ionicons name="person" size={16} color={GREEN} />
                 </View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Enter Details</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Provide required info</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Enter Details</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Provide required info</Txt>
               </Col>
 
               <Ionicons name="arrow-forward" size={14} color="#D0D6D2" style={{ marginHorizontal: 2 }} />
@@ -526,8 +517,8 @@ export function OwnerGuestsManagementTab() {
                 <View style={styles.workflowIconBox}>
                   <Ionicons name="shield-checkmark" size={16} color={GREEN} />
                 </View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Account Ready</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Account will be created</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.workflowStepTitle}>Account Ready</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.workflowStepDesc}>Account will be created</Txt>
               </Col>
             </Row>
 
@@ -539,10 +530,10 @@ export function OwnerGuestsManagementTab() {
                 <Ionicons name="shield-checkmark" size={18} color={GREEN} />
               </View>
               <Col style={{ flex: 1 }}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.securityBannerTitle}>Secure & Private</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.securityBannerText}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.securityBannerTitle}>Secure & Private</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.securityBannerText}>
                   Only you control who can join your PG. All data is encrypted and secure.
-                </Text>
+                </Txt>
               </Col>
             </Row>
 
@@ -557,9 +548,9 @@ export function OwnerGuestsManagementTab() {
               <Row justify="space-between" align="center" style={{ width: '100%' }}>
                 <Row gap={10} align="center">
                   <Ionicons name="help-circle-outline" size={18} color={MUTED} />
-                  <Text maxFontSizeMultiplier={1.3} style={styles.helpLinkText}>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.helpLinkText}>
                     Need help? Learn more about managing residents
-                  </Text>
+                  </Txt>
                 </Row>
                 <Ionicons name="chevron-forward" size={16} color={MUTED} />
               </Row>
@@ -702,9 +693,9 @@ export function OwnerGuestsManagementTab() {
               )}
 
               <Row justify="space-between" align="center">
-                <Text maxFontSizeMultiplier={1.3} style={styles.directoryTitle}>Registered Residents</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.directoryTitle}>Registered Residents</Txt>
                 <View style={styles.countBadge}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{guests.length} Guests</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.countBadgeText}>{guests.length} Guests</Txt>
                 </View>
               </Row>
 
@@ -1105,9 +1096,9 @@ export function OwnerGuestsManagementTab() {
 
                 {owner.joinCode ? (
                   <>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
                       Residents who enter this code during self-registration will be added to your PG automatically. You will verify their KYC documents before they are approved.
-                    </Text>
+                    </Txt>
 
                     <Spacer size={16} />
 
@@ -1130,8 +1121,8 @@ export function OwnerGuestsManagementTab() {
 
                     <AnimatedPress accessibilityRole="button" onPress={handleCopyCode} style={styles.inviteCodeBox}>
                       <Col>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeLabel}>LOBBY JOIN CODE</Text>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeText}>{owner.joinCode}</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.inviteCodeLabel}>LOBBY JOIN CODE</Txt>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.inviteCodeText}>{owner.joinCode}</Txt>
                       </Col>
                       <Ionicons name="copy-outline" size={20} color={GREEN} />
                     </AnimatedPress>
@@ -1139,10 +1130,10 @@ export function OwnerGuestsManagementTab() {
                     <Spacer size={12} />
 
                     <Row align="center" justify="space-between" style={styles.inviteRentRow}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteRentLabel}>Monthly rent for self sign-ups</Text>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteRentValue}>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.inviteRentLabel}>Monthly rent for self sign-ups</Txt>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.inviteRentValue}>
                         {owner.defaultRentAmount > 0 ? `₹${owner.defaultRentAmount.toLocaleString('en-IN')} / mo` : 'Not set'}
-                      </Text>
+                      </Txt>
                     </Row>
 
                     {!isManager && (
@@ -1180,14 +1171,14 @@ export function OwnerGuestsManagementTab() {
                         onPress={handleShareCode}
                       >
                         <Ionicons name="share-social-outline" size={18} color={WHITE} style={{ marginRight: 6 }} />
-                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteShareBtnText}>Share Invitation</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.inviteShareBtnText}>Share Invitation</Txt>
                       </AnimatedPress>
                       {!isManager && (
                         <AnimatedPress accessibilityRole="button"
                           style={styles.inviteRotateBtn}
                           onPress={handleRotateCode}
                         >
-                          <Text maxFontSizeMultiplier={1.3} style={styles.inviteRotateBtnText}>New Code</Text>
+                          <Txt maxFontSizeMultiplier={1.3} style={styles.inviteRotateBtnText}>New Code</Txt>
                         </AnimatedPress>
                       )}
                     </Row>
@@ -1196,7 +1187,7 @@ export function OwnerGuestsManagementTab() {
                       <>
                         <Spacer size={14} />
                         <AnimatedPress accessibilityRole="button" onPress={handleDisableCode} style={{ alignSelf: 'center' }}>
-                          <Text maxFontSizeMultiplier={1.3} style={styles.inviteDisableText}>Turn off self sign-up</Text>
+                          <Txt maxFontSizeMultiplier={1.3} style={styles.inviteDisableText}>Turn off self sign-up</Txt>
                         </AnimatedPress>
                       </>
                     )}
@@ -1205,9 +1196,9 @@ export function OwnerGuestsManagementTab() {
                   /* Disabled state */
                   !isManager && (
                     <>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
                         Self sign-up is currently off. Set the default monthly rent below to turn it on and generate a join code.
-                      </Text>
+                      </Txt>
                       <Spacer size={14} />
                       <OutlinedTextField
                         label="Monthly rent for new residents (₹) *"
@@ -1223,16 +1214,16 @@ export function OwnerGuestsManagementTab() {
                         onPress={handleEnableJoinCode}
                       >
                         <Ionicons name="key-outline" size={16} color={WHITE} style={{ marginRight: 6 }} />
-                        <Text maxFontSizeMultiplier={1.3} style={styles.inviteEnableBtnText}>Turn on self sign-up</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.inviteEnableBtnText}>Turn on self sign-up</Txt>
                       </AnimatedPress>
                     </>
                   )
                 )}
 
                 {isManager && !owner.joinCode && (
-                  <Text maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.inviteExplain}>
                     Self sign-up is currently disabled. Only the property owner can turn this on.
-                  </Text>
+                  </Txt>
                 )}
         </Sheet>
       )}
