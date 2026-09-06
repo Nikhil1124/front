@@ -1,4 +1,4 @@
-import { SupplyCategory } from '@/types';
+import { Txt } from '@/components/ui';\nimport { SupplyCategory } from '@/types';
 import { toAmount } from '@/data/mappers';
 import { useMemo, useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';

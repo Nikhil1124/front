@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { Txt } from '@/components/ui';\nimport { useState, useMemo } from 'react';
 import { StyleSheet, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

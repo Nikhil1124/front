@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { Txt } from '@/components/ui';\nimport { useState, useMemo, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
 import { FormScroll } from '@/components/ui/FormScroll';
 
