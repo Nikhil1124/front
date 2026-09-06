@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
+;
 import { DayMenuConfig } from '../../data/WeeklyMenuTypes';
 import { Radii, Palette, Colors } from '@/theme';
 
@@ -30,20 +31,20 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
     <View style={[styles.bannerCard, { backgroundColor: cardBg, borderColor: accentBorder }]}>
       {/* Top Header Row */}
       <View style={styles.headerRow}>
-        <Text maxFontSizeMultiplier={1.3} style={styles.dayLabel}>{day.toUpperCase()}</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.dayLabel}>{day.toUpperCase()}</Txt>
         <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-          <Text maxFontSizeMultiplier={1.3} style={[styles.badgeText, { color: badgeText }]}>
+          <Txt maxFontSizeMultiplier={1.3} style={[styles.badgeText, { color: badgeText }]}>
             {isVeg ? '🥗 PURE VEG DAY' : '🍗 NON-VEG DAY'}
-          </Text>
+          </Txt>
         </View>
       </View>
 
       {/* Menu Dishes List */}
       <View style={styles.menuContainer}>
-        <Text maxFontSizeMultiplier={1.3} style={[styles.dishesText, { color: dishText }]} numberOfLines={2}>
+        <Txt maxFontSizeMultiplier={1.3} style={[styles.dishesText, { color: dishText }]} numberOfLines={2}>
           {menu.slice(0, 4).join(' • ')}
-        </Text>
-        <Text maxFontSizeMultiplier={1.3} style={styles.supportingText}>Fresh ingredients for today's kitchen</Text>
+        </Txt>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.supportingText}>Fresh ingredients for today's kitchen</Txt>
       </View>
 
       {/* Bottom View Menu Button */}
@@ -53,7 +54,7 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
 
           onPress={onViewMenuPress}
         >
-          <Text maxFontSizeMultiplier={1.3} style={styles.viewMenuText}>View Menu</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.viewMenuText}>View Menu</Txt>
         </AnimatedPress>
       </View>
     </View>

@@ -1,8 +1,9 @@
 import { SupplyItem } from '@/types';
 import React, { useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Modal } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
+;
 import { Ionicons } from '@expo/vector-icons';
 import { Sheet } from '@/components/ui';
 import { useCartStore } from '../../store/useCartStore';
@@ -317,11 +318,11 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
       {/* Header */}
       <View style={styles.headerRow}>
         <View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.title}>🍽️ Today's Kitchen Needs</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>Everything needed for today's PG menu</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.title}>🍽️ Today's Kitchen Needs</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.subtitle}>Everything needed for today's PG menu</Txt>
         </View>
         <AnimatedPress accessibilityRole="button" onPress={onSeeAllCategoriesPress}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Txt>
         </AnimatedPress>
       </View>
 
@@ -334,9 +335,9 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
             onPress={() => handleTabPress(type)}
 
           >
-            <Text maxFontSizeMultiplier={1.3} style={[styles.tabButtonText, activeTab === type && styles.activeTabButtonText]}>
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.tabButtonText, activeTab === type && styles.activeTabButtonText]}>
               {type === 'veg' ? '🥦 Veg Needs' : '🍗 Non-Veg Needs'}
-            </Text>
+            </Txt>
           </AnimatedPress>
         ))}
       </View>
@@ -400,8 +401,8 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
           <View style={styles.grabHandle} />
           <View style={styles.bottomSheetHeader}>
             <View style={{ flex: 1 }}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetTitle}>Today's Kitchen Needs</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.bottomSheetTitle}>Today's Kitchen Needs</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Txt>
             </View>
             <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setIsSeeAllOpen(false)} style={{ padding: 4 }}>
               <Ionicons name="close" size={24} color={Colors.textPrimary} />
@@ -414,7 +415,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
             ].map(({ label, items }) => (
               <View key={label} style={styles.categorySection}>
                 <View style={styles.categoryHeadingRow}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.categoryName}>{label}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.categoryName}>{label}</Txt>
                 </View>
                 <View style={styles.gridContainer}>
                   {items.map((ing: MenuIngredient) => {
