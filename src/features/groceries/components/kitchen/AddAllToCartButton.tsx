@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 
 interface AddAllToCartButtonProps {
@@ -21,9 +21,9 @@ export const AddAllToCartButton: React.FC<AddAllToCartButtonProps> = ({
 
       onPress={onPress}
     >
-      <Text maxFontSizeMultiplier={1.3} style={styles.text}>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.text}>
         🛒 Add All • {totalItems} items • ₹{totalPrice}
-      </Text>
+      </Txt>
     </AnimatedPress>
   );
 };

@@ -11,12 +11,13 @@
  * layout sets up are not guaranteed to be there.
  */
 import { Component, type ReactNode } from 'react';
-import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, Platform } from 'react-native';
 import type { ErrorBoundaryProps } from 'expo-router';
 
 import { Radii, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Txt } from '@/components/ui/Txt';
+import { Txt } from '@/components/ui';
 
 export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   // No crash reporter wired up yet, so this console line is the only record that survives.
@@ -27,7 +28,7 @@ export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <View style={styles.root}>
       <View style={styles.card}>
-        <Text maxFontSizeMultiplier={1.3} style={styles.emoji}>⚠️</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.emoji}>⚠️</Txt>
         <Txt variant="screenTitle" color={Colors.textPrimary} align="center">Something went wrong</Txt>
         <Txt variant="body" color={Colors.textMuted} align="center" style={styles.body}>
           This screen ran into an unexpected problem. Your data is safe — nothing you saved has

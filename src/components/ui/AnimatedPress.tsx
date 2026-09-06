@@ -41,6 +41,7 @@
 import React from 'react';
 import { Pressable, type GestureResponderEvent, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Txt } from '@/components/ui';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -71,7 +72,7 @@ export function AnimatedPress({
   // TalkBack and VoiceOver announcing them as plain text with no hint they could be
   // activated. Defaulting it here fixes the role everywhere at once and any call site that
   // is genuinely something else (a link, a tab) can still override. Pressable derives the
-  // spoken label from the child <Text maxFontSizeMultiplier={1.3}> on its own, so only icon-only buttons still need an
+  // spoken label from the child <Txt maxFontSizeMultiplier={1.3}> on its own, so only icon-only buttons still need an
   // explicit accessibilityLabel.
   accessibilityRole = 'button',
   onPressIn,

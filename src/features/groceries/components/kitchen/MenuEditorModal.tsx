@@ -1,20 +1,14 @@
 import { SupplyItem } from '@/types';
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-} from 'react-native';
+import { View, TouchableOpacity, Image, StyleSheet,  } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Sheet, Txt, Btn } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Palette, Colors } from '@/theme';
 
 import { FormScroll } from '@/components/ui/FormScroll';
-import { OutlinedTextField, SearchField } from '@/components/ui';
+import { OutlinedTextField, SearchField, Txt } from '@/components/ui';
 
 export interface MenuEditorModalProps {
   visible: boolean;
@@ -90,7 +84,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
 
         <FormScroll style={styles.scroll} showsVerticalScrollIndicator={false}>
           {/* Current dishes */}
-          <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Current Dishes</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.listHeading}>Current Dishes</Txt>
           {dishes.map((dish, index) => (
             <View key={index} style={styles.dishRow}>
               <OutlinedTextField
@@ -106,7 +100,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
           ))}
 
           {/* Add new dish */}
-          <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Add New Dish</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.listHeading}>Add New Dish</Txt>
           <View style={styles.addDishRow}>
             <SearchField
               style={{ flex: 1 }}
@@ -120,9 +114,9 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
           </View>
 
           {/* Product suggestions */}
-          <Text maxFontSizeMultiplier={1.3} style={styles.relatedHeading}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.relatedHeading}>
             {newDishText.trim() ? 'Matching Stock Products' : 'Popular Ingredients'}
-          </Text>
+          </Txt>
           <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
             {suggestions.map((prod) => {
               const isAdded = dishes.includes(prod.name);
@@ -147,7 +141,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                       resizeMode="contain"
                     />
                   </View>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.relatedName} numberOfLines={1}>{prod.name}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.relatedName} numberOfLines={1}>{prod.name}</Txt>
                   <View style={[styles.relatedAddBadge, isAdded && styles.relatedAddBadgeAdded]}>
                     <Ionicons name={isAdded ? 'checkmark' : 'add'} size={10} color={Colors.surface} />
                   </View>

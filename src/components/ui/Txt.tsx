@@ -1,8 +1,9 @@
 import React from 'react';
-import { Text, TextStyle, StyleProp } from 'react-native';
+import { TextStyle, StyleProp } from 'react-native';
 import { Colors } from '@/theme';
 import { Typography, fontFamilyForWeight, normalizeFontWeight, type TypographyKey } from '@/theme/typography';
 import type { FontWeight } from '@/theme/typography';
+import { Txt } from '@/components/ui';
 
 type RNFontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
@@ -56,7 +57,7 @@ export function Txt({
   const resolvedLineHeight = lineHeight ?? base?.lineHeight ?? resolvedSize * 1.35;
   const resolvedLetterSpacing = letterSpacing ?? base?.letterSpacing ?? 0;
   return (
-    <Text
+    <Txt
       style={[{
         fontFamily: fontFamilyForWeight(requestedWeight),
         fontSize: resolvedSize,
@@ -74,7 +75,7 @@ export function Txt({
       maxFontSizeMultiplier={maxFontSizeMultiplier}
     >
       {children}
-    </Text>
+    </Txt>
   );
 }
 

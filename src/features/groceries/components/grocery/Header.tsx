@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
@@ -37,14 +37,14 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
             <Ionicons name="time" size={13} color={Colors.textInverse} />
             {/* Matches checkout's actual fastest slot ("Express • 15–25 min") — this used
                 to promise a flat "10 MINS", a number nothing in the order flow can meet. */}
-            <Text maxFontSizeMultiplier={1.3} style={styles.deliveryBadgeText}>EXPRESS</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryBadgeText}>EXPRESS</Txt>
           </View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.deliveryText}>Delivery to</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryText}>Delivery to</Txt>
         </View>
         <View style={styles.locationRow}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.locationTitle} numberOfLines={1}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.locationTitle} numberOfLines={1}>
             {deliveryLabel}
-          </Text>
+          </Txt>
         </View>
       </View>
 
@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
 
       >
         <View style={styles.profileAvatar}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.profileAvatarText}>{avatarLetter}</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.profileAvatarText}>{avatarLetter}</Txt>
         </View>
       </AnimatedPress>
     </BlurView>

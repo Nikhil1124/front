@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import { getPerUnitRateLabel, parseUnitQuantity } from '../../utils/pricing';
 
@@ -31,7 +31,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
 }) => {
   return (
     <View style={styles.card}>
-      <Text maxFontSizeMultiplier={1.3} style={styles.heading}>🏢 Best Value for PG Owners</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.heading}>🏢 Best Value for PG Owners</Txt>
       <View style={styles.gridRow}>
         <View style={styles.columnsWrapper}>
           {options.map((opt, i) => {
@@ -50,17 +50,17 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
                 onPress={() => onSelect(i)}
 
               >
-                <Text maxFontSizeMultiplier={1.3} style={styles.columnUnit}>{opt.unit}</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.columnPrice}>₹{opt.price}</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.columnRate}>{perUnitRate}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.columnUnit}>{opt.unit}</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.columnPrice}>₹{opt.price}</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.columnRate}>{perUnitRate}</Txt>
 
                 {isBestValue ? (
                   <View style={styles.bestValueTag}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.bestValueTagText}>Best Value</Text>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.bestValueTagText}>Best Value</Txt>
                   </View>
                 ) : calcSavings > 0 ? (
                   <View style={styles.savingsTag}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.savingsTagText}>Save ₹{calcSavings}</Text>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.savingsTagText}>Save ₹{calcSavings}</Txt>
                   </View>
                 ) : null}
               </AnimatedPress>
@@ -70,13 +70,13 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
 
         {/* Savings highlight block */}
         <View style={styles.savingsBlock}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.savingsTitle}>You Save</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.savingsPrice}>₹{currentSavings || 0}</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.savingsSubtitle}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.savingsTitle}>You Save</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.savingsPrice}>₹{currentSavings || 0}</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.savingsSubtitle}>
             {currentSavings > 0
               ? `on ${options[selectedIdx]?.unit} pack`
               : 'Buy bulk to save'}
-          </Text>
+          </Txt>
         </View>
       </View>
     </View>
