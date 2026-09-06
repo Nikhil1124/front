@@ -5,7 +5,6 @@ import { router } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { ListRow, Row, Col, Spacer, SearchField, AnimatedPress, Sheet, Txt } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Radii, Colors } from '@/theme';
@@ -20,6 +19,7 @@ import {
   useRemoveStaffMutation } from '@/features/staff/useStaff';
 import * as map from '@/data/mappers';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { AnimatedPress, Col, ListRow, Row, SearchField, Sheet, Spacer, Txt } from '@/components/ui';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG

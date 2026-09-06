@@ -1,18 +1,17 @@
 import { SupplyOrderSummary } from '@/types';
 import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ErrorState, ListRow, toneFor } from '@/components/ui';
 import { useSupplyOrdersQuery } from '../useSupplyOrders';
 import { useAuthStore } from '@/store/authStore';
 import { Radii, Colors, Layout } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
+import { AnimatedPress, ErrorState, ListRow, Txt, toneFor } from '@/components/ui';
 
 export function GroceryOrdersScreen() {
   const insets = useSafeAreaInsets();

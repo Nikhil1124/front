@@ -11,12 +11,12 @@ import {
   ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Row, Col, OutlinedTextField, AnimatedPress, Txt } from '@/components/ui';
 import { Colors, Palette, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { qk } from '@/data/queryKeys';
 import { listUpiIds, addUpiId, activateUpiId, removeUpiId } from '@/features/properties/useProperties';
+import { AnimatedPress, Col, OutlinedTextField, Row, Txt } from '@/components/ui';
 
 // ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary

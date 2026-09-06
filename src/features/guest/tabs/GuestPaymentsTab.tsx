@@ -24,7 +24,6 @@ import QRCode from 'react-native-qrcode-svg';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 
-import { StatusChip, toneFor, type StatusTone, Card, Txt, Btn, Row, Col, Spacer, Spinner, ListRow, MetricRow, AnimatedPress, Sheet } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Palette, Radii } from '@/theme';
@@ -48,6 +47,7 @@ import { useActiveProperty } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { AnimatedPress, Btn, Card, Col, ListRow, MetricRow, Row, Sheet, Spacer, Spinner, StatusChip, Txt, toneFor, type StatusTone } from '@/components/ui';
 
 
 /**

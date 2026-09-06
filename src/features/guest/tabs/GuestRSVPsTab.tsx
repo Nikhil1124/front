@@ -12,9 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueries } from '@tanstack/react-query';
 
-import { Txt, Row, Col, Spacer, Card, StatusChip, type StatusTone, AnimatedPress } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
-import { Sheet } from '@/components/ui';
 import { MealToggleWidget } from '@/components/MealToggleWidget';
 import { FeaturedMonetizedAdCard } from '@/components/FeaturedMonetizedAdCard';
 import { Colors, Palette, Radii } from '@/theme';
@@ -30,6 +28,7 @@ import { useSetAwayMutation } from '@/features/auth/useAuth';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { AnimatedPress, Card, Col, Row, Sheet, Spacer, StatusChip, Txt, type StatusTone } from '@/components/ui';
 
 const { width: SW } = Dimensions.get('window');
 

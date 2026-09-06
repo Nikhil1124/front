@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn, LoadingState, ErrorState, ChoiceChips, RoomPicker, OutlinedTextField, AnimatedPress, Sheet } from '@/components/ui';
 import { Colors, Palette, Radii, DeckTints } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
@@ -23,6 +22,7 @@ import { useMaintenanceChecklist, type ChecklistItemStatus } from './useMaintena
 import { formatTimeAgo, getGreeting } from '@/utils/format';
 import type { FeedbackComplaintEntity } from '@/types';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+import { AnimatedPress, Btn, Card, ChoiceChips, Col, Divider, ErrorState, IconBtn, LoadingState, OutlinedTextField, RoomPicker, Row, Sheet, Spacer, Txt } from '@/components/ui';
 
 /** `FeedbackComplaintEntity` → the shape every view in this file already renders. Keeping the
  *  UI-facing shape unchanged means MaintenanceStatsSummary / MaintenanceDashView needed no

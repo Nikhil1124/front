@@ -10,14 +10,12 @@
  * no `onPress`, on purpose.
  */
 import { View, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
-import {
-  Txt, Spacer, ErrorState, ListRow, ListSectionHeader, MetricDeck, type DeckCardData,
-} from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors } from '@/theme';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { usePortfolioDetail } from '@/features/properties/usePortfolio';
 import { useResponsivePadding } from '@/utils/responsive';
+import { ErrorState, ListRow, ListSectionHeader, MetricDeck, Spacer, Txt, type DeckCardData } from '@/components/ui';
 
 function formatINR(n: number): string {
   if (n >= 100_000) {

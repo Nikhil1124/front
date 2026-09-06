@@ -9,9 +9,9 @@
  */
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Txt, Card, Spacer } from '@/components/ui';
 import { LoadingState, ErrorState } from '@/components/ui/Spinner';
 import { Radii, Colors } from '@/theme';
+import { Card, Spacer, Txt } from '@/components/ui';
 
 export interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;

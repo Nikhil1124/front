@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { StyleSheet, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -21,6 +20,7 @@ import { useSubmitProcurementOrder } from '@/features/procurement/useProcurement
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();

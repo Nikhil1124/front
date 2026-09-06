@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, StyleSheet, Modal, Pressable, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { StatusChip, toneFor, Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn, ListRow, Sheet } from '@/components/ui';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
@@ -42,6 +41,7 @@ const CATEGORY_TABS = [
 ];
 
 import { useActiveProperty } from '@/features/properties/useProperties';
+import { Btn, Card, Col, IconBtn, ListRow, OutlinedBtn, Row, Sheet, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
 
 /**
  * Order supplies AND approve requisitions — the same for owner and manager.

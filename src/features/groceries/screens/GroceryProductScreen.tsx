@@ -1,7 +1,6 @@
 import { SupplyItem } from '@/types';
 import { useState, useMemo, useEffect } from 'react';
 import { Share, StyleSheet, View, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -22,6 +21,7 @@ import { QuantityStepper } from '../components/ui/QuantityStepper';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { BulkPricingGrid } from '../components/grocery/BulkPricingGrid';
 import { parseUnitQuantity } from '../utils/pricing';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

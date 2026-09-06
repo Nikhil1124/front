@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 ;
 import { DayMenuConfig } from '../../data/WeeklyMenuTypes';
 import { Radii, Palette, Colors } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface KitchenNeedsBannerProps {
   config: DayMenuConfig;

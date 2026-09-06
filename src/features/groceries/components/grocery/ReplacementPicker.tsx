@@ -1,9 +1,9 @@
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { Ionicons } from '@expo/vector-icons';
 import { ReplacementPreference } from '../../store/useCartStore';
 import { Colors, Radii } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 const OPTIONS: { value: ReplacementPreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { value: 'best-match', label: "Shopper's best match", icon: 'sparkles-outline' },

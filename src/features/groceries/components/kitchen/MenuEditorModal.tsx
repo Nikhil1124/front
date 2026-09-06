@@ -2,14 +2,12 @@ import { SupplyItem } from '@/types';
 import React from 'react';
 import { View, TouchableOpacity, Image, StyleSheet,  } from 'react-native';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 ;
-import { Sheet, Txt, Btn } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Palette, Colors } from '@/theme';
 
 import { FormScroll } from '@/components/ui/FormScroll';
-import { OutlinedTextField, SearchField } from '@/components/ui';
+import { AnimatedPress, Btn, OutlinedTextField, SearchField, Sheet, Txt } from '@/components/ui';
 
 export interface MenuEditorModalProps {
   visible: boolean;

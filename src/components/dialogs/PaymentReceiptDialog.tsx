@@ -8,12 +8,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { Txt, Btn, OutlinedBtn, Row, Col, Spacer, AnimatedPress, Sheet } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import { formatDateTime, formatINR } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PaymentEntity } from '@/types';
+import { AnimatedPress, Btn, Col, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
 
 interface Props {
   payment: PaymentEntity;

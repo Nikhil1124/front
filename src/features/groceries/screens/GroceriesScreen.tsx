@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
 import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { AnimatedPress, ErrorState, LoadingState, Txt } from '@/components/ui';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 import { router } from 'expo-router';
@@ -31,6 +30,7 @@ import { usePGowStore } from '@/store/usePGowStore';
  * "guest" items), so there is no toggle UI — see the mode-sync effect below.
  */
 import { useActiveProperty } from '@/features/properties/useProperties';
+import { AnimatedPress, ErrorState, LoadingState, Txt } from '@/components/ui';
 
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();

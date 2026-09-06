@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, Alert, KeyboardAvoidingView } from 'react-native';
-import { AnimatedPress, Btn, ErrorState, OutlinedTextField, Sheet, Txt } from '@/components/ui';
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +12,7 @@ import {
 import { Radii, Colors, Layout } from '@/theme';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
+import { AnimatedPress, Btn, ErrorState, OutlinedTextField, Sheet, Txt } from '@/components/ui';
 
 const STATUS_HERO: Record<string, string> = {
   placed: 'Order Placed',

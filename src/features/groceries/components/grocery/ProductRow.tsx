@@ -1,11 +1,11 @@
 import React from 'react';
 import { FlatList, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { SupplyItem } from '@/types';
 import { ProductCard } from './ProductCard';
 
 import { Colors } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface ProductRowProps {
   title: string;

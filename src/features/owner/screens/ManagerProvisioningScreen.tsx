@@ -14,7 +14,6 @@
  */
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Radii, Colors } from '@/theme';
@@ -22,6 +21,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useStaffQuery } from '@/features/staff/useStaff';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { StaffManagementTab } from '@/features/owner/tabs/StaffManagementTab';
+import { Card, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
 
 export function ManagerProvisioningScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);

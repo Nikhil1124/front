@@ -22,7 +22,6 @@ import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt, Btn, Row, Spacer, StatusChip } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Radii } from '@/theme';
@@ -32,6 +31,7 @@ import { useTokenLanding } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
 import * as map from '@/data/mappers';
 import { QrScanner } from '@/features/auth/QrScanner';
+import { Btn, Row, Spacer, StatusChip, Txt } from '@/components/ui';
 
 type Step = 'code' | 'room' | 'you';
 

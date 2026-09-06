@@ -11,8 +11,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import { Card, Txt, Btn, Row, Col, Spacer, ListRow, toneFor, ChoiceChips, SearchField, AnimatedPress } from '@/components/ui';
-import { Sheet } from '@/components/ui';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { formatINR, formatDateTime } from '@/utils/format';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -27,6 +25,7 @@ import { useAllExpensesQuery, useLogExpenseMutation, useReverseExpenseMutation, 
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { AnimatedPress, Btn, Card, ChoiceChips, Col, ListRow, Row, SearchField, Sheet, Spacer, Txt, toneFor } from '@/components/ui';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG

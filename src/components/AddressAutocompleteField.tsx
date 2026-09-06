@@ -18,13 +18,13 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { usePlaces } from '@/features/places/usePlaces';
 import { API, BASE_URL } from '@/config';
 import { fetchWithTimeout } from '@/data/apiClient';
 import { Colors, Radii, Spacing } from '@/theme';
 import type { PickedLocation } from '@/features/places/pendingLocation';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface Props {
   label: string;

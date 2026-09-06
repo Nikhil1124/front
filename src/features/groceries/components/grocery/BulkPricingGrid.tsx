@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 ;
 import { Radii, Colors } from '@/theme';
 import { getPerUnitRateLabel, parseUnitQuantity } from '../../utils/pricing';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 export interface PricingOption {
   unit: string;

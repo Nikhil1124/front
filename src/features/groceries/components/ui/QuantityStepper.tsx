@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 export interface QuantityStepperProps {
   quantity: number;

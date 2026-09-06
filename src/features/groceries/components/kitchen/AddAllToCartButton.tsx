@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 ;
 import { Radii, Colors } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface AddAllToCartButtonProps {
   totalItems: number;

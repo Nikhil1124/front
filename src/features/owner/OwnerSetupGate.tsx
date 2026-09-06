@@ -21,12 +21,12 @@ import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Txt } from '@/components/ui';
 
 import { Radii, Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePropertyLayout } from '@/features/property/usePropertyLayout';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Txt } from '@/components/ui';
 
 /** The routes the gate is asking the owner to visit — never covered, or it would block the fix. */
 const SETUP_ROUTES = ['/manage-properties', '/bed-visualizer'];

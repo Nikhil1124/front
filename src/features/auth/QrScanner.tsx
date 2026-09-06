@@ -13,9 +13,9 @@ import { View, StyleSheet } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt, Btn, Spacer } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Radii } from '@/theme';
+import { Btn, Spacer, Txt } from '@/components/ui';
 
 /**
  * A PGow join link or a bare code.

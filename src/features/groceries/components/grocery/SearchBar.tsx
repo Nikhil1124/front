@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   View } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
 import { Radii, Colors, Layout } from '@/theme';
+import { AnimatedPress } from '@/components/ui';
 
 const EXAMPLE_ITEMS = [
   "Search  'Tomato Puree'",

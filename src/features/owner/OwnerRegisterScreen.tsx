@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { Modal, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Txt, Btn, Row, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 import { LocationField } from '@/components/LocationField';
@@ -17,6 +16,7 @@ import { FormScroll } from '@/components/ui/FormScroll';
 import { fetchMe, useRegister } from '@/features/auth/useAuth';
 import { useCreatePropertyMutation } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
+import { Btn, IconBtn, Row, Spacer, Txt } from '@/components/ui';
 
 export function OwnerRegisterScreen() {
   const registerMutation = useRegister();

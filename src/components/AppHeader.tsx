@@ -27,8 +27,8 @@ import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt, AnimatedPress } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 const TOP_GAP = 8;
 const ROW_MIN_HEIGHT = 38;

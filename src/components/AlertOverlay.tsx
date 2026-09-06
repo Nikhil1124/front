@@ -34,11 +34,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Txt, Row, AnimatedPress } from '@/components/ui';
 import { Radii, Colors, toastEntering, toastExiting } from '@/theme';
 import { HEADER_BAND_HEIGHT } from '@/components/AppHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { SimulatedAlert } from '@/types';
+import { AnimatedPress, Row, Txt } from '@/components/ui';
 
 interface ToastStyle {
   accent: string;

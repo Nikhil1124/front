@@ -22,9 +22,9 @@
 import { useEffect, useState } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 import type { MealToggleState } from '@/types';
+import { Card, Col, Row, Spacer, Txt } from '@/components/ui';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner';
 

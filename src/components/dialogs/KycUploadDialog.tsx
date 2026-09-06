@@ -30,10 +30,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, AnimatedPress, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { AnimatedPress, Btn, Card, Col, IconBtn, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
 const ID_TYPES = ['Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID'];
 
 interface Props {

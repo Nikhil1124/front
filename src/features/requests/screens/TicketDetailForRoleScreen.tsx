@@ -12,13 +12,13 @@ import { StyleSheet, View, RefreshControl } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Btn, Card, Col, Row, Spacer, Txt, LoadingState, ErrorState } from '@/components/ui';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { useComplaintQuery } from '@/features/requests/useComplaints';
 import { tradeForComplaint } from '@/features/requests/technicianTrades';
 import { useAuthStore } from '@/store/authStore';
 import { Radii, Colors } from '@/theme';
+import { Btn, Card, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
 
 export function TicketDetailForRoleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

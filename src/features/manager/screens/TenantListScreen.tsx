@@ -28,10 +28,6 @@ import { useState } from 'react';
 import { View, StyleSheet, Alert, Pressable, FlatList } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Card, Txt, Btn, Row, Col, Spacer, LoadingState, ErrorState, StatusChip, toneFor,
-  initialsOf, MetricDeck, type DeckCardData,
-} from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Colors, Radii } from '@/theme';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
@@ -51,6 +47,7 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAuthStore } from '@/store/authStore';
 
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
+import { Btn, Card, Col, ErrorState, LoadingState, MetricDeck, Row, Spacer, StatusChip, Txt, initialsOf, toneFor, type DeckCardData } from '@/components/ui';
 
 export function TenantListScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);

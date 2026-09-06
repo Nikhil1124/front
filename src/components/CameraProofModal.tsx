@@ -41,8 +41,8 @@ import {
   Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Card, Txt, Row, Col, Btn, OutlinedBtn, Spacer } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
+import { Btn, Card, Col, OutlinedBtn, Row, Spacer, Txt } from '@/components/ui';
 export interface CameraProofModalProps {
   visible: boolean;
   title: string;

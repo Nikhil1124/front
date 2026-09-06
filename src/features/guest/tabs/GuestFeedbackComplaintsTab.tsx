@@ -23,7 +23,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Card, Txt, Row, Col, Spacer, IconBtn, LoadingState, ErrorState, StatusChip, toneFor, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -34,6 +33,7 @@ import { useToast } from '@/hooks/useToast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { AnimatedPress, Card, Col, ErrorState, IconBtn, LoadingState, Row, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
 
 const COMPLAINT_CATEGORIES = [
   { label: 'Food Quality', icon: 'restaurant-outline' },

@@ -4,7 +4,6 @@
 import { useState } from 'react';
 import { Modal, View, StyleSheet, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
@@ -14,6 +13,7 @@ import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PGOwnerEntity } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
+import { Btn, Card, Col, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
 
 interface Props {
   pg: PGOwnerEntity;

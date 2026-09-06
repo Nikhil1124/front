@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyItem } from '@/types';
@@ -9,6 +8,7 @@ import { useWishlistStore } from '../../store/useWishlistStore';
 import { useCartStore } from '../../store/useCartStore';
 import { Radii, Colors } from '@/theme';
 import { PriceDisplay } from './PriceDisplay';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 export interface MiniProductCardProps {
   product: SupplyItem;

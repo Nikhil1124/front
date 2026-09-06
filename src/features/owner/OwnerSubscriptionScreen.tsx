@@ -18,10 +18,6 @@ import { View, StyleSheet, Alert, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import {
-  Card, Txt, Btn, Row, Col, Spacer, IconBtn, ListRow, ListSectionHeader,
-  type StatusTone,
-} from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -38,6 +34,7 @@ import { useActiveProperty } from '@/features/properties/useProperties';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { Radii, Colors, DeckTints, type DeckTint } from '@/theme';
+import { Btn, Card, Col, IconBtn, ListRow, ListSectionHeader, Row, Spacer, Txt, type StatusTone } from '@/components/ui';
 
 /** The two shapes the design already had: a flat-fee one and a pay-as-you-grow one. `brand`
  *  and `green` — not a fifth, off-palette purple — so this screen stays inside the same four

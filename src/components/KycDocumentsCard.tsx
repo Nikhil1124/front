@@ -15,9 +15,9 @@ import { useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt, Row, Spacer } from '@/components/ui';
 import { useScreenCaptureGuard } from '@/hooks/useScreenCaptureGuard';
 import { Radii, Colors } from '@/theme';
+import { Row, Spacer, Txt } from '@/components/ui';
 
 export interface KycDocumentsCardProps {
   idPhotoUri?: string | null;

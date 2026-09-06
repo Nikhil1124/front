@@ -23,7 +23,6 @@ import { useState } from 'react';
 import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 
-import { Txt, Btn, Row, Spacer, AnimatedPress, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors, Radii } from '@/theme';
@@ -34,6 +33,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { toUserRole } from '@/store/roles';
 import { PGowApiError } from '@/data/apiClient';
 import * as map from '@/data/mappers';
+import { AnimatedPress, Btn, Row, Sheet, Spacer, Txt } from '@/components/ui';
 
 type Mode = 'password' | 'pin';
 

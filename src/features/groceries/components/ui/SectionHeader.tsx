@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { Colors } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 export interface SectionHeaderProps {
   title: string;

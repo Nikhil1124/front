@@ -24,10 +24,10 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { Map, Camera, ViewAnnotation } from '@/components/maplibreCompat';
 
-import { Txt, AnimatedPress } from '@/components/ui';
 import { fetchMapStyle } from '@/features/places/mapStyle';
 import { useMapReady } from '@/features/places/useMapReady';
 import { Colors, Radii, Spacing } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface Props {
   formattedAddress: string;

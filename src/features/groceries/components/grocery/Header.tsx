@@ -1,13 +1,13 @@
 import React from 'react';
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 ;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
 import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/store/authStore';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface HeaderProps {
   /** Static "delivering to" line — groceries always ship to the PG's own

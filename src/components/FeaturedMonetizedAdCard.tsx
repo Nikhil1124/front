@@ -8,11 +8,11 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer, Sheet } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { useAdConfigQuery, useRecordAdEventMutation } from '@/features/ads/useAds';
 import { useAuthStore } from '@/store/authStore';
+import { Btn, Card, Col, Row, Sheet, Spacer, Txt } from '@/components/ui';
 
 export function FeaturedMonetizedAdCard() {
   const [showCheckout, setShowCheckout] = useState(false);

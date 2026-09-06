@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, FlatList, Image, TouchableOpacity, useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent, ImageSourcePropType,  } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { Radii, Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 export interface BannerConfig {
   id: string;

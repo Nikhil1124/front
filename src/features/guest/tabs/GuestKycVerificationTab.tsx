@@ -21,12 +21,12 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
+import { Btn, Card, Col, Row, Spacer, Txt } from '@/components/ui';
 interface Props {
   scrollable?: boolean;
 }

@@ -12,15 +12,12 @@
  */
 import { useMemo, useState } from 'react';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import {
-  Card, Txt, Row, Chip, Spacer, LoadingState, ErrorState, MetricDeck, TrendChart,
-  type DeckCardData, type TrendChartPoint, type TrendChartSeries,
-} from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useResponsivePadding } from '@/utils/responsive';
 import { useRSVPTrends } from '@/features/meals/useRSVPTrends';
 import type { MealRSVPTrendDay } from '@/features/meals/useMeals';
+import { Card, Chip, ErrorState, LoadingState, MetricDeck, Row, Spacer, TrendChart, Txt, type DeckCardData, type TrendChartPoint, type TrendChartSeries } from '@/components/ui';
 
 type MealFilter = 'all' | 'breakfast' | 'lunch' | 'dinner';
 

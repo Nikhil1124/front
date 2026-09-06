@@ -2,10 +2,8 @@ import { SupplyItem } from '@/types';
 import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Modal } from 'react-native';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 ;
 import { Ionicons } from '@expo/vector-icons';
-import { Sheet } from '@/components/ui';
 import { useCartStore } from '../../store/useCartStore';
 import { toAmount } from '@/data/mappers';
 
@@ -23,6 +21,7 @@ import { Radii, Colors } from '@/theme';
 // Extracted modal components
 import { CustomAlertModal, CustomAlertState } from './CustomAlertModal';
 import { MenuEditorModal } from './MenuEditorModal';
+import { AnimatedPress, Sheet, Txt } from '@/components/ui';
 
 // ─── Weekday / meal-type conversion ────────────────────────────────────────────
 // The server speaks lowercase weekdays ('monday') and 'veg' | 'non_veg' | 'pure_veg'; this

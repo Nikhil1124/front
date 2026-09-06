@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Dimensions } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
@@ -13,6 +12,7 @@ import type { PickedLocation } from '@/features/places/pendingLocation';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { Btn, Card, Col, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
 
 const SCREEN_H = Dimensions.get('window').height;
 

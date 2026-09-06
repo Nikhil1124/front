@@ -6,13 +6,13 @@
 import { Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer, AnimatedPress } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Radii, Colors } from '@/theme';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { UpiConfigSection } from '@/features/owner/tabs/UpiConfigSection';
 import { useIsManagerMode } from '@/store/authStore';
+import { AnimatedPress, Btn, Card, Col, Row, Spacer, Txt } from '@/components/ui';
 
 export function SettingsScreen() {
   const { activeEntity: owner } = useActiveProperty();

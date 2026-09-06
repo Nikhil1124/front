@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
-import { AnimatedPress, OutlinedTextField, Txt } from '@/components/ui';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,6 +58,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCreateSupplyOrderMutation, useCreditAccountQuery } from '../useSupplyOrders';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
+import { AnimatedPress, OutlinedTextField, Txt } from '@/components/ui';
 
 export function GroceryCheckoutScreen() {
   const { activeEntity: owner } = useActiveProperty();

@@ -12,9 +12,9 @@
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt, AnimatedPress } from '@/components/ui';
 import type { PickedLocation } from '@/features/places/pendingLocation';
 import { Colors, Radii, Spacing } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface Props {
   value: PickedLocation | null;

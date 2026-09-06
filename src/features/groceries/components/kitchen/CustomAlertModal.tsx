@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Palette, Colors } from '@/theme';
-import { Sheet, Txt, Btn } from '@/components/ui';
+import { Btn, Sheet, Txt } from '@/components/ui';
 
 export type AlertType = 'success' | 'info' | 'error';
 

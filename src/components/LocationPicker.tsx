@@ -20,7 +20,6 @@ import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { Map, Camera, type CameraRef } from '@/components/maplibreCompat';
 
-import { Txt, AnimatedPress } from '@/components/ui';
 import { API, BASE_URL } from '@/config';
 import { fetchWithTimeout } from '@/data/apiClient';
 import { round6 } from '@/features/places/geo';
@@ -28,6 +27,7 @@ import { fetchMapStyle } from '@/features/places/mapStyle';
 import { useMapReady } from '@/features/places/useMapReady';
 import { useDeviceLocation } from '@/features/places/useDeviceLocation';
 import { Colors, Radii, Spacing } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 interface Props {
   /** Where to open. Falls back to the city centre when the owner hasn't searched yet. */

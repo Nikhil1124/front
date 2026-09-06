@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, View, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { AnimatedPress, Txt } from '@/components/ui';
 
 import { SupplyCategory } from '@/types';
 import { Radii, Palette, Colors } from '@/theme';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 const gap = 10;
 const totalPadding = 32;

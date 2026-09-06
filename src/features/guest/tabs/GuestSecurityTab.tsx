@@ -11,7 +11,6 @@ import { View, StyleSheet, Alert, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { StatusChip, type StatusTone, Card, Txt, Row, Col, Spacer, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -22,6 +21,7 @@ import { useChangePassword } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
 import { AppHeader } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { AnimatedPress, Card, Col, Row, Spacer, StatusChip, Txt, type StatusTone } from '@/components/ui';
 
 /**
  * Same camera/gallery pattern as KycUploadDialog's `pickImage`/`choosePhoto` — real

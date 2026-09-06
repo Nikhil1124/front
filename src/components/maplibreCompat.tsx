@@ -1,8 +1,8 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import React, { useEffect, useImperativeHandle } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Txt } from '@/components/ui';
 import { Colors } from '@/theme';
+import { Txt } from '@/components/ui';
 
 const isExpoGo = Constants?.executionEnvironment === ExecutionEnvironment.StoreClient;
 
