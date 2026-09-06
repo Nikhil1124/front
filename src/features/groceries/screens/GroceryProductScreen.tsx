@@ -1,5 +1,5 @@
 import { SupplyItem } from '@/types';
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { useActiveProperty } from '@/features/properties/useProperties';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 
 // Extracted shared components
 import { MiniProductCard } from '../components/ui/MiniProductCard';
@@ -391,48 +391,48 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 110 },
   errorContainer: { flex: 1, backgroundColor: Colors.surface },
   errorState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, gap: 12 },
-  backBtnError: { backgroundColor: Colors.primary, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8 },
+  backBtnError: { backgroundColor: Colors.primary, borderRadius: Radii.control, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8 },
 
   floatingHeader: { position: 'absolute', left: 0, right: 0, top: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16 },
   headerRight: { flexDirection: 'row', gap: 8 },
-  headerBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3, position: 'relative' },
-  headerCartBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: Colors.primary, borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
+  headerBtn: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3, position: 'relative' },
+  headerCartBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: Colors.primary, borderRadius: Radii.control, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
 
   topRowSection: { flexDirection: 'row', backgroundColor: Colors.surface, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, gap: 14 },
   leftImageColumn: { width: '44%', height: 170, justifyContent: 'center', alignItems: 'center', position: 'relative', backgroundColor: Colors.surface },
-  discountBadge: { position: 'absolute', top: 2, left: 2, backgroundColor: Colors.danger, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, zIndex: 3 },
-  wishlistBtn: { position: 'absolute', top: 2, right: 2, width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 2, zIndex: 3 },
+  discountBadge: { position: 'absolute', top: 2, left: 2, backgroundColor: Colors.danger, paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radii.badge, zIndex: 3 },
+  wishlistBtn: { position: 'absolute', top: 2, right: 2, width: 28, height: 28, borderRadius: Radii.pill, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 2, zIndex: 3 },
   imageScroll: { width: '100%' },
   mainImageWrapper: { width: 140, height: 140, justifyContent: 'center', alignItems: 'center' },
   mainImage: { width: '90%', height: '90%', resizeMode: 'contain' },
   paginationRow: { flexDirection: 'row', gap: 3, position: 'absolute', bottom: -6, alignSelf: 'center' },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.borderSubtle },
+  dot: { width: 4, height: 4, borderRadius: Radii.pill, backgroundColor: Colors.borderSubtle },
   activeDot: { width: 10, backgroundColor: Colors.primary },
 
   rightInfoColumn: { width: '52%', justifyContent: 'center' },
   mrpRow: { flexDirection: 'row', alignItems: 'center' },
-  miniWholesaleCard: { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 6 },
+  miniWholesaleCard: { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: Radii.badge, paddingHorizontal: 8, paddingVertical: 4, marginTop: 6 },
 
   bodyContent: { paddingHorizontal: 16, paddingTop: 16 },
 
-  packQtyCard: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16, alignItems: 'center' },
+  packQtyCard: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16, alignItems: 'center' },
   packLeftSection: { flex: 1, paddingRight: 8 },
   packSizesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  packTab: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 6, borderWidth: 1.2, borderColor: Colors.borderSubtle, backgroundColor: Colors.surface },
+  packTab: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: Radii.badge, borderWidth: 1.2, borderColor: Colors.borderSubtle, backgroundColor: Colors.surface },
   selectedPackTab: { borderColor: Colors.primary, backgroundColor: Colors.surfaceElevated },
   selectedPackText: { color: Colors.primary },
   qtyRightSection: { width: 100, alignItems: 'center', borderLeftWidth: 1, borderLeftColor: Colors.borderSubtle, paddingLeft: 8 },
-  inlineAddBtn: { backgroundColor: Colors.primary, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
+  inlineAddBtn: { backgroundColor: Colors.primary, borderRadius: Radii.control, paddingVertical: 6, paddingHorizontal: 12 },
 
-  deliveryCard: { flexDirection: 'row', backgroundColor: Palette.TintBlue, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
+  deliveryCard: { flexDirection: 'row', backgroundColor: Palette.TintBlue, borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
   deliveryLeft: { flex: 1.2, justifyContent: 'center' },
   deliveryHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
   deliveryRight: { flex: 1, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: Colors.borderSubtle, justifyContent: 'center' },
 
-  reassuranceStrip: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: Colors.surface, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
+  reassuranceStrip: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: Colors.surface, borderRadius: Radii.card, padding: 10, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 16 },
   reassuranceItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 
-  detailsAccordionCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 20 },
+  detailsAccordionCard: { backgroundColor: Colors.surface, borderRadius: Radii.card, padding: 14, borderWidth: 1, borderColor: Colors.borderSubtle, marginBottom: 20 },
   accordionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   accordionContent: { marginTop: 10, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, paddingTop: 6 },
   accordionRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.canvas },
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   stickyPurchaseBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center', justifyContent: 'space-between', shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 8 },
   stickyBarLeft: { justifyContent: 'center' },
   stickyBarMiddle: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  stickyAddBtn: { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 18, minWidth: 120, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+  stickyAddBtn: { backgroundColor: Colors.primary, borderRadius: Radii.card, paddingVertical: 10, paddingHorizontal: 18, minWidth: 120, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   addedBtn: { backgroundColor: Colors.primaryDark },
   errorText: { fontSize: 16, color: Colors.textSecondary, fontWeight: '700' as const },
   backBtnText: { color: Colors.surface, fontWeight: '700' as const, fontSize: 13 },
@@ -471,5 +471,4 @@ const styles = StyleSheet.create({
   stickyPrice: { fontSize: 18, fontWeight: '700' as const, color: Colors.primary },
   stickyInfoText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '400' as const, marginTop: 1 },
   stickyCartText: { color: Colors.primary, fontSize: 11, fontWeight: '700' as const },
-  stickyAddBtnText: { color: Colors.surface, fontWeight: '700' as const, fontSize: 13 },
-});
+  stickyAddBtnText: { color: Colors.surface, fontWeight: '700' as const, fontSize: 13 } });

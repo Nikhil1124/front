@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { DayMenuConfig } from '../../data/WeeklyMenuTypes';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 
 interface KitchenNeedsBannerProps {
   config: DayMenuConfig;
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   bannerCard: {
     width: 320,
     height: 180,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1.5,
     padding: 16,
     justifyContent: 'space-between',
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: Radii.control,
   },
   badgeText: {
     fontSize: 10,
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   viewMenuBtn: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: Radii.control,
   },
   viewMenuText: {
     color: '#FFFFFF',

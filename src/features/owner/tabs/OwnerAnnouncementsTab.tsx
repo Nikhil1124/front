@@ -1,31 +1,73 @@
-import { useState, useMemo, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Modal, Pressable, RefreshControl, TextInput, TouchableOpacity, Text, Image, KeyboardAvoidingView, Platform, FlatList, Animated as RNAnimated, PanResponder, BackHandler } from 'react-native';
-import { useRef } from 'react';
+/**
+ * The combined notifications+notices inbox for every role (KYC approvals, payment decisions,
+ * announcements, requests; a broadcast composer and a Reviews subtab for owner/manager) —
+ * reachable at `/notifications` (see app/notifications/index.tsx) from any role's header bell.
+ *
+ * ── Row weight (X1) ──────────────────────────────────────────────────────────────────────────
+ * Every item sorts into one of three bands, and the band — not priority guesswork — decides
+ * how much space it gets:
+ *
+ *   decision  A real, currently-open decision: a pending KYC submission, a payment awaiting
+ *             verification, a procurement request awaiting approval. Rendered as a full card
+ *             with its typed body and its own buttons, always at the top, regardless of read
+ *             state — a decision does not stop needing you because you have seen it.
+ *   unread    Everything else not yet opened: a normal row, one snippet line, a time.
+ *   read      Opened already: a dense single line — icon, title, time, nothing else — so a
+ *             long history takes less scroll than a long list of duplicated real estate.
+ *
+ * ── The pinned strip (X4) ───────────────────────────────────────────────────────────────────
+ * When one or more decisions are open, an amber strip sits above the filter chips and stays
+ * there no matter which chip is active — "survives every filter" — naming the count and
+ * jumping to the Decisions chip on tap.
+ *
+ * ── Typed shapes (W2) ───────────────────────────────────────────────────────────────────────
+ * A payment-flavoured item (rent category, or the server's own `actionType: "payment"`) reads
+ * as a receipt: a dashed tear line over a tabular amount when the amount is actually known.
+ * A pending KYC decision is an ID card: the resident's own two document photos, inline, via
+ * the same `KycDocumentsCard` the detail sheet already used. An announcement carries a small
+ * pin glyph rather than the generic bell. Nothing else gets a bespoke shape — request/shift/
+ * service notifications stay a plain row, because inventing a shape nobody asked for is not
+ * this pass's job.
+ *
+ * ── What is real, and what only redirects ──────────────────────────────────────────────────
+ * KYC and payment decisions act right here — `verifyGuestKycByOwner`, `useVerifyPaymentMutation`
+ * / `useRejectPaymentMutation` — same mutations the Guests and Payments tabs use, so verifying
+ * from the inbox and verifying from the tab are the same action, not a parallel one. Procurement
+ * only ever redirects: approving needs a payment method chosen on the real Procurement screen,
+ * and the server sends that notification with no `actionId` to act on directly. A payment
+ * notification is only ever treated as a live decision when its `actionId` is still in the
+ * OWNER'S OWN pending-payments list — the notification row itself never updates once you act
+ * on the same payment elsewhere, so trusting its static shape alone would show a Verify button
+ * on money someone already verified from the Payments tab.
+ */
+import { useMemo, useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, Text, KeyboardAvoidingView, ScrollView, useWindowDimensions, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, SlideInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Row, Col, Spacer, Card, Txt, StatusChip, OutlinedTextField, AnimatedPress } from '@/components/ui';
+import { EmptyState } from '@/components/EmptyState';
+import { Colors, Radii, DeckTints } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { formatTimeAgo } from '@/utils/format';
-import type { GuestEntity } from '@/types';
+import { formatTimeAgo, formatDateTime } from '@/utils/format';
+import type { GuestEntity, PaymentEntity, AppRoleNotificationEntity } from '@/types';
 import { OwnerReviewsTab } from './OwnerReviewsTab';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 
-const PRIMARY = Colors.primary;       // Deep Ocean Blue
-const PRIMARY_DARK = Colors.primaryDark; // Obsidian Navy
-const BG = Colors.canvas;            // Light Ice Canvas
-const SURFACE = Colors.surface;      // Pure White
-const UNREAD_SURFACE = Colors.surfaceElevated; // Soft Ice Cyan Tint
-const TEXT_PRIMARY = Colors.textPrimary; // Obsidian Navy
-const TEXT_SECONDARY = Colors.textMuted; // Ocean Muted
-const DIVIDER = Colors.borderSubtle;     // Ice Subtle Border
-const WARNING = Colors.warning;
-const DANGER = Colors.danger;
+const PRIMARY = Colors.primary;
+const BG = Colors.canvas;
+const SURFACE = Colors.surface;
+const TEXT_PRIMARY = Colors.textPrimary;
+const TEXT_SECONDARY = Colors.textMuted;
+const DIVIDER = Colors.separator;
+/** Same duration-based spring the press feedback and the sheets use. */
+const FAB_SPRING = { duration: 260, dampingRatio: 0.85 } as const;
 
 import {
   useRoleNotificationsQuery,
@@ -33,340 +75,359 @@ import {
   useMarkAllNotificationsReadMutation,
   useDismissNotificationMutation,
   useBroadcastNotificationMutation,
-  BROADCAST_AUDIENCE_MAP,
-} from '@/features/notifications/useNotifications';
+  BROADCAST_AUDIENCE_MAP } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
+import { useAllPaymentsQuery, useVerifyPaymentMutation, useRejectPaymentMutation } from '@/features/payments/usePayments';
 import { useAuthStore } from '@/store/authStore';
 import { AppHeader } from '@/components/AppHeader';
 
-// === HELPER COMPONENTS ===
+// ── Classification ───────────────────────────────────────────────────────────────────────────
 
-const NotificationHeader = ({ title, onBack }: { title: string, onBack: () => void }) => {
-  const insets = useSafeAreaInsets();
-  return (
-    <AppHeader title={title} onBack={onBack} />
-  );
-};
+type InboxKind = 'KYC' | 'PAYMENT' | 'ANNOUNCEMENT' | 'REQUEST' | 'PROCUREMENT' | 'OTHER';
+type InboxWeight = 'decision' | 'unread' | 'read';
 
-const NotificationSummary = ({ total, approvals }: { total: number, approvals: number }) => (
-  <View style={styles.summaryContainer}>
-    <Text maxFontSizeMultiplier={1.3} style={styles.summarySub}>{total} updates · {approvals} approvals</Text>
-  </View>
-);
+interface InboxItem {
+  id: string;
+  kind: InboxKind;
+  title: string;
+  desc: string;
+  timestamp: number;
+  isRead: boolean;
+  weight: InboxWeight;
+  icon: keyof typeof Ionicons.glyphMap;
+  /** Present only for the synthetic per-guest KYC decision. */
+  guest?: GuestEntity;
+  /** Present for every item sourced from a real notification row (everything but the KYC
+   *  decision, which is built straight from the guest roster — see the file header for why
+   *  the server's own "New KYC submission" row for the same guest is filtered out below). */
+  notif?: AppRoleNotificationEntity;
+  /** Payment decisions only — the live record, looked up by `notif.actionId` in the owner's
+   *  own pending list, which is what makes the amount on the card real rather than guessed. */
+  payment?: PaymentEntity;
+  /** Supplementary "book a technician" shortcut on a maintenance-flavoured request — a
+   *  convenience the old title-keyword heuristic already offered; kept, but demoted to a
+   *  bonus button rather than the whole basis for classifying the row (see `REQUEST` below). */
+  isMaintenanceFlavoured?: boolean;
+}
 
-const NotificationStatusRow = ({ pending }: { pending: number }) => {
-  if (pending > 0) {
-    return (
-      <View style={[styles.statusRow, styles.statusWarning]}>
-        <Ionicons name="alert-circle" size={16} color={WARNING} />
-        <Text maxFontSizeMultiplier={1.3} style={styles.statusWarningText}>Needs Attention · {pending} pending</Text>
-      </View>
-    );
+/** Categorises off the server's own `category`/`actionType`, not text-sniffed guesses.
+ *  The one exception is procurement: the server posts that notification with neither field
+ *  set (approving needs a payment method chosen on the real screen, so there is nothing to
+ *  point `actionId` at), so its exact, fixed title is genuinely the only signal there is. */
+function kindOf(n: AppRoleNotificationEntity): InboxKind {
+  if (n.category === 'KYC') return 'KYC';
+  if (n.category === 'RENT' || n.actionType === 'payment') return 'PAYMENT';
+  if (n.category === 'ANNOUNCEMENT') return 'ANNOUNCEMENT';
+  if (n.category === 'COMPLAINT') return 'REQUEST';
+  if (n.title.toLowerCase().includes('procurement request awaiting approval')) return 'PROCUREMENT';
+  // FINANCE (an expense logged — recorded, not awaiting anything), SHIFT (a delivery trip
+  // assignment) and SERVICE (a supply-order status change) are all real, all informational,
+  // and none of them was asked for a bespoke shape — a plain row is the honest one.
+  return 'OTHER';
+}
+
+function iconFor(kind: InboxKind, notif?: AppRoleNotificationEntity): keyof typeof Ionicons.glyphMap {
+  switch (kind) {
+    case 'KYC': return 'shield-checkmark-outline';
+    case 'PAYMENT': return 'receipt-outline';
+    case 'ANNOUNCEMENT': return 'pin-outline';
+    case 'REQUEST': return 'construct-outline';
+    case 'PROCUREMENT': return 'cart-outline';
+    default:
+      if (notif?.category === 'FINANCE') return 'cash-outline';
+      if (notif?.category === 'SHIFT') return 'bicycle-outline';
+      if (notif?.category === 'SERVICE') return 'cube-outline';
+      return 'notifications-outline';
   }
-  return (
-    <View style={[styles.statusRow, styles.statusSuccess]}>
-      <Ionicons name="checkmark-circle" size={16} color={PRIMARY} />
-      <Text maxFontSizeMultiplier={1.3} style={styles.statusSuccessText}>All caught up · No pending approvals</Text>
-    </View>
-  );
-};
+}
 
-const NotificationFilterRow = ({ tabs, activeTab, onChange }: { tabs: { id: string, label: string, count?: number }[], activeTab: string, onChange: (id: string) => void }) => (
-  <View>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
-      {tabs.map(tab => (
-        <TouchableOpacity accessibilityRole="button"
-          key={tab.id}
-          activeOpacity={0.8}
-          onPress={() => onChange(tab.id)}
-          style={[styles.filterChip, activeTab === tab.id && styles.filterChipActive]}
-        >
-          <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, activeTab === tab.id && styles.filterChipTextActive]}>
-            {tab.label} {tab.count !== undefined ? tab.count : ''}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-);
+const weightRank: Record<InboxWeight, number> = { decision: 0, unread: 1, read: 2 };
 
-const NotificationEmptyState = () => (
-  <View style={styles.emptyContainer}>
-    <Ionicons name="notifications-off-outline" size={32} color={TEXT_SECONDARY} />
-    <Spacer size={12} />
-    <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>You're all caught up</Text>
-    <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>No new notifications right now.</Text>
-  </View>
-);
+// ── Row (unread + read tiers) ───────────────────────────────────────────────────────────────
 
-const NotificationItem = ({ item, onPress, onDismiss }: { item: any, onPress: () => void, onDismiss?: () => void }) => {
-  const isUnread = !item.isRead;
-  const isHighPriority = item.priority === 'HIGH';
+/** Not `ListRow`: that component deliberately carries no status/snippet-plus-time combination
+ *  and no dense variant — it is the roster/payment-list shape, not the inbox shape. Same
+ *  reasoning as `MetricRow` existing beside it. */
+function InboxRow({ item, onPress, onDismiss }: { item: InboxItem; onPress: () => void; onDismiss?: () => void }) {
+  const dense = item.weight === 'read';
+  const tileTone = item.kind === 'PAYMENT' ? DeckTints.brand : item.kind === 'ANNOUNCEMENT' ? DeckTints.amber : undefined;
 
   return (
-    <TouchableOpacity accessibilityRole="button"
-      activeOpacity={0.7}
-      onPress={onPress}
-      style={[
-        styles.notifItemContainer,
-        isUnread && styles.notifItemUnread
-      ]}
-    >
-      <Row gap={12} align="flex-start">
-        <View style={[styles.iconContainer, isHighPriority && styles.iconContainerHigh]}>
-          <Ionicons name={item.icon} size={20} color={isHighPriority ? DANGER : PRIMARY} />
+    <AnimatedPress accessibilityRole="button" onPress={onPress} style={[styles.row, dense && styles.rowDense]}>
+      <Row gap={12} align={dense ? 'center' : 'flex-start'}>
+        <View style={[styles.iconTile, tileTone && { backgroundColor: tileTone.fill }, dense && styles.iconTileDense]}>
+          <Ionicons name={item.icon} size={dense ? 14 : 18} color={tileTone ? tileTone.ink : PRIMARY} />
         </View>
-        <Col style={{ flex: 1 }}>
-          <Row justify="space-between" align="center">
-            <Row align="center" gap={6}>
-              {isUnread && <View style={styles.unreadIndicator} />}
-              <Text maxFontSizeMultiplier={1.3} style={[styles.categoryLabel, isHighPriority && { color: WARNING }]}>{item.categoryText}</Text>
-            </Row>
-            <Text maxFontSizeMultiplier={1.3} style={styles.timeText}>{formatTimeAgo(item.timestamp)}</Text>
-          </Row>
-          <Spacer size={4} />
-          <Text maxFontSizeMultiplier={1.3} style={[styles.titleText, isUnread && styles.titleTextUnread]} numberOfLines={1}>{item.title}</Text>
-          <Spacer size={2} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.descText} numberOfLines={2}>{item.desc}</Text>
-        </Col>
-        {onDismiss ? (
-          <TouchableOpacity accessibilityLabel="Close" accessibilityRole="button"
-            onPress={(e) => { e.stopPropagation(); onDismiss(); }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{ marginTop: 24, marginLeft: 8, padding: 2 }}
-          >
-            <Ionicons name="close" size={18} color={TEXT_SECONDARY} />
-          </TouchableOpacity>
+        {dense ? (
+          <>
+            <Txt size={12.5} weight="500" color={TEXT_SECONDARY} numberOfLines={1} style={{ flex: 1 }}>{item.title}</Txt>
+            <Txt size={10.5} color={TEXT_SECONDARY}>{formatTimeAgo(item.timestamp)}</Txt>
+          </>
         ) : (
-          <Ionicons name="chevron-forward" size={16} color={TEXT_SECONDARY} style={{ marginTop: 24, marginLeft: 8 }} />
+          <Col style={{ flex: 1 }}>
+            <Row justify="space-between" align="center">
+              <Row align="center" gap={6}>
+                {!item.isRead && <View style={styles.unreadDot} />}
+                <Txt size={10.5} weight="800" color={PRIMARY} style={{ letterSpacing: 0.4 }}>{item.kind}</Txt>
+              </Row>
+              <Txt size={11} color={TEXT_SECONDARY}>{formatTimeAgo(item.timestamp)}</Txt>
+            </Row>
+            <Spacer size={3} />
+            <Txt size={14.5} weight={item.isRead ? '600' : '700'} color={TEXT_PRIMARY} numberOfLines={1}>{item.title}</Txt>
+            <Spacer size={2} />
+            <Txt size={13} color={TEXT_SECONDARY} numberOfLines={2} style={{ lineHeight: 18 }}>{item.desc}</Txt>
+          </Col>
         )}
+        {onDismiss && !dense ? (
+          <AnimatedPress accessibilityLabel="Dismiss" accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onDismiss(); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginTop: 2 }}>
+            <Ionicons name="close" size={16} color={TEXT_SECONDARY} />
+          </AnimatedPress>
+        ) : null}
       </Row>
-    </TouchableOpacity>
-  );
-};
-
-const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
-  const insets = useSafeAreaInsets();
-  const pan = useRef(new RNAnimated.ValueXY()).current;
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Start dragging if moved more than 5 pixels
-        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
-      },
-      onPanResponderGrant: () => {
-        pan.setOffset({
-          x: (pan.x as any)._value,
-          y: (pan.y as any)._value
-        });
-      },
-      onPanResponderMove: RNAnimated.event(
-        [null, { dx: pan.x, dy: pan.y }],
-        { useNativeDriver: false }
-      ),
-      onPanResponderRelease: () => {
-        pan.flattenOffset();
-      }
-    })
-  ).current;
-
-  return (
-    <RNAnimated.View
-      {...panResponder.panHandlers}
-      style={[
-        styles.fab,
-        { bottom: Math.max(insets.bottom + 80, 80) },
-        { transform: [{ translateX: pan.x }, { translateY: pan.y }] }
-      ]}
-    >
-      <TouchableOpacity accessibilityRole="button" 
-        activeOpacity={0.85} 
-        onPress={onPress}
-        style={styles.fabInner}
-      >
-        <Ionicons name="megaphone-outline" size={18} color={SURFACE} />
-        <Text maxFontSizeMultiplier={1.3} style={styles.fabText}>New Announcement</Text>
-      </TouchableOpacity>
-    </RNAnimated.View>
+    </AnimatedPress>
   );
 }
 
-// === MAIN SCREEN COMPONENT ===
+// ── Receipt shape (W2) ──────────────────────────────────────────────────────────────────────
+
+/** The tear line's "cut" circles are `Colors.surface` — verified equal to `Colors.canvas`
+ *  (both `#FFFFFF`) in colors.ts, which is what makes them read correctly whether this sits
+ *  directly on the screen or inside a white modal sheet, without matching a parent colour by
+ *  hand at each call site. */
+function ReceiptDivider() {
+  return (
+    <View style={styles.receiptDivider}>
+      <View style={styles.receiptDash} />
+      <View style={[styles.receiptNotch, { left: -13 }]} />
+      <View style={[styles.receiptNotch, { right: -13 }]} />
+    </View>
+  );
+}
+
+/** A payment item only ever carries a live `payment` record while it is still pending — see
+ *  `isPaymentDecision` above — so this only ever reads the notification's own fixed title
+ *  (never arbitrary user text) for the three states that have already been resolved. */
+function paymentToneFor(item: InboxItem): string {
+  if (item.payment) return 'Pending';
+  if (item.title.includes('verified')) return 'Verified';
+  if (item.title.includes('due')) return 'Due';
+  if (item.title.includes('attention')) return 'Rejected';
+  return 'Submitted';
+}
+
+function ReceiptBody({ title, payment, tone }: { title: string; payment?: PaymentEntity; tone: string }) {
+  return (
+    <View>
+      <Row justify="space-between" align="center">
+        <Txt size={13} weight="700" color={TEXT_PRIMARY}>{title}</Txt>
+        <StatusChip label={tone} variant="dot" />
+      </Row>
+      {payment ? (
+        <>
+          <ReceiptDivider />
+          <Row justify="space-between" align="center">
+            <Col>
+              <Txt size={10.5} color={TEXT_SECONDARY}>{payment.payerName} · {payment.paymentType.replace(/_/g, ' ')}</Txt>
+              <Txt size={10} color={TEXT_SECONDARY}>{payment.paymentMode.replace(/_/g, ' ')}</Txt>
+            </Col>
+            <Txt size={19} weight="800" color={TEXT_PRIMARY} tabular>₹{payment.amount.toLocaleString('en-IN')}</Txt>
+          </Row>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+// ── Main screen ─────────────────────────────────────────────────────────────────────────────
 
 export function OwnerAnnouncementsTab() {
   const router = useRouter();
   const activePgId = useAuthStore((s) => s.activePgId);
   const activeRole = useAuthStore((s) => s.activeRole);
-  // This is now the one notification screen every role lands on (see app/notifications/index.tsx).
-  // KYC decisions, the property-wide guest roster they're read from, the Reviews tab (staff
-  // performance) and the broadcast composer are all owner/manager-only data and actions
-  // server-side — a resident or chef opening this screen must see the same generic
-  // notification inbox everyone gets, never another resident's ID photos or the staff roster.
   const canManage = activeRole === 'owner' || activeRole === 'manager';
+  // Owner/manager alone has the `(owner)` route group's `/ticket/[id]` in its own stack;
+  // staff roles (chef/kitchen_staff/maintenance/delivery_agent) share `(staff)`, which has
+  // no ticket-detail route at all — a "View ticket" button there would push to a route
+  // nobody mounted. See app/_layout.tsx's `isStaffRole` for the exact role list this reads.
+  const canOpenTicket = canManage || activeRole === 'guest';
+
   const { data: roleNotifs = [], isLoading: inboxLoading, error: inboxError, refetch: refetchInbox } = useRoleNotificationsQuery(activePgId ?? undefined);
   const { data: guests = [] } = useGuestsQuery(canManage ? (activePgId ?? undefined) : undefined);
+  // Cache-shared with the bottom nav's own C3 signal (HeadlessDockTabButton calls this exact
+  // hook with these exact args) — not an extra round trip in practice, and it is what tells a
+  // stale "New payment submitted" row apart from one already resolved from the Payments tab.
+  const { data: pendingPayments = [] } = useAllPaymentsQuery(canManage ? (activePgId ?? undefined) : undefined, 'pending');
+
   const markReadMutation = useMarkNotificationReadMutation(activePgId ?? undefined);
   const markAllReadMutation = useMarkAllNotificationsReadMutation(activePgId ?? undefined);
   const dismissMutation = useDismissNotificationMutation(activePgId ?? undefined);
   const broadcastMutation = useBroadcastNotificationMutation(activePgId ?? undefined);
+  const verifyPaymentMutation = useVerifyPaymentMutation(activePgId ?? undefined);
+  const rejectPaymentMutation = useRejectPaymentMutation(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
 
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
 
-  const [activeSubTab, setActiveSubTab] = useState<'ALL' | 'APPROVALS' | 'ANNOUNCEMENTS' | 'REVIEWS'>('ALL');
+  const [activeSubTab, setActiveSubTab] = useState<'ALL' | 'DECISIONS' | 'PAYMENTS' | 'REQUESTS' | 'ANNOUNCEMENTS' | 'REVIEWS'>('ALL');
 
-  // Override back navigation — notices is a hidden tab, not a stack screen.
+  // Notifications is always reached by pushing from a role's own header bell, so there is
+  // always somewhere real to return to — `router.back()` is the same convention every other
+  // screen's `onBack` already uses. The previous handler hardcoded '/overview', which is an
+  // owner-only route: a resident or staff member pressing the hardware back button here was
+  // sent to a screen their role cannot even see.
   useEffect(() => {
-    const onBack = () => { router.replace('/overview'); return true; };
+    const onBack = () => { router.back(); return true; };
     const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
     return () => sub.remove();
   }, []);
+
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
-  const [selectedInboxItem, setSelectedInboxItem] = useState<any | null>(null);
+  const [selectedInboxItem, setSelectedInboxItem] = useState<InboxItem | null>(null);
+  const [rejectingPayment, setRejectingPayment] = useState<InboxItem | null>(null);
+  const [rejectingKyc, setRejectingKyc] = useState<InboxItem | null>(null);
 
   const [noticeTitle, setNoticeTitle] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
+  const [noticeErrors, setNoticeErrors] = useState<{ title?: string; message?: string }>({});
   const [noticeAudience, setNoticeAudience] = useState<'all' | 'guest' | 'staff' | 'manager'>('all');
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const inboxItems = useMemo(() => {
-    const items: any[] = [];
+  const pendingPaymentById = useMemo(() => new Map(pendingPayments.map((p) => [p.id, p])), [pendingPayments]);
 
-    const pendingKycGuests = guests.filter((g: GuestEntity) => g.kycStatus === 'PENDING');
-    pendingKycGuests.forEach((g: GuestEntity) => {
+  const inboxItems = useMemo<InboxItem[]>(() => {
+    const items: InboxItem[] = [];
+
+    guests.filter((g: GuestEntity) => g.kycStatus === 'PENDING').forEach((g: GuestEntity) => {
       items.push({
         id: `kyc_${g.id}`,
-        type: 'KYC',
-        categoryText: 'KYC',
+        kind: 'KYC',
         title: 'New resident joined',
-        desc: `Room ${g.roomNo} · KYC review required`,
+        desc: `Room ${g.roomNo} · identity documents ready for review`,
         timestamp: g.kycSubmissionDate || Date.now(),
         isRead: false,
-        priority: 'MEDIUM',
-        icon: 'shield-checkmark',
-        raw: g,
+        weight: 'decision',
+        icon: iconFor('KYC'),
+        guest: g,
       });
     });
 
     roleNotifs.forEach((n) => {
-      const titleLower = (n.title || '').toLowerCase();
-      const catUpper = (n.category || '').toUpperCase();
-      const descLower = (n.message || '').toLowerCase();
+      const kind = kindOf(n);
+      // The server also posts this exact event as a real notification row ("New KYC
+      // submission", category KYC) to the same owner/manager the guest roster above already
+      // covers — with richer data (the guest's own photos) than the bare row could ever
+      // carry. Without this, every pending resident would show up twice.
+      if (kind === 'KYC' && canManage && n.title.startsWith('New KYC submission')) return;
 
-      // A generic "finance" notification only ever means "Expense logged"
-      // (expense/service.py) — the expense is already spent and recorded, with no status
-      // column to approve or reverse (expense/models.py: "no status column"). Treating that
-      // as an "Approve/Reject" item used to call deleteNotif() and claim "Request Approved"
-      // — a fabricated decision with no effect on the actual expense.
-      //
-      // Procurement is different: create_procurement_request DOES notify the owner now
-      // (title "Procurement request awaiting approval", procurement/service.py), and that
-      // one genuinely has a real, actionable pending request behind it — just not one this
-      // screen can act on directly (approving needs a payment method, chosen on the real
-      // Procurement screen). isProcurementApproval below routes a tap there for real.
-      const isProcurementApproval = titleLower.includes('procurement request awaiting approval');
-      const isFinance = catUpper.includes('EXPENSE') || catUpper.includes('FINANCE') || titleLower.includes('procurement') || titleLower.includes('salary');
-
-      let icon: any = 'notifications';
-      let categoryText = 'UPDATE';
-
-      if (titleLower.includes('payment') || descLower.includes('payment') || titleLower.includes('rent')) {
-        icon = 'wallet';
-        categoryText = 'PAYMENT';
-      } else if (titleLower.includes('complaint') || titleLower.includes('repair') || titleLower.includes('maintenance')) {
-        icon = 'construct';
-        categoryText = 'MAINTENANCE';
-      } else if (titleLower.includes('review') || titleLower.includes('rating') || titleLower.includes('feedback')) {
-        icon = 'star';
-        categoryText = 'REVIEW';
-      } else if (titleLower.includes('food') || titleLower.includes('meal') || titleLower.includes('rsvp')) {
-        icon = 'restaurant';
-        categoryText = 'MEAL';
-      } else if (isFinance) {
-        icon = 'cash';
-        categoryText = 'FINANCE';
-      } else {
-        icon = 'megaphone';
-        categoryText = 'ANNOUNCEMENT';
-      }
+      const isPaymentDecision = kind === 'PAYMENT' && !!n.actionId && pendingPaymentById.has(n.actionId);
+      const isProcurementDecision = kind === 'PROCUREMENT';
+      const isDecision = isPaymentDecision || isProcurementDecision;
 
       items.push({
         id: `notif_${n.id}`,
-        type: 'NOTICE',
-        isProcurementApproval,
-        categoryText,
+        kind,
         title: n.title,
         desc: n.message,
         timestamp: n.timestamp,
         isRead: n.isRead,
-        priority: isProcurementApproval ? 'MEDIUM' : 'LOW',
-        icon,
-        raw: n,
+        weight: isDecision ? 'decision' : n.isRead ? 'read' : 'unread',
+        icon: iconFor(kind, n),
+        notif: n,
+        payment: isPaymentDecision ? pendingPaymentById.get(n.actionId!) : undefined,
+        isMaintenanceFlavoured: kind === 'REQUEST' && /repair|maintenance/i.test(n.title),
       });
     });
 
-    const weights: Record<string, number> = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-    return items.sort((a, b) => {
-      const wA = weights[a.priority] || 1;
-      const wB = weights[b.priority] || 1;
-      if (wA !== wB) return wB - wA;
-      return b.timestamp - a.timestamp;
-    });
-  }, [guests, roleNotifs]);
+    return items.sort((a, b) => weightRank[a.weight] - weightRank[b.weight] || b.timestamp - a.timestamp);
+  }, [guests, roleNotifs, pendingPaymentById, canManage]);
 
-  const totalInboxCount = inboxItems.length;
-  // KYC is the only item type with a real approve/reject action behind it — see the
-  // isFinance note in inboxItems above for why "approval"-shaped notifications aren't.
-  const approvalsCount = inboxItems.filter((i) => i.type === 'KYC').length;
-  const noticesCount = inboxItems.filter((i) => i.type === 'NOTICE').length;
-  const unreadNoticeCount = inboxItems.filter((i) => i.type === 'NOTICE' && !i.isRead).length;
+  const totalCount = inboxItems.length;
+  const decisionItems = useMemo(() => inboxItems.filter((i) => i.weight === 'decision'), [inboxItems]);
+  const paymentCount = useMemo(() => inboxItems.filter((i) => i.kind === 'PAYMENT').length, [inboxItems]);
+  const requestCount = useMemo(() => inboxItems.filter((i) => i.kind === 'REQUEST').length, [inboxItems]);
+  const announcementCount = useMemo(() => inboxItems.filter((i) => i.kind === 'ANNOUNCEMENT').length, [inboxItems]);
+  const unreadInformationalCount = useMemo(() => inboxItems.filter((i) => i.weight === 'unread').length, [inboxItems]);
 
   const displayedItems = useMemo(() => {
-    if (activeSubTab === 'APPROVALS') return inboxItems.filter((i) => i.type === 'KYC');
-    if (activeSubTab === 'ANNOUNCEMENTS') return inboxItems.filter((i) => i.type === 'NOTICE');
+    if (activeSubTab === 'DECISIONS') return decisionItems;
+    if (activeSubTab === 'PAYMENTS') return inboxItems.filter((i) => i.kind === 'PAYMENT');
+    if (activeSubTab === 'REQUESTS') return inboxItems.filter((i) => i.kind === 'REQUEST');
+    if (activeSubTab === 'ANNOUNCEMENTS') return inboxItems.filter((i) => i.kind === 'ANNOUNCEMENT');
     return inboxItems;
-  }, [inboxItems, activeSubTab]);
+  }, [inboxItems, activeSubTab, decisionItems]);
 
-  const handleApproveRequest = async (item: any) => {
-    if (item.type === 'KYC') {
-      await verifyKyc(item.raw.id, true);
-      toast('success', 'KYC Approved', `${item.raw.name} is now verified.`);
-    }
+  const handleApproveKyc = async (item: InboxItem) => {
+    if (!item.guest) return;
+    await verifyKyc(item.guest.id, true);
+    toast('success', 'KYC Approved', `${item.guest.name} is now verified.`);
     setSelectedInboxItem(null);
   };
 
-  const handleRejectRequest = async (item: any) => {
-    if (item.type === 'KYC') {
-      Alert.alert('Reject KYC', 'Are you sure you want to reject this KYC document upload?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: async () => {
-            await verifyKyc(item.raw.id, false, 'Documents unreadable or incomplete.');
-            toast('warning', 'KYC Rejected', 'Resident notified.');
-            setSelectedInboxItem(null);
-          },
-        },
-      ]);
-    }
+  // Was a yes/no alert that then sent the canned string "Documents unreadable or incomplete."
+  // no matter what was actually wrong — so a resident whose selfie was fine but whose ID was
+  // cropped got told the wrong thing, and had to guess. The rejection reason is the only
+  // explanation they ever see (kyc/service.py posts it straight to them), so it is worth
+  // typing. Same dialog the payment rejection uses.
+  const handleRejectKyc = (item: InboxItem) => {
+    if (!item.guest) return;
+    setRejectingKyc(item);
   };
 
-  const handleBookService = (item: any) => {
-    const serviceName = item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() || "General Repair";
+  const submitRejectKyc = async (reason: string) => {
+    if (!rejectingKyc?.guest) return;
+    await verifyKyc(rejectingKyc.guest.id, false, reason);
+    toast('warning', 'KYC Rejected', 'Resident notified.');
+    setRejectingKyc(null);
+    setSelectedInboxItem(null);
+  };
+
+  const handleVerifyPayment = async (item: InboxItem) => {
+    if (!item.notif?.actionId) return;
+    await verifyPaymentMutation.mutateAsync(item.notif.actionId);
+    toast('success', 'Payment Verified', 'The resident has been notified.');
+    setSelectedInboxItem(null);
+  };
+
+  const openRejectPayment = (item: InboxItem) => setRejectingPayment(item);
+
+  const submitRejectPayment = async (reason: string) => {
+    if (!rejectingPayment?.notif?.actionId) return;
+    await rejectPaymentMutation.mutateAsync({ paymentId: rejectingPayment.notif.actionId, reason });
+    toast('warning', 'Payment Rejected', 'The resident has been notified.');
+    setRejectingPayment(null);
+    setSelectedInboxItem(null);
+  };
+
+  const handleReviewProcurement = (item: InboxItem) => {
+    setSelectedInboxItem(null);
+    router.push('/procurement');
+  };
+
+  const handleViewTicket = (item: InboxItem) => {
+    if (!item.notif?.actionId) return;
+    setSelectedInboxItem(null);
+    router.push({ pathname: '/ticket/[id]', params: { id: item.notif.actionId } });
+  };
+
+  const handleBookService = (item: InboxItem) => {
+    const serviceName = item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() || 'General Repair';
     bookRepair(serviceName, `Direct booking from notification: ${item.desc}`, 'ASAP', 149);
     toast('success', 'Service Booked!', `Technician assigned for ${serviceName}.`);
     setSelectedInboxItem(null);
   };
 
   const handlePublishNotice = async () => {
-    if (!noticeTitle.trim() || !noticeMessage.trim()) {
-      Alert.alert('Validation', 'Title and message are required.');
-      return;
-    }
+    // Inline, on the fields, rather than the `Alert.alert('Validation', …)` this used to
+    // throw: a popup that blocks the screen to describe in prose which of the fields behind
+    // it is empty, then disappears. See OutlinedTextField's header for the rest of that.
+    const nextErrors = {
+      title: noticeTitle.trim() ? undefined : 'Give the notice a title',
+      message: noticeMessage.trim() ? undefined : 'Say what the notice is about',
+    };
+    setNoticeErrors(nextErrors);
+    if (nextErrors.title || nextErrors.message) return;
     if (!activePgId) {
       Alert.alert('Failed', 'No active property.');
       return;
@@ -379,11 +440,11 @@ export function OwnerAnnouncementsTab() {
         title: noticeTitle.trim(),
         body: noticeMessage.trim(),
         category: 'announcement',
-        priority: 'normal',
-      });
+        priority: 'normal' });
       toast('success', 'Announcement Published', `Broadcast delivered to target ${noticeAudience}.`);
       setNoticeTitle('');
       setNoticeMessage('');
+      setNoticeErrors({});
       setShowBroadcastModal(false);
     } catch (err) {
       Alert.alert('Failed', err instanceof Error ? err.message : 'Could not publish the announcement.');
@@ -392,48 +453,66 @@ export function OwnerAnnouncementsTab() {
     }
   };
 
-  const handleOpenItem = (item: any) => {
+  const handleOpenItem = (item: InboxItem) => {
     setSelectedInboxItem(item);
-    if (item.type === 'NOTICE') markReadMutation.mutate(item.raw.id);
+    if (item.notif && !item.notif.isRead) markReadMutation.mutate(item.notif.id);
   };
 
   const tabs = [
-    { id: 'ALL', label: 'All', count: totalInboxCount },
-    ...(canManage ? [{ id: 'APPROVALS', label: 'Approvals', count: approvalsCount }] : []),
-    { id: 'ANNOUNCEMENTS', label: 'Announcements', count: noticesCount },
+    { id: 'ALL', label: 'All', count: totalCount },
+    ...(canManage ? [{ id: 'DECISIONS', label: 'Decisions', count: decisionItems.length }] : []),
+    { id: 'PAYMENTS', label: 'Payments', count: paymentCount },
+    { id: 'REQUESTS', label: 'Requests', count: requestCount },
+    { id: 'ANNOUNCEMENTS', label: 'Announcements', count: announcementCount },
     ...(canManage ? [{ id: 'REVIEWS', label: 'Reviews' }] : []),
   ];
 
   return (
     <View style={styles.root}>
-      <ScrollView 
-        contentContainerStyle={[styles.mainScroll, { paddingBottom: 120 }]} 
+      <AppHeader title="Notifications" onBack={() => router.back()} />
+      <ScrollView
+        contentContainerStyle={[styles.mainScroll, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
       >
-        <NotificationSummary total={totalInboxCount} approvals={approvalsCount} />
-        <Spacer size={16} />
-        {canManage && <NotificationStatusRow pending={approvalsCount} />}
-        <Spacer size={20} />
-        <NotificationFilterRow
-          tabs={tabs}
-          activeTab={activeSubTab}
-          onChange={(id) => { setActiveSubTab(id as any); }}
-        />
-        {activeSubTab !== 'REVIEWS' && unreadNoticeCount > 0 && (
+        <Txt size={13} color={TEXT_SECONDARY}>{totalCount} updates · {decisionItems.length} decision{decisionItems.length === 1 ? '' : 's'}</Txt>
+        <Spacer size={14} />
+
+        {/* X4 — survives every filter, so it renders above the chips, not the list. */}
+        {decisionItems.length > 0 && (
+          <>
+            <AnimatedPress accessibilityRole="button" onPress={() => setActiveSubTab('DECISIONS')} style={styles.pinnedStrip}>
+              <Ionicons name="alert-circle" size={16} color={DeckTints.amber.ink} />
+              <Txt size={12.5} weight="700" color={DeckTints.amber.ink} style={{ flex: 1, marginLeft: 8 }}>
+                {decisionItems.length} still need{decisionItems.length === 1 ? 's' : ''} your decision
+              </Txt>
+              <Ionicons name="chevron-forward" size={14} color={DeckTints.amber.sub} />
+            </AnimatedPress>
+            <Spacer size={12} />
+          </>
+        )}
+
+        <View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
+            {tabs.map((tab) => (
+              <AnimatedPress accessibilityRole="button" key={tab.id} onPress={() => setActiveSubTab(tab.id as any)} style={[styles.filterChip, activeSubTab === tab.id && styles.filterChipActive]}>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, activeSubTab === tab.id && styles.filterChipTextActive]}>
+                  {tab.label}{tab.count !== undefined ? ` ${tab.count}` : ''}
+                </Text>
+              </AnimatedPress>
+            ))}
+          </ScrollView>
+        </View>
+
+        {activeSubTab !== 'REVIEWS' && unreadInformationalCount > 0 && (
           <>
             <Spacer size={10} />
-            <TouchableOpacity accessibilityRole="button"
-              onPress={() => markAllReadMutation.mutate()}
-              disabled={markAllReadMutation.isPending}
-              style={styles.markAllReadBtn}
-              activeOpacity={0.7}
-            >
+            <AnimatedPress accessibilityRole="button" onPress={() => markAllReadMutation.mutate()} disabled={markAllReadMutation.isPending} style={styles.markAllReadBtn}>
               <Ionicons name="checkmark-done" size={15} color={PRIMARY} />
               <Text maxFontSizeMultiplier={1.3} style={styles.markAllReadText}>
-                {markAllReadMutation.isPending ? 'Marking…' : `Mark all ${unreadNoticeCount} as read`}
+                {markAllReadMutation.isPending ? 'Marking…' : `Mark all ${unreadInformationalCount} as read`}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPress>
           </>
         )}
         <Spacer size={16} />
@@ -442,24 +521,42 @@ export function OwnerAnnouncementsTab() {
           <View style={{ marginHorizontal: -20 }}>
             <OwnerReviewsTab />
           </View>
+        ) : inboxLoading || inboxError || displayedItems.length === 0 ? (
+          <EmptyState
+            icon="notifications-off-outline"
+            title={inboxError ? 'Could not load the inbox' : "You're all caught up"}
+            subtitle={inboxError ? undefined : 'No new notifications right now.'}
+            loading={inboxLoading}
+            error={inboxError}
+            onRetry={refetchInbox}
+          />
         ) : (
           <View>
-            {inboxLoading ? (
-              <LoadingState label="Loading inbox…" fill={false} />
-            ) : inboxError ? (
-              <ErrorState error={inboxError} title="Could not load the inbox" onRetry={refetchInbox} fill={false} />
-            ) : displayedItems.length === 0 ? (
-              <NotificationEmptyState />
-            ) : (
+            {/* Decision cards — always their own full-width surface, always first (the sort
+                above already put them there), never demoted no matter how the list re-sorts. */}
+            {displayedItems.filter((i) => i.weight === 'decision').map((item) => (
+              <DecisionCard
+                key={item.id}
+                item={item}
+                onPress={() => handleOpenItem(item)}
+                onApproveKyc={() => handleApproveKyc(item)}
+                onRejectKyc={() => handleRejectKyc(item)}
+                onVerifyPayment={() => handleVerifyPayment(item)}
+                onRejectPayment={() => openRejectPayment(item)}
+                onReviewProcurement={() => handleReviewProcurement(item)}
+              />
+            ))}
+
+            {displayedItems.some((i) => i.weight !== 'decision') && (
               <View style={styles.listContainer}>
-                {displayedItems.map((item, index) => (
+                {displayedItems.filter((i) => i.weight !== 'decision').map((item, index, arr) => (
                   <View key={item.id}>
-                    <NotificationItem
+                    <InboxRow
                       item={item}
                       onPress={() => handleOpenItem(item)}
-                      onDismiss={item.type === 'NOTICE' ? () => dismissMutation.mutate(item.raw.id) : undefined}
+                      onDismiss={item.notif ? () => dismissMutation.mutate(item.notif!.id) : undefined}
                     />
-                    {index < displayedItems.length - 1 && <View style={styles.divider} />}
+                    {index < arr.length - 1 && <View style={styles.divider} />}
                   </View>
                 ))}
               </View>
@@ -475,115 +572,167 @@ export function OwnerAnnouncementsTab() {
         <Modal visible transparent animationType="none" onRequestClose={() => setSelectedInboxItem(null)}>
           <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setSelectedInboxItem(null)} />
-            <Animated.View entering={SlideInDown.duration(150)} style={styles.detailSheet}>
+            <Animated.View entering={SlideInDown.springify(150).dampingRatio(0.85)} style={styles.detailSheet}>
               <View style={styles.sheetHandle} />
-              
+
               <Row justify="space-between" align="center" style={{ marginBottom: 20 }}>
                 <Row gap={8} align="center">
                   <View style={styles.detailIconCircle}>
-                     <Ionicons 
-                        name={selectedInboxItem.type === 'NOTICE' ? 'megaphone' : 'information-circle'}
-                        size={18} 
-                        color={PRIMARY} 
-                     />
+                    <Ionicons name={selectedInboxItem.icon} size={18} color={PRIMARY} />
                   </View>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailCategoryText}>{selectedInboxItem.categoryText}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.detailCategoryText}>{selectedInboxItem.kind}</Text>
                 </Row>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSelectedInboxItem(null)} style={styles.closeIconBtn} activeOpacity={0.7}>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSelectedInboxItem(null)} style={styles.closeIconBtn}>
                   <Ionicons name="close" size={18} color={TEXT_SECONDARY} />
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
 
               <Text maxFontSizeMultiplier={1.3} style={styles.detailTitleText}>
                 {selectedInboxItem.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
               </Text>
-              
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailDateText}>
-                {new Date(selectedInboxItem.timestamp).toLocaleString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-              </Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.detailDateText}>{formatDateTime(selectedInboxItem.timestamp)}</Text>
 
               <Spacer size={24} />
 
-              <View style={styles.detailMessageCard}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
-              </View>
+              {selectedInboxItem.kind === 'PAYMENT' ? (
+                <View style={[styles.detailMessageCard, { backgroundColor: SURFACE }]}>
+                  <ReceiptBody title={selectedInboxItem.title} payment={selectedInboxItem.payment} tone={paymentToneFor(selectedInboxItem)} />
+                  {!selectedInboxItem.payment && (
+                    <>
+                      <Spacer size={10} />
+                      <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+                    </>
+                  )}
+                </View>
+              ) : selectedInboxItem.kind === 'ANNOUNCEMENT' ? (
+                <View style={[styles.detailMessageCard, styles.pinnedNoticeCard]}>
+                  <Ionicons name="pin" size={16} color={Colors.textMuted} style={styles.pinnedGlyph} />
+                  <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+                </View>
+              ) : (
+                <View style={styles.detailMessageCard}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.detailDescText}>{selectedInboxItem.desc}</Text>
+                </View>
+              )}
 
               <Spacer size={32} />
 
-              {selectedInboxItem.type === 'KYC' && (() => {
-                // `raw` for a KYC inbox item is always the exact GuestEntity it was built
-                // from (see inboxItems above: `raw: g`) — there is nothing to guess here.
-                // This used to fall back to name/room/text matching and, failing that, to
-                // "any resident with pending KYC" — meaning an owner could be shown a
-                // DIFFERENT resident's ID photo and selfie while Verify/Reject still (via
-                // item.raw.id) correctly acted on the one they opened. A decision made on
-                // the wrong person's identity photo, backend attribution notwithstanding.
-                const kycGuest = selectedInboxItem.raw;
+              {selectedInboxItem.kind === 'KYC' && selectedInboxItem.guest && (
+                <View style={styles.actionBlockBox}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Identity Verification Required</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Verify {selectedInboxItem.guest.name}'s identity documents.</Text>
+                  <Spacer size={16} />
+                  <KycDocumentsCard
+                    idPhotoUri={selectedInboxItem.guest.idProofPhotoUri}
+                    selfieUri={selectedInboxItem.guest.profilePhotoUri}
+                    emptyHint="No document photos uploaded yet."
+                  />
+                  <Spacer size={16} />
+                  <Row gap={12}>
+                    <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleApproveKyc(selectedInboxItem)}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
+                    </AnimatedPress>
+                    <AnimatedPress accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => handleRejectKyc(selectedInboxItem)}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
+                    </AnimatedPress>
+                  </Row>
+                </View>
+              )}
 
-                return (
-                  <View style={styles.actionBlockBox}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Identity Verification Required</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Verify {kycGuest?.name || selectedInboxItem.raw?.name || 'resident'}'s identity documents.</Text>
-                    <Spacer size={16} />
-                    <KycDocumentsCard
-                      idPhotoUri={kycGuest?.idProofPhotoUri}
-                      selfieUri={kycGuest?.profilePhotoUri}
-                      emptyHint="No document photos uploaded yet."
-                    />
-                    <Spacer size={16} />
-                    <Row gap={12}>
-                      <TouchableOpacity accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleApproveRequest(selectedInboxItem)}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => handleRejectRequest(selectedInboxItem)}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
-                      </TouchableOpacity>
-                    </Row>
-                  </View>
-                );
-              })()}
+              {selectedInboxItem.kind === 'PAYMENT' && selectedInboxItem.payment && (
+                <View style={styles.actionBlockBox}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Payment Awaiting Verification</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Confirm the money actually arrived before verifying.</Text>
+                  <Spacer size={16} />
+                  <Row gap={12}>
+                    <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleVerifyPayment(selectedInboxItem)}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text>
+                    </AnimatedPress>
+                    <AnimatedPress accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => openRejectPayment(selectedInboxItem)}>
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Reject</Text>
+                    </AnimatedPress>
+                  </Row>
+                </View>
+              )}
 
-              {selectedInboxItem.isProcurementApproval && (
+              {selectedInboxItem.kind === 'PROCUREMENT' && (
                 <View style={styles.actionBlockBox}>
                   <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Awaiting Your Approval</Text>
                   <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Choose a payment method and approve or reject on the Procurement screen.</Text>
                   <Spacer size={16} />
-                  <TouchableOpacity accessibilityRole="button"
-                    style={styles.actionApproveBtn}
-                    onPress={() => { setSelectedInboxItem(null); router.push('/procurement'); }}
-                    activeOpacity={0.85}
-                  >
+                  <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleReviewProcurement(selectedInboxItem)}>
                     <Row gap={8} align="center">
                       <Ionicons name="cart" size={16} color={SURFACE} />
                       <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Text>
                     </Row>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </View>
               )}
 
-              {selectedInboxItem.categoryText === 'MAINTENANCE' && (
+              {selectedInboxItem.kind === 'REQUEST' && (
                 <View style={styles.actionBlockBox}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>Resolve this issue</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>Instantly book a technician to fix this problem.</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>{selectedInboxItem.isMaintenanceFlavoured ? 'Resolve this issue' : 'Follow up'}</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>
+                    {canOpenTicket ? 'Open the full ticket for history and photos.' : 'A resolution here needs someone with access to the ticket.'}
+                  </Text>
                   <Spacer size={16} />
-                  <TouchableOpacity accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleBookService(selectedInboxItem)} activeOpacity={0.85}>
-                    <Row gap={8} align="center">
-                      <Ionicons name="construct" size={16} color={SURFACE} />
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Book Service Now</Text>
-                    </Row>
-                  </TouchableOpacity>
+                  <Row gap={12}>
+                    {canOpenTicket && (
+                      <AnimatedPress accessibilityRole="button" style={styles.actionApproveBtn} onPress={() => handleViewTicket(selectedInboxItem)}>
+                        <Row gap={8} align="center">
+                          <Ionicons name="document-text" size={16} color={SURFACE} />
+                          <Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>View Ticket</Text>
+                        </Row>
+                      </AnimatedPress>
+                    )}
+                    {canManage && selectedInboxItem.isMaintenanceFlavoured && (
+                      <AnimatedPress accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => handleBookService(selectedInboxItem)}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Book Service</Text>
+                      </AnimatedPress>
+                    )}
+                  </Row>
                 </View>
               )}
 
-              {(selectedInboxItem.type !== 'KYC' && selectedInboxItem.categoryText !== 'MAINTENANCE') && (
-                <TouchableOpacity accessibilityRole="button" style={styles.primaryDismissBtn} onPress={() => setSelectedInboxItem(null)} activeOpacity={0.85}>
+              {(selectedInboxItem.kind === 'ANNOUNCEMENT' || selectedInboxItem.kind === 'OTHER' || (selectedInboxItem.kind === 'PAYMENT' && !selectedInboxItem.payment)) && (
+                <AnimatedPress accessibilityRole="button" style={styles.primaryDismissBtn} onPress={() => setSelectedInboxItem(null)}>
                   <Text maxFontSizeMultiplier={1.3} style={styles.primaryDismissBtnText}>Got it</Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               )}
             </Animated.View>
           </Animated.View>
         </Modal>
       )}
+
+      {/* ── Reject payment reason ── */}
+      {/* Centered, not a bottom sheet: this stopped you mid-decision, and the reason it
+          collects cannot live in a native alert because `Alert.prompt` is iOS-only. */}
+      <TextPromptDialog
+        visible={!!rejectingKyc}
+        title="Reject these documents"
+        label="Reason"
+        placeholder="The ID photo is cropped — please re-upload the full card"
+        helper={`${rejectingKyc?.guest?.name ?? 'The resident'} sees this and re-uploads against it`}
+        confirmLabel="Reject"
+        destructive
+        required
+        onCancel={() => setRejectingKyc(null)}
+        onSave={submitRejectKyc}
+      />
+
+      <TextPromptDialog
+        visible={!!rejectingPayment}
+        title="Reject payment"
+        label="Reason"
+        placeholder="Amount doesn't match the UTR reference"
+        helper="The resident sees this, so say what was actually wrong"
+        confirmLabel="Reject payment"
+        destructive
+        required
+        busy={rejectPaymentMutation.isPending}
+        onCancel={() => setRejectingPayment(null)}
+        onSave={submitRejectPayment}
+      />
 
       {/* ── Publish New Notice Dialog ── */}
       {showBroadcastModal && (
@@ -591,125 +740,264 @@ export function OwnerAnnouncementsTab() {
           <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowBroadcastModal(false)} />
             <KeyboardAvoidingView behavior="padding" style={{ width: '100%', alignItems: 'center' }}>
-              <Animated.View entering={SlideInDown.duration(150)} style={styles.broadcastSheet}>
+              <Animated.View entering={SlideInDown.springify(150).dampingRatio(0.85)} style={styles.broadcastSheet}>
                 <View style={styles.sheetHandle} />
                 <Text maxFontSizeMultiplier={1.3} style={styles.sheetTitle}>New Announcement</Text>
                 <Spacer size={16} />
-                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Title (e.g. WiFi Maintenance)" style={styles.noticeInput} placeholder="Title (e.g. WiFi Maintenance)" placeholderTextColor={TEXT_SECONDARY} value={noticeTitle} onChangeText={setNoticeTitle} />
+                <OutlinedTextField
+                  label="Title"
+                  required
+                  placeholder="Water cut on Tuesday"
+                  value={noticeTitle}
+                  // Clears the moment they start fixing it, rather than making them submit
+                  // again to find out whether it counted.
+                  onChangeText={(t) => { setNoticeTitle(t); if (noticeErrors.title) setNoticeErrors((e) => ({ ...e, title: undefined })); }}
+                  error={noticeErrors.title}
+                />
                 <Spacer size={12} />
-                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Description" style={[styles.noticeInput, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]} placeholder="Description..." placeholderTextColor={TEXT_SECONDARY} value={noticeMessage} onChangeText={setNoticeMessage} multiline numberOfLines={3} />
+                <OutlinedTextField
+                  label="Message"
+                  required
+                  multiline
+                  placeholder="Supply is off from 10am to 2pm."
+                  helper="Everyone you pick below gets this on their phone"
+                  value={noticeMessage}
+                  onChangeText={(t) => { setNoticeMessage(t); if (noticeErrors.message) setNoticeErrors((e) => ({ ...e, message: undefined })); }}
+                  error={noticeErrors.message}
+                />
                 <Spacer size={16} />
                 <Text maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Target Audience</Text>
                 <Spacer size={8} />
                 <Row gap={8}>
                   {(['all', 'guest', 'staff', 'manager'] as const).map((aud) => (
-                    <TouchableOpacity accessibilityRole="button" key={aud} style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]} onPress={() => setNoticeAudience(aud)}>
+                    <AnimatedPress accessibilityRole="button" key={aud} style={[styles.smallChip, noticeAudience === aud && styles.smallChipActive]} onPress={() => setNoticeAudience(aud)}>
                       <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, noticeAudience === aud && styles.smallChipTextActive]}>
                         {aud === 'all' ? 'All' : aud === 'guest' ? 'Residents' : aud === 'staff' ? 'Staff' : 'Managers'}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   ))}
                 </Row>
                 <Spacer size={24} />
                 <Row gap={12}>
-                  <TouchableOpacity accessibilityRole="button" style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing} activeOpacity={0.8}>
+                  <AnimatedPress accessibilityRole="button" style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing}>
                     <Text maxFontSizeMultiplier={1.3} style={styles.publishBtnText}>{isPublishing ? 'Publishing...' : 'Publish'}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity accessibilityRole="button" style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)} activeOpacity={0.8}>
+                  </AnimatedPress>
+                  <AnimatedPress accessibilityRole="button" style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)}>
                     <Text maxFontSizeMultiplier={1.3} style={styles.publishCancelText}>Cancel</Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
               </Animated.View>
             </KeyboardAvoidingView>
           </Animated.View>
         </Modal>
       )}
-
     </View>
   );
 }
 
+// ── Decision card (X1 "decisions as cards with buttons") ───────────────────────────────────
+
+function DecisionCard({
+  item, onPress, onApproveKyc, onRejectKyc, onVerifyPayment, onRejectPayment, onReviewProcurement,
+}: {
+  item: InboxItem;
+  onPress: () => void;
+  onApproveKyc: () => void;
+  onRejectKyc: () => void;
+  onVerifyPayment: () => void;
+  onRejectPayment: () => void;
+  onReviewProcurement: () => void;
+}) {
+  // Amber reads as "money or approval waiting" — the same tint C3 tints a nav tab with for
+  // the identical reason. KYC gets the cooler brand tint: a document review, not overdue
+  // money, and conflating the two would blunt amber's meaning everywhere else it appears.
+  const tint = item.kind === 'KYC' ? DeckTints.brand : DeckTints.amber;
+
+  return (
+    <Card containerColor={tint.fill} borderColor={tint.fill} padding={16} style={{ marginBottom: 12 }}>
+      <AnimatedPress accessibilityRole="button" onPress={onPress}>
+        <Row gap={8} align="center">
+          <Ionicons name={item.icon} size={16} color={tint.ink} />
+          <Txt size={11} weight="800" color={tint.ink} style={{ letterSpacing: 0.4, flex: 1 }}>{item.kind} · NEEDS YOUR DECISION</Txt>
+          <Txt size={11} color={tint.sub}>{formatTimeAgo(item.timestamp)}</Txt>
+        </Row>
+        <Spacer size={8} />
+        <Txt size={15} weight="800" color={tint.ink}>{item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}</Txt>
+        <Spacer size={4} />
+        <Txt size={12.5} color={tint.sub}>{item.desc}</Txt>
+      </AnimatedPress>
+
+      {item.kind === 'KYC' && item.guest && (
+        <>
+          <Spacer size={12} />
+          <KycDocumentsCard idPhotoUri={item.guest.idProofPhotoUri} selfieUri={item.guest.profilePhotoUri} emptyHint="No document photos uploaded yet." />
+        </>
+      )}
+
+      {item.kind === 'PAYMENT' && item.payment && (
+        <>
+          <Spacer size={12} />
+          <View style={{ backgroundColor: SURFACE, borderRadius: Radii.control, padding: 12 }}>
+            <ReceiptBody title="Submitted for review" payment={item.payment} tone={paymentToneFor(item)} />
+          </View>
+        </>
+      )}
+
+      <Spacer size={14} />
+      {item.kind === 'KYC' && (
+        <Row gap={10}>
+          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onApproveKyc}><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text></AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectKyc}><Text maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Text></AnimatedPress>
+        </Row>
+      )}
+      {item.kind === 'PAYMENT' && (
+        <Row gap={10}>
+          <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onVerifyPayment}><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Verify</Text></AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.cardRejectBtn} onPress={onRejectPayment}><Text maxFontSizeMultiplier={1.3} style={[styles.actionRejectText, { color: Colors.danger }]}>Reject</Text></AnimatedPress>
+        </Row>
+      )}
+      {item.kind === 'PROCUREMENT' && (
+        <AnimatedPress accessibilityRole="button" style={styles.cardApproveBtn} onPress={onReviewProcurement}>
+          <Row gap={6} align="center" justify="center"><Ionicons name="cart" size={14} color={SURFACE} /><Text maxFontSizeMultiplier={1.3} style={styles.actionApproveText}>Review in Procurement</Text></Row>
+        </AnimatedPress>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * The composer button, draggable so it can be moved off whatever it happens to be covering.
+ *
+ * Was the app's last `PanResponder`, and the only animation left that predated Reanimated. It
+ * also had no bounds at all: a fling sent it off-screen with no way back short of restarting
+ * the app, because nothing clamped it and nothing persisted it either. It is gesture-handler
+ * and Reanimated now — the same stack the chart scrub uses — and it springs back inside the
+ * screen on release rather than keeping wherever the finger let go.
+ *
+ * The position is still deliberately not persisted. Somewhere to put it while reading one long
+ * notice is the entire use; remembering that choice forever is a different feature, and one
+ * nobody asked for.
+ */
+const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
+  const insets = useSafeAreaInsets();
+  const { width: screenW, height: screenH } = useWindowDimensions();
+  const size = useSharedValue({ w: 190, h: 48 });
+
+  const offsetX = useSharedValue(0);
+  const offsetY = useSharedValue(0);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+
+  const drag = Gesture.Pan()
+    .onStart(() => {
+      startX.value = offsetX.value;
+      startY.value = offsetY.value;
+    })
+    .onUpdate((e) => {
+      offsetX.value = startX.value + e.translationX;
+      offsetY.value = startY.value + e.translationY;
+    })
+    .onEnd(() => {
+      // Clamped against the FAB's own measured box rather than a guessed one, so a long label
+      // cannot be dragged half off the left edge. Spring, not timing: the finger was driving
+      // this a frame ago, and it should decelerate the way the drag did.
+      const minX = -(screenW - size.value.w - 20);
+      const maxY = insets.bottom + 60;
+      const minY = -(screenH - size.value.h - 140);
+      offsetX.value = withSpring(Math.min(0, Math.max(minX, offsetX.value)), FAB_SPRING);
+      offsetY.value = withSpring(Math.min(maxY, Math.max(minY, offsetY.value)), FAB_SPRING);
+    });
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: offsetX.value }, { translateY: offsetY.value }],
+  }));
+
+  return (
+    <GestureDetector gesture={drag}>
+      <Animated.View
+        onLayout={(e) => { size.value = { w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height }; }}
+        style={[styles.fab, { bottom: Math.max(insets.bottom + 80, 80) }, style]}
+      >
+        <AnimatedPress accessibilityRole="button" onPress={onPress} style={styles.fabInner}>
+          <Ionicons name="megaphone-outline" size={18} color={SURFACE} />
+          <Text maxFontSizeMultiplier={1.3} style={styles.fabText}>New Announcement</Text>
+        </AnimatedPress>
+      </Animated.View>
+    </GestureDetector>
+  );
+};
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-  
-  mainScroll: { paddingHorizontal: 20, paddingTop: 8 },
-  
-  summaryContainer: { marginTop: 0 },
-  summaryTitle: { fontSize: 24, fontWeight: '800', color: TEXT_PRIMARY },
-  summarySub: { fontSize: 14, fontWeight: '500', color: TEXT_SECONDARY },
-  
+  mainScroll: { paddingHorizontal: 20, paddingTop: 12 },
+
+  pinnedStrip: { flexDirection: 'row', alignItems: 'center', height: 44, paddingHorizontal: 14, borderRadius: Radii.control, backgroundColor: DeckTints.amber.fill },
+
   markAllReadBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: 6, paddingVertical: 4, paddingHorizontal: 4 },
   markAllReadText: { fontSize: 12.5, fontWeight: '700', color: PRIMARY },
 
-  statusRow: { flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 12, borderRadius: 8, backgroundColor: SURFACE },
-  statusSuccess: { backgroundColor: '#F0FDF4' },
-  statusSuccessText: { fontSize: 13, fontWeight: '600', color: '#166534', marginLeft: 8 },
-  statusWarning: { backgroundColor: '#FFFBEB' },
-  statusWarningText: { fontSize: 13, fontWeight: '600', color: '#B45309', marginLeft: 8 },
-
   filterScrollContent: { paddingRight: 20 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER, marginRight: 8 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radii.sheet, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER, marginRight: 8 },
   filterChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
   filterChipText: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
   filterChipTextActive: { color: SURFACE },
-  
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: TEXT_PRIMARY },
-  emptySub: { fontSize: 14, color: TEXT_SECONDARY, marginTop: 4 },
 
-  listContainer: { backgroundColor: SURFACE, borderRadius: 16, borderWidth: 1, borderColor: DIVIDER, overflow: 'hidden' },
-  notifItemContainer: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SURFACE },
-  notifItemUnread: { backgroundColor: UNREAD_SURFACE },
+  listContainer: { backgroundColor: SURFACE, borderRadius: Radii.card, borderWidth: 1, borderColor: DIVIDER, overflow: 'hidden' },
+  row: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SURFACE },
+  rowDense: { paddingVertical: 9 },
   divider: { height: 1, backgroundColor: DIVIDER },
-  
-  iconContainer: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
-  iconContainerHigh: { backgroundColor: '#FEF2F2' },
-  unreadIndicator: { width: 6, height: 6, borderRadius: 3, backgroundColor: PRIMARY },
-  categoryLabel: { fontSize: 11, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5 },
-  timeText: { fontSize: 12, fontWeight: '500', color: TEXT_SECONDARY },
-  titleText: { fontSize: 15, fontWeight: '500', color: TEXT_PRIMARY },
-  titleTextUnread: { fontWeight: '700' },
-  descText: { fontSize: 14, color: TEXT_SECONDARY, lineHeight: 20 },
-  
+
+  iconTile: { width: 36, height: 36, borderRadius: Radii.control, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
+  iconTileDense: { width: 22, height: 22, borderRadius: Radii.badge },
+  unreadDot: { width: 6, height: 6, borderRadius: Radii.pill, backgroundColor: PRIMARY },
+
   fab: { position: 'absolute', right: 20, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-  fabInner: { height: 48, paddingHorizontal: 16, borderRadius: 24, backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  fabInner: { height: 48, paddingHorizontal: 16, borderRadius: Radii.sheet, backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   fabText: { fontSize: 14, fontWeight: '700', color: SURFACE, marginLeft: 8 },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(23, 24, 28, 0.45)', justifyContent: 'flex-end' },
   detailSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 48, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
   broadcastSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 40 },
-  sheetHandle: { width: 48, height: 5, borderRadius: 2.5, backgroundColor: DIVIDER, alignSelf: 'center', marginBottom: 24 },
-  
-  detailIconCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  sheetHandle: { width: 48, height: 5, borderRadius: Radii.pill, backgroundColor: DIVIDER, alignSelf: 'center', marginBottom: 24 },
+
+  detailIconCircle: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   detailCategoryText: { fontSize: 12, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5, textTransform: 'uppercase' },
-  closeIconBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
-  
+  closeIconBtn: { width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
+
   detailTitleText: { fontSize: 22, fontWeight: '800', color: TEXT_PRIMARY, lineHeight: 28 },
   detailDateText: { fontSize: 13, fontWeight: '600', color: TEXT_SECONDARY, marginTop: 6 },
-  
-  detailMessageCard: { backgroundColor: '#F9FAFB', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: DIVIDER },
+
+  detailMessageCard: { backgroundColor: '#F9FAFB', padding: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: DIVIDER },
   detailDescText: { fontSize: 15, color: '#374151', lineHeight: 24 },
-  
-  actionBlockBox: { backgroundColor: SURFACE, borderWidth: 1, borderColor: PRIMARY, borderRadius: 16, padding: 20 },
+  pinnedNoticeCard: { backgroundColor: Colors.surfaceMuted, paddingTop: 26 },
+  pinnedGlyph: { position: 'absolute', top: 10, left: 16, transform: [{ rotate: '-18deg' }] },
+
+  actionBlockBox: { backgroundColor: SURFACE, borderWidth: 1, borderColor: PRIMARY, borderRadius: Radii.card, padding: 20 },
   actionBlockLabel: { fontSize: 14, fontWeight: '800', color: PRIMARY },
   actionBlockDesc: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 4 },
-  actionApproveBtn: { flex: 1, height: 48, backgroundColor: '#16A34A', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionApproveBtn: { flex: 1, height: 48, backgroundColor: Colors.success, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
   actionApproveText: { fontSize: 15, fontWeight: '800', color: SURFACE },
-  actionRejectBtn: { flex: 1, height: 48, backgroundColor: '#DC2626', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionRejectBtn: { flex: 1, height: 48, backgroundColor: Colors.danger, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
   actionRejectText: { fontSize: 15, fontWeight: '800', color: SURFACE },
-  
-  primaryDismissBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+
+  cardApproveBtn: { flex: 1, height: 44, backgroundColor: Colors.success, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' },
+  cardRejectBtn: { flex: 1, height: 44, backgroundColor: SURFACE, borderWidth: 1, borderColor: Colors.danger, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' },
+
+  primaryDismissBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
   primaryDismissBtnText: { fontSize: 16, fontWeight: '800', color: SURFACE },
-  
+
   sheetTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
-  noticeInput: { borderWidth: 1, borderColor: DIVIDER, backgroundColor: BG, borderRadius: 12, paddingHorizontal: 16, fontSize: 14, color: TEXT_PRIMARY, height: 48 },
   inputLabelStyle: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
-  smallChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER },
+  smallChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.control, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER },
   smallChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
   smallChipText: { fontSize: 12, fontWeight: '600', color: TEXT_PRIMARY },
   smallChipTextActive: { color: SURFACE },
-  publishBtn: { flex: 2, height: 48, backgroundColor: PRIMARY, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  publishBtn: { flex: 2, height: 48, backgroundColor: PRIMARY, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
   publishBtnText: { fontSize: 15, fontWeight: '700', color: SURFACE },
-  publishCancelBtn: { flex: 1, height: 48, borderWidth: 1, borderColor: DIVIDER, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: SURFACE },
+  publishCancelBtn: { flex: 1, height: 48, borderWidth: 1, borderColor: DIVIDER, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center', backgroundColor: SURFACE },
   publishCancelText: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+
+  receiptDivider: { height: 12, justifyContent: 'center', marginVertical: 4 },
+  receiptDash: { height: 1, borderWidth: 1, borderColor: DIVIDER, borderStyle: 'dashed' },
+  receiptNotch: { position: 'absolute', top: -1, width: 14, height: 14, borderRadius: Radii.pill, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER },
 });

@@ -3,6 +3,7 @@ import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import { hapticSuccess } from "../../utils/haptics";
 import * as map from "../../data/mappers";
 import type { AppRoleNotificationEntity } from "../../types";
 
@@ -160,6 +161,7 @@ export function useBroadcastNotificationMutation(pgId?: string) {
   return useMutation({
     mutationFn: (params: BroadcastParams) => broadcastNotification(params),
     onSuccess: () => {
+      hapticSuccess();
       if (pgId) {
         qc.invalidateQueries({ queryKey: qk.notifications.list(pgId) });
         qc.invalidateQueries({ queryKey: qk.notifications.all(pgId) });

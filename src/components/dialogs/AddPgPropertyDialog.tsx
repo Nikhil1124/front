@@ -2,7 +2,7 @@
  * AddPgPropertyDialog — port of Kotlin `AddPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Dimensions } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
@@ -11,7 +11,7 @@ import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
 import type { PickedLocation } from '@/features/places/pendingLocation';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -31,10 +31,13 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
   const [mgrPin, setMgrPin] = useState('1234');
   const [location, setLocation] = useState<PickedLocation | null>(null);
   const [picking, setPicking] = useState(false);
+  const [nameError, setNameError] = useState<string | undefined>();
+  const [addressError, setAddressError] = useState<string | undefined>();
 
   const handleSave = async () => {
     if (!name.trim() || !address.trim()) {
-      Alert.alert('Validation', 'PG Name and Address are required.');
+      setNameError(name.trim() ? undefined : 'Name the property');
+      setAddressError(address.trim() ? undefined : 'Enter the property address');
       return;
     }
     if (!location) {
@@ -79,7 +82,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
         <View style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
-            borderRadius={24}
+            borderRadius={Radii.sheet}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[20, 20]}
@@ -115,7 +118,8 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               label="Property / PG Name *"
               placeholder="Koramangala Executive Hub"
               value={name}
-              onChangeText={setName}
+              onChangeText={(v) => { setName(v); if (nameError) setNameError(undefined); }}
+              error={nameError}
               containerColor={Colors.surfaceMuted}
               focusedBorderColor={Colors.primary}
               unfocusedBorderColor={Colors.borderSubtle}
@@ -123,7 +127,8 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             <AddressAutocompleteField
               label="Property Address *"
               value={address}
-              onChangeText={setAddress}
+              onChangeText={(v) => { setAddress(v); if (addressError) setAddressError(undefined); }}
+              error={addressError}
               onLocationResolved={(loc) => {
                 // Pre-seed map pin from autocomplete pick; user can still open the picker to adjust
                 if (!location) setLocation(loc);
@@ -186,7 +191,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               onPress={handleSave}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
-              borderRadius={12}
+              borderRadius={Radii.card}
               height={44}
               style={{ flex: 1 }}
             >
@@ -196,7 +201,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               onPress={onDismiss}
               borderColor={Colors.borderSubtle}
               textColor={Colors.textPrimary}
-              borderRadius={12}
+              borderRadius={Radii.card}
               height={44}
               style={{ flex: 1 }}
             >
@@ -213,18 +218,14 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
   headerIconBox: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: Radii.control,
     backgroundColor: '#EEF2FF',
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
   sectionCard: {
     backgroundColor: Colors.surfaceMuted,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    padding: 12,
-  },
-});
+    padding: 12 } });

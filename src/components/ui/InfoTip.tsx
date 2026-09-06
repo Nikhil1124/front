@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 interface Props {
   text: string;
@@ -25,7 +25,7 @@ export function InfoTip({ text, size = 15 }: Props) {
         <Pressable accessibilityRole="button" style={styles.backdrop} onPress={() => setVisible(false)}>
           <Card
             containerColor={Colors.surface}
-            borderRadius={14}
+            borderRadius={Radii.card}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[14, 14]}

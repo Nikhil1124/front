@@ -14,18 +14,27 @@
  * profile photo anywhere in the app — see KycUploadDialog.tsx for the real
  * expo-image-picker pattern to build that against when a real entry point is added.
  */
-import { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { usePathname } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
-import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
+import { Dock, DockAlert, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
+import { centreOut, NAV_PROFILES } from '@/data/navTabs';
 import { Colors } from '@/theme';
 import Animated from 'react-native-reanimated';
 import { tabEntering, tabExiting } from '@/theme';
 
+/**
+ * The bar no longer lists home first — the frequency ranking puts the least-used destination
+ * in the leftmost slot — and without this the navigator would take its initial route from
+ * whichever trigger happens to come first, landing every session on Support instead of
+ * home. `anchor` pins it, and also sorts home to the head of the navigator's own screen
+ * list. Do not delete this when reordering the bar; that is exactly when it matters.
+ */
+export const unstable_settings = { anchor: 'home' };
+
 export default function GuestTabsLayout() {
   const pathname = usePathname();
-  const { dockStyle, contentPaddingBottom } = useDock();
+  const { dockStyle, contentPaddingBottom, counts, alert } = useDock('resident');
 
   return (
     <Tabs style={styles.root}>
@@ -41,28 +50,30 @@ export default function GuestTabsLayout() {
         </Animated.View>
       </View>
 
-      {/* Sticky bottom dock — see Dock/useDock in HeadlessDockTabButton.tsx */}
-      <Dock style={dockStyle}>
-        <TabTrigger name="home" href="/home" asChild>
-          <HeadlessDockTabButton icon="home-outline" label="Home" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
-        </TabTrigger>
-        <TabTrigger name="meals" href="/meals" asChild>
-          <HeadlessDockTabButton icon="restaurant-outline" label="Meals" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
-        </TabTrigger>
-        <TabTrigger name="guest-payments" href="/guest-payments" asChild>
-          <HeadlessDockTabButton icon="card-outline" label="Payments" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
-        </TabTrigger>
-        <TabTrigger name="profile" href="/profile" asChild>
-          <HeadlessDockTabButton icon="person-outline" label="Profile" activeTint={Colors.primary} activeBg={Colors.surfaceElevated} />
-        </TabTrigger>
+      {/* Context strip — a sibling of Dock, never a child: TabList is a row and its children
+          are walked for triggers. */}
+      <DockAlert alert={alert} />
 
-        {/* Hidden trigger to register support route in the tabs navigator */}
-        <TabTrigger name="support" href="/support" style={{ display: 'none' }} />
+      {/* Sticky bottom dock. Slot order is computed from the frequency ranking in navTabs.ts,
+          not written out here — `.map` is fine inside TabList because `Children.forEach`
+          flattens arrays, which is what Tabs walks to find the triggers.
+          `support` used to be a hidden trigger with no way to reach it from the bar; it is a
+          real destination now, which is what fills the fifth slot. */}
+      <Dock style={dockStyle}>
+        {centreOut(NAV_PROFILES.resident).map((d) => (
+          <TabTrigger key={d.name} name={d.name} href={d.href} asChild>
+            <HeadlessDockTabButton
+              icon={d.icon}
+              label={d.label}
+              pending={d.signal ? counts[d.signal] : undefined}
+              activeTint={Colors.primary}
+            />
+          </TabTrigger>
+        ))}
       </Dock>
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.canvas },
-});
+  root: { flex: 1, backgroundColor: Colors.canvas } });

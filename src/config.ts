@@ -38,6 +38,8 @@ export const API = {
   // rotation is revocation, since a property has exactly one — and DELETE turns self-join
   // off. Owner-only, because whoever holds the code can create an account here.
   PG_JOIN_CODE: (pgId: string) => `/v1/pgs/${pgId}/join-code`,
+  //: What a lobby code points at, before the joiner has an account.
+  PG_JOIN_PREVIEW: (code: string) => `/v1/pgs/join-preview/${encodeURIComponent(code)}`,
   // A property's UPI accounts — a list, at most one active. Owner-only on the server.
   PG_UPI_IDS: (pgId: string) => `/v1/pgs/${pgId}/upi-ids`,
   PG_UPI_ID: (pgId: string, upiId: string) => `/v1/pgs/${pgId}/upi-ids/${upiId}`,

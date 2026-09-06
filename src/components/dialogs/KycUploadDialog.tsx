@@ -23,16 +23,16 @@
  */
 import { useEffect, useState } from 'react';
 import {
-  Modal, View, StyleSheet, Pressable, TouchableOpacity, Alert, Platform, BackHandler,
+  Modal, View, StyleSheet, Pressable, Alert, Platform, BackHandler,
   KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors, Layout } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 const ID_TYPES = ['Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID'];
 
@@ -132,9 +132,11 @@ export function KycUploadDialog({
   const isAadhaar = selectedIdType === 'Aadhaar Card';
   const aadhaarDigits = idNumber.replace(/\D/g, '');
 
+  const [idError, setIdError] = useState<string | undefined>();
+
   const handleSubmit = async () => {
     if (isAadhaar && aadhaarDigits.length < 4) {
-      Alert.alert('Validation', 'Enter your 12-digit Aadhaar number. Only the last four digits are stored.');
+      setIdError('Enter your Aadhaar number — only the last four digits are stored');
       return;
     }
     if (!idPhotoUri || !profilePhotoUri) {
@@ -166,7 +168,7 @@ export function KycUploadDialog({
         <Pressable accessibilityRole="button" onPress={() => {/* swallow tap so it doesn't bubble */}} style={styles.cardWrap}>
           <Card
             containerColor={Colors.surface}
-            borderRadius={20}
+            borderRadius={Radii.sheet}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[20, 20]}
@@ -193,7 +195,7 @@ export function KycUploadDialog({
                 size={20}
                 tint={Colors.textSecondary}
                 containerColor={Colors.surfaceMuted}
-                borderRadius={999}
+                borderRadius={Radii.pill}
                 padding={6}
                 hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
                 testID="kyc_upload_close_btn"
@@ -243,7 +245,7 @@ export function KycUploadDialog({
                   onPress={() => choosePhoto(setProfilePhotoUri, 'Selfie')}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
-                  borderRadius={Layout.borderRadiusButton}
+                  borderRadius={Radii.control}
                   height={36}
                   testID="kyc_upload_selfie_btn"
                 >
@@ -258,28 +260,28 @@ export function KycUploadDialog({
             {/* 2. ID type dropdown */}
             <Txt variant="body" weight="700" color={Colors.primary}>2. ID Document Type</Txt>
             <Spacer size={8} />
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               onPress={() => setShowDropdown(true)}
               style={styles.dropdownBox}
               testID="kyc_id_type_dropdown"
             >
               <Txt variant="body" color={Colors.textPrimary}>{selectedIdType}</Txt>
               <Ionicons name="chevron-down" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
+            </AnimatedPress>
             {/* Dropdown modal — for clean tap-outside-to-close */}
             <Modal visible={showDropdown} transparent animationType="fade" onRequestClose={() => setShowDropdown(false)}>
               <Pressable accessibilityRole="button" style={styles.dropdownBackdrop} onPress={() => setShowDropdown(false)}>
                 <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
                 <View style={styles.dropdownMenu}>
                   {ID_TYPES.map((t) => (
-                    <TouchableOpacity accessibilityRole="button"
+                    <AnimatedPress accessibilityRole="button"
                       key={t}
                       onPress={() => { setSelectedIdType(t); setShowDropdown(false); }}
                       style={styles.dropdownItem}
                     >
                       <Txt variant="body" color={Colors.textPrimary}>{t}</Txt>
                       {selectedIdType === t && <Ionicons name="checkmark" size={16} color={Colors.primary} />}
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   ))}
                 </View>
               </Pressable>
@@ -292,7 +294,8 @@ export function KycUploadDialog({
               label={isAadhaar ? 'Aadhaar Number *' : 'ID Document Number (optional)'}
               placeholder={isAadhaar ? '1234 5678 9012' : 'Not required — we read it from your photo'}
               value={idNumber}
-              onChangeText={setIdNumber}
+              onChangeText={(v) => { setIdNumber(v); if (idError) setIdError(undefined); }}
+              error={idError}
               keyboardType={isAadhaar ? 'number-pad' : 'default'}
               testID="kyc_id_number_input"
             />
@@ -318,7 +321,7 @@ export function KycUploadDialog({
                   onPress={() => choosePhoto(setIdPhotoUri, 'ID Document Photo')}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
-                  borderRadius={Layout.borderRadiusButton}
+                  borderRadius={Radii.control}
                   height={36}
                   testID="kyc_upload_id_doc_btn"
                 >
@@ -338,7 +341,7 @@ export function KycUploadDialog({
                 onPress={handleSubmit}
                 containerColor={Colors.primary}
                 textColor={Colors.textInverse}
-                borderRadius={Layout.borderRadiusButton}
+                borderRadius={Radii.control}
                 height={48}
                 loading={submitting}
                 style={{ flex: 1 }}
@@ -353,7 +356,7 @@ export function KycUploadDialog({
                 onPress={onDismiss}
                 borderColor={Colors.borderMuted}
                 textColor={Colors.textSecondary}
-                borderRadius={Layout.borderRadiusButton}
+                borderRadius={Radii.control}
                 height={48}
                 testID="kyc_cancel_btn"
               >
@@ -381,7 +384,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   titleIconWrap: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: Radii.control,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -389,10 +392,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: Colors.alertGradientStart,
     borderWidth: 1, borderColor: Colors.danger,
-    borderRadius: Layout.borderRadiusCard, padding: 12,
+    borderRadius: Radii.card, padding: 12,
   },
   photoBox: {
-    width: 80, height: 80, borderRadius: 12,
+    width: 80, height: 80, borderRadius: Radii.card,
     backgroundColor: Colors.surfaceMuted,
     borderWidth: 1.5, borderColor: Colors.borderMuted, borderStyle: 'dashed',
     alignItems: 'center', justifyContent: 'center',
@@ -402,7 +405,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.success, borderStyle: 'solid',
   },
   idPhotoBox: {
-    width: 110, height: 75, borderRadius: 12,
+    width: 110, height: 75, borderRadius: Radii.card,
     backgroundColor: Colors.surfaceMuted,
     borderWidth: 1.5, borderColor: Colors.borderMuted, borderStyle: 'dashed',
     alignItems: 'center', justifyContent: 'center',
@@ -410,7 +413,7 @@ const styles = StyleSheet.create({
   dropdownBox: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1, borderColor: Colors.borderMuted,
-    borderRadius: Layout.borderRadiusButton, paddingHorizontal: 12, paddingVertical: 14,
+    borderRadius: Radii.control, paddingHorizontal: 12, paddingVertical: 14,
     backgroundColor: Colors.surfaceMuted,
   },
   dropdownBackdrop: {
@@ -418,7 +421,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', paddingHorizontal: 24,
   },
   dropdownMenu: {
-    backgroundColor: Colors.surface, borderRadius: Layout.borderRadiusCard,
+    backgroundColor: Colors.surface, borderRadius: Radii.card,
     borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden',
   },
   dropdownItem: {

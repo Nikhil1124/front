@@ -18,7 +18,7 @@ import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { useComplaintQuery } from '@/features/requests/useComplaints';
 import { tradeForComplaint } from '@/features/requests/technicianTrades';
 import { useAuthStore } from '@/store/authStore';
-import { Colors, Layout } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 export function TicketDetailForRoleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,7 +40,7 @@ export function TicketDetailForRoleScreen() {
         <ErrorState error={error} title="Could not load this ticket" onRetry={refetch} />
       ) : (
         <View style={styles.body}>
-          <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Row gap={10} align="center">
               <View style={[styles.badge, { backgroundColor: isComplaint ? `${Colors.danger}14` : `${Colors.success}14` }]}>
                 <Ionicons
@@ -60,7 +60,7 @@ export function TicketDetailForRoleScreen() {
             <Txt size={13} color={Colors.textSecondary} style={{ lineHeight: 19 }}>{ticket.description}</Txt>
           </Card>
 
-          <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
               {ticket.mediaUri ? 'ATTACHED EVIDENCE' : 'EVIDENCE'}
             </Txt>
@@ -69,7 +69,7 @@ export function TicketDetailForRoleScreen() {
           </Card>
 
           {ticket.adminResponse ? (
-            <Card containerColor={Colors.surfaceElevated} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+            <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
               <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>YOUR RESPONSE</Txt>
               <Spacer size={6} />
               <Txt size={13} color={Colors.textPrimary}>{ticket.adminResponse}</Txt>
@@ -81,7 +81,7 @@ export function TicketDetailForRoleScreen() {
               onPress={() => router.push(`/book-technician/${ticket.id}`)}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
-              borderRadius={Layout.borderRadiusButton}
+              borderRadius={Radii.control}
               height={50}
             >
               <Ionicons name={spec.icon as any} size={18} color={Colors.textInverse} />
@@ -96,7 +96,7 @@ export function TicketDetailForRoleScreen() {
 
 const styles = StyleSheet.create({
   body: { padding: 16, gap: 14 },
-  badge: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: 36, height: 36, borderRadius: Radii.pill, alignItems: 'center', justifyContent: 'center' },
 });
 
 export default TicketDetailForRoleScreen;

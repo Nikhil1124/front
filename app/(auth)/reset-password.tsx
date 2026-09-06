@@ -7,13 +7,13 @@
  * `(auth)` group) it skips straight to the new-password step with `token` already filled in.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { StyleSheet, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Txt, Btn, Row, Spacer, IconBtn } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { FormScroll } from '@/components/ui/FormScroll';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import * as map from '@/data/mappers';
 import { useRequestPasswordResetMutation, useConfirmPasswordResetMutation } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
@@ -33,6 +33,7 @@ export default function ResetPasswordScreen() {
   const [token, setToken] = useState(tokenParam ?? '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetErrors, setResetErrors] = useState<{ token?: string; next?: string; confirm?: string }>({});
 
   const showConfirmStep = requested || !!tokenParam;
 
@@ -50,18 +51,13 @@ export default function ResetPasswordScreen() {
   };
 
   const handleConfirm = async () => {
-    if (!token.trim()) {
-      Alert.alert('Error', 'Paste the reset code from your email.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      Alert.alert('Error', 'New password must be at least 8 characters.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match.');
-      return;
-    }
+    const nextErrors = {
+      token: token.trim() ? undefined : 'Paste the code from your email',
+      next: newPassword.length < 8 ? 'At least 8 characters' : undefined,
+      confirm: newPassword && newPassword !== confirmPassword ? "This doesn't match" : undefined,
+    };
+    setResetErrors(nextErrors);
+    if (nextErrors.token || nextErrors.next || nextErrors.confirm) return;
     try {
       await confirmMutation.mutateAsync({ token: token.trim(), newPassword });
       toast('success', 'Password updated', 'You are signed in.');
@@ -105,7 +101,7 @@ export default function ResetPasswordScreen() {
             disabled={requestMutation.isPending || !phone.trim()}
             containerColor={Colors.primary}
             textColor={Colors.textInverse}
-            borderRadius={12}
+            borderRadius={Radii.card}
             height={50}
           >
             <Txt variant="cardTitle" color={Colors.textInverse}>Send Reset Link</Txt>
@@ -121,7 +117,8 @@ export default function ResetPasswordScreen() {
           <OutlinedTextField
             label="Reset Code"
             value={token}
-            onChangeText={setToken}
+            onChangeText={(v) => { setToken(v); if (resetErrors.token) setResetErrors((e) => ({ ...e, token: undefined })); }}
+            error={resetErrors.token}
             leadingIcon="key"
             editable={!tokenParam}
             style={{ marginBottom: 12, opacity: tokenParam ? 0.6 : 1 }}
@@ -129,7 +126,9 @@ export default function ResetPasswordScreen() {
           <OutlinedTextField
             label="New Password * (min 8 characters)"
             value={newPassword}
-            onChangeText={setNewPassword}
+            onChangeText={(v) => { setNewPassword(v); if (resetErrors.next) setResetErrors((e) => ({ ...e, next: undefined })); }}
+            error={resetErrors.next}
+            helper="At least 8 characters"
             leadingIcon="lock-closed"
             secureTextEntry
             style={{ marginBottom: 12 }}
@@ -137,7 +136,8 @@ export default function ResetPasswordScreen() {
           <OutlinedTextField
             label="Confirm New Password *"
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={(v) => { setConfirmPassword(v); if (resetErrors.confirm) setResetErrors((e) => ({ ...e, confirm: undefined })); }}
+            error={resetErrors.confirm}
             leadingIcon="lock-closed"
             secureTextEntry
             style={{ marginBottom: 16 }}
@@ -148,7 +148,7 @@ export default function ResetPasswordScreen() {
             disabled={confirmMutation.isPending}
             containerColor={Colors.primary}
             textColor={Colors.textInverse}
-            borderRadius={12}
+            borderRadius={Radii.card}
             height={50}
           >
             <Txt variant="cardTitle" color={Colors.textInverse}>Set New Password</Txt>
@@ -158,7 +158,7 @@ export default function ResetPasswordScreen() {
             onPress={() => { setRequested(false); setToken(''); }}
             containerColor="transparent"
             textColor={Colors.textMuted}
-            borderRadius={12}
+            borderRadius={Radii.card}
             height={44}
           >
             <Txt variant="body" color={Colors.textMuted}>Send another link</Txt>
@@ -171,5 +171,4 @@ export default function ResetPasswordScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
-  scroll: { padding: 24, paddingBottom: 100 },
-});
+  scroll: { padding: 24, paddingBottom: 100 } });

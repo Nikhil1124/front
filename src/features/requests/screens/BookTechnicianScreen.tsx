@@ -23,7 +23,7 @@ import { useComplaintQuery, useEscalateComplaintMutation } from '@/features/requ
 import { tradeForComplaint, draftNoteFor } from '@/features/requests/technicianTrades';
 import { useAuthStore } from '@/store/authStore';
 import { PGowApiError } from '@/data/apiClient';
-import { Colors, Layout } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 export function BookTechnicianScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -79,7 +79,7 @@ export function BookTechnicianScreen() {
           {/* What is being booked, and for whom */}
           <Card
             containerColor={Colors.surface}
-            borderRadius={Layout.borderRadiusCard}
+            borderRadius={Radii.card}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[16, 16]}
@@ -112,7 +112,7 @@ export function BookTechnicianScreen() {
           {ticket.mediaUri ? (
             <Card
               containerColor={Colors.surface}
-              borderRadius={Layout.borderRadiusCard}
+              borderRadius={Radii.card}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[16, 16]}
@@ -128,7 +128,7 @@ export function BookTechnicianScreen() {
           {/* The brief */}
           <Card
             containerColor={Colors.surface}
-            borderRadius={Layout.borderRadiusCard}
+            borderRadius={Radii.card}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[16, 16]}
@@ -154,7 +154,7 @@ export function BookTechnicianScreen() {
             loading={escalate.isPending}
             containerColor={Colors.primary}
             textColor={Colors.textInverse}
-            borderRadius={Layout.borderRadiusButton}
+            borderRadius={Radii.control}
             height={50}
             testID="book_technician_submit"
           >
@@ -175,7 +175,7 @@ export function BookTechnicianScreen() {
 const styles = StyleSheet.create({
   body: { padding: 16, gap: 14, paddingBottom: 40 },
   tradeBubble: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 40, height: 40, borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center', justifyContent: 'center',
   },

@@ -8,15 +8,12 @@ import {
   Alert,
   View,
   StyleSheet,
-  TouchableOpacity,
-  TextInput,
   Text,
-  ActivityIndicator,
-} from 'react-native';
+  ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Row, Col, Spacer } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Row, Col, OutlinedTextField, AnimatedPress } from '@/components/ui';
+import { Colors, Palette, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { qk } from '@/data/queryKeys';
@@ -29,7 +26,6 @@ const CHARCOAL = Colors.textPrimary; // Obsidian Navy primary text
 const MUTED = Colors.textMuted;      // Ocean Muted text
 const BORDER = Colors.borderSubtle;  // Ice Cyan subtle border
 const WHITE = Colors.surface;        // Pure White surface
-const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan active tint
 const RADIUS = 20;            // Rounded corner radius
 
 export function UpiConfigSection() {
@@ -41,23 +37,19 @@ export function UpiConfigSection() {
   const { data: upiList = [], isLoading, isError } = useQuery({
     queryKey: qk.properties.upiIds(pgId ?? ''),
     queryFn: () => listUpiIds(pgId!),
-    enabled: !!pgId,
-  });
+    enabled: !!pgId });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: qk.properties.upiIds(pgId ?? '') });
 
   const addMutation = useMutation({
     mutationFn: (vpa: string) => addUpiId(pgId!, vpa),
-    onSuccess: () => invalidate(),
-  });
+    onSuccess: () => invalidate() });
   const activateMutation = useMutation({
     mutationFn: (id: string) => activateUpiId(pgId!, id),
-    onSuccess: () => invalidate(),
-  });
+    onSuccess: () => invalidate() });
   const removeMutation = useMutation({
     mutationFn: (id: string) => removeUpiId(pgId!, id),
-    onSuccess: () => invalidate(),
-  });
+    onSuccess: () => invalidate() });
 
   const [newUpi, setNewUpi] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -106,8 +98,7 @@ export function UpiConfigSection() {
             } catch (err: any) {
               Alert.alert('Error', err?.message || 'Could not delete UPI handle.');
             }
-          },
-        },
+          } },
       ]
     );
   };
@@ -141,7 +132,19 @@ export function UpiConfigSection() {
           </Text>
         </View>
 
-        {upiList.length === 0 ? (
+        {isError ? (
+          /* A failed fetch used to fall through to the empty state, so a network blip read as
+             "you have no UPI handles" — and adding one from there would duplicate a handle
+             that is already on the account. */
+          <View style={styles.emptyCard}>
+            <Ionicons name="cloud-offline-outline" size={32} color={Colors.danger} />
+            <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Could not load your UPI handles</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.emptySubText}>
+              Pull to refresh, or check your connection. Do not add a handle until this loads —
+              you may already have one.
+            </Text>
+          </View>
+        ) : upiList.length === 0 ? (
           /* Empty State */
           <View style={styles.emptyCard}>
             <Ionicons name="card-outline" size={32} color={MUTED} />
@@ -181,21 +184,19 @@ export function UpiConfigSection() {
                     </Row>
                     <Row gap={8} align="center">
                       {!isPrimary && (
-                        <TouchableOpacity accessibilityRole="button"
+                        <AnimatedPress accessibilityRole="button"
                           style={styles.primaryBtnAction}
                           onPress={() => handleSetPrimary(item.id, item.vpa_address)}
-                          activeOpacity={0.8}
                         >
                           <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnActionText}>Set as Primary</Text>
-                        </TouchableOpacity>
+                        </AnimatedPress>
                       )}
-                      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button"
+                      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button"
                         style={styles.deleteBtn}
                         onPress={() => handleDeleteUpi(item.id, item.vpa_address)}
-                        activeOpacity={0.7}
                       >
-                        <Ionicons name="trash-outline" size={16} color="#B91C1C" />
-                      </TouchableOpacity>
+                        <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                      </AnimatedPress>
                     </Row>
                   </Row>
                 </View>
@@ -208,29 +209,23 @@ export function UpiConfigSection() {
       {/* ── Add UPI Handle ── */}
       <Col gap={12}>
         <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Add UPI Handle</Text>
-        <View style={styles.inputWrapper}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>Enter UPI ID</Text>
-          <View style={[styles.inputContainer, !!errorMsg && styles.inputContainerError]}>
-            <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="propertyowner@okaxis"
-              style={styles.textInput}
-              value={newUpi}
-              onChangeText={(v) => {
-                setNewUpi(v);
-                if (errorMsg) setErrorMsg('');
-              }}
-              placeholder="propertyowner@okaxis"
-              placeholderTextColor="#9EB09E"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          {!!errorMsg && <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>{errorMsg}</Text>}
-        </View>
+        <OutlinedTextField
+          label="Enter UPI ID"
+          required
+          value={newUpi}
+          onChangeText={(v) => {
+            setNewUpi(v);
+            if (errorMsg) setErrorMsg('');
+          }}
+          placeholder="propertyowner@okaxis"
+          error={errorMsg || undefined}
+          helper="This is where residents' rent lands"
+          inputStyle={{ fontSize: 14 }}
+        />
 
-        <TouchableOpacity accessibilityRole="button"
+        <AnimatedPress accessibilityRole="button"
           style={[styles.submitBtn, addMutation.isPending && styles.submitBtnDisabled]}
           onPress={handleAddUpi}
-          activeOpacity={0.85}
           disabled={addMutation.isPending}
         >
           {addMutation.isPending ? (
@@ -238,7 +233,7 @@ export function UpiConfigSection() {
           ) : (
             <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Add UPI Handle</Text>
           )}
-        </TouchableOpacity>
+        </AnimatedPress>
       </Col>
     </Col>
   );
@@ -248,8 +243,7 @@ const styles = StyleSheet.create({
   loadingBox: {
     padding: 32,
     alignItems: 'center',
-    gap: 8,
-  },
+    gap: 8 },
   loadingText: { fontSize: 13, color: MUTED },
 
   // Sections
@@ -262,18 +256,15 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 16,
-  },
+    padding: 16 },
   upiCardPrimary: {
-    borderColor: '#C6E8D4',
-  },
+    borderColor: '#C6E8D4' },
   statusDotWrapper: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   vpaText: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   statusLabel: { fontSize: 11, fontWeight: '600', color: MUTED, marginTop: 2 },
   statusLabelActive: { color: GREEN },
@@ -283,41 +274,24 @@ const styles = StyleSheet.create({
     backgroundColor: GREEN,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: Radii.control },
   primaryBtnActionText: { fontSize: 12, fontWeight: '800', color: WHITE },
   deleteBtn: {
     width: 32,
     height: 32,
-    borderRadius: 10,
-    backgroundColor: '#FEF2F2',
+    borderRadius: Radii.control,
+    backgroundColor: Palette.TintRed,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
 
   // Input
-  inputWrapper: { width: '100%' },
-  inputLabel: { fontSize: 12, fontWeight: '700', color: CHARCOAL, marginBottom: 6 },
-  inputContainer: {
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: WHITE,
-    paddingHorizontal: 14,
-    justifyContent: 'center',
-  },
-  inputContainerError: { borderColor: '#DC2626' },
-  textInput: { fontSize: 14, color: CHARCOAL, height: '100%' },
-  errorText: { fontSize: 12, color: '#DC2626', marginTop: 5 },
 
   submitBtn: {
     height: 52,
     backgroundColor: GREEN,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   submitBtnDisabled: { opacity: 0.7 },
   submitBtnText: { fontSize: 15, fontWeight: '800', color: WHITE },
 
@@ -328,8 +302,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
     padding: 24,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   emptyTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL, marginTop: 8 },
-  emptySubText: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 2 },
-});
+  emptySubText: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 2 } });

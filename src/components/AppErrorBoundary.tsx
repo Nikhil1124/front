@@ -13,10 +13,11 @@
  * a store would be a second crash with nothing left to catch it.
  */
 import { Component, type ReactNode } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
 import type { ErrorBoundaryProps } from 'expo-router';
 
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   // No crash reporter wired up yet, so this console line is the only record that survives.
@@ -42,9 +43,9 @@ export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
           </ScrollView>
         )}
 
-        <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={retry} activeOpacity={0.85}>
+        <AnimatedPress accessibilityRole="button" style={styles.button} onPress={retry}>
           <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>Try Again</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
 
         <Text maxFontSizeMultiplier={1.3} style={styles.hint}>
           If it keeps happening, close the app fully and reopen it.
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     backgroundColor: Colors.surface,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     padding: 24,
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     maxHeight: 200,
     marginTop: 16,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
   button: {
     alignSelf: 'stretch',
     height: 50,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,12 +1,13 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity,
+  Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
-import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { Radii, Colors } from '@/theme';
 import { FormScroll } from '@/components/ui/FormScroll';
+import { OutlinedTextField } from '@/components/ui';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 
 interface CheckoutSlot {
@@ -145,13 +146,11 @@ export function GroceryCheckoutScreen() {
           // `i.id` is the cart's compound key (productId + '-' + unit) — not a UUID.
           // The backend's CreateOrderRequest requires a valid UUID for item_id.
           item_id: i.productId,
-          quantity: i.quantity,
-        })),
+          quantity: i.quantity })),
         // Stable for the life of this screen, deliberately: a key regenerated per attempt
         // would make every retry look like a brand-new order, which is the opposite of what
         // idempotency is for. Reset only after a confirmed success, below.
-        idempotency_key: idempotencyKey.current,
-      });
+        idempotency_key: idempotencyKey.current });
 
       // Fresh key for any subsequent order placed without remounting this screen.
       idempotencyKey.current = `ord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -292,18 +291,14 @@ export function GroceryCheckoutScreen() {
             </View>
 
             {/* Instruction input */}
-            <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>Delivery instructions (optional)</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="e.g. Leave at door, call when arrived"
-                style={styles.textInput}
-                placeholder="e.g. Leave at door, call when arrived..."
-                placeholderTextColor={Colors.textMuted}
-                value={driverNote}
-                onChangeText={(text) => text.length <= 120 && setDriverNote(text)}
-                multiline
-              />
-              <Text maxFontSizeMultiplier={1.3} style={styles.charLimitText}>{driverNote.length}/120</Text>
-            </View>
+            <OutlinedTextField
+              label="Delivery instructions (optional)"
+              placeholder="Leave at door, call when arrived"
+              value={driverNote}
+              onChangeText={(text: string) => text.length <= 120 && setDriverNote(text)}
+              multiline
+              helper={`${driverNote.length}/120`}
+            />
           </View>
         )}
 
@@ -497,16 +492,14 @@ export function GroceryCheckoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.canvas,
-  },
+    backgroundColor: Colors.canvas },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 110,
-  },
+    paddingBottom: 110 },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     padding: 14,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -515,66 +508,54 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 2,
-    elevation: 1,
-  },
+    elevation: 1 },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   stepBadge: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.primary,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   stepBadgeText: {
     color: Colors.surface,
-    fontSize: 11,
-  },
+    fontSize: 11 },
   cardTitle: {
     fontSize: 14,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   fulfillmentContainer: {
     flexDirection: 'row',
     backgroundColor: Colors.surfaceMuted,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     padding: 4,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   fulfillmentBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 8,
-    gap: 6,
-  },
+    borderRadius: Radii.control,
+    gap: 6 },
   selectedFulfillmentBtn: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.primary,
-  },
+    borderColor: Colors.primary },
   fulfillmentText: {
     fontSize: 12,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   selectedFulfillmentText: {
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   slotListLabel: {
     fontSize: 11,
     color: Colors.textSecondary,
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   slotList: {
-    gap: 8,
-  },
+    gap: 8 },
   slotRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -582,241 +563,165 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 10,
-  },
+    borderRadius: Radii.control },
   selectedSlotRow: {
     borderColor: Colors.primary,
-    backgroundColor: Colors.surfaceElevated,
-  },
+    backgroundColor: Colors.surfaceElevated },
   slotRowLeft: {
     flexDirection: 'row',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   radioIcon: {
-    marginRight: 8,
-  },
+    marginRight: 8 },
   slotDetails: {
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   slotDayBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
+    gap: 6 },
   slotDay: {
     fontSize: 13,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   slotBadge: {
-    borderRadius: 4,
+    borderRadius: Radii.badge,
     paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
+    paddingVertical: 2 },
   fastestBadge: {
-    backgroundColor: Colors.surfaceElevated,
-  },
+    backgroundColor: Colors.surfaceElevated },
   freeBadge: {
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   slotBadgeText: {
-    fontSize: 8,
-  },
+    fontSize: 8 },
   fastestText: {
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   freeText: {
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   slotWindow: {
     fontSize: 11,
     color: Colors.textSecondary,
-    marginTop: 1,
-  },
+    marginTop: 1 },
   slotFeeText: {
     fontSize: 12,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   greenFeeText: {
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   // Location Card
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     padding: 10,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   locationCardIcon: {
-    marginRight: 8,
-  },
+    marginRight: 8 },
   locationTextWrapper: {
-    flex: 1,
-  },
+    flex: 1 },
   locationCardTitle: {
     fontSize: 11,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   locationCardSub: {
     fontSize: 12,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   changeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-  },
+    gap: 2 },
   changeBtnText: {
     fontSize: 11,
-    color: Colors.primary,
-  },
-  inputLabel: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginBottom: 6,
-  },
-  inputWrapper: {
-    position: 'relative',
-  },
-  textInput: {
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    padding: 10,
-    paddingBottom: 20,
-    fontSize: 12,
-    color: Colors.textPrimary,
-    minHeight: 56,
-    textAlignVertical: 'top',
-  },
-  charLimitText: {
-    position: 'absolute',
-    bottom: 6,
-    right: 8,
-    fontSize: 9,
-    color: Colors.textMuted,
-  },
+    color: Colors.primary },
   // Payment List
   paymentList: {
-    gap: 8,
-  },
+    gap: 8 },
   paymentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
+    backgroundColor: Colors.surface },
   selectedPaymentRow: {
     borderColor: Colors.borderSubtle,
-    backgroundColor: Colors.surfaceElevated,
-  },
+    backgroundColor: Colors.surfaceElevated },
   paymentIcon: {
-    marginRight: 10,
-  },
+    marginRight: 10 },
   disabledPaymentRow: {
-    opacity: 0.5,
-  },
+    opacity: 0.5 },
   paymentLabelColumn: {
-    flex: 1,
-  },
+    flex: 1 },
   paymentLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   selectedPaymentLabel: {
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   paymentSubLabel: {
     fontSize: 10,
     color: Colors.textMuted,
-    marginTop: 2,
-  },
+    marginTop: 2 },
   paymentWarnLabel: {
-    color: Colors.warning,
-  },
+    color: Colors.warning },
   // Summary Details
   summaryTitle: {
     fontSize: 14,
     color: Colors.textPrimary,
-    marginBottom: 10,
-  },
+    marginBottom: 10 },
   summaryList: {
     gap: 8,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   summaryItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
+    gap: 8 },
   summaryItemImg: {
     width: 32,
     height: 32,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
+    backgroundColor: Colors.surface },
   summaryItemDetails: {
-    flex: 1,
-  },
+    flex: 1 },
   summaryItemName: {
     fontSize: 12,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   summaryItemUnit: {
     fontSize: 10,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   summaryItemPrice: {
     fontSize: 12,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   // Bill Breakdown table
   billBreakdown: {
     borderTopWidth: 1,
     borderTopColor: Colors.borderSubtle,
     paddingTop: 10,
-    gap: 6,
-  },
+    gap: 6 },
   billRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between' },
   billLabel: {
     fontSize: 11,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   billValue: {
     fontSize: 11,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   greenText: {
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   totalRow: {
     borderTopWidth: 1,
     borderTopColor: Colors.borderSubtle,
     paddingTop: 8,
-    marginTop: 4,
-  },
+    marginTop: 4 },
   totalLabel: {
     fontSize: 14,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   totalValue: {
     fontSize: 16,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   // Sticky Footer checkout bar
   stickyFooter: {
     position: 'absolute',
@@ -835,74 +740,60 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 8,
-  },
+    elevation: 8 },
   footerLeft: {
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   footerPrice: {
     fontSize: 18,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   footerSavings: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    marginTop: 1,
-  },
+    marginTop: 1 },
   footerSavingsText: {
     fontSize: 10,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   footerItemText: {
     fontSize: 11,
     color: Colors.textSecondary,
-    marginTop: 1,
-  },
+    marginTop: 1 },
   viewCartBadgeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
+    gap: 4 },
   cartIconWrapper: {
     position: 'relative',
     width: 20,
     height: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   cartCountBadge: {
     position: 'absolute',
     top: -2,
     right: -4,
     backgroundColor: Colors.primary,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
     minWidth: 12,
     height: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 1.5,
-  },
+    paddingHorizontal: 1.5 },
   cartCountText: {
     color: Colors.surface,
-    fontSize: 7,
-  },
+    fontSize: 7 },
   viewCartText: {
     color: Colors.primary,
-    fontSize: 11,
-  },
+    fontSize: 11 },
   placeOrderBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     paddingVertical: 10,
     paddingHorizontal: 18,
     minWidth: 120,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-  },
+    flexDirection: 'row' },
   placeOrderText: {
     color: Colors.surface,
-    fontSize: 13,
-  },
-});
+    fontSize: 13 } });

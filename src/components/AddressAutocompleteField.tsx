@@ -15,10 +15,10 @@
  * registration form, so every call it makes is unauthenticated by design.
  */
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt } from '@/components/ui';
+import { Txt, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { usePlaces } from '@/features/places/usePlaces';
 import { API, BASE_URL } from '@/config';
@@ -36,6 +36,9 @@ interface Props {
    * fine without it, it just won't update the map.
    */
   onLocationResolved?: (location: PickedLocation) => void;
+  /** Forwarded to the `OutlinedTextField` this wraps — it is a form field like any other. */
+  error?: string;
+  required?: boolean;
   testID?: string;
   style?: object;
 }
@@ -46,8 +49,7 @@ export function AddressAutocompleteField({
   onChangeText,
   onLocationResolved,
   testID,
-  style,
-}: Props) {
+  style, error, required}: Props) {
   const { suggestions, searching, search, endSession } = usePlaces();
   // Suppressed after a pick, so choosing a suggestion doesn't immediately re-search the text
   // it just wrote and reopen the list under the user's finger.
@@ -89,6 +91,8 @@ export function AddressAutocompleteField({
         value={value}
         onChangeText={handleChange}
         leadingIcon="location"
+        error={error}
+        required={required}
         testID={testID}
       />
       {open && (searching || suggestions.length > 0) && (
@@ -99,11 +103,10 @@ export function AddressAutocompleteField({
             </Txt>
           ) : (
             suggestions.map((s) => (
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 key={s.place_id}
                 onPress={() => choose([s.primary, s.secondary].filter(Boolean).join(', '), s.place_id)}
                 style={styles.row}
-                activeOpacity={0.7}
               >
                 <Ionicons name="location-outline" size={16} color={Colors.textMuted} />
                 <View style={styles.rowText}>
@@ -116,7 +119,7 @@ export function AddressAutocompleteField({
                     </Txt>
                   ) : null}
                 </View>
-              </TouchableOpacity>
+              </AnimatedPress>
             ))
           )}
         </View>
@@ -129,7 +132,7 @@ const styles = StyleSheet.create({
   dropdown: {
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: Radii.lg,
+    borderRadius: Radii.control,
     backgroundColor: Colors.surface,
     marginTop: 4,
     overflow: 'hidden',

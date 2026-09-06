@@ -3,12 +3,12 @@
  * Account summary + payment/UPI configuration + sign out — the basics every
  * owner or manager needs; more sections land here as they come up.
  */
-import { Alert, TouchableOpacity, StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, AnimatedPress } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Layout } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { UpiConfigSection } from '@/features/owner/tabs/UpiConfigSection';
@@ -30,7 +30,7 @@ export function SettingsScreen() {
     <HubScreenWrapper title="Settings" subtitle={owner?.pgName ?? 'Account'}>
       <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>ACCOUNT</Txt>
       <Spacer size={8} />
-      <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+      <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
         <Row gap={10} align="center">
           <Ionicons name="person-circle" size={22} color={Colors.primary} />
           <Col style={{ flex: 1 }}>
@@ -71,9 +71,9 @@ export function SettingsScreen() {
       <Spacer size={20} />
       <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>PROPERTY & PLAN</Txt>
       <Spacer size={8} />
-      <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 4]}>
+      <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 4]}>
         {!isManager && (
-          <TouchableOpacity
+          <AnimatedPress
             style={styles.settingRow}
             onPress={() => router.push('/manager-provisioning')}
             accessibilityRole="button"
@@ -85,12 +85,12 @@ export function SettingsScreen() {
               <Txt variant="caption" color={Colors.textMuted}>Appoint and review property managers</Txt>
             </Col>
             <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-          </TouchableOpacity>
+          </AnimatedPress>
         )}
         {/* Unlike Manager Provisioning above (genuinely owner-only — D-06 in the backend),
             billing's `get_subscription`/`subscribe` are `require_manage`: owner OR manager.
             Hiding this from managers blocked a capability the server grants them. */}
-        <TouchableOpacity
+        <AnimatedPress
           style={styles.settingRow}
           onPress={() => router.push('/owner-subscription')}
           accessibilityRole="button"
@@ -104,8 +104,8 @@ export function SettingsScreen() {
             </Txt>
           </Col>
           <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity
+        </AnimatedPress>
+        <AnimatedPress
           style={styles.settingRow}
           onPress={() => router.push('/manage-properties')}
           accessibilityRole="button"
@@ -117,8 +117,8 @@ export function SettingsScreen() {
             <Txt variant="caption" color={Colors.textMuted}>Switch, edit or add a property</Txt>
           </Col>
           <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity
+        </AnimatedPress>
+        <AnimatedPress
           style={styles.settingRow}
           onPress={() => router.push('/rsvp-trends')}
           accessibilityRole="button"
@@ -130,14 +130,14 @@ export function SettingsScreen() {
             <Txt variant="caption" color={Colors.textMuted}>Eating vs. skipping, last 7 days</Txt>
           </Col>
           <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-        </TouchableOpacity>
+        </AnimatedPress>
       </Card>
 
       <Spacer size={20} />
       <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>MONETIZATION</Txt>
       <Spacer size={8} />
-      <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 4]}>
-        <TouchableOpacity
+      <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 4]}>
+        <AnimatedPress
           style={styles.settingRow}
           onPress={() => router.push('/manage-ad')}
           accessibilityRole="button"
@@ -149,11 +149,11 @@ export function SettingsScreen() {
             <Txt variant="caption" color={Colors.textMuted}>Show a promotion to your residents</Txt>
           </Col>
           <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-        </TouchableOpacity>
+        </AnimatedPress>
       </Card>
 
       <Spacer size={20} />
-      <Btn onPress={confirmLogout} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={12} height={48} borderWidth={1} borderColor="#FECACA">
+      <Btn onPress={confirmLogout} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={Radii.card} height={48} borderWidth={1} borderColor="#FECACA">
         <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
         <Txt variant="body" weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>Log Out</Txt>
       </Btn>

@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/store/authStore';
 
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
     gap: 3,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   profileAvatar: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',

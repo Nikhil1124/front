@@ -18,14 +18,13 @@ import {
   Linking,
   Platform,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { Map, Camera, ViewAnnotation } from '@/components/maplibreCompat';
 
-import { Txt } from '@/components/ui';
+import { Txt, AnimatedPress } from '@/components/ui';
 import { fetchMapStyle } from '@/features/places/mapStyle';
 import { useMapReady } from '@/features/places/useMapReady';
 import { Colors, Radii, Spacing } from '@/theme';
@@ -120,7 +119,7 @@ export default function PropertyMap({
           </View>
         )}
       </View>
-      <TouchableOpacity accessibilityRole="button" style={styles.footer} onPress={openInMaps} activeOpacity={0.8}>
+      <AnimatedPress accessibilityRole="button" style={styles.footer} onPress={openInMaps}>
         <Txt variant="caption" color={Colors.textMuted} style={styles.address} numberOfLines={1}>
           {formattedAddress || 'Location'}
         </Txt>
@@ -130,7 +129,7 @@ export default function PropertyMap({
             Open
           </Txt>
         </View>
-      </TouchableOpacity>
+      </AnimatedPress>
     </View>
   );
 }
@@ -139,7 +138,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: Radii.xl,
+    borderRadius: Radii.card,
     backgroundColor: Colors.surface,
     overflow: 'hidden',
   },

@@ -18,16 +18,14 @@
  */
 import { useState } from 'react';
 import {
-  View, ScrollView, StyleSheet, Alert, Modal, TouchableOpacity,
-  RefreshControl, Dimensions,
-} from 'react-native';
+  View, ScrollView, StyleSheet, Alert, Modal, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Card, Txt, Row, Col, Spacer, IconBtn, LoadingState, ErrorState } from '@/components/ui';
+import { Card, Txt, Row, Col, Spacer, IconBtn, LoadingState, ErrorState, StatusChip, toneFor, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { FeedbackComplaintEntity } from '@/types';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
@@ -35,6 +33,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 const COMPLAINT_CATEGORIES = [
   { label: 'Food Quality', icon: 'restaurant-outline' },
@@ -46,13 +45,13 @@ const COMPLAINT_CATEGORIES = [
 ];
 
 export function GuestFeedbackComplaintsTab() {
+  const dockScroll = useDockScroll();
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
     data: submissions = [],
     isLoading: submissionsLoading,
     error: submissionsError,
-    refetch: refetchSubmissions,
-  } = useComplaintsQuery(activePgId ?? undefined);
+    refetch: refetchSubmissions } = useComplaintsQuery(activePgId ?? undefined);
   const submit = usePGowStore((s) => s.submitFeedbackComplaint);
   const toast = useToast();
   const { refreshing, onRefresh } = usePullToRefresh();
@@ -75,6 +74,7 @@ export function GuestFeedbackComplaintsTab() {
   const [mediaName, setMediaName] = useState<string | null>(null);
   const [preview, setPreview] = useState<FeedbackComplaintEntity | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ title?: string; description?: string }>({});
 
   const attach = async (kind: 'photo' | 'video') => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -84,8 +84,7 @@ export function GuestFeedbackComplaintsTab() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: kind === 'video' ? ['videos'] : ['images'],
-      quality: 0.85,
-    });
+      quality: 0.85 });
     if (result.canceled) return;
     const asset = result.assets?.[0];
     if (!asset?.uri) return;
@@ -99,10 +98,12 @@ export function GuestFeedbackComplaintsTab() {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    if (!title.trim() || !description.trim()) {
-      Alert.alert('Validation Error', 'Please provide a title and detailed description.');
-      return;
-    }
+    const nextErrors = {
+      title: title.trim() ? undefined : 'Give it a short title',
+      description: description.trim() ? undefined : 'Describe what happened',
+    };
+    setFormErrors(nextErrors);
+    if (nextErrors.title || nextErrors.description) return;
     setIsSubmitting(true);
     try {
       const r = await submit(
@@ -143,6 +144,7 @@ export function GuestFeedbackComplaintsTab() {
 
       {/* ── SCROLLABLE CONTENT ── */}
       <ScrollView
+        {...dockScroll}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -155,8 +157,7 @@ export function GuestFeedbackComplaintsTab() {
         {/* ── 2. TOP ACTION CARDS (Complaint vs Feedback) ── */}
         <Row gap={12} style={styles.topCardsRow}>
           {/* Card 1: Raise Complaint */}
-          <TouchableOpacity accessibilityRole="button"
-            activeOpacity={0.88}
+          <AnimatedPress accessibilityRole="button"
             onPress={() => { setSubmissionType('COMPLAINT'); }}
             style={[styles.actionCard, styles.complaintCard, submissionType === 'COMPLAINT' && styles.complaintCardActive]}
           >
@@ -170,15 +171,14 @@ export function GuestFeedbackComplaintsTab() {
               <Ionicons name="chevron-forward" size={16} color={Colors.danger} />
             </Row>
             <Spacer size={12} />
-            <Txt size={15} weight="900" color="#DC2626">Raise Complaint</Txt>
+            <Txt size={15} weight="900" color={Colors.danger}>Raise Complaint</Txt>
             <Txt size={11} color="#991B1B" style={{ marginTop: 3, lineHeight: 15 }}>
               Report an issue or request support
             </Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
 
           {/* Card 2: Write Feedback */}
-          <TouchableOpacity accessibilityRole="button"
-            activeOpacity={0.88}
+          <AnimatedPress accessibilityRole="button"
             onPress={() => { setSubmissionType('FEEDBACK'); }}
             style={[styles.actionCard, styles.feedbackCard, submissionType === 'FEEDBACK' && styles.feedbackCardActive]}
           >
@@ -196,7 +196,7 @@ export function GuestFeedbackComplaintsTab() {
             <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 3, lineHeight: 15 }}>
               Share your experience and suggestions
             </Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
 
         {/* ── 3. DYNAMIC CONTENT BASED ON SELECTED MODE ── */}
@@ -217,9 +217,8 @@ export function GuestFeedbackComplaintsTab() {
               {COMPLAINT_CATEGORIES.map((c) => {
                 const active = category === c.label;
                 return (
-                  <TouchableOpacity accessibilityState={{ selected: !!active }} accessibilityRole="button"
+                  <AnimatedPress accessibilityState={{ selected: !!active }} accessibilityRole="button"
                     key={c.label}
-                    activeOpacity={0.88}
                     onPress={() => { setCategory(c.label); }}
                     style={[styles.catPill, active && styles.catPillActive]}
                   >
@@ -227,7 +226,7 @@ export function GuestFeedbackComplaintsTab() {
                     <Txt size={12} weight="800" color={active ? '#FFFFFF' : Colors.textPrimary} style={{ marginLeft: 6 }}>
                       {c.label}
                     </Txt>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 );
               })}
             </ScrollView>
@@ -241,9 +240,10 @@ export function GuestFeedbackComplaintsTab() {
               <OutlinedTextField
                 label="Issue Title (e.g. Broken Fan in Room 204)"
                 value={title}
-                onChangeText={setTitle}
+                onChangeText={(v) => { setTitle(v); if (formErrors.title) setFormErrors((e) => ({ ...e, title: undefined })); }}
+                error={formErrors.title}
                 focusedBorderColor={Colors.danger}
-                borderRadius={14}
+                borderRadius={Radii.card}
                 style={{ flex: 1 }}
               />
             </View>
@@ -256,11 +256,12 @@ export function GuestFeedbackComplaintsTab() {
               <OutlinedTextField
                 label="Describe the issue in detail..."
                 value={description}
-                onChangeText={setDescription}
+                onChangeText={(v) => { setDescription(v); if (formErrors.description) setFormErrors((e) => ({ ...e, description: undefined })); }}
+                error={formErrors.description}
                 multiline
                 numberOfLines={4}
                 focusedBorderColor={Colors.danger}
-                borderRadius={14}
+                borderRadius={Radii.card}
                 style={{ flex: 1, minHeight: 90 }}
               />
             </View>
@@ -272,21 +273,21 @@ export function GuestFeedbackComplaintsTab() {
             </Txt>
             <Spacer size={8} />
             <Row gap={10}>
-              <TouchableOpacity accessibilityRole="button" activeOpacity={0.85} onPress={() => attach('photo')} style={styles.attachBtn}>
+              <AnimatedPress accessibilityRole="button" onPress={() => attach('photo')} style={styles.attachBtn}>
                 <Ionicons name="image-outline" size={20} color={Colors.danger} />
                 <Col style={{ marginLeft: 8 }}>
                   <Txt size={12} weight="800" color={Colors.textPrimary}>Add Photo</Txt>
                   <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
                 </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
 
-              <TouchableOpacity accessibilityRole="button" activeOpacity={0.85} onPress={() => attach('video')} style={styles.attachBtn}>
+              <AnimatedPress accessibilityRole="button" onPress={() => attach('video')} style={styles.attachBtn}>
                 <Ionicons name="videocam-outline" size={20} color={Colors.danger} />
                 <Col style={{ marginLeft: 8 }}>
                   <Txt size={12} weight="800" color={Colors.textPrimary}>Add Video</Txt>
                   <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
                 </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Row>
 
             {mediaUri && (
@@ -295,19 +296,18 @@ export function GuestFeedbackComplaintsTab() {
                 <Txt size={11} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ flex: 1, marginLeft: 6 }}>
                   {mediaName ?? 'Attached Asset'}
                 </Txt>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => { setMediaUri(null); setMediaName(null); }}>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => { setMediaUri(null); setMediaName(null); }}>
                   <Ionicons name="close-circle" size={18} color={Colors.danger} />
-                </TouchableOpacity>
+                </AnimatedPress>
               </View>
             )}
 
             {/* COMPLAINT SUBMIT CTA */}
             <Spacer size={18} />
-            <TouchableOpacity accessibilityRole="button"
-              activeOpacity={0.9}
+            <AnimatedPress accessibilityRole="button"
               onPress={handleSubmit}
               disabled={isSubmitting}
-              style={[styles.submitCtaBtn, { backgroundColor: '#DC2626' }]}
+              style={[styles.submitCtaBtn, { backgroundColor: Colors.danger }]}
             >
               <Ionicons name="megaphone" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Col align="center">
@@ -318,7 +318,7 @@ export function GuestFeedbackComplaintsTab() {
                   Your issue will be sent immediately to the management team
                 </Txt>
               </Col>
-            </TouchableOpacity>
+            </AnimatedPress>
           </>
         ) : (
           <>
@@ -326,7 +326,7 @@ export function GuestFeedbackComplaintsTab() {
             <Row justify="space-between" align="center" style={{ marginTop: 22, marginBottom: 12 }}>
               <Txt size={16} weight="800" color={Colors.textPrimary}>Rate Your PG Experience</Txt>
               <View style={styles.overallScoreChip}>
-                <Ionicons name="star" size={13} color="#F59E0B" />
+                <Ionicons name="star" size={13} color={Colors.warning} />
                 <Txt size={11} weight="800" color={Colors.textPrimary} style={{ marginLeft: 4 }}>
                   Overall Rating: {calculatedOverall.toFixed(1)} / 5.0
                 </Txt>
@@ -357,9 +357,10 @@ export function GuestFeedbackComplaintsTab() {
               <OutlinedTextField
                 label="Feedback Title (e.g. Chef is doing great!)"
                 value={title}
-                onChangeText={setTitle}
+                onChangeText={(v) => { setTitle(v); if (formErrors.title) setFormErrors((e) => ({ ...e, title: undefined })); }}
+                error={formErrors.title}
                 focusedBorderColor={Colors.primary}
-                borderRadius={14}
+                borderRadius={Radii.card}
                 style={{ flex: 1 }}
               />
             </View>
@@ -372,19 +373,19 @@ export function GuestFeedbackComplaintsTab() {
               <OutlinedTextField
                 label="Share your experience & suggestions..."
                 value={description}
-                onChangeText={setDescription}
+                onChangeText={(v) => { setDescription(v); if (formErrors.description) setFormErrors((e) => ({ ...e, description: undefined })); }}
+                error={formErrors.description}
                 multiline
                 numberOfLines={4}
                 focusedBorderColor={Colors.primary}
-                borderRadius={14}
+                borderRadius={Radii.card}
                 style={{ flex: 1, minHeight: 90 }}
               />
             </View>
 
             {/* FEEDBACK SUBMIT CTA */}
             <Spacer size={18} />
-            <TouchableOpacity accessibilityRole="button"
-              activeOpacity={0.9}
+            <AnimatedPress accessibilityRole="button"
               onPress={handleSubmit}
               disabled={isSubmitting}
               style={[styles.submitCtaBtn, { backgroundColor: Colors.primaryDark }]}
@@ -398,47 +399,47 @@ export function GuestFeedbackComplaintsTab() {
                   Your feedback helps us continuously improve your experience
                 </Txt>
               </Col>
-            </TouchableOpacity>
+            </AnimatedPress>
           </>
         )}
 
         {/* ── 4. MY RECENT SUBMISSIONS WITH DYNAMIC FILTERING ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 12 }}>
           <Txt size={17} weight="800" color={Colors.textPrimary}>My Recent Submissions</Txt>
-          <TouchableOpacity accessibilityRole="button" onPress={() => toast('info', 'Submissions', 'Showing your grievance & review tickets.')}>
+          <AnimatedPress accessibilityRole="button" onPress={() => toast('info', 'Submissions', 'Showing your grievance & review tickets.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
               <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
             </Row>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
 
         {/* SUBMISSION LIST FILTER TABS */}
         <Row gap={8} style={{ marginBottom: 14 }}>
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.filterChip, listFilter === 'ALL' && styles.filterChipActive]}
             onPress={() => { setListFilter('ALL'); }}
           >
             <Txt size={11} weight="800" color={listFilter === 'ALL' ? '#FFFFFF' : Colors.textSecondary}>
               All ({submissions.length})
             </Txt>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button"
             style={[styles.filterChip, listFilter === 'COMPLAINT' && styles.filterChipComplaintActive]}
             onPress={() => { setListFilter('COMPLAINT'); }}
           >
             <Txt size={11} weight="800" color={listFilter === 'COMPLAINT' ? '#FFFFFF' : Colors.textSecondary}>
               Complaints 🚨 ({submissions.filter((s) => s.type === 'COMPLAINT').length})
             </Txt>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button"
             style={[styles.filterChip, listFilter === 'FEEDBACK' && styles.filterChipFeedbackActive]}
             onPress={() => { setListFilter('FEEDBACK'); }}
           >
             <Txt size={11} weight="800" color={listFilter === 'FEEDBACK' ? '#FFFFFF' : Colors.textSecondary}>
               Feedback 🌟 ({submissions.filter((s) => s.type === 'FEEDBACK').length})
             </Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
 
         {submissionsLoading ? (
@@ -454,14 +455,6 @@ export function GuestFeedbackComplaintsTab() {
           </View>
         ) : (
           filteredSubmissions.map((item) => {
-            const isResolved = item.status === 'Resolved';
-            const isInProgress = item.status === 'In Progress';
-
-            let statusBg = '#FEE2E2';
-            let statusColor: string = Colors.danger;
-            if (isResolved) { statusBg = '#E0F2F0'; statusColor = Colors.success; }
-            if (isInProgress) { statusBg = '#FEF3C7'; statusColor = '#D97706'; }
-
             let catIcon: any = 'grid-outline';
             if (item.category.includes('Wi-Fi')) catIcon = 'wifi-outline';
             if (item.category.includes('Food')) catIcon = 'restaurant-outline';
@@ -469,21 +462,20 @@ export function GuestFeedbackComplaintsTab() {
             if (item.type === 'FEEDBACK') catIcon = 'star-outline';
 
             return (
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 key={item.id}
-                activeOpacity={0.9}
                 onPress={() => router.push({ pathname: '/ticket/[id]', params: { id: item.id } })}
                 style={styles.submissionCard}
               >
                 <Row justify="space-between" align="center">
                   <Row gap={10} style={{ flex: 1, paddingRight: 8 }}>
                     <View style={styles.subCatIconWrap}>
-                      <Ionicons name={catIcon} size={20} color={item.type === 'COMPLAINT' ? '#DC2626' : Colors.primaryDark} />
+                      <Ionicons name={catIcon} size={20} color={item.type === 'COMPLAINT' ? Colors.danger : Colors.primaryDark} />
                     </View>
 
                     <Col style={{ flex: 1 }}>
                       <Row gap={6} align="center">
-                        <Txt size={10} weight="900" color={item.type === 'COMPLAINT' ? '#DC2626' : Colors.primary} style={{ letterSpacing: 0.5 }}>
+                        <Txt size={10} weight="900" color={item.type === 'COMPLAINT' ? Colors.danger : Colors.primary} style={{ letterSpacing: 0.5 }}>
                           {item.type === 'COMPLAINT' ? 'COMPLAINT' : 'FEEDBACK'} • {item.category.toUpperCase()}
                         </Txt>
                       </Row>
@@ -497,9 +489,7 @@ export function GuestFeedbackComplaintsTab() {
                   </Row>
 
                   <Row align="center" gap={4}>
-                    <View style={[styles.subStatusPill, { backgroundColor: statusBg }]}>
-                      <Txt size={10} weight="800" color={statusColor}>{item.status.toUpperCase()}</Txt>
-                    </View>
+                    <StatusChip label={item.status} tone={toneFor(item.status)} />
                     <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
                   </Row>
                 </Row>
@@ -518,7 +508,7 @@ export function GuestFeedbackComplaintsTab() {
                     </Txt>
                   </View>
                 )}
-              </TouchableOpacity>
+              </AnimatedPress>
             );
           })
         )}
@@ -529,7 +519,7 @@ export function GuestFeedbackComplaintsTab() {
       {/* Preview Modal */}
       <Modal visible={preview != null} transparent animationType="fade">
         <View style={styles.backdrop}>
-          <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor="#DCE9EA" padding={[16, 16]} style={{ width: '92%' }}>
+          <Card containerColor="#FFFFFF" borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[16, 16]} style={{ width: '92%' }}>
             {preview && (
               <>
                 <Row justify="space-between" align="center">
@@ -551,8 +541,7 @@ export function GuestFeedbackComplaintsTab() {
 }
 
 function RatingCard({
-  title, icon, rating, onChange,
-}: {
+  title, icon, rating, onChange }: {
   title: string; icon: keyof typeof Ionicons.glyphMap; rating: number; onChange: (n: number) => void;
 }) {
   return (
@@ -565,9 +554,9 @@ function RatingCard({
       </Txt>
       <Row gap={2} style={{ marginTop: 6 }}>
         {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" key={star} onPress={() => { onChange(star); }}>
-            <Ionicons name={star <= rating ? "star" : "star-outline"} size={14} color="#F59E0B" />
-          </TouchableOpacity>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" key={star} onPress={() => { onChange(star); }}>
+            <Ionicons name={star <= rating ? "star" : "star-outline"} size={14} color={Colors.warning} />
+          </AnimatedPress>
         ))}
       </Row>
       <Txt size={12} weight="900" color={Colors.textPrimary} style={{ marginTop: 6 }}>
@@ -581,7 +570,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
 
   // Header
-  helpBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 16 },
@@ -589,73 +577,66 @@ const styles = StyleSheet.create({
   // Top action cards
   topCardsRow: { marginTop: 14, zIndex: 20 },
   actionCard: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20,
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9EA', padding: 14,
-    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-  },
+    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
   complaintCard: { backgroundColor: '#FFF5F5', borderColor: '#FECACA' },
   complaintCardActive: { borderWidth: 2, borderColor: Colors.danger },
   feedbackCard: { backgroundColor: '#F0F6F5', borderColor: '#BDD8D6' },
   feedbackCardActive: { borderWidth: 2, borderColor: Colors.primary },
 
-  complaintIconWrap: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
-  feedbackIconWrap: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center' },
-  alertBadgeDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center' },
-  starBadgeDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  complaintIconWrap: { width: 42, height: 42, borderRadius: Radii.pill, backgroundColor: Palette.TintRed, alignItems: 'center', justifyContent: 'center' },
+  feedbackIconWrap: { width: 42, height: 42, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
+  alertBadgeDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: Radii.pill, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center' },
+  starBadgeDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: Radii.pill, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
 
   // Category pills
   catPill: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 20,
+    backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9EA',
-    paddingHorizontal: 14, paddingVertical: 9,
-  },
+    paddingHorizontal: 14, paddingVertical: 9 },
   catPillActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
 
   // Overall Score Badge
-  overallScoreChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 },
+  overallScoreChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: Palette.TintAmber, borderRadius: Radii.card, paddingHorizontal: 10, paddingVertical: 5 },
 
   // Rating card
   ratingCard: {
-    width: 110, backgroundColor: '#FFFFFF', borderRadius: 18,
+    width: 110, backgroundColor: '#FFFFFF', borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9EA',
     padding: 12, alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
-  ratingIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center' },
+    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  ratingIconWrap: { width: 40, height: 40, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
 
   // Form inputs
   inputWrapper: { flexDirection: 'row', alignItems: 'center' },
   inputIconPrefix: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center',
-    marginRight: 8,
-  },
+    width: 38, height: 38, borderRadius: Radii.pill,
+    backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center',
+    marginRight: 8 },
 
-  attachBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1.5, borderColor: '#DCE9EA', borderStyle: 'dashed', padding: 12 },
-  mediaPreviewChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0F2F0', borderRadius: 12, padding: 10, marginTop: 10 },
+  attachBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1.5, borderColor: '#DCE9EA', borderStyle: 'dashed', padding: 12 },
+  mediaPreviewChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 10, marginTop: 10 },
 
   // Submit CTA
   submitCtaBtn: {
-    borderRadius: 16,
+    borderRadius: Radii.card,
     paddingVertical: 14, paddingHorizontal: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4,
-  },
+    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 },
 
   // Submissions Filter Chips
-  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9EA' },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.card, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9EA' },
   filterChipActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
-  filterChipComplaintActive: { backgroundColor: '#DC2626', borderColor: '#DC2626' },
+  filterChipComplaintActive: { backgroundColor: Colors.danger, borderColor: Colors.danger },
   filterChipFeedbackActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
 
   // Submissions
-  submissionCard: { backgroundColor: '#FFFFFF', borderRadius: 18, borderWidth: 1, borderColor: '#DCE9EA', padding: 14, marginBottom: 10, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  subCatIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center' },
-  subStatusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
-  adminReplyBox: { backgroundColor: '#E0F2F0', borderRadius: 12, padding: 10, marginTop: 10 },
-  emptySubmissionsCard: { alignItems: 'center', paddingVertical: 32, backgroundColor: '#FFFFFF', borderRadius: 18, borderWidth: 1, borderColor: '#DCE9EA' },
+  submissionCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA', padding: 14, marginBottom: 10, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  subCatIconWrap: { width: 40, height: 40, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
+  adminReplyBox: { backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 10, marginTop: 10 },
+  emptySubmissionsCard: { alignItems: 'center', paddingVertical: 32, backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA' },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.6)', alignItems: 'center', justifyContent: 'center' },
-  previewBox: { height: 180, backgroundColor: '#F8FAFC', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-});
+  previewBox: { height: 180, backgroundColor: '#F8FAFC', borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' } });

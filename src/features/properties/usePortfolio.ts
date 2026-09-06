@@ -75,9 +75,18 @@ async function fetchOne(
     // list allows 200). Sending 200 made this call 422 every time — and because
     // `allSettled` swallows it, `payments` fell back to [] and `pendingDues` then counted
     // EVERY resident as unpaid: a confident, precise, wrong number on the owner's dashboard.
-    // ponytail: one page. The endpoint has no period filter, so a property with >100
-    // verified payments still truncates — page on `next_cursor` when that starts to bite.
-    listPayments(pg.id, { status: "verified", limit: 100 }),
+    //
+    // The same number went wrong again, quietly, once `purpose`/`period` were left to the
+    // client: `status=verified` alone also matches food and service payments, so on a
+    // property with grocery volume this month's rent rows fell off the newest-100 page and
+    // residents who had paid were counted as pending. Filtered server-side now, so the cap
+    // is 100 rent payments for this period rather than 100 payments of any kind.
+    listPayments(pg.id, {
+      status: "verified",
+      purpose: "rent",
+      period,
+      limit: 100,
+    }),
     getExpenseSummary(pg.id, period),
     getMealSavingsAnalytics(pg.id, monthStart, monthEnd),
   ]);

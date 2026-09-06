@@ -6,23 +6,16 @@
 import React from 'react';
 import {
   View,
-  Text,
-  TouchableOpacity,
   StyleSheet,
   ViewStyle,
-  TextStyle,
   ActivityIndicator,
   StyleProp,
-  DimensionValue,
-} from 'react-native';
+  DimensionValue } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Palette, Radii, Layout } from '@/theme';
-import { Typography, type TypographyKey } from '@/theme/typography';
+import { Colors, Layout, Radii } from '@/theme';
 import type { FontWeight } from '@/theme/typography';
 import { Txt, type TxtProps } from './Txt';
 import { AnimatedPress } from './AnimatedPress';
-
-type RNFontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
 // Allow any string icon name to bypass TS strict glyph-map checking.
 type IconName = string | keyof typeof Ionicons.glyphMap;
@@ -41,17 +34,15 @@ export interface CardProps {
 }
 
 export function Card({
-  children, style, containerColor = Colors.surface, borderRadius = Layout.borderRadiusCard,
-  borderColor = Colors.borderSubtle, borderWidth = 1, padding, onPress, testID,
-}: CardProps) {
+  children, style, containerColor = Colors.surface, borderRadius = Radii.card,
+  borderColor = Colors.borderSubtle, borderWidth = 1, padding, onPress, testID }: CardProps) {
   const paddingStyle: ViewStyle = (() => {
     if (padding == null) return {};
     if (typeof padding === 'number') return { padding };
     if (padding.length === 2) return { paddingHorizontal: padding[0], paddingVertical: padding[1] };
     return {
       paddingTop: padding[0], paddingRight: padding[1],
-      paddingBottom: padding[2], paddingLeft: padding[3],
-    };
+      paddingBottom: padding[2], paddingLeft: padding[3] };
   })();
   const cardStyle: ViewStyle = {
     backgroundColor: containerColor,
@@ -66,13 +57,12 @@ export function Card({
     shadowOpacity: Layout.shadowCard.shadowOpacity,
     shadowRadius: Layout.shadowCard.shadowRadius,
     elevation: Layout.shadowCard.elevation,
-    ...paddingStyle,
-  };
+    ...paddingStyle };
   if (onPress) {
     return (
-      <TouchableOpacity accessibilityRole="button" testID={testID} activeOpacity={0.92} onPress={onPress} style={[cardStyle, style]}>
+      <AnimatedPress accessibilityRole="button" testID={testID} onPress={onPress} style={[cardStyle, style]}>
         {children}
-      </TouchableOpacity>
+      </AnimatedPress>
     );
   }
   return <View testID={testID} style={[cardStyle, style]}>{children}</View>;
@@ -98,9 +88,8 @@ export interface ButtonProps {
 
 export function Btn({
   children, onPress, containerColor = Colors.primary, textColor = Colors.textInverse,
-  borderRadius = Layout.borderRadiusButton, height = 44, width, borderWidth, borderColor, disabled, loading,
-  style, contentStyle, testID,
-}: ButtonProps) {
+  borderRadius = Radii.control, height = 44, width, borderWidth, borderColor, disabled, loading,
+  style, contentStyle, testID }: ButtonProps) {
   return (
     <AnimatedPress
       testID={testID}
@@ -120,8 +109,7 @@ export function Btn({
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
-          opacity: disabled ? 0.5 : 1,
-        },
+          opacity: disabled ? 0.5 : 1 },
         style,
       ]}
     >
@@ -154,9 +142,8 @@ export interface OutlinedButtonProps {
 export function OutlinedBtn({
   children, onPress, borderColor = Colors.primary,
   textColor = Colors.primary,
-  borderRadius = Layout.borderRadiusButton, height = 44, width, borderWidth = 1.5,
-  containerColor = 'transparent', disabled, style, testID,
-}: OutlinedButtonProps & { textColor?: string }) {
+  borderRadius = Radii.control, height = 44, width, borderWidth = 1.5,
+  containerColor = 'transparent', disabled, style, testID }: OutlinedButtonProps & { textColor?: string }) {
   return (
     <AnimatedPress
       testID={testID}
@@ -173,8 +160,7 @@ export function OutlinedBtn({
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
-          opacity: disabled ? 0.5 : 1,
-        },
+          opacity: disabled ? 0.5 : 1 },
         style,
       ]}
     >
@@ -201,8 +187,7 @@ export interface IconBtnProps {
 export function IconBtn({
   onPress, icon, size = 20, tint = Colors.textPrimary,
   containerColor = 'transparent', borderRadius = 999, padding = 8, disabled, testID,
-  accessibilityLabel, hitSlop,
-}: IconBtnProps & { hitSlop?: { top: number; bottom: number; left: number; right: number } }) {
+  accessibilityLabel, hitSlop }: IconBtnProps & { hitSlop?: { top: number; bottom: number; left: number; right: number } }) {
   return (
     <AnimatedPress
       testID={testID}
@@ -212,8 +197,7 @@ export function IconBtn({
       accessibilityLabel={accessibilityLabel}
       style={{
         backgroundColor: containerColor, borderRadius, padding,
-        alignItems: 'center', justifyContent: 'center',
-      }}
+        alignItems: 'center', justifyContent: 'center' }}
     >
       {typeof icon === 'string' ? (
         <Ionicons name={icon as any} size={size} color={tint} />
@@ -263,13 +247,11 @@ export interface PillProps {
 
 export function Pill({
   label, color = Colors.primary, bg = `${color}26`, borderColor = 'transparent',
-  borderWidth = 0, size = 10, weight = '700', paddingH = 10, paddingV = 4, borderRadius = Layout.borderRadiusChip,
-}: PillProps) {
+  borderWidth = 0, size = 10, weight = '700', paddingH = 10, paddingV = 4, borderRadius = Radii.pill }: PillProps) {
   return (
     <View style={{
       backgroundColor: bg, borderRadius, paddingHorizontal: paddingH, paddingVertical: paddingV,
-      borderWidth, borderColor, alignSelf: 'flex-start',
-    }}>
+      borderWidth, borderColor, alignSelf: 'flex-start' }}>
       <Txt size={size} weight={weight} color={color}>{label}</Txt>
     </View>
   );
@@ -293,20 +275,17 @@ export interface ChipProps {
 export function Chip({
   label, selected, onPress, selectedColor = Colors.primary,
   unselectedBg = Colors.surfaceMuted, unselectedBorder = Colors.borderMuted,
-  labelColor, weight = '700', size = 11, paddingH = 12, paddingV = 6, testID,
-}: ChipProps) {
+  labelColor, weight = '700', size = 11, paddingH = 12, paddingV = 6, testID }: ChipProps) {
   return (
-    <TouchableOpacity accessibilityRole="button"
+    <AnimatedPress accessibilityRole="button"
       testID={testID}
-      activeOpacity={0.85}
       onPress={onPress}
       style={{
         backgroundColor: selected ? selectedColor : unselectedBg,
-        borderRadius: Layout.borderRadiusChip,
+        borderRadius: Radii.pill,
         paddingHorizontal: paddingH, paddingVertical: paddingV,
         borderWidth: selected ? 0 : 1,
-        borderColor: selected ? selectedColor : unselectedBorder,
-      }}
+        borderColor: selected ? selectedColor : unselectedBorder }}
     >
       <Txt
         size={size}
@@ -315,7 +294,7 @@ export function Chip({
       >
         {label}
       </Txt>
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -331,8 +310,7 @@ export function Row({ children, align = 'center', justify = 'flex-start', gap = 
   return (
     <View style={[{
       flexDirection: 'row', alignItems: align, justifyContent: justify,
-      gap: gap > 0 ? gap : undefined,
-    }, style]}>
+      gap: gap > 0 ? gap : undefined }, style]}>
       {children}
     </View>
   );
@@ -350,8 +328,7 @@ export function Col({ children, align = 'stretch', justify = 'flex-start', gap =
   return (
     <View style={[{
       flexDirection: 'column', alignItems: align, justifyContent: justify,
-      gap: gap > 0 ? gap : undefined,
-    }, style]}>
+      gap: gap > 0 ? gap : undefined }, style]}>
       {children}
     </View>
   );
@@ -359,14 +336,24 @@ export function Col({ children, align = 'stretch', justify = 'flex-start', gap =
 
 export const styles = StyleSheet.create({
   fillMaxWidth: { width: '100%' },
-  fillMaxSize: { flex: 1 },
-});
+  fillMaxSize: { flex: 1 } });
 
 // The loading/error primitives live in their own file but belong to the same kit — re-exported
 // so a screen imports them from '@/components/ui' like everything else it renders.
 export { Spinner, LoadingState, ErrorState } from './Spinner';
 export type { SpinnerProps, LoadingStateProps, ErrorStateProps } from './Spinner';
 export { Txt, type TxtProps };
-export { Skeleton } from './Skeleton';
+export { AnimatedPress, type AnimatedPressProps } from './AnimatedPress';
 export { AnimatedChevron } from './AnimatedChevron';
-
+export { StatusChip, toneFor, type StatusTone } from './StatusChip';
+export { ListRow, ListSectionHeader, initialsOf } from './ListRow';
+export { RoomPicker } from './RoomPicker';
+export { ChoiceChips } from './ChoiceChips';
+export { TrendChart, type TrendChartSeries, type TrendChartPoint } from './TrendChart';
+export { MetricRow } from './MetricRow';
+export { MetricDeck, type DeckCardData } from './MetricDeck';
+export { CountUp } from './CountUp';
+export { PickerField, type PickerFieldProps } from './PickerField';
+export { SearchField, type SearchFieldProps } from './SearchField';
+export { Sheet, type SheetProps } from './Sheet';
+export { OutlinedTextField, type OutlinedTextFieldProps } from './OutlinedTextField';

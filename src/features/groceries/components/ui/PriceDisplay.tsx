@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 export interface PriceDisplayProps {
   price: number;
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
 
   badge: {
     backgroundColor: Colors.danger,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
     paddingHorizontal: 5,
     paddingVertical: 2,
   },

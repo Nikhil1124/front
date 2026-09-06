@@ -6,10 +6,10 @@
  * Quick Action destination.
  */
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Image, TextInput } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, LoadingState, ErrorState } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, LoadingState, ErrorState, SearchField } from '@/components/ui';
 import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
@@ -21,19 +21,18 @@ import { usePortfolioDetail } from '@/features/properties/usePortfolio';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import type { PGOwnerEntity } from '@/types';
-import { Colors } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 
 // ── Color System (Official LUNA Palette) ───────────────────────────────────
 const PRIMARY = Colors.primary;       // Deep Ocean Blue
 const PRIMARY_SOFT = Colors.surfaceElevated; // Soft Ice Cyan Tint
-const BG = Colors.canvas;            // Light Ice Canvas
 const CHARCOAL = Colors.textPrimary; // Obsidian Navy
 const MUTED = Colors.textMuted;      // Ocean Muted
 const BORDER = Colors.borderSubtle;  // Ice Subtle Border
 const WHITE = Colors.surface;
 const SUCCESS = '#16A34A';
-const WARNING = '#F59E0B';
-const ERROR = '#DC2626';
+const WARNING = Colors.warning;
+const ERROR = Colors.danger;
 
 export function ManagePropertiesScreen() {
   const {
@@ -41,8 +40,7 @@ export function ManagePropertiesScreen() {
     isLoading: pgsLoading,
     error: pgsError,
     refetch: refetchPgs,
-    isRefetching: pgsRefetching,
-  } = usePropertiesEntitiesQuery();
+    isRefetching: pgsRefetching } = usePropertiesEntitiesQuery();
   const activePgId = useAuthStore((s) => s.activePgId);
   const setActivePgId = useAuthStore((s) => s.setActivePgId);
   // Scoped to whichever property is currently active — correct for a single-PG owner (their
@@ -100,7 +98,7 @@ export function ManagePropertiesScreen() {
             size={20}
             tint={WHITE}
             containerColor={PRIMARY}
-            borderRadius={20}
+            borderRadius={Radii.sheet}
             padding={8}
             accessibilityLabel="Add PG Property"
             testID="add_property_btn"
@@ -200,7 +198,7 @@ export function ManagePropertiesScreen() {
                         size={18}
                         tint={PRIMARY}
                         containerColor={PRIMARY_SOFT}
-                        borderRadius={10}
+                        borderRadius={Radii.control}
                         padding={8}
                         accessibilityLabel="Edit Property"
                       />
@@ -232,7 +230,7 @@ export function ManagePropertiesScreen() {
                             size={14}
                             tint={PRIMARY}
                             containerColor={PRIMARY_SOFT}
-                            borderRadius={8}
+                            borderRadius={Radii.control}
                             padding={8}
                             accessibilityLabel="Call Manager"
                           />
@@ -274,7 +272,7 @@ export function ManagePropertiesScreen() {
                         }}
                         containerColor={isCurrent ? PRIMARY : PRIMARY_SOFT}
                         textColor={isCurrent ? WHITE : PRIMARY}
-                        borderRadius={12}
+                        borderRadius={Radii.card}
                         height={40}
                         style={{ paddingHorizontal: 16 }}
                       >
@@ -332,7 +330,7 @@ function PropertyStats({ totalPGs, totalGuests, totalBeds, totalRevenue, totalCo
 
       {/* Occupancy Card */}
       <View style={styles.statCard}>
-        <View style={[styles.statIconWrapper, { backgroundColor: '#ECFDF5' }]}>
+        <View style={[styles.statIconWrapper, { backgroundColor: Palette.TintGreen }]}>
           <Ionicons name="bed" size={18} color={SUCCESS} />
         </View>
         <Txt size={11} color={MUTED} weight="700">Occupancy</Txt>
@@ -342,7 +340,7 @@ function PropertyStats({ totalPGs, totalGuests, totalBeds, totalRevenue, totalCo
 
       {/* Revenue Card */}
       <View style={styles.statCard}>
-        <View style={[styles.statIconWrapper, { backgroundColor: '#FEF3C7' }]}>
+        <View style={[styles.statIconWrapper, { backgroundColor: Palette.TintAmber }]}>
           <Ionicons name="wallet" size={18} color={WARNING} />
         </View>
         <Txt size={11} color={MUTED} weight="700">Revenue</Txt>
@@ -352,7 +350,7 @@ function PropertyStats({ totalPGs, totalGuests, totalBeds, totalRevenue, totalCo
 
       {/* Issues Card */}
       <View style={styles.statCard}>
-        <View style={[styles.statIconWrapper, { backgroundColor: '#FEF2F2' }]}>
+        <View style={[styles.statIconWrapper, { backgroundColor: Palette.TintRed }]}>
           <Ionicons name="alert-circle" size={18} color={ERROR} />
         </View>
         <Txt size={11} color={MUTED} weight="700">Open Issues</Txt>
@@ -370,18 +368,11 @@ interface PropertySearchProps {
 
 function PropertySearch({ value, onChangeText }: PropertySearchProps) {
   return (
-    <Row style={styles.searchRow}>
-      <Ionicons name="search-outline" size={18} color={MUTED} style={{ marginRight: 8 }} />
-      <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search PG by name, area, manager"
-        style={styles.searchInput}
-        placeholder="Search PG by name, area, manager..."
-        placeholderTextColor={MUTED}
-        value={value}
-        onChangeText={onChangeText}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-    </Row>
+    <SearchField
+      placeholder="Search PG by name, area, manager"
+      value={value}
+      onChangeText={onChangeText}
+    />
   );
 }
 
@@ -393,7 +384,7 @@ function AddPropertyCTA({ onPress }: AddPropertyCTAProps) {
   return (
     <Card
       containerColor={WHITE}
-      borderRadius={20}
+      borderRadius={Radii.sheet}
       borderWidth={1}
       borderColor={BORDER}
       padding={[16, 16]}
@@ -415,7 +406,7 @@ function AddPropertyCTA({ onPress }: AddPropertyCTAProps) {
           onPress={onPress}
           borderColor={PRIMARY}
           textColor={PRIMARY}
-          borderRadius={12}
+          borderRadius={Radii.card}
           height={38}
           style={{ paddingHorizontal: 12 }}
         >
@@ -430,12 +421,11 @@ const styles = StyleSheet.create({
   // Stats scroll & card styles
   statsScroll: {
     paddingVertical: 4,
-    gap: 12,
-  },
+    gap: 12 },
   statCard: {
     width: 125,
     backgroundColor: WHITE,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 12,
@@ -443,43 +433,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
+    elevation: 2 },
   statIconWrapper: {
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: Radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
 
   // Search input styles
-  searchRow: {
-    backgroundColor: WHITE,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: BORDER,
-    paddingHorizontal: 14,
-    height: 48,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: CHARCOAL,
-    paddingVertical: 0,
-  },
 
   // Property Card layout
   propertyCard: {
     backgroundColor: WHITE,
-    borderRadius: 22,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: BORDER,
     shadowColor: '#000',
@@ -487,18 +455,15 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
-    overflow: 'hidden',
-  },
+    overflow: 'hidden' },
   imageContainer: {
     width: '100%',
     aspectRatio: 16 / 9,
     position: 'relative',
-    backgroundColor: '#E5E7EB',
-  },
+    backgroundColor: '#E5E7EB' },
   propertyImage: {
     width: '100%',
-    height: '100%',
-  },
+    height: '100%' },
   activePill: {
     position: 'absolute',
     top: 12,
@@ -508,62 +473,54 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     gap: 4,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
+    elevation: 2 },
   activeDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.success,
-  },
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.success },
 
   // Card details styles
   cardContent: {
     padding: 16,
-    gap: 14,
-  },
+    gap: 14 },
   cardDivider: {
     height: 1,
     backgroundColor: BORDER,
-    marginVertical: 4,
-  },
+    marginVertical: 4 },
 
   // Manager sub-card styles
   managerCard: {
     backgroundColor: '#F9FAFB',
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 12,
-  },
+    padding: 12 },
   managerIconBox: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: Radii.pill,
     backgroundColor: PRIMARY_SOFT,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
 
   // Beds Occupancy progress bar
   progressContainer: {
     height: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 4,
+    backgroundColor: Colors.surfaceMuted,
+    borderRadius: Radii.badge,
     overflow: 'hidden',
-    marginTop: 6,
-  },
+    marginTop: 6 },
   progressFill: {
     height: '100%',
     backgroundColor: PRIMARY,
-    borderRadius: 4,
-  },
+    borderRadius: Radii.badge },
 
   // Add Property CTA Card
   addCtaCard: {
@@ -571,16 +528,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.02,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
+    elevation: 1 },
   addCtaIconBox: {
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: PRIMARY_SOFT,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
 
   // Empty state container
   emptyContainer: {
@@ -588,8 +543,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: WHITE,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
-});
+    borderColor: BORDER } });

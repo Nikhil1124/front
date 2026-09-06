@@ -20,8 +20,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({
   title,
   products,
   onProductPress,
-  onSeeAllPress,
-}) => {
+  onSeeAllPress }) => {
   const { width } = useWindowDimensions();
   const cardWidth = width > 600 ? 165 : width * 0.43;
 
@@ -56,24 +55,18 @@ export const ProductRow: React.FC<ProductRowProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 12,
-  },
+    marginVertical: 12 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   sectionTitle: {
     fontSize: 18,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   seeAllText: {
     fontSize: 13,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   listContent: {
-    paddingHorizontal: 16,
-  },
-});
+    paddingHorizontal: 16 } });

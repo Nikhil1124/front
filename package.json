@@ -7,7 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
-    "check": "node src/data/mappers.check.ts && node src/data/logic.check.ts && node src/data/headers.check.ts",
+    "check": "node src/data/mappers.check.ts && node src/data/logic.check.ts && node src/data/headers.check.ts && node src/data/tokens.check.ts && node src/data/colors.check.ts && node src/data/forms.check.ts && node src/data/sheets.check.ts && node src/data/press.check.ts",
     "check:api": "node scripts/check-api-compatibility.mjs"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "expo": "^57.0.13",
     "expo-blur": "~57.0.2",
     "expo-build-properties": "~57.0.11",
+    "expo-camera": "~57.0.4",
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.11",
     "expo-dev-client": "~57.0.13",

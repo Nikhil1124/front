@@ -6,10 +6,10 @@
  * not somebody else's promotion.
  */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, Modal, Image } from 'react-native';
+import { View, StyleSheet, Alert, Modal, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { useAdConfigQuery, useRecordAdEventMutation } from '@/features/ads/useAds';
 import { useAuthStore } from '@/store/authStore';
@@ -32,7 +32,7 @@ export function FeaturedMonetizedAdCard() {
   const recordCouponCopy = () => recordEvent.mutate({ eventType: 'coupon_copy' });
 
   return (
-    <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor="rgba(255,215,0,0.4)" padding={[8, 8]}>
+    <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor="rgba(255,215,0,0.4)" padding={[8, 8]}>
       {/* Sponsored Header */}
       <View style={styles.sponsoredHeader}>
         <Row gap={8} align="center" style={{ flex: 1 }}>
@@ -82,7 +82,7 @@ export function FeaturedMonetizedAdCard() {
               }}
               containerColor="#1A1F36"
               textColor="#FFD700"
-              borderRadius={10}
+              borderRadius={Radii.control}
               height={40}
               style={{ flex: 1.1 }}
               borderWidth={1}
@@ -96,7 +96,7 @@ export function FeaturedMonetizedAdCard() {
             onPress={() => { recordClick(); setShowCheckout(true); }}
             containerColor={Colors.accentRose}
             textColor="#FFFFFF"
-            borderRadius={10}
+            borderRadius={Radii.control}
             height={40}
             style={{ flex: 1 }}
           >
@@ -109,7 +109,7 @@ export function FeaturedMonetizedAdCard() {
           the copy-code-and-continue flow the prototype offered. */}
       <Modal visible={showCheckout} transparent animationType="fade">
         <View style={styles.backdrop}>
-          <Card containerColor="#0F0B21" borderRadius={20} borderWidth={1} borderColor={Colors.accentRose} padding={[20, 20]} style={{ width: '92%' }}>
+          <Card containerColor="#0F0B21" borderRadius={Radii.sheet} borderWidth={1} borderColor={Colors.accentRose} padding={[20, 20]} style={{ width: '92%' }}>
             <Col align="center">
               <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={Colors.success} /></View>
               <Spacer size={16} />
@@ -137,7 +137,7 @@ export function FeaturedMonetizedAdCard() {
                   : 'You can complete your order on their platform.'}
               </Txt>
               <Spacer size={20} />
-              <Btn onPress={() => setShowCheckout(false)} containerColor={Colors.accentRose} textColor="#FFFFFF" borderRadius={12} height={44} style={{ width: '100%' }}>
+              <Btn onPress={() => setShowCheckout(false)} containerColor={Colors.accentRose} textColor="#FFFFFF" borderRadius={Radii.card} height={44} style={{ width: '100%' }}>
                 <Txt variant="body" weight="700" color="#FFFFFF">Awesome, Continue</Txt>
               </Btn>
             </Col>
@@ -152,13 +152,11 @@ const styles = StyleSheet.create({
   sponsoredHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 8,
-    backgroundColor: 'rgba(19,40,45,0.6)',
-  },
-  sponsoredTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(255,215,0,0.15)', borderWidth: 1, borderColor: '#FFD700' },
+    backgroundColor: 'rgba(19,40,45,0.6)' },
+  sponsoredTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radii.badge, backgroundColor: 'rgba(255,215,0,0.15)', borderWidth: 1, borderColor: '#FFD700' },
   bannerBox: { height: 130, backgroundColor: '#1A1F36', position: 'relative', overflow: 'hidden' },
   bannerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
   bannerPillsRow: { position: 'absolute', bottom: 8, left: 16, flexDirection: 'row', gap: 8 },
-  bannerPill: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, backgroundColor: 'rgba(30,41,59,0.8)' },
+  bannerPill: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: Radii.badge, backgroundColor: 'rgba(30,41,59,0.8)' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
-  successIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(16,185,129,0.15)', alignItems: 'center', justifyContent: 'center' },
-});
+  successIcon: { width: 56, height: 56, borderRadius: Radii.pill, backgroundColor: 'rgba(16,185,129,0.15)', alignItems: 'center', justifyContent: 'center' } });

@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, RefreshControl, Pressable, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { useState } from 'react';
+import { View, StyleSheet, Modal, Pressable, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn } from '@/components/ui';
+import { StatusChip, toneFor, Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn, ListRow } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
-import { Colors, Layout } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { Radii, Colors } from '@/theme';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -18,8 +17,7 @@ import {
   useSubmitProcurementOrder,
   useApproveProcurementOrder,
   type ProcurementPaymentMethod,
-  useRejectProcurementOrder,
-} from './useProcurement';
+  useRejectProcurementOrder } from './useProcurement';
 import type { ProcurementCatalogItem } from '@/types';
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -30,8 +28,7 @@ const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   toiletries: 'hand-left',
   hardware: 'bulb',
   supplies: 'cube',
-  other: 'ellipsis-horizontal-circle',
-};
+  other: 'ellipsis-horizontal-circle' };
 
 const CATEGORY_TABS = [
   { key: 'all', label: 'All Items' },
@@ -72,22 +69,22 @@ export function ProcurementScreen() {
     <HubScreenWrapper title="Procurement & Supplies" icon="cart-outline">
       {canApprove && (
         <Row gap={8} style={{ marginBottom: 14 }}>
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             onPress={() => { setTab('order'); }}
             style={[styles.tabBtn, tab === 'order' && styles.tabBtnActive]}
           >
             <Txt size={12} weight="800" color={tab === 'order' ? Colors.textInverse : Colors.textPrimary}>
               Order Supplies
             </Txt>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button"
             onPress={() => { setTab('approvals'); }}
             style={[styles.tabBtn, tab === 'approvals' && styles.tabBtnActive]}
           >
             <Txt size={12} weight="800" color={tab === 'approvals' ? Colors.textInverse : Colors.textPrimary}>
               Approvals
             </Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
       )}
       {canApprove && tab === 'approvals' ? <ApprovalsSection /> : <OrderSuppliesSection />}
@@ -186,18 +183,18 @@ function OrderSuppliesSection() {
       <Spacer size={14} />
 
       {isLoading ? (
-        <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[20, 20]}>
           <Txt variant="body" color={Colors.textMuted} align="center">Loading catalog…</Txt>
         </Card>
       ) : isError ? (
-        <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[20, 20]}>
           <Row gap={8} align="center">
             <Ionicons name="cloud-offline" size={20} color={Colors.danger} />
             <Col style={{ flex: 1 }}>
               <Txt variant="body" weight="700" color={Colors.danger}>Couldn't load the catalog</Txt>
-              <TouchableOpacity accessibilityRole="button" onPress={() => refetch()}>
+              <AnimatedPress accessibilityRole="button" onPress={() => refetch()}>
                 <Txt variant="caption" color={Colors.primary} weight="700">Tap to retry</Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Col>
           </Row>
         </Card>
@@ -216,24 +213,18 @@ function OrderSuppliesSection() {
           <Spacer size={20} />
           <Txt size={14} weight="900" color={Colors.textPrimary}>Recent Requisitions</Txt>
           <Spacer size={8} />
-          <View style={{ gap: 8 }}>
-            {myOrders.map((ord) => (
-              <Card
+          <View>
+            {myOrders.map((ord, i) => (
+              <ListRow
                 key={ord.id}
-                containerColor={Colors.surface}
-                borderRadius={14}
-                borderWidth={1}
-                borderColor={Colors.borderSubtle}
-                padding={[12, 14]}
-              >
-                <Row justify="space-between" align="center">
-                  <Col>
-                    <Txt size={13} weight="800" color={Colors.textPrimary}>{ord.items.length} Item{ord.items.length === 1 ? '' : 's'} Requested</Txt>
-                    <Txt size={11} color={Colors.textMuted}>₹{ord.totalCost.toLocaleString('en-IN')} • {new Date(ord.createdAt).toLocaleDateString()}</Txt>
-                  </Col>
-                  <StatusBadge status={ord.status} />
-                </Row>
-              </Card>
+                title={`${ord.items.length} item${ord.items.length === 1 ? '' : 's'} requested`}
+                meta={new Date(ord.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                leading={<Ionicons name="cube-outline" size={17} color={Colors.primary} />}
+                amount={`₹${ord.totalCost.toLocaleString('en-IN')}`}
+                status={{ label: statusLabel(ord.status), tone: toneFor(ord.status) }}
+                first={i === 0}
+                last={i === myOrders.length - 1}
+              />
             ))}
           </View>
         </>
@@ -262,7 +253,7 @@ function OrderSuppliesSection() {
           <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowCartModal(false)} />
           <Card
             containerColor={Colors.surface}
-            borderRadius={24}
+            borderRadius={Radii.sheet}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[20, 20]}
@@ -324,7 +315,7 @@ function OrderSuppliesSection() {
               disabled={submitOrder.isPending}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
-              borderRadius={12}
+              borderRadius={Radii.card}
               height={48}
             >
               <Ionicons name="send" size={16} color={Colors.textInverse} />
@@ -340,12 +331,11 @@ function OrderSuppliesSection() {
 }
 
 function CatalogRow({
-  item, qty, onChangeQty,
-}: { item: ProcurementCatalogItem; qty: number; onChangeQty: (id: string, delta: number) => void }) {
+  item, qty, onChangeQty }: { item: ProcurementCatalogItem; qty: number; onChangeQty: (id: string, delta: number) => void }) {
   return (
     <Card
       containerColor={Colors.surface}
-      borderRadius={16}
+      borderRadius={Radii.card}
       borderWidth={1}
       borderColor={qty > 0 ? Colors.primary : Colors.borderSubtle}
       padding={[14, 14]}
@@ -367,22 +357,22 @@ function CatalogRow({
         <Row gap={6} align="center">
           {qty > 0 ? (
             <>
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" onPress={() => onChangeQty(item.id, -1)} style={styles.qtyBtn} activeOpacity={0.7}>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" onPress={() => onChangeQty(item.id, -1)} style={styles.qtyBtn}>
                 <Ionicons name="remove" size={16} color={Colors.textPrimary} />
-              </TouchableOpacity>
+              </AnimatedPress>
               <View style={styles.qtyBox}>
                 <Txt size={13} weight="900" color={Colors.primaryDark}>{qty}</Txt>
               </View>
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => onChangeQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]} activeOpacity={0.7}>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => onChangeQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]}>
                 <Ionicons name="add" size={16} color={Colors.textInverse} />
-              </TouchableOpacity>
+              </AnimatedPress>
             </>
           ) : (
             <Btn
               onPress={() => onChangeQty(item.id, 1)}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
-              borderRadius={10}
+              borderRadius={Radii.control}
               height={34}
               contentStyle={{ paddingHorizontal: 12 }}
             >
@@ -396,17 +386,15 @@ function CatalogRow({
   );
 }
 
+/** Only the label is local now — `pending` reads as "Pending approval" here specifically.
+ *  Colour and shape come from `StatusChip`, like every other status in the app. */
+function statusLabel(status: string): string {
+  if (status === 'pending_owner_approval') return 'Pending approval';
+  return status.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}
+
 function StatusBadge({ status }: { status: string }) {
-  const style =
-    status === 'approved' ? { bg: '#ECFDF5', text: '#047857', label: 'APPROVED' } :
-    status === 'rejected' ? { bg: '#FEF2F2', text: '#DC2626', label: 'REJECTED' } :
-    status === 'ordered' || status === 'delivered' ? { bg: '#EFF6FF', text: '#1D4ED8', label: status.toUpperCase() } :
-    { bg: '#FFFBEB', text: '#D97706', label: 'PENDING APPROVAL' };
-  return (
-    <View style={[styles.statusBadge, { backgroundColor: style.bg }]}>
-      <Txt size={10} weight="800" color={style.text}>{style.label}</Txt>
-    </View>
-  );
+  return <StatusChip label={statusLabel(status)} tone={toneFor(status)} />;
 }
 
 // ─── Owner View: real requisitions approval queue ─────────────────────────────
@@ -466,18 +454,18 @@ function ApprovalsSection() {
   return (
     <>
       {isLoading ? (
-        <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[20, 20]}>
           <Txt variant="body" color={Colors.textMuted} align="center">Loading requisitions…</Txt>
         </Card>
       ) : isError ? (
-        <Card containerColor={Colors.surface} borderRadius={16} padding={[20, 20]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[20, 20]}>
           <Row gap={8} align="center">
             <Ionicons name="cloud-offline" size={20} color={Colors.danger} />
             <Col style={{ flex: 1 }}>
               <Txt variant="body" weight="700" color={Colors.danger}>Couldn't load requisitions</Txt>
-              <TouchableOpacity accessibilityRole="button" onPress={() => refetch()}>
+              <AnimatedPress accessibilityRole="button" onPress={() => refetch()}>
                 <Txt variant="caption" color={Colors.primary} weight="700">Tap to retry</Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Col>
           </Row>
         </Card>
@@ -489,7 +477,7 @@ function ApprovalsSection() {
             <Card
               key={req.id}
               containerColor={Colors.surface}
-              borderRadius={18}
+              borderRadius={Radii.card}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[16, 16]}
@@ -533,7 +521,7 @@ function ApprovalsSection() {
                       disabled={approveOrder.isPending}
                       containerColor={Colors.success}
                       textColor={Colors.textInverse}
-                      borderRadius={10}
+                      borderRadius={Radii.control}
                       height={40}
                       style={{ flex: 1 }}
                     >
@@ -544,7 +532,7 @@ function ApprovalsSection() {
                       onPress={() => { setRejectingId(req.id); setRejectReason(''); }}
                       borderColor={Colors.danger}
                       textColor={Colors.danger}
-                      borderRadius={10}
+                      borderRadius={Radii.control}
                       height={40}
                       style={{ flex: 1 }}
                     >
@@ -565,7 +553,7 @@ function ApprovalsSection() {
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setRejectingId(null)} />
             <Card
               containerColor={Colors.surface}
-              borderRadius={20}
+              borderRadius={Radii.sheet}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[20, 20]}
@@ -588,7 +576,7 @@ function ApprovalsSection() {
                   disabled={rejectOrder.isPending}
                   containerColor={Colors.danger}
                   textColor={Colors.textInverse}
-                  borderRadius={10}
+                  borderRadius={Radii.control}
                   height={44}
                   style={{ flex: 1 }}
                 >
@@ -598,7 +586,7 @@ function ApprovalsSection() {
                   onPress={() => setRejectingId(null)}
                   borderColor={Colors.borderSubtle}
                   textColor={Colors.textPrimary}
-                  borderRadius={10}
+                  borderRadius={Radii.control}
                   height={44}
                   style={{ flex: 1 }}
                 >
@@ -617,64 +605,51 @@ const styles = StyleSheet.create({
   tabBtn: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   tabBtnActive: {
     backgroundColor: Colors.primaryDark,
-    borderColor: Colors.primaryDark,
-  },
+    borderColor: Colors.primaryDark },
   catPill: {
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   catPillActive: {
     backgroundColor: Colors.primaryDark,
-    borderColor: Colors.primaryDark,
-  },
+    borderColor: Colors.primaryDark },
   itemIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   qtyBtn: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   qtyBox: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     backgroundColor: '#F0FDF9',
-    borderRadius: 6,
+    borderRadius: Radii.badge,
     minWidth: 26,
-    alignItems: 'center',
-  },
-  statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
+    alignItems: 'center' },
   floatingCart: {
     position: 'absolute',
     bottom: 16,
     left: 16,
     right: 16,
     backgroundColor: Colors.primaryDark,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     paddingVertical: 14,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -683,25 +658,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 6,
-  },
+    elevation: 6 },
   cartCountPill: {
     backgroundColor: Colors.textInverse,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
-  },
+    borderRadius: Radii.control },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.5)',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   cartRow: {
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-  },
-});
+    borderBottomColor: Colors.borderSubtle } });
 
 export default ProcurementScreen;

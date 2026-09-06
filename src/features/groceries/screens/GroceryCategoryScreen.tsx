@@ -1,6 +1,6 @@
-import { SupplyCategory, SupplyItem } from '@/types';
+import { SupplyCategory } from '@/types';
 import { toAmount } from '@/data/mappers';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -22,19 +22,15 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNam
   deals: {
     label: "Today's Deals",
     icon: '🔥',
-    categoryNames: [],
-  },
+    categoryNames: [] },
   essentials: {
     label: 'Daily Essentials',
     icon: '🛒',
-    categoryNames: ['Dairy, Bread & Eggs', 'Atta, Rice & Dal', 'Oil, Ghee & Masala'],
-  },
+    categoryNames: ['Dairy, Bread & Eggs', 'Atta, Rice & Dal', 'Oil, Ghee & Masala'] },
   kitchen: {
     label: "Today's Kitchen Needs",
     icon: '🍳',
-    categoryNames: ['Vegetables & Fruits', 'Oil, Ghee & Masala', 'Chicken, Meat & Fish', 'PG Kitchen Needs'],
-  },
-};
+    categoryNames: ['Vegetables & Fruits', 'Oil, Ghee & Masala', 'Chicken, Meat & Fish', 'PG Kitchen Needs'] } };
 
 export function GroceryCategoryScreen() {
   const insets = useSafeAreaInsets();
@@ -202,23 +198,20 @@ export function GroceryCategoryScreen() {
                     'Oil, Ghee & Masala', 'Oils & Masala',
                     'Chicken, Meat & Fish', 'Meat & Fish',
                     'PG Kitchen Needs', 'Kitchen Essentials',
-                  ],
-                },
+                  ] },
                 {
                   title: 'Snacks & Drinks',
                   names: [
                     'Snacks', 'Beverages', 'Drinks',
                     'Frozen Foods', 'Sauces & Spreads', 'Sweets & Chocolates',
                     'Canned & Ready-to-eat',
-                  ],
-                },
+                  ] },
                 {
                   title: 'Household & Essentials',
                   names: [
                     'Cleaning Supplies', 'Household', 'Cleaning',
                     'Packaging', 'Custom Supplies',
-                  ],
-                },
+                  ] },
               ];
 
               const claimedIds = new Set<string>();
@@ -304,7 +297,7 @@ export function GroceryCategoryScreen() {
             <BlurView
               intensity={80}
               tint="light"
-              style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+              style={[StyleSheet.absoluteFill, { borderRadius: Radii.sheet }]}
             />
             <View style={styles.cartInfo}>
               <View style={styles.cartIconWrapper}>
@@ -328,24 +321,21 @@ export function GroceryCategoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.canvas,
-  },
+    backgroundColor: Colors.canvas },
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    gap: 10,
-  },
+    gap: 10 },
   backBtn: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Layout.shadowCard,
-  },
+    ...Layout.shadowCard },
   searchBarContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -357,18 +347,15 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    ...Layout.shadowCard,
-  },
+    ...Layout.shadowCard },
   headerSearchInput: {
     flex: 1,
     fontSize: 14,
     color: Colors.textPrimary,
-    padding: 0,
-  },
+    padding: 0 },
   chipRow: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
+    paddingBottom: 8 },
   activeChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -379,51 +366,41 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: Colors.primary,
-    gap: 6,
-  },
+    gap: 6 },
   activeChipText: {
     fontSize: 12,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   activeSupplyCategoryHeader: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   activeSupplyCategoryTitle: {
     fontSize: 20,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   activeSupplyCategorySub: {
     fontSize: 12,
     color: Colors.textSecondary,
-    marginTop: 2,
-  },
+    marginTop: 2 },
   sectionsScrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 150,
-  },
+    paddingBottom: 150 },
   sectionBlock: {
     marginTop: 18,
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   sectionHeading: {
     fontSize: 18,
     color: Colors.textPrimary,
     marginBottom: 14,
-    letterSpacing: -0.2,
-  },
+    letterSpacing: -0.2 },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-  },
+    gap: 10 },
   catItem: {
     alignItems: 'center',
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   imageContainer: {
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -431,48 +408,40 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
-    elevation: 1,
-  },
+    elevation: 1 },
   catImage: {
     width: '82%',
-    height: '82%',
-  },
+    height: '82%' },
   catTitle: {
     fontSize: 11,
     color: Colors.textPrimary,
     textAlign: 'center',
     marginTop: 6,
     lineHeight: 14,
-    paddingHorizontal: 2,
-  },
+    paddingHorizontal: 2 },
   gridContent: {
     paddingHorizontal: 12,
     paddingTop: 8,
-    paddingBottom: 160,
-  },
+    paddingBottom: 160 },
   columnWrapper: {
     justifyContent: 'space-between',
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   emptyBox: {
     alignItems: 'center',
     paddingTop: 80,
-    gap: 8,
-  },
+    gap: 8 },
   emptyIcon: { fontSize: 40 },
   emptyText: {
     fontSize: 15,
-    color: Colors.textMuted,
-  },
+    color: Colors.textMuted },
   floatingCartContainer: {
     position: 'absolute',
     alignSelf: 'center',
     width: '85%',
-    ...Layout.shadowFloatingBar,
-  },
+    ...Layout.shadowFloatingBar },
   floatingCart: {
     backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 32,
+    borderRadius: Radii.sheet,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -480,33 +449,26 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.85)',
-    overflow: 'hidden',
-  },
+    overflow: 'hidden' },
   cartInfo: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cartIconWrapper: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   cartTotal: {
     fontSize: 14,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   cartSub: {
     fontSize: 11,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   viewCartBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 24,
+    borderRadius: Radii.sheet,
     paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
+    paddingHorizontal: 14 },
   viewCartText: {
     color: '#fff',
-    fontSize: 12,
-  },
-});
+    fontSize: 12 } });

@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
 import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Layout } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useStaffQuery } from '@/features/staff/useStaff';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
@@ -49,7 +49,7 @@ export function ManagerProvisioningScreen() {
       {/* Manager summary — at-a-glance list of who has manager access */}
       <Card
         containerColor={Colors.surface}
-        borderRadius={Layout.borderRadiusCard}
+        borderRadius={Radii.card}
         borderWidth={1}
         borderColor={Colors.borderSubtle}
         padding={[14, 14]}
@@ -110,18 +110,18 @@ export function ManagerProvisioningScreen() {
 
 const styles = StyleSheet.create({
   avatar: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 36, height: 36, borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center', justifyContent: 'center',
   },
   countPill: {
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: Radii.pill, paddingHorizontal: 10, paddingVertical: 4,
     borderWidth: 1, borderColor: Colors.borderSubtle,
   },
   pgPill: {
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: Radii.pill, paddingHorizontal: 8, paddingVertical: 3,
     borderWidth: 1, borderColor: Colors.borderSubtle,
     maxWidth: 100,
   },

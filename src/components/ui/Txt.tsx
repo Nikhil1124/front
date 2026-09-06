@@ -23,6 +23,10 @@ export interface TxtProps {
   /** Raise for text that must stay legible at any system font size and sits in a container
    *  that can grow with it. Lower (or 1) only for text inside genuinely fixed chrome. */
   maxFontSizeMultiplier?: number;
+  /** Fixed-width digits. Without this, "₹1,42,300" and "₹86,400" sit on different optical
+   *  grids — every proportional digit has its own width, so a column of rupee figures never
+   *  lines up. Set on any number that appears in a list, a row, or beside another number. */
+  tabular?: boolean;
 }
 
 /**
@@ -43,7 +47,7 @@ const DEFAULT_MAX_FONT_SCALE = 1.3;
 export function Txt({
   children, variant, size, weight, color = Colors.textPrimary,
   align = 'left', lineHeight, letterSpacing, style, numberOfLines, ellipsizeMode,
-  maxFontSizeMultiplier = DEFAULT_MAX_FONT_SCALE,
+  maxFontSizeMultiplier = DEFAULT_MAX_FONT_SCALE, tabular = false,
 }: TxtProps) {
   const base = variant ? Typography[variant] : null;
   const resolvedSize = size ?? base?.fontSize ?? 13;
@@ -59,7 +63,7 @@ export function Txt({
         textAlign: align,
         lineHeight: resolvedLineHeight,
         letterSpacing: resolvedLetterSpacing,
-      }, style]}
+      }, tabular && styles.tabular, style]}
       numberOfLines={numberOfLines}
       ellipsizeMode={ellipsizeMode}
       maxFontSizeMultiplier={maxFontSizeMultiplier}
@@ -68,3 +72,5 @@ export function Txt({
     </Text>
   );
 }
+
+const styles = { tabular: { fontVariant: ['tabular-nums'] as TextStyle['fontVariant'] } };

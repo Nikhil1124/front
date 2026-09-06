@@ -29,7 +29,7 @@
  * from two single-capture invocations. This keeps the modal reusable for the
  * one-shot "verify delivery" and "log expense receipt" flows too.
  */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Modal,
   View,
@@ -38,8 +38,7 @@ import {
   Platform,
   Linking,
   Image,
-  Pressable,
-} from 'react-native';
+  Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Card, Txt, Row, Col, Btn, OutlinedBtn, Spacer } from '@/components/ui';
@@ -82,8 +81,7 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
         quality: 0.7,
-        allowsEditing: false,
-      });
+        allowsEditing: false });
       // `canceled` is the user backing out of the camera without shooting —
       // not an error, just stay on the capture button.
       if (result.canceled) return;
@@ -161,7 +159,7 @@ function CaptureBody({ onCapture }: { onCapture: () => void }) {
     <Col align="center" justify="center" gap={24} style={{ flex: 1 }}>
       <Card
         containerColor={Colors.surfaceElevated}
-        borderRadius={Radii.xxl}
+        borderRadius={Radii.card}
         borderColor={Colors.borderMuted}
         padding={[16, 18]}
         style={{ maxWidth: 320 }}
@@ -200,8 +198,7 @@ function PreviewBody({
   photoUri,
   submitting,
   onRetake,
-  onSubmit,
-}: {
+  onSubmit }: {
   photoUri: string;
   submitting: boolean;
   onRetake: () => void;
@@ -211,7 +208,7 @@ function PreviewBody({
     <Col style={{ flex: 1 }} gap={12}>
       <Card
         containerColor={Colors.surfaceElevated}
-        borderRadius={Radii.xxl}
+        borderRadius={Radii.card}
         borderColor={Colors.borderMuted}
         padding={0}
         style={{ flex: 1, overflow: 'hidden' }}
@@ -224,7 +221,7 @@ function PreviewBody({
       </Card>
 
       {submitting ? (
-        <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.lg} borderColor={Colors.borderMuted} padding={[14, 14]}>
+        <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.control} borderColor={Colors.borderMuted} padding={[14, 14]}>
           <Row align="center" justify="center" gap={10}>
             <ActivityIndicator color={Colors.primary} />
             <Txt variant="caption" weight="600" color={Colors.textInverse}>Uploading proof…</Txt>
@@ -246,13 +243,13 @@ function PreviewBody({
           <Btn
             onPress={onSubmit}
             containerColor={Colors.primary}
-            textColor={Colors.canvas}
+            textColor={Colors.textInverse}
             height={46}
             style={{ flex: 1 }}
             testID="camera-proof-submit"
           >
-            <MaterialCommunityIcons name="check-circle" size={18} color={Colors.canvas} />
-            <Txt variant="caption" weight="700" color={Colors.canvas} style={{ marginLeft: 6 }}>Submit</Txt>
+            <MaterialCommunityIcons name="check-circle" size={18} color={Colors.textInverse} />
+            <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Submit</Txt>
           </Btn>
         </Row>
       )}
@@ -286,11 +283,11 @@ function PermissionDeniedCard({ onRequest }: { onRequest: () => void }) {
         <Btn
           onPress={() => Linking.openSettings()}
           containerColor={Colors.primary}
-          textColor={Colors.canvas}
+          textColor={Colors.textInverse}
           height={42}
           testID="camera-proof-open-settings"
         >
-          <Txt variant="body" weight="700" color={Colors.canvas}>Open Settings</Txt>
+          <Txt variant="body" weight="700" color={Colors.textInverse}>Open Settings</Txt>
         </Btn>
       </Row>
     </Col>
@@ -300,41 +297,34 @@ function PermissionDeniedCard({ onRequest }: { onRequest: () => void }) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: Colors.canvas,
-  },
+    backgroundColor: Colors.canvas },
   container: {
     flex: 1,
     paddingTop: Platform.OS === 'ios' ? 56 : 28,
     paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
+    paddingBottom: 24 },
   header: {
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   closeBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   shutterBtn: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: Radii.pill,
     borderWidth: 3,
     borderColor: Colors.primary,
     backgroundColor: 'transparent',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   deniedIcon: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    justifyContent: 'center' } });
 
 export default CameraProofModal;

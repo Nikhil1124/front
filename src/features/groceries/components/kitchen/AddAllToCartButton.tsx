@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 interface AddAllToCartButtonProps {
   totalItems: number;
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 16,

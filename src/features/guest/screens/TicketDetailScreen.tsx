@@ -21,7 +21,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer, Pill, OutlinedBtn } from '@/components/ui';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Layout } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { FeedbackComplaintEntity } from '@/types';
@@ -99,7 +99,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
       {/* Status tracker — horizontal stepper */}
       <Card
         containerColor={Colors.surface}
-        borderRadius={Layout.borderRadiusCard}
+        borderRadius={Radii.card}
         borderWidth={1}
         borderColor={Colors.borderSubtle}
         padding={[16, 14]}
@@ -148,7 +148,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
       {/* Ticket body */}
       <Card
         containerColor={Colors.surface}
-        borderRadius={Layout.borderRadiusCard}
+        borderRadius={Radii.card}
         borderWidth={1}
         borderColor={Colors.borderSubtle}
         padding={[16, 16]}
@@ -182,7 +182,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
       {ticket.mediaUri ? (
         <>
           <Spacer size={14} />
-          <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row gap={8} align="center">
               <Ionicons name="attach" size={16} color={Colors.primary} />
               <Txt variant="body" weight="700" color={Colors.textPrimary}>Photo attachment</Txt>
@@ -197,7 +197,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
       {ticket.adminResponse ? (
         <>
           <Spacer size={14} />
-          <Card containerColor={Colors.surfaceElevated} borderRadius={Layout.borderRadiusCard} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+          <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
             <Row gap={8} align="center">
               <Ionicons name="chatbubble-ellipses" size={16} color={Colors.primary} />
               <Txt variant="body" weight="700" color={Colors.textPrimary}>Manager response</Txt>
@@ -214,7 +214,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
       <Spacer size={14} />
       <Card
         containerColor={Colors.surfaceMuted}
-        borderRadius={Layout.borderRadiusCard}
+        borderRadius={Radii.card}
         borderWidth={1}
         borderColor={Colors.borderMuted}
         padding={[14, 14]}
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', position: 'relative',
   },
   stageDot: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 28, height: 28, borderRadius: Radii.pill,
     borderWidth: 2,
     alignItems: 'center', justifyContent: 'center',
     zIndex: 2,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   attachmentImage: {
     width: '100%',
     height: 180,
-    borderRadius: Layout.borderRadiusCard,
+    borderRadius: Radii.card,
     backgroundColor: Colors.surfaceMuted,
   },
 });

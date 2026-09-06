@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { getPerUnitRateLabel, parseUnitQuantity } from '../../utils/pricing';
 
 export interface PricingOption {
@@ -84,7 +84,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     padding: 14,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 60,
     backgroundColor: Colors.surface,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     padding: 8,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   bestValueTag: {
     backgroundColor: Colors.primary,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   savingsTag: {
     backgroundColor: Colors.danger,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     padding: 8,
   },
   savingsTitle: {

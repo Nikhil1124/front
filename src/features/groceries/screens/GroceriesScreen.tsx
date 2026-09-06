@@ -1,5 +1,4 @@
-import { SupplyItem } from '@/types';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
 import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
@@ -19,9 +18,8 @@ import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
 
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 /**
@@ -272,7 +270,7 @@ export function GroceriesScreen() {
 
       <Animated.View style={[styles.floatingCartContainer, { transform: [{ translateY: cartAnimY }], opacity: cartOpacity, bottom: 24 }]}>
         <TouchableOpacity accessibilityRole="button" style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>
-          <BlurView intensity={80} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} />
+          <BlurView intensity={80} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: Radii.sheet }]} />
           <View style={styles.cartInfo}>
             <View style={styles.cartIconWrapper}>
               <Ionicons name="cart" size={14} color="#fff" />
@@ -302,17 +300,15 @@ const styles = StyleSheet.create({
   searchContainer: { paddingHorizontal: 16, marginTop: 12, marginBottom: 8 },
   floatingCartContainer: {
     position: 'absolute', alignSelf: 'center', width: '85%',
-    shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8,
-  },
+    shadowColor: Colors.textPrimary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8 },
   floatingCart: {
-    backgroundColor: 'rgba(255, 255, 255, 0.65)', borderRadius: 32, flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.65)', borderRadius: Radii.sheet, flexDirection: 'row',
     justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8,
-    borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.85)', overflow: 'hidden',
-  },
+    borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.85)', overflow: 'hidden' },
   cartInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cartIconWrapper: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  cartBadge: { position: 'absolute', top: -2, right: -4, backgroundColor: Colors.accentRose, borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
-  checkoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 1, backgroundColor: Colors.primary, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 24 },
+  cartIconWrapper: { width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  cartBadge: { position: 'absolute', top: -2, right: -4, backgroundColor: Colors.accentRose, borderRadius: Radii.control, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
+  checkoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 1, backgroundColor: Colors.primary, paddingVertical: 7, paddingHorizontal: 12, borderRadius: Radii.sheet },
   searchResultsWrapper: { paddingHorizontal: 16, paddingTop: 4 },
   searchResultsList: { gap: 10 },
   noResultsBox: { alignItems: 'center', paddingVertical: 60, gap: 12 },
@@ -327,5 +323,4 @@ const styles = StyleSheet.create({
   noResultsText: { fontSize: 14, color: Colors.textMuted, fontWeight: '600' as const },
   sectionTitle: { fontSize: 18, fontWeight: '800' as const, color: Colors.textPrimary },
   sectionSubtitle: { fontSize: 12, fontWeight: '400' as const, color: Colors.textSecondary, marginTop: 2 },
-  seeAllText: { fontSize: 13, fontWeight: '600' as const, color: Colors.primary },
-});
+  seeAllText: { fontSize: 13, fontWeight: '600' as const, color: Colors.primary } });

@@ -7,12 +7,11 @@
  * out, or the API returned 0. Showing a friendly icon + caption stops the
  * user from wondering if the screen is still loading.
  */
-import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Card, Spacer } from '@/components/ui';
 import { LoadingState, ErrorState } from '@/components/ui/Spinner';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 export interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -38,12 +37,11 @@ export function EmptyState({
   accent = Colors.textMuted,
   loading = false,
   error,
-  onRetry,
-}: EmptyStateProps) {
+  onRetry }: EmptyStateProps) {
   return (
     <Card
       containerColor={Colors.surface}
-      borderRadius={16}
+      borderRadius={Radii.card}
       borderWidth={1}
       borderColor={Colors.borderSubtle}
       padding={[32, 24]}
@@ -80,10 +78,8 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    justifyContent: 'center' } });
 
 export default EmptyState;

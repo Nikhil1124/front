@@ -2,16 +2,15 @@
  * PaymentReceiptDialog — PGow digital receipt / invoice modal.
  * Designed as a clean bottom-sheet receipt viewer with optimized hierarchy and layout.
  */
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import {
-  Modal, View, StyleSheet, ScrollView, Pressable, Linking, Platform, BackHandler, Alert, TouchableOpacity
+  Modal, View, StyleSheet, ScrollView, Pressable, Linking, Platform, BackHandler, Alert
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { BlurView } from 'expo-blur';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
-import { Colors, Layout, Motion } from '@/theme';
+import { Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, AnimatedPress } from '@/components/ui';
+import { Radii, Colors } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -27,6 +26,14 @@ interface Props {
    *  set and no onDownload is supplied, the Download button uses Linking. */
   downloadUrl?: string;
   downloadLabel?: string;
+  /**
+   * Decisions that belong to this payment — the owner's Verify / Reject pair.
+   *
+   * They used to sit inside the payment's list row, two 14px targets inside an already
+   * tappable card. A decision needs the UTR, the mode and the payer in front of you, and
+   * that is exactly what this sheet already shows.
+   */
+  actions?: ReactNode;
 }
 
 function formatPaymentType(type: string): string {
@@ -44,7 +51,7 @@ export function PaymentReceiptDialog({
   onDownload,
   downloadUrl,
   downloadLabel = 'Download PDF',
-}: Props) {
+  actions }: Props) {
   // Bottom-pinned sheet: the receipt's last row would otherwise sit in the gesture strip.
   const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
@@ -105,7 +112,7 @@ export function PaymentReceiptDialog({
               size={18}
               tint={Colors.textSecondary}
               containerColor={Colors.surfaceMuted}
-              borderRadius={999}
+              borderRadius={Radii.pill}
               padding={6}
               hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
               testID="receipt_header_close_btn"
@@ -123,8 +130,7 @@ export function PaymentReceiptDialog({
                 styles.statusBanner,
                 {
                   backgroundColor: isVerified ? Colors.surfaceElevated : Colors.alertGradientStart,
-                  borderColor: isVerified ? Colors.success : Colors.warning,
-                },
+                  borderColor: isVerified ? Colors.success : Colors.warning },
               ]}
             >
               <Row gap={8} align="center">
@@ -165,12 +171,12 @@ export function PaymentReceiptDialog({
               ) : null}
               <Spacer size={6} />
               <Row gap={8} style={{ marginTop: 2 }}>
-                <TouchableOpacity accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.pgId); Alert.alert('Copied', 'PG ID copied to clipboard.'); }} style={styles.idChip}>
+                <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.pgId); Alert.alert('Copied', 'PG ID copied to clipboard.'); }} style={styles.idChip}>
                   <Txt size={9} color={Colors.textMuted}>PG ID: {payment.pgId.slice(0, 8)}...</Txt>
-                </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.payerId); Alert.alert('Copied', 'Resident ID copied to clipboard.'); }} style={styles.idChip}>
+                </AnimatedPress>
+                <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.payerId); Alert.alert('Copied', 'Resident ID copied to clipboard.'); }} style={styles.idChip}>
                   <Txt size={9} color={Colors.textMuted}>Res ID: {payment.payerId.slice(0, 8)}...</Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
             </View>
 
@@ -233,13 +239,19 @@ export function PaymentReceiptDialog({
 
           {/* Footer Action Bar */}
           <View style={styles.footer}>
+            {actions ? (
+              <>
+                {actions}
+                <Spacer size={10} />
+              </>
+            ) : null}
             <Row gap={10}>
               {isVerified && (
                 <Btn
                   onPress={handleDownload}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
-                  borderRadius={Layout.borderRadiusButton}
+                  borderRadius={Radii.control}
                   height={42}
                   style={{ flex: 1 }}
                   testID="download_pdf_invoice_btn"
@@ -254,7 +266,7 @@ export function PaymentReceiptDialog({
                 onPress={onDismiss}
                 borderColor={Colors.borderMuted}
                 textColor={Colors.textSecondary}
-                borderRadius={Layout.borderRadiusButton}
+                borderRadius={Radii.control}
                 height={42}
                 style={isVerified ? undefined : { flex: 1 }}
                 testID="receipt_done_btn"
@@ -273,8 +285,7 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    justifyContent: 'flex-end',
-  },
+    justifyContent: 'flex-end' },
   modalContent: {
     width: '100%',
     maxHeight: '85%',
@@ -283,47 +294,38 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    overflow: 'hidden',
-  },
+    overflow: 'hidden' },
   header: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
+    backgroundColor: Colors.surface },
   scrollBody: {
     padding: 16,
-    paddingBottom: 24,
-  },
+    paddingBottom: 24 },
   statusBanner: {
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
-    padding: 10,
-  },
+    padding: 10 },
   detailsCard: {
     padding: 12,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   amountCard: {
     padding: 12,
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   idChip: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: Colors.surfaceMuted,
-  },
+    borderRadius: Radii.badge,
+    backgroundColor: Colors.surfaceMuted },
   footer: {
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
-});
+    backgroundColor: Colors.surface } });

@@ -114,6 +114,30 @@ export interface JoinPgResult {
  * new resident name their own rent. The membership created here is still subject to the KYC
  * gate, so joining buys a waiting room, not access.
  */
+export interface JoinPreviewRoom {
+  room_number: string;
+  floor_number: number;
+  sharing_type: number;
+  has_vacancy: boolean;
+}
+
+export interface JoinPreview {
+  name: string;
+  formatted_address: string;
+  rooms: JoinPreviewRoom[];
+}
+
+/**
+ * Resolve a lobby code to the property it belongs to, before the joiner has an account.
+ *
+ * This is what lets the join form name the PG you are about to join and offer its rooms as a
+ * picker. `POST /guests/join` takes `room_no` as a free string and never checks it, so a typo
+ * quietly creates a resident in a room that does not exist.
+ */
+export function fetchJoinPreview(code: string): Promise<JoinPreview> {
+  return apiFetch<JoinPreview>(API.PG_JOIN_PREVIEW(code), { unauthorized: "throw" });
+}
+
 export function joinPg(params: JoinPgParams): Promise<JoinPgResult> {
   return apiFetch<JoinPgResult>(API.GUESTS_JOIN, {
     method: "POST",
@@ -151,11 +175,20 @@ export function useGuestsQuery(pgId?: string) {
         listGuests(pgId, { limit: 200 }),
         // 100, not 200 — `/v1/payments` is the one list route capped at `le=100`. At 200
         // this 422'd on every call and `.catch(() => null)` swallowed it, so `settled` was
-        // always empty and every resident on the roster read "Rent pending for this cycle",
-        // which is the exact bug the comment below was written to prevent.
-        // ponytail: one page, no period filter server-side — page on `next_cursor` if a
-        // property ever exceeds 100 verified payments.
-        listPayments(pgId, { status: "verified", limit: 100 }).catch(() => null),
+        // always empty and every resident on the roster read "Rent pending for this cycle".
+        //
+        // `purpose`/`period` are filtered server-side rather than below, so the cap means
+        // "100 rent payments for this month" — one per resident. Without them the page was
+        // every verified payment of any kind, newest first, and a property with grocery
+        // volume pushed this month's rent rows off the end: residents who had paid came
+        // back as unpaid. The client-side filter below stays as a backstop in case the
+        // server ignores an unknown param — truncated-but-correct beats wrong.
+        listPayments(pgId, {
+          status: "verified",
+          purpose: "rent",
+          period,
+          limit: 100,
+        }).catch(() => null),
       ]);
       const settled = new Set(
         (payments?.items ?? [])

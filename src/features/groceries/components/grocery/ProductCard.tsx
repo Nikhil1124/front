@@ -5,7 +5,7 @@ import { SupplyItem } from '@/types';
 import { useCartStore } from '../../store/useCartStore';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 interface ProductCardProps {
@@ -230,7 +230,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surfaceCard,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     padding: 12,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.TintRed,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
   },
   discountBadgeText: {
     color: Colors.danger,
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     bottom: 2,
     right: 2,
     backgroundColor: '#FFFFFF',
-    borderRadius: 9,
+    borderRadius: Radii.control,
     shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   optionTab: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     backgroundColor: '#FFFFFF',
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   },
   addBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     height: 34,
     justifyContent: 'center',
     alignItems: 'center',
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     height: 34,
     paddingHorizontal: 8,
   },
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   // ── Simple Layout Styles ──
   simpleCard: {
     backgroundColor: Colors.surfaceCard,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 10,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   simpleAddButton: {
     width: 26,
     height: 26,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     height: 26,
     paddingHorizontal: 4,
     gap: 4,

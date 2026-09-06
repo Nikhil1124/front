@@ -28,8 +28,6 @@ const ALLOWED = new Set([
   // Auth screens: no header, they pad their own scroll away from the notch.
   'app/(auth)/reset-password.tsx',
   'src/features/owner/OwnerRegisterScreen.tsx',
-  'src/features/owner/OwnerLoginScreen.tsx',
-  'src/features/owner/WelcomeScreen.tsx',
 ]);
 
 function walk(dir: string, out: string[] = []): string[] {

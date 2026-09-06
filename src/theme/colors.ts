@@ -18,7 +18,14 @@
  */
 export const Colors = {
   // ── Surfaces & Canvas ─────────────────────────────────────────────────────
-  canvas: '#F6F9FB',              // Light ice cyan canvas background
+  //
+  // White, not a tint. The old `#F6F9FB` put a white card at 1.06:1 against its own page —
+  // measurably the same colour — so nothing on any screen read as a surface, and the only
+  // thing drawing a card edge was a 1.46:1 border. You cannot make a white card visible on a
+  // near-white page; the page has to stop being near-white. Structure now comes from the
+  // hairline (`separator`) and from type, and a filled surface is reserved for something that
+  // means it: a tinted metric card, a role-tinted total, an alert.
+  canvas: '#FFFFFF',              // The page. Nothing is painted on top of it "for free".
   surface: '#FFFFFF',             // Pure white cards & dialogs
   surfaceCard: '#FFFFFF',         // Card background
   surfaceElevated: '#EDF4F8',     // Soft highlighted ice tiles / active chips
@@ -49,6 +56,11 @@ export const Colors = {
   textAccent: '#26658C',          // Ocean blue text for links & active tab labels
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
+  //
+  // `separator` is new and load-bearing: with no tinted page behind them, a run of rows is
+  // held together by this hairline and nothing else. `surfaceElevated` used to do this job at
+  // 1.11:1 against white, which is invisible — it is a tile fill, not a rule.
+  separator: '#E1E7EC',           // 1.25:1 on white — row rules and group edges
   borderSubtle: '#C9D8E2',        // Ice Cyan border
   borderFocus: '#26658C',         // 2px active input focus border
   borderGlass: 'rgba(44, 74, 99, 0.16)', // Glassmorphic borders
@@ -96,38 +108,46 @@ export const Palette = {
   TintBlue: '#E6F1F7',
 } as const;
 
-
-
-export const Theme = {
-  colors: Colors,
-  palette: Palette,
-  primary: Colors.primary,
-  secondary: Colors.secondary,
-  tertiary: Colors.tertiary,
-  background: Colors.canvas,
-  surface: Colors.surface,
-  onPrimary: Colors.textInverse,
-  onSecondary: Colors.textInverse,
-  onBackground: Colors.textPrimary,
-  onSurface: Colors.textPrimary,
-  surfaceVariant: Colors.surfaceMuted,
-  onSurfaceVariant: Colors.textSecondary,
-  primaryContainer: Colors.surfaceElevated,
-  onPrimaryContainer: Colors.primaryDark,
-  secondaryContainer: Colors.surfaceMuted,
-  onSecondaryContainer: Colors.textPrimary,
-  tertiaryContainer: Colors.surfaceElevated,
-  onTertiaryContainer: Colors.tertiary,
-  error: Colors.danger,
-  onError: Colors.textInverse,
+/**
+ * DeckTints — the filled metric cards in the analytics deck.
+ *
+ * Each is a verified triplet, because a tinted surface needs an ink of its own hue: generic
+ * near-black on an amber fill looks like a mistake, and `textMuted` on any of them misses AA.
+ * Ratios are ink-on-fill and sub-on-fill respectively:
+ *
+ *     brand  13.77 / 5.69      green   9.67 / 6.00
+ *     amber   8.00 / 5.68      slate  15.06 / 5.05
+ *
+ * `slate` is the inactive card. It is a tint rather than white so that an inactive card still
+ * reads as a card on the white page — white-on-white is the bug this whole pass exists to fix.
+ */
+export const DeckTints = {
+  brand: { fill: '#DCEAF2', ink: '#011C40', sub: '#3A5D75' },
+  green: { fill: '#D8EDE3', ink: '#03402C', sub: '#2E5F4C' },
+  amber: { fill: '#F7E8CE', ink: '#6B3705', sub: '#7A5227' },
+  slate: { fill: '#EDEFF2', ink: '#0F1B2A', sub: '#55677A' },
 } as const;
 
-export type ThemeType = typeof Theme;
+export type DeckTint = keyof typeof DeckTints;
+
+
+
+// `Theme` — a Material-Design-shaped alias object (`primaryContainer`, `onSurfaceVariant`,
+// `error`/`onError`…) sitting beside `Colors` and never once imported anywhere in the app —
+// lived here until this pass. It predates `Colors`' own semantic naming (`textPrimary`,
+// `surfaceElevated`, `danger`) and nothing in the app ever adopted its Material vocabulary;
+// every screen already reaches for `Colors.*` directly. Same failure shape as the `Layout`
+// radius fields removed above: a second, unused name for values `Colors` already owns.
 
 export const Layout = {
-  borderRadiusCard: 20,
-  borderRadiusButton: 12,
-  borderRadiusChip: 20,
+  // `borderRadiusCard` (20), `borderRadiusButton` (12) and `borderRadiusChip` (20) lived here
+  // until this pass — a second, uncoordinated radius scale sitting beside `Radii`, and the
+  // one `Card`/`Btn`/`OutlinedBtn`/`Chip`/`Pill` actually defaulted to. `Radii` was built
+  // specifically to replace scales like this one; these three just never got the memo, so
+  // every screen using a bare `<Card>` was silently 2px rounder than one that passed
+  // `borderRadius={Radii.card}` explicitly. Removed rather than pointed at `Radii` and kept,
+  // because a second name for the same five values is exactly the trap `Radii` exists to
+  // close — see `src/data/tokens.check.ts`.
   shadowCard: {
     shadowColor: '#011C40',
     shadowOffset: { width: 0, height: 4 },

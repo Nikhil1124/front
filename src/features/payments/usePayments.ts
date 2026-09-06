@@ -7,6 +7,7 @@ import type { Page } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
 import * as map from "../../data/mappers";
+import { hapticCaution, hapticSuccess } from "../../utils/haptics";
 import type { PaymentEntity } from "../../types";
 // Re-exported: this module stays the public entry point for payments, while the pure
 // URI builder lives somewhere a plain `node` check can import it.
@@ -76,10 +77,20 @@ export function submitPayment(params: SubmitPaymentParams): Promise<PaymentRecor
 // GET /v1/payments?pg_id=&status=&limit=&cursor=
 export function listPayments(
   pgId: string,
-  opts?: { status?: PaymentStatus; limit?: number; cursor?: string }
+  opts?: {
+    status?: PaymentStatus;
+    /** Narrow to one kind of payment. Rent, food and service all live in this one list. */
+    purpose?: "rent" | "food" | "service";
+    /** One month, as any date inside it (`YYYY-MM-01`). */
+    period?: string;
+    limit?: number;
+    cursor?: string;
+  }
 ): Promise<Page<PaymentRecord>> {
   const params = new URLSearchParams({ pg_id: pgId });
   if (opts?.status) params.append("status", opts.status);
+  if (opts?.purpose) params.append("purpose", opts.purpose);
+  if (opts?.period) params.append("period", opts.period);
   if (opts?.limit) params.append("limit", opts.limit.toString());
   if (opts?.cursor) params.append("cursor", opts.cursor);
   return apiFetch<Page<PaymentRecord>>(`${API.PAYMENTS}?${params.toString()}`);
@@ -229,6 +240,7 @@ export function useVerifyPaymentMutation(pgId?: string) {
   return useMutation({
     mutationFn: (paymentId: string) => verifyPayment(paymentId),
     onSuccess: () => {
+      hapticSuccess();
       if (pgId) {
         qc.invalidateQueries({ queryKey: qk.payments.list(pgId) });
         qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
@@ -245,6 +257,7 @@ export function useRejectPaymentMutation(pgId?: string) {
     mutationFn: ({ paymentId, reason }: { paymentId: string; reason?: string }) =>
       rejectPayment(paymentId, reason),
     onSuccess: () => {
+      hapticCaution();
       if (pgId) {
         qc.invalidateQueries({ queryKey: qk.payments.list(pgId) });
         qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });

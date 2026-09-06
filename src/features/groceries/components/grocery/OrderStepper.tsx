@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyOrderStatus } from '@/types/supply';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 
 export const SUPPLY_ORDER_STATUS_SEQUENCE: SupplyOrderStatus[] = [
   'placed',
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 12,
     backgroundColor: Palette.TintRed,
-    borderRadius: 8,
+    borderRadius: Radii.control,
   },
   cancelledText: {
     color: Colors.danger,
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   node: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: Radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.primary,
     zIndex: 1,
   },

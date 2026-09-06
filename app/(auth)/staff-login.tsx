@@ -1,7 +1,4 @@
-import { OwnerLoginScreen } from '@/features/owner/OwnerLoginScreen';
+import { SignInScreen } from '@/features/auth/SignInScreen';
 
-// Staff portal → tab index 2 (Kitchen & Staff). Same underlying form as owner-login,
-// just opened on a different tab — see OwnerLoginScreen's own TABS array.
-export default function StaffLoginRoute() {
-  return <OwnerLoginScreen initialTab={2} />;
-}
+// Staff sign in with a PIN, which is a mode on the shared form rather than its own screen.
+export default SignInScreen;

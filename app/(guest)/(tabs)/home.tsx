@@ -11,19 +11,18 @@
  *
  * All data is live — no mocks. Zero hardcoding of resident, meal, or rent info.
  */
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View, StyleSheet, Alert, ScrollView, RefreshControl,
-  Image, TouchableOpacity, Platform, Dimensions,
-} from 'react-native';
+  Image, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Card, Txt, Btn, Row, Col, Spacer, LoadingState, ErrorState, OutlinedBtn } from '@/components/ui';
+import { Txt, Row, Col, Spacer, LoadingState, ErrorState, StatusChip } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { Colors } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
@@ -39,6 +38,7 @@ import { usePropertyQuery } from '@/features/properties/useProperties';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CUTOFF_HOURS: Record<string, number> = { BREAKFAST: 10, LUNCH: 14, DINNER: 21 };
@@ -62,11 +62,11 @@ function cutoffLabel(ms: number | null): string {
  *  than guess at what's being served. */
 const DIETARY_TAG: Record<'veg' | 'non_veg' | 'pure_veg', { label: string; color: string; bg: string }> = {
   veg: { label: '🥦 VEG', color: '#15803D', bg: '#DCFCE7' },
-  non_veg: { label: '🍗 NON-VEG', color: '#B91C1C', bg: '#FEE2E2' },
-  pure_veg: { label: '🥗 PURE VEG', color: '#166534', bg: '#DCFCE7' },
-};
+  non_veg: { label: '🍗 NON-VEG', color: Colors.danger, bg: Palette.TintRed },
+  pure_veg: { label: '🥗 PURE VEG', color: Colors.success, bg: '#DCFCE7' } };
 
 export default function GuestHomeTab() {
+  const dockScroll = useDockScroll();
   const [showKycDialog, setShowKycDialog] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -92,8 +92,7 @@ export default function GuestHomeTab() {
           toast('success', 'Welcome Back! 🏠', "You're marked as home again.");
         }
       },
-      onError: () => toast('error', 'Could not update', 'Please try again.'),
-    });
+      onError: () => toast('error', 'Could not update', 'Please try again.') });
   }, [setAwayMutation, toast]);
 
   const { data: roleNotifs = [], refetch: refetchNotifs, isLoading: noticesLoading, error: noticesError } = useRoleNotificationsQuery(activePgId ?? undefined);
@@ -185,6 +184,7 @@ export default function GuestHomeTab() {
 
       {/* ══════════════ SCROLLABLE CONTENT ══════════════ */}
       <ScrollView
+        {...dockScroll}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -195,8 +195,7 @@ export default function GuestHomeTab() {
         }
       >
         {/* ── RESIDENCE / RENT CARD ── */}
-        <TouchableOpacity accessibilityRole="button"
-          activeOpacity={0.92}
+        <AnimatedPress accessibilityRole="button"
           onPress={() => router.push('/guest-payments')}
           style={styles.residenceCard}
         >
@@ -222,12 +221,9 @@ export default function GuestHomeTab() {
                 <Txt size={12} weight="700" color={Colors.primary}>Rent Status</Txt>
                 <Ionicons name="chevron-forward" size={14} color={Colors.primary} style={{ marginLeft: 2 }} />
               </View>
-              <Row align="center" gap={6} style={{ marginTop: 7 }}>
-                <View style={[styles.statusDot, { backgroundColor: isBillPaid ? '#22C55E' : '#F59E0B' }]} />
-                <Txt size={13} weight="700" color={isBillPaid ? '#22C55E' : '#F59E0B'}>
-                  {isBillPaid ? 'Paid' : 'Pending'}
-                </Txt>
-              </Row>
+              <View style={{ marginTop: 7 }}>
+                <StatusChip label={isBillPaid ? 'Paid' : 'Pending'} tone={isBillPaid ? 'ok' : 'warn'} />
+              </View>
             </Col>
           </Row>
 
@@ -241,11 +237,10 @@ export default function GuestHomeTab() {
             </View>
           )}
 
-        </TouchableOpacity>
+        </AnimatedPress>
 
         {/* ── HOME VISIT & MEAL ALERTS WIDGET ── */}
-        <TouchableOpacity accessibilityRole="button"
-          activeOpacity={0.9}
+        <AnimatedPress accessibilityRole="button"
           onPress={() => toggleVacationMode(!isAwayFromPg)}
           style={[
             styles.vacationHomeCard,
@@ -258,7 +253,7 @@ export default function GuestHomeTab() {
                 <Ionicons
                   name={isAwayFromPg ? "airplane" : "notifications-outline"}
                   size={20}
-                  color={isAwayFromPg ? "#D97706" : Colors.primary}
+                  color={isAwayFromPg ? Colors.warning : Colors.primary}
                 />
               </View>
 
@@ -267,13 +262,13 @@ export default function GuestHomeTab() {
                   <Txt size={13} weight="800" color={isAwayFromPg ? "#92400E" : Colors.textPrimary}>
                     {isAwayFromPg ? "Away from PG (Home Visit)" : "Meal Notifications"}
                   </Txt>
-                  <View style={[styles.vacationChip, { backgroundColor: isAwayFromPg ? '#FEF3C7' : Colors.surfaceElevated }]}>
-                    <Txt size={9} weight="900" color={isAwayFromPg ? '#D97706' : Colors.primary}>
+                  <View style={[styles.vacationChip, { backgroundColor: isAwayFromPg ? Palette.TintAmber : Colors.surfaceElevated }]}>
+                    <Txt size={9} weight="900" color={isAwayFromPg ? Colors.warning : Colors.primary}>
                       {isAwayFromPg ? "MUTED ✈️" : "ACTIVE 🔔"}
                     </Txt>
                   </View>
                 </Row>
-                <Txt size={11} color={isAwayFromPg ? "#B45309" : Colors.textSecondary} style={{ marginTop: 2 }}>
+                <Txt size={11} color={isAwayFromPg ? Colors.warning : Colors.textSecondary} style={{ marginTop: 2 }}>
                   {isAwayFromPg
                     ? "Staff can see you're away. RSVP \"Not Attending\" yourself on each meal — this doesn't do that automatically."
                     : "Going home soon? Mark yourself away — staff will see it on the roster."}
@@ -287,14 +282,14 @@ export default function GuestHomeTab() {
               </Txt>
             </View>
           </Row>
-        </TouchableOpacity>
+        </AnimatedPress>
 
         {/* ── KYC BANNER ── */}
         {(canSubmitKyc(kycStatus) || kycStatus === 'PENDING') && (
           <Animated.View entering={FadeIn} style={styles.kycBanner}>
-            <View style={[styles.kycIcon, { backgroundColor: kycStatus === 'PENDING' ? '#FEF3C7' : '#FEE2E2' }]}>
+            <View style={[styles.kycIcon, { backgroundColor: kycStatus === 'PENDING' ? Palette.TintAmber : Palette.TintRed }]}>
               <Ionicons name={kycStatus === 'PENDING' ? 'time' : 'document-text'} size={18}
-                color={kycStatus === 'PENDING' ? '#D97706' : Colors.danger} />
+                color={kycStatus === 'PENDING' ? Colors.warning : Colors.danger} />
             </View>
             <Col style={{ flex: 1, marginLeft: 12 }}>
               <Txt size={14} weight="700" color={kycStatus === 'PENDING' ? '#92400E' : Colors.danger}>
@@ -305,9 +300,9 @@ export default function GuestHomeTab() {
               </Txt>
             </Col>
             {kycStatus !== 'PENDING' && (
-              <TouchableOpacity accessibilityRole="button" onPress={() => setShowKycDialog(true)} style={styles.kycUploadBtn}>
+              <AnimatedPress accessibilityRole="button" onPress={() => setShowKycDialog(true)} style={styles.kycUploadBtn}>
                 <Txt size={12} weight="800" color="#FFFFFF">Upload</Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             )}
           </Animated.View>
         )}
@@ -411,7 +406,7 @@ export default function GuestHomeTab() {
                 </View>
               ) : (
                 <Row gap={10}>
-                  <TouchableOpacity accessibilityRole="button"
+                  <AnimatedPress accessibilityRole="button"
                     style={[styles.rsvpBtn, isAttending && styles.rsvpBtnActive]}
                     onPress={() => toggleAttending(true)}
                   >
@@ -419,13 +414,13 @@ export default function GuestHomeTab() {
                     <Txt size={13} weight="700" color={isAttending ? '#FFFFFF' : Colors.textSecondary}>
                       Attending
                     </Txt>
-                  </TouchableOpacity>
-                  <TouchableOpacity accessibilityRole="button"
+                  </AnimatedPress>
+                  <AnimatedPress accessibilityRole="button"
                     style={[styles.rsvpBtn, !isAttending && myMealResponse && styles.rsvpBtnChosen]}
                     onPress={() => toggleAttending(false)}
                   >
                     <Txt size={13} weight="700" color={Colors.textSecondary}>Not Attending</Txt>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
               )
             )}
@@ -435,9 +430,9 @@ export default function GuestHomeTab() {
         {/* ── 4. TODAY AT PGOW ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
           <Txt size={17} weight="800" color={Colors.textPrimary}>Today at PGow</Txt>
-          <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/meals')}>
+          <AnimatedPress accessibilityRole="button" onPress={() => router.push('/meals')}>
             <Txt size={13} weight="700" color={Colors.textSecondary}>View All</Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
 
         {todayMeals.length === 0 && myLaundry.length === 0 ? (
@@ -457,16 +452,14 @@ export default function GuestHomeTab() {
                     title: m.mealType[0] + m.mealType.slice(1).toLowerCase(),
                     desc: m.menuItems,
                     time: m.serviceTime,
-                    state: isPast ? 'completed' : isCur ? 'current' : 'future',
-                  };
+                    state: isPast ? 'completed' : isCur ? 'current' : 'future' };
                 }),
                 ...myLaundry.slice(0, 1).map((l) => ({
                   id: 'laundry',
                   title: 'Laundry Pickup',
                   desc: l.serviceType,
                   time: l.preferredSlot ?? 'Anytime',
-                  state: 'future',
-                })),
+                  state: 'future' })),
               ];
 
               return items.map((item, idx) => (
@@ -494,12 +487,13 @@ export default function GuestHomeTab() {
                     </Col>
                     <Col align="flex-end">
                       <Txt size={12} weight="600" color={Colors.textPrimary}>{item.time}</Txt>
-                      <Txt size={11} weight="700" style={{ marginTop: 2 }} color={
-                        item.state === 'completed' ? Colors.success :
-                          item.state === 'current' ? Colors.primary : Colors.textSecondary
-                      }>
-                        {item.state === 'completed' ? 'Completed' : item.state === 'current' ? 'Upcoming' : 'Scheduled'}
-                      </Txt>
+                      <View style={{ marginTop: 3 }}>
+                        <StatusChip
+                          variant="dot"
+                          label={item.state === 'completed' ? 'Completed' : item.state === 'current' ? 'Upcoming' : 'Scheduled'}
+                          tone={item.state === 'completed' ? 'ok' : item.state === 'current' ? 'info' : 'neutral'}
+                        />
+                      </View>
                     </Col>
                   </Row>
                 </View>
@@ -565,7 +559,7 @@ export default function GuestHomeTab() {
             contentContainerStyle={{ gap: 12, paddingHorizontal: 16 }}
           >
             {notices.map((n) => (
-              <TouchableOpacity accessibilityRole="button" key={n.id} onPress={() => router.push('/notifications')} style={styles.noticeCard}>
+              <AnimatedPress accessibilityRole="button" key={n.id} onPress={() => router.push('/notifications')} style={styles.noticeCard}>
                 <View style={styles.noticeIcon}>
                   <Ionicons name="megaphone" size={18} color="#FFFFFF" />
                 </View>
@@ -579,7 +573,7 @@ export default function GuestHomeTab() {
                     <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
                   </Row>
                 </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
             ))}
           </ScrollView>
         )}
@@ -594,13 +588,12 @@ export default function GuestHomeTab() {
 
 // ─── Service Card ─────────────────────────────────────────────────────────────
 function SvcCard({
-  title, desc, image, icon, onPress, badge,
-}: {
+  title, desc, image, icon, onPress, badge }: {
   title: string; desc: string; image?: any; icon?: string;
   onPress: () => void; badge?: number;
 }) {
   return (
-    <TouchableOpacity accessibilityRole="button" activeOpacity={0.88} onPress={onPress} style={styles.svcCard}>
+    <AnimatedPress accessibilityRole="button" onPress={onPress} style={styles.svcCard}>
       {/* Image or icon */}
       {image ? (
         <Image source={image} style={styles.svcImage} resizeMode="cover" />
@@ -636,7 +629,7 @@ function SvcCard({
       <View style={styles.svcArrow}>
         <Ionicons name="chevron-forward" size={13} color="#FFFFFF" />
       </View>
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -648,39 +641,31 @@ const styles = StyleSheet.create({
   // Decorative bubbles
   // Avatar ring
   hAvatar: {
-    width: 38, height: 38, borderRadius: 19, overflow: 'hidden',
+    width: 38, height: 38, borderRadius: Radii.pill, overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.surfaceElevated,
-  },
+    backgroundColor: Colors.surfaceElevated },
   // Bell
   vacationHomeCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9EA',
     padding: 14, marginTop: 14,
-    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3,
-  },
+    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
   vacationHomeCardActive: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A', borderWidth: 1.5,
-  },
+    backgroundColor: Palette.TintAmber,
+    borderColor: Palette.TintAmber, borderWidth: 1.5 },
   vacationHomeIconWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center',
-  },
+    width: 40, height: 40, borderRadius: Radii.pill,
+    backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
   vacationHomeIconWrapActive: {
-    backgroundColor: '#FEF3C7',
-  },
+    backgroundColor: Palette.TintAmber },
   vacationChip: {
-    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6,
-  },
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: Radii.badge },
   vacationTogglePill: {
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12,
-    backgroundColor: '#E0F2F0', borderWidth: 1, borderColor: '#BDD8D6',
-  },
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radii.card,
+    backgroundColor: Palette.TintGreen, borderWidth: 1, borderColor: '#BDD8D6' },
   vacationTogglePillActive: {
-    backgroundColor: '#D97706', borderColor: '#D97706',
-  },
+    backgroundColor: Colors.warning, borderColor: Colors.warning },
   // Rounded bottom of header
 
   // ── Scroll
@@ -691,7 +676,7 @@ const styles = StyleSheet.create({
   residenceCard: {
     marginTop: -16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: '#DCE9E9',
     padding: 16,
@@ -700,53 +685,46 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 6,
-    zIndex: 20,
-  },
+    zIndex: 20 },
   buildingIconWrap: {
-    width: 46, height: 46, borderRadius: 12,
+    width: 46, height: 46, borderRadius: Radii.card,
     backgroundColor: Colors.primaryDark,
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
   // 'Rent Status >' bordered chip
   rentStatusChip: {
     flexDirection: 'row', alignItems: 'center',
     borderWidth: 1, borderColor: '#BDD8D6',
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     paddingHorizontal: 10, paddingVertical: 5,
-    backgroundColor: '#FFFFFF',
-  },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
+    backgroundColor: '#FFFFFF' },
   rentBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginTop: 12,
-    backgroundColor: '#FFFBEB',
-    borderRadius: 12,
+    backgroundColor: Palette.TintAmber,
+    borderRadius: Radii.card,
     paddingHorizontal: 14, paddingVertical: 11,
-    borderWidth: 1, borderColor: '#F59E0B',
-  },
+    borderWidth: 1, borderColor: Colors.warning },
 
   // ── KYC
   kycBanner: {
     flexDirection: 'row', alignItems: 'center',
     marginTop: 12,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1, borderColor: Colors.borderSubtle,
     padding: 14,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
-  kycIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  kycIcon: { width: 36, height: 36, borderRadius: Radii.pill, alignItems: 'center', justifyContent: 'center' },
   kycUploadBtn: {
     backgroundColor: Colors.danger,
-    borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 7,
-  },
+    borderRadius: Radii.control,
+    paddingHorizontal: 14, paddingVertical: 7 },
 
   // ── Meal hero
   mealCard: {
     marginTop: 16,
     backgroundColor: '#F0F6F5',
-    borderRadius: 24,
+    borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#D5E8E6',
     overflow: 'hidden',
     minHeight: 220,
@@ -754,42 +732,36 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 18,
-    elevation: 5,
-  },
+    elevation: 5 },
   mealImageContainer: {
     position: 'absolute',
     top: 0, bottom: 0, right: 0,
-    width: '55%',
-  },
+    width: '55%' },
   mealImage: { width: '100%', height: '100%' },
   cutoffPill: {
     position: 'absolute', top: 14, right: 14, zIndex: 5,
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: Radii.sheet, paddingHorizontal: 10, paddingVertical: 6,
     borderWidth: 1, borderColor: '#D5E8E6',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
-  },
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
   mealContent: { padding: 22, zIndex: 2, maxWidth: '68%' },
-  dietTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  dietTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radii.control },
   rsvpLocked: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#E5EDED', borderRadius: 12,
-    height: 40, paddingHorizontal: 16,
-  },
+    backgroundColor: '#E5EDED', borderRadius: Radii.card,
+    height: 40, paddingHorizontal: 16 },
   rsvpBtn: {
-    flex: 1, height: 42, borderRadius: 12,
+    flex: 1, height: 42, borderRadius: Radii.card,
     backgroundColor: '#FFFFFF',
     borderWidth: 1, borderColor: '#D5E8E6',
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-  },
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   rsvpBtnActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
-  },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   rsvpBtnChosen: { backgroundColor: '#F0F6F5' },
 
   // ── Timeline
@@ -797,71 +769,60 @@ const styles = StyleSheet.create({
   tlRow: { flexDirection: 'row', position: 'relative' },
   tlLine: {
     position: 'absolute', top: 20, bottom: 0, left: 9,
-    width: 1.5, backgroundColor: '#D5E8E6', zIndex: 1,
-  },
+    width: 1.5, backgroundColor: '#D5E8E6', zIndex: 1 },
   tlNode: {
-    width: 20, height: 20, borderRadius: 10, marginRight: 14, zIndex: 2,
+    width: 20, height: 20, borderRadius: Radii.pill, marginRight: 14, zIndex: 2,
     backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#C0D8D5',
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
   tlNodeDone: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
   tlNodeCurrent: { borderColor: Colors.primary, borderWidth: 2.5 },
-  tlDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Colors.primary },
+  tlDot: { width: 7, height: 7, borderRadius: Radii.pill, backgroundColor: Colors.primary },
 
   // ── Quick services grid
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   svcCard: {
     width: (SCREEN_WIDTH - 32 - 10) / 2,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#D9EDED',
     padding: 12,
     flexDirection: 'row', alignItems: 'center',
     shadowColor: '#0C3B3E', shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.05, shadowRadius: 8, elevation: 3,
-    minHeight: 72,
-  },
-  svcImage: { width: 40, height: 40, borderRadius: 10, flexShrink: 0 },
+    minHeight: 72 },
+  svcImage: { width: 40, height: 40, borderRadius: Radii.control, flexShrink: 0 },
   svcIconWrap: {
-    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+    width: 40, height: 40, borderRadius: Radii.control, flexShrink: 0,
     backgroundColor: '#DFF5F3',
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
   svcTextWrap: {
     flex: 1,
     marginLeft: 10,
-    marginRight: 6,
-  },
+    marginRight: 6 },
   svcArrow: {
-    width: 26, height: 26, borderRadius: 13, flexShrink: 0,
+    width: 26, height: 26, borderRadius: Radii.pill, flexShrink: 0,
     backgroundColor: Colors.primaryDark,
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
   svcBadge: {
-    minWidth: 16, height: 16, borderRadius: 8,
+    minWidth: 16, height: 16, borderRadius: Radii.control,
     backgroundColor: Colors.danger,
     alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
+    paddingHorizontal: 3 },
 
   // ── Community notice
   noNoticeCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 16,
-    padding: 16, borderWidth: 1, borderColor: '#D9EDED',
-  },
+    backgroundColor: '#FFFFFF', borderRadius: Radii.card,
+    padding: 16, borderWidth: 1, borderColor: '#D9EDED' },
   noticeCard: {
     width: 290,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20, borderWidth: 1, borderColor: '#D9EDED',
+    borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#D9EDED',
     padding: 16,
     flexDirection: 'row', alignItems: 'flex-start',
     shadowColor: '#0C3B3E', shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
-  },
+    shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   noticeIcon: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 44, height: 44, borderRadius: Radii.card,
     backgroundColor: Colors.primaryDark,
-    alignItems: 'center', justifyContent: 'center',
-  },
-});
+    alignItems: 'center', justifyContent: 'center' } });

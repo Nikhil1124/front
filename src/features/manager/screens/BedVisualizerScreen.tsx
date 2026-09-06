@@ -1,32 +1,31 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   Modal,
   Pressable,
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
   RefreshControl,
-  Image,
-} from 'react-native';
+  Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn } from '@/components/ui';
+import {
+  Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn, ChoiceChips,
+  MetricDeck, type DeckCardData,
+} from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { EmptyState } from '@/components/EmptyState';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Layout } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { Colors, Palette, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
+import { useResponsivePadding } from '@/utils/responsive';
 import {
   usePropertyLayout,
   useAssignBed,
   useVacateBed,
   useCreateRoom,
-  useSetRoomSharing,
-} from '@/features/property/usePropertyLayout';
+  useSetRoomSharing } from '@/features/property/usePropertyLayout';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '@/hooks/useToast';
@@ -34,11 +33,21 @@ import type { BedResponse, RoomResponse } from '@/types';
 
 const FLOORPLAN_IMG = require('../../../../assets/room_floorplan_preview.png');
 
+/** The room sizes a PG is actually built at. Beyond 6 it is a dormitory, not a room. */
+const SHARING_OPTIONS = [1, 2, 3, 4, 5, 6];
+
+/** The same list, plus whatever this room already is — a room sitting at 8 has to show 8 as
+ *  its current value, or the sheet opens with nothing selected and no way back to it. */
+function sharingOptionsFor(current: number): number[] {
+  return SHARING_OPTIONS.includes(current) ? SHARING_OPTIONS : [...SHARING_OPTIONS, current];
+}
+
 export function BedVisualizerScreen() {
   // The room-detail sheet below is pinned to the bottom edge inside a `<Modal>`, which
   // nothing in the layout tree pads — without this its controls sit in the Android
   // gesture-navigation strip, where a tap competes with the swipe-up home gesture.
   const insets = useSafeAreaInsets();
+  const sidePadding = useResponsivePadding();
   const pgId = useAuthStore((s) => s.activePgId) ?? null;
   const { data: guests = [], refetch: refetchGuests } = useGuestsQuery(pgId ?? undefined);
   const toast = useToast();
@@ -69,7 +78,13 @@ export function BedVisualizerScreen() {
   const [increasedSharing, setIncreasedSharing] = useState('');
 
   const floors = layout?.floors ?? [];
-  const currentFloor = floors.find((f) => f.floorNumber === selectedFloor) ?? null;
+  // Every floor that exists, plus the next one up — the only floor you can legitimately be
+  // adding that is not already there. Ground counts as 0, so a brand-new property offers it.
+  const floorOptions = (() => {
+    const existing = floors.map((f) => f.floorNumber).sort((a, b) => a - b);
+    const next = existing.length ? existing[existing.length - 1] + 1 : 0;
+    return [...existing, next];
+  })();
 
   // Flattened all beds across property
   const allBeds = useMemo(() => floors.flatMap((f) => f.rooms.flatMap((r) => r.beds)), [floors]);
@@ -86,14 +101,26 @@ export function BedVisualizerScreen() {
     return floors.flatMap((f) => f.rooms);
   }, [floors, selectedFloor]);
 
+  // The overview card and the availability-snapshot card below it used to show these same
+  // four numbers twice, once as a pair of pills and once as a progress bar with two labels
+  // underneath — the exact "same information, different shape, right next to itself" pattern
+  // this pass exists to close.
+  const deckCards: DeckCardData[] = [
+    {
+      key: 'total', tint: 'brand', label: 'Total beds', value: String(totalBeds),
+      delta: `${targetRooms.length} room${targetRooms.length === 1 ? '' : 's'} · ${floors.length} floor${floors.length === 1 ? '' : 's'}` },
+    { key: 'occupied', tint: 'green', label: 'Occupied', value: String(occupiedBeds) },
+    { key: 'vacant', tint: 'amber', label: 'Vacant', value: String(vacantBeds) },
+    { key: 'occupancy', tint: 'slate', label: 'Occupancy', value: `${occupancyPercent}%` },
+  ];
+
   // Derived available room types with counts
   const roomTypeSummary = useMemo(() => {
     const typesMap: Record<string, { roomsCount: number; vacantCount: number; totalBedsCount: number }> = {
       '1': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 },
       '2': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 },
       '3': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 },
-      '4': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 },
-    };
+      '4': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 } };
 
     targetRooms.forEach((r) => {
       const typeKey = String(r.sharingType);
@@ -186,8 +213,7 @@ export function BedVisualizerScreen() {
         floor_number: floorNum,
         room_number: newRoomNumber.trim(),
         sharing_type: sharing,
-        base_rent: Number.isFinite(rent) && rent > 0 ? rent : undefined,
-      });
+        base_rent: Number.isFinite(rent) && rent > 0 ? rent : undefined });
       toast('success', 'Room added', `Room ${newRoomNumber.trim()} (${sharing} Sharing) created on Floor ${floorNum}.`);
       setShowAddRoom(false);
       setNewFloor(''); setNewRoomNumber(''); setNewSharing(''); setNewBaseRent('');
@@ -278,13 +304,13 @@ export function BedVisualizerScreen() {
       }
     >
       {isLoading ? (
-        <Card containerColor={Colors.surface} borderRadius={20} padding={[24, 20]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.sheet} padding={[24, 20]}>
           <Txt variant="body" color={Colors.textMuted} align="center">
             Loading property layout & capacity…
           </Txt>
         </Card>
       ) : isError ? (
-        <Card containerColor={Colors.surface} borderRadius={20} padding={[20, 20]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.sheet} padding={[20, 20]}>
           <Row gap={10} align="center">
             <Ionicons name="cloud-offline" size={22} color={Colors.danger} />
             <Col style={{ flex: 1 }}>
@@ -305,79 +331,28 @@ export function BedVisualizerScreen() {
         />
       ) : (
         <>
-          {/* 1. PROPERTY OVERVIEW SUMMARY CARD */}
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={20}
-            borderWidth={1.5}
-            borderColor={Colors.borderSubtle}
-            padding={[18, 18]}
-            style={styles.overviewCardShadow}
-          >
-            <Row justify="space-between" align="center">
-              <Col>
-                <Row gap={6} align="center">
-                  <Ionicons name="business" size={16} color={Colors.primary} />
-                  <Txt size={12} weight="800" color={Colors.primary} style={{ letterSpacing: 0.5 }}>
-                    PROPERTY OVERVIEW
-                  </Txt>
-                </Row>
-                <Txt size={24} weight="900" color={Colors.textPrimary} style={{ marginTop: 2 }}>
-                  {totalBeds} Total Beds
-                </Txt>
-                <Txt size={11} color={Colors.textMuted}>
-                  {targetRooms.length} Rooms • {floors.length} Floor{floors.length === 1 ? '' : 's'}
-                </Txt>
-              </Col>
-
-              <View style={styles.occupancyBadgeBox}>
-                <Txt size={16} weight="900" color="#059669">
-                  {occupancyPercent}%
-                </Txt>
-                <Txt size={9} weight="800" color="#047857">
-                  Occupied
-                </Txt>
-              </View>
-            </Row>
-
-            <Spacer size={14} />
-
-            {/* Quick Metrics Bar */}
-            <Row gap={10}>
-              <View style={[styles.overviewMetricPill, { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }]}>
-                <Ionicons name="people" size={14} color="#DC2626" />
-                <Txt size={13} weight="900" color="#DC2626">
-                  {occupiedBeds} Occupied
-                </Txt>
-              </View>
-
-              <View style={[styles.overviewMetricPill, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
-                <Ionicons name="bed" size={14} color="#059669" />
-                <Txt size={13} weight="900" color="#059669">
-                  {vacantBeds} Vacant
-                </Txt>
-              </View>
-            </Row>
-
-            <Spacer size={14} />
-
-            <OutlinedBtn
-              onPress={() => {
-                setShowAddRoom(true);
-              }}
-              borderColor={Colors.primary}
-              textColor={Colors.primary}
-              borderRadius={12}
-              height={42}
-            >
-              <Ionicons name="add-circle-outline" size={16} color={Colors.primary} />
-              <Txt size={12} weight="800" color={Colors.primary} style={{ marginLeft: 6 }}>
-                Add Room / Floor
-              </Txt>
-            </OutlinedBtn>
-          </Card>
+          {/* Total beds · occupied · vacant · occupancy — was two cards. */}
+          <MetricDeck cards={deckCards} sidePadding={sidePadding} testID="bed_deck" />
 
           <Spacer size={16} />
+
+          <OutlinedBtn
+            onPress={() => {
+              setShowAddRoom(true);
+            }}
+            borderColor={Colors.primary}
+            textColor={Colors.primary}
+            borderRadius={Radii.card}
+            height={42}
+          >
+            <Ionicons name="add-circle-outline" size={16} color={Colors.primary} />
+            <Txt size={12} weight="800" color={Colors.primary} style={{ marginLeft: 6 }}>
+              Add Room / Floor
+            </Txt>
+          </OutlinedBtn>
+
+          <Spacer size={16} />
+
 
           {/* 2. DEDICATED ROOM TYPES SELECTOR */}
           <Col>
@@ -400,52 +375,6 @@ export function BedVisualizerScreen() {
               {renderRoomTypeCard('4', '4 Sharing', 4)}
             </ScrollView>
           </Col>
-
-          <Spacer size={16} />
-
-          {/* 3. AVAILABILITY SNAPSHOT / INSIGHT BAR */}
-          <Card
-            containerColor={Colors.canvas}
-            borderRadius={16}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[14, 14]}
-          >
-            <Row justify="space-between" align="center">
-              <Row gap={8} align="center">
-                <Ionicons name="pie-chart-outline" size={16} color={Colors.primary} />
-                <Txt size={12} weight="800" color={Colors.textPrimary}>
-                  Availability Snapshot
-                </Txt>
-              </Row>
-              <Txt size={11} weight="800" color={Colors.primary}>
-                {vacantBeds} Beds Available
-              </Txt>
-            </Row>
-
-            <Spacer size={8} />
-
-            {/* Segmented capacity bar */}
-            <View style={styles.snapshotBarTrack}>
-              <View
-                style={[
-                  styles.snapshotBarFill,
-                  { width: `${Math.max(5, occupancyPercent)}%`, backgroundColor: '#DC2626' },
-                ]}
-              />
-            </View>
-
-            <Spacer size={6} />
-
-            <Row justify="space-between" align="center">
-              <Txt size={10} color={Colors.textMuted}>
-                {occupiedBeds} Occupied ({occupancyPercent}%)
-              </Txt>
-              <Txt size={10} color={Colors.textMuted}>
-                {vacantBeds} Vacant ({100 - occupancyPercent}%)
-              </Txt>
-            </Row>
-          </Card>
 
           <Spacer size={16} />
 
@@ -482,7 +411,7 @@ export function BedVisualizerScreen() {
             </Txt>
 
             <Row gap={6}>
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 onPress={() => {
                   setRoomFilterSort((prev) =>
                     prev === 'ALL'
@@ -502,7 +431,7 @@ export function BedVisualizerScreen() {
                     ? 'Vacant First'
                     : 'Occupied First'}
                 </Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Row>
           </Row>
 
@@ -510,7 +439,7 @@ export function BedVisualizerScreen() {
 
           {/* 6. SUMMARIZED ROOM CARDS GRID */}
           {filteredRooms.length === 0 ? (
-            <Card containerColor={Colors.surface} borderRadius={16} padding={[24, 20]} style={{ alignItems: 'center' }}>
+            <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[24, 20]} style={{ alignItems: 'center' }}>
               <Ionicons name="filter-outline" size={32} color={Colors.textMuted} />
               <Spacer size={8} />
               <Txt size={14} weight="800" color={Colors.textPrimary}>
@@ -527,7 +456,7 @@ export function BedVisualizerScreen() {
                 }}
                 containerColor={Colors.primary}
                 textColor={Colors.textInverse}
-                borderRadius={10}
+                borderRadius={Radii.control}
                 height={36}
                 style={{ paddingHorizontal: 16 }}
               >
@@ -555,7 +484,7 @@ export function BedVisualizerScreen() {
                   >
                     <Card
                       containerColor={Colors.surface}
-                      borderRadius={18}
+                      borderRadius={Radii.card}
                       borderWidth={1.5}
                       borderColor={Colors.borderSubtle}
                       padding={[16, 16]}
@@ -579,16 +508,16 @@ export function BedVisualizerScreen() {
                           style={[
                             styles.statusTagPill,
                             isFull
-                              ? { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }
+                              ? { backgroundColor: Palette.TintRed, borderColor: Palette.TintRed }
                               : isPart
-                              ? { backgroundColor: '#FEF3C7', borderColor: '#FCD34D' }
-                              : { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+                              ? { backgroundColor: Palette.TintAmber, borderColor: '#FCD34D' }
+                              : { backgroundColor: Palette.TintGreen, borderColor: Palette.TintGreen },
                           ]}
                         >
                           <Txt
                             size={10}
                             weight="800"
-                            color={isFull ? '#DC2626' : isPart ? '#D97706' : '#059669'}
+                            color={isFull ? Colors.danger : isPart ? Colors.warning : Colors.success}
                           >
                             {isFull ? 'Fully Occupied' : isPart ? `${vacCount} Beds Available` : 'Fully Vacant'}
                           </Txt>
@@ -608,19 +537,19 @@ export function BedVisualizerScreen() {
                                 style={[
                                   styles.miniBedChip,
                                   isOcc
-                                    ? { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }
-                                    : { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+                                    ? { backgroundColor: Palette.TintRed, borderColor: Palette.TintRed }
+                                    : { backgroundColor: Palette.TintGreen, borderColor: Palette.TintGreen },
                                 ]}
                               >
                                 <Ionicons
                                   name="bed"
                                   size={12}
-                                  color={isOcc ? '#DC2626' : '#059669'}
+                                  color={isOcc ? Colors.danger : Colors.success}
                                 />
                                 <Txt
                                   size={9}
                                   weight="800"
-                                  color={isOcc ? '#DC2626' : '#059669'}
+                                  color={isOcc ? Colors.danger : Colors.success}
                                   style={{ marginLeft: 2 }}
                                 >
                                   {isOcc ? bed.tenant?.fullName?.split(' ')[0] ?? 'B' + bed.bedNumber : 'Free'}
@@ -660,12 +589,12 @@ export function BedVisualizerScreen() {
               <View style={styles.detailHeaderBar}>
                 <Row justify="space-between" align="center">
                   <Row gap={10} align="center">
-                    <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
+                    <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
                       onPress={() => setSelectedRoomDetail(null)}
                       style={styles.detailBackBtn}
                     >
                       <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                    </TouchableOpacity>
+                    </AnimatedPress>
                     <Col>
                       <Txt size={18} weight="900" color="#FFFFFF">
                         Room {activeRoomDetailObject.roomNumber}
@@ -687,7 +616,7 @@ export function BedVisualizerScreen() {
 
               <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
                 {/* ROOM OVERVIEW CARD */}
-                <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+                <Card containerColor="#FFFFFF" borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                   <Row gap={14} align="center">
                     {/* 2D Floorplan Preview */}
                     <Image source={FLOORPLAN_IMG} style={styles.floorplanImage} resizeMode="cover" />
@@ -711,20 +640,20 @@ export function BedVisualizerScreen() {
                           <Txt size={9} color={Colors.textMuted}>Total</Txt>
                         </View>
 
-                        <View style={[styles.overviewMiniPill, { backgroundColor: '#FEF2F2' }]}>
-                          <Ionicons name="person-outline" size={14} color="#DC2626" />
-                          <Txt size={11} weight="900" color="#DC2626" style={{ marginTop: 2 }}>
+                        <View style={[styles.overviewMiniPill, { backgroundColor: Palette.TintRed }]}>
+                          <Ionicons name="person-outline" size={14} color={Colors.danger} />
+                          <Txt size={11} weight="900" color={Colors.danger} style={{ marginTop: 2 }}>
                             {activeRoomDetailObject.beds.filter((b) => b.status === 'occupied').length} Occupied
                           </Txt>
-                          <Txt size={9} color="#DC2626">Active</Txt>
+                          <Txt size={9} color={Colors.danger}>Active</Txt>
                         </View>
 
-                        <View style={[styles.overviewMiniPill, { backgroundColor: '#ECFDF5' }]}>
-                          <Ionicons name="checkmark-circle-outline" size={14} color="#059669" />
-                          <Txt size={11} weight="900" color="#059669" style={{ marginTop: 2 }}>
+                        <View style={[styles.overviewMiniPill, { backgroundColor: Palette.TintGreen }]}>
+                          <Ionicons name="checkmark-circle-outline" size={14} color={Colors.success} />
+                          <Txt size={11} weight="900" color={Colors.success} style={{ marginTop: 2 }}>
                             {activeRoomDetailObject.beds.filter((b) => b.status !== 'occupied').length} Vacant
                           </Txt>
-                          <Txt size={9} color="#059669">Available</Txt>
+                          <Txt size={9} color={Colors.success}>Available</Txt>
                         </View>
                       </Row>
                     </Col>
@@ -733,7 +662,7 @@ export function BedVisualizerScreen() {
 
                 {/* SEGMENTED TAB SELECTOR */}
                 <Row style={styles.detailSegmentedBar}>
-                  <TouchableOpacity accessibilityRole="button"
+                  <AnimatedPress accessibilityRole="button"
                     onPress={() => setDetailActiveTab('ALLOCATION')}
                     style={[
                       styles.detailTabBtn,
@@ -753,9 +682,9 @@ export function BedVisualizerScreen() {
                     >
                       Bed Allocation
                     </Txt>
-                  </TouchableOpacity>
+                  </AnimatedPress>
 
-                  <TouchableOpacity accessibilityRole="button"
+                  <AnimatedPress accessibilityRole="button"
                     onPress={() => setDetailActiveTab('DETAILS')}
                     style={[
                       styles.detailTabBtn,
@@ -775,18 +704,18 @@ export function BedVisualizerScreen() {
                     >
                       Room Details
                     </Txt>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
 
                 {/* TAB CONTENT: BED ALLOCATION */}
                 {detailActiveTab === 'ALLOCATION' && (
-                  <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+                  <Card containerColor="#FFFFFF" borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                     <Row justify="space-between" align="center">
                       <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
                         BED ALLOCATION
                       </Txt>
 
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         onPress={() => {
                           setIncreasingRoom(activeRoomDetailObject);
                           setIncreasedSharing(String(activeRoomDetailObject.sharingType));
@@ -797,7 +726,7 @@ export function BedVisualizerScreen() {
                         <Txt size={11} weight="800" color={Colors.primary} style={{ marginLeft: 4 }}>
                           Edit Beds
                         </Txt>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     </Row>
 
                     <Spacer size={12} />
@@ -820,8 +749,8 @@ export function BedVisualizerScreen() {
                               style={[
                                 styles.allocationBedCard,
                                 isOcc
-                                  ? { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }
-                                  : { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+                                  ? { backgroundColor: Palette.TintRed, borderColor: Palette.TintRed }
+                                  : { backgroundColor: Palette.TintGreen, borderColor: Palette.TintGreen },
                               ]}
                             >
                               <Row justify="space-between" align="center">
@@ -829,13 +758,13 @@ export function BedVisualizerScreen() {
                                   <Ionicons
                                     name="bed"
                                     size={16}
-                                    color={isOcc ? '#DC2626' : '#059669'}
+                                    color={isOcc ? Colors.danger : Colors.success}
                                   />
-                                  <Txt size={12} weight="900" color={isOcc ? '#DC2626' : '#059669'}>
+                                  <Txt size={12} weight="900" color={isOcc ? Colors.danger : Colors.success}>
                                     Bed {bed.bedNumber}
                                   </Txt>
                                 </Row>
-                                <Txt size={9} weight="800" color={isOcc ? '#DC2626' : '#059669'}>
+                                <Txt size={9} weight="800" color={isOcc ? Colors.danger : Colors.success}>
                                   {isOcc ? 'Occupied' : 'Vacant'}
                                 </Txt>
                               </Row>
@@ -873,14 +802,14 @@ export function BedVisualizerScreen() {
                                 style={[
                                   styles.allocationStatusPill,
                                   isOcc
-                                    ? { backgroundColor: '#FEE2E2' }
-                                    : { backgroundColor: '#D1FAE5' },
+                                    ? { backgroundColor: Palette.TintRed }
+                                    : { backgroundColor: Palette.TintGreen },
                                 ]}
                               >
                                 <Txt
                                   size={10}
                                   weight="800"
-                                  color={isOcc ? '#DC2626' : '#059669'}
+                                  color={isOcc ? Colors.danger : Colors.success}
                                 >
                                   {isOcc ? 'Occupied' : 'Assign Resident'}
                                 </Txt>
@@ -894,7 +823,7 @@ export function BedVisualizerScreen() {
                     <Spacer size={16} />
 
                     {/* Room Capacity Card */}
-                    <Card containerColor={Colors.canvas} borderRadius={12} padding={[12, 12]}>
+                    <Card containerColor={Colors.canvas} borderRadius={Radii.card} padding={[12, 12]}>
                       <Row justify="space-between" align="center">
                         <Row gap={8} align="center">
                           <Ionicons name="people-circle" size={24} color={Colors.primary} />
@@ -934,7 +863,7 @@ export function BedVisualizerScreen() {
                         query, or mutation behind any of them. Add Occupant is the only one of
                         the four that ever did anything real. */}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         onPress={() => {
                           const freeBed = activeRoomDetailObject.beds.find((b) => b.status !== 'occupied');
                           if (freeBed) {
@@ -949,7 +878,7 @@ export function BedVisualizerScreen() {
                         <Txt size={11} weight="800" color={Colors.textPrimary} style={{ marginLeft: 6 }}>
                           Add Occupant
                         </Txt>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     </ScrollView>
 
                     <Spacer size={16} />
@@ -996,7 +925,7 @@ export function BedVisualizerScreen() {
                     PgRoom model has no amenities or area column). Base Monthly Rent is the
                     one real fact here. */}
                 {detailActiveTab === 'DETAILS' && (
-                  <Card containerColor="#FFFFFF" borderRadius={18} padding={[16, 16]}>
+                  <Card containerColor="#FFFFFF" borderRadius={Radii.card} padding={[16, 16]}>
                     <Txt size={14} weight="900" color={Colors.textPrimary}>
                       Room Specifications
                     </Txt>
@@ -1024,7 +953,7 @@ export function BedVisualizerScreen() {
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setActiveBed(null)} />
             <Card
               containerColor={Colors.surface}
-              borderRadius={20}
+              borderRadius={Radii.sheet}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[20, 20]}
@@ -1046,7 +975,7 @@ export function BedVisualizerScreen() {
 
               {activeBed.bed.status === 'occupied' && activeBed.bed.tenant ? (
                 <>
-                  <Card containerColor={Colors.surfaceMuted} borderRadius={12} padding={[12, 12]}>
+                  <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.card} padding={[12, 12]}>
                     <Txt size={13} weight="800" color={Colors.textPrimary}>
                       {activeBed.bed.tenant.fullName}
                     </Txt>
@@ -1066,7 +995,7 @@ export function BedVisualizerScreen() {
                     disabled={vacateBed.isPending}
                     containerColor={Colors.danger}
                     textColor={Colors.textInverse}
-                    borderRadius={10}
+                    borderRadius={Radii.control}
                     height={44}
                   >
                     <Txt size={12} weight="800" color={Colors.textInverse}>
@@ -1092,13 +1021,12 @@ export function BedVisualizerScreen() {
                       <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
                         <View style={{ gap: 8 }}>
                           {unassignedGuests.map((g) => (
-                            <TouchableOpacity accessibilityRole="button"
+                            <AnimatedPress accessibilityRole="button"
                               key={g.id}
-                              activeOpacity={0.7}
                               disabled={assignBed.isPending}
                               onPress={() => handleAssign(g.id, g.name)}
                             >
-                              <Card containerColor={Colors.surfaceMuted} borderRadius={10} padding={[10, 12]}>
+                              <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.control} padding={[10, 12]}>
                                 <Txt size={12} weight="800" color={Colors.textPrimary}>
                                   {g.name}
                                 </Txt>
@@ -1106,7 +1034,7 @@ export function BedVisualizerScreen() {
                                   {g.phone} • Room {g.roomNo}
                                 </Txt>
                               </Card>
-                            </TouchableOpacity>
+                            </AnimatedPress>
                           ))}
                         </View>
                       </ScrollView>
@@ -1126,7 +1054,7 @@ export function BedVisualizerScreen() {
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowAddRoom(false)} />
             <Card
               containerColor={Colors.surface}
-              borderRadius={20}
+              borderRadius={Radii.sheet}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[20, 20]}
@@ -1143,9 +1071,29 @@ export function BedVisualizerScreen() {
                 Total beds on this property is capped — adding beds beyond that is refused.
               </Txt>
               <Spacer size={14} />
-              <OutlinedTextField label="Floor number" value={newFloor} onChangeText={setNewFloor} keyboardType="number-pad" style={{ marginBottom: 10 }} />
-              <OutlinedTextField label="Room number" value={newRoomNumber} onChangeText={setNewRoomNumber} style={{ marginBottom: 10 }} />
-              <OutlinedTextField label="Sharing (beds in this room)" value={newSharing} onChangeText={setNewSharing} keyboardType="number-pad" style={{ marginBottom: 10 }} />
+              {/* Floor and sharing were number boxes: a typo filed a room on floor 99 of a
+                  two-storey building, or created a 40-bed room. Both sets are short and known —
+                  the floors that exist plus the next one up, and the sharing counts a PG room
+                  is ever built at. */}
+              <ChoiceChips
+                label="Floor"
+                options={floorOptions}
+                value={newFloor === '' ? null : Number(newFloor)}
+                onChange={(f) => setNewFloor(String(f))}
+                render={(f) => (f === 0 ? 'Ground' : `Floor ${f}`)}
+                testID="add_room_floor"
+              />
+              <Spacer size={12} />
+              <OutlinedTextField label="Room number" value={newRoomNumber} onChangeText={setNewRoomNumber} style={{ marginBottom: 12 }} />
+              <ChoiceChips
+                label="Sharing (beds in this room)"
+                options={SHARING_OPTIONS}
+                value={newSharing === '' ? null : Number(newSharing)}
+                onChange={(n) => setNewSharing(String(n))}
+                render={(n) => (n === 1 ? 'Single' : `${n} share`)}
+                testID="add_room_sharing"
+              />
+              <Spacer size={12} />
               <OutlinedTextField label="Base rent per bed (₹, optional)" value={newBaseRent} onChangeText={setNewBaseRent} keyboardType="number-pad" />
               <Spacer size={16} />
               <Btn
@@ -1154,7 +1102,7 @@ export function BedVisualizerScreen() {
                 disabled={createRoom.isPending}
                 containerColor={Colors.primary}
                 textColor={Colors.textInverse}
-                borderRadius={10}
+                borderRadius={Radii.control}
                 height={44}
               >
                 <Txt size={12} weight="800" color={Colors.textInverse}>
@@ -1173,7 +1121,7 @@ export function BedVisualizerScreen() {
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setIncreasingRoom(null)} />
             <Card
               containerColor={Colors.surface}
-              borderRadius={20}
+              borderRadius={Radii.sheet}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[20, 20]}
@@ -1188,12 +1136,18 @@ export function BedVisualizerScreen() {
               <Spacer size={4} />
               <Txt size={11} color={Colors.textMuted}>
                 Room {increasingRoom.roomNumber} currently holds {increasingRoom.sharingType} bed
-                {increasingRoom.sharingType === 1 ? '' : 's'}. Set it anywhere from 1 (a single
-                room) to 20. Reducing it removes the highest-numbered beds, and is refused if
-                anyone is still in them.
+                {increasingRoom.sharingType === 1 ? '' : 's'}. Reducing it removes the
+                highest-numbered beds, and is refused if anyone is still in them.
               </Txt>
               <Spacer size={14} />
-              <OutlinedTextField label="Beds in this room (1–20)" value={increasedSharing} onChangeText={setIncreasedSharing} keyboardType="number-pad" />
+              <ChoiceChips
+                label="Beds in this room"
+                options={sharingOptionsFor(increasingRoom.sharingType)}
+                value={increasedSharing === '' ? null : Number(increasedSharing)}
+                onChange={(n) => setIncreasedSharing(String(n))}
+                render={(n) => (n === 1 ? 'Single' : `${n} share`)}
+                testID="set_sharing"
+              />
               <Spacer size={16} />
               <Btn
                 onPress={handleSetSharing}
@@ -1201,7 +1155,7 @@ export function BedVisualizerScreen() {
                 disabled={setSharing.isPending}
                 containerColor={Colors.primary}
                 textColor={Colors.textInverse}
-                borderRadius={10}
+                borderRadius={Radii.control}
                 height={44}
               >
                 <Txt size={12} weight="800" color={Colors.textInverse}>
@@ -1217,38 +1171,11 @@ export function BedVisualizerScreen() {
 }
 
 const styles = StyleSheet.create({
-  overviewCardShadow: {
-    shadowColor: Colors.primaryDark,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  occupancyBadgeBox: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#ECFDF5',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-    alignItems: 'center',
-  },
-  overviewMetricPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
   roomTypeCard: {
     width: 140,
     padding: 14,
-    borderRadius: 16,
-    borderWidth: 1.5,
-  },
+    borderRadius: Radii.card,
+    borderWidth: 1.5 },
   roomTypeCardSelected: {
     backgroundColor: '#EAF7F5',
     borderColor: Colors.primary,
@@ -1256,33 +1183,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
-    elevation: 3,
-  },
+    elevation: 3 },
   roomTypeCardUnselected: {
     backgroundColor: '#FFFFFF',
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   roomTypeIconBox: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: Colors.canvas,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   roomTypeIconSelected: {
-    backgroundColor: Colors.primary,
-  },
-  snapshotBarTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ECFDF5',
-    overflow: 'hidden',
-  },
-  snapshotBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
+    backgroundColor: Colors.primary },
   sortBtnPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1290,118 +1203,102 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.canvas,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   roomBadgeIcon: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: Colors.canvas,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   statusTagPill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
+    borderRadius: Radii.control,
+    borderWidth: 1 },
   miniBedChip: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
+    borderRadius: Radii.control,
+    borderWidth: 1 },
   detailModalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(1, 28, 64, 0.65)',
-    justifyContent: 'flex-end',
-  },
+    justifyContent: 'flex-end' },
   detailModalCard: {
     width: '100%',
     maxHeight: '92%',
     backgroundColor: Colors.canvas,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    overflow: 'hidden',
-  },
+    overflow: 'hidden' },
   detailHeaderBar: {
     backgroundColor: Colors.primaryDark,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 16,
-  },
+    paddingBottom: 16 },
   detailBackBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   detailSharingTag: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
-  },
+    borderRadius: Radii.card },
   floorplanImage: {
     width: 100,
     height: 100,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   overviewMiniPill: {
     flex: 1,
     backgroundColor: Colors.canvas,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     padding: 8,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   detailSegmentedBar: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 4,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   detailTabBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 10,
-  },
+    borderRadius: Radii.control },
   detailTabBtnActive: {
-    backgroundColor: Colors.primary,
-  },
+    backgroundColor: Colors.primary },
   editBedsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.canvas,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   allocationBedCard: {
     padding: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
-  },
+    borderRadius: Radii.card,
+    borderWidth: 1.5 },
   allocationAvatarCircle: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: Radii.pill,
     backgroundColor: '#FFFFFF',
     alignSelf: 'center',
     alignItems: 'center',
@@ -1410,23 +1307,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2,
-  },
+    elevation: 2 },
   allocationStatusPill: {
     paddingVertical: 4,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
+    borderRadius: Radii.badge,
+    alignItems: 'center' },
   detailQuickActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   aboutRoomChip: {
     flex: 1,
     minWidth: 120,
@@ -1435,14 +1329,11 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.canvas,
     padding: 10,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.55)',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    justifyContent: 'center' } });

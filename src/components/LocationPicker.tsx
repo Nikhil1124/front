@@ -14,13 +14,13 @@
  * Ported from the `main` branch; only the theme tokens changed.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { Map, Camera, type CameraRef } from '@/components/maplibreCompat';
 
-import { Txt } from '@/components/ui';
+import { Txt, AnimatedPress } from '@/components/ui';
 import { API, BASE_URL } from '@/config';
 import { fetchWithTimeout } from '@/data/apiClient';
 import { round6 } from '@/features/places/geo';
@@ -190,27 +190,27 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
         )}
 
         <View style={[styles.zoomStack, { top: insets.top + Spacing.md }]}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom in" accessibilityRole="button"
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom in" accessibilityRole="button"
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.min(20, zoom + 1), { duration: 200 })}
           >
             <Ionicons name="add" size={20} color={Colors.textInverse} />
-          </TouchableOpacity>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom out" accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom out" accessibilityRole="button"
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.max(3, zoom - 1), { duration: 200 })}
           >
             <Ionicons name="remove" size={20} color={Colors.textInverse} />
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
 
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Use my current location" accessibilityRole="button" style={styles.gpsBtn} onPress={useMyLocation} disabled={locating}>
+        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Use my current location" accessibilityRole="button" style={styles.gpsBtn} onPress={useMyLocation} disabled={locating}>
           {locating ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
             <Ionicons name="locate" size={20} color={Colors.primary} />
           )}
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
 
       <View style={[styles.sheet, { paddingBottom: Spacing.lg + insets.bottom }]}>
@@ -236,7 +236,7 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
           {centre.latitude}, {centre.longitude}
         </Txt>
 
-        <TouchableOpacity accessibilityRole="button"
+        <AnimatedPress accessibilityRole="button"
           style={styles.confirm}
           onPress={() =>
             onConfirm({
@@ -246,10 +246,10 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
             })
           }
         >
-          <Txt variant="cardTitle" color={Colors.canvas}>
+          <Txt variant="cardTitle" color={Colors.textInverse}>
             Confirm location
           </Txt>
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
     </View>
   );
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   zoomBtn: {
     width: 40,
     height: 40,
-    borderRadius: Radii.sm,
+    borderRadius: Radii.badge,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     bottom: Spacing.md,
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.primary,
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   addressBox: { height: 42, justifyContent: 'center' },
   confirm: {
     backgroundColor: Colors.primary,
-    borderRadius: Radii.xl,
+    borderRadius: Radii.card,
     paddingVertical: Spacing.md,
     alignItems: 'center',
   },

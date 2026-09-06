@@ -4,15 +4,15 @@ import {
   Modal,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   Image,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 
 import { FormScroll } from '@/components/ui/FormScroll';
+import { OutlinedTextField, SearchField } from '@/components/ui';
 
 export interface MenuEditorModalProps {
   visible: boolean;
@@ -76,11 +76,11 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
             <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Current Dishes</Text>
             {dishes.map((dish, index) => (
               <View key={index} style={styles.dishRow}>
-                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Enter dish name"
-                  style={styles.dishInput}
+                <OutlinedTextField
+                  style={{ flex: 1 }}
                   value={dish}
-                  onChangeText={(text) => onDishTextChange(index, text)}
-                  placeholder="Enter dish name..."
+                  onChangeText={(text: string) => onDishTextChange(index, text)}
+                  placeholder="Enter dish name"
                 />
                 <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button" style={styles.removeDishBtn} onPress={() => onRemoveDish(index)}>
                   <Ionicons name="trash-outline" size={16} color={Colors.danger} />
@@ -91,16 +91,12 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
             {/* Add new dish */}
             <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Add New Dish</Text>
             <View style={styles.addDishRow}>
-              <View style={styles.searchBarWrapper}>
-                <Ionicons name="search" size={16} color={Colors.textSecondary} style={styles.searchIcon} />
-                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search/Type dish or ingredient"
-                  style={styles.dishSearchInput}
-                  value={newDishText}
-                  onChangeText={onNewDishTextChange}
-                  placeholder="Search/Type dish or ingredient..."
-                  placeholderTextColor={Colors.textMuted}
-                />
-              </View>
+              <SearchField
+                style={{ flex: 1 }}
+                value={newDishText}
+                onChangeText={onNewDishTextChange}
+                placeholder="Search or type a dish"
+              />
               <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.addDishBtn} onPress={onAddDish} activeOpacity={0.8}>
                 <Ionicons name="add" size={20} color={Colors.surface} />
               </TouchableOpacity>
@@ -171,7 +167,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     backgroundColor: Colors.surface,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -200,43 +196,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   dishRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
-  dishInput: {
-    flex: 1,
-    backgroundColor: Colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 12,
-    color: Colors.textPrimary,
-  },
-  removeDishBtn: { padding: 8, backgroundColor: Palette.TintRed, borderRadius: 8 },
+  removeDishBtn: { padding: 8, backgroundColor: Palette.TintRed, borderRadius: Radii.control },
 
   addDishRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  searchBarWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.canvas,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-  },
-  searchIcon: { marginRight: 6 },
-  dishSearchInput: {
-    flex: 1,
-    height: 38,
-    fontSize: 12,
-    color: Colors.textPrimary,
-    paddingVertical: 0,
-  },
   addDishBtn: {
     backgroundColor: Colors.primary,
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -255,7 +222,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     padding: 8,
     alignItems: 'center',
     position: 'relative',
@@ -265,7 +232,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     backgroundColor: Colors.canvas,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
@@ -277,7 +244,7 @@ const styles = StyleSheet.create({
     right: 4,
     width: 16,
     height: 16,
-    borderRadius: 8,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.textMuted,
     justifyContent: 'center',
     alignItems: 'center',
@@ -292,8 +259,8 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.borderSubtle,
     paddingTop: 12,
   },
-  cancelBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
-  saveBtn: { backgroundColor: Colors.primary, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8 },
+  cancelBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: Radii.control },
+  saveBtn: { backgroundColor: Colors.primary, paddingVertical: 10, paddingHorizontal: 18, borderRadius: Radii.control },
   title: { fontSize: 18, fontWeight: '700' as const, color: Colors.textPrimary },
   relatedName: { fontSize: 9, fontWeight: '700' as const, color: Colors.textPrimary, textAlign: 'center' as const },
   cancelText: { color: Colors.textSecondary, fontSize: 12, fontWeight: '700' as const },

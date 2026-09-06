@@ -20,28 +20,32 @@
  *   - HubScreenWrapper for the sticky back header.
  *   - Tenant rows are surface cards with KYC status pills colour-coded
  *     (verified=green, pending=amber, rejected=red, none=slate).
+ *   - The triage counts at the top are a `MetricDeck` — was three cards with a `${color}66`
+ *     opacity-hack border and no "not submitted" count at all, the one number a manager
+ *     chasing compliance actually needs and this screen never showed.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, Alert, Modal, Pressable, FlatList, KeyboardAvoidingView } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Pill, LoadingState, ErrorState } from '@/components/ui';
+import {
+  Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, LoadingState, ErrorState, StatusChip, toneFor,
+  initialsOf, MetricDeck, type DeckCardData,
+} from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Layout } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
+import { useResponsivePadding } from '@/utils/responsive';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { GuestEntity } from '@/types';
 
-interface KycPillConfig { label: string; color: string; bg: string; }
-function kycPill(status: string | undefined): KycPillConfig {
-  switch (status) {
-    case 'VERIFIED': return { label: 'Verified', color: Colors.success, bg: Colors.surfaceElevated };
-    case 'PENDING':  return { label: 'Pending',  color: Colors.warning, bg: Colors.alertGradientStart };
-    case 'REJECTED': return { label: 'Rejected',  color: Colors.danger,  bg: '#FEF2F2' };
-    case 'NOT_SUBMITTED':
-    default:          return { label: 'Not Submitted', color: Colors.textMuted, bg: Colors.surfaceMuted };
-  }
-}
+/** The KYC states, as words. Colour is `StatusChip`'s job now — this was the ninth place in
+ *  the app inventing its own pill palette. */
+const KYC_LABEL: Record<string, string> = {
+  VERIFIED: 'Verified',
+  PENDING: 'Pending',
+  REJECTED: 'Rejected',
+  NOT_SUBMITTED: 'Not submitted' };
 
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAuthStore } from '@/store/authStore';
@@ -50,11 +54,13 @@ import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 
 export function TenantListScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);
+  const sidePadding = useResponsivePadding();
   const { data: guests = [], isLoading: guestsLoading, error: guestsError, refetch, isRefetching } = useGuestsQuery(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
 
   const [rejectGuestId, setRejectGuestId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [rejectError, setRejectError] = useState<string | undefined>();
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -71,8 +77,7 @@ export function TenantListScreen() {
             const r = await verifyKyc(guest.id, true);
             setSubmittingId(null);
             if (!r.ok) Alert.alert('Failed', r.error ?? 'Could not verify.');
-          },
-        },
+          } },
       ],
     );
   };
@@ -80,7 +85,7 @@ export function TenantListScreen() {
   const handleRejectSubmit = async () => {
     if (!rejectGuestId) return;
     if (!rejectReason.trim()) {
-      Alert.alert('Reason required', 'Please provide a short reason for the rejection.');
+      setRejectError('The resident sees this — say what was wrong');
       return;
     }
     setSubmittingId(rejectGuestId);
@@ -97,6 +102,17 @@ export function TenantListScreen() {
   const pending = guests.filter((g) => g.kycStatus === 'PENDING');
   const rejected = guests.filter((g) => g.kycStatus === 'REJECTED');
   const verified = guests.filter((g) => g.kycStatus === 'VERIFIED');
+  // Not shown anywhere on this screen before — residents who haven't submitted at all were
+  // invisible between "pending" (submitted, waiting) and the roster total. A manager chasing
+  // compliance needs this count as much as the pending queue.
+  const notSubmitted = guests.filter((g) => !g.kycStatus || g.kycStatus === 'NOT_SUBMITTED');
+
+  const deckCards: DeckCardData[] = [
+    { key: 'pending', tint: 'brand', label: 'Awaiting your decision', value: String(pending.length) },
+    { key: 'not_submitted', tint: 'amber', label: 'Not submitted', value: String(notSubmitted.length) },
+    { key: 'rejected', tint: 'slate', label: 'Rejected', value: String(rejected.length) },
+    { key: 'verified', tint: 'green', label: 'Verified', value: String(verified.length) },
+  ];
 
   return (
     <HubScreenWrapper
@@ -117,17 +133,12 @@ export function TenantListScreen() {
         refreshing={isRefetching}
         ListHeaderComponent={
           <View>
-            {/* KYC Triage bar — surfaces the counts at a glance */}
-            <Row gap={10}>
-              <TriageTile label="Pending" count={pending.length} color={Colors.warning} />
-              <TriageTile label="Rejected" count={rejected.length} color={Colors.danger} />
-              <TriageTile label="Verified" count={verified.length} color={Colors.success} />
-            </Row>
-            <Spacer size={16} />
+            <MetricDeck cards={deckCards} sidePadding={sidePadding} testID="tenant_kyc_deck" />
+            <Spacer size={20} />
           </View>
         }
         ListEmptyComponent={
-          <Card containerColor={Colors.surface} borderRadius={Layout.borderRadiusCard} padding={[20, 20]}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[20, 20]}>
             {guestsLoading ? (
               <LoadingState label="Loading tenants…" fill={false} />
             ) : guestsError ? (
@@ -145,28 +156,28 @@ export function TenantListScreen() {
           </Card>
         }
         renderItem={({ item: g }) => {
-          const pill = kycPill(g.kycStatus);
+          const kycLabel = KYC_LABEL[g.kycStatus ?? ''] ?? 'Not submitted';
           const canDecide = g.kycStatus === 'PENDING' || g.kycStatus === 'REJECTED';
           const isExpanded = expandedId === g.id || canDecide;
 
           return (
             <Card
               containerColor={Colors.surface}
-              borderRadius={Layout.borderRadiusCard}
+              borderRadius={Radii.card}
               borderWidth={1}
               borderColor={Colors.borderSubtle}
               padding={[14, 14]}
             >
               <Pressable accessibilityRole="button" onPress={() => setExpandedId(isExpanded ? null : g.id)}>
                 <Row gap={12} align="center">
-                  <View style={[styles.avatar, { backgroundColor: `${pill.color}1A` }]}>
-                    <Txt size={14} weight="800" color={pill.color}>{(g.name ?? '?').slice(0, 1).toUpperCase()}</Txt>
+                  <View style={styles.avatar}>
+                    <Txt size={13} weight="700" color={Colors.primary}>{initialsOf(g.name ?? '?')}</Txt>
                   </View>
                   <Col style={{ flex: 1 }}>
                     <Txt size={14} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
                     <Txt size={11} color={Colors.textMuted}>Room {g.roomNo || '—'} • {g.phone || 'No phone'}</Txt>
                   </Col>
-                  <Pill label={pill.label} color={pill.color} bg={pill.bg} />
+                  <StatusChip label={kycLabel} tone={toneFor(g.kycStatus)} />
                   <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={16} color={Colors.textMuted} />
                 </Row>
               </Pressable>
@@ -193,7 +204,7 @@ export function TenantListScreen() {
                       onPress={() => handleVerify(g)}
                       containerColor={Colors.success}
                       textColor={Colors.textInverse}
-                      borderRadius={Layout.borderRadiusButton}
+                      borderRadius={Radii.control}
                       height={36}
                       loading={submittingId === g.id}
                       style={{ flex: 1 }}
@@ -207,7 +218,7 @@ export function TenantListScreen() {
                     onPress={() => { setRejectGuestId(g.id); setRejectReason(''); }}
                     containerColor={Colors.danger}
                     textColor={Colors.textInverse}
-                    borderRadius={Layout.borderRadiusButton}
+                    borderRadius={Radii.control}
                     height={36}
                     style={{ flex: g.kycStatus === 'PENDING' ? undefined : 1 }}
                     testID={`tenant_reject_${g.id}`}
@@ -230,7 +241,7 @@ export function TenantListScreen() {
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <Pressable accessibilityRole="button" style={styles.backdrop} onPress={() => setRejectGuestId(null)}>
             <Pressable accessibilityRole="button" onPress={() => {/* swallow */}} style={styles.rejectCardWrap}>
-              <Card containerColor={Colors.surface} borderRadius={20} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
+              <Card containerColor={Colors.surface} borderRadius={Radii.sheet} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
                 <Row gap={8} align="center">
                   <View style={styles.titleIconWrap}>
                     <Ionicons name="warning" size={20} color={Colors.danger} />
@@ -245,7 +256,8 @@ export function TenantListScreen() {
                   label="Reason for rejection *"
                   placeholder="Photo blurry — please retake"
                   value={rejectReason}
-                  onChangeText={setRejectReason}
+                  onChangeText={(v) => { setRejectReason(v); if (rejectError) setRejectError(undefined); }}
+                  error={rejectError}
                   multiline
                   height={80}
                   testID="tenant_reject_reason_input"
@@ -256,7 +268,7 @@ export function TenantListScreen() {
                     onPress={handleRejectSubmit}
                     containerColor={Colors.danger}
                     textColor={Colors.textInverse}
-                    borderRadius={Layout.borderRadiusButton}
+                    borderRadius={Radii.control}
                     height={44}
                     loading={!!submittingId}
                     style={{ flex: 1 }}
@@ -269,7 +281,7 @@ export function TenantListScreen() {
                     onPress={() => setRejectGuestId(null)}
                     borderColor={Colors.borderMuted}
                     textColor={Colors.textSecondary}
-                    borderRadius={Layout.borderRadiusButton}
+                    borderRadius={Radii.control}
                     height={44}
                   >
                     <Txt size={13} weight="700" color={Colors.textSecondary}>Cancel</Txt>
@@ -285,35 +297,16 @@ export function TenantListScreen() {
   );
 }
 
-function TriageTile({ label, count, color }: { label: string; count: number; color: string }) {
-  return (
-    <View style={[styles.triageTile, { borderColor: `${color}66` }]}>
-      <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>{label.toUpperCase()}</Txt>
-      <Txt size={18} weight="900" color={color} style={{ marginTop: 4 }}>{count}</Txt>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   avatar: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
-  },
+    width: 40, height: 40, borderRadius: Radii.control,
+    backgroundColor: Colors.surfaceElevated,
+    alignItems: 'center', justifyContent: 'center' },
   backdrop: {
     flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    justifyContent: 'center', paddingHorizontal: 16,
-  },
+    justifyContent: 'center', paddingHorizontal: 16 },
   rejectCardWrap: { width: '100%', maxWidth: 480, alignSelf: 'center' },
   titleIconWrap: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: '#FEF2F2',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  triageTile: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Layout.borderRadiusCard,
-    borderWidth: 1,
-    padding: 12,
-  },
-});
+    width: 36, height: 36, borderRadius: Radii.control,
+    backgroundColor: Palette.TintRed,
+    alignItems: 'center', justifyContent: 'center' } });

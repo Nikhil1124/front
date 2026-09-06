@@ -42,6 +42,7 @@ export function ManageAdScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState(BLANK);
+  const [brandError, setBrandError] = useState<string | undefined>();
 
   // Load the existing ad into the form the moment there is one to edit.
   useEffect(() => {
@@ -54,7 +55,7 @@ export function ManageAdScreen() {
   const save = async () => {
     if (!pgId) return;
     if (!form.brand_name.trim()) {
-      Alert.alert('Brand name required', 'Give the ad a brand or business name.');
+      setBrandError('Give the ad a brand or business name');
       return;
     }
     try {
@@ -105,7 +106,7 @@ export function ManageAdScreen() {
   return (
     <HubScreenWrapper title="Sponsored Ad" subtitle="Shown to residents on the RSVP tab">
       {!showForm && data ? (
-        <Card containerColor={Colors.surface} borderRadius={Radii.xxl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
           <Row gap={10} align="center">
             <Ionicons name="megaphone" size={20} color={Colors.primary} />
             <Col style={{ flex: 1 }}>
@@ -124,16 +125,16 @@ export function ManageAdScreen() {
           )}
           <Spacer size={16} />
           <Row gap={10}>
-            <OutlinedBtn onPress={() => setIsEditing(true)} borderColor={Colors.primary} textColor={Colors.primary} borderRadius={10} height={42} style={{ flex: 1 }}>
+            <OutlinedBtn onPress={() => setIsEditing(true)} borderColor={Colors.primary} textColor={Colors.primary} borderRadius={Radii.control} height={42} style={{ flex: 1 }}>
               <Txt variant="body" weight="700" color={Colors.primary}>Edit</Txt>
             </OutlinedBtn>
-            <Btn onPress={confirmRemove} loading={remove.isPending} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={10} height={42} borderWidth={1} borderColor="#FECACA" style={{ flex: 1 }}>
+            <Btn onPress={confirmRemove} loading={remove.isPending} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={Radii.control} height={42} borderWidth={1} borderColor="#FECACA" style={{ flex: 1 }}>
               <Txt variant="body" weight="700" color={Colors.danger}>Remove</Txt>
             </Btn>
           </Row>
         </Card>
       ) : !isEditing ? (
-        <Card containerColor={Colors.surface} borderRadius={Radii.xxl} borderWidth={1} borderColor={Colors.borderSubtle} padding={[24, 24]}>
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[24, 24]}>
           <Col align="center" gap={10}>
             <Ionicons name="megaphone-outline" size={32} color={Colors.textMuted} />
             <Txt variant="body" weight="700" color={Colors.textPrimary} align="center">No sponsored ad configured</Txt>
@@ -141,7 +142,7 @@ export function ManageAdScreen() {
               Residents see nothing on the RSVP tab until you add one.
             </Txt>
             <Spacer size={6} />
-            <Btn onPress={() => setIsEditing(true)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={10} height={44}>
+            <Btn onPress={() => setIsEditing(true)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.control} height={44}>
               <Ionicons name="add" size={18} color="#FFFFFF" />
               <Txt variant="body" weight="800" color="#FFFFFF" style={{ marginLeft: 6 }}>Add Sponsored Ad</Txt>
             </Btn>
@@ -149,7 +150,7 @@ export function ManageAdScreen() {
         </Card>
       ) : (
         <ScrollView keyboardShouldPersistTaps="handled">
-          <OutlinedTextField label="Brand / business name" value={form.brand_name} onChangeText={(v) => set('brand_name', v)} placeholder="NutriFit Cloud Kitchen" style={{ marginBottom: 12 }} />
+          <OutlinedTextField label="Brand / business name" required value={form.brand_name} onChangeText={(v) => { set('brand_name', v); if (brandError) setBrandError(undefined); }} error={brandError} placeholder="NutriFit Cloud Kitchen" style={{ marginBottom: 12 }} />
           <OutlinedTextField label="Tagline" value={form.tagline} onChangeText={(v) => set('tagline', v)} placeholder="Chef-crafted healthy meal boxes" style={{ marginBottom: 12 }} />
           <OutlinedTextField label="Description" value={form.description} onChangeText={(v) => set('description', v)} multiline numberOfLines={3} style={{ marginBottom: 12, minHeight: 80 }} />
           <Row gap={10} style={{ marginBottom: 12 }}>
@@ -170,11 +171,11 @@ export function ManageAdScreen() {
 
           <Row gap={10}>
             {data && (
-              <OutlinedBtn onPress={() => { setForm({ ...data }); setIsEditing(false); }} borderColor={Colors.borderMuted} textColor={Colors.textSecondary} borderRadius={10} height={44} style={{ flex: 1 }}>
+              <OutlinedBtn onPress={() => { setForm({ ...data }); setIsEditing(false); }} borderColor={Colors.borderMuted} textColor={Colors.textSecondary} borderRadius={Radii.control} height={44} style={{ flex: 1 }}>
                 <Txt variant="body" weight="700" color={Colors.textSecondary}>Cancel</Txt>
               </OutlinedBtn>
             )}
-            <Btn onPress={save} loading={upsert.isPending} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={10} height={44} style={{ flex: 1 }}>
+            <Btn onPress={save} loading={upsert.isPending} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.control} height={44} style={{ flex: 1 }}>
               <Txt variant="body" weight="800" color="#FFFFFF">Save Ad</Txt>
             </Btn>
           </Row>

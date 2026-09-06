@@ -7,20 +7,21 @@
  *   - High-Contrast Dark Forest Typography (#173A33)
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, Alert, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
+import { StatusChip, type StatusTone, Card, Txt, Row, Col, Spacer, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { GuestKycVerificationTab } from './GuestKycVerificationTab';
 import { useKycStatus } from '@/features/kyc/useKycStatus';
 import { useToast } from '@/hooks/useToast';
 import { useChangePassword } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
-import { AppHeader, HeaderChip } from '@/components/AppHeader';
+import { AppHeader } from '@/components/AppHeader';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 /**
  * Same camera/gallery pattern as KycUploadDialog's `pickImage`/`choosePhoto` — real
@@ -49,19 +50,26 @@ async function pickPhoto(from: 'camera' | 'library'): Promise<string | null> {
 
 type KycStatus = 'UNKNOWN' | 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
-interface KycPillConfig { label: string; color: string; bg: string; }
-function kycPill(status: KycStatus): KycPillConfig {
+/**
+ * The resident's own KYC state, in their words rather than the system's.
+ *
+ * Deliberately not `toneFor` — a resident reads "Action required", not "Rejected", and
+ * "Under review" rather than "Pending". Only the colours moved to tokens; the copy is the
+ * point of having this here at all.
+ */
+function kycStatusLabel(status: KycStatus): { label: string; tone: StatusTone } {
   switch (status) {
-    case 'UNKNOWN': return { label: 'Checking…', color: Colors.textSecondary, bg: '#F6F1E9' };
-    case 'VERIFIED': return { label: 'Verified Shield', color: Colors.success, bg: '#F6F1E9' };
-    case 'PENDING': return { label: 'Under Review', color: '#D97706', bg: '#FEF3C7' };
-    case 'REJECTED': return { label: 'Action Required', color: Colors.danger, bg: '#FEE2E2' };
+    case 'UNKNOWN': return { label: 'Checking…', tone: 'neutral' };
+    case 'VERIFIED': return { label: 'Verified', tone: 'ok' };
+    case 'PENDING': return { label: 'Under review', tone: 'warn' };
+    case 'REJECTED': return { label: 'Action required', tone: 'danger' };
     case 'NOT_SUBMITTED':
-    default: return { label: 'Not Submitted', color: Colors.textSecondary, bg: '#F6F1E9' };
+    default: return { label: 'Not submitted', tone: 'neutral' };
   }
 }
 
 export function GuestSecurityTab() {
+  const dockScroll = useDockScroll();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const changePasswordMutation = useChangePassword();
   const updateProfilePhoto = usePGowStore((s) => s.updateGuestProfilePhoto);
@@ -71,10 +79,11 @@ export function GuestSecurityTab() {
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [pwErrors, setPwErrors] = useState<{ current?: string; next?: string }>({});
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const kycStatus = useKycStatus() as KycStatus;
-  const pill = kycPill(kycStatus);
+  const pill = kycStatusLabel(kycStatus);
 
   const handleChangePhoto = () => {
     if (isUploadingPhoto) return;
@@ -102,14 +111,14 @@ export function GuestSecurityTab() {
 
   const handleUpdatePassword = async () => {
     if (isUpdating) return;
-    if (!currentPassword.trim() || !newPassword.trim()) {
-      Alert.alert('Validation Error', 'Please enter your current and new passcode.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      Alert.alert('Passcode Too Short', 'New passcode must be at least 8 characters long.');
-      return;
-    }
+    const nextErrors = {
+      current: currentPassword.trim() ? undefined : 'Enter your current passcode',
+      next: !newPassword.trim()
+        ? 'Choose a new passcode'
+        : newPassword.length < 8 ? 'At least 8 characters' : undefined,
+    };
+    setPwErrors(nextErrors);
+    if (nextErrors.current || nextErrors.next) return;
     setIsUpdating(true);
     try {
       await changePasswordMutation.mutateAsync({ current_password: currentPassword, new_password: newPassword });
@@ -136,6 +145,7 @@ export function GuestSecurityTab() {
 
       {/* ── SCROLLABLE CONTENT ── */}
       <ScrollView
+        {...dockScroll}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -146,8 +156,7 @@ export function GuestSecurityTab() {
         <View style={styles.profileCard}>
           <Row justify="space-between" align="center">
             <Row gap={14} align="center" style={{ flex: 1 }}>
-              <TouchableOpacity accessibilityLabel="Profile" accessibilityRole="button"
-                activeOpacity={0.85}
+              <AnimatedPress accessibilityLabel="Profile" accessibilityRole="button"
                 onPress={handleChangePhoto}
                 disabled={isUploadingPhoto}
                 style={styles.avatarRing}
@@ -160,7 +169,7 @@ export function GuestSecurityTab() {
                 <View style={styles.avatarCameraBadge}>
                   <Ionicons name={isUploadingPhoto ? 'hourglass' : 'camera'} size={12} color="#FFFFFF" />
                 </View>
-              </TouchableOpacity>
+              </AnimatedPress>
               <Col style={{ flex: 1 }}>
                 <Txt size={18} weight="900" color={Colors.textPrimary}>
                   {guest?.name ?? 'Resident'}
@@ -171,16 +180,7 @@ export function GuestSecurityTab() {
               </Col>
             </Row>
 
-            <View style={[styles.kycPill, { backgroundColor: pill.bg }]}>
-              <Ionicons
-                name={kycStatus === 'VERIFIED' ? 'shield-checkmark' : kycStatus === 'PENDING' ? 'hourglass' : 'warning'}
-                size={12}
-                color={pill.color}
-              />
-              <Txt size={11} weight="800" color={pill.color} style={{ marginLeft: 4 }}>
-                {pill.label}
-              </Txt>
-            </View>
+            <StatusChip label={pill.label} tone={pill.tone} />
           </Row>
 
           {(guest?.phone || guest?.email) && (
@@ -207,7 +207,7 @@ export function GuestSecurityTab() {
         </Txt>
         <Card
           containerColor="#FFFFFF"
-          borderRadius={20}
+          borderRadius={Radii.sheet}
           borderWidth={1}
           borderColor={Colors.borderSubtle}
           padding={[16, 16]}
@@ -228,7 +228,7 @@ export function GuestSecurityTab() {
         </Txt>
         <Card
           containerColor="#FFFFFF"
-          borderRadius={20}
+          borderRadius={Radii.sheet}
           borderWidth={1}
           borderColor={Colors.borderSubtle}
           padding={[16, 16]}
@@ -244,38 +244,39 @@ export function GuestSecurityTab() {
           <OutlinedTextField
             label="Current Passcode"
             value={currentPassword}
-            onChangeText={setCurrentPassword}
+            onChangeText={(v) => { setCurrentPassword(v); if (pwErrors.current) setPwErrors((e) => ({ ...e, current: undefined })); }}
+            error={pwErrors.current}
             secureTextEntry
             focusedBorderColor={Colors.primary}
-            borderRadius={14}
+            borderRadius={Radii.card}
             style={{ marginBottom: 12 }}
           />
 
           <OutlinedTextField
             label="New Passcode (min 8 characters)"
             value={newPassword}
-            onChangeText={setNewPassword}
+            onChangeText={(v) => { setNewPassword(v); if (pwErrors.next) setPwErrors((e) => ({ ...e, next: undefined })); }}
+            error={pwErrors.next}
+            helper="At least 8 characters"
             secureTextEntry
             focusedBorderColor={Colors.primary}
-            borderRadius={14}
+            borderRadius={Radii.card}
             style={{ marginBottom: 16 }}
           />
 
-          <TouchableOpacity accessibilityRole="button"
-            activeOpacity={0.9}
+          <AnimatedPress accessibilityRole="button"
             onPress={handleUpdatePassword}
             disabled={isUpdating}
             style={styles.updatePasscodeBtn}
           >
             <Ionicons name="lock-closed" size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Txt size={13} weight="800" color="#FFFFFF">Update Passcode</Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Card>
 
         {/* ── 5. LOGOUT BUTTON ── */}
         <Spacer size={24} />
-        <TouchableOpacity accessibilityRole="button"
-          activeOpacity={0.88}
+        <AnimatedPress accessibilityRole="button"
           onPress={confirmLogout}
           style={styles.logoutBtn}
         >
@@ -283,7 +284,7 @@ export function GuestSecurityTab() {
           <Txt size={14} weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>
             Log Out of PGow Account
           </Txt>
-        </TouchableOpacity>
+        </AnimatedPress>
 
         <Spacer size={32} />
       </ScrollView>
@@ -301,53 +302,39 @@ const styles = StyleSheet.create({
 
   // Profile Card
   profileCard: {
-    marginTop: -14, backgroundColor: '#FFFFFF', borderRadius: 20,
+    marginTop: -14, backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16,
-    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-  },
+    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
   avatarRing: {
-    width: 52, height: 52, borderRadius: 26,
+    width: 52, height: 52, borderRadius: Radii.pill,
     backgroundColor: '#F6F1E9', borderWidth: 2, borderColor: Colors.borderSubtle,
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
   avatarImage: {
-    width: '100%', height: '100%', borderRadius: 24,
-  },
+    width: '100%', height: '100%', borderRadius: Radii.sheet },
   avatarCameraBadge: {
     position: 'absolute', bottom: -2, right: -2,
-    width: 20, height: 20, borderRadius: 10,
+    width: 20, height: 20, borderRadius: Radii.pill,
     backgroundColor: Colors.primary,
     borderWidth: 2, borderColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  kycPill: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
-  },
+    alignItems: 'center', justifyContent: 'center' },
   contactDetailsBox: {
     marginTop: 14, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: '#F6F1E9',
-  },
+    borderTopWidth: 1, borderTopColor: '#F6F1E9' },
 
   // Section Cards
   sectionCard: {
-    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
+    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
   sectionIconWrap: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center',
-  },
+    width: 34, height: 34, borderRadius: Radii.pill,
+    backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
 
   // Buttons
   updatePasscodeBtn: {
-    backgroundColor: Colors.primary, borderRadius: 14,
+    backgroundColor: Colors.primary, borderRadius: Radii.card,
     paddingVertical: 12, paddingHorizontal: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 3,
-  },
+    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 3 },
   logoutBtn: {
-    backgroundColor: '#FFF5F5', borderRadius: 16,
+    backgroundColor: '#FFF5F5', borderRadius: Radii.card,
     borderWidth: 1.5, borderColor: '#FECACA',
-    paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-  },
-});
+    paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' } });

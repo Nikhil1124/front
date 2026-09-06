@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SupplyCategory } from '@/types';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 
 const gap = 10;
 const totalPadding = 32;
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   imageWrapper: {
-    borderRadius: 16,
+    borderRadius: Radii.card,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',

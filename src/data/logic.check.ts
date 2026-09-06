@@ -21,6 +21,8 @@ import { GATE_CODES, gateCodeFrom } from "./gateCodes.ts";
 // `config.ts` must stay free of runtime imports — `scripts/check-api-compatibility.mjs`
 // reads it under plain node. Asserted below so a future re-export cannot quietly break it.
 import { currentPeriod, periodToMonthYear, toAmount } from "./mappers.ts";
+import { toneFor } from "../components/ui/statusTone.ts";
+import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
 
 // ── UPI deep link ───────────────────────────────────────────────────────────
 // The highest-consequence string this app builds. A VPA that is wrong — or worse, silently
@@ -108,9 +110,11 @@ import { currentPeriod, periodToMonthYear, toAmount } from "./mappers.ts";
   const period = currentPeriod();
   assert.match(period, /^\d{4}-\d{2}-01$/, "a period is always pinned to the 1st");
 
-  const now = new Date();
-  const expectedMonth = String(now.getMonth() + 1).padStart(2, "0");
-  assert.equal(period, `${now.getFullYear()}-${expectedMonth}-01`, "period is the local month");
+  // The month in India, not on this machine. `app/core/clock.py` pins the server the same
+  // way; if these two ever disagree, a resident's payment is filed against the wrong cycle.
+  const ist = new Date(Date.now() + 330 * 60_000);
+  const expectedMonth = String(ist.getUTCMonth() + 1).padStart(2, "0");
+  assert.equal(period, `${ist.getUTCFullYear()}-${expectedMonth}-01`, "period is the IST month");
 
   // Display round-trip: the label a resident reads must name the month they paid for.
   assert.equal(periodToMonthYear("2026-09-01"), "September 2026");
@@ -139,6 +143,76 @@ import { currentPeriod, periodToMonthYear, toAmount } from "./mappers.ts";
     "src/config.ts must have no runtime imports — scripts/check-api-compatibility.mjs "
       + "reads it under plain node. Put shared values in their own import-free module instead."
   );
+}
+
+// ── Status tone ─────────────────────────────────────────────────────────────
+// One mapper now decides the colour of every status in the app, so a status it does not
+// recognise goes grey everywhere at once rather than on one screen. The server vocabularies
+// disagree with each other on purpose (`pending` vs `pending_owner_approval`), and the
+// casing and separators vary by module, so those are the cases worth pinning.
+{
+  const cases: Array<[string, string]> = [
+    ["VERIFIED", "ok"], ["Paid", "ok"], ["delivered", "ok"], ["active", "ok"],
+    ["PENDING", "warn"], ["pending_owner_approval", "warn"], ["In Progress", "warn"], ["Due", "warn"],
+    ["REJECTED", "danger"], ["Overdue", "danger"], ["cancelled", "danger"],
+    ["ordered", "info"], ["Open", "info"],
+    ["NOT_SUBMITTED", "neutral"], ["Paused", "neutral"], ["", "neutral"],
+  ];
+  for (const [status, expected] of cases) {
+    assert.equal(toneFor(status), expected, `toneFor(${JSON.stringify(status)}) should be ${expected}`);
+  }
+  assert.equal(toneFor(null), "neutral", "a missing status is neutral, not a crash");
+  assert.equal(toneFor(undefined), "neutral", "an absent status is neutral, not a crash");
+}
+
+// ── Bottom bar: frequency ranking → physical slots ──────────────────────────
+// The ordering rule is the whole reason the nav tables are written by rank rather than by
+// position, and it is invisible when wrong: a bar with the right five tabs in the wrong slots
+// still looks fine, it just puts the most-used destination under the least reachable thumb.
+{
+  assert.deepEqual(
+    centreOut([1, 2, 3, 4, 5]),
+    [4, 2, 1, 3, 5],
+    "rank 1 takes the centre, 2 and 3 flank it, 4 and 5 take the hard-to-reach ends",
+  );
+  assert.deepEqual(centreOut([1, 2, 3]), [2, 1, 3], "three slots: rank 1 is still the middle");
+  assert.deepEqual(centreOut([1]), [1]);
+  assert.deepEqual(centreOut([]), [], "an empty profile must not throw");
+  assert.equal(
+    centreOut([1, 2, 3, 4])[2],
+    1,
+    "even lengths have no true centre — rank 1 goes right of the middle, the better half for a thumb",
+  );
+
+  for (const [profile, dests] of Object.entries(NAV_PROFILES)) {
+    assert.ok(dests.length <= 5, `${profile}: a bottom bar caps at five destinations`);
+    assert.ok(dests.length >= 3, `${profile}: fewer than three destinations is not a tab bar`);
+    assert.equal(
+      new Set(dests.map((d) => d.name)).size,
+      dests.length,
+      `${profile}: two triggers with the same name would collide in the navigator`,
+    );
+    for (const d of dests) {
+      assert.ok(d.label.length <= 11, `${profile}/${d.label}: too long for a five-up label row`);
+      assert.equal(d.href, `/${d.name}`, `${profile}/${d.name}: href and trigger name must agree`);
+    }
+    // Every signal the alert order names has to belong to a destination, or the strip would
+    // fire with nowhere to send you.
+    for (const key of ALERT_ORDER[profile as keyof typeof ALERT_ORDER]) {
+      assert.ok(dests.some((d) => d.signal === key), `${profile}: no destination owns "${key}"`);
+    }
+  }
+
+  assert.equal(pickAlert("owner", {}), null, "nothing waiting ⇒ no strip");
+  assert.equal(pickAlert("owner", { complaintsOpen: 0 }), null, "an empty queue is not an alert");
+  assert.equal(
+    pickAlert("owner", { complaintsOpen: 9, paymentsPending: 1 })?.key,
+    "paymentsPending",
+    "unverified money outranks a bigger pile of complaints — cost, not size",
+  );
+  assert.equal(pickAlert("owner", { paymentsPending: 1 })?.text, "1 payment waiting to be verified");
+  assert.equal(pickAlert("owner", { paymentsPending: 4 })?.text, "4 payments waiting to be verified");
+  assert.equal(pickAlert("chef", { paymentsPending: 3 }), null, "a profile with no alerts stays silent");
 }
 
 console.log("logic.check.ts — all assertions passed");

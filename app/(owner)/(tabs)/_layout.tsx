@@ -1,19 +1,30 @@
 /**
- * Owner/Manager tabs shell — premium Indigo redesign.
- * Personalized header (avatar, dynamic greeting, property swapper, notifications, settings)
- * and custom floating bottom navigation bar with "+" action and More overlay sheet.
- * All existing functionality and data bindings preserved.
+ * Owner/Manager tabs shell — header (avatar, greeting, property swapper, notifications,
+ * settings, quick-add) and the shared bottom bar.
+ *
+ * ── What changed, and why ───────────────────────────────────────────────────────────────────
+ * This layout used to own a bespoke floating pill dock with two visible tabs and a raised
+ * centre "+", while `guests`, `staff`, `complaints`, `reviews` and `notices` were all hidden
+ * triggers with no way to reach them from the bar at all — an owner had to go back to Overview
+ * and find a card. It now uses the same bar as every other role, with five real destinations
+ * ordered by how often an owner needs them (see src/data/navTabs.ts).
+ *
+ * The "+" moved to the header. A bottom bar holds destinations, not actions — that is the one
+ * rule both Material 3 and the HIG agree on — and the centre slot is the easiest place to
+ * reach, which is why Overview now has it. Its old label was `"Increase quantity"`, a stepper
+ * string that had been pasted onto a create button, so a screen reader announced the wrong
+ * thing entirely; it is `"Add"` now.
  */
 import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet, Modal, Pressable, ScrollView } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
+import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Card, Txt, Row, Spacer, AnimatedPress } from '@/components/ui';
+import { Dock, DockAlert, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
+import { centreOut, NAV_PROFILES } from '@/data/navTabs';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
@@ -28,7 +39,15 @@ const CHARCOAL = Colors.textPrimary;
 const MUTED = Colors.textMuted;
 const BORDER = Colors.borderSubtle;
 const WHITE = Colors.surface;
-const DANGER = Colors.danger;
+
+/**
+ * The bar no longer lists overview first — the frequency ranking puts the least-used destination
+ * in the leftmost slot — and without this the navigator would take its initial route from
+ * whichever trigger happens to come first, landing every session on Requests instead of
+ * overview. `anchor` pins it, and also sorts overview to the head of the navigator's own screen
+ * list. Do not delete this when reordering the bar; that is exactly when it matters.
+ */
+export const unstable_settings = { anchor: 'overview' };
 
 export default function OwnerTabsLayout() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -48,8 +67,8 @@ export default function OwnerTabsLayout() {
   const user = useAuthStore((s) => s.user);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
-  const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const { dockStyle, contentPaddingBottom, counts, alert } = useDock('owner');
 
   // Dynamic names
   const ownerName = owner?.ownerName || user?.name || 'Owner';
@@ -60,14 +79,17 @@ export default function OwnerTabsLayout() {
   const location = owner?.address ? owner.address.split(',').slice(0, 2).join(',') : 'Bengaluru';
   const subLabel = `${allPGs.length} PG${allPGs.length === 1 ? '' : 's'} • ${location}`;
 
-  // Paths
+  // Paths. A tab route gets the root header — a back arrow on one is a lie, since there is no
+  // stack behind it to pop. `notices` and `reviews` are reached by pushing, so they keep theirs.
   const isOverviewActive = pathname === '/overview';
-  const isPaymentsActive = pathname === '/payments';
+  const isTabRoute = NAV_PROFILES.owner.some((d) => d.href === pathname);
+
+  const addChip = <HeaderChip icon="add" label="Add" onPress={() => { setShowAddOptions(true); }} />;
 
   return (
     <Tabs style={styles.root}>
       {/* ── Main Layout Wrapper ── */}
-      <View style={{ flex: 1, backgroundColor: BG, paddingBottom: 68 + insets.bottom }}>
+      <View style={{ flex: 1, backgroundColor: BG, paddingBottom: contentPaddingBottom }}>
         {/* ── Header: one component, two variants ─────────────────────────────── */}
         {isOverviewActive ? (
           <AppHeader
@@ -92,6 +114,7 @@ export default function OwnerTabsLayout() {
             }
             actions={
               <Row gap={8} align="center">
+                {addChip}
                 <HeaderChip icon="notifications-outline" label="Notifications" badge={unreadCount > 0} onPress={() => { router.push('/notices'); }} />
                 <HeaderChip icon="settings-outline" label="Settings" onPress={() => router.push('/settings')} />
               </Row>
@@ -99,7 +122,8 @@ export default function OwnerTabsLayout() {
           />
         ) : (
           <AppHeader
-            onBack={() => { router.push('/overview'); }}
+            onBack={isTabRoute ? undefined : () => { router.push('/overview'); }}
+            actions={isTabRoute ? addChip : undefined}
             title={
               pathname === '/guests' ? 'Residents Directory' :
               pathname === '/payments' ? 'Payments & Revenue' :
@@ -119,52 +143,33 @@ export default function OwnerTabsLayout() {
         </View>
       </View>
 
-      {/* ── Custom Floating Bottom Navigation Bar ──────────────────────────────
-          TabList must be a direct child of Tabs, and cannot be nested within an
-          ordinary View so that Expo Router can locate triggers and discover screens.
+      {/* Context strip — a sibling of Dock, never a child: TabList is laid out as a row and
+          its children are walked for triggers. */}
+      <DockAlert alert={alert} />
+
+      {/* ── Bottom bar ─────────────────────────────────────────────────────────
+          TabList must be a direct child of Tabs and cannot be nested in an ordinary View, or
+          Expo Router can't locate the triggers and discover the screens. `.map` is fine —
+          `Children.forEach`, which is what it walks with, flattens arrays.
+          Slot order comes from the frequency ranking in navTabs.ts.
       ───────────────────────────────────────────────────────────────────────── */}
-      <TabList style={[styles.floatingDock, { bottom: Math.max(insets.bottom, 12) }]}>
-        {/* Tab 1: Overview */}
-        <TabTrigger name="overview" href="/overview" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.dockItem} activeOpacity={0.8}>
-            <Ionicons name="grid" size={20} color={isOverviewActive ? PRIMARY : MUTED} />
-            <Txt size={10} weight={isOverviewActive ? '800' : '600'} color={isOverviewActive ? PRIMARY : MUTED} style={styles.dockText}>
-              Overview
-            </Txt>
-          </TouchableOpacity>
-        </TabTrigger>
+      <Dock style={dockStyle}>
+        {centreOut(NAV_PROFILES.owner).map((d) => (
+          <TabTrigger key={d.name} name={d.name} href={d.href} asChild>
+            <HeadlessDockTabButton
+              icon={d.icon}
+              label={d.label}
+              pending={d.signal ? counts[d.signal] : undefined}
+              activeTint={Colors.primary}
+            />
+          </TabTrigger>
+        ))}
 
-
-
-        {/* Center Action 3: Elevated Floating Plus */}
-        <View style={styles.plusBtnContainer}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
-            style={styles.floatingPlusBtn}
-            activeOpacity={0.85}
-            onPress={() => { setShowAddOptions(true); }}
-
-          >
-            <Ionicons name="add" size={28} color={WHITE} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Tab 4: Payments */}
-        <TabTrigger name="payments" href="/payments" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.dockItem} activeOpacity={0.8}>
-            <Ionicons name="card" size={20} color={isPaymentsActive ? PRIMARY : MUTED} />
-            <Txt size={10} weight={isPaymentsActive ? '800' : '600'} color={isPaymentsActive ? PRIMARY : MUTED} style={styles.dockText}>
-              Payments
-            </Txt>
-          </TouchableOpacity>
-        </TabTrigger>
-
-
-        {/* Hidden triggers to register all tab routes in the navigator */}
-        <TabTrigger name="guests" href="/guests" style={{ display: 'none' }} />
-        <TabTrigger name="staff" href="/staff" style={{ display: 'none' }} />
+        {/* Hidden triggers: routes that exist but lost the five-slot cut. Both stay reachable —
+            notices from the header bell, reviews from Overview. */}
         <TabTrigger name="notices" href="/notices" style={{ display: 'none' }} />
         <TabTrigger name="reviews" href="/reviews" style={{ display: 'none' }} />
-      </TabList>
+      </Dock>
 
       {/* ── PG Swapper Popover Menu ─────────────────────────────────────────── */}
       {showProfileMenu && (
@@ -174,7 +179,7 @@ export default function OwnerTabsLayout() {
             <View style={styles.swapperMenuCard}>
               <Card
                 containerColor={WHITE}
-                borderRadius={22}
+                borderRadius={Radii.sheet}
                 borderWidth={1}
                 borderColor={BORDER}
                 padding={[8, 8]}
@@ -193,7 +198,7 @@ export default function OwnerTabsLayout() {
                   {allPGs.map((pg) => {
                     const isCurrent = pg.id === activePgId;
                     return (
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         key={pg.id}
                         style={[styles.menuRow, isCurrent && styles.menuRowActive]}
                         onPress={async () => {
@@ -206,7 +211,7 @@ export default function OwnerTabsLayout() {
                           {pg.pgName}
                         </Txt>
                         {isCurrent && <Ionicons name="checkmark-circle" size={18} color={PRIMARY} />}
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     );
                   })}
                 </ScrollView>
@@ -215,20 +220,20 @@ export default function OwnerTabsLayout() {
 
                 {!isManager && (
                   <>
-                    <TouchableOpacity accessibilityRole="button"
+                    <AnimatedPress accessibilityRole="button"
                       style={styles.menuRow}
                       onPress={() => { setShowProfileMenu(false); setShowAddPgModal(true); }}
                     >
                       <Ionicons name="add-circle-outline" size={18} color={PRIMARY} />
                       <Txt size={13} weight="700" color={CHARCOAL} style={{ marginLeft: 10 }}>Add Property</Txt>
-                    </TouchableOpacity>
-                    <TouchableOpacity accessibilityRole="button"
+                    </AnimatedPress>
+                    <AnimatedPress accessibilityRole="button"
                       style={styles.menuRow}
                       onPress={() => { setShowProfileMenu(false); router.push('/manage-properties'); }}
                     >
                       <Ionicons name="settings-outline" size={18} color={PRIMARY} />
                       <Txt size={13} weight="700" color={CHARCOAL} style={{ marginLeft: 10 }}>Manage Properties</Txt>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   </>
                 )}
               </Card>
@@ -257,49 +262,46 @@ export default function OwnerTabsLayout() {
               
               <Row justify="space-evenly" align="center" style={{ marginVertical: 10 }}>
                 {/* Add Resident */}
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={styles.addOptionItem}
                   onPress={() => {
                     setShowAddOptions(false);
                     setTimeout(() => router.navigate('/guests'), 150);
                   }}
-                  activeOpacity={0.7}
                 >
-                  <View style={[styles.moreIconBox, { backgroundColor: '#ECFDF5' }]}><Ionicons name="person-add-outline" size={22} color={Colors.success} /></View>
+                  <View style={[styles.moreIconBox, { backgroundColor: Palette.TintGreen }]}><Ionicons name="person-add-outline" size={22} color={Colors.success} /></View>
                   <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Resident</Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
 
                 {/* Add Staff */}
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={styles.addOptionItem}
                   onPress={() => {
                     setShowAddOptions(false);
                     setTimeout(() => router.navigate('/staff'), 150);
                   }}
-                  activeOpacity={0.7}
                 >
                   <View style={[styles.moreIconBox, { backgroundColor: '#EEF2FF' }]}><Ionicons name="ribbon-outline" size={22} color={PRIMARY} /></View>
                   <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Staff</Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
 
                 {/* Add Property */}
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={styles.addOptionItem}
                   onPress={() => {
                     setShowAddOptions(false);
                     setShowAddPgModal(true);
                   }}
-                  activeOpacity={0.7}
                 >
-                  <View style={[styles.moreIconBox, { backgroundColor: '#FEF3C7' }]}><Ionicons name="business-outline" size={22} color="#F59E0B" /></View>
+                  <View style={[styles.moreIconBox, { backgroundColor: Palette.TintAmber }]}><Ionicons name="business-outline" size={22} color={Colors.warning} /></View>
                   <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Property</Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
 
               <Spacer size={8} />
-              <TouchableOpacity accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowAddOptions(false)}>
+              <AnimatedPress accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowAddOptions(false)}>
                 <Txt size={13} weight="800" color={MUTED} align="center">Cancel</Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             </View>
           </View>
         </Modal>
@@ -313,76 +315,26 @@ const styles = StyleSheet.create({
 
   // LUNA Gradient Header (Matching Resident Design)
   avatarFrame: {
-    width: 38, height: 38, borderRadius: 19,
+    width: 38, height: 38, borderRadius: Radii.pill,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.surfaceElevated,
-  },
+    backgroundColor: Colors.surfaceElevated },
   managerBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: '#A7EBF2',
-  },
+    borderRadius: Radii.badge,
+    backgroundColor: '#A7EBF2' },
 
-  // Custom Floating Dock styled directly onto TabList
-  floatingDock: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    height: 62,
-    backgroundColor: 'rgba(255, 255, 255, 0.96)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(229, 231, 235, 0.8)',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  dockItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-  },
-  dockText: {
-    marginTop: 2,
-    fontSize: 9,
-  },
-  plusBtnContainer: {
-    width: 64,
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floatingPlusBtn: {
-    position: 'absolute',
-    top: -20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: PRIMARY,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
-  },
+  // The floating-pill dock that used to live here (floatingDock / dockItem / dockText) and its
+  // raised centre "+" (plusBtnContainer / floatingPlusBtn) are gone with the bar itself — see
+  // this file's header comment. The bar's styles are now in HeadlessDockTabButton.tsx, shared
+  // with every role.
 
   // Modals Backdrops
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(21, 23, 26, 0.4)',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   swapperMenuCard: {
     width: '84%',
     maxWidth: 320,
@@ -390,30 +342,25 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
+    elevation: 6 },
   menuDivider: {
     height: 1,
     backgroundColor: BORDER,
-    marginVertical: 4,
-  },
+    marginVertical: 4 },
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: 12,
-  },
+    borderRadius: Radii.card },
   menuRowActive: {
-    backgroundColor: '#EEF2FF',
-  },
+    backgroundColor: '#EEF2FF' },
 
   // More Menu Bottom Sheet
   moreMenuBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(21, 23, 26, 0.45)',
-    justifyContent: 'flex-end',
-  },
+    justifyContent: 'flex-end' },
   moreMenuSheet: {
     backgroundColor: WHITE,
     borderTopLeftRadius: 28,
@@ -425,55 +372,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: -4 },
-    elevation: 10,
-  },
+    elevation: 10 },
   sheetHandle: {
     width: 38,
     height: 4,
-    borderRadius: 2,
+    borderRadius: Radii.badge,
     backgroundColor: BORDER,
     alignSelf: 'center',
-    marginBottom: 16,
-  },
-  moreGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  moreGridItem: {
-    width: '22%',
-    alignItems: 'center',
-    gap: 8,
-  },
+    marginBottom: 16 },
   moreIconBox: {
     width: 48,
     height: 48,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    borderRadius: Radii.card,
+    backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  moreActionBtn: {
-    flexDirection: 'row',
-    height: 46,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   addOptionItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 80,
-  },
+    width: 80 },
   sheetCancelBtn: {
     height: 48,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    borderRadius: Radii.card,
+    backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
-    width: '100%',
-  },
-});
+    width: '100%' } });
 

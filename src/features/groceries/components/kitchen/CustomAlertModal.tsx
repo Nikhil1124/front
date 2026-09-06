@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 
 export type AlertType = 'success' | 'info' | 'error';
 
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     backgroundColor: Colors.surface,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: Radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   },
   confirmBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     paddingVertical: 10,
     paddingHorizontal: 40,
   },

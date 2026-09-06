@@ -5,7 +5,7 @@ import { SupplyItem } from '@/types';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { useCartStore } from '../../store/useCartStore';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { PriceDisplay } from './PriceDisplay';
 
 export interface MiniProductCardProps {
@@ -24,8 +24,7 @@ export interface MiniProductCardProps {
 export const MiniProductCard: React.FC<MiniProductCardProps> = ({
   product,
   onPress,
-  showWishlist = false,
-}) => {
+  showWishlist = false }) => {
   const mode = useShoppingModeStore((s) => s.mode);
   const options = [{ price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined }];
 
@@ -118,11 +117,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 10,
     marginRight: 8,
-    position: 'relative',
-  },
+    position: 'relative' },
   discountBadge: {
     position: 'absolute',
     top: 6,
@@ -130,60 +128,48 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.danger,
     paddingHorizontal: 4,
     paddingVertical: 2,
-    borderRadius: 4,
-    zIndex: 2,
-  },
+    borderRadius: Radii.badge,
+    zIndex: 2 },
   discountText: {
     color: Colors.surface,
-    fontSize: 8,
-  },
+    fontSize: 8 },
   wishlistBtn: {
     position: 'absolute',
     top: 6,
     right: 6,
     zIndex: 2,
-    padding: 3,
-  },
+    padding: 3 },
   imageContainer: {
     height: 72,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 4,
-  },
+    marginVertical: 4 },
   image: {
     width: '80%',
-    height: '80%',
-  },
+    height: '80%' },
   name: {
     fontSize: 11,
     color: Colors.textPrimary,
     marginTop: 4,
-    lineHeight: 14,
-  },
+    lineHeight: 14 },
   unit: {
     fontSize: 9,
     color: Colors.textSecondary,
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   addBtn: {
     marginTop: 8,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.primary,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
     paddingVertical: 5,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   addedBtn: {
     backgroundColor: Colors.surfaceElevated,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   addBtnText: {
     color: Colors.primary,
-    fontSize: 11,
-  },
+    fontSize: 11 },
   addedBtnText: {
-    color: Colors.primaryDark,
-  },
-});
+    color: Colors.primaryDark } });

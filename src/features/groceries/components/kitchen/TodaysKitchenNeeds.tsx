@@ -14,7 +14,7 @@ import {
   useSetKitchenMenuDayMutation,
 } from '../../useKitchenMenu';
 import { KitchenMenuDay, KitchenMenuMealType, KitchenMenuWeekday } from '@/types';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 // Extracted modal components
 import { CustomAlertModal, CustomAlertState } from './CustomAlertModal';
@@ -444,8 +444,8 @@ const styles = StyleSheet.create({
   container: { marginVertical: 12 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 },
 
-  tabContainer: { flexDirection: 'row', marginHorizontal: 16, backgroundColor: Colors.surfaceElevated, borderRadius: 10, padding: 3, marginVertical: 6 },
-  tabButton: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+  tabContainer: { flexDirection: 'row', marginHorizontal: 16, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.control, padding: 3, marginVertical: 6 },
+  tabButton: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: Radii.control },
   activeTabButton: { backgroundColor: Colors.primary, shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
   activeTabButtonText: { color: Colors.surface },
 
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
 
   bottomSheetBackdrop: { flex: 1, backgroundColor: 'rgba(12,46,78,0.55)', justifyContent: 'flex-end' },
   bottomSheetContainer: { height: '65%', backgroundColor: Colors.surfaceMuted, borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 10, overflow: 'hidden' },
-  grabHandle: { width: 40, height: 5, backgroundColor: Colors.borderMuted, borderRadius: 2.5, alignSelf: 'center', marginTop: 8, marginBottom: 4 },
+  grabHandle: { width: 40, height: 5, backgroundColor: Colors.borderMuted, borderRadius: Radii.pill, alignSelf: 'center', marginTop: 8, marginBottom: 4 },
   bottomSheetHeader: { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   bottomSheetScroll: { flex: 1, padding: 16 },
   categorySection: { marginBottom: 20 },

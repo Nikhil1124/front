@@ -23,7 +23,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
-import { Colors, Layout } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
@@ -77,7 +77,7 @@ function bannerFor(status: KycStatus, rejectReason: string | undefined): BannerC
       };
     case 'REJECTED':
       return {
-        bg: '#FEF2F2',
+        bg: Palette.TintRed,
         border: Colors.danger,
         icon: 'ban',
         iconColor: Colors.danger,
@@ -135,7 +135,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
       {/* Status banner — colour-coded, with reason when rejected */}
       <Card
         containerColor={banner.bg}
-        borderRadius={Layout.borderRadiusCard}
+        borderRadius={Radii.card}
         borderWidth={1.5}
         borderColor={banner.border}
         padding={[16, 16]}
@@ -173,7 +173,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
       {canSubmitKyc(kycStatus) && (
         <Card
           containerColor={Colors.surface}
-          borderRadius={Layout.borderRadiusCard}
+          borderRadius={Radii.card}
           borderWidth={1}
           borderColor={Colors.borderSubtle}
           padding={[16, 16]}
@@ -193,7 +193,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
             onPress={openUpload}
             containerColor={kycStatus === 'REJECTED' ? Colors.danger : Colors.primary}
             textColor={Colors.textInverse}
-            borderRadius={Layout.borderRadiusButton}
+            borderRadius={Radii.control}
             height={46}
             testID="kyc_open_upload_btn"
           >
@@ -208,7 +208,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
       {/* Help card — what to do if stuck */}
       <Card
         containerColor={Colors.surfaceMuted}
-        borderRadius={Layout.borderRadiusCard}
+        borderRadius={Radii.card}
         borderWidth={1}
         borderColor={Colors.borderMuted}
         padding={[14, 14]}
@@ -238,7 +238,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
 
 const styles = StyleSheet.create({
   statusIconBubble: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 44, height: 44, borderRadius: Radii.pill,
     alignItems: 'center', justifyContent: 'center',
   },
 });

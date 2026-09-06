@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { View, StyleSheet, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, Text, BackHandler } from 'react-native';
+import { View, StyleSheet, Modal, Pressable, RefreshControl, ScrollView, Text, BackHandler } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Row, Col, Spacer, LoadingState, ErrorState, ListRow, SearchField, AnimatedPress } from '@/components/ui';
+import { Colors, Radii } from '@/theme';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 const GREEN = Colors.primary;        // Deep Ocean Blue
 const BG = Colors.canvas;            // Light Ice Canvas
@@ -33,8 +33,7 @@ export function OwnerReviewsTab() {
     data: staffList = [],
     isLoading: staffLoading,
     error: staffError,
-    refetch: refetchStaff,
-  } = useStaffQuery(activePgId ?? undefined);
+    refetch: refetchStaff } = useStaffQuery(activePgId ?? undefined);
   const { data: submissions = [] } = useComplaintsQuery(activePgId ?? undefined);
   const { refreshing, onRefresh } = usePullToRefresh();
 
@@ -67,8 +66,7 @@ export function OwnerReviewsTab() {
     return {
       positive: { count: pos, pct: Math.round((pos / totalReviews) * 100) },
       neutral: { count: neu, pct: Math.round((neu / totalReviews) * 100) },
-      negative: { count: neg, pct: Math.round((neg / totalReviews) * 100) },
-    };
+      negative: { count: neg, pct: Math.round((neg / totalReviews) * 100) } };
   }, [submissions, totalReviews]);
 
   // Role feedback maps
@@ -146,8 +144,7 @@ export function OwnerReviewsTab() {
         reviewCount,
         icon,
         reviews,
-        needsAttention,
-      };
+        needsAttention };
     });
   }, [staffList, avgMgr, avgMeals, avgClean, avgOverall, managerReviews, chefReviews, staffReviews, totalReviews, submissions]);
 
@@ -206,12 +203,12 @@ export function OwnerReviewsTab() {
             </Col>
             <Col style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: BORDER }}>
               <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.neutral.pct}%</Text>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: '#D97706' }]}>Neutral</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.warning }]}>Neutral</Text>
               <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.neutral.count} reviews</Text>
             </Col>
             <Col style={{ flex: 1, alignItems: 'center' }}>
               <Text maxFontSizeMultiplier={1.3} style={styles.summaryValueText}>{ratingSummary.negative.pct}%</Text>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: '#DC2626' }]}>Negative</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[styles.summaryLabel, { color: Colors.danger }]}>Negative</Text>
               <Text maxFontSizeMultiplier={1.3} style={styles.summaryCountSub}>{ratingSummary.negative.count} reviews</Text>
             </Col>
           </Row>
@@ -247,10 +244,8 @@ export function OwnerReviewsTab() {
       ) : staffPerformanceList.length > 0 ? (
         <>
           {/* Search & Filter */}
-          <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search staff"
-            style={styles.searchBar}
-            placeholder="Search staff..."
-            placeholderTextColor={MUTED}
+          <SearchField
+            placeholder="Search staff"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -258,7 +253,7 @@ export function OwnerReviewsTab() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
             <Row gap={6}>
               {(['All', 'Highest Rated', 'Needs Attention', 'No Reviews'] as const).map((opt) => (
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   key={opt}
                   style={[styles.filterChip, filterType === opt && styles.filterChipActive]}
                   onPress={() => setFilterType(opt)}
@@ -266,50 +261,30 @@ export function OwnerReviewsTab() {
                   <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, filterType === opt && styles.filterChipTextActive]}>
                     {opt}
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               ))}
             </Row>
           </ScrollView>
 
           {/* Actual Staff List */}
           <View style={styles.staffListBox}>
-            {displayedStaff.map((staff) => (
-              <TouchableOpacity accessibilityRole="button"
+            {displayedStaff.map((staff, i) => (
+              <ListRow
                 key={staff.id}
-                style={styles.staffItemRow}
-                onPress={() => {
-                  setSelectedStaff(staff);
-                }}
-                activeOpacity={0.8}
-              >
-                <Row justify="space-between" align="center" style={{ width: '100%' }}>
-                  <Row gap={12} align="center" style={{ flex: 1 }}>
-                    <View style={styles.staffAvatarCircle}>
-                      <Ionicons name={staff.icon} size={18} color={GREEN} />
-                    </View>
-                    <Col style={{ flex: 1 }}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.staffNameText}>{staff.name}</Text>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.staffRoleSub}>{staff.subtitle}</Text>
-                    </Col>
-                  </Row>
-
-                  <Row gap={6} align="center">
-                    {staff.needsAttention && (
-                      <View style={styles.attentionBadge}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.attentionBadgeText}>Needs attention</Text>
-                      </View>
-                    )}
-                    {staff.reviewCount > 0 ? (
-                      <Text maxFontSizeMultiplier={1.3} style={styles.staffRatingScore}>
-                        ★ {staff.rating.toFixed(1)} ({staff.reviewCount})
-                      </Text>
-                    ) : (
-                      <Text maxFontSizeMultiplier={1.3} style={styles.staffNoReviewsText}>No reviews yet</Text>
-                    )}
-                    <Ionicons name="chevron-forward" size={16} color={MUTED} />
-                  </Row>
-                </Row>
-              </TouchableOpacity>
+                title={staff.name}
+                meta={staff.subtitle}
+                leading={<Ionicons name={staff.icon} size={17} color={GREEN} />}
+                amount={staff.reviewCount > 0 ? `★ ${staff.rating.toFixed(1)} (${staff.reviewCount})` : undefined}
+                status={
+                  staff.needsAttention ? { label: 'Needs attention', tone: 'warn' }
+                  : staff.reviewCount === 0 ? { label: 'No reviews yet', tone: 'neutral' }
+                  : undefined
+                }
+                onPress={() => setSelectedStaff(staff)}
+                first={i === 0}
+                last={i === displayedStaff.length - 1}
+                testID={`staff_review_${staff.id}`}
+              />
             ))}
           </View>
         </>
@@ -325,7 +300,7 @@ export function OwnerReviewsTab() {
           <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setSelectedStaff(null)} />
             
-            <Animated.View entering={SlideInDown.duration(160)} style={styles.drillDownSheet}>
+            <Animated.View entering={SlideInDown.springify(160).dampingRatio(0.85)} style={styles.drillDownSheet}>
               <View style={styles.sheetHandle} />
 
               <Row gap={12} align="center" style={{ marginBottom: 16 }}>
@@ -379,9 +354,9 @@ export function OwnerReviewsTab() {
                 )}
               </ScrollView>
 
-              <TouchableOpacity accessibilityRole="button" style={styles.sheetCloseBtn} onPress={() => setSelectedStaff(null)}>
+              <AnimatedPress accessibilityRole="button" style={styles.sheetCloseBtn} onPress={() => setSelectedStaff(null)}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.sheetCloseBtnText}>Close</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Animated.View>
           </Animated.View>
         </Modal>
@@ -410,8 +385,7 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     paddingVertical: 14,
     flexDirection: 'row',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   summaryValueText: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
   summaryLabel: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   summaryCountSub: { fontSize: 9, color: MUTED, marginTop: 2 },
@@ -424,36 +398,23 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     padding: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   emptySummaryTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL, marginTop: 8 },
   emptySummaryDesc: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 2, lineHeight: 16 },
 
   sectionHeader: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
 
   // Staff Performance items
-  searchBar: {
-    height: 44,
-    backgroundColor: WHITE,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: BORDER,
-    paddingHorizontal: 12,
-    fontSize: 13,
-    color: CHARCOAL,
-  },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   filterChipActive: {
     backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
+    borderColor: GREEN },
   filterChipText: { fontSize: 12, color: CHARCOAL, fontWeight: '600' },
   filterChipTextActive: { color: WHITE, fontWeight: '700' },
 
@@ -462,33 +423,14 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS,
     borderWidth: 1,
     borderColor: BORDER,
-    overflow: 'hidden',
-  },
-  staffItemRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: BG,
-  },
+    overflow: 'hidden' },
   staffAvatarCircle: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: LIGHT_GREEN,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  staffNameText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-  staffRoleSub: { fontSize: 10, color: MUTED, marginTop: 1 },
-  staffRatingScore: { fontSize: 11, fontWeight: '700', color: CHARCOAL },
-  staffNoReviewsText: { fontSize: 10, color: MUTED },
-  attentionBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    backgroundColor: '#FEF2F2',
-  },
-  attentionBadgeText: { fontSize: 8, fontWeight: '700', color: '#B91C1C' },
+    justifyContent: 'center' },
   noStaffBox: { padding: 16, alignItems: 'center' },
   noStaffText: { fontSize: 12, color: MUTED },
 
@@ -497,8 +439,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(10, 18, 13, 0.45)',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   drillDownSheet: {
     width: '100%',
     backgroundColor: WHITE,
@@ -507,45 +448,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 34,
-    alignSelf: 'flex-end',
-  },
+    alignSelf: 'flex-end' },
   sheetHandle: {
     width: 36,
     height: 4,
-    borderRadius: 2,
+    borderRadius: Radii.badge,
     backgroundColor: BORDER,
     alignSelf: 'center',
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   sheetStaffName: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   sheetStaffRole: { fontSize: 12, color: MUTED, marginTop: 1 },
   detailSecTitle: { fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.5, marginBottom: 8 },
   sheetKpiCard: {
     flex: 1,
     backgroundColor: BG,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     padding: 12,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   sheetKpiVal: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
   sheetKpiLabel: { fontSize: 10, color: MUTED, marginTop: 2 },
   noReviewsAvailableText: { fontSize: 12, color: MUTED, fontStyle: 'italic', paddingVertical: 12 },
-  sharedNoticeText: { fontSize: 11, color: MUTED, lineHeight: 16, backgroundColor: BG, borderRadius: 10, padding: 10 },
+  sharedNoticeText: { fontSize: 11, color: MUTED, lineHeight: 16, backgroundColor: BG, borderRadius: Radii.control, padding: 10 },
   feedbackHistoryItem: {
     backgroundColor: BG,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     padding: 10,
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   revGuestName: { fontSize: 11, fontWeight: '700', color: CHARCOAL },
-  revRating: { fontSize: 11, fontWeight: '700', color: '#D97706' },
+  revRating: { fontSize: 11, fontWeight: '700', color: Colors.warning },
   revDesc: { fontSize: 11, color: MUTED, marginTop: 4, fontStyle: 'italic' },
   sheetCloseBtn: {
     height: 44,
     backgroundColor: BG,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sheetCloseBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-});
+    justifyContent: 'center' },
+  sheetCloseBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL } });

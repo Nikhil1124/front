@@ -9,10 +9,10 @@
  * A location is not optional: the API refuses to create a property without one, since a PG
  * nobody can find on a map is not much use to whoever is deciding whether to move in.
  */
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt } from '@/components/ui';
+import { Txt, AnimatedPress } from '@/components/ui';
 import type { PickedLocation } from '@/features/places/pendingLocation';
 import { Colors, Radii, Spacing } from '@/theme';
 
@@ -31,9 +31,8 @@ export function LocationField({ value, onPress, placeholder }: Props) {
     : (placeholder ?? 'Pin the location on the map *');
 
   return (
-    <TouchableOpacity accessibilityRole="button"
+    <AnimatedPress accessibilityRole="button"
       onPress={onPress}
-      activeOpacity={0.8}
       style={[styles.row, picked && styles.rowPicked]}
       testID="location_field"
     >
@@ -57,7 +56,7 @@ export function LocationField({ value, onPress, placeholder }: Props) {
       <Txt variant="caption" weight="700" color={Colors.primary}>
         {picked ? 'Change' : 'Pick'}
       </Txt>
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -68,7 +67,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: Radii.lg,
+    borderRadius: Radii.control,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.sm,

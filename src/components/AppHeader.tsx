@@ -23,12 +23,12 @@
  * editing `Colors.primary` alone — nothing here needs to be touched, and no screen hardcodes it.
  */
 import { type ReactNode } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Txt } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Txt, AnimatedPress } from '@/components/ui';
+import { Radii, Colors } from '@/theme';
 
 const TOP_GAP = 8;
 const ROW_MIN_HEIGHT = 38;
@@ -86,30 +86,28 @@ export function AppHeader({
       style={[styles.header, { paddingTop: insets.top + TOP_GAP }]}
     >
       {onBack ? (
-        <TouchableOpacity
+        <AnimatedPress
           accessibilityRole="button"
           accessibilityLabel="Go back"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           onPress={onBack}
           style={styles.back}
-          activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
+        </AnimatedPress>
       ) : (
         leading ?? <View style={styles.brandRule} />
       )}
 
       {onTitlePress ? (
-        <TouchableOpacity
+        <AnimatedPress
           accessibilityRole="button"
           accessibilityHint="Opens the property switcher"
           onPress={onTitlePress}
           style={styles.titleCol}
-          activeOpacity={0.7}
         >
           {titleBlock}
-        </TouchableOpacity>
+        </AnimatedPress>
       ) : titleBlock}
 
       {actions}
@@ -131,17 +129,16 @@ export function HeaderChip({
   badge?: boolean;
 }) {
   return (
-    <TouchableOpacity
+    <AnimatedPress
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       onPress={onPress}
       style={styles.chip}
-      activeOpacity={0.7}
     >
       <Ionicons name={icon} size={18} color={Colors.primary} />
       {badge ? <View style={styles.badge} /> : null}
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -165,13 +162,13 @@ const styles = StyleSheet.create({
   titleCol: { flex: 1, minWidth: 0, justifyContent: 'center', minHeight: ROW_MIN_HEIGHT },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   chip: {
-    width: 38, height: 38, borderRadius: 19,
+    width: 38, height: 38, borderRadius: Radii.pill,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.surfaceElevated,
   },
   badge: {
     position: 'absolute', top: 8, right: 8,
-    width: 8, height: 8, borderRadius: 4,
+    width: 8, height: 8, borderRadius: Radii.pill,
     backgroundColor: Colors.danger,
     borderWidth: 1.5, borderColor: Colors.surface,
   },

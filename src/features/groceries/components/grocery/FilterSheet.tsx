@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,8 +6,7 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  TouchableWithoutFeedback,
-} from 'react-native';
+  TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii } from '@/theme';
@@ -27,8 +26,7 @@ export interface FilterState {
 export const DEFAULT_FILTERS: FilterState = {
   sort: 'popular',
   maxPrice: undefined,
-  onDealOnly: false,
-};
+  onDealOnly: false };
 
 const SORTS: { value: ProductSort; label: string }[] = [
   { value: 'popular', label: 'Most popular' },
@@ -179,62 +177,50 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
+    justifyContent: 'flex-end' },
   sheetContainer: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radii.huge,
-    borderTopRightRadius: Radii.huge,
+    borderTopLeftRadius: Radii.sheet,
+    borderTopRightRadius: Radii.sheet,
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 24,
-    maxHeight: '80%',
-  },
+    maxHeight: '80%' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-  },
+    borderBottomColor: Colors.borderSubtle },
   headerTitle: {
     fontSize: 18,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   closeBtn: {
-    padding: 4,
-  },
+    padding: 4 },
   body: {
-    marginVertical: 12,
-  },
+    marginVertical: 12 },
   sectionTitle: {
     fontSize: 14,
     color: Colors.textSecondary,
     marginTop: 14,
-    marginBottom: 10,
-  },
+    marginBottom: 10 },
   sortList: {
-    gap: 8,
-  },
+    gap: 8 },
   sortRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
+    paddingVertical: 10 },
   sortLabel: {
     fontSize: 14,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   selectedSortLabel: {
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
+    gap: 8 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -243,48 +229,38 @@ const styles = StyleSheet.create({
     borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   activeChip: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
+    borderColor: Colors.primary },
   chipText: {
     fontSize: 13,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   activeChipText: {
-    color: '#fff',
-  },
+    color: '#fff' },
   footer: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-  },
+    borderTopColor: Colors.borderSubtle },
   resetBtn: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: Radii.pill,
     borderWidth: 1.5,
     borderColor: Colors.primary,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   resetText: {
     color: Colors.primary,
-    fontSize: 15,
-  },
+    fontSize: 15 },
   applyBtn: {
     flex: 2,
     paddingVertical: 14,
     borderRadius: Radii.pill,
     backgroundColor: Colors.primary,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   applyText: {
     color: '#fff',
-    fontSize: 15,
-  },
-});
+    fontSize: 15 } });

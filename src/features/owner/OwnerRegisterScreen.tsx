@@ -10,7 +10,7 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -37,18 +37,20 @@ export function OwnerRegisterScreen() {
   const pgTotalBedsInput = usePGowStore((s) => s.pgTotalBedsInput);
   const set = usePGowStore((s) => s.set);
 
+  const [regErrors, setRegErrors] = useState<{ pgName?: string; ownerName?: string; phone?: string; password?: string }>({});
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
     // Checked before the account is created, not after: registering and then failing on the
     // property would leave a signed-in owner with no PG and no obvious way back.
-    if (!pgNameInput.trim() || !ownerNameInput.trim() || !ownerPhoneInput.trim()) {
-      Alert.alert('Registration Failed', 'Please fill all required fields.');
-      return;
-    }
-    if (ownerPasswordInput.length < 8) {
-      Alert.alert('Registration Failed', 'Password must be at least 8 characters.');
-      return;
-    }
+    const nextErrors = {
+      pgName: pgNameInput.trim() ? undefined : 'Name your property',
+      ownerName: ownerNameInput.trim() ? undefined : 'Enter your name',
+      phone: ownerPhoneInput.trim() ? undefined : 'Enter your phone number',
+      password: ownerPasswordInput.length < 8 ? 'At least 8 characters' : undefined,
+    };
+    setRegErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
     if (!ownerLocationInput) {
       Alert.alert('Registration Failed', 'Pin your PG on the map before registering.');
       return;
@@ -124,7 +126,8 @@ export function OwnerRegisterScreen() {
         label="Paying Guest (PG) Name *"
         placeholder="Royal Meadows Co-Living"
         value={pgNameInput}
-        onChangeText={(v) => set('pgNameInput', v)}
+        onChangeText={(v) => { set('pgNameInput', v); if (regErrors.pgName) setRegErrors((e) => ({ ...e, pgName: undefined })); }}
+        error={regErrors.pgName}
         leadingIcon="home"
         testID="pg_name_input"
         style={{ marginBottom: 12 }}
@@ -132,7 +135,8 @@ export function OwnerRegisterScreen() {
       <OutlinedTextField
         label="Owner Name *"
         value={ownerNameInput}
-        onChangeText={(v) => set('ownerNameInput', v)}
+        onChangeText={(v) => { set('ownerNameInput', v); if (regErrors.ownerName) setRegErrors((e) => ({ ...e, ownerName: undefined })); }}
+        error={regErrors.ownerName}
         leadingIcon="person"
         testID="owner_name_input"
         style={{ marginBottom: 12 }}
@@ -149,7 +153,8 @@ export function OwnerRegisterScreen() {
       <OutlinedTextField
         label="Phone Number *"
         value={ownerPhoneInput}
-        onChangeText={(v) => set('ownerPhoneInput', v)}
+        onChangeText={(v) => { set('ownerPhoneInput', v); if (regErrors.phone) setRegErrors((e) => ({ ...e, phone: undefined })); }}
+        error={regErrors.phone}
         leadingIcon="call"
         keyboardType="phone-pad"
         style={{ marginBottom: 12 }}
@@ -157,7 +162,8 @@ export function OwnerRegisterScreen() {
       <OutlinedTextField
         label="Password * (min 8 characters)"
         value={ownerPasswordInput}
-        onChangeText={(v) => set('ownerPasswordInput', v)}
+        onChangeText={(v) => { set('ownerPasswordInput', v); if (regErrors.password) setRegErrors((e) => ({ ...e, password: undefined })); }}
+        error={regErrors.password}
         leadingIcon="lock-closed"
         secureTextEntry
         testID="owner_password_input"
@@ -195,7 +201,7 @@ export function OwnerRegisterScreen() {
         disabled={isSubmitting}
         containerColor={Colors.primary}
         textColor={Colors.textInverse}
-        borderRadius={12}
+        borderRadius={Radii.card}
         height={50}
         testID="owner_register_button"
       >

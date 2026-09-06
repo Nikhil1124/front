@@ -78,9 +78,24 @@ export function toE164(raw: string): string {
   return trimmed;
 }
 
-/** The period the payments API keys rent on: the first of the current month, "YYYY-MM-01". */
+/**
+ * The period the payments API keys rent on: the first of the current month, "YYYY-MM-01".
+ *
+ * Pinned to India, not to the device. The server does the same (`app/core/clock.py`: "Every
+ * *date* this product stores is a date in India ... while the servers run in UTC"), and the
+ * two have to agree — `period` is sent in the body of `POST /v1/payments` and trusted there.
+ * Read off the device clock, a phone anywhere west of IST returns the *previous* month for
+ * the first 5½ hours of the 1st, so a resident paying then files their rent against the cycle
+ * that just closed: the owner still sees the month unpaid, the resident sees "recorded".
+ *
+ * A fixed +5:30 offset rather than `Intl`: IST has never observed DST, so the offset is exact
+ * and this keeps working if the JS engine ships without full ICU data.
+ */
+const IST_OFFSET_MINUTES = 330;
+
 export function currentPeriod(date = new Date()): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
+  const ist = new Date(date.getTime() + IST_OFFSET_MINUTES * 60_000);
+  return `${ist.getUTCFullYear()}-${String(ist.getUTCMonth() + 1).padStart(2, "0")}-01`;
 }
 
 /** "2026-08-01" → "August 2026", which is what the receipts and payment rows display. */

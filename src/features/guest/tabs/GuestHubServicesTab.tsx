@@ -3,24 +3,23 @@
  * Visual System: Unified Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, TouchableOpacity, RefreshControl } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Card, Txt, Row, Col, Spacer, AnimatedPress } from '@/components/ui';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GuestLaundryBookingDialog } from '@/components/dialogs/HubDialogs';
-import { AppHeader, HeaderChip } from '@/components/AppHeader';
+import { AppHeader } from '@/components/AppHeader';
 export function GuestHubServicesTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
     data: laundryRequests = [],
     refetch: refetchLaundry,
-    isRefetching: laundryRefetching,
-  } = useLaundryRequestsQuery(activePgId ?? undefined);
+    isRefetching: laundryRefetching } = useLaundryRequestsQuery(activePgId ?? undefined);
   const [showLaundryDialog, setShowLaundryDialog] = useState(false);
 
   const myLaundry = laundryRequests.filter((r) => r.guestId === guest?.id);
@@ -48,7 +47,7 @@ export function GuestHubServicesTab() {
         {/* ── 2. EXPRESS LAUNDRY CARD ── */}
         <Card
           containerColor="#FFFFFF"
-          borderRadius={20}
+          borderRadius={Radii.sheet}
           borderWidth={1}
           borderColor={Colors.borderSubtle}
           padding={[16, 16]}
@@ -57,7 +56,7 @@ export function GuestHubServicesTab() {
           <Row justify="space-between" align="center">
             <Row gap={12} style={{ flex: 1, paddingRight: 8 }}>
               <View style={styles.laundryIconWrap}>
-                <Txt size={22}>🧺</Txt>
+                <Ionicons name="shirt-outline" size={21} color={Colors.primary} />
               </View>
               <Col style={{ flex: 1 }}>
                 <Txt size={15} weight="900" color={Colors.textPrimary}>EXPRESS PG LAUNDRY</Txt>
@@ -67,13 +66,12 @@ export function GuestHubServicesTab() {
               </Col>
             </Row>
 
-            <TouchableOpacity accessibilityRole="button"
-              activeOpacity={0.9}
+            <AnimatedPress accessibilityRole="button"
               onPress={() => { setShowLaundryDialog(true); }}
               style={styles.bookBtn}
             >
               <Txt size={11} weight="800" color="#FFFFFF">Book Pickup</Txt>
-            </TouchableOpacity>
+            </AnimatedPress>
           </Row>
 
           {myLaundry.length > 0 && (
@@ -93,8 +91,8 @@ export function GuestHubServicesTab() {
                       Slot: {req.preferredSlot} • {req.paymentStatus}
                     </Txt>
                   </Col>
-                  <View style={[styles.statusPill, { backgroundColor: req.status === 'Delivered' ? '#E0F2F0' : '#FEF3C7' }]}>
-                    <Txt size={10} weight="800" color={req.status === 'Delivered' ? Colors.primary : '#D97706'}>
+                  <View style={[styles.statusPill, { backgroundColor: req.status === 'Delivered' ? Palette.TintGreen : Palette.TintAmber }]}>
+                    <Txt size={10} weight="800" color={req.status === 'Delivered' ? Colors.primary : Colors.warning}>
                       {req.status.toUpperCase()}
                     </Txt>
                   </View>
@@ -144,9 +142,9 @@ export function GuestHubServicesTab() {
         </Row>
 
         <Spacer size={16} />
-        <Card containerColor="#FFFFFF" borderRadius={18} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
+        <Card containerColor="#FFFFFF" borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
           <Row gap={10} align="center">
-            <Txt size={20}>⚡</Txt>
+            <Ionicons name="flash" size={19} color={Colors.warning} />
             <Col style={{ flex: 1 }}>
               <Txt size={13} weight="800" color={Colors.textPrimary}>PGow Smart Hub Integrated</Txt>
               <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2, lineHeight: 15 }}>
@@ -172,13 +170,11 @@ export function GuestHubServicesTab() {
 }
 
 function HubServiceCard({
-  title, desc, icon, statusText, buttonText, onPress,
-}: {
+  title, desc, icon, statusText, buttonText, onPress }: {
   title: string; desc: string; icon: keyof typeof Ionicons.glyphMap; statusText: string; buttonText: string; onPress: () => void;
 }) {
   return (
-    <TouchableOpacity accessibilityRole="button"
-      activeOpacity={0.88}
+    <AnimatedPress accessibilityRole="button"
       onPress={() => { onPress(); }}
       style={styles.gridCard}
     >
@@ -197,7 +193,7 @@ function HubServiceCard({
       <View style={styles.gridCardBtn}>
         <Txt size={10} weight="800" color="#FFFFFF">{buttonText}</Txt>
       </View>
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 }
 
@@ -212,19 +208,16 @@ const styles = StyleSheet.create({
   // Laundry Card
   laundryCard: {
     marginTop: -14, backgroundColor: '#FFFFFF',
-    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-  },
-  laundryIconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
-  bookBtn: { backgroundColor: Colors.primary, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
+    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
+  laundryIconWrap: { width: 44, height: 44, borderRadius: Radii.pill, backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
+  bookBtn: { backgroundColor: Colors.primary, borderRadius: Radii.card, paddingHorizontal: 14, paddingVertical: 8 },
   laundryItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radii.control },
 
   // Grid Card
   gridCard: {
-    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 18,
+    width: '48%', backgroundColor: '#FFFFFF', borderRadius: Radii.card,
     borderWidth: 1, borderColor: Colors.borderSubtle, padding: 12,
-    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
-  gridIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
-  gridCardBtn: { backgroundColor: Colors.primary, borderRadius: 10, paddingVertical: 6, alignItems: 'center', justifyContent: 'center' },
-});
+    shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  gridIconWrap: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
+  gridCardBtn: { backgroundColor: Colors.primary, borderRadius: Radii.control, paddingVertical: 6, alignItems: 'center', justifyContent: 'center' } });

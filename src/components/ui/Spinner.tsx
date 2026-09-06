@@ -8,7 +8,7 @@
  */
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 export interface SpinnerProps {
   /** 'small' ≈ 20dp, 'large' ≈ 36dp — the two sizes RN actually supports on both platforms. */
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   message: { marginTop: 4, textAlign: 'center', lineHeight: 17 },
   retry: { marginTop: 12 },
   errIcon: {
-    width: 56, height: 56, borderRadius: 28,
+    width: 56, height: 56, borderRadius: Radii.pill,
     backgroundColor: `${Colors.danger}14`,
     alignItems: 'center', justifyContent: 'center',
   },

@@ -17,14 +17,15 @@
  * gating them on "create a property" would lock them out of an app they cannot fix (D-06
  * makes property creation owner-only server-side).
  */
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePropertyLayout } from '@/features/property/usePropertyLayout';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 /** The routes the gate is asking the owner to visit — never covered, or it would block the fix. */
 const SETUP_ROUTES = ['/manage-properties', '/bed-visualizer'];
@@ -93,14 +94,13 @@ export function OwnerSetupGate() {
         <Text maxFontSizeMultiplier={1.3} style={styles.title}>{copy.title}</Text>
         <Text maxFontSizeMultiplier={1.3} style={styles.body}>{copy.body}</Text>
 
-        <TouchableOpacity accessibilityRole="button"
+        <AnimatedPress accessibilityRole="button"
           style={styles.button}
           onPress={() => router.push(copy.href as never)}
-          activeOpacity={0.85}
         >
           <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>{copy.cta}</Text>
           <Ionicons name="arrow-forward" size={16} color={Colors.textInverse} />
-        </TouchableOpacity>
+        </AnimatedPress>
 
         <View style={styles.progressRow}>
           <View style={[styles.pip, styles.pipDone]} />
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     backgroundColor: Colors.surface,
-    borderRadius: 22,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     padding: 26,
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 62,
     height: 62,
-    borderRadius: 31,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignSelf: 'stretch',
     height: 52,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     backgroundColor: Colors.primary,
     marginTop: 22,
   },
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   pip: {
     width: 26,
     height: 4,
-    borderRadius: 2,
+    borderRadius: Radii.badge,
     backgroundColor: Colors.borderSubtle,
   },
   pipDone: { backgroundColor: Colors.primary },

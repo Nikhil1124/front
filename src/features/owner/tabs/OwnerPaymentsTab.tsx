@@ -2,27 +2,22 @@ import { useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   RefreshControl,
   FlatList,
   Text,
   ScrollView,
-  TextInput,
   Modal,
   Pressable,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+  KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Card, Txt, Btn, Row, Col, Spacer, ListRow, toneFor, ChoiceChips, SearchField, AnimatedPress } from '@/components/ui';
+import { Sheet } from '@/components/ui';
+import { formatINR, formatDateTime } from '@/utils/format';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+import { Radii, Colors, Palette } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
@@ -32,7 +27,7 @@ import { useAllPaymentsQuery, useVerifyPaymentMutation, useRejectPaymentMutation
 import { useAllExpensesQuery, useLogExpenseMutation, useReverseExpenseMutation, type ExpenseCategory, type ExpenseMethod } from '@/features/expenses/useExpenses';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useActiveProperty } from '@/features/properties/useProperties';
-import { FormScroll } from '@/components/ui/FormScroll';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG
@@ -42,6 +37,9 @@ const BORDER = Colors.borderSubtle;  // Ice Cyan subtle border
 const WHITE = Colors.surface;        // Pure White surface
 const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan active tint
 const RADIUS = 22;            // Premium rounded corner radius
+
+/** The three ways a PG actually pays an expense — matches `ExpenseMethod` on the server. */
+const EXPENSE_MODES = ['UPI', 'Cash', 'Bank Transfer'];
 
 const EXPENSE_CATEGORIES = [
   'Staff Salary',
@@ -61,13 +59,13 @@ function getPast12Months() {
     months.push({
       label: `${names[d.getMonth()]} ${d.getFullYear()}`,
       start: new Date(d.getFullYear(), d.getMonth(), 1),
-      end: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59),
-    });
+      end: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59) });
   }
   return months;
 }
 
 export function OwnerPaymentsTab() {
+  const dockScroll = useDockScroll();
   const { activeEntity: owner } = useActiveProperty();
   const [subTab, setSubTab] = useState(0); // 0: Balance Sheet, 1: Expenses, 2: Collections
   const [period, setPeriod] = useState<'month' | '3m' | '6m' | '1y' | 'custom'>('month');
@@ -127,9 +125,14 @@ export function OwnerPaymentsTab() {
 
   const { refreshing, onRefresh } = usePullToRefresh();
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
+  // Reversing an expense is destructive and irreversible. It used to be a 14px trash icon
+  // inside the row, one thumb-slip from the row's own tap target; it now lives behind the
+  // row, in the sheet that shows what is about to be reversed.
+  const [detailExpense, setDetailExpense] = useState<ExpenseEntity | null>(null);
 
   // Log expense form states
   const [expenseTitle, setExpenseTitle] = useState('');
+  const [expenseErrors, setExpenseErrors] = useState<{ title?: string; amount?: string }>({});
   const [expenseCategory, setExpenseCategory] = useState('Staff Salary');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [recipientName, setRecipientName] = useState('');
@@ -263,23 +266,19 @@ export function OwnerPaymentsTab() {
     Groceries: 'groceries', 'Daily Mess Groceries': 'groceries',
     Utilities: 'utilities', 'Utility Bills': 'utilities',
     Maintenance: 'maintenance', Repairs: 'maintenance', 'Maintenance & Repairs': 'maintenance',
-    Internet: 'internet', Wifi: 'internet', 'Wi-Fi & Internet': 'internet',
-  };
+    Internet: 'internet', Wifi: 'internet', 'Wi-Fi & Internet': 'internet' };
   const EXPENSE_METHOD_MAP: Record<string, ExpenseMethod> = {
     UPI: 'upi', 'Online UPI': 'upi', Cash: 'cash',
-    'Bank Transfer': 'bank_transfer', Bank: 'bank_transfer',
-  };
+    'Bank Transfer': 'bank_transfer', Bank: 'bank_transfer' };
 
   const handleLogExpenseSubmit = async () => {
     const amt = parseFloat(expenseAmount) || 0;
-    if (!expenseTitle.trim()) {
-      Alert.alert('Validation', 'Please enter an expense title.');
-      return;
-    }
-    if (amt <= 0) {
-      Alert.alert('Validation', 'Please enter a valid amount.');
-      return;
-    }
+    const nextErrors = {
+      title: expenseTitle.trim() ? undefined : 'Name what this was for',
+      amount: amt > 0 ? undefined : 'Enter an amount above zero',
+    };
+    setExpenseErrors(nextErrors);
+    if (nextErrors.title || nextErrors.amount) return;
     setIsSubmitting(true);
     try {
       await logExpenseMutation.mutateAsync({
@@ -288,8 +287,7 @@ export function OwnerPaymentsTab() {
         amount: amt,
         method: EXPENSE_METHOD_MAP[paymentMode] ?? 'cash',
         recipient_name: recipientName,
-        notes,
-      });
+        notes });
       Alert.alert('Success', '✅ Expense logged successfully.');
       setExpenseTitle('');
       setExpenseAmount('');
@@ -312,57 +310,137 @@ export function OwnerPaymentsTab() {
   return (
     <View style={styles.root}>
       {selectedReceipt && (
-        <PaymentReceiptDialog payment={selectedReceipt} onDismiss={() => setSelectedReceipt(null)} />
+        <PaymentReceiptDialog
+          payment={selectedReceipt}
+          onDismiss={() => setSelectedReceipt(null)}
+          actions={selectedReceipt.status === 'PENDING' ? (
+            <Row gap={10}>
+              <Btn
+                onPress={() => { const p = selectedReceipt; setSelectedReceipt(null); handleVerifyPayment(p); }}
+                containerColor={GREEN}
+                borderRadius={Radii.control}
+                height={44}
+                loading={verifyPayment.isPending}
+                style={{ flex: 1 }}
+                testID="receipt_verify_btn"
+              >
+                <Ionicons name="checkmark-circle" size={15} color={WHITE} />
+                <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Verify</Txt>
+              </Btn>
+              <Btn
+                onPress={() => { const p = selectedReceipt; setSelectedReceipt(null); setRejectingPayment(p); setRejectReason(''); }}
+                containerColor={Palette.TintRed}
+                borderRadius={Radii.control}
+                height={44}
+                style={{ flex: 1 }}
+                testID="receipt_reject_btn"
+              >
+                <Ionicons name="close-circle" size={15} color={Colors.danger} />
+                <Txt size={13} weight="700" color={Colors.danger} style={{ marginLeft: 6 }}>Reject</Txt>
+              </Btn>
+            </Row>
+          ) : undefined}
+        />
       )}
+
+      <Sheet
+        visible={detailExpense !== null}
+        title={detailExpense?.title ?? ''}
+        subtitle={detailExpense ? `${detailExpense.category} · ${formatINR(detailExpense.amount)}` : undefined}
+        accent={Colors.danger}
+        icon="receipt-outline"
+        onDismiss={() => setDetailExpense(null)}
+        footer={
+          <Btn
+            onPress={() => {
+              const e = detailExpense;
+              if (!e) return;
+              Alert.alert(
+                'Reverse this entry?',
+                `${e.title} — ${formatINR(e.amount)}. This cannot be undone.`,
+                [
+                  { text: 'Keep it', style: 'cancel' },
+                  {
+                    text: 'Reverse',
+                    style: 'destructive',
+                    onPress: () => {
+                      setDetailExpense(null);
+                      reverseExpenseMutation.mutate(
+                        { expenseId: e.id, reason: 'Reversed from the expense log' },
+                        { onError: (err) => Alert.alert('Could not reverse entry', err instanceof Error ? err.message : 'Nothing was changed.') },
+                      );
+                    } },
+                ],
+              );
+            }}
+            containerColor={Palette.TintRed}
+            borderRadius={Radii.control}
+            height={46}
+            testID="expense_reverse_btn"
+          >
+            <Ionicons name="arrow-undo-outline" size={16} color={Colors.danger} />
+            <Txt size={13} weight="700" color={Colors.danger} style={{ marginLeft: 6 }}>Reverse entry</Txt>
+          </Btn>
+        }
+      >
+        {detailExpense ? (
+          <Col gap={10}>
+            <DetailLine label="Amount" value={formatINR(detailExpense.amount)} />
+            <DetailLine label="Category" value={detailExpense.category} />
+            {detailExpense.recipientName ? <DetailLine label="Paid to" value={detailExpense.recipientName} /> : null}
+            <DetailLine label="Mode" value={detailExpense.paymentMode} />
+            <DetailLine label="Logged by" value={detailExpense.loggedByName || detailExpense.loggedByRole || 'staff'} />
+            <DetailLine label="Date" value={formatDateTime(detailExpense.dateLogged)} />
+            {detailExpense.notes ? <DetailLine label="Notes" value={detailExpense.notes} /> : null}
+          </Col>
+        ) : null}
+      </Sheet>
 
       {/* ── Segmented Control Sub-tabs ── */}
       <View style={styles.tabContainer}>
         <Row gap={8} style={styles.segmentedControl}>
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 0 && styles.segBtnActive]}
             onPress={() => {
               setSubTab(0);
             }}
-            activeOpacity={0.8}
           >
             <Ionicons name="bar-chart-outline" size={16} color={subTab === 0 ? WHITE : MUTED} style={{ marginRight: 6 }} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Balance Sheet
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
 
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 1 && styles.segBtnActive]}
             onPress={() => {
               setSubTab(1);
             }}
-            activeOpacity={0.8}
           >
             <Ionicons name="cash-outline" size={16} color={subTab === 1 ? WHITE : MUTED} style={{ marginRight: 6 }} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Expenses
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
 
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 2 && styles.segBtnActive]}
             onPress={() => {
               setSubTab(2);
             }}
-            activeOpacity={0.8}
           >
             <Ionicons name="receipt-outline" size={16} color={subTab === 2 ? WHITE : MUTED} style={{ marginRight: 6 }} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 2 && styles.segBtnTextActive]}>
               Collections
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
       </View>
 
       {/* ── Period Selector ── */}
       <View style={styles.periodContainer}>
         <Row gap={6} align="center">
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.periodBtn, period === 'month' && styles.periodBtnActive]}
             onPress={() => {
               setPeriod('month');
@@ -371,8 +449,8 @@ export function OwnerPaymentsTab() {
             <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === 'month' && styles.periodBtnTextActive]}>
               This Month
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button"
             style={[styles.periodBtn, period === '3m' && styles.periodBtnActive]}
             onPress={() => {
               setPeriod('3m');
@@ -381,8 +459,8 @@ export function OwnerPaymentsTab() {
             <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === '3m' && styles.periodBtnTextActive]}>
               3 Months
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button"
             style={[styles.periodBtn, period === '6m' && styles.periodBtnActive]}
             onPress={() => {
               setPeriod('6m');
@@ -391,8 +469,8 @@ export function OwnerPaymentsTab() {
             <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === '6m' && styles.periodBtnTextActive]}>
               6 Months
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button"
             style={[styles.periodBtn, period === '1y' && styles.periodBtnActive]}
             onPress={() => {
               setPeriod('1y');
@@ -401,16 +479,16 @@ export function OwnerPaymentsTab() {
             <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === '1y' && styles.periodBtnTextActive]}>
               1 Year
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
           
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Choose a date" accessibilityRole="button"
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Choose a date" accessibilityRole="button"
             style={[styles.periodCalBtn, period === 'custom' && styles.periodCalBtnActive]}
             onPress={() => {
               setShowDatePicker(true);
             }}
           >
             <Ionicons name="calendar-outline" size={16} color={period === 'custom' ? WHITE : CHARCOAL} />
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
         {period === 'custom' && customLabel ? (
           <Text maxFontSizeMultiplier={1.3} style={styles.customDateText}>Selected: {customLabel}</Text>
@@ -422,10 +500,9 @@ export function OwnerPaymentsTab() {
           place to raise the property's total bed capacity (the one-time plan's bed
           configurator calls updateProperty with a new total_beds). Was Settings-only. */}
       <View style={styles.periodContainer}>
-        <TouchableOpacity accessibilityRole="button"
+        <AnimatedPress accessibilityRole="button"
           style={styles.subscriptionRow}
           onPress={() => router.push('/owner-subscription')}
-          activeOpacity={0.85}
         >
           <Ionicons name="card-outline" size={20} color={GREEN} />
           <View style={{ flex: 1, marginLeft: 10 }}>
@@ -435,12 +512,13 @@ export function OwnerPaymentsTab() {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={MUTED} />
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
 
       {/* ── Sub-Tab 0: Balance Sheet ── */}
       {subTab === 0 && (
         <ScrollView
+          {...dockScroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -458,20 +536,18 @@ export function OwnerPaymentsTab() {
                 No collections or expenses have been recorded for this period.
               </Text>
               <Spacer size={16} />
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.emptyActionBtn}
                 onPress={() => setSubTab(2)}
-                activeOpacity={0.8}
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.emptyActionText}>View Collections</Text>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button"
+              </AnimatedPress>
+              <AnimatedPress accessibilityRole="button"
                 style={styles.emptySecBtn}
                 onPress={() => setSubTab(1)}
-                activeOpacity={0.8}
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.emptySecText}>Add Expense</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             </View>
           ) : (
             /* Standard Dashboard Content */
@@ -481,9 +557,9 @@ export function OwnerPaymentsTab() {
               <Spacer size={10} />
               <Row gap={10} style={{ flexWrap: 'wrap' }}>
                 {/* KPI 1: Collected */}
-                <View style={[styles.kpiCard, { borderColor: '#EEF8F1' }]}>
+                <View style={[styles.kpiCard, { borderColor: Palette.TintGreen }]}>
                   <Row gap={6} align="center">
-                    <View style={[styles.kpiIconCircle, { backgroundColor: '#EEF8F1' }]}>
+                    <View style={[styles.kpiIconCircle, { backgroundColor: Palette.TintGreen }]}>
                       <Ionicons name="wallet-outline" size={16} color={GREEN} />
                     </View>
                     <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>Collected</Text>
@@ -495,14 +571,14 @@ export function OwnerPaymentsTab() {
                 </View>
 
                 {/* KPI 2: Expenses */}
-                <View style={[styles.kpiCard, { borderColor: '#FEF2F2' }]}>
+                <View style={[styles.kpiCard, { borderColor: Palette.TintRed }]}>
                   <Row gap={6} align="center">
-                    <View style={[styles.kpiIconCircle, { backgroundColor: '#FEF2F2' }]}>
-                      <Ionicons name="briefcase-outline" size={16} color="#DC2626" />
+                    <View style={[styles.kpiIconCircle, { backgroundColor: Palette.TintRed }]}>
+                      <Ionicons name="briefcase-outline" size={16} color={Colors.danger} />
                     </View>
                     <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>Expenses</Text>
                   </Row>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: '#DC2626' }]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: Colors.danger }]}>
                     ₹{Math.round(totalOutflows).toLocaleString('en-IN')}
                   </Text>
                   <Text maxFontSizeMultiplier={1.3} style={styles.kpiSub}>Total logged</Text>
@@ -588,7 +664,7 @@ export function OwnerPaymentsTab() {
 
                 <View style={styles.detailItemRow}>
                   <Text maxFontSizeMultiplier={1.3} style={styles.detailItemLabel}>Total Expenses</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: '#DC2626' }]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: Colors.danger }]}>
                     ₹{Math.round(totalOutflows).toLocaleString('en-IN')}
                   </Text>
                 </View>
@@ -602,7 +678,7 @@ export function OwnerPaymentsTab() {
 
                 <View style={[styles.detailItemRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
                   <Text maxFontSizeMultiplier={1.3} style={styles.detailItemLabel}>Outstanding</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: '#D97706' }]}>
+                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: Colors.warning }]}>
                     ₹{Math.round(outstandingTotal).toLocaleString('en-IN')} · {outstandingPayments.length} payments
                   </Text>
                 </View>
@@ -615,6 +691,7 @@ export function OwnerPaymentsTab() {
       {/* ── Sub-Tab 1: Expenses Tab ── */}
       {subTab === 1 && (
         <FlatList
+          {...dockScroll}
           style={{ flex: 1 }}
           data={displayedExpenses}
           keyExtractor={(e) => String(e.id)}
@@ -644,24 +721,24 @@ export function OwnerPaymentsTab() {
                   {/* Preset Quick Chips */}
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
                     <Row gap={6}>
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         style={styles.presetChip}
                         onPress={() => handlePresetSelect('Chef Monthly Salary - Ramesh', 'Staff Salary', '15000', 'Ramesh Kumar')}
                       >
                         <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>👨‍🍳 Chef Salary ₹15k</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity accessibilityRole="button"
+                      </AnimatedPress>
+                      <AnimatedPress accessibilityRole="button"
                         style={styles.presetChip}
                         onPress={() => handlePresetSelect('Daily Mess Grocery Procurement', 'Daily Mess Groceries', '2450', 'Wholesale Mart')}
                       >
                         <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>🛒 Groceries ₹2.4k</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity accessibilityRole="button"
+                      </AnimatedPress>
+                      <AnimatedPress accessibilityRole="button"
                         style={styles.presetChip}
                         onPress={() => handlePresetSelect('PG Electricity Power Bill', 'Utility Bills', '6800', 'Electricity Board')}
                       >
                         <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>⚡ Electricity ₹6.8k</Text>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     </Row>
                   </ScrollView>
 
@@ -669,8 +746,8 @@ export function OwnerPaymentsTab() {
                     label="Expense Title"
                     placeholder="Cook Salary, Groceries, Lock Repair"
                     value={expenseTitle}
-                    onChangeText={setExpenseTitle}
-                    containerColor={BG}
+                    onChangeText={(v) => { setExpenseTitle(v); if (expenseErrors.title) setExpenseErrors((e) => ({ ...e, title: undefined })); }}
+                    error={expenseErrors.title}
                     style={{ marginBottom: 10 }}
                   />
 
@@ -679,9 +756,9 @@ export function OwnerPaymentsTab() {
                       label="Amount (₹)"
                       placeholder="5000"
                       value={expenseAmount}
-                      onChangeText={(v) => setExpenseAmount(v.replace(/[^\d.]/g, ''))}
+                      onChangeText={(v) => { setExpenseAmount(v.replace(/[^\d.]/g, '')); if (expenseErrors.amount) setExpenseErrors((e) => ({ ...e, amount: undefined })); }}
                       keyboardType="number-pad"
-                      containerColor={BG}
+                      error={expenseErrors.amount}
                       style={{ flex: 1 }}
                     />
                     <OutlinedTextField
@@ -696,43 +773,44 @@ export function OwnerPaymentsTab() {
                   
                   <Spacer size={10} />
                   
-                  <Row gap={6} align="center">
-                    <Text maxFontSizeMultiplier={1.3} style={styles.formSectionLabel}>Category:</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <Row gap={6}>
-                        {EXPENSE_CATEGORIES.map((cat) => (
-                          <TouchableOpacity accessibilityRole="button"
-                            key={cat}
-                            style={[styles.smallChip, expenseCategory === cat && styles.smallChipActive]}
-                            onPress={() => setExpenseCategory(cat)}
-                          >
-                            <Text maxFontSizeMultiplier={1.3} style={[styles.smallChipText, expenseCategory === cat && styles.smallChipTextActive]}>
-                              {cat.replace('Daily Mess ', '').replace(' Bills', '')}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </Row>
-                    </ScrollView>
-                  </Row>
+                  {/* Six categories in a horizontal strip hid half of them off the right
+                      edge, and the visible ones were abbreviated to fit. They wrap now. */}
+                  <ChoiceChips
+                    label="Category"
+                    options={EXPENSE_CATEGORIES}
+                    value={expenseCategory}
+                    onChange={setExpenseCategory}
+                    testID="expense_category"
+                  />
 
                   <Spacer size={12} />
 
-                  <TouchableOpacity accessibilityRole="button"
+                  {/* The mode was fixed at 'UPI' in state with nothing to change it — every
+                      expense was filed as UPI regardless of how it was actually paid, and the
+                      row then displayed that as fact. */}
+                  <ChoiceChips
+                    label="Paid by"
+                    options={EXPENSE_MODES}
+                    value={paymentMode}
+                    onChange={setPaymentMode}
+                    testID="expense_mode"
+                  />
+
+                  <Spacer size={12} />
+
+                  <AnimatedPress accessibilityRole="button"
                     style={styles.submitBtn}
                     onPress={handleLogExpenseSubmit}
                     disabled={isSubmitting || !expenseAmount.trim()}
-                    activeOpacity={0.85}
                   >
                     <Ionicons name="cloud-upload-outline" size={16} color={WHITE} style={{ marginRight: 6 }} />
                     <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>{isSubmitting ? 'Saving...' : 'Log Expense Entry'}</Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Card>
 
               {/* Search expenses */}
-              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search expenses"
-                style={styles.searchBar}
-                placeholder="Search expenses..."
-                placeholderTextColor={MUTED}
+              <SearchField
+                placeholder="Search expenses"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -741,7 +819,7 @@ export function OwnerPaymentsTab() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <Row gap={6}>
                   {['All', ...EXPENSE_CATEGORIES].map((cat) => (
-                    <TouchableOpacity accessibilityRole="button"
+                    <AnimatedPress accessibilityRole="button"
                       key={cat}
                       style={[styles.filterChip, categoryFilter === cat && styles.filterChipActive]}
                       onPress={() => setCategoryFilter(cat)}
@@ -749,7 +827,7 @@ export function OwnerPaymentsTab() {
                       <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, categoryFilter === cat && styles.filterChipTextActive]}>
                         {cat}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   ))}
                 </Row>
               </ScrollView>
@@ -760,65 +838,22 @@ export function OwnerPaymentsTab() {
               icon="cash-outline"
               title="No expenses logged"
               subtitle="Logged outflows and property maintenance expenses will appear here."
-              accent="#DC2626"
+              accent={Colors.danger}
               loading={expensesLoading}
               error={expensesError}
             />
           }
-          renderItem={({ item: e }) => (
-            <Card
-              containerColor={WHITE}
-              borderRadius={16}
-              borderWidth={1}
-              borderColor={BORDER}
-              padding={[12, 14]}
-              style={{ marginBottom: 10 }}
-            >
-              <Row justify="space-between" align="center">
-                <Row gap={10} style={{ flex: 1 }} align="center">
-                  <View style={[styles.kpiIconCircle, { backgroundColor: '#FEF2F2' }]}>
-                    <Ionicons name="receipt-outline" size={18} color="#DC2626" />
-                  </View>
-                  <Col style={{ flex: 1 }}>
-                    <Row align="center" gap={6}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.itemTitle}>{e.title}</Text>
-                      <View style={styles.itemCategoryBadge}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.itemCategoryText}>{e.category}</Text>
-                      </View>
-                    </Row>
-                    {e.recipientName ? (
-                      <Text maxFontSizeMultiplier={1.3} style={styles.itemPayee}>Payee: {e.recipientName}</Text>
-                    ) : null}
-                    <Text maxFontSizeMultiplier={1.3} style={styles.itemMeta}>
-                      Logged by {e.loggedByName || e.loggedByRole || 'staff'} • {e.paymentMode}
-                    </Text>
-                  </Col>
-                </Row>
-                <Col align="flex-end">
-                  <Text maxFontSizeMultiplier={1.3} style={styles.itemExpenseAmount}>
-                    -₹{Math.round(e.amount).toLocaleString('en-IN')}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.itemDate}>
-                    {new Date(e.dateLogged || Date.now()).toLocaleDateString('en-IN', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </Text>
-                  {/* Reversal — same `require_manage` boundary as logging one; see the note
-                      above the log-expense form. */}
-                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button"
-                    onPress={() => reverseExpenseMutation.mutate(
-                      { expenseId: e.id, reason: 'Reversed from the expense log' },
-                      { onError: (err) => Alert.alert('Could Not Reverse Entry', err instanceof Error ? err.message : 'Nothing was changed.') },
-                    )}
-                    style={{ marginTop: 4 }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={14} color={Colors.danger} />
-                  </TouchableOpacity>
-                </Col>
-              </Row>
-            </Card>
+          renderItem={({ item: e, index }) => (
+            <ListRow
+              title={e.title}
+              meta={`${e.category}${e.recipientName ? ` · ${e.recipientName}` : ''} · ${e.paymentMode} · ${new Date(e.dateLogged || Date.now()).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`}
+              leading={<Ionicons name="receipt-outline" size={17} color={Colors.danger} />}
+              amount={`-₹${Math.round(e.amount).toLocaleString('en-IN')}`}
+              onPress={() => setDetailExpense(e)}
+              first={index === 0}
+              last={index === displayedExpenses.length - 1}
+              testID={`expense_${e.id}`}
+            />
           )}
         />
       )}
@@ -826,6 +861,7 @@ export function OwnerPaymentsTab() {
       {/* ── Sub-Tab 2: Collections Tab ── */}
       {subTab === 2 && (
         <FlatList
+          {...dockScroll}
           style={{ flex: 1 }}
           data={displayedCollections}
           keyExtractor={(p) => String(p.id)}
@@ -845,10 +881,8 @@ export function OwnerPaymentsTab() {
               </View>
 
               {/* Search collections */}
-              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search collections by name or UTR"
-                style={styles.searchBar}
-                placeholder="Search collections by name or UTR..."
-                placeholderTextColor={MUTED}
+              <SearchField
+                placeholder="Search collections by name or UTR"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -857,7 +891,7 @@ export function OwnerPaymentsTab() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <Row gap={6}>
                   {['All', 'VERIFIED', 'PENDING', 'REJECTED'].map((status) => (
-                    <TouchableOpacity accessibilityRole="button"
+                    <AnimatedPress accessibilityRole="button"
                       key={status}
                       style={[styles.filterChip, statusFilter === status && styles.filterChipActive]}
                       onPress={() => setStatusFilter(status)}
@@ -865,7 +899,7 @@ export function OwnerPaymentsTab() {
                       <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, statusFilter === status && styles.filterChipTextActive]}>
                         {status}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   ))}
                 </Row>
               </ScrollView>
@@ -881,94 +915,17 @@ export function OwnerPaymentsTab() {
               error={paymentsError}
             />
           }
-          renderItem={({ item: p }) => (
-            <AnimatedPress
-              scale={0.985}
-              onPress={() => {
-                setSelectedReceipt(p);
-              }}
-            >
-              <Card
-                containerColor={WHITE}
-                borderRadius={16}
-                borderWidth={1}
-                borderColor={p.status === 'VERIFIED' ? '#ECFDF5' : BORDER}
-                padding={[12, 14]}
-                style={{ marginBottom: 10 }}
-              >
-                <Row justify="space-between" align="center">
-                  <Row gap={10} style={{ flex: 1 }} align="center">
-                    <View style={[styles.kpiIconCircle, { backgroundColor: p.status === 'VERIFIED' ? '#EEF8F1' : '#FFFBEB' }]}>
-                      <Ionicons
-                        name={p.paymentType === 'OWNER_SUBSCRIPTION' ? 'ribbon' : 'checkmark-circle'}
-                        size={18}
-                        color={p.status === 'VERIFIED' ? GREEN : '#D97706'}
-                      />
-                    </View>
-                    <Col style={{ flex: 1 }}>
-                      <Row align="center" gap={6}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.itemTitle}>{p.payerName}</Text>
-                        <View
-                          style={[
-                            styles.statusLabelBadge,
-                            {
-                              backgroundColor: p.status === 'VERIFIED' ? '#ECFDF5' : '#FFFBEB',
-                              borderColor: p.status === 'VERIFIED' ? '#A7F3D0' : '#FDE68A',
-                            },
-                          ]}
-                        >
-                          <Text maxFontSizeMultiplier={1.3} style={[styles.statusLabelText, { color: p.status === 'VERIFIED' ? '#047857' : '#B45309' }]}>
-                            {p.status}
-                          </Text>
-                        </View>
-                      </Row>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.itemMeta}>
-                        {p.paymentType} • Room {getPayerRoom(p.payerId)}
-                      </Text>
-                      {p.utrRef ? (
-                        <Text maxFontSizeMultiplier={1.3} style={styles.itemUtr}>UTR: {p.utrRef}</Text>
-                      ) : null}
-                      {p.status === 'VERIFIED' && p.verifiedByName ? (
-                        <Text maxFontSizeMultiplier={1.3} style={styles.itemMeta}>Verified by {p.verifiedByName}</Text>
-                      ) : null}
-                    </Col>
-                  </Row>
-                  <Col align="flex-end">
-                    <Text maxFontSizeMultiplier={1.3} style={[styles.itemCollectedAmount, { color: p.status === 'VERIFIED' ? GREEN : '#D97706' }]}>
-                      +₹{Math.round(p.amount).toLocaleString('en-IN')}
-                    </Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.itemDate}>
-                      {new Date(p.timestamp || Date.now()).toLocaleDateString('en-IN', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </Text>
-                  </Col>
-                </Row>
-                {p.status === 'PENDING' && (
-                  <>
-                    <View style={{ height: 1, backgroundColor: BORDER, marginVertical: 10 }} />
-                    <Row gap={8}>
-                      <TouchableOpacity accessibilityRole="button"
-                        onPress={() => handleVerifyPayment(p)}
-                        disabled={verifyPayment.isPending}
-                        style={[styles.paymentActionBtn, { backgroundColor: GREEN, opacity: verifyPayment.isPending ? 0.6 : 1 }]}
-                      >
-                        <Ionicons name="checkmark-circle" size={14} color={WHITE} />
-                        <Text maxFontSizeMultiplier={1.3} style={styles.paymentActionBtnTextLight}>Verify</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity accessibilityRole="button"
-                        onPress={() => { setRejectingPayment(p); setRejectReason(''); }}
-                        style={[styles.paymentActionBtn, { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5' }]}
-                      >
-                        <Ionicons name="close-circle" size={14} color={Colors.danger} />
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.paymentActionBtnTextLight, { color: Colors.danger }]}>Reject</Text>
-                      </TouchableOpacity>
-                    </Row>
-                  </>
-                )}
-              </Card>
-            </AnimatedPress>
+          renderItem={({ item: p, index }) => (
+            <ListRow
+              title={p.payerName}
+              meta={`${p.paymentType.replace(/_/g, ' ').toLowerCase()} · Room ${getPayerRoom(p.payerId)}${p.utrRef ? ` · UTR ${p.utrRef}` : ''}`}
+              amount={`+₹${Math.round(p.amount).toLocaleString('en-IN')}`}
+              status={{ label: p.status, tone: toneFor(p.status) }}
+              onPress={() => setSelectedReceipt(p)}
+              first={index === 0}
+              last={index === displayedCollections.length - 1}
+              testID={`collection_${p.id}`}
+            />
           )}
         />
       )}
@@ -995,21 +952,21 @@ export function OwnerPaymentsTab() {
                 />
                 <Spacer size={16} />
                 <Row gap={10}>
-                  <TouchableOpacity accessibilityRole="button"
+                  <AnimatedPress accessibilityRole="button"
                     onPress={() => setRejectingPayment(null)}
-                    style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: '#F1F5F4', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ flex: 1, height: 44, borderRadius: Radii.control, backgroundColor: '#F1F5F4', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '800', color: CHARCOAL }}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity accessibilityRole="button"
+                  </AnimatedPress>
+                  <AnimatedPress accessibilityRole="button"
                     onPress={handleRejectPayment}
                     disabled={rejectPayment.isPending}
-                    style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center', opacity: rejectPayment.isPending ? 0.6 : 1 }}
+                    style={{ flex: 1, height: 44, borderRadius: Radii.control, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center', opacity: rejectPayment.isPending ? 0.6 : 1 }}
                   >
                     <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '800', color: WHITE }}>
                       {rejectPayment.isPending ? 'Rejecting…' : 'Confirm Rejection'}
                     </Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
               </View>
             </View>
@@ -1031,7 +988,7 @@ export function OwnerPaymentsTab() {
                 {getPast12Months().map((m) => {
                   const isSelected = customLabel === m.label;
                   return (
-                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                    <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={m.label}
                       style={[styles.pickerPopupOption, isSelected && styles.pickerPopupOptionActive]}
                       onPress={() => {
@@ -1045,19 +1002,19 @@ export function OwnerPaymentsTab() {
                       <Text maxFontSizeMultiplier={1.3} style={[styles.pickerPopupOptionText, isSelected && styles.pickerPopupOptionTextActive]}>
                         {m.label}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   );
                 })}
               </ScrollView>
 
               <Spacer size={16} />
               
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.pickerCancelBtn}
                 onPress={() => setShowDatePicker(false)}
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.pickerCancelBtnText}>Close</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             </View>
           </View>
         </Modal>
@@ -1073,93 +1030,80 @@ const styles = StyleSheet.create({
   tabContainer: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 10,
-  },
+    paddingBottom: 10 },
   segmentedControl: {
     backgroundColor: WHITE,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 4,
-    width: '100%',
-  },
+    width: '100%' },
   segBtn: {
     flex: 1,
     height: 40,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: WHITE,
-  },
+    backgroundColor: WHITE },
   segBtnActive: {
-    backgroundColor: GREEN,
-  },
+    backgroundColor: GREEN },
   segBtnText: { fontSize: 12, fontWeight: '600', color: CHARCOAL },
   segBtnTextActive: { color: WHITE, fontWeight: '700' },
 
   // Period selector
   periodContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 14,
-  },
+    paddingBottom: 14 },
   subscriptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: WHITE,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 14,
-  },
+    padding: 14 },
   subscriptionRowTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: CHARCOAL,
-  },
+    color: CHARCOAL },
   subscriptionRowSub: {
     fontSize: 12,
     color: MUTED,
-    marginTop: 2,
-  },
+    marginTop: 2 },
   periodBtn: {
     flex: 1,
     height: 34,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   periodBtnActive: {
     backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
+    borderColor: GREEN },
   periodBtnText: { fontSize: 11, fontWeight: '600', color: CHARCOAL },
   periodBtnTextActive: { color: WHITE, fontWeight: '700' },
   periodCalBtn: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   periodCalBtnActive: {
     backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
+    borderColor: GREEN },
   customDateText: { fontSize: 11, color: GREEN, fontWeight: '700', marginTop: 6, paddingHorizontal: 4 },
 
   // Scroll Content
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 4,
-    paddingBottom: 32,
-  },
+    paddingBottom: 32 },
   sectionHeader: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
 
   // KPIs
@@ -1170,15 +1114,13 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 12,
-  },
+    padding: 12 },
   kpiIconCircle: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   kpiLabel: { fontSize: 11, fontWeight: '700', color: CHARCOAL },
   kpiValue: { fontSize: 17, fontWeight: '800', marginTop: 8 },
   kpiSub: { fontSize: 9, color: MUTED, marginTop: 2 },
@@ -1186,12 +1128,11 @@ const styles = StyleSheet.create({
   // Status Strip
   statusStripBox: {
     backgroundColor: LIGHT_GREEN,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   statusStripText: { fontSize: 12, color: GREEN, fontWeight: '700' },
 
   // Cards Content
@@ -1200,30 +1141,26 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 16,
-  },
+    padding: 16 },
   cardHeaderTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   cardHeaderValue: { fontSize: 11, color: MUTED, fontWeight: '600' },
 
   // Expense breakdown rows
   breakdownRow: {
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   breakdownLabel: { fontSize: 12, fontWeight: '600', color: CHARCOAL },
   breakdownAmount: { fontSize: 12, fontWeight: '700', color: CHARCOAL },
   breakdownPercent: { fontSize: 11, color: MUTED, width: 34, textAlign: 'right' },
   progressBarBg: {
     height: 4,
     backgroundColor: BG,
-    borderRadius: 2,
+    borderRadius: Radii.badge,
     marginTop: 4,
-    overflow: 'hidden',
-  },
+    overflow: 'hidden' },
   progressBarFill: {
     height: '100%',
     backgroundColor: GREEN,
-    borderRadius: 2,
-  },
+    borderRadius: Radii.badge },
 
   // Balance details items
   detailItemRow: {
@@ -1232,8 +1169,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: BG,
-  },
+    borderBottomColor: BG },
   detailItemLabel: { fontSize: 12, fontWeight: '600', color: CHARCOAL },
   detailItemValue: { fontSize: 13, fontWeight: '700' },
 
@@ -1246,204 +1182,138 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
-  },
+    marginTop: 10 },
   emptyIconBg: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: Radii.pill,
     backgroundColor: LIGHT_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
-  },
+    marginBottom: 14 },
   emptyTitle: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
   emptyDesc: { fontSize: 13, color: MUTED, textAlign: 'center', marginTop: 4, lineHeight: 18 },
   emptyActionBtn: {
     height: 44,
     backgroundColor: GREEN,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-  },
+    width: '100%' },
   emptyActionText: { fontSize: 13, fontWeight: '800', color: WHITE },
   emptySecBtn: {
     height: 44,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-  },
+    marginTop: 8 },
   emptySecText: { fontSize: 13, fontWeight: '700', color: GREEN },
 
   // Expenses Tab list
   listContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   totalHeaderBox: {
     backgroundColor: WHITE,
     borderRadius: RADIUS,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 16,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   totalHeaderLabel: { fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.5 },
-  totalHeaderValueText: { fontSize: 24, fontWeight: '800', color: '#DC2626', marginTop: 4 },
-  searchBar: {
-    height: 48,
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-    paddingHorizontal: 16,
-    fontSize: 13,
-    color: CHARCOAL,
-  },
+  totalHeaderValueText: { fontSize: 24, fontWeight: '800', color: Colors.danger, marginTop: 4 },
 
   // Log Form
   formTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   presetChip: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     backgroundColor: BG,
     borderWidth: 1,
     borderColor: BORDER,
-    marginRight: 6,
-  },
+    marginRight: 6 },
   presetChipText: { fontSize: 11, fontWeight: '600', color: CHARCOAL },
-  formSectionLabel: { fontSize: 12, fontWeight: '700', color: MUTED, marginRight: 8 },
-  smallChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: WHITE,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  smallChipActive: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
-  smallChipText: { fontSize: 11, color: CHARCOAL, fontWeight: '600' },
-  smallChipTextActive: { color: WHITE, fontWeight: '700' },
   submitBtn: {
     height: 46,
     backgroundColor: GREEN,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   submitBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
 
   // Outflow item card
-  itemTitle: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-  itemCategoryBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    backgroundColor: LIGHT_GREEN,
-  },
-  itemCategoryText: { fontSize: 9, fontWeight: '700', color: GREEN },
-  itemPayee: { fontSize: 11, color: MUTED, marginTop: 2 },
-  itemMeta: { fontSize: 10, color: MUTED, marginTop: 1 },
-  itemExpenseAmount: { fontSize: 14, fontWeight: '800', color: '#DC2626' },
-  itemCollectedAmount: { fontSize: 14, fontWeight: '800' },
-  itemDate: { fontSize: 9, color: MUTED, marginTop: 2 },
-  itemUtr: { fontSize: 10, color: GREEN, marginTop: 2, fontWeight: '600' },
 
   // Filter chips
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   filterChipActive: {
     backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
+    borderColor: GREEN },
   filterChipText: { fontSize: 12, color: CHARCOAL, fontWeight: '600' },
   filterChipTextActive: { color: WHITE, fontWeight: '700' },
 
   // Status label
-  statusLabelBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  statusLabelText: { fontSize: 8, fontWeight: '800' },
 
-  paymentActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    height: 36,
-    borderRadius: 8,
-  },
-  paymentActionBtnTextLight: { fontSize: 12, fontWeight: '800', color: '#FFFFFF' },
 
   // Custom picker popup modals
   pickerPopupBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(10, 18, 13, 0.45)',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   pickerPopupCard: {
     width: '80%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 18,
-  },
+    padding: 18 },
   pickerPopupTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: CHARCOAL,
-    marginBottom: 10,
-  },
+    marginBottom: 10 },
   pickerSectionLabel: {
     fontSize: 11,
     fontWeight: '700',
     color: MUTED,
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   pickerPopupOption: {
     paddingVertical: 12,
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     borderBottomWidth: 1,
-    borderBottomColor: BG,
-  },
+    borderBottomColor: BG },
   pickerPopupOptionActive: {
-    backgroundColor: LIGHT_GREEN,
-  },
+    backgroundColor: LIGHT_GREEN },
   pickerPopupOptionText: {
     fontSize: 13,
     color: CHARCOAL,
-    fontWeight: '500',
-  },
+    fontWeight: '500' },
   pickerPopupOptionTextActive: {
     color: GREEN,
-    fontWeight: '700',
-  },
+    fontWeight: '700' },
   pickerCancelBtn: {
     height: 40,
     backgroundColor: BG,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickerCancelBtnText: { fontSize: 12, color: CHARCOAL, fontWeight: '700' },
-});
+    justifyContent: 'center' },
+  pickerCancelBtnText: { fontSize: 12, color: CHARCOAL, fontWeight: '700' } });
+
+/** One label/value line in the expense sheet. */
+function DetailLine({ label, value }: { label: string; value: string }) {
+  return (
+    <Row justify="space-between" align="flex-start" gap={16}>
+      <Txt size={12} color={Colors.textMuted}>{label}</Txt>
+      <Txt size={12.5} weight="700" color={Colors.textPrimary} style={{ flex: 1, textAlign: 'right' }}>{value}</Txt>
+    </Row>
+  );
+}

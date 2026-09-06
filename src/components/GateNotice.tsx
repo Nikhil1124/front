@@ -14,13 +14,14 @@
  * app's gate handler is a no-op on purpose (see `app/_layout.tsx`) because moving someone on
  * a gate changes the flow instead of reporting it.
  */
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { PGowApiError } from '@/data/apiClient';
 import { gateCodeFrom, type GateCode } from '@/data/gateCodes';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 /** The gate code behind an error, or null when it is an ordinary failure. The rule itself
  *  lives in `data/gateCodes.ts` so it can be checked without a react-native import. */
@@ -92,7 +93,7 @@ export function GateNotice({ error, compact = false }: { error: unknown; compact
   const copy = COPY[code];
 
   if (compact) {
-    const Wrapper: any = copy.action ? TouchableOpacity : View;
+    const Wrapper: any = copy.action ? AnimatedPress : View;
     return (
       <Wrapper
         style={styles.compact}
@@ -120,9 +121,9 @@ export function GateNotice({ error, compact = false }: { error: unknown; compact
       <Text maxFontSizeMultiplier={1.3} style={styles.title}>{copy.title}</Text>
       <Text maxFontSizeMultiplier={1.3} style={styles.body}>{copy.body}</Text>
       {copy.action && (
-        <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={copy.action.go} activeOpacity={0.85}>
+        <AnimatedPress accessibilityRole="button" style={styles.button} onPress={copy.action.go}>
           <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>{copy.action.label}</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       )}
     </View>
   );
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
   box: {
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 18,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     paddingHorizontal: 22,
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 54,
     height: 54,
-    borderRadius: 27,
+    borderRadius: Radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     height: 46,
     minWidth: 200,
     paddingHorizontal: 22,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

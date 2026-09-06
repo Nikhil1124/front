@@ -1,13 +1,12 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Animated,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View,
-} from 'react-native';
-import { Colors, Layout } from '@/theme';
+  View } from 'react-native';
+import { Radii, Colors, Layout } from '@/theme';
 
 const EXAMPLE_ITEMS = [
   "Search  'Tomato Puree'",
@@ -47,14 +46,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
+        useNativeDriver: true }).start(() => {
         setPlaceholderIndex((prev) => (prev + 1) % itemsToUse.length);
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
-        }).start();
+          useNativeDriver: true }).start();
       });
     }, 2500);
     return () => clearInterval(interval);
@@ -117,69 +114,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 8,
-    gap: 10,
-  },
+    gap: 10 },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 50,
+    borderRadius: Radii.sheet,
     paddingHorizontal: 16,
     height: 50,
     borderWidth: 1,
     borderColor: 'transparent',
-    ...Layout.shadowCard,
-  },
+    ...Layout.shadowCard },
   inputWrapper: {
     flex: 1,
     marginLeft: 10,
     justifyContent: 'center',
-    height: 50,
-  },
+    height: 50 },
   animatedPlaceholder: {
     position: 'absolute',
     fontSize: 13,
-    color: Colors.textMuted,
-  },
+    color: Colors.textMuted },
   searchInput: {
     fontSize: 13,
     color: Colors.textPrimary,
     height: 50,
-    padding: 0,
-  },
+    padding: 0 },
   inputActive: {
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   divider: {
     width: 1,
     height: 22,
     backgroundColor: Colors.borderSubtle,
-    marginHorizontal: 10,
-  },
+    marginHorizontal: 10 },
   scanBtn: {
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
-  },
+    position: 'relative' },
   filterDot: {
     position: 'absolute',
     top: -2,
     right: -2,
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-  },
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.primary },
   cartBtn: {
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'transparent',
-    ...Layout.shadowCard,
-  },
-});
+    ...Layout.shadowCard } });

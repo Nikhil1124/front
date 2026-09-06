@@ -2,26 +2,22 @@
  * HubDialogs — AddPgDailySubscriptionDialog + BookRepairDialog + GuestLaundryBookingDialog
  * Ported to the Cyber Indigo theme.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Modal,
   View,
   StyleSheet,
   Alert,
   ScrollView,
-  TouchableOpacity,
   Pressable,
   KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-} from 'react-native';
+  Text } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip, ChoiceChips, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors, dialogEntering, dialogExiting, Motion } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useProcurementCatalog } from '@/features/procurement/useProcurement';
@@ -73,8 +69,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
         deliver_at: deliverAt,
         payment_method: 'credit',
         delivery_note: note.trim(),
-        items: Object.entries(cart).map(([item_id, quantity]) => ({ item_id, quantity })),
-      });
+        items: Object.entries(cart).map(([item_id, quantity]) => ({ item_id, quantity })) });
       Alert.alert('Success', 'Daily Auto-Subscription Activated!');
       onDismiss();
     } catch (err: any) {
@@ -90,7 +85,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
         <View style={{ width: '92%', maxHeight: '85%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
-            borderRadius={24}
+            borderRadius={Radii.sheet}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[20, 20]}
@@ -98,7 +93,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
           >
           <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
             <Row gap={8} align="center">
-              <Txt size={18}>🔄</Txt>
+              <Ionicons name="refresh" size={18} color={Colors.primary} />
               <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Daily Grocery Auto-Order</Txt>
             </Row>
             <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
@@ -147,13 +142,13 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
                         <Txt size={11} color={Colors.textMuted}>{item.unit} • ₹{item.defaultPrice}</Txt>
                       </Col>
                       <Row gap={8} align="center">
-                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" onPress={() => updateQty(item.id, -1)} style={styles.qtyBtn} activeOpacity={0.7}>
+                        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" onPress={() => updateQty(item.id, -1)} style={styles.qtyBtn}>
                           <Ionicons name="remove" size={14} color={Colors.textPrimary} />
-                        </TouchableOpacity>
+                        </AnimatedPress>
                         <Txt size={13} weight="900" color={Colors.primaryDark}>{qty}</Txt>
-                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => updateQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]} activeOpacity={0.7}>
+                        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => updateQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]}>
                           <Ionicons name="add" size={14} color={Colors.textInverse} />
-                        </TouchableOpacity>
+                        </AnimatedPress>
                       </Row>
                     </Row>
                   );
@@ -175,7 +170,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
             disabled={createSubscription.isPending || cartItemCount === 0}
             containerColor={Colors.primary}
             textColor={Colors.textInverse}
-            borderRadius={12}
+            borderRadius={Radii.card}
             height={44}
           >
             <Txt variant="body" weight="800" color={Colors.textInverse}>Activate Daily Subscription</Txt>
@@ -216,11 +211,7 @@ function getNext7Days(): string[] {
 }
 
 const DIALOG_GREEN = Colors.primary;
-const DIALOG_BG = Colors.canvas;
-const DIALOG_CHARCOAL = Colors.textPrimary;
 const DIALOG_MUTED = Colors.textMuted;
-const DIALOG_BORDER = Colors.borderSubtle;
-const DIALOG_WHITE = Colors.surface;
 const DIALOG_LIGHT_GREEN = Colors.surfaceElevated;
 
 export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
@@ -234,10 +225,9 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
 
   // Scheduled date/time picker state — defaults to today so an untouched picker never
   // silently books a stale, already-past date (it used to be hardcoded to a fixed string).
+  const next7Days = useMemo(() => getNext7Days(), []);
   const [schedDate, setSchedDate] = useState(() => getNext7Days()[0]);
   const [schedTime, setSchedTime] = useState('11:30 AM - 12:00 PM');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const costMap: Record<string, number> = { Plumbing: 399, Electrical: 449, 'AC Repair': 799 };
   
@@ -275,9 +265,9 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                     <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubtitle}>Tell us what needs fixing</Text>
                   </Col>
                 </Row>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onDismiss} style={styles.closeBtn}>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onDismiss} style={styles.closeBtn}>
                   <Ionicons name="close" size={20} color={DIALOG_MUTED} />
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
 
               {/* Step 1: What needs repair */}
@@ -287,16 +277,15 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                 {REPAIR_CATEGORIES.map((cat) => {
                   const isSelected = category === cat;
                   return (
-                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                    <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={cat}
                       style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
                       onPress={() => setCategory(cat)}
-                      activeOpacity={0.7}
                     >
                       <Text maxFontSizeMultiplier={1.3} style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
                         {cat}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   );
                 })}
               </View>
@@ -306,22 +295,17 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               {/* Step 2: What's the issue */}
               <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>2. What's the issue?</Text>
               <Spacer size={8} />
-              <View style={styles.textAreaContainer}>
-                <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Describe the problem briefly"
-                  style={styles.textArea}
-                  value={issue}
-                  onChangeText={(v) => {
-                    if (v.length <= 250) setIssue(v);
-                  }}
-                  placeholder="Describe the problem briefly..."
-                  placeholderTextColor={DIALOG_MUTED}
-                  multiline
-                  numberOfLines={4}
-                  maxLength={250}
-                  textAlignVertical="top"
-                />
-                <Text maxFontSizeMultiplier={1.3} style={styles.charCounter}>{issue.length}/250</Text>
-              </View>
+              <OutlinedTextField
+                value={issue}
+                onChangeText={(v) => {
+                  if (v.length <= 250) setIssue(v);
+                }}
+                placeholder="Describe the problem briefly"
+                multiline
+                numberOfLines={4}
+                maxLength={250}
+                helper={`${issue.length}/250`}
+              />
 
               <Spacer size={16} />
 
@@ -329,13 +313,12 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>3. When do you need help?</Text>
               <Spacer size={8} />
               <Row gap={10}>
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={[
                     styles.urgencyBtn,
                     urgency === '15-Min Express' && styles.urgencyBtnActive,
                   ]}
                   onPress={() => setUrgency('15-Min Express')}
-                  activeOpacity={0.8}
                 >
                   <Text maxFontSizeMultiplier={1.3}
                     style={[
@@ -345,14 +328,13 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   >
                     Express · 15 min
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="button"
+                </AnimatedPress>
+                <AnimatedPress accessibilityRole="button"
                   style={[
                     styles.urgencyBtn,
                     urgency === 'Scheduled Today' && styles.urgencyBtnActive,
                   ]}
                   onPress={() => setUrgency('Scheduled Today')}
-                  activeOpacity={0.8}
                 >
                   <Text maxFontSizeMultiplier={1.3}
                     style={[
@@ -362,46 +344,32 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   >
                     Schedule
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
 
               {/* Conditional Date & Time Selectors */}
               {urgency === 'Scheduled Today' && (
                 <>
                   <Spacer size={12} />
-                  <Row gap={10}>
-                    {/* Date Selector */}
-                    <TouchableOpacity accessibilityRole="button"
-                      style={styles.pickerDropdown}
-                      onPress={() => setShowDatePicker(true)}
-                      activeOpacity={0.8}
-                    >
-                      <Text maxFontSizeMultiplier={1.3} style={styles.pickerLabel}>Date</Text>
-                      <Row justify="space-between" align="center" style={{ flex: 1 }}>
-                        <Row gap={6} align="center">
-                          <Ionicons name="calendar-outline" size={15} color={DIALOG_GREEN} />
-                          <Text maxFontSizeMultiplier={1.3} style={styles.pickerValue}>{schedDate}</Text>
-                        </Row>
-                        <Ionicons name="chevron-down" size={14} color={DIALOG_MUTED} />
-                      </Row>
-                    </TouchableOpacity>
-
-                    {/* Time Selector */}
-                    <TouchableOpacity accessibilityRole="button"
-                      style={styles.pickerDropdown}
-                      onPress={() => setShowTimePicker(true)}
-                      activeOpacity={0.8}
-                    >
-                      <Text maxFontSizeMultiplier={1.3} style={styles.pickerLabel}>Time</Text>
-                      <Row justify="space-between" align="center" style={{ flex: 1 }}>
-                        <Row gap={6} align="center">
-                          <Ionicons name="time-outline" size={15} color={DIALOG_GREEN} />
-                          <Text maxFontSizeMultiplier={1.3} style={styles.pickerValue}>{schedTime}</Text>
-                        </Row>
-                        <Ionicons name="chevron-down" size={14} color={DIALOG_MUTED} />
-                      </Row>
-                    </TouchableOpacity>
-                  </Row>
+                  {/* Seven days and seven slots, shown inline. They were two modals over a
+                      modal — a dropdown popup opening on top of the dialog you were already
+                      filling in, which on Android stacks two dimmed backdrops. */}
+                  <ChoiceChips
+                    label="Date"
+                    options={next7Days}
+                    value={schedDate}
+                    onChange={setSchedDate}
+                    testID="repair_date"
+                  />
+                  <Spacer size={12} />
+                  <ChoiceChips
+                    label="Time"
+                    options={TIME_SLOTS}
+                    value={schedTime}
+                    onChange={setSchedTime}
+                    render={(t) => t.replace(/:00 /g, '').replace(' - ', '–')}
+                    testID="repair_time"
+                  />
                 </>
               )}
 
@@ -420,15 +388,14 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               <Spacer size={20} />
 
               {/* CTA Button */}
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.sheetSubmitBtn}
                 onPress={handleDispatch}
-                activeOpacity={0.85}
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubmitBtnText}>
                   {urgency === '15-Min Express' ? 'Request Express Repair' : 'Request Repair'}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPress>
 
               <Spacer size={12} />
               
@@ -442,72 +409,25 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Date Dropdown Popup Modal */}
-      {showDatePicker && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-          <View style={styles.pickerPopupBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
-            <View style={styles.pickerPopupCard}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.pickerPopupTitle}>Select Date</Text>
-              <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 10, maxHeight: 220 }}>
-                {getNext7Days().map((d) => (
-                  <TouchableOpacity accessibilityRole="button"
-                    key={d}
-                    style={[styles.pickerPopupOption, schedDate === d && styles.pickerPopupOptionActive]}
-                    onPress={() => { setSchedDate(d); setShowDatePicker(false); }}
-                  >
-                    <Text maxFontSizeMultiplier={1.3} style={[styles.pickerPopupOptionText, schedDate === d && styles.pickerPopupOptionTextActive]}>
-                      {d}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {/* Time Dropdown Popup Modal */}
-      {showTimePicker && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowTimePicker(false)}>
-          <View style={styles.pickerPopupBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
-            <View style={styles.pickerPopupCard}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.pickerPopupTitle}>Select Time Slot</Text>
-              <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 10, maxHeight: 220 }}>
-                {TIME_SLOTS.map((t) => (
-                  <TouchableOpacity accessibilityRole="button"
-                    key={t}
-                    style={[styles.pickerPopupOption, schedTime === t && styles.pickerPopupOptionActive]}
-                    onPress={() => { setSchedTime(t); setShowTimePicker(false); }}
-                  >
-                    <Text maxFontSizeMultiplier={1.3} style={[styles.pickerPopupOptionText, schedTime === t && styles.pickerPopupOptionTextActive]}>
-                      {t}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      )}
     </>
   );
 }
 
 // ===== GuestLaundryBookingDialog =====
+const LAUNDRY_SLOTS = ['Morning (8–10 AM)', 'Afternoon (1–3 PM)', 'Evening (6–8 PM)'];
+const LAUNDRY_PAY_MODES = ['Added to Room Bill', 'UPI', 'Cash on Pickup'];
+
 const LAUNDRY_RATES: Record<string, number> = {
-  'Wash & Fold': 39, 'Wash & Iron': 59, 'Dry Cleaning': 149, 'Shoe Care': 199,
-};
+  'Wash & Fold': 39, 'Wash & Iron': 59, 'Dry Cleaning': 149, 'Shoe Care': 199 };
 
 export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismiss }: { guestId: string; guestName: string; roomNo: string; onDismiss: () => void }) {
   const bookLaundry = usePGowStore((s) => s.bookGuestLaundryService);
   const [service, setService] = useState('Wash & Fold');
   const [weight, setWeight] = useState('5 kg');
   const [pickupPref] = useState('Room Doorstep Pickup');
-  const [slot, setSlot] = useState('Morning (8 AM - 10 AM)');
+  const [slot, setSlot] = useState(LAUNDRY_SLOTS[0]);
   const [notes, setNotes] = useState('');
-  const [payMode, setPayMode] = useState('Added to Room Bill');
+  const [payMode, setPayMode] = useState(LAUNDRY_PAY_MODES[0]);
 
   const multiplier = weight.includes('10') ? 2 : weight.includes('15') ? 3 : 1;
   const est = (LAUNDRY_RATES[service] ?? 40) * multiplier;
@@ -526,7 +446,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
         <View style={{ width: '92%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
-            borderRadius={24}
+            borderRadius={Radii.sheet}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[20, 20]}
@@ -534,7 +454,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
           >
           <Row justify="space-between" align="center" style={{ marginBottom: 4 }}>
             <Row gap={8} align="center">
-              <Txt size={18}>🧺</Txt>
+              <Ionicons name="shirt-outline" size={18} color={Colors.primary} />
               <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Doorstep Laundry</Txt>
             </Row>
             <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
@@ -546,15 +466,14 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
           <Spacer size={6} />
           <View style={{ gap: 6 }}>
             {Object.entries(LAUNDRY_RATES).map(([srv, rate]) => (
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 key={srv}
                 onPress={() => setService(srv)}
                 style={[
                   styles.laundryOpt,
                   {
                     borderColor: service === srv ? Colors.primary : Colors.borderSubtle,
-                    backgroundColor: service === srv ? DIALOG_LIGHT_GREEN : Colors.surfaceMuted,
-                  },
+                    backgroundColor: service === srv ? DIALOG_LIGHT_GREEN : Colors.surfaceMuted },
                 ]}
               >
                 <Row justify="space-between" align="center">
@@ -563,7 +482,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
                     ₹{rate}{srv.includes('Shoe') ? '/pair' : srv.includes('Dry') ? '/pc' : '/kg'}
                   </Txt>
                 </Row>
-              </TouchableOpacity>
+              </AnimatedPress>
             ))}
           </View>
           <Spacer size={12} />
@@ -576,7 +495,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
                 onPress={() => setWeight(w)}
                 containerColor={weight === w ? Colors.primary : Colors.surfaceMuted}
                 textColor={weight === w ? Colors.textInverse : Colors.textPrimary}
-                borderRadius={8}
+                borderRadius={Radii.control}
                 height={34}
                 style={{ flex: 1 }}
               >
@@ -584,6 +503,25 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
               </Btn>
             ))}
           </Row>
+          <Spacer size={12} />
+
+          {/* Both of these were fixed values in state with no control attached: every booking
+              went out as a morning pickup billed to the room, whatever the resident wanted. */}
+          <ChoiceChips
+            label="Pickup slot"
+            options={LAUNDRY_SLOTS}
+            value={slot}
+            onChange={setSlot}
+            testID="laundry_slot"
+          />
+          <Spacer size={12} />
+          <ChoiceChips
+            label="Pay by"
+            options={LAUNDRY_PAY_MODES}
+            value={payMode}
+            onChange={setPayMode}
+            testID="laundry_pay_mode"
+          />
           <Spacer size={12} />
 
           <OutlinedTextField
@@ -604,7 +542,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
               onPress={handleBook}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
-              borderRadius={12}
+              borderRadius={Radii.card}
               height={44}
             >
               <Txt variant="caption" weight="800" color={Colors.textInverse}>Confirm Pickup</Txt>
@@ -623,28 +561,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(10, 18, 13, 0.55)',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
+    justifyContent: 'flex-end' },
   laundryOpt: {
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
-    padding: 10,
-  },
+    padding: 10 },
   catalogRow: {
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     backgroundColor: Colors.surfaceMuted,
-    padding: 10,
-  },
+    padding: 10 },
   qtyBtn: {
     width: 26,
     height: 26,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
 
   // Bottom Sheet
   sheetCard: {
@@ -654,104 +588,82 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 34,
-  },
+    paddingBottom: 34 },
   handlebar: {
     width: 36,
     height: 4,
-    borderRadius: 2,
+    borderRadius: Radii.badge,
     backgroundColor: '#E6EFEA',
     alignSelf: 'center',
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   headerIconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: DIALOG_LIGHT_GREEN,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   sheetTitle: { fontSize: 17, fontWeight: '700', color: '#17201A' },
   sheetSubtitle: { fontSize: 13, color: '#66736B', marginTop: 1 },
   closeBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: Radii.pill,
     backgroundColor: '#F7FAF7',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   stepTitle: { fontSize: 14, fontWeight: '700', color: '#17201A' },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
+    gap: 8 },
   categoryChip: {
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E6EFEA',
-  },
+    borderColor: '#E6EFEA' },
   categoryChipSelected: {
     backgroundColor: DIALOG_GREEN,
-    borderColor: DIALOG_GREEN,
-  },
+    borderColor: DIALOG_GREEN },
   categoryChipText: { fontSize: 13, fontWeight: '600', color: '#17201A' },
   categoryChipTextSelected: { color: '#FFFFFF', fontWeight: '700' },
 
   // Textarea
-  textAreaContainer: {
-    borderWidth: 1,
-    borderColor: '#E6EFEA',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    minHeight: 110,
-    justifyContent: 'space-between',
-  },
-  textArea: { fontSize: 14, color: '#17201A', height: 74, paddingVertical: 0 },
-  charCounter: { fontSize: 11, color: '#66736B', textAlign: 'right' },
 
   // Urgency selector
   urgencyBtn: {
     flex: 1,
     height: 44,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: '#E6EFEA',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
+    backgroundColor: '#FFFFFF' },
   urgencyBtnActive: {
     borderColor: DIALOG_GREEN,
     backgroundColor: DIALOG_LIGHT_GREEN,
-    borderWidth: 1.5,
-  },
+    borderWidth: 1.5 },
   urgencyBtnText: { fontSize: 13, fontWeight: '600', color: '#66736B' },
   urgencyBtnTextActive: { color: DIALOG_GREEN, fontWeight: '800' },
 
   // ETA strip
   etaStrip: {
     backgroundColor: DIALOG_LIGHT_GREEN,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
+    paddingVertical: 10 },
   etaText: { fontSize: 12, color: DIALOG_GREEN, fontWeight: '600', flex: 1, lineHeight: 16 },
 
   // Submit
   sheetSubmitBtn: {
     height: 52,
     backgroundColor: DIALOG_GREEN,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   sheetSubmitBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
 
   // Security info
@@ -759,68 +671,7 @@ const styles = StyleSheet.create({
   securityText: { fontSize: 11, color: '#66736B', marginLeft: 4 },
 
   // Picker dropdowns
-  pickerDropdown: {
-    flex: 1,
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E6EFEA',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    justifyContent: 'space-between',
-  },
-  pickerLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#66736B',
-    marginBottom: 2,
-  },
-  pickerValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#17201A',
-  },
 
   // Picker popup modals
-  pickerPopupBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 18, 13, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pickerPopupCard: {
-    width: '80%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E6EFEA',
-    padding: 18,
-  },
-  pickerPopupTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#17201A',
-    marginBottom: 8,
-  },
-  pickerPopupOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F7FAF7',
-  },
-  pickerPopupOptionActive: {
-    backgroundColor: DIALOG_LIGHT_GREEN,
-  },
-  pickerPopupOptionText: {
-    fontSize: 13,
-    color: '#17201A',
-    fontWeight: '500',
-  },
-  pickerPopupOptionTextActive: {
-    color: DIALOG_GREEN,
-    fontWeight: '700',
-  },
 });
 

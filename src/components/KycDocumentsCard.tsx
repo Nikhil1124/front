@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Txt, Row, Spacer } from '@/components/ui';
 import { useScreenCaptureGuard } from '@/hooks/useScreenCaptureGuard';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 export interface KycDocumentsCardProps {
   idPhotoUri?: string | null;
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: Colors.canvas,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     padding: 14,
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   thumbEmptyCard: {
     flex: 1,
     height: 135,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     backgroundColor: Colors.canvas,
     borderWidth: 1.5,
     borderColor: Colors.borderSubtle,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   thumbCard: {
     flex: 1,
     height: 135,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     overflow: 'hidden',
     backgroundColor: Colors.primaryDark,
     borderWidth: 1.5,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(1, 28, 64, 0.85)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     alignSelf: 'flex-start',
   },
   inspectHint: {
@@ -199,12 +199,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     alignSelf: 'center',
   },
   securityNoteBox: {
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     width: '100%',
   },
 });

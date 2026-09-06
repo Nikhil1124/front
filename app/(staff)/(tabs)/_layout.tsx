@@ -1,25 +1,39 @@
 /**
  * Chef/kitchen-staff tabs shell — header (chef name, notification bell, logout) and the
- * 3-tab bottom dock (Eaters/Menu/Kitchen). This dock's visual (two-line label, filled
- * background on the active tab) is distinct enough from the Owner/Guest dock that it isn't
- * built from the shared HeadlessDockTabButton — a bespoke button local to this one layout.
+ * 3-tab bottom dock, shared with every other role.
+ *
+ * Chef and delivery agent are two profiles over the same three route files, because the
+ * ranking genuinely differs: a chef's day revolves around posting the menu (the app fires
+ * three alarms a day about it), a delivery agent's around the route. `centreOut` therefore
+ * puts a different tab in the middle for each. See src/data/navTabs.ts.
  */
-import { forwardRef } from 'react';
-import { View, StyleSheet, type View as RNView, type PressableProps, Pressable } from 'react-native';
-import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
+import { View, StyleSheet } from 'react-native';
+import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { Row, Txt, Col } from '@/components/ui';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { Colors } from '@/theme';
+import { Row } from '@/components/ui';
+import { Radii, Colors } from '@/theme';
 import { Dock, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
+import { centreOut, NAV_PROFILES } from '@/data/navTabs';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { router, usePathname } from 'expo-router';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {  } from 'react-native-reanimated';
 import { tabEntering, tabExiting } from '@/theme';
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
+
+/**
+ * Without this the navigator takes its initial route from whichever trigger happens to be
+ * first, and the frequency ranking deliberately puts the LEAST-used destination in the
+ * leftmost slot — for a delivery agent that is History, which is no way to open a shift.
+ *
+ * The anchor has to be one static name, but the two staff profiles rank differently, so it is
+ * the route rather than the label that is pinned: `eaters` opens a chef on Eaters and a
+ * delivery agent on Route, which is the right first screen for both. Do not delete this when
+ * reordering the bar — reordering is exactly when it matters.
+ */
+export const unstable_settings = { anchor: 'eaters' };
 
 export default function StaffTabsLayout() {
   const pathname = usePathname();
@@ -31,9 +45,10 @@ export default function StaffTabsLayout() {
   const activeRole = useAuthStore((s) => s.activeRole);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
-  // Shares the flat-bar geometry and safe-area inset with the other roles' docks; only the
-  // buttons inside stay bespoke (two-line labels, filled active state).
+  // No profile argument: neither staff role has a countable "waiting for you" queue in the
+  // data model today, so there is nothing honest to tint a tab or a context strip with.
   const { dockStyle, contentPaddingBottom } = useDock();
+  const destinations = centreOut(NAV_PROFILES[activeRole === 'delivery_agent' ? 'delivery' : 'chef']);
 
   return (
     <Tabs style={styles.root}>
@@ -71,31 +86,18 @@ export default function StaffTabsLayout() {
         </Animated.View>
       </View>
 
-      {/* TabList must be a direct child of Tabs, and everything inside it up to the
-          TabTriggers must be Fragments, not Views — Tabs discovers screens by walking its
-          own children for TabList/TabTrigger and does not recurse into an ordinary View
-          (confirmed by reading expo-router/ui's Tabs.js). So the previous two-layer dock
-          (translucent outer strip + white inner pill) is one layer here too, same as the
-          Owner/Guest tabs — dockWrap and dock are merged onto TabList directly. */}
+      {/* TabList must be a direct child of Tabs, and everything between it and the TabTriggers
+          must be a Fragment or an array — never a View. Tabs discovers screens by walking its
+          own children for TabList/TabTrigger with `Children.forEach`, which flattens arrays
+          (so `.map` is fine) but does not recurse into an ordinary View (confirmed by reading
+          expo-router/ui's Tabs.js). That is also why the dock is one layer rather than the
+          two it used to be — the styles are merged onto TabList directly. */}
       <Dock style={dockStyle}>
-        <TabTrigger name="eaters" href="/eaters" asChild>
-          <HeadlessDockTabButton 
-            icon={activeRole === 'delivery_agent' ? 'map' : 'people'} 
-            label={activeRole === 'delivery_agent' ? 'Route' : 'Eaters'} 
-          />
-        </TabTrigger>
-        <TabTrigger name="broadcast" href="/broadcast" asChild>
-          <HeadlessDockTabButton 
-            icon={activeRole === 'delivery_agent' ? 'time' : 'megaphone'} 
-            label={activeRole === 'delivery_agent' ? 'History' : 'Menu'} 
-          />
-        </TabTrigger>
-        <TabTrigger name="kitchen" href="/kitchen" asChild>
-          <HeadlessDockTabButton 
-            icon={activeRole === 'delivery_agent' ? 'person' : 'restaurant'} 
-            label={activeRole === 'delivery_agent' ? 'Profile' : 'Kitchen'} 
-          />
-        </TabTrigger>
+        {destinations.map((d) => (
+          <TabTrigger key={d.name} name={d.name} href={d.href} asChild>
+            <HeadlessDockTabButton icon={d.icon} label={d.label} />
+          </TabTrigger>
+        ))}
       </Dock>
     </Tabs>
   );
@@ -104,5 +106,4 @@ export default function StaffTabsLayout() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
 
-  chefIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
-});
+  chefIcon: { width: 46, height: 46, borderRadius: Radii.pill, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' } });

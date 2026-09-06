@@ -1,10 +1,11 @@
 /**
  * 404 Screen — Rendered when an unmapped route is accessed.
  */
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Link, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 export default function NotFoundScreen() {
   return (
@@ -23,10 +24,10 @@ export default function NotFoundScreen() {
         <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>The page or route you requested does not exist in PGow App.</Text>
 
         <Link href="/" asChild>
-          <TouchableOpacity accessibilityRole="button" style={styles.button}>
-            <Ionicons name="home-sharp" size={18} color={Colors.canvas} />
+          <AnimatedPress accessibilityRole="button" style={styles.button}>
+            <Ionicons name="home-sharp" size={18} color={Colors.textInverse} />
             <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>Return to Home</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Link>
       </View>
     </>
@@ -63,12 +64,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     gap: 8,
   },
   buttonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: Colors.canvas,
+    color: Colors.textInverse,
   },
 });

@@ -10,7 +10,6 @@ import { View, StyleSheet, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Txt } from '@/components/ui';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
@@ -39,8 +38,7 @@ export function HubScreenWrapper({
   contentContainerStyle,
   refreshControl,
   onBack,
-  testID,
-}: HubScreenWrapperProps) {
+  testID }: HubScreenWrapperProps) {
   const insets = useSafeAreaInsets();
   const responsivePadding = useResponsivePadding();
 
@@ -81,8 +79,7 @@ export function HubScreenWrapper({
             paddingHorizontal: responsivePadding,
             paddingTop: 16,
             paddingBottom: insets.bottom,
-            ...contentContainerStyle,
-          }}
+            ...contentContainerStyle }}
         >
           {children}
         </View>
@@ -94,9 +91,6 @@ export function HubScreenWrapper({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.canvas,
-  },
+    backgroundColor: Colors.canvas },
   scrollBody: {
-    flex: 1,
-  },
-});
+    flex: 1 } });

@@ -18,10 +18,9 @@ import { PGowApiError } from '@/data/apiClient';
 import * as map from '@/data/mappers';
 import { NotificationHelper } from '@/data/notificationHelper';
 import { queryClient } from '@/data/queryClient';
+import { hapticCaution, hapticSuccess } from '@/utils/haptics';
 import { qk } from '@/data/queryKeys';
 import * as authApi from '@/features/auth/useAuth';
-import * as expensesApi from '@/features/expenses/useExpenses';
-import * as guestsApi from '@/features/guests/useGuests';
 import * as kycApi from '@/features/kyc/useKyc';
 import * as mealsApi from '@/features/meals/useMeals';
 import * as notificationsApi from '@/features/notifications/useNotifications';
@@ -29,10 +28,9 @@ import * as paymentsApi from '@/features/payments/usePayments';
 import type { PickedLocation } from '@/features/places/pendingLocation';
 import * as propertiesApi from '@/features/properties/useProperties';
 import * as requestsApi from '@/features/requests/useComplaints';
-import * as rewardsApi from '@/features/rewards/useRewards';
 import * as staffApi from '@/features/staff/useStaff';
-import { useAuthStore, type Membership } from '@/store/authStore';
-// Re-exported so `toUserRole` keeps its established import path (OwnerLoginScreen and
+import { useAuthStore } from '@/store/authStore';
+// Re-exported so `toUserRole` keeps its established import path (SignInScreen and
 // others import it from this store); the implementation lives in a module a plain
 // `node` check can reach.
 import { toUserRole } from '@/store/roles';
@@ -49,11 +47,7 @@ import type {
   FeedbackComplaintEntity,
   ExpenseEntity,
   AppRoleNotificationEntity,
-  SimulatedAlert,
-  PGGroceryOrder,
-  PGRepairServiceRequest,
-  GuestLaundryRequest,
-} from '@/types';
+  SimulatedAlert } from '@/types';
 
 /** Ids for the rows that never reach a server — hub services, local expenses. Prefixed so a
  *  locally-invented id can never be mistaken for one the backend issued. */
@@ -115,8 +109,7 @@ function notifyRole(
       title,
       body,
       category,
-      priority: 'high',
-    })
+      priority: 'high' })
     .catch((err) => console.warn('[PGow] side notification failed:', err));
 }
 
@@ -151,15 +144,9 @@ export interface PGowState {
   ownerLocationInput: PickedLocation | null;
 
   // ===== Guest registration form =====
-  guestNameInput: string;
-  guestEmailInput: string;
-  guestPhoneInput: string;
-  guestRoomInput: string;
-  guestScanCodeInput: string;
   /** The password a self-joining resident chooses. Its own field rather than borrowing the
    *  owner's: two different people fill these in, and sharing one would leak whichever was
    *  typed first into the other form. */
-  guestPasswordInput: string;
 
   // ===== Staff registration form =====
   staffNameInput: string;
@@ -179,19 +166,8 @@ export interface PGowState {
    *  veg/non-veg selector, auto-set from selected dishes but always overridable. */
   mealDietaryTypeSelected: 'veg' | 'non_veg' | 'pure_veg';
 
-  // ===== Hub services state =====
-  pgGroceryOrdersState: PGGroceryOrder[];
-  pgRepairRequestsState: PGRepairServiceRequest[];
-  guestLaundryRequestsState: GuestLaundryRequest[];
-
   // ===== Active alert / push =====
   activeAlert: SimulatedAlert | null;
-
-  // ===== Financial summary (real P&L for the cycle in progress) =====
-  cycleCollected: number;
-  cycleSpent: number;
-  cycleNet: number;
-  cycleExpensesByCategory: { category: string; amount: number }[];
 
   // ===== Chef alarms =====
   chefAlarm9amEnabled: boolean;
@@ -285,25 +261,21 @@ function chefAlarmContent(alarmSlot: string): { title: string; msg: string } {
   if (alarmSlot === '9:00 AM') {
     return {
       title: '⏰ 9:00 AM Chef Alarm: Send Lunch Alert! 🍛',
-      msg: "Good morning Chef! It's 9:00 AM. Please broadcast today's Lunch Menu plate so residents can RSVP early!",
-    };
+      msg: "Good morning Chef! It's 9:00 AM. Please broadcast today's Lunch Menu plate so residents can RSVP early!" };
   }
   if (alarmSlot === '1:00 PM') {
     return {
       title: '⏰ 1:00 PM Chef Alarm: Send Dinner Alert! 🍲',
-      msg: "Good afternoon Chef! It's 1:00 PM. Please broadcast today's Dinner Menu plate so residents can RSVP early!",
-    };
+      msg: "Good afternoon Chef! It's 1:00 PM. Please broadcast today's Dinner Menu plate so residents can RSVP early!" };
   }
   if (alarmSlot === '3:30 PM') {
     return {
       title: "⏰ 3:30 PM Chef Alarm: Send Tomorrow's Breakfast Alert! 🥞",
-      msg: "Hello Chef! It's 3:30 PM. Please broadcast tomorrow morning's Breakfast Menu so residents can RSVP early!",
-    };
+      msg: "Hello Chef! It's 3:30 PM. Please broadcast tomorrow morning's Breakfast Menu so residents can RSVP early!" };
   }
   return {
     title: `⏰ Chef Scheduled Alarm (${alarmSlot})`,
-    msg: 'Time to send your daily food menu broadcast to PG residents!',
-  };
+    msg: 'Time to send your daily food menu broadcast to PG residents!' };
 }
 
 export const usePGowStore = create<PGowState>((set, get) => ({
@@ -323,13 +295,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   pgTotalBedsInput: '30',
   ownerLocationInput: null,
 
-  guestNameInput: '',
-  guestEmailInput: '',
-  guestPhoneInput: '',
-  guestRoomInput: '',
-  guestScanCodeInput: '',
-  guestPasswordInput: '',
-
   staffNameInput: '',
   staffRoleInput: 'Manager',
   staffPinInput: '',
@@ -344,19 +309,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   serviceTimeInput: '08:30',
   autoScheduleAlert: true,
 
-  // Filled by `refreshAll` from `/v1/requests`. Empty rather than seeded with demo rows: a
-  // fabricated rider and ETA on first launch is indistinguishable from a real order until
-  // somebody tries to call the number.
-  pgGroceryOrdersState: [],
-  pgRepairRequestsState: [],
-  guestLaundryRequestsState: [],
-
   activeAlert: null,
-
-  cycleCollected: 0,
-  cycleSpent: 0,
-  cycleNet: 0,
-  cycleExpensesByCategory: [],
 
   chefAlarm9amEnabled: true,
   chefAlarm1pmEnabled: true,
@@ -384,8 +337,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       // Stack.Protected guards) — no screen/stack to set here anymore.
       set({
         activeRole: role,
-        isManagerMode: role === 'MANAGER',
-      });
+        isManagerMode: role === 'MANAGER' });
       await get().refreshAll();
     } catch {
       // An unusable stored token: the client already cleared it on a refused refresh, so
@@ -421,8 +373,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         const kycFromGate: Record<string, string> = {
           KYC_REQUIRED: 'NOT_SUBMITTED',
           KYC_PENDING: 'PENDING',
-          KYC_REJECTED: 'REJECTED',
-        };
+          KYC_REJECTED: 'REJECTED' };
         set({
           loggedInGuest: {
             id: mem.membership_id,
@@ -443,9 +394,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
             kycStatus: (user.gate && kycFromGate[user.gate] ? kycFromGate[user.gate] : 'VERIFIED') as GuestEntity['kycStatus'],
             kycRejectReason: '',
             kycSubmissionDate: 0,
-            kycVerificationDate: 0,
-          },
-        });
+            kycVerificationDate: 0 } });
       }
       return;
     }
@@ -483,17 +432,14 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         // priority rather than another detail field.
         priority: isExpress10Min ? 'express' : 'normal',
         amount: totalPrice,
-        details: { eta_minutes: isExpress10Min ? 10 : 45 },
-      })
+        details: { eta_minutes: isExpress10Min ? 10 : 45 } })
       .then(() => get().refreshAll())
       .catch((err) => {
         set({
           activeAlert: {
             title: '❌ ORDER NOT PLACED',
             description: err instanceof Error ? err.message : 'The order was not saved.',
-            type: 'ANNOUNCEMENT', timestamp: Date.now(),
-          },
-        });
+            type: 'ANNOUNCEMENT', timestamp: Date.now() } });
       });
   },
 
@@ -511,8 +457,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         amount: estimatedCost,
         // No technician is named here: assigning one is the owner's action on the ticket,
         // and inventing a name at booking time would put a stranger's details on screen.
-        details: { urgency, eta_minutes: urgency.includes('15') ? 12 : 45 },
-      })
+        details: { urgency, eta_minutes: urgency.includes('15') ? 12 : 45 } })
       .then(() => {
         const msg = `${category} - ${issueTitle} has been booked.`;
         notifyRole('OWNER', '🔧 Repair Service Booked', msg, 'complaint');
@@ -525,9 +470,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
           activeAlert: {
             title: '❌ REPAIR NOT BOOKED',
             description: err instanceof Error ? err.message : 'The booking was not saved.',
-            type: 'ANNOUNCEMENT', timestamp: Date.now(),
-          },
-        });
+            type: 'ANNOUNCEMENT', timestamp: Date.now() } });
       });
   },
 
@@ -551,18 +494,14 @@ export const usePGowStore = create<PGowState>((set, get) => ({
           weight_or_count: weightOrCount,
           pickup_preference: pickupPreference,
           preferred_slot: preferredSlot,
-          payment_status: paymentStatus,
-        },
-      })
+          payment_status: paymentStatus } })
       .then(() => get().refreshAll())
       .catch((err) => {
         set({
           activeAlert: {
             title: '❌ PICKUP NOT SCHEDULED',
             description: err instanceof Error ? err.message : 'The booking was not saved.',
-            type: 'ANNOUNCEMENT', timestamp: Date.now(),
-          },
-        });
+            type: 'ANNOUNCEMENT', timestamp: Date.now() } });
       });
   },
 
@@ -586,8 +525,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
 
   selectMealType: (meal) => {
     const timeMap: Record<string, string> = {
-      Breakfast: '08:30', Lunch: '13:30', Dinner: '20:30',
-    };
+      Breakfast: '08:30', Lunch: '13:30', Dinner: '20:30' };
     set({ mealTypeSelected: meal, serviceTimeInput: timeMap[meal] ?? '13:00' });
   },
 
@@ -632,9 +570,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       activeAlert: {
         title: '⏰ RSVP REMINDER: 2h Until Service!',
         description: `Meal: ${notification.mealType} at ${get().formatServiceTime12h(notification.serviceTime)}\nMenu: ${notification.menuItems}\n\nPlease submit your RSVP now to avoid food wastage!`,
-        type: 'MEAL', notificationId: notification.id, timestamp: Date.now(),
-      },
-    });
+        type: 'MEAL', notificationId: notification.id, timestamp: Date.now() } });
     await NotificationHelper.showRsvpNotification(notification, get().loggedInGuest?.id ?? '');
     await get().refreshAll();
   },
@@ -645,8 +581,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     const { title, msg } = chefAlarmContent(alarmSlot);
     set({
       lastChefAlarmTriggered: `${alarmSlot} triggered at ${Date.now()}`,
-      activeAlert: { title, description: msg, type: 'MEAL', timestamp: Date.now() },
-    });
+      activeAlert: { title, description: msg, type: 'MEAL', timestamp: Date.now() } });
     await NotificationHelper.showFoodAnnouncementNotification(title, msg);
   },
 
@@ -672,10 +607,8 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         activeAlert: {
           title: '🚨 15-Min RSVP Follow-Up Sent',
           description: `Chef is preparing ${activeMeal.meal_type} (${activeMeal.menu_items}). Residents who have not answered have been reminded to respond EATING or SKIPPING.`,
-          type: 'MEAL', notificationId: activeMeal.id, timestamp: Date.now(),
-        },
-        lastFollowupTimestamp: Date.now(),
-      });
+          type: 'MEAL', notificationId: activeMeal.id, timestamp: Date.now() },
+        lastFollowupTimestamp: Date.now() });
       await get().refreshAll();
     } catch (err) {
       console.warn('[PGow] follow-up broadcast failed:', err);
@@ -712,8 +645,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         total_beds: totalBeds > 0 ? totalBeds : 30,
         address: address.trim() || undefined,
         latitude: location.latitude,
-        longitude: location.longitude,
-      });
+        longitude: location.longitude });
 
       if (managerName.trim() && managerPhone.trim()) {
         try {
@@ -721,8 +653,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
             name: managerName.trim(),
             phone: map.toE164(managerPhone),
             role: 'manager',
-            pin: /^\d{4}$/.test(managerPin.trim()) ? managerPin.trim() : undefined,
-          });
+            pin: /^\d{4}$/.test(managerPin.trim()) ? managerPin.trim() : undefined });
         } catch (err) {
           console.warn('[PGow] property created but manager was not:', err);
         }
@@ -764,8 +695,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         // re-geocode and a fresh static-map fetch server-side.
         ...(location
           ? { latitude: location.latitude, longitude: location.longitude }
-          : {}),
-      });
+          : {}) });
       // Changing the UPI account adds a new one and makes it active; the old row stays for
       // the payment history that already references it.
       const vpa = upiId.trim();
@@ -861,8 +791,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
               cleanliness_rating: cleanlinessRating,
               manager_rating: managerRating,
               staff_rating: staffRating,
-              other_rating: otherRating,
-            }
+              other_rating: otherRating }
           : {};
       const created = await requestsApi.submitComplaint({
         pg_id: pgId,
@@ -870,8 +799,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         category: category || undefined,
         title,
         description,
-        details: ratings,
-      });
+        details: ratings });
       if (mediaUri) {
         // Best effort: a ticket that exists without its photo is far better than one the
         // resident believes they filed and did not.
@@ -898,9 +826,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
             title: '✅ Issue Reported',
             description: 'Your property manager has been notified.',
             type: 'SUCCESS',
-            timestamp: Date.now(),
-          },
-        });
+            timestamp: Date.now() } });
       }
 
       await get().refreshAll();
@@ -935,7 +861,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
 
   // ── Owner auth ────────────────────────────────────────────────────────────
   // Login/register/password-change moved to React Query hooks in useAuth.ts, called
-  // directly from OwnerLoginScreen/OwnerRegisterScreen — see useTokenLanding there for
+  // directly from SignInScreen/OwnerRegisterScreen — see useTokenLanding there for
   // what replaces the token/role bookkeeping that used to live in this store.
   // Staff add/update/remove moved to useAddStaffMutation/useUpdateStaffMutation/
   // useRemoveStaffMutation in useStaff.ts, called directly from StaffManagementTab.
@@ -944,7 +870,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   // Join/login/password-change/reset moved to React Query hooks (useJoinPgMutation in
   // useGuests.ts, useLogin/useChangePassword/useRequestPasswordResetMutation/
   // useConfirmPasswordResetMutation in useAuth.ts), called directly from
-  // OwnerLoginScreen/GuestSecurityTab/app/(auth)/reset-password.tsx.
+  // SignInScreen/GuestSecurityTab/app/(auth)/reset-password.tsx.
 
   submitGuestKyc: async (idType, idNumber, idPhotoUri, profilePhotoUri) => {
     const pgId = useAuthStore.getState().activePgId;
@@ -958,8 +884,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       'PAN Card': 'pan',
       'Passport': 'passport',
       'Driving License': 'dl',
-      'Voter ID': 'voter_id',
-    };
+      'Voter ID': 'voter_id' };
     try {
       const mappedKind = kycKindMap[idType] || 'aadhaar';
       // The photos go straight to storage on presigned URLs; only the object keys reach us.
@@ -988,8 +913,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       if (mappedKind === 'aadhaar' && !/^[0-9]{4}$/.test(last4)) {
         return {
           ok: false,
-          error: 'Enter your 12-digit Aadhaar number — the last four digits are recorded with your documents.',
-        };
+          error: 'Enter your 12-digit Aadhaar number — the last four digits are recorded with your documents.' };
       }
       const aadhaarLast4 = mappedKind === 'aadhaar' ? last4 : undefined;
       await kycApi.submitKyc({
@@ -1001,8 +925,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         // never asked for.
         back_object_key: front,
         selfie_object_key: selfie,
-        ...(aadhaarLast4 ? { aadhaar_last4: aadhaarLast4 } : {}),
-      });
+        ...(aadhaarLast4 ? { aadhaar_last4: aadhaarLast4 } : {}) });
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.session() });
       const currentGuest = get().loggedInGuest;
@@ -1011,9 +934,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
           loggedInGuest: {
             ...currentGuest,
             kycStatus: 'PENDING',
-            kycRejectReason: '',
-          },
-        });
+            kycRejectReason: '' } });
       }
       useAuthStore.getState().setUser(await authApi.fetchMe(), 'guest');
       
@@ -1044,8 +965,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         return {
           ok: false,
           error:
-            'Document upload is not switched on for this property yet. Nothing is wrong with your photos — please tell your property manager, and try again once they confirm it is set up.',
-        };
+            'Document upload is not switched on for this property yet. Nothing is wrong with your photos — please tell your property manager, and try again once they confirm it is set up.' };
       }
       // uploadToPresignedUrl throws plain Error (not PGowApiError) for a failed S3 PUT or a
       // missing photo — those messages are the actual diagnostic ("Upload failed: 403 — …"),
@@ -1081,9 +1001,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         activeAlert: {
           title: '❌ PHOTO NOT SAVED',
           description: err instanceof Error ? err.message : 'The photo could not be uploaded.',
-          type: 'ANNOUNCEMENT', timestamp: Date.now(),
-        },
-      });
+          type: 'ANNOUNCEMENT', timestamp: Date.now() } });
       await get().refreshAll();
     }
   },
@@ -1101,13 +1019,14 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       if (!record) {
         return {
           ok: false,
-          error: 'There is no KYC submission awaiting review for this resident. Ask them to upload their documents first.',
-        };
+          error: 'There is no KYC submission awaiting review for this resident. Ask them to upload their documents first.' };
       }
       if (approve) {
         await kycApi.verifyKyc(record.id);
+        hapticSuccess();
       } else {
         await kycApi.rejectKyc(record.id, rejectReason || 'Document or selfie photo unreadable.');
+        hapticCaution();
       }
       queryClient.invalidateQueries({ queryKey: qk.kyc.all(pgId) });
       queryClient.invalidateQueries({ queryKey: qk.guests.all(pgId) });
@@ -1135,7 +1054,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
 
 
   // ── Staff / manager sign-in ───────────────────────────────────────────────
-  // Moved to usePinLogin() in useAuth.ts, called directly from OwnerLoginScreen — the
+  // Moved to usePinLogin() in useAuth.ts, called directly from SignInScreen — the
   // same endpoint for both, since the server decides from the membership whether this
   // person is a manager.
 
@@ -1152,9 +1071,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         activeAlert: {
           title: '❌ RSVP NOT RECORDED',
           description: message,
-          type: 'MEAL', notificationId, timestamp: Date.now(),
-        },
-      });
+          type: 'MEAL', notificationId, timestamp: Date.now() } });
       return { ok: false, error: message };
     }
     await get().refreshAll();
@@ -1195,9 +1112,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
       activeRole: null, isManagerMode: false,
       activeNotificationId: null,
-      pgGroceryOrdersState: [], pgRepairRequestsState: [], guestLaundryRequestsState: [],
-      _initialized: false,
-    });
+      _initialized: false });
   },
 
   /** Selecting a different meal changes which roster the server is being asked for, so this
@@ -1207,5 +1122,4 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     await get().refreshAll();
   },
 
-  dismissAlert: () => set({ activeAlert: null }),
-}));
+  dismissAlert: () => set({ activeAlert: null }) }));

@@ -29,13 +29,13 @@
  * keyboard may still be up, and a bottom-anchored card would be behind it.
  */
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet, AccessibilityInfo } from 'react-native';
+import { View, StyleSheet, AccessibilityInfo } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Txt, Row } from '@/components/ui';
-import { Colors, toastEntering, toastExiting } from '@/theme';
+import { Txt, Row, AnimatedPress } from '@/components/ui';
+import { Radii, Colors, toastEntering, toastExiting } from '@/theme';
 import { HEADER_BAND_HEIGHT } from '@/components/AppHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { SimulatedAlert } from '@/types';
@@ -134,14 +134,13 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
 
   return (
     <Animated.View entering={toastEntering} exiting={toastExiting} style={styles.animWrap}>
-      <TouchableOpacity
+      <AnimatedPress
         accessibilityRole="button"
         // Announced by the effect above; the label here is what a user gets when they land on the
         // card by traversal and need to know that tapping is what closes it.
         accessibilityLabel={alert.description ? `${alert.title}. ${alert.description}` : alert.title}
         accessibilityHint="Dismisses this notification"
         accessibilityLiveRegion="polite"
-        activeOpacity={0.92}
         onPress={onDismiss}
         style={[styles.toast, { borderLeftColor: style.accent }]}
       >
@@ -160,12 +159,12 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
             <View style={{ marginTop: 8 }}>
               {rsvpChoice == null ? (
                 <Row gap={6}>
-                  <TouchableOpacity accessibilityRole="button" onPress={() => answer('EATING')} style={[styles.miniBtn, { backgroundColor: Colors.success }]}>
+                  <AnimatedPress accessibilityRole="button" onPress={() => answer('EATING')} style={[styles.miniBtn, { backgroundColor: Colors.success }]}>
                     <Txt size={11} weight="700" color={Colors.textInverse}>I'll eat</Txt>
-                  </TouchableOpacity>
-                  <TouchableOpacity accessibilityRole="button" onPress={() => answer('SKIPPING')} style={[styles.miniBtn, { backgroundColor: Colors.danger }]}>
+                  </AnimatedPress>
+                  <AnimatedPress accessibilityRole="button" onPress={() => answer('SKIPPING')} style={[styles.miniBtn, { backgroundColor: Colors.danger }]}>
                     <Txt size={11} weight="700" color={Colors.textInverse}>Skip</Txt>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
               ) : (
                 <Txt size={11} weight="700" color={Colors.success}>
@@ -175,7 +174,7 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
             </View>
           )}
         </View>
-      </TouchableOpacity>
+      </AnimatedPress>
     </Animated.View>
   );
 }
@@ -194,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderLeftWidth: 3,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -210,6 +209,6 @@ const styles = StyleSheet.create({
   miniBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 7,
+    borderRadius: Radii.control,
   },
 });

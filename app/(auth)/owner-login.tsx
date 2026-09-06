@@ -1,5 +1,4 @@
-import { OwnerLoginScreen } from '@/features/owner/OwnerLoginScreen';
+import { SignInScreen } from '@/features/auth/SignInScreen';
 
-export default function OwnerLoginRoute() {
-  return <OwnerLoginScreen initialTab={0} />;
-}
+// One sign-in form for every role — see SignInScreen for why the role tabs went away.
+export default SignInScreen;

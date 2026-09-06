@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, TouchableOpacity, Text, TextInput, Modal, Pressable, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { ScrollView, View, StyleSheet, Text, Modal, Pressable, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInDown, ZoomIn } from 'react-native-reanimated';
-import { Row, Col, Spacer, LoadingState, ErrorState } from '@/components/ui';
+import { Row, Col, Spacer, LoadingState, ErrorState, ListRow, toneFor, ChoiceChips, SearchField, AnimatedPress } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useRepairRequestsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionsQuery, useSetSubscriptionActiveMutation } from '@/features/subscriptions/useSubscriptions';
 import { AddPgDailySubscriptionDialog } from '@/components/dialogs/HubDialogs';
 
-import { Colors } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 
 // ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
@@ -87,23 +87,20 @@ export function OwnerServicesTab() {
     data: repairs = [],
     isLoading: repairsLoading,
     error: repairsError,
-    refetch: refetchRepairs,
-  } = useRepairRequestsQuery(activePgId ?? undefined);
+    refetch: refetchRepairs } = useRepairRequestsQuery(activePgId ?? undefined);
   const isManagerMode = useIsManagerMode();
 
   const { data: pendingOrders = [] } = useProcurementOrders({
     pgId: activePgId ?? undefined,
-    status: isManagerMode ? undefined : 'pending_owner_approval',
-  });
+    status: isManagerMode ? undefined : 'pending_owner_approval' });
   const pendingCount = pendingOrders.length;
 
   const { data: subscriptions = [] } = useSubscriptionsQuery(activePgId ?? undefined);
   const setSubscriptionActive = useSetSubscriptionActiveMutation(activePgId ?? undefined);
 
   const renderServiceCard = (item: ServiceItem) => (
-    <TouchableOpacity accessibilityRole="button"
+    <AnimatedPress accessibilityRole="button"
       key={item.id}
-      activeOpacity={0.8}
       onPress={() => { setSelectedService(item); }}
       style={styles.serviceCard}
     >
@@ -116,7 +113,7 @@ export function OwnerServicesTab() {
         <Text maxFontSizeMultiplier={1.3} style={styles.priceText}>₹{item.cost}</Text>
         <Text maxFontSizeMultiplier={1.3} style={styles.originalPriceText}>₹{item.originalCost}</Text>
       </Row>
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 
   const renderSection = (title: string, type: string) => {
@@ -165,10 +162,10 @@ export function OwnerServicesTab() {
             <Text maxFontSizeMultiplier={1.3} style={styles.fallbackTitle}>Can't find what you need?</Text>
             <Text maxFontSizeMultiplier={1.3} style={styles.fallbackSub}>Tell us what's wrong and we'll find the right service.</Text>
           </Col>
-          <TouchableOpacity accessibilityRole="button" style={styles.requestBtn} activeOpacity={0.8} onPress={() => setShowCustomRequest(true)}>
+          <AnimatedPress accessibilityRole="button" style={styles.requestBtn} onPress={() => setShowCustomRequest(true)}>
             <Ionicons name="add" size={16} color={SURFACE} />
             <Text maxFontSizeMultiplier={1.3} style={styles.requestBtnText}>Request a Service</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
       </View>
     </ScrollView>
@@ -193,19 +190,19 @@ export function OwnerServicesTab() {
       ) : repairs.length === 0 ? (
         <View style={styles.emptyLegacyCard}><Text maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repair requests.</Text></View>
       ) : (
-        <Col gap={10}>
-          {repairs.map((rep) => (
-            <View key={rep.id} style={styles.legacyCard}>
-              <Row justify="space-between" align="center">
-                <Col>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.legacyId}>Request #{rep.id.slice(0, 4)}</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.legacyCategory}>{rep.category}</Text>
-                </Col>
-                <View style={styles.legacyPill}><Text maxFontSizeMultiplier={1.3} style={styles.legacyPillText}>{rep.status}</Text></View>
-              </Row>
-            </View>
+        <View>
+          {repairs.map((rep, i) => (
+            <ListRow
+              key={rep.id}
+              title={`Request #${rep.id.slice(0, 4)}`}
+              meta={rep.category}
+              leading={<Ionicons name="construct-outline" size={17} color={Colors.primary} />}
+              status={{ label: rep.status, tone: toneFor(rep.status) }}
+              first={i === 0}
+              last={i === repairs.length - 1}
+            />
           ))}
-        </Col>
+        </View>
       )}
     </ScrollView>
   );
@@ -214,7 +211,7 @@ export function OwnerServicesTab() {
     <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingHorizontal: 20 }]} showsVerticalScrollIndicator={false}>
       <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Procurement & Supplies</Text>
       <Spacer size={12} />
-      <TouchableOpacity accessibilityRole="button" style={styles.legacyCard} onPress={() => { router.push('/procurement'); }} activeOpacity={0.8}>
+      <AnimatedPress accessibilityRole="button" style={styles.legacyCard} onPress={() => { router.push('/procurement'); }}>
         <Row justify="space-between" align="center">
           <Row gap={12} align="center">
             <Ionicons name="cube-outline" size={24} color={MUTED} />
@@ -225,61 +222,66 @@ export function OwnerServicesTab() {
           </Row>
           <Ionicons name="chevron-forward" size={16} color={MUTED} />
         </Row>
-      </TouchableOpacity>
+      </AnimatedPress>
       
       {pendingOrders.length > 0 && (
         <>
           <Spacer size={24} />
           <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Pending Approvals</Text>
           <Spacer size={12} />
-          <Col gap={10}>
-            {pendingOrders.map((ord) => (
-              <View key={ord.id} style={styles.legacyCard}>
-                <Row justify="space-between" align="center">
-                  <Col>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.legacyId}>Order #{ord.id.slice(0, 4)}</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.legacyCategory}>₹{ord.totalCost.toLocaleString('en-IN')}</Text>
-                  </Col>
-                  <View style={[styles.legacyPill, { backgroundColor: '#FEF3C7' }]}><Text maxFontSizeMultiplier={1.3} style={[styles.legacyPillText, { color: '#D97706' }]}>Pending</Text></View>
-                </Row>
-              </View>
+          <View>
+            {pendingOrders.map((ord, i) => (
+              <ListRow
+                key={ord.id}
+                title={`Order #${ord.id.slice(0, 4)}`}
+                leading={<Ionicons name="cube-outline" size={17} color={Colors.primary} />}
+                amount={`₹${ord.totalCost.toLocaleString('en-IN')}`}
+                status={{ label: 'Pending', tone: 'warn' }}
+                onPress={() => router.push('/procurement')}
+                first={i === 0}
+                last={i === pendingOrders.length - 1}
+              />
             ))}
-          </Col>
+          </View>
         </>
       )}
 
       <Spacer size={24} />
       <Row justify="space-between" align="center">
         <Text maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, { fontSize: 16 }]}>Daily Subscriptions</Text>
-        <TouchableOpacity accessibilityRole="button" onPress={() => setShowAddSubscription(true)} activeOpacity={0.8}>
+        <AnimatedPress accessibilityRole="button" onPress={() => setShowAddSubscription(true)}>
           <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>+ Add</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       </Row>
       <Spacer size={12} />
       {subscriptions.length === 0 ? (
         <View style={styles.emptyLegacyCard}><Text maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No standing grocery orders yet.</Text></View>
       ) : (
-        <Col gap={10}>
-          {subscriptions.map((sub) => (
-            <View key={sub.id} style={styles.legacyCard}>
-              <Row justify="space-between" align="center">
-                <Col style={{ flex: 1 }}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.legacyId}>{sub.delivery_note || `${sub.items.length} item(s)`}</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.legacyCategory}>Delivers {sub.deliver_at.slice(0, 5)} • {sub.items.length} item{sub.items.length === 1 ? '' : 's'}</Text>
-                </Col>
-                <TouchableOpacity accessibilityRole="button"
-                  onPress={() => setSubscriptionActive.mutate({ id: sub.id, active: !sub.is_active })}
-                  disabled={setSubscriptionActive.isPending}
-                  style={[styles.legacyPill, { backgroundColor: sub.is_active ? '#D1FAE5' : '#F3F4F6' }]}
-                >
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.legacyPillText, { color: sub.is_active ? '#047857' : MUTED }]}>
-                    {sub.is_active ? 'Active' : 'Paused'}
-                  </Text>
-                </TouchableOpacity>
-              </Row>
-            </View>
+        <View>
+          {subscriptions.map((sub, i) => (
+            <ListRow
+              key={sub.id}
+              title={sub.delivery_note || `${sub.items.length} item(s)`}
+              meta={`Delivers ${sub.deliver_at.slice(0, 5)} · ${sub.items.length} item${sub.items.length === 1 ? '' : 's'}`}
+              leading={<Ionicons name="repeat-outline" size={17} color={Colors.primary} />}
+              status={{ label: sub.is_active ? 'Active' : 'Paused', tone: sub.is_active ? 'ok' : 'neutral' }}
+              // The status pill used to be the pause button: nothing distinguished "this is
+              // active" from "tap here to deactivate", so reading the list risked changing it.
+              onPress={() => Alert.alert(
+                sub.delivery_note || 'Standing order',
+                sub.is_active ? 'Pause this delivery?' : 'Resume this delivery?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: sub.is_active ? 'Pause' : 'Resume',
+                    onPress: () => setSubscriptionActive.mutate({ id: sub.id, active: !sub.is_active }) },
+                ],
+              )}
+              first={i === 0}
+              last={i === subscriptions.length - 1}
+            />
           ))}
-        </Col>
+        </View>
       )}
     </ScrollView>
   );
@@ -298,16 +300,11 @@ export function OwnerServicesTab() {
       {/* ── Main Content Sheet (White Background with Rounded Top) ── */}
       <View style={styles.mainSheet}>
         {/* Search */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={MUTED} />
-          <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search for a service"
-            style={styles.searchInput}
-            placeholder="Search for a service"
-            placeholderTextColor={MUTED}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+        <SearchField
+          placeholder="Search for a service"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
 
         {activeSubTab === 'SERVICES' && renderServices()}
         {activeSubTab === 'BOOKINGS' && renderBookings()}
@@ -315,18 +312,18 @@ export function OwnerServicesTab() {
 
         {/* ── Sub Navigation Bar ── */}
         <View style={[styles.bottomNavBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <TouchableOpacity accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('SERVICES'); }} activeOpacity={0.7}>
+          <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('SERVICES'); }}>
             <Ionicons name={activeSubTab === 'SERVICES' ? "grid" : "grid-outline"} size={22} color={activeSubTab === 'SERVICES' ? PRIMARY : MUTED} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'SERVICES' && styles.navTabTextActive]}>Services</Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('BOOKINGS'); }} activeOpacity={0.7}>
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('BOOKINGS'); }}>
             <Ionicons name={activeSubTab === 'BOOKINGS' ? "calendar" : "calendar-outline"} size={22} color={activeSubTab === 'BOOKINGS' ? PRIMARY : MUTED} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'BOOKINGS' && styles.navTabTextActive]}>Bookings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('PROCUREMENT'); }} activeOpacity={0.7}>
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('PROCUREMENT'); }}>
             <Ionicons name={activeSubTab === 'PROCUREMENT' ? "cube" : "cube-outline"} size={22} color={activeSubTab === 'PROCUREMENT' ? PRIMARY : MUTED} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'PROCUREMENT' && styles.navTabTextActive]}>Supplies</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
       </View>
 
@@ -350,22 +347,6 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
   const [time, setTime] = useState(TIME_SLOT_OPTIONS[1]);
 
-  // The chevron next to the time had no onPress at all — every booking silently went out
-  // as "Today, 2:00 PM" regardless of what the owner actually wanted, with no way to change
-  // it despite the UI implying it was tappable. Alert.alert's button list is the same
-  // pick-one-of-a-few pattern already used elsewhere in this app (see KycUploadDialog's
-  // choosePhoto), so this stays consistent rather than building a second picker component.
-  const pickTime = () => {
-    Alert.alert(
-      'Preferred time',
-      undefined,
-      [
-        ...TIME_SLOT_OPTIONS.map((slot) => ({ text: slot, onPress: () => setTime(slot) })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
-    );
-  };
-
   const handleBook = () => {
     bookRepair(service.name, `Requesting ${service.name}`, time, service.cost);
     setSuccess(true);
@@ -378,7 +359,7 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
     <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
       <View style={styles.modalBackdrop}>
         <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={success ? undefined : onDismiss} />
-        <Animated.View entering={SlideInDown.duration(200)} style={styles.modalSheet}>
+        <Animated.View entering={SlideInDown.springify(200).dampingRatio(0.85)} style={styles.modalSheet}>
           {success ? (
             <Animated.View entering={ZoomIn.duration(250)} style={styles.successView}>
               <View style={styles.successCircle}>
@@ -408,9 +389,9 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
                 <View style={styles.modalIconBox}>
                   <Ionicons name={service.icon} size={24} color={PRIMARY} />
                 </View>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onDismiss} style={styles.closeBtn}>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onDismiss} style={styles.closeBtn}>
                   <Ionicons name="close" size={20} color={MUTED} />
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
 
               <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>{service.name}</Text>
@@ -432,34 +413,36 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
               <Spacer size={8} />
               {service.includes.map((inc, i) => (
                 <Row key={i} gap={8} align="center" style={{ marginBottom: 6 }}>
-                  <Ionicons name="checkmark-circle-outline" size={14} color="#166534" />
+                  <Ionicons name="checkmark-circle-outline" size={14} color={Colors.success} />
                   <Text maxFontSizeMultiplier={1.3} style={styles.modalListItem}>{inc}</Text>
                 </Row>
               ))}
 
               <Spacer size={24} />
 
+              {/* Five slots shown, not hidden behind an Alert. The chevron here originally
+                  had no onPress at all, so every booking went out as "Today, 2:00 PM". */}
+              <ChoiceChips
+                label="Preferred time"
+                options={TIME_SLOT_OPTIONS}
+                value={time}
+                onChange={setTime}
+                testID="service_time"
+              />
+
+              <Spacer size={16} />
+
               <View style={styles.bookingBox}>
                 <Row justify="space-between" align="center">
-                  <Col>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.bookingLabel}>Estimated charges</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.bookingCost}>₹{service.cost}</Text>
-                  </Col>
-                  <View style={{ width: 1, height: 30, backgroundColor: BORDER }} />
-                  <Col>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.bookingLabel}>Preferred time</Text>
-                    <TouchableOpacity accessibilityRole="button" style={styles.timeSelectBtn} activeOpacity={0.7} onPress={pickTime}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.bookingTime}>{time}</Text>
-                      <Ionicons name="chevron-down" size={14} color={PRIMARY} />
-                    </TouchableOpacity>
-                  </Col>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.bookingLabel}>Estimated charges</Text>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.bookingCost}>₹{service.cost}</Text>
                 </Row>
               </View>
 
               <Spacer size={24} />
-              <TouchableOpacity accessibilityRole="button" style={styles.bookBtn} activeOpacity={0.85} onPress={handleBook}>
+              <AnimatedPress accessibilityRole="button" style={styles.bookBtn} onPress={handleBook}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.bookBtnText}>Book Service</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             </>
           )}
         </Animated.View>
@@ -473,8 +456,6 @@ const styles = StyleSheet.create({
   
   mainSheet: { flex: 1, backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -20 },
   
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: SURFACE, height: 50, borderRadius: 12, paddingHorizontal: 16, marginHorizontal: 20, marginTop: 20, shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3, borderWidth: 1, borderColor: '#F3F4F6' },
-  searchInput: { flex: 1, fontSize: 15, color: CHARCOAL, marginLeft: 10 },
 
   scroll: { paddingBottom: 100 },
   
@@ -485,8 +466,8 @@ const styles = StyleSheet.create({
   horizontalScroll: { paddingHorizontal: 20, gap: 12 },
   gridContainer: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   
-  serviceCard: { width: 140, backgroundColor: SURFACE, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: BORDER, shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  serviceIconFrame: { height: 90, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB', borderRadius: 12, marginBottom: 12 },
+  serviceCard: { width: 140, backgroundColor: SURFACE, borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: BORDER, shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  serviceIconFrame: { height: 90, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB', borderRadius: Radii.card, marginBottom: 12 },
   
   serviceName: { fontSize: 13, fontWeight: '800', color: CHARCOAL },
   serviceDesc: { fontSize: 11, color: MUTED, lineHeight: 14, marginTop: 2, height: 28 },
@@ -494,51 +475,45 @@ const styles = StyleSheet.create({
   priceText: { fontSize: 15, fontWeight: '800', color: CHARCOAL },
   originalPriceText: { fontSize: 12, color: MUTED, textDecorationLine: 'line-through' },
   
-  fallbackBanner: { flexDirection: 'row', backgroundColor: '#EEF8F1', borderRadius: 16, padding: 16, marginHorizontal: 20, marginTop: 24, borderWidth: 1, borderColor: '#D1EAE0' },
+  fallbackBanner: { flexDirection: 'row', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 16, marginHorizontal: 20, marginTop: 24, borderWidth: 1, borderColor: '#D1EAE0' },
   fallbackIconWrap: { position: 'relative' },
-  speechBubble: { position: 'absolute', top: -4, right: -12, backgroundColor: SURFACE, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 8, borderWidth: 1, borderColor: '#D1EAE0' },
+  speechBubble: { position: 'absolute', top: -4, right: -12, backgroundColor: SURFACE, paddingHorizontal: 4, paddingVertical: 2, borderRadius: Radii.control, borderWidth: 1, borderColor: '#D1EAE0' },
   fallbackTitle: { fontSize: 14, fontWeight: '800', color: CHARCOAL },
   fallbackSub: { fontSize: 11, color: MUTED, marginTop: 2 },
-  requestBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  requestBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control },
   requestBtnText: { fontSize: 12, fontWeight: '700', color: SURFACE, marginLeft: 4 },
   
-  legacyArea: { borderTopWidth: 1, borderTopColor: BORDER, paddingTop: 24, paddingHorizontal: 20 },
-  legacyCard: { backgroundColor: SURFACE, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER, marginBottom: 8 },
+  legacyCard: { backgroundColor: SURFACE, borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: BORDER, marginBottom: 8 },
   legacyId: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   legacyCategory: { fontSize: 13, color: MUTED, marginTop: 2 },
-  legacyPill: { backgroundColor: LIGHT_INDIGO, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  legacyPillText: { fontSize: 11, fontWeight: '700', color: PRIMARY },
-  emptyLegacyCard: { backgroundColor: BG, borderRadius: 12, padding: 20, alignItems: 'center' },
+  emptyLegacyCard: { backgroundColor: BG, borderRadius: Radii.card, padding: 20, alignItems: 'center' },
   emptyLegacyText: { fontSize: 13, color: MUTED },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(10, 18, 13, 0.45)', justifyContent: 'flex-end' },
   modalSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 40 },
-  sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: BORDER, alignSelf: 'center', marginBottom: 20 },
-  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
-  modalIconBox: { width: 56, height: 56, borderRadius: 16, backgroundColor: LIGHT_INDIGO, alignItems: 'center', justifyContent: 'center' },
+  sheetHandle: { width: 40, height: 4, borderRadius: Radii.badge, backgroundColor: BORDER, alignSelf: 'center', marginBottom: 20 },
+  closeBtn: { width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
+  modalIconBox: { width: 56, height: 56, borderRadius: Radii.card, backgroundColor: LIGHT_INDIGO, alignItems: 'center', justifyContent: 'center' },
   modalTitle: { fontSize: 24, fontWeight: '800', color: CHARCOAL },
   modalDesc: { fontSize: 14, color: MUTED, marginTop: 4 },
   modalSectionTitle: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
   modalListItem: { fontSize: 14, color: CHARCOAL },
   
-  bookingBox: { backgroundColor: BG, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER },
+  bookingBox: { backgroundColor: BG, borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: BORDER },
   bookingLabel: { fontSize: 12, color: MUTED, fontWeight: '500' },
   bookingCost: { fontSize: 18, fontWeight: '800', color: CHARCOAL, marginTop: 4 },
-  timeSelectBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 },
-  bookingTime: { fontSize: 14, fontWeight: '700', color: PRIMARY },
   
-  bookBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  bookBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
   bookBtnText: { fontSize: 16, fontWeight: '800', color: SURFACE },
   
   successView: { alignItems: 'center', paddingVertical: 40 },
-  successCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#166534', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  successCircle: { width: 64, height: 64, borderRadius: Radii.pill, backgroundColor: Colors.success, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   successTitle: { fontSize: 20, fontWeight: '800', color: CHARCOAL },
-  successBox: { width: '100%', backgroundColor: BG, borderRadius: 12, padding: 16, marginTop: 16 },
+  successBox: { width: '100%', backgroundColor: BG, borderRadius: Radii.card, padding: 16, marginTop: 16 },
   successLabel: { fontSize: 13, color: MUTED },
   successVal: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
 
   bottomNavBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: SURFACE, borderTopWidth: 1, borderTopColor: BORDER, paddingTop: 12 },
   navTab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   navTabText: { fontSize: 10, fontWeight: '600', color: MUTED, marginTop: 4 },
-  navTabTextActive: { color: PRIMARY, fontWeight: '800' },
-});
+  navTabTextActive: { color: PRIMARY, fontWeight: '800' } });

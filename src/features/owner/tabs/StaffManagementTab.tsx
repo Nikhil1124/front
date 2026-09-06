@@ -2,31 +2,24 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   Alert,
   FlatList,
   Text,
   ScrollView,
-  TextInput,
   Modal,
   Pressable,
   KeyboardAvoidingView,
-  ActivityIndicator,
-  Platform,
-  RefreshControl,
-  BackHandler,
-} from 'react-native';
+  BackHandler } from 'react-native';
 import { router } from 'expo-router';
 
 
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { ListRow, Card, Row, Col, Spacer, SearchField, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import * as staffApi from '@/features/staff/useStaff';
@@ -35,10 +28,9 @@ import {
   useStaffQuery,
   useAddStaffMutation,
   useUpdateStaffMutation,
-  useRemoveStaffMutation,
-} from '@/features/staff/useStaff';
-import { FormScroll } from '@/components/ui/FormScroll';
+  useRemoveStaffMutation } from '@/features/staff/useStaff';
 import * as map from '@/data/mappers';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG
@@ -47,15 +39,13 @@ const MUTED = Colors.textMuted;      // Ocean Muted text
 const BORDER = Colors.borderSubtle;  // Ice Cyan subtle border
 const WHITE = Colors.surface;        // Pure White surface
 const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan active tint
-const RADIUS = 22;            // Premium rounded corner radius
 
 const ROLE_DISPLAY_NAMES: Record<string, string> = {
   manager: 'Manager',
   chef: 'Chef',
   kitchen_staff: 'Kitchen Staff',
   maintenance: 'Maintenance Staff',
-  delivery_agent: 'Delivery Agent',
-};
+  delivery_agent: 'Delivery Agent' };
 
 const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff', 'Delivery Agent'];
 const SHIFT_OPTIONS = ['Day Shift (8 AM - 5 PM)', 'Night Shift (8 PM - 5 AM)', 'Part Time (9 AM - 1 PM)'];
@@ -68,8 +58,7 @@ const SHIFT_OPTIONS = ['Day Shift (8 AM - 5 PM)', 'Night Shift (8 PM - 5 AM)', '
 const SHIFT_TIMES: Record<string, { shift_start: string; shift_end: string }> = {
   'Day Shift (8 AM - 5 PM)': { shift_start: '08:00:00', shift_end: '17:00:00' },
   'Night Shift (8 PM - 5 AM)': { shift_start: '20:00:00', shift_end: '05:00:00' },
-  'Part Time (9 AM - 1 PM)': { shift_start: '09:00:00', shift_end: '13:00:00' },
-};
+  'Part Time (9 AM - 1 PM)': { shift_start: '09:00:00', shift_end: '13:00:00' } };
 
 /**
  * The other half of the round-trip. `mappers.toStaff` renders a saved shift as "08:00 - 17:00",
@@ -85,6 +74,7 @@ function shiftLabelFor(shiftTime: string): string {
 }
 
 export function StaffManagementTab() {
+  const dockScroll = useDockScroll();
   const [subTab, setSubTab] = useState(0); // 0: Add Staff, 1: Staff Directory
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -117,7 +107,9 @@ export function StaffManagementTab() {
   const [showPin, setShowPin] = useState(false);
 
   const [isDeletingStaff, setIsDeletingStaff] = useState<string | null>(null);
-  const [errorField, setErrorField] = useState<'phone' | null>(null);
+  // Was `errorField: 'phone' | null`, which only tinted one field's border and said nothing.
+  // `OutlinedTextField.error` carries the sentence now, so this holds one per field.
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; pin?: string; editName?: string; newPin?: string }>({});
 
   // Action Menu States
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
@@ -162,42 +154,39 @@ export function StaffManagementTab() {
     Manager: 'manager', Supervisor: 'manager', Chef: 'chef',
     'Kitchen Staff': 'kitchen_staff',
     Maintenance: 'maintenance', 'Maintenance Staff': 'maintenance', Cleaner: 'maintenance',
-    'Delivery Agent': 'delivery_agent', Delivery: 'delivery_agent', Rider: 'delivery_agent',
-  };
+    'Delivery Agent': 'delivery_agent', Delivery: 'delivery_agent', Rider: 'delivery_agent' };
 
   const handleRegister = async () => {
     if (isSubmitting) return;
-    if (!staffNameInput.trim()) {
-      Alert.alert('Validation', 'Please enter the staff member\'s full name.');
-      return;
-    }
-    if (!staffPhoneInput.trim() || staffPhoneInput.length < 10) {
-      Alert.alert('Validation', 'Please enter a valid 10-digit phone number.');
-      return;
-    }
-    if (staffPinInput.length !== 4) {
-      Alert.alert('Validation', 'Login PIN must be exactly 4 digits.');
-      return;
-    }
+    const fieldErrors = {
+      name: staffNameInput.trim() ? undefined : 'Enter their full name',
+      phone: !staffPhoneInput.trim() || staffPhoneInput.length < 10
+        ? 'Enter a 10-digit mobile number' : undefined,
+      pin: staffPinInput.length !== 4 ? 'The PIN is exactly 4 digits' : undefined,
+    };
+    setErrors(fieldErrors);
+    if (fieldErrors.name || fieldErrors.phone || fieldErrors.pin) return;
+
+    // Neither of these is about a field someone can fix by typing — one is an authorisation
+    // rule, the other is app state — so they stay as alerts rather than being bolted onto an
+    // input that isn't the problem.
     if (isManager && staffRoleInput === 'Manager') {
-      Alert.alert('Validation', 'Managers cannot register other managers.');
+      Alert.alert('Not allowed', 'Managers cannot register other managers.');
       return;
     }
     if (!activePgId) {
-      Alert.alert('Validation', 'No active property.');
+      Alert.alert('No active property', 'Pick a property before adding staff.');
       return;
     }
 
     setIsSubmitting(true);
-    setErrorField(null);
     try {
       await addStaffMutation.mutateAsync({
         name: staffNameInput.trim(),
         phone: map.toE164(staffPhoneInput),
         role: REGISTER_ROLE_MAP[staffRoleInput] ?? 'kitchen_staff',
         pin: staffPinInput,
-        monthly_salary: parseFloat(staffSalaryInput) || undefined,
-      });
+        monthly_salary: parseFloat(staffSalaryInput) || undefined });
       Alert.alert('Success', 'Staff member account registered successfully!');
       set('staffNameInput', '');
       set('staffPhoneInput', '');
@@ -206,18 +195,19 @@ export function StaffManagementTab() {
       set('staffSalaryInput', '15000');
       setSubTab(1); // Go to directory
     } catch (err) {
-      let errorMsg = err instanceof Error ? err.message : 'Unknown error occurred.';
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred.';
       const lowerError = errorMsg.toLowerCase();
 
+      // A duplicate phone number is a fact about the phone field, so it belongs on the phone
+      // field. It used to be tinted red AND explained in a popup — the tint said "here" and
+      // the popup said "what", and you couldn't see both at once.
       if (lowerError.includes('number') || lowerError.includes('phone')) {
-        errorMsg = 'An account with this phone number already exists.';
-        setErrorField('phone');
+        setErrors((e) => ({ ...e, phone: 'An account with this number already exists' }));
       } else if (lowerError.includes('already exists')) {
-        errorMsg = 'An account with these details already exists.';
-        setErrorField('phone');
+        setErrors((e) => ({ ...e, phone: 'An account with these details already exists' }));
+      } else {
+        Alert.alert('Failed', errorMsg);
       }
-
-      Alert.alert('Failed', errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -242,8 +232,7 @@ export function StaffManagementTab() {
             } finally {
               setIsDeletingStaff(null);
             }
-          },
-        },
+          } },
       ]);
     }, 100);
   };
@@ -262,7 +251,7 @@ export function StaffManagementTab() {
   const handleUpdateStaff = async () => {
     if (!selectedStaff || isUpdating) return;
     if (!editName.trim()) {
-      Alert.alert('Validation', 'Name is required.');
+      setErrors((e) => ({ ...e, editName: 'Enter their name' }));
       return;
     }
     
@@ -276,8 +265,7 @@ export function StaffManagementTab() {
         // Its own role, not 'maintenance': a delivery agent gets the trips dashboard
         // (app/(staff)/(tabs)/eaters.tsx), and mapping it onto maintenance would put them
         // on the chef screens instead.
-        'Delivery Agent': 'delivery_agent',
-      };
+        'Delivery Agent': 'delivery_agent' };
       
       // No `|| 'kitchen_staff'` fallback: silently registering someone with the wrong role
       // is worse than refusing the edit. Omitting the field leaves the role unchanged.
@@ -289,8 +277,7 @@ export function StaffManagementTab() {
         ...(mappedRole ? { role: mappedRole } : {}),
         monthly_salary: parseFloat(editSalary) || undefined,
         // Both halves, as real `time` values — see SHIFT_TIMES.
-        ...(shift ?? {}),
-      };
+        ...(shift ?? {}) };
 
       await updateStaffMutation.mutateAsync({ membershipId: selectedStaff.id, params: payload });
       Alert.alert('Success', 'Staff member details updated.');
@@ -306,7 +293,7 @@ export function StaffManagementTab() {
     if (!selectedStaff || isResettingPin) return;
     // Mirrors the server's own `^[0-9]{4}$` — a length check alone let "12a4" through to a 422.
     if (!/^[0-9]{4}$/.test(newPin)) {
-      Alert.alert('Validation', 'PIN must be exactly 4 digits.');
+      setErrors((e) => ({ ...e, newPin: 'Exactly 4 digits, numbers only' }));
       return;
     }
     setIsResettingPin(true);
@@ -353,37 +340,36 @@ export function StaffManagementTab() {
       {/* ── Segmented Control Sub-tabs ── */}
       <View style={styles.tabContainer}>
         <Row gap={8} style={styles.segmentedControl}>
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 0 && styles.segBtnActive]}
             onPress={() => {
               setSubTab(0);
             }}
-            activeOpacity={0.8}
           >
             <Ionicons name="person-add-outline" size={16} color={subTab === 0 ? WHITE : MUTED} style={{ marginRight: 6 }} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Add Staff
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
 
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 1 && styles.segBtnActive]}
             onPress={() => {
               setSubTab(1);
             }}
-            activeOpacity={0.8}
           >
             <Ionicons name="people-outline" size={16} color={subTab === 1 ? WHITE : MUTED} style={{ marginRight: 6 }} />
             <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Staff Directory
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
       </View>
 
       {/* ── Sub-Tab 0: Add Staff View ── */}
       {subTab === 0 && (
         <ScrollView
+          {...dockScroll}
           contentContainerStyle={styles.scrollContent}
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
@@ -399,19 +385,18 @@ export function StaffManagementTab() {
               label="Full Name *"
               placeholder="Full Name"
               value={staffNameInput}
-              onChangeText={(v) => set('staffNameInput', v)}
-              containerColor={WHITE}
+              onChangeText={(v) => { set('staffNameInput', v); if (errors.name) setErrors((e) => ({ ...e, name: undefined })); }}
+              error={errors.name}
               style={{ flex: 1.2 }}
             />
             <OutlinedTextField
               label="Phone Number *"
               placeholder="10-Digit Mobile"
               value={staffPhoneInput}
-              onChangeText={(v) => set('staffPhoneInput', v)}
+              onChangeText={(v) => { set('staffPhoneInput', v); if (errors.phone) setErrors((e) => ({ ...e, phone: undefined })); }}
               keyboardType="phone-pad"
-              containerColor={WHITE}
+              error={errors.phone}
               style={{ flex: 1 }}
-              unfocusedBorderColor={errorField === 'phone' ? Colors.danger : undefined}
             />
           </Row>
 
@@ -424,16 +409,15 @@ export function StaffManagementTab() {
               {selectableRoles.map((role) => {
                 const isSelected = staffRoleInput === role;
                 return (
-                  <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                  <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                     key={role}
                     style={[styles.roleChip, isSelected && styles.roleChipActive]}
                     onPress={() => set('staffRoleInput', role)}
-                    activeOpacity={0.8}
                   >
                     <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
                       {role}
                     </Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 );
               })}
             </Row>
@@ -450,16 +434,15 @@ export function StaffManagementTab() {
                   {SHIFT_OPTIONS.map((opt) => {
                     const isSelected = staffShiftInput === opt;
                     return (
-                      <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                      <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                         key={opt}
                         style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                         onPress={() => set('staffShiftInput', opt)}
-                        activeOpacity={0.85}
                       >
                         <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
                           {opt.replace(' Shift', '').split(' ')[0]}
                         </Text>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     );
                   })}
                 </Row>
@@ -486,18 +469,17 @@ export function StaffManagementTab() {
                 label="Login PIN (4 digits) *"
                 placeholder="PIN"
                 value={staffPinInput}
-                onChangeText={(v) => set('staffPinInput', v.replace(/\D/g, '').slice(0, 4))}
+                onChangeText={(v) => { set('staffPinInput', v.replace(/\D/g, '').slice(0, 4)); if (errors.pin) setErrors((e) => ({ ...e, pin: undefined })); }}
                 keyboardType="number-pad"
                 secureTextEntry={!showPin}
-                containerColor={WHITE}
+                error={errors.pin}
               />
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
                 style={[styles.eyeBtn, { top: 32 }]}
                 onPress={() => setShowPin(!showPin)}
-                activeOpacity={0.7}
               >
                 <Ionicons name={showPin ? 'eye-off-outline' : 'eye-outline'} size={18} color={MUTED} />
-              </TouchableOpacity>
+              </AnimatedPress>
             </View>
 
             <Row gap={6} align="center" style={[styles.securityStrip, { flex: 1.2, height: 48, marginTop: 16 }]}>
@@ -511,22 +493,22 @@ export function StaffManagementTab() {
           <Spacer size={16} />
 
           {/* Primary CTA */}
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.primaryBtn, { height: 48 }]}
             onPress={handleRegister}
             disabled={isSubmitting}
-            activeOpacity={0.85}
           >
             <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnText}>
               {isSubmitting ? 'Registering...' : 'Create Staff Account'}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </ScrollView>
       )}
 
       {/* ── Sub-Tab 1: Staff Directory View ── */}
       {subTab === 1 && (
         <FlatList
+          {...dockScroll}
           style={{ flex: 1 }}
           data={filteredStaffList}
           keyExtractor={(staff) => staff.id}
@@ -544,10 +526,8 @@ export function StaffManagementTab() {
               </Row>
 
               {/* Search staff input */}
-              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Search staff by name or phone"
-                style={styles.searchBar}
-                placeholder="Search staff by name or phone..."
-                placeholderTextColor={MUTED}
+              <SearchField
+                placeholder="Search staff by name or phone"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -556,7 +536,7 @@ export function StaffManagementTab() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <Row gap={6}>
                   {['All', 'Managers', 'Kitchen', 'Maintenance'].map((filter) => (
-                    <TouchableOpacity accessibilityRole="button"
+                    <AnimatedPress accessibilityRole="button"
                       key={filter}
                       style={[styles.filterChip, roleFilter === filter && styles.filterChipActive]}
                       onPress={() => setRoleFilter(filter)}
@@ -564,7 +544,7 @@ export function StaffManagementTab() {
                       <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
                         {filter}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   ))}
                 </Row>
               </ScrollView>
@@ -580,56 +560,19 @@ export function StaffManagementTab() {
               error={staffError}
             />
           }
-          renderItem={({ item: staff }) => {
-            const branchName = allPGs.find((p) => p.id === staff.pgId)?.pgName ?? `PG #${staff.pgId}`;
-            return (
-              <Card
-                containerColor={WHITE}
-                borderRadius={16}
-                borderWidth={1}
-                borderColor={BORDER}
-                padding={[12, 14]}
-                style={{ marginBottom: 10 }}
-              >
-                <Row justify="space-between" align="center">
-                  <Row gap={12} style={{ flex: 1 }} align="center">
-                    <View style={styles.roleIconCircle}>
-                      <Ionicons name={roleIconName(staff.role)} size={20} color={GREEN} />
-                    </View>
-                    <Col style={{ flex: 1 }}>
-                      <Row align="center" gap={6}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.staffNameText}>{staff.name}</Text>
-                        <View style={styles.roleBadge}>
-                          <Text maxFontSizeMultiplier={1.3} style={styles.roleBadgeText}>
-                            {ROLE_DISPLAY_NAMES[staff.role] || staff.role}
-                          </Text>
-                        </View>
-                      </Row>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.staffPhone}>{staff.phone}</Text>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.staffBranch}>
-                        {branchName} · {staff.shiftTime || 'Day Shift'}
-                      </Text>
-                    </Col>
-                  </Row>
-
-                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button"
-                    onPress={() => {
-                      setSelectedStaff(staff);
-                      setShowActionMenu(true);
-                    }}
-                    style={styles.optionsBtn}
-                    disabled={isDeletingStaff === staff.id}
-                  >
-                    {isDeletingStaff === staff.id ? (
-                      <ActivityIndicator size="small" color={Colors.danger} />
-                    ) : (
-                      <Ionicons name="ellipsis-vertical" size={18} color={CHARCOAL} />
-                    )}
-                  </TouchableOpacity>
-                </Row>
-              </Card>
-            );
-          }}
+          renderItem={({ item: staff, index }) => (
+            <ListRow
+              title={staff.name}
+              meta={`${ROLE_DISPLAY_NAMES[staff.role] || staff.role} · ${staff.shiftTime || 'Day Shift'}`}
+              leading={<Ionicons name={roleIconName(staff.role)} size={18} color={Colors.primary} />}
+              // The row opens the action menu the "..." button used to. One target instead of
+              // two, and the menu already holds every action that button led to.
+              onPress={() => { setSelectedStaff(staff); setShowActionMenu(true); }}
+              first={index === 0}
+              last={index === filteredStaffList.length - 1}
+              testID={`owner_staff_${staff.id}`}
+            />
+          )}
         />
       )}
 
@@ -639,7 +582,7 @@ export function StaffManagementTab() {
           <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
             <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowActionMenu(false)} />
             
-            <Animated.View entering={SlideInDown.duration(160)} style={styles.actionSheet}>
+            <Animated.View entering={SlideInDown.springify(160).dampingRatio(0.85)} style={styles.actionSheet}>
               <View style={styles.sheetHandle} />
               
               <Text maxFontSizeMultiplier={1.3} style={styles.actionSheetTitle}>{selectedStaff.name}</Text>
@@ -649,7 +592,7 @@ export function StaffManagementTab() {
               
               <Spacer size={16} />
 
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.sheetOptionRow}
                 onPress={() => {
                   setShowActionMenu(false);
@@ -658,28 +601,28 @@ export function StaffManagementTab() {
               >
                 <Ionicons name="information-circle-outline" size={20} color={CHARCOAL} />
                 <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>View Details</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
 
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.sheetOptionRow}
                 onPress={() => handleOpenEdit(selectedStaff)}
               >
                 <Ionicons name="create-outline" size={20} color={CHARCOAL} />
                 <Text maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>Edit Staff</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
 
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={[styles.sheetOptionRow, { borderBottomWidth: 0 }]}
                 onPress={() => confirmDeleteStaff(selectedStaff)}
               >
                 <Ionicons name="trash-outline" size={20} color={Colors.danger} />
                 <Text maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: Colors.danger }]}>Delete Staff</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
 
               <Spacer size={8} />
-              <TouchableOpacity accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowActionMenu(false)}>
+              <AnimatedPress accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowActionMenu(false)}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.sheetCancelText}>Cancel</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Animated.View>
           </Animated.View>
         </Modal>
@@ -691,7 +634,7 @@ export function StaffManagementTab() {
           <View style={styles.modalBackdrop}>
             <Card
               containerColor={WHITE}
-              borderRadius={20}
+              borderRadius={Radii.sheet}
               borderWidth={1}
               borderColor={BORDER}
               padding={[20, 20]}
@@ -699,9 +642,9 @@ export function StaffManagementTab() {
             >
               <Row justify="space-between" align="center">
                 <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Staff Profile</Text>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowDetails(false)}>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowDetails(false)}>
                   <Ionicons name="close" size={20} color={MUTED} />
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
               
               <Spacer size={16} />
@@ -750,28 +693,27 @@ export function StaffManagementTab() {
                   label="Reset PIN (4 digits)"
                   placeholder="Enter new 4-digit PIN"
                   value={newPin}
-                  onChangeText={(v) => setNewPin(v.replace(/\D/g, '').slice(0, 4))}
+                  onChangeText={(v) => { setNewPin(v.replace(/\D/g, '').slice(0, 4)); if (errors.newPin) setErrors((e) => ({ ...e, newPin: undefined })); }}
                   keyboardType="number-pad"
-                  containerColor={BG}
+                  error={errors.newPin}
                   style={{ flex: 1, marginRight: 8 }}
                 />
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={styles.resetPinBtn}
                   onPress={handleResetPin}
                   disabled={isResettingPin}
-                  activeOpacity={0.8}
                 >
                   <Text maxFontSizeMultiplier={1.3} style={styles.resetPinBtnText}>Save</Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               </View>
 
               <Spacer size={16} />
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.sheetCancelBtn}
                 onPress={() => setShowDetails(false)}
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.sheetCancelText}>Close</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Card>
           </View>
         </Modal>
@@ -784,7 +726,7 @@ export function StaffManagementTab() {
             <View style={styles.modalBackdrop}>
               <Card
                 containerColor={WHITE}
-                borderRadius={20}
+                borderRadius={Radii.sheet}
                 borderWidth={1}
                 borderColor={BORDER}
                 padding={[20, 20]}
@@ -792,9 +734,9 @@ export function StaffManagementTab() {
               >
                 <Row justify="space-between" align="center">
                   <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Edit Staff Details</Text>
-                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowEditModal(false)}>
+                  <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowEditModal(false)}>
                     <Ionicons name="close" size={20} color={MUTED} />
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
 
                 <Spacer size={16} />
@@ -812,8 +754,8 @@ export function StaffManagementTab() {
                   <OutlinedTextField
                     label="Full Name"
                     value={editName}
-                    onChangeText={setEditName}
-                    containerColor={BG}
+                    onChangeText={(v) => { setEditName(v); if (errors.editName) setErrors((e) => ({ ...e, editName: undefined })); }}
+                    error={errors.editName}
                     style={{ marginBottom: 12 }}
                   />
 
@@ -843,7 +785,7 @@ export function StaffManagementTab() {
                           {SHIFT_OPTIONS.map((opt) => {
                             const isSelected = editShift === opt;
                             return (
-                              <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                              <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                                 key={opt}
                                 style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
                                 onPress={() => setEditShift(opt)}
@@ -851,7 +793,7 @@ export function StaffManagementTab() {
                                 <Text maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
                                   {opt.replace(' Shift', '').split(' ')[0]}
                                 </Text>
-                              </TouchableOpacity>
+                              </AnimatedPress>
                             );
                           })}
                         </Row>
@@ -867,7 +809,7 @@ export function StaffManagementTab() {
                       {selectableRoles.map((r) => {
                         const isSelected = editRole === r;
                         return (
-                          <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                          <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                             key={r}
                             style={[styles.roleChip, isSelected && styles.roleChipActive]}
                             onPress={() => setEditRole(r)}
@@ -875,7 +817,7 @@ export function StaffManagementTab() {
                             <Text maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
                               {r}
                             </Text>
-                          </TouchableOpacity>
+                          </AnimatedPress>
                         );
                       })}
                     </Row>
@@ -885,24 +827,22 @@ export function StaffManagementTab() {
                 <Spacer size={12} />
 
                 <Row gap={10}>
-                  <TouchableOpacity accessibilityRole="button"
+                  <AnimatedPress accessibilityRole="button"
                     style={styles.editModalSaveBtn}
                     onPress={handleUpdateStaff}
                     disabled={isUpdating}
-                    activeOpacity={0.8}
                   >
                     <Text maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
                       {isUpdating ? 'Saving...' : 'Save Changes'}
                     </Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
 
-                  <TouchableOpacity accessibilityRole="button"
+                  <AnimatedPress accessibilityRole="button"
                     style={styles.editModalCancelBtn}
                     onPress={() => setShowEditModal(false)}
-                    activeOpacity={0.8}
                   >
                     <Text maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
               </Card>
             </View>
@@ -931,28 +871,24 @@ const styles = StyleSheet.create({
   tabContainer: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 10,
-  },
+    paddingBottom: 10 },
   segmentedControl: {
     backgroundColor: WHITE,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 4,
-    width: '100%',
-  },
+    width: '100%' },
   segBtn: {
     flex: 1,
     height: 40,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: WHITE,
-  },
+    backgroundColor: WHITE },
   segBtnActive: {
-    backgroundColor: GREEN,
-  },
+    backgroundColor: GREEN },
   segBtnText: { fontSize: 13, fontWeight: '600', color: CHARCOAL },
   segBtnTextActive: { color: WHITE, fontWeight: '700' },
 
@@ -960,8 +896,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   bodyTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
   sectionHeader: { fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.5 },
@@ -970,15 +905,13 @@ const styles = StyleSheet.create({
   roleChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   roleChipActive: {
     backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
+    borderColor: GREEN },
   roleChipText: { fontSize: 12, color: CHARCOAL, fontWeight: '600' },
   roleChipTextActive: { color: WHITE, fontWeight: '700' },
   supportingText: { fontSize: 11, color: MUTED, marginTop: 4 },
@@ -988,16 +921,14 @@ const styles = StyleSheet.create({
   shiftChip: {
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     borderWidth: 1,
     borderColor: BORDER,
-    marginRight: 6,
-  },
+    marginRight: 6 },
   shiftChipActive: {
     backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
+    borderColor: GREEN },
   shiftChipText: { fontSize: 11, color: CHARCOAL, fontWeight: '600' },
   shiftChipTextActive: { color: WHITE, fontWeight: '700' },
 
@@ -1005,64 +936,47 @@ const styles = StyleSheet.create({
   eyeBtn: {
     position: 'absolute',
     right: 16,
-    top: 36,
-  },
+    top: 36 },
   securityStrip: {
     backgroundColor: LIGHT_GREEN,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
+    paddingVertical: 6 },
   securityText: { fontSize: 11, color: GREEN, fontWeight: '600' },
 
   // Create button CTA
   primaryBtn: {
     height: 54,
     backgroundColor: GREEN,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginTop: 10,
-  },
+    marginTop: 10 },
   primaryBtnText: { fontSize: 14, fontWeight: '800', color: WHITE },
 
   // Directory Styles
   listContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   countBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: LIGHT_GREEN,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   countBadgeText: { fontSize: 11, fontWeight: '700', color: GREEN },
-  searchBar: {
-    height: 48,
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-    paddingHorizontal: 16,
-    fontSize: 13,
-    color: CHARCOAL,
-  },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   filterChipActive: {
     backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
+    borderColor: GREEN },
   filterChipText: { fontSize: 12, color: CHARCOAL, fontWeight: '600' },
   filterChipTextActive: { color: WHITE, fontWeight: '700' },
 
@@ -1070,36 +984,32 @@ const styles = StyleSheet.create({
   roleIconCircle: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: LIGHT_GREEN,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   staffNameText: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   roleBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
-    backgroundColor: LIGHT_GREEN,
-  },
+    borderRadius: Radii.badge,
+    backgroundColor: LIGHT_GREEN },
   roleBadgeText: { fontSize: 9, fontWeight: '700', color: GREEN },
   staffPhone: { fontSize: 11, color: MUTED, marginTop: 2 },
   staffBranch: { fontSize: 10, color: MUTED, marginTop: 1 },
   optionsBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
 
   // Modal Sheet Backdrop
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(10, 18, 13, 0.45)',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
 
   // Bottom action sheet popup
   actionSheet: {
@@ -1110,16 +1020,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 34,
-    alignSelf: 'flex-end',
-  },
+    alignSelf: 'flex-end' },
   sheetHandle: {
     width: 36,
     height: 4,
-    borderRadius: 2,
+    borderRadius: Radii.badge,
     backgroundColor: BORDER,
     alignSelf: 'center',
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   actionSheetTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   actionSheetSub: { fontSize: 12, color: MUTED, marginTop: 1 },
   sheetOptionRow: {
@@ -1128,17 +1036,15 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: BG,
-  },
+    borderBottomColor: BG },
   sheetOptionText: { fontSize: 14, fontWeight: '600', color: CHARCOAL },
   sheetCancelBtn: {
     height: 44,
     backgroundColor: BG,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-  },
+    marginTop: 8 },
   sheetCancelText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
 
   // Details Modal styles
@@ -1151,16 +1057,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     backgroundColor: BG,
     padding: 10,
-    borderRadius: 12,
-  },
+    borderRadius: Radii.card },
   resetPinBtn: {
     height: 52,
     backgroundColor: GREEN,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
+    paddingHorizontal: 16 },
   resetPinBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
 
   // Edit Staff Modal styles
@@ -1168,20 +1072,17 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     backgroundColor: GREEN,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   editModalSaveText: { fontSize: 13, fontWeight: '800', color: WHITE },
   editModalCancelBtn: {
     flex: 1,
     height: 48,
     borderWidth: 1,
     borderColor: BORDER,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: WHITE,
-  },
-  editModalCancelText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-});
+    backgroundColor: WHITE },
+  editModalCancelText: { fontSize: 13, fontWeight: '700', color: CHARCOAL } });

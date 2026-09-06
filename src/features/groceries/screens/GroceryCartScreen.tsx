@@ -1,16 +1,15 @@
-import { SupplyItem } from '@/types';
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useCartStore, CartItem, ReplacementPreference } from '../store/useCartStore';
+import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { ReplacementPicker } from '../components/grocery/ReplacementPicker';
 import { useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Palette, Colors } from '@/theme';
+import { Radii, Palette, Colors } from '@/theme';
 import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -88,8 +87,7 @@ export function GroceryCartScreen() {
         await submitProcurementOrder.mutateAsync({
           pg_id: activePgId,
           order_type: 'supplies',
-          items: items.map((i) => ({ item_id: i.productId, quantity: i.quantity })),
-        });
+          items: items.map((i) => ({ item_id: i.productId, quantity: i.quantity })) });
         clearCart();
         Alert.alert('Requisition Sent', 'Your grocery list has been sent to the owner/manager for approval.');
         router.back();
@@ -394,19 +392,16 @@ export function GroceryCartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.canvas,
-  },
+    backgroundColor: Colors.canvas },
   clearBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
+    paddingVertical: 4 },
   clearText: {
     fontSize: 13,
-    color: Colors.danger,
-  },
+    color: Colors.danger },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -416,49 +411,40 @@ const styles = StyleSheet.create({
   deliveryCard: {
     flexDirection: 'row',
     backgroundColor: Palette.TintBlue,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 12,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   deliveryLeft: {
     flex: 1.2,
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   deliveryHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 2,
-  },
+    marginBottom: 2 },
   locationIcon: {
-    marginTop: -1,
-  },
+    marginTop: -1 },
   deliveryTitle: {
     fontSize: 10,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   deliveryAddress: {
     fontSize: 12,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   deliveryRight: {
     flex: 1,
     paddingLeft: 12,
     borderLeftWidth: 1,
     borderLeftColor: Colors.borderSubtle,
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   deliveryRightLabel: {
     fontSize: 10,
     color: Colors.textSecondary,
-    marginBottom: 2,
-  },
+    marginBottom: 2 },
   deliveryTimeText: {
     color: Colors.info,
-    fontSize: 12,
-  },
+    fontSize: 12 },
   // Free delivery tag
   freeDeliveryCard: {
     flexDirection: 'row',
@@ -466,133 +452,112 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 16,
-    gap: 6,
-  },
+    gap: 6 },
   freeDeliveryText: {
     color: Colors.primaryDark,
-    fontSize: 12,
-  },
+    fontSize: 12 },
   sectionHeading: {
     fontSize: 14,
     color: Colors.textPrimary,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   // Cart Card Layout
   cartCard: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 14,
     marginBottom: 12,
     shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 2,
-    elevation: 1,
-  },
+    elevation: 1 },
   cartItemHeader: {
-    flexDirection: 'row',
-  },
+    flexDirection: 'row' },
   imageContainer: {
     width: 70,
     height: 70,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-  },
+    marginRight: 12 },
   itemImage: {
     width: '85%',
     height: '85%',
-    resizeMode: 'contain',
-  },
+    resizeMode: 'contain' },
   itemInfo: {
     flex: 1,
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   itemName: {
     fontSize: 14,
     color: Colors.textPrimary,
     lineHeight: 18,
-    marginBottom: 2,
-  },
+    marginBottom: 2 },
   itemUnit: {
     fontSize: 12,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   unitRateText: {
     fontSize: 10,
     color: Colors.textMuted,
-    marginTop: 2,
-  },
+    marginTop: 2 },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 6,
-    marginTop: 4,
-  },
+    marginTop: 4 },
   itemPrice: {
     fontSize: 15,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   strikePrice: {
     fontSize: 11,
     color: Colors.textMuted,
-    textDecorationLine: 'line-through',
-  },
+    textDecorationLine: 'line-through' },
   itemSavingsText: {
     fontSize: 10,
     color: Colors.primary,
-    marginTop: 2,
-  },
+    marginTop: 2 },
   actionsContainer: {
     width: 90,
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between' },
   quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     height: 32,
     paddingHorizontal: 2,
-    gap: 8,
-  },
+    gap: 8 },
   qtyBtn: {
     width: 24,
     height: 24,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
     backgroundColor: Colors.surfaceElevated,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   qtyText: {
     fontSize: 13,
     color: Colors.textPrimary,
     minWidth: 14,
-    textAlign: 'center',
-  },
+    textAlign: 'center' },
   removeAction: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingVertical: 4,
-  },
+    paddingVertical: 4 },
   removeActionText: {
     fontSize: 11,
-    color: Colors.danger,
-  },
+    color: Colors.danger },
   replacementToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -600,11 +565,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-  },
+    borderTopColor: Colors.borderSubtle },
   replacementPickerWrapper: {
-    marginTop: 8,
-  },
+    marginTop: 8 },
   // Savings banner summary card
   savingsCard: {
     flexDirection: 'row',
@@ -612,114 +575,92 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 12,
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   savingsTagIcon: {
     fontSize: 16,
-    marginRight: 8,
-  },
+    marginRight: 8 },
   savingsTextWrapper: {
-    flex: 1,
-  },
+    flex: 1 },
   savingsCardTitle: {
     fontSize: 13,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   savingsCardSubtitle: {
     fontSize: 11,
     color: Colors.textSecondary,
-    marginTop: 1,
-  },
+    marginTop: 1 },
   savingsBadge: {
     backgroundColor: Colors.primary,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
     paddingHorizontal: 6,
-    paddingVertical: 3,
-  },
+    paddingVertical: 3 },
   savingsBadgeText: {
     color: Colors.surface,
-    fontSize: 10,
-  },
+    fontSize: 10 },
   // Bill Details card
   billCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     padding: 14,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   billTitle: {
     fontSize: 14,
     color: Colors.textPrimary,
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   billLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   billValue: {
     fontSize: 12,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   totalRow: {
     borderTopWidth: 1,
     borderTopColor: Colors.borderSubtle,
     paddingTop: 10,
     marginTop: 6,
-    marginBottom: 0,
-  },
+    marginBottom: 0 },
   totalLabel: {
     fontSize: 14,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   totalValue: {
     fontSize: 16,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   billFootnote: {
     fontSize: 10.5,
     color: Colors.textSecondary,
-    marginTop: 6,
-  },
+    marginTop: 6 },
   // You May Also Need Section
   recSection: {
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   recHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
+    marginBottom: 12 },
   recTitle: {
     fontSize: 14,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   recSeeAllText: {
     fontSize: 11,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   recScrollContent: {
-    gap: 8,
-  },
+    gap: 8 },
   recCard: {
     width: 125,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 10,
     position: 'relative',
-    marginRight: 6,
-  },
+    marginRight: 6 },
   recDiscountBadge: {
     position: 'absolute',
     top: 6,
@@ -727,84 +668,70 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.danger,
     paddingHorizontal: 4,
     paddingVertical: 2,
-    borderRadius: 4,
-    zIndex: 2,
-  },
+    borderRadius: Radii.badge,
+    zIndex: 2 },
   recDiscountText: {
     color: Colors.surface,
-    fontSize: 8,
-  },
+    fontSize: 8 },
   recImageContainer: {
     height: 70,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 4,
-    backgroundColor: Colors.surface,
-  },
+    backgroundColor: Colors.surface },
   recImage: {
     width: '80%',
     height: '80%',
-    resizeMode: 'contain',
-  },
+    resizeMode: 'contain' },
   recName: {
     fontSize: 11,
     color: Colors.textPrimary,
-    marginTop: 4,
-  },
+    marginTop: 4 },
   recUnit: {
     fontSize: 9,
     color: Colors.textSecondary,
-    marginBottom: 4,
-  },
+    marginBottom: 4 },
   recPriceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 3,
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   recPrice: {
     fontSize: 12,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   recStrikePrice: {
     fontSize: 9,
     color: Colors.textMuted,
-    textDecorationLine: 'line-through',
-  },
+    textDecorationLine: 'line-through' },
   recAddBtn: {
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.primary,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
     paddingVertical: 4,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   recAddBtnText: {
     color: Colors.primary,
-    fontSize: 11,
-  },
+    fontSize: 11 },
   // Reassurance strip
   reassuranceStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     padding: 10,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    marginBottom: 10,
-  },
+    marginBottom: 10 },
   reassuranceItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
+    gap: 4 },
   reassuranceText: {
     fontSize: 9,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   // Sticky Bottom Checkout
   stickyCheckoutBar: {
     position: 'absolute',
@@ -823,79 +750,66 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 8,
-  },
+    elevation: 8 },
   checkoutBarLeft: {
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   checkoutPrice: {
     fontSize: 18,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   checkoutInfoText: {
     fontSize: 11,
     color: Colors.textSecondary,
-    marginTop: 1,
-  },
+    marginTop: 1 },
   checkoutBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     paddingVertical: 10,
     paddingHorizontal: 18,
     minWidth: 150,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-  },
+    flexDirection: 'row' },
   checkoutBtnText: {
     color: Colors.surface,
-    fontSize: 13,
-  },
+    fontSize: 13 },
   // Empty state stylings
   emptyCart: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    backgroundColor: Colors.canvas,
-  },
+    backgroundColor: Colors.canvas },
   emptyIconWrapper: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
     borderWidth: 1.5,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   emptyTitle: {
     fontSize: 18,
     color: Colors.textPrimary,
     marginBottom: 8,
-    textAlign: 'center',
-  },
+    textAlign: 'center' },
   emptySubtitle: {
     fontSize: 13,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 24,
-  },
+    marginBottom: 24 },
   shopBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     paddingVertical: 12,
     paddingHorizontal: 32,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
-    elevation: 3,
-  },
+    elevation: 3 },
   shopBtnText: {
     color: Colors.surface,
-    fontSize: 14,
-  },
-});
+    fontSize: 14 } });

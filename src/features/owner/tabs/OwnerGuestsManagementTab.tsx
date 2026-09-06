@@ -1,40 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
+  SectionList,
   View,
   StyleSheet,
   Alert,
   Modal,
-  TouchableOpacity,
   RefreshControl,
-  FlatList,
   Text,
   ScrollView,
   Pressable,
   KeyboardAvoidingView,
-  Platform,
   Share,
-  ActivityIndicator,
-  BackHandler,
-} from 'react-native';
+  BackHandler } from 'react-native';
 
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn } from '@/components/ui';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { ListRow, ListSectionHeader, type StatusTone, Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, RoomPicker, AnimatedPress } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
-import { DetailBottomSheet } from '@/components/DetailBottomSheet';
+import { Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
-import { Colors } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { formatDateTime } from '@/utils/format';
+import { formatINR, formatDateTime } from '@/utils/format';
 import type { GuestEntity } from '@/types';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
@@ -46,18 +41,14 @@ const WHITE = Colors.surface;        // Pure White surface
 const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan active tint
 const RADIUS = 22;            // Premium corner radius
 
-const KYC_STYLE: Record<string, { bg: string; border: string; text: string; label: string }> = {
-  VERIFIED: { bg: '#ECFDF5', border: '#A7F3D0', text: '#047857', label: '✅ Verified' },
-  PENDING: { bg: '#FFFBEB', border: '#FDE68A', text: '#B45309', label: '⏳ KYC Pending' },
-  REJECTED: { bg: '#FEF2F2', border: '#FECACA', text: '#B91C1C', label: '❌ Rejected' },
-  DEFAULT: { bg: '#F7F8FC', border: '#E5E7EB', text: '#6B7280', label: '⚠️ No KYC' },
-};
-
 import { useGuestsQuery, useAddGuestMutation, useUpdateGuestMutation, useRemoveGuestMutation } from '@/features/guests/useGuests';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
+import QRCode from 'react-native-qrcode-svg';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 export function OwnerGuestsManagementTab() {
+  const dockScroll = useDockScroll();
   const [subTab, setSubTab] = useState(0); // 0: Add Resident, 1: Directory
   const [showManualForm, setShowManualForm] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -114,6 +105,21 @@ export function OwnerGuestsManagementTab() {
   const toast = useToast();
 
   const pendingKyc = guests.filter((g) => g.kycStatus === 'PENDING');
+
+  /**
+   * Two groups, so the handful that need chasing sit above the many that do not — the owner
+   * opens this screen to find those, and scanning 40 settled residents to spot 6 is the job
+   * the screen should be doing for them. A section is dropped entirely when it is empty
+   * rather than rendering a heading over nothing.
+   */
+  const sections = useMemo(() => {
+    const needsAction = guests.filter((g) => g.kycStatus !== 'VERIFIED' || !g.isBillPaid);
+    const settled = guests.filter((g) => g.kycStatus === 'VERIFIED' && g.isBillPaid);
+    return [
+      ...(needsAction.length ? [{ title: 'Needs action', data: needsAction }] : []),
+      ...(settled.length ? [{ title: 'All good', data: settled }] : []),
+    ];
+  }, [guests]);
 
   // Override back navigation — this screen lives inside the tab navigator, not a stack,
   // so native back would leave ghost tab state. We force-replace with overview instead.
@@ -176,8 +182,7 @@ export function OwnerGuestsManagementTab() {
         password: guestPassword,
         room_no: guestRoom.trim(),
         rent_amount: parsedRent,
-        email: guestEmail.trim().toLowerCase() || undefined,
-      });
+        email: guestEmail.trim().toLowerCase() || undefined });
       toast('success', 'Resident Registered', `${guestName} can now log in.`);
       setGuestName('');
       setGuestEmail('');
@@ -225,9 +230,7 @@ export function OwnerGuestsManagementTab() {
           name: editName.trim() || editing.name,
           email: editEmail.trim().toLowerCase() || undefined,
           room_no: editRoom.trim() || editing.roomNo,
-          rent_amount: parsedEditRent > 0 ? parsedEditRent : undefined,
-        },
-      });
+          rent_amount: parsedEditRent > 0 ? parsedEditRent : undefined } });
       toast('success', 'Profile Updated', 'Resident profile & monthly fee updated.');
       setEditing(null);
     } catch (err) {
@@ -275,10 +278,12 @@ export function OwnerGuestsManagementTab() {
     return result;
   };
 
+  const [rentError, setRentError] = useState<string | undefined>();
+
   const handleEnableJoinCode = async () => {
     const amount = parseFloat(rentInput);
     if (!(amount > 0)) {
-      Alert.alert('Set the rent first', 'Enter the monthly rent a new resident should be put on.');
+      setRentError('Enter the monthly rent a new resident starts on');
       return;
     }
     const saved = await guardJoinCode(() => setDefaultRent(amount));
@@ -298,8 +303,7 @@ export function OwnerGuestsManagementTab() {
       await Share.share({
         message:
           `Join ${owner.pgName} on PGow.\n\nCode: ${owner.joinCode}\n\n` +
-          'Open the app, choose "Join PG", and enter this code with your details.',
-      });
+          'Open the app, choose "Join PG", and enter this code with your details.' });
     } catch {
       // Dismissed
     }
@@ -332,12 +336,11 @@ export function OwnerGuestsManagementTab() {
       {/* ── Segmented Tab Selector ── */}
       <View style={styles.tabContainer}>
         <Row gap={8} style={styles.segmentedControl}>
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 0 && styles.segBtnActive]}
             onPress={() => {
               setSubTab(0);
             }}
-            activeOpacity={0.8}
           >
             <Ionicons
               name="person-add"
@@ -348,13 +351,12 @@ export function OwnerGuestsManagementTab() {
             <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Add Resident
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button"
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button"
             style={[styles.segBtn, subTab === 1 && styles.segBtnActive]}
             onPress={() => {
               setSubTab(1);
             }}
-            activeOpacity={0.8}
           >
             <Ionicons
               name="people"
@@ -365,7 +367,7 @@ export function OwnerGuestsManagementTab() {
             <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Directory
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </Row>
       </View>
 
@@ -374,13 +376,14 @@ export function OwnerGuestsManagementTab() {
         showManualForm ? (
           /* Manual Registration Form UI */
           <ScrollView
+            {...dockScroll}
             contentContainerStyle={styles.formScroll}
             showsVerticalScrollIndicator={false}
           >
             <Row align="center" gap={8} style={{ marginBottom: 12 }}>
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => setShowManualForm(false)} style={styles.backBtn}>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" onPress={() => setShowManualForm(false)} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={CHARCOAL} />
-              </TouchableOpacity>
+              </AnimatedPress>
               <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Manual Registration</Text>
             </Row>
 
@@ -402,26 +405,17 @@ export function OwnerGuestsManagementTab() {
               style={{ marginBottom: 12 }}
               unfocusedBorderColor={errorField === 'email' ? Colors.danger : undefined}
             />
-            <Row gap={10}>
-              <OutlinedTextField
-                label="Room No *"
-                placeholder="101"
-                value={guestRoom}
-                onChangeText={setGuestRoom}
-                containerColor={WHITE}
-                style={{ flex: 1 }}
-              />
-              <OutlinedTextField
-                label="Phone"
-                placeholder="9876543210"
-                value={guestPhone}
-                onChangeText={setGuestPhone}
-                keyboardType="phone-pad"
-                containerColor={WHITE}
-                style={{ flex: 1.2 }}
-                unfocusedBorderColor={errorField === 'phone' ? Colors.danger : undefined}
-              />
-            </Row>
+            <OutlinedTextField
+              label="Phone"
+              placeholder="9876543210"
+              value={guestPhone}
+              onChangeText={setGuestPhone}
+              keyboardType="phone-pad"
+              containerColor={WHITE}
+              style={{ marginBottom: 12 }}
+              unfocusedBorderColor={errorField === 'phone' ? Colors.danger : undefined}
+            />
+            <RoomPicker pgId={activePgId} value={guestRoom} onChange={setGuestRoom} label="Room *" testID="add_guest_room" />
             <Spacer size={12} />
             <OutlinedTextField
               label="Monthly Rent Fee (₹) *"
@@ -442,19 +436,19 @@ export function OwnerGuestsManagementTab() {
               style={{ marginBottom: 20 }}
             />
 
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               style={styles.submitBtn}
               onPress={handleCreate}
               disabled={isCreating}
-              activeOpacity={0.85}
             >
               <Ionicons name="person-add" size={16} color={WHITE} style={{ marginRight: 8 }} />
               <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Register Resident ID & Password</Text>
-            </TouchableOpacity>
+            </AnimatedPress>
           </ScrollView>
         ) : (
           /* Add Resident Options Roster */
           <ScrollView
+            {...dockScroll}
             contentContainerStyle={styles.addRosterScroll}
             showsVerticalScrollIndicator={false}
           >
@@ -475,13 +469,12 @@ export function OwnerGuestsManagementTab() {
                   Share a secure sign-up link. Resident registers themselves.
                 </Text>
                 <Spacer size={12} />
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={styles.choiceBtnSolid}
                   onPress={() => setShowInviteModal(true)}
-                  activeOpacity={0.8}
                 >
                   <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnSolidText}>Create Sign-Up Link</Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               </View>
 
               {/* Card 2: Add Manually */}
@@ -494,13 +487,12 @@ export function OwnerGuestsManagementTab() {
                   Enter resident details yourself and create their account.
                 </Text>
                 <Spacer size={12} />
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={styles.choiceBtnOutline}
                   onPress={() => setShowManualForm(true)}
-                  activeOpacity={0.8}
                 >
                   <Text maxFontSizeMultiplier={1.3} style={styles.choiceBtnOutlineText}>Add Manually</Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               </View>
             </Row>
 
@@ -561,9 +553,8 @@ export function OwnerGuestsManagementTab() {
 
             {/* Need Help Link — there's no residents-management help screen to send this to
                 yet, so it acknowledges the tap honestly instead of doing nothing. */}
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               style={styles.helpLinkRow}
-              activeOpacity={0.7}
               onPress={() => Alert.alert('Need help?', 'A residents management guide is not available yet. Contact PGow support if you have questions.')}
             >
               <Row justify="space-between" align="center" style={{ width: '100%' }}>
@@ -575,14 +566,19 @@ export function OwnerGuestsManagementTab() {
                 </Row>
                 <Ionicons name="chevron-forward" size={16} color={MUTED} />
               </Row>
-            </TouchableOpacity>
+            </AnimatedPress>
           </ScrollView>
         )
       ) : (
         /* Directory Roster Renders list of guests */
-        <FlatList
-          data={guests}
+        <SectionList
+          {...dockScroll}
+          sections={sections}
           keyExtractor={(g) => g.id}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <ListSectionHeader title={section.title} count={section.data.length} />
+          )}
           contentContainerStyle={styles.directoryList}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -595,15 +591,14 @@ export function OwnerGuestsManagementTab() {
           }
           ListHeaderComponent={
             <View style={{ gap: 14, marginBottom: 12 }}>
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 onPress={() => {
                   router.push('/bed-visualizer');
                 }}
-                activeOpacity={0.7}
               >
                 <Card
                   containerColor={WHITE}
-                  borderRadius={14}
+                  borderRadius={Radii.card}
                   borderWidth={1}
                   borderColor={BORDER}
                   padding={[12, 14]}
@@ -623,18 +618,18 @@ export function OwnerGuestsManagementTab() {
                     <Ionicons name="chevron-forward" size={18} color={MUTED} />
                   </Row>
                 </Card>
-              </TouchableOpacity>
+              </AnimatedPress>
 
               {pendingKyc.length > 0 && (
                 <Card
-                  containerColor="#FFFBEB"
-                  borderRadius={16}
+                  containerColor={Palette.TintAmber}
+                  borderRadius={Radii.card}
                   borderWidth={1}
-                  borderColor="#FDE68A"
+                  borderColor={Palette.TintAmber}
                   padding={[14, 14]}
                 >
                   <Row gap={8} align="center">
-                    <Ionicons name="hourglass" size={20} color="#B45309" />
+                    <Ionicons name="hourglass" size={20} color={Colors.warning} />
                     <Txt size={13} weight="900" color="#92400E">
                       Pending Resident KYC ({pendingKyc.length})
                     </Txt>
@@ -644,7 +639,7 @@ export function OwnerGuestsManagementTab() {
                     <Card
                       key={g.id}
                       containerColor={WHITE}
-                      borderRadius={12}
+                      borderRadius={Radii.card}
                       borderWidth={1}
                       borderColor={BORDER}
                       padding={[12, 12]}
@@ -668,7 +663,7 @@ export function OwnerGuestsManagementTab() {
                           onPress={() => setReviewing(g)}
                           containerColor={LIGHT_GREEN}
                           textColor={GREEN}
-                          borderRadius={8}
+                          borderRadius={Radii.control}
                           height={32}
                           contentStyle={{ paddingHorizontal: 10 }}
                         >
@@ -683,7 +678,7 @@ export function OwnerGuestsManagementTab() {
                           onPress={() => handleApprove(g)}
                           containerColor={GREEN}
                           textColor={WHITE}
-                          borderRadius={8}
+                          borderRadius={Radii.control}
                           height={34}
                           style={{ flex: 1 }}
                         >
@@ -695,7 +690,7 @@ export function OwnerGuestsManagementTab() {
                           onPress={() => setRejecting(g)}
                           containerColor={Colors.danger}
                           textColor={WHITE}
-                          borderRadius={8}
+                          borderRadius={Radii.control}
                           height={34}
                           style={{ flex: 1 }}
                         >
@@ -717,7 +712,7 @@ export function OwnerGuestsManagementTab() {
               </Row>
 
               {!isManager && (
-                <TouchableOpacity accessibilityRole="button" onPress={() => setShowEditProperty(true)} activeOpacity={0.7}>
+                <AnimatedPress accessibilityRole="button" onPress={() => setShowEditProperty(true)}>
                   <Row gap={6} align="center">
                     <Ionicons name="bed-outline" size={14} color={MUTED} />
                     <Txt variant="caption" color={MUTED}>
@@ -727,7 +722,7 @@ export function OwnerGuestsManagementTab() {
                       Edit ›
                     </Txt>
                   </Row>
-                </TouchableOpacity>
+                </AnimatedPress>
               )}
             </View>
           }
@@ -741,78 +736,18 @@ export function OwnerGuestsManagementTab() {
               error={guestsError}
             />
           }
-          renderItem={({ item: g }) => {
-            const kyc = KYC_STYLE[g.kycStatus] ?? KYC_STYLE.DEFAULT;
-            return (
-              <AnimatedPress scale={0.985} onPress={() => openDetail(g)}>
-                <Card
-                  containerColor={WHITE}
-                  borderRadius={14}
-                  borderWidth={1}
-                  borderColor={BORDER}
-                  padding={[14, 14]}
-                  style={{ marginBottom: 10 }}
-                >
-                  <Row justify="space-between" align="center">
-                    <Row gap={12} style={{ flex: 1 }}>
-                      <View style={styles.avatar}>
-                        <Txt variant="screenTitle" weight="900" color={GREEN}>
-                          {g.name.charAt(0).toUpperCase()}
-                        </Txt>
-                      </View>
-                      <Col style={{ flex: 1 }}>
-                        <Txt variant="cardTitle" weight="800" color={CHARCOAL}>
-                          {g.name}
-                        </Txt>
-                        <Txt variant="caption" color={MUTED}>
-                          Room {g.roomNo} • {g.email}
-                        </Txt>
-                        <Txt variant="caption" weight="700" color={GREEN}>
-                          ₹{Math.round(g.rentAmount)}/mo
-                        </Txt>
-                        <Row gap={6} style={{ marginTop: 4 }}>
-                          <View style={[styles.pill, { backgroundColor: kyc.bg, borderColor: kyc.border }]}>
-                            <Txt variant="labelSmall" weight="800" color={kyc.text}>
-                              {kyc.label}
-                            </Txt>
-                          </View>
-                          <View
-                            style={[
-                              styles.pill,
-                              {
-                                backgroundColor: g.isBillPaid ? '#ECFDF5' : '#FFFBEB',
-                                borderColor: g.isBillPaid ? '#A7F3D0' : '#FDE68A',
-                              },
-                            ]}
-                          >
-                            <Txt variant="labelSmall" weight="800" color={g.isBillPaid ? '#047857' : '#B45309'}>
-                              {g.isBillPaid ? '💵 Paid' : '⏳ Due'}
-                            </Txt>
-                          </View>
-                        </Row>
-                      </Col>
-                    </Row>
-                    <Row gap={2}>
-                      <IconBtn
-                        onPress={() => openEdit(g)}
-                        icon="create-outline"
-                        size={19}
-                        tint={GREEN}
-                        testID={`owner_edit_guest_${g.id}`}
-                      />
-                      {isDeletingGuest === g.id ? (
-                        <View style={{ padding: 10 }}>
-                          <ActivityIndicator size="small" color={Colors.danger} />
-                        </View>
-                      ) : (
-                        <IconBtn onPress={() => confirmDeleteGuest(g)} icon="trash-outline" size={19} tint={Colors.danger} />
-                      )}
-                    </Row>
-                  </Row>
-                </Card>
-              </AnimatedPress>
-            );
-          }}
+          renderItem={({ item: g, index, section }) => (
+            <ListRow
+              title={g.name}
+              meta={`Room ${g.roomNo || '—'}`}
+              amount={g.isBillPaid ? undefined : formatINR(g.rentAmount)}
+              status={residentStatus(g)}
+              onPress={() => openDetail(g)}
+              first={index === 0}
+              last={index === section.data.length - 1}
+              testID={`owner_resident_${g.id}`}
+            />
+          )}
         />
       )}
 
@@ -821,7 +756,7 @@ export function OwnerGuestsManagementTab() {
       )}
 
       {/* Resident Detail Bottom Sheet */}
-      <DetailBottomSheet
+      <Sheet
         visible={detailGuest != null}
         title={detailGuest?.name ?? 'Resident'}
         subtitle={`Room ${detailGuest?.roomNo ?? ''} • ${detailGuest?.email ?? ''}`}
@@ -838,7 +773,7 @@ export function OwnerGuestsManagementTab() {
                 }}
                 containerColor={GREEN}
                 textColor={WHITE}
-                borderRadius={10}
+                borderRadius={Radii.control}
                 height={42}
                 style={{ flex: 1 }}
               >
@@ -853,9 +788,9 @@ export function OwnerGuestsManagementTab() {
                     setReviewing(detailGuest);
                     setDetailGuest(null);
                   }}
-                  containerColor="#D97706"
+                  containerColor={Colors.warning}
                   textColor={WHITE}
-                  borderRadius={10}
+                  borderRadius={Radii.control}
                   height={42}
                   style={{ flex: 1 }}
                 >
@@ -872,7 +807,7 @@ export function OwnerGuestsManagementTab() {
                 }}
                 containerColor={Colors.danger}
                 textColor={WHITE}
-                borderRadius={10}
+                borderRadius={Radii.control}
                 height={42}
                 style={{ flex: 1 }}
               >
@@ -889,13 +824,13 @@ export function OwnerGuestsManagementTab() {
           <View>
             <Card
               containerColor={LIGHT_GREEN}
-              borderRadius={12}
+              borderRadius={Radii.card}
               borderWidth={1}
               borderColor={BORDER}
               padding={[14, 14]}
             >
               <Row align="center" gap={12}>
-                <View style={[styles.avatar, { width: 56, height: 56, borderRadius: 28 }]}>
+                <View style={[styles.avatar, { width: 56, height: 56, borderRadius: Radii.pill }]}>
                   <Txt variant="statValue" weight="900" color={GREEN}>
                     {detailGuest.name.charAt(0).toUpperCase()}
                   </Txt>
@@ -944,7 +879,7 @@ export function OwnerGuestsManagementTab() {
             </Txt>
             <Spacer size={6} />
             <View style={styles.detailRow}>
-              <Ionicons name="cash" size={14} color="#059669" />
+              <Ionicons name="cash" size={14} color={Colors.success} />
               <Txt variant="caption" color={CHARCOAL}>
                 Monthly Rent: ₹{Math.round(detailGuest.rentAmount)}
               </Txt>
@@ -953,9 +888,9 @@ export function OwnerGuestsManagementTab() {
               <Ionicons
                 name={detailGuest.isBillPaid ? 'checkmark-circle' : 'alert-circle'}
                 size={14}
-                color={detailGuest.isBillPaid ? '#059669' : '#B45309'}
+                color={detailGuest.isBillPaid ? Colors.success : Colors.warning}
               />
-              <Txt variant="caption" color={detailGuest.isBillPaid ? '#059669' : '#B45309'}>
+              <Txt variant="caption" color={detailGuest.isBillPaid ? Colors.success : Colors.warning}>
                 {detailGuest.isBillPaid ? 'Rent paid this cycle' : 'Rent pending for this cycle'}
               </Txt>
             </View>
@@ -970,8 +905,8 @@ export function OwnerGuestsManagementTab() {
                 name="shield-checkmark"
                 size={14}
                 color={
-                  detailGuest.kycStatus === 'VERIFIED' ? '#059669' :
-                  detailGuest.kycStatus === 'PENDING' ? '#B45309' :
+                  detailGuest.kycStatus === 'VERIFIED' ? Colors.success :
+                  detailGuest.kycStatus === 'PENDING' ? Colors.warning :
                   detailGuest.kycStatus === 'REJECTED' ? Colors.danger : MUTED
                 }
               />
@@ -1006,14 +941,14 @@ export function OwnerGuestsManagementTab() {
             {detailGuest.kycRejectReason ? (
               <View style={styles.rejectReasonBox}>
                 <Ionicons name="warning" size={14} color={Colors.danger} />
-                <Txt variant="caption" color="#B91C1C" style={{ flex: 1 }}>
+                <Txt variant="caption" color={Colors.danger} style={{ flex: 1 }}>
                   Rejection reason: {detailGuest.kycRejectReason}
                 </Txt>
               </View>
             ) : null}
           </View>
         )}
-      </DetailBottomSheet>
+      </Sheet>
 
       {/* Edit Dialog */}
       <Modal visible={editing != null} transparent animationType="fade">
@@ -1022,7 +957,7 @@ export function OwnerGuestsManagementTab() {
           <View style={styles.modalBackdrop}>
             <Card
               containerColor={WHITE}
-              borderRadius={20}
+              borderRadius={Radii.sheet}
               borderWidth={1}
               borderColor={BORDER}
               padding={[16, 16]}
@@ -1041,13 +976,9 @@ export function OwnerGuestsManagementTab() {
                   containerColor={BG}
                   style={{ marginBottom: 8 }}
                 />
-                <OutlinedTextField
-                  label="Room No *"
-                  value={editRoom}
-                  onChangeText={setEditRoom}
-                  containerColor={BG}
-                  style={{ marginBottom: 8 }}
-                />
+                <View style={{ marginBottom: 10 }}>
+                  <RoomPicker pgId={activePgId} value={editRoom} onChange={setEditRoom} label="Room *" />
+                </View>
                 <OutlinedTextField
                   label="Monthly Rent Fee (₹) *"
                   value={editRent}
@@ -1079,7 +1010,7 @@ export function OwnerGuestsManagementTab() {
                   loading={isUpdating}
                   containerColor={GREEN}
                   textColor={WHITE}
-                  borderRadius={10}
+                  borderRadius={Radii.control}
                   height={42}
                   style={{ flex: 1 }}
                 >
@@ -1091,7 +1022,7 @@ export function OwnerGuestsManagementTab() {
                   onPress={() => setEditing(null)}
                   borderColor={BORDER}
                   textColor={CHARCOAL}
-                  borderRadius={10}
+                  borderRadius={Radii.control}
                   height={42}
                   style={{ flex: 1 }}
                 >
@@ -1111,7 +1042,7 @@ export function OwnerGuestsManagementTab() {
         <View style={styles.modalBackdrop}>
           <Card
             containerColor={WHITE}
-            borderRadius={20}
+            borderRadius={Radii.sheet}
             borderWidth={1}
             borderColor={BORDER}
             padding={[20, 20]}
@@ -1151,7 +1082,7 @@ export function OwnerGuestsManagementTab() {
                     onPress={() => handleApprove(reviewing)}
                     containerColor={Colors.success}
                     textColor={WHITE}
-                    borderRadius={10}
+                    borderRadius={Radii.control}
                     height={42}
                     style={{ flex: 1 }}
                   >
@@ -1166,7 +1097,7 @@ export function OwnerGuestsManagementTab() {
                     }}
                     containerColor={Colors.danger}
                     textColor={WHITE}
-                    borderRadius={10}
+                    borderRadius={Radii.control}
                     height={42}
                     style={{ flex: 1 }}
                   >
@@ -1187,7 +1118,7 @@ export function OwnerGuestsManagementTab() {
           <View style={styles.modalBackdrop}>
             <Card
               containerColor={WHITE}
-              borderRadius={20}
+              borderRadius={Radii.sheet}
               borderWidth={1}
               borderColor={BORDER}
               padding={[16, 16]}
@@ -1214,7 +1145,7 @@ export function OwnerGuestsManagementTab() {
                   onPress={handleReject}
                   containerColor={Colors.danger}
                   textColor={WHITE}
-                  borderRadius={10}
+                  borderRadius={Radii.control}
                   height={42}
                   style={{ flex: 1 }}
                 >
@@ -1226,7 +1157,7 @@ export function OwnerGuestsManagementTab() {
                   onPress={() => setRejecting(null)}
                   borderColor={BORDER}
                   textColor={CHARCOAL}
-                  borderRadius={10}
+                  borderRadius={Radii.control}
                   height={42}
                   style={{ flex: 1 }}
                 >
@@ -1250,7 +1181,7 @@ export function OwnerGuestsManagementTab() {
               <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowInviteModal(false)} />
               
               <Animated.View
-                entering={SlideInDown.duration(180)}
+                entering={SlideInDown.springify(180).dampingRatio(0.85)}
                 style={styles.inviteSheet}
               >
                 {/* Drag handle */}
@@ -1267,9 +1198,9 @@ export function OwnerGuestsManagementTab() {
                       <Text maxFontSizeMultiplier={1.3} style={styles.inviteSheetSub}>Let residents register themselves</Text>
                     </Col>
                   </Row>
-                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowInviteModal(false)} style={styles.inviteCloseBtn}>
+                  <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowInviteModal(false)} style={styles.inviteCloseBtn}>
                     <Ionicons name="close" size={20} color={MUTED} />
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
 
                 {owner.joinCode ? (
@@ -1280,13 +1211,30 @@ export function OwnerGuestsManagementTab() {
 
                     <Spacer size={16} />
 
-                    <TouchableOpacity accessibilityRole="button" onPress={handleCopyCode} activeOpacity={0.75} style={styles.inviteCodeBox}>
+                    {/* The poster's whole job is to be scanned, so print the QR, not just the
+                        letters. `react-native-qrcode-svg` was already a dependency and had
+                        never been used — the "scan" flow on the join side used to open a modal
+                        that asked you to type the code by hand. The payload is a deep link so
+                        a phone's own camera app can open PGow straight onto the join form;
+                        `QrScanner` also accepts the bare code for any other QR generator. */}
+                    <View style={styles.inviteQrBox}>
+                      <QRCode
+                        value={`pgow://join/${owner.joinCode}`}
+                        size={148}
+                        color={Colors.primaryDark}
+                        backgroundColor={Colors.surface}
+                      />
+                    </View>
+
+                    <Spacer size={12} />
+
+                    <AnimatedPress accessibilityRole="button" onPress={handleCopyCode} style={styles.inviteCodeBox}>
                       <Col>
                         <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeLabel}>LOBBY JOIN CODE</Text>
                         <Text maxFontSizeMultiplier={1.3} style={styles.inviteCodeText}>{owner.joinCode}</Text>
                       </Col>
                       <Ionicons name="copy-outline" size={20} color={GREEN} />
-                    </TouchableOpacity>
+                    </AnimatedPress>
 
                     <Spacer size={12} />
 
@@ -1312,7 +1260,7 @@ export function OwnerGuestsManagementTab() {
                             onPress={() => guardJoinCode(() => setDefaultRent(parseFloat(rentInput)))}
                             borderColor={GREEN}
                             textColor={GREEN}
-                            borderRadius={12}
+                            borderRadius={Radii.card}
                             height={52}
                             style={{ width: 88 }}
                           >
@@ -1327,31 +1275,29 @@ export function OwnerGuestsManagementTab() {
                     <Spacer size={20} />
 
                     <Row gap={10}>
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         style={styles.inviteShareBtn}
                         onPress={handleShareCode}
-                        activeOpacity={0.8}
                       >
                         <Ionicons name="share-social-outline" size={18} color={WHITE} style={{ marginRight: 6 }} />
                         <Text maxFontSizeMultiplier={1.3} style={styles.inviteShareBtnText}>Share Invitation</Text>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                       {!isManager && (
-                        <TouchableOpacity accessibilityRole="button"
+                        <AnimatedPress accessibilityRole="button"
                           style={styles.inviteRotateBtn}
                           onPress={handleRotateCode}
-                          activeOpacity={0.8}
                         >
                           <Text maxFontSizeMultiplier={1.3} style={styles.inviteRotateBtnText}>New Code</Text>
-                        </TouchableOpacity>
+                        </AnimatedPress>
                       )}
                     </Row>
 
                     {!isManager && (
                       <>
                         <Spacer size={14} />
-                        <TouchableOpacity accessibilityRole="button" onPress={handleDisableCode} activeOpacity={0.7} style={{ alignSelf: 'center' }}>
+                        <AnimatedPress accessibilityRole="button" onPress={handleDisableCode} style={{ alignSelf: 'center' }}>
                           <Text maxFontSizeMultiplier={1.3} style={styles.inviteDisableText}>Turn off self sign-up</Text>
-                        </TouchableOpacity>
+                        </AnimatedPress>
                       </>
                     )}
                   </>
@@ -1367,18 +1313,18 @@ export function OwnerGuestsManagementTab() {
                         label="Monthly rent for new residents (₹) *"
                         placeholder="6500"
                         value={rentInput}
-                        onChangeText={setRentInput}
+                        onChangeText={(v) => { setRentInput(v); if (rentError) setRentError(undefined); }}
                         keyboardType="number-pad"
+                        error={rentError}
                         style={{ marginBottom: 16 }}
                       />
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         style={styles.inviteEnableBtn}
                         onPress={handleEnableJoinCode}
-                        activeOpacity={0.8}
                       >
                         <Ionicons name="key-outline" size={16} color={WHITE} style={{ marginRight: 6 }} />
                         <Text maxFontSizeMultiplier={1.3} style={styles.inviteEnableBtnText}>Turn on self sign-up</Text>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     </>
                   )
                 )}
@@ -1397,6 +1343,21 @@ export function OwnerGuestsManagementTab() {
   );
 }
 
+/**
+ * The one thing a row says about a resident.
+ *
+ * A resident can be both unverified and unpaid; the row shows a single status, so this ranks
+ * them. Identity first — an unverified resident is a problem regardless of whether this
+ * month's rent happens to have landed.
+ */
+function residentStatus(g: GuestEntity): { label: string; tone: StatusTone } {
+  if (g.kycStatus === 'REJECTED') return { label: 'KYC rejected', tone: 'danger' };
+  if (g.kycStatus === 'NOT_SUBMITTED') return { label: 'No KYC', tone: 'warn' };
+  if (g.kycStatus === 'PENDING') return { label: 'KYC pending', tone: 'warn' };
+  if (!g.isBillPaid) return { label: 'Rent due', tone: 'warn' };
+  return { label: 'Paid', tone: 'ok' };
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
@@ -1407,63 +1368,55 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   logoCircle: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: LIGHT_GREEN,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   headerTitle: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
   headerSub: { fontSize: 11, color: MUTED, marginTop: 1 },
   headerIconBtn: {
     width: 38,
     height: 38,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: BG,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-  },
+    position: 'relative' },
   notiBadge: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.danger,
     position: 'absolute',
     top: 10,
-    right: 10,
-  },
+    right: 10 },
 
   // Segmented Tab bar
   tabContainer: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 10,
-  },
+    paddingBottom: 10 },
   segmentedControl: {
     backgroundColor: WHITE,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 4,
-    width: '100%',
-  },
+    width: '100%' },
   segBtn: {
     flex: 1,
     height: 40,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: WHITE,
-  },
+    backgroundColor: WHITE },
   segBtnActive: {
-    backgroundColor: GREEN,
-  },
+    backgroundColor: GREEN },
   segBtnText: { fontSize: 13, fontWeight: '600', color: CHARCOAL },
   segBtnTextActive: { color: WHITE, fontWeight: '700' },
 
@@ -1471,8 +1424,7 @@ const styles = StyleSheet.create({
   addRosterScroll: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 32,
-  },
+    paddingBottom: 32 },
   bodyTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
 
@@ -1484,67 +1436,60 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
     padding: 16,
-    alignItems: 'flex-start',
-  },
+    alignItems: 'flex-start' },
   choiceIconCircle: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: LIGHT_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-  },
+    marginBottom: 10 },
   choiceTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   choiceDesc: { fontSize: 11, color: MUTED, marginTop: 4, lineHeight: 15, height: 46 },
   choiceBtnSolid: {
     height: 36,
     width: '100%',
     backgroundColor: GREEN,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   choiceBtnSolidText: { fontSize: 11, fontWeight: '700', color: WHITE },
   choiceBtnOutline: {
     height: 36,
     width: '100%',
     borderWidth: 1,
     borderColor: GREEN,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: WHITE,
-  },
+    backgroundColor: WHITE },
   choiceBtnOutlineText: { fontSize: 11, fontWeight: '700', color: GREEN },
 
   // Manual Form styles
   formScroll: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   backBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 4,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   submitBtn: {
     height: 52,
     backgroundColor: GREEN,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
-  },
+    marginTop: 10 },
   submitBtnText: { fontSize: 14, fontWeight: '800', color: WHITE },
 
   // Workflow section
@@ -1555,17 +1500,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
     paddingVertical: 16,
-    paddingHorizontal: 10,
-  },
+    paddingHorizontal: 10 },
   workflowIconBox: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: LIGHT_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   workflowStepTitle: { fontSize: 11, fontWeight: '700', color: CHARCOAL, textAlign: 'center' },
   workflowStepDesc: { fontSize: 8, color: MUTED, textAlign: 'center', marginTop: 2 },
 
@@ -1576,95 +1519,79 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: BORDER,
-    alignItems: 'flex-start',
-  },
+    alignItems: 'flex-start' },
   securityIconBg: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: WHITE,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   securityBannerTitle: { fontSize: 13, fontWeight: '700', color: GREEN },
   securityBannerText: { fontSize: 11, color: MUTED, marginTop: 2, lineHeight: 16 },
 
   // Help Link row
   helpLinkRow: {
     backgroundColor: WHITE,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
+    paddingVertical: 14 },
   helpLinkText: { fontSize: 11, color: CHARCOAL, fontWeight: '600' },
 
   // Directory / FlatList
+  // Inset past the tile so the eye follows the text column, not the full width.
   directoryList: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 40,
-  },
+    paddingBottom: 40 },
   directoryTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   countBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: LIGHT_GREEN,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   countBadgeText: { fontSize: 11, fontWeight: '700', color: GREEN },
   avatar: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: Radii.pill,
     backgroundColor: LIGHT_GREEN,
     borderWidth: 1,
     borderColor: BORDER,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    marginRight: 4,
-  },
+    justifyContent: 'center' },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(10, 18, 13, 0.55)',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   photoBox: {
     height: 140,
     backgroundColor: BG,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
-  },
+    marginTop: 4 },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 4,
-  },
+    paddingVertical: 4 },
   rejectReasonBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Palette.TintRed,
     borderWidth: 1,
     borderColor: '#FECACA',
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 4,
-  },
+    borderRadius: Radii.control,
+    marginTop: 4 },
 
   // Invite Link Bottom Sheet Styles
   inviteSheet: {
@@ -1675,35 +1602,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 34,
-    alignSelf: 'flex-end',
-  },
+    alignSelf: 'flex-end' },
   inviteHandleBar: {
     width: 36,
     height: 4,
-    borderRadius: 2,
+    borderRadius: Radii.badge,
     backgroundColor: BORDER,
     alignSelf: 'center',
-    marginBottom: 16,
-  },
+    marginBottom: 16 },
   inviteHeaderIcon: {
     width: 38,
     height: 38,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: LIGHT_GREEN,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   inviteSheetTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   inviteSheetSub: { fontSize: 12, color: MUTED, marginTop: 1 },
   inviteCloseBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: Radii.pill,
     backgroundColor: BG,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   inviteExplain: { fontSize: 12, color: MUTED, lineHeight: 18 },
+  inviteQrBox: { alignItems: 'center', paddingVertical: 6 },
   inviteCodeBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1711,46 +1635,40 @@ const styles = StyleSheet.create({
     backgroundColor: LIGHT_GREEN,
     borderWidth: 1,
     borderColor: BORDER,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
+    paddingHorizontal: 16 },
   inviteCodeLabel: { fontSize: 9, fontWeight: '700', color: GREEN, letterSpacing: 0.5 },
   inviteCodeText: { fontSize: 24, fontWeight: '900', color: CHARCOAL, letterSpacing: 4, marginTop: 2 },
   inviteRentRow: {
-    paddingVertical: 4,
-  },
+    paddingVertical: 4 },
   inviteRentLabel: { fontSize: 12, color: MUTED },
   inviteRentValue: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   inviteShareBtn: {
     flex: 1.5,
     height: 48,
     backgroundColor: GREEN,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   inviteShareBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
   inviteRotateBtn: {
     flex: 1,
     height: 48,
     borderWidth: 1,
     borderColor: BORDER,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: WHITE,
-  },
+    backgroundColor: WHITE },
   inviteRotateBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   inviteDisableText: { fontSize: 12, color: Colors.danger, fontWeight: '700' },
   inviteEnableBtn: {
     height: 48,
     backgroundColor: GREEN,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inviteEnableBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
-});
+    justifyContent: 'center' },
+  inviteEnableBtnText: { fontSize: 13, fontWeight: '800', color: WHITE } });

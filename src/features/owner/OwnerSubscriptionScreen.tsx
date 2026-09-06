@@ -1,21 +1,28 @@
 /**
  * OwnerSubscriptionScreen — activation and billing.
  *
- * The layout is unchanged from the port: plan cards, a bed configurator, a preview card, one
- * activation button. What changed is where the numbers come from. The two plans and their
- * prices used to be hardcoded here (₹50 a seat, ₹75 a guest); they are now `/v1/billing`
- * rows, so the screen shows what the server will actually charge rather than what this file
- * happens to say.
+ * This was the one screen in the app still running its own hardcoded dark-navy/purple theme
+ * (`#0F172A`, `#1E293B`, `#2E1065`…) — a design generation earlier than everything around it,
+ * invisible to `colors.check.ts` because that guard only bans a known list of *past*
+ * mistakes, not "any hex a screen invents." It never adopted `Card`, `ListRow`, `StatusChip`,
+ * or a single `Colors.*` token for its own backgrounds. Rebuilt on the same tokens, the same
+ * `DeckTints` roles the analytics screens use, and `ListRow` for the invoice list.
  *
- * Once a property is subscribed the same screen becomes its billing history, because "what
- * am I on and what do I owe" is the question an owner returns here to ask.
+ * The data path is unchanged: the two plans and their prices are `/v1/billing` rows, not
+ * something this file states, and once a property is subscribed the same screen becomes its
+ * billing history, because "what am I on and what do I owe" is the question an owner returns
+ * here to ask.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Image, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Card, Txt, Btn, Row, Col, Spacer, IconBtn } from '@/components/ui';
+import {
+  Card, Txt, Btn, Row, Col, Spacer, IconBtn, ListRow, ListSectionHeader,
+  type StatusTone,
+} from '@/components/ui';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { InfoTip } from '@/components/ui/InfoTip';
 import {
@@ -25,24 +32,48 @@ import {
   useReportInvoicePayment,
   useSubscribe,
   useSubscription,
-  type Plan,
-} from '@/features/billing/useBilling';
+  type Plan } from '@/features/billing/useBilling';
 import { updateProperty } from '@/features/properties/useProperties';
+import { useActiveProperty } from '@/features/properties/useProperties';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
-import { Colors } from '@/theme';
+import { Radii, Colors, DeckTints, type DeckTint } from '@/theme';
 
-/** The two shapes the design already had: a prepaid green one and a dynamic purple one. */
-function accentFor(plan: Plan): { colour: string; tag: string; tagBg: string } {
-  if (plan.billing_period === 'usage') {
-    return { colour: '#8B5CF6', tag: 'DYNAMIC', tagBg: 'rgba(139,92,246,0.15)' };
-  }
-  return { colour: Colors.success, tag: 'PREPAID', tagBg: 'rgba(16,185,129,0.15)' };
+/** The two shapes the design already had: a flat-fee one and a pay-as-you-grow one. `brand`
+ *  and `green` — not a fifth, off-palette purple — so this screen stays inside the same four
+ *  verified tints every other tinted card in the app uses. */
+function tintFor(plan: Pick<Plan, 'billing_period'>): DeckTint {
+  return plan.billing_period === 'usage' ? 'brand' : 'green';
 }
 
-import { useActiveProperty } from '@/features/properties/useProperties';
+function tagFor(plan: Pick<Plan, 'billing_period'>): string {
+  return plan.billing_period === 'usage' ? 'PAY AS YOU GROW' : 'FLAT FEE';
+}
 
 const money = (value: string | number) => `₹${Math.round(Number(value)).toLocaleString('en-IN')}`;
+
+/** An invoice can be reported paid only while it is issued and nobody has already reported a
+ *  method for it — `subscribe()` issues the invoice at activation, so "issued" alone would
+ *  include one already mid-confirmation. */
+function canReportPayment(inv: { status: string; method?: string | null }): boolean {
+  return inv.status === 'issued' && !inv.method;
+}
+
+function statusForInvoice(inv: { status: string; method?: string | null }): { label: string; tone: StatusTone } {
+  if (inv.status === 'paid') return { label: 'Paid', tone: 'ok' };
+  if (inv.method) return { label: 'Awaiting PGow', tone: 'info' };
+  return { label: 'Due', tone: 'warn' };
+}
+
+/** One bullet of a plan's feature list. */
+function PlanPoint({ tint, children }: { tint: DeckTint; children: React.ReactNode }) {
+  return (
+    <Row align="flex-start" gap={6} style={{ marginBottom: 3 }}>
+      <Ionicons name="checkmark" size={13} color={DeckTints[tint].sub} style={{ marginTop: 2 }} />
+      <Txt size={12} color={DeckTints[tint].sub} style={{ flex: 1 }}>{children}</Txt>
+    </Row>
+  );
+}
 
 export function OwnerSubscriptionScreen() {
   const { activeEntity: owner } = useActiveProperty();
@@ -84,7 +115,6 @@ export function OwnerSubscriptionScreen() {
     return Number(selected.price);
   }, [selected, bedsCount]);
 
-  const isUsage = selected?.billing_period === 'usage';
   const isOneTime = selected?.billing_period === 'one_time';
 
   const handleSubmit = async () => {
@@ -115,28 +145,30 @@ export function OwnerSubscriptionScreen() {
             reportPayment
               .mutateAsync({ invoiceId, method: 'upi_manual' })
               .then(() => Alert.alert('Recorded', 'PGow will confirm and settle this shortly.'))
-              .catch((e: any) => Alert.alert('Failed', e?.message ?? 'Not recorded.')),
-        },
+              .catch((e: any) => Alert.alert('Failed', e?.message ?? 'Not recorded.')) },
         {
           text: 'Bank transfer',
           onPress: () =>
             reportPayment
               .mutateAsync({ invoiceId, method: 'bank_transfer' })
               .then(() => Alert.alert('Recorded', 'PGow will confirm and settle this shortly.'))
-              .catch((e: any) => Alert.alert('Failed', e?.message ?? 'Not recorded.')),
-        },
+              .catch((e: any) => Alert.alert('Failed', e?.message ?? 'Not recorded.')) },
       ]
     );
   };
 
   const active = subscription.data;
+  // `Subscription` carries `plan_code`, not `billing_period` — look the real plan up in the
+  // already-fetched list rather than guess the tint from the plan's display name.
+  const activePlan = plans.data?.find((p: any) => p.code === active?.plan_code) ?? null;
+  const activeTint = DeckTints[activePlan ? tintFor(activePlan) : 'green'];
 
   // HubScreenWrapper already owns the back button (router.back(), same as every other
   // drill-down screen); the only reason this screen needed its own header before was the
   // logout affordance for the not-yet-subscribed state, which becomes rightAction instead.
   return (
     <HubScreenWrapper
-      title={active ? 'Subscription & Billing' : 'Secure PG Portal Activation'}
+      title={active ? 'Subscription & billing' : 'Activate this property'}
       onBack={() => router.back()}
       rightAction={
         !active ? (
@@ -144,185 +176,161 @@ export function OwnerSubscriptionScreen() {
         ) : undefined
       }
     >
-      <Card containerColor="transparent" borderRadius={16} style={{ height: 130, marginBottom: 16, overflow: 'hidden' }}>
+      <Card containerColor="transparent" borderRadius={Radii.feature} style={{ height: 130, marginBottom: 20, overflow: 'hidden' }}>
         <Image source={require('../../../assets/img_premium_subscription.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
       </Card>
 
       {active ? (
         <>
           {/* ── Already subscribed: what am I on, and what do I owe ── */}
-          <Card containerColor="#064E3B" borderRadius={16} padding={[16, 16]}>
+          <Card containerColor={activeTint.fill} borderRadius={Radii.feature} borderWidth={0} padding={[16, 16]}>
             <Row justify="space-between" align="center">
-              <Txt size={11} weight="900" color={Colors.textInverse} style={{ letterSpacing: 0.5 }}>
+              <Txt size={11} weight="700" color={activeTint.sub} style={{ letterSpacing: 0.5 }}>
                 CURRENT PLAN
               </Txt>
               <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
             </Row>
-            <Spacer size={8} />
-            <Txt variant="statValue" weight="900" color={Colors.textInverse}>{active.plan_name}</Txt>
+            <Spacer size={6} />
+            <Txt size={22} weight="700" color={activeTint.ink}>{active.plan_name}</Txt>
             <Spacer size={4} />
-            <Txt variant="caption" color="rgba(234,242,243,0.9)">
-              {/* `subscribe()` marks the subscription active and issues the invoice in the
-                  same step (billing/service.py) — the invoice starts "issued", not "paid";
-                  actual payment only lands once reported and confirmed (see Invoices below,
-                  which would show this same invoice as DUE right under a card claiming it
-                  was already paid). */}
+            {/* `subscribe()` marks the subscription active and issues the invoice in the same
+                step (billing/service.py) — the invoice starts "issued", not "paid"; actual
+                payment only lands once reported and confirmed (see Invoices below, which
+                would show this same invoice as Due right under a card claiming it was
+                already paid). */}
+            <Txt size={12} color={activeTint.sub} tabular>
               {Number(active.price) > 0
                 ? `${money(active.price)} billed at activation`
                 : 'No upfront cost — billed as residents are added'}
             </Txt>
-            <Txt variant="caption" color="rgba(234,242,243,0.9)">
-              Active since {active.current_period_start}
-            </Txt>
+            <Txt size={12} color={activeTint.sub}>Active since {active.current_period_start}</Txt>
           </Card>
 
-          <Spacer size={20} />
-          <Txt variant="sectionTitle" weight="800" color={Colors.textInverse}>Invoices</Txt>
-          <Spacer size={10} />
+          <Spacer size={24} />
+          <ListSectionHeader title="Invoices" count={invoices.data?.length} />
 
           {invoices.isLoading ? (
-            <Txt variant="caption" color={Colors.textMuted}>Loading…</Txt>
+            <Txt size={12} color={Colors.textMuted} style={{ paddingVertical: 12 }}>Loading…</Txt>
           ) : !invoices.data?.length ? (
-            <Card containerColor={Colors.surface} borderRadius={12} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-              <Txt variant="caption" color={Colors.textMuted} align="center">
-                Nothing billed yet.
-              </Txt>
+            <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+              <Txt size={12} color={Colors.textMuted} align="center">Nothing billed yet.</Txt>
             </Card>
           ) : (
-            invoices.data.map((inv: any) => (
-              <Card
-                key={inv.id}
-                containerColor={Colors.surface}
-                borderRadius={12}
-                borderWidth={1}
-                borderColor={inv.status === 'paid' ? 'rgba(16,185,129,0.35)' : Colors.borderSubtle}
-                padding={[14, 14]}
-                style={{ marginBottom: 8 }}
-              >
-                <Row justify="space-between" align="center">
-                  <Col>
-                    <Txt variant="sectionTitle" weight="900" color={Colors.textInverse}>{money(inv.amount)}</Txt>
-                    <Txt variant="caption" color={Colors.textMuted}>Period {inv.period}</Txt>
-                  </Col>
-                  <Txt
-                    size={11}
-                    weight="700"
-                    color={inv.status === 'paid' ? Colors.success : Colors.secondary}
-                  >
-                    {inv.status === 'paid' ? 'PAID' : inv.method ? 'AWAITING PGOW' : 'DUE'}
-                  </Txt>
-                </Row>
-                {inv.status === 'issued' && !inv.method && (
-                  <>
-                    <Spacer size={10} />
-                    <Btn
-                      onPress={() => handleReportPayment(inv.id)}
-                      containerColor={Colors.success}
-                      textColor={Colors.canvas}
-                      borderRadius={10}
-                      height={38}
-                      testID={`invoice_pay_${inv.id}`}
-                    >
-                      <Txt variant="caption" weight="700" color={Colors.canvas}>I've paid this</Txt>
-                    </Btn>
-                  </>
-                )}
-              </Card>
-            ))
+            invoices.data.map((inv: any, i: number, arr: any[]) => {
+              const reportable = canReportPayment(inv);
+              return (
+                <ListRow
+                  key={inv.id}
+                  leading={<Ionicons name="receipt-outline" size={17} color={Colors.primary} />}
+                  title={`Period ${inv.period}`}
+                  meta={reportable ? 'Tap to report your payment' : undefined}
+                  amount={money(inv.amount)}
+                  status={statusForInvoice(inv)}
+                  onPress={reportable ? () => handleReportPayment(inv.id) : undefined}
+                  first={i === 0}
+                  last={i === arr.length - 1}
+                  testID={`invoice_${inv.id}`}
+                />
+              );
+            })
           )}
         </>
       ) : (
         <>
           {/* ── Not subscribed: pick a plan ── */}
           <Row gap={6} align="center" style={{ marginBottom: 16 }}>
-            <Txt variant="screenTitle" weight="900" color={Colors.primary}>Step 1: Select Billing Model</Txt>
+            <Txt size={18} weight="700" color={Colors.textPrimary}>Choose a plan</Txt>
             <InfoTip text="Choose how you want to subscribe to the co-living management features. Pay a fixed upfront cost, or pay-as-you-grow based on residents actually added." />
           </Row>
 
           {plans.isLoading && (
-            <Txt variant="caption" color={Colors.textMuted}>Loading plans…</Txt>
+            <Txt size={12} color={Colors.textMuted}>Loading plans…</Txt>
           )}
           {plans.isError && (
-            <Txt variant="caption" color={Colors.accentRose}>
-              Could not load plans. Pull back and try again.
-            </Txt>
+            <Txt size={12} color={Colors.danger}>Could not load plans. Pull back and try again.</Txt>
           )}
 
-          <Row gap={12} style={{ marginBottom: 16 }}>
+          <Row gap={12} style={{ marginBottom: 20 }}>
             {(plans.data ?? []).map((plan: any) => {
-              const accent = accentFor(plan);
+              const tint = DeckTints[tintFor(plan)];
               const isSelected = plan.code === selectedCode;
               return (
-                <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                <AnimatedPress
                   key={plan.code}
                   onPress={() => setSelectedCode(plan.code)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
                   style={[
                     styles.planCard,
-                    isSelected && { borderColor: accent.colour, borderWidth: 2, backgroundColor: '#1E293B' },
+                    { backgroundColor: isSelected ? tint.fill : Colors.surface,
+                      borderColor: isSelected ? Colors.primary : Colors.borderSubtle,
+                      borderWidth: isSelected ? 2 : 1 },
                   ]}
                   testID={`plan_${plan.code}`}
                 >
-                  <View style={[styles.planTag, { backgroundColor: accent.tagBg }]}>
-                    <Txt variant="labelSmall" color={accent.colour}>{accent.tag}</Txt>
+                  <View style={[styles.planTag, { backgroundColor: isSelected ? Colors.surface : Colors.surfaceElevated }]}>
+                    <Txt size={9} weight="700" color={isSelected ? tint.ink : Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+                      {tagFor(plan)}
+                    </Txt>
                   </View>
                   <Spacer size={8} />
-                  <Txt variant="cardTitle" weight="900" color={Colors.textInverse}>{plan.name}</Txt>
-                  <Txt variant="caption" color="#94A3B8" style={{ lineHeight: 14, marginTop: 4 }}>
+                  <Txt size={15} weight="700" color={isSelected ? tint.ink : Colors.textPrimary}>{plan.name}</Txt>
+                  <Txt size={11.5} color={isSelected ? tint.sub : Colors.textMuted} style={{ lineHeight: 15, marginTop: 4 }}>
                     {plan.billing_period === 'one_time'
                       ? `Pay ${money(plan.unit_price ?? 0)} per bed upfront. Add residents up to your limit with ₹0 extra.`
                       : plan.billing_period === 'usage'
                         ? `₹0 upfront. First ${plan.included_units} residents free, then ${money(plan.unit_price ?? 0)} per resident added.`
                         : `${money(plan.price)} per ${plan.billing_period.replace('ly', '')}.`}
                   </Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
               );
             })}
           </Row>
 
           {selected && (
             <>
-              <Txt variant="sectionTitle" weight="800" color={Colors.textInverse} style={{ marginBottom: 12 }}>
+              <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginBottom: 12 }}>
                 {isOneTime
-                  ? 'Step 2: Enter PG Bed Capacity'
-                  : `Step 2: Starting Seat Size (${selected.included_units} Free Included)`}
+                  ? 'How many beds?'
+                  : `Starting size — ${selected.included_units} free included`}
               </Txt>
 
-              <Card containerColor="#1D1F27" borderRadius={16} borderWidth={1} borderColor="#2C2F3A" padding={[16, 16]} style={{ marginBottom: 16 }}>
+              <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col align="center">
-                  <Txt variant="caption" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
-                    {isOneTime ? 'TOTAL ACTIVE SEATS / BEDS' : 'INITIAL SEAT ALLOCATION'}
+                  <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+                    {isOneTime ? 'TOTAL BEDS' : 'INITIAL SEAT ALLOCATION'}
                   </Txt>
-                  <Spacer size={12} />
-                  <Txt size={64} weight="900" color={accentFor(selected).colour}>
+                  <Spacer size={10} />
+                  <Txt size={48} weight="700" color={Colors.textPrimary} tabular style={{ letterSpacing: -1 }}>
                     {isOneTime ? bedsCount : selected.included_units}
                   </Txt>
-                  <Txt size={13} weight="500" color={Colors.textMuted}>
-                    {isOneTime ? 'Paid Seats Configured' : 'Free Starter Seats Active'}
+                  <Txt size={12.5} color={Colors.textMuted}>
+                    {isOneTime ? 'Paid beds configured' : 'Free starter seats active'}
                   </Txt>
 
                   {isOneTime ? (
                     <>
-                      <Spacer size={20} />
+                      <Spacer size={18} />
                       <Row gap={8}>
-                        <Btn onPress={() => setBedsCount((c) => (c > 10 ? c - 10 : c > 1 ? 1 : c))} containerColor="#2C2F3A" textColor={Colors.textInverse} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.textInverse}>-10</Txt>
+                        <Btn onPress={() => setBedsCount((c) => (c > 10 ? c - 10 : c > 1 ? 1 : c))} containerColor={Colors.surfaceElevated} textColor={Colors.textPrimary} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                          <Txt size={13} weight="700" color={Colors.textPrimary}>-10</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => (c > 1 ? c - 1 : c))} containerColor="#2C2F3A" textColor={Colors.textInverse} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.textInverse}>-1</Txt>
+                        <Btn onPress={() => setBedsCount((c) => (c > 1 ? c - 1 : c))} containerColor={Colors.surfaceElevated} textColor={Colors.textPrimary} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                          <Txt size={13} weight="700" color={Colors.textPrimary}>-1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor={Colors.success} textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.canvas}>+1</Txt>
+                        <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                          <Txt size={13} weight="700" color={Colors.textInverse}>+1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor={Colors.success} textColor={Colors.canvas} borderRadius={10} height={40} style={{ flex: 1 }}>
-                          <Txt variant="cardTitle" color={Colors.canvas}>+10</Txt>
+                        <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                          <Txt size={13} weight="700" color={Colors.textInverse}>+10</Txt>
                         </Btn>
                       </Row>
                     </>
                   ) : (
                     <>
-                      <Spacer size={12} />
-                      <Txt variant="caption" color="#A78BFA" align="center" style={{ paddingHorizontal: 12, lineHeight: 16 }}>
-                        🌱 Scalable plan: your first {selected.included_units} seats are free. From the
+                      <Spacer size={10} />
+                      <Txt size={12} color={Colors.primary} align="center" style={{ paddingHorizontal: 12, lineHeight: 16 }}>
+                        Scalable plan: your first {selected.included_units} seats are free. From the
                         next resident onwards, {money(selected.unit_price ?? 0)} is added to that
                         month's invoice.
                       </Txt>
@@ -331,47 +339,45 @@ export function OwnerSubscriptionScreen() {
                 </Col>
               </Card>
 
-              <Card containerColor={isUsage ? '#2E1065' : '#064E3B'} borderRadius={16} padding={[16, 16]}>
+              <Card containerColor={DeckTints[tintFor(selected)].fill} borderRadius={Radii.feature} borderWidth={0} padding={[16, 16]}>
                 <Row justify="space-between" align="center">
-                  <Txt size={11} weight="900" color={Colors.textInverse} style={{ letterSpacing: 0.5 }}>
-                    DASHBOARD PREVIEW
+                  <Txt size={11} weight="700" color={DeckTints[tintFor(selected)].sub} style={{ letterSpacing: 0.5 }}>
+                    DUE AT ACTIVATION
                   </Txt>
-                  <Ionicons name="checkmark-circle" size={18} color={accentFor(selected).colour} />
+                  <Ionicons name="checkmark-circle" size={18} color={DeckTints[tintFor(selected)].ink} />
                 </Row>
-                <Spacer size={8} />
-                <Txt variant="screenTitle" weight="900" color={Colors.textInverse}>
-                  {previewAmount > 0 ? `${money(previewAmount)} DUE NOW` : '₹0 FREE ACTIVATION'}
+                <Spacer size={6} />
+                <Txt size={26} weight="700" color={DeckTints[tintFor(selected)].ink} tabular>
+                  {previewAmount > 0 ? money(previewAmount) : '₹0 free activation'}
                 </Txt>
-                <Spacer size={8} />
+                <Spacer size={10} />
                 {/* The server's own words for why that number, so the screen and the invoice
                     can never tell different stories. */}
-                {quote.data && (
-                  <Txt variant="caption" color="rgba(234,242,243,0.9)">✔ {quote.data.explanation}</Txt>
-                )}
-                <Txt variant="caption" color="rgba(234,242,243,0.9)">✔ Real-time portions optimizer to eliminate kitchen food waste</Txt>
-                <Txt variant="caption" color="rgba(234,242,243,0.9)">✔ Staff registration portal for your kitchen chefs & supervisors</Txt>
+                {quote.data && <PlanPoint tint={tintFor(selected)}>{quote.data.explanation}</PlanPoint>}
+                <PlanPoint tint={tintFor(selected)}>Real-time portions optimizer to eliminate kitchen food waste</PlanPoint>
+                <PlanPoint tint={tintFor(selected)}>Staff registration portal for your kitchen chefs and supervisors</PlanPoint>
               </Card>
 
-              <Spacer size={28} />
+              <Spacer size={24} />
 
               <Btn
                 onPress={handleSubmit}
                 disabled={subscribe.isPending}
                 loading={subscribe.isPending}
-                containerColor={accentFor(selected).colour}
-                textColor={isUsage ? Colors.textInverse : Colors.canvas}
-                borderRadius={12}
+                containerColor={Colors.primary}
+                textColor={Colors.textInverse}
+                borderRadius={Radii.card}
                 height={54}
                 testID="subscription_submit_button"
               >
-                <Txt variant="sectionTitle" weight="900" color={isUsage ? Colors.textInverse : Colors.canvas}>
+                <Txt size={15} weight="700" color={Colors.textInverse}>
                   {subscribe.isPending
-                    ? 'Activating...'
+                    ? 'Activating…'
                     : previewAmount > 0
-                      ? 'Pay Upfront & Activate Portal'
-                      : 'Activate Pay-As-You-Grow Portal'}
+                      ? 'Pay upfront and activate'
+                      : 'Activate pay-as-you-grow'}
                 </Txt>
-                <Ionicons name="arrow-forward" size={18} color={isUsage ? Colors.textInverse : Colors.canvas} style={{ marginLeft: 8 }} />
+                <Ionicons name="arrow-forward" size={18} color={Colors.textInverse} style={{ marginLeft: 8 }} />
               </Btn>
             </>
           )}
@@ -384,16 +390,10 @@ export function OwnerSubscriptionScreen() {
 const styles = StyleSheet.create({
   planCard: {
     flex: 1,
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-    padding: 14,
-  },
+    borderRadius: Radii.card,
+    padding: 14 },
   planTag: {
     alignSelf: 'flex-start',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
-  },
-});
+    borderRadius: Radii.badge } });

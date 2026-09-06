@@ -11,7 +11,7 @@ import {
   NativeScrollEvent,
   ImageSourcePropType,
 } from 'react-native';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface BannerConfig {
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     marginVertical: 14,
   },
   bannerContainer: {
-    borderRadius: 18,
+    borderRadius: Radii.card,
     overflow: 'hidden',
     height: 180,
     shadowColor: '#000',
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     paddingVertical: 7,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     gap: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.borderSubtle,
   },
   activeDot: {

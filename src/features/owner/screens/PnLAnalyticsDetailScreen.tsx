@@ -7,25 +7,22 @@ import { useState } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   Text,
-  TextInput,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
+  ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Row, Col, Spacer } from '@/components/ui';
+import {
+  Row, Col, Spacer, MetricDeck, TrendChart, MetricRow, ListSectionHeader,
+  type DeckCardData, type TrendChartPoint, type TrendChartSeries, AnimatedPress } from '@/components/ui';
 import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { PnLChart as PnLChartPresentational } from '@/components/PnLChart';
 import { usePnL } from '@/features/billing/usePnL';
 import { useAllPaymentsQuery } from '@/features/payments/usePayments';
 import { useAllExpensesQuery } from '@/features/expenses/useExpenses';
-import { Colors } from '@/theme';
+import { useResponsivePadding } from '@/utils/responsive';
+import { Radii, Colors } from '@/theme';
 import type { PnLInterval, PaymentEntity, ExpenseEntity } from '@/types';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue
-const BG = Colors.canvas;            // Light Ice Canvas
 const CHARCOAL = Colors.textPrimary; // Obsidian Navy
 const MUTED = Colors.textMuted;      // Ocean Muted
 const BORDER = Colors.borderSubtle;  // Ice Subtle Border
@@ -38,18 +35,65 @@ const TABS = [
   { key: '3m' as const, label: '3 Months' },
   { key: '6m' as const, label: '6 Months' },
   { key: '1y' as const, label: '1 Year' },
-  { key: 'custom' as const, label: 'Custom Range 📅' },
+  { key: 'custom' as const, label: 'Custom' },
 ];
 
 import { useActiveProperty } from '@/features/properties/useProperties';
 
-/** "YYYY-MM-DD" for the custom-range text fields, in local time. */
+/** "YYYY-MM-DD", in local time. */
 function isoDay(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+
+/**
+ * The ranges an owner actually asks for.
+ *
+ * This used to be two `YYYY-MM-DD` text boxes with three preset chips underneath. The boxes
+ * accepted any string — a typo produced an empty chart with no explanation — and every real
+ * question ("how did last month go?") was already one of the chips. Ranges are computed on
+ * render so they stay correct across midnight and month boundaries.
+ */
+const RANGE_PRESETS = [
+  {
+    label: 'This month',
+    range: () => {
+      const t = new Date();
+      return { start: isoDay(new Date(t.getFullYear(), t.getMonth(), 1)), end: isoDay(t) };
+    } },
+  {
+    label: 'Last month',
+    range: () => {
+      const t = new Date();
+      return {
+        start: isoDay(new Date(t.getFullYear(), t.getMonth() - 1, 1)),
+        end: isoDay(new Date(t.getFullYear(), t.getMonth(), 0)) };
+    } },
+  {
+    label: 'Last 30 days',
+    range: () => {
+      const t = new Date();
+      const from = new Date(t);
+      from.setDate(t.getDate() - 29);
+      return { start: isoDay(from), end: isoDay(t) };
+    } },
+  {
+    label: 'Last 90 days',
+    range: () => {
+      const t = new Date();
+      const from = new Date(t);
+      from.setDate(t.getDate() - 89);
+      return { start: isoDay(from), end: isoDay(t) };
+    } },
+  {
+    label: 'This year',
+    range: () => {
+      const t = new Date();
+      return { start: isoDay(new Date(t.getFullYear(), 0, 1)), end: isoDay(t) };
+    } },
+] as const;
 
 export function PnLAnalyticsDetailScreen() {
   const [interval, setInterval] = useState<AnalyticsInterval>('3m');
@@ -70,6 +114,7 @@ export function PnLAnalyticsDetailScreen() {
   // useActiveProperty derives the same shape live from activePgId instead.
   const { activeEntity: owner, activePgId } = useActiveProperty();
   const pgId = activePgId;
+  const sidePadding = useResponsivePadding();
   // Full history, not just the newest page — the category breakdown and period-over-period
   // comparison below sum this whole set, and capping it silently undercounted for any
   // property with more than a page of payments/expenses.
@@ -83,8 +128,7 @@ export function PnLAnalyticsDetailScreen() {
     isError: isApiError,
     error: apiError,
     refetch: refetchPnl,
-    isRefetching: isPnlRefetching,
-  } = usePnL(
+    isRefetching: isPnlRefetching } = usePnL(
     pgId,
     interval === 'custom' ? '3m' : interval
   );
@@ -102,8 +146,7 @@ export function PnLAnalyticsDetailScreen() {
     } else if (key === 'custom') {
       return {
         start: new Date(customStart),
-        end: new Date(customEnd),
-      };
+        end: new Date(customEnd) };
     }
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
@@ -132,8 +175,7 @@ export function PnLAnalyticsDetailScreen() {
     return {
       key: `${year}-${month}`,
       label: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      date: new Date(year, d.getMonth(), 1),
-    };
+      date: new Date(year, d.getMonth(), 1) };
   };
 
   const calculatedMonthly = () => {
@@ -214,14 +256,21 @@ export function PnLAnalyticsDetailScreen() {
 
     if (!isValid) return null;
 
+    // Margin moves in *points*, not percent-of-percent — "margin went from 31% to 34%" is a
+    // 3-point move, not a 9.7% one, and reporting the latter would say something true but
+    // unreadable.
+    const prevMargin = prevRev > 0 ? (prevNet / prevRev) * 100 : null;
+    const currentMargin = revenueVal > 0 ? (netVal / revenueVal) * 100 : null;
+
     return {
       revenue: prevRev > 0 ? ((revenueVal - prevRev) / prevRev) * 100 : null,
       expenses: prevExp > 0 ? ((expensesVal - prevExp) / prevExp) * 100 : null,
       net: prevNet !== 0 ? ((netVal - prevNet) / Math.abs(prevNet)) * 100 : null,
-    };
+      marginPts: prevMargin !== null && currentMargin !== null ? currentMargin - prevMargin : null };
   };
 
   const compData = computeComparison();
+  const marginVal = revenueVal > 0 ? (netVal / revenueVal) * 100 : 0;
 
   // ── Expense Categories Summation ─────────────────────────────────────────────
   const categoriesMap = {
@@ -230,8 +279,7 @@ export function PnLAnalyticsDetailScreen() {
     utilities: 0,
     maintenance: 0,
     internet: 0,
-    other: 0,
-  };
+    other: 0 };
 
   const CATEGORY_LABELS = {
     staff_salary: 'Staff Salary',
@@ -239,8 +287,7 @@ export function PnLAnalyticsDetailScreen() {
     utilities: 'Utilities',
     maintenance: 'Maintenance',
     internet: 'Internet',
-    other: 'Other',
-  };
+    other: 'Other' };
 
   filteredExpenses.forEach((e: ExpenseEntity) => {
     const cat = e.category.toLowerCase().replace(' ', '_');
@@ -257,8 +304,7 @@ export function PnLAnalyticsDetailScreen() {
       key,
       label: CATEGORY_LABELS[key as keyof typeof CATEGORY_LABELS] || key,
       amount,
-      percentage: pct,
-    };
+      percentage: pct };
   });
 
   // ── Dynamic Insights Generation ──────────────────────────────────────────────
@@ -316,6 +362,38 @@ export function PnLAnalyticsDetailScreen() {
     return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
   }
 
+  // ── Deck cards ────────────────────────────────────────────────────────────────
+  // Net / Revenue / Expenses / Margin — the four numbers the KPI cards used to show
+  // separately, now paged as one deck. Each card's tint is its own kind of number: brand for
+  // the headline, green for money in, amber for money out, slate for a ratio.
+  const deckCards: DeckCardData[] = [
+    {
+      key: 'net', tint: 'brand', label: 'Net profit', value: formatMoney(netVal),
+      ...pctDelta(compData?.net ?? null) },
+    {
+      key: 'revenue', tint: 'green', label: 'Revenue', value: formatMoney(revenueVal),
+      ...pctDelta(compData?.revenue ?? null) },
+    {
+      key: 'expenses', tint: 'amber', label: 'Expenses', value: formatMoney(expensesVal),
+      ...pctDelta(compData?.expenses ?? null, /* invert */ true) },
+    {
+      key: 'margin', tint: 'slate', label: 'Margin', value: `${marginVal.toFixed(1)}%`,
+      ...ptsDelta(compData?.marginPts ?? null) },
+  ];
+
+  // ── Chart data ────────────────────────────────────────────────────────────────
+  // Revenue and expenses producing `period` in two different shapes — "2026-08" from the
+  // server, "Aug 2026" from the client-computed custom-range fallback — was already true of
+  // this screen before this pass; a 12-bar chart is where that stopped being hideable in a
+  // table cell. One normalizer for both.
+  const chartData: TrendChartPoint[] = monthlyBreakdown.map((row) => ({
+    label: shortMonthLabel(row.period),
+    values: { revenue: row.revenue, expenses: row.expenses } }));
+  const chartSeries: TrendChartSeries[] = [
+    { key: 'revenue', color: Colors.primary, label: 'Revenue' },
+    { key: 'expenses', color: Colors.danger, label: 'Expenses' },
+  ];
+
   // ── Main Render ─────────────────────────────────────────────────────────────
   return (
     <HubScreenWrapper
@@ -329,17 +407,16 @@ export function PnLAnalyticsDetailScreen() {
         {TABS.map((t) => {
           const isSel = interval === t.key;
           return (
-            <TouchableOpacity accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
+            <AnimatedPress accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
               key={t.key}
               style={[styles.tabButton, isSel && styles.tabButtonSel]}
               onPress={() => {
                 setInterval(t.key);
               }}
-              activeOpacity={0.7}
               testID={`pnl_interval_${t.key}`}
             >
               <Text maxFontSizeMultiplier={1.3} style={[styles.tabLabel, isSel && styles.tabLabelSel]}>{t.label}</Text>
-            </TouchableOpacity>
+            </AnimatedPress>
           );
         })}
       </View>
@@ -348,64 +425,30 @@ export function PnLAnalyticsDetailScreen() {
       {interval === 'custom' && (
         <View style={styles.customCard}>
           <Row justify="space-between" align="center">
-            <Text maxFontSizeMultiplier={1.3} style={styles.customTitle}>📅 Custom Date Range</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.customTitle}>Custom range</Text>
             <Text maxFontSizeMultiplier={1.3} style={styles.customDateDisplay}>
               {formatDateLabel(customStart)} → {formatDateLabel(customEnd)}
             </Text>
           </Row>
           <Spacer size={12} />
-          <Row gap={12}>
-            <View style={{ flex: 1 }}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
-              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="YYYY-MM-DD"
-                style={styles.dateInput}
-                value={customStart}
-                onChangeText={setCustomStart}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#9EB09E"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.inputLabel}>End Date (YYYY-MM-DD)</Text>
-              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="YYYY-MM-DD"
-                style={styles.dateInput}
-                value={customEnd}
-                onChangeText={setCustomEnd}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#9EB09E"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-          </Row>
-          <Spacer size={10} />
-          <Row gap={6}>
-            {(() => {
-              const today = new Date();
-              const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-              const last30Start = new Date(today);
-              last30Start.setDate(today.getDate() - 29);
-              const last90Start = new Date(today);
-              last90Start.setDate(today.getDate() - 89);
-              return [
-                { label: 'Current Month', start: isoDay(monthStart), end: isoDay(today) },
-                { label: 'Last 30 Days', start: isoDay(last30Start), end: isoDay(today) },
-                { label: 'Last 90 Days', start: isoDay(last90Start), end: isoDay(today) },
-              ];
-            })().map((p) => (
-              <TouchableOpacity accessibilityRole="button"
+          <Row gap={6} style={{ flexWrap: 'wrap' }}>
+            {RANGE_PRESETS.map((preset) => {
+              const p = { label: preset.label, ...preset.range() };
+              const isSel = p.start === customStart && p.end === customEnd;
+              return (
+              <AnimatedPress accessibilityRole="button"
                 key={p.label}
-                style={styles.presetChip}
+                accessibilityState={{ selected: isSel }}
+                style={[styles.presetChip, isSel && styles.presetChipSel]}
                 onPress={() => {
                   setCustomStart(p.start);
                   setCustomEnd(p.end);
                 }}
               >
-                <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>{p.label}</Text>
-              </TouchableOpacity>
-            ))}
+                <Text maxFontSizeMultiplier={1.3} style={[styles.presetChipText, isSel && styles.presetChipTextSel]}>{p.label}</Text>
+              </AnimatedPress>
+              );
+            })}
           </Row>
         </View>
       )}
@@ -420,7 +463,7 @@ export function PnLAnalyticsDetailScreen() {
         </View>
       ) : isApiError && !isCustomMode ? (
         <View style={styles.errorBox}>
-          <Ionicons name="alert-circle" size={24} color="#B91C1C" />
+          <Ionicons name="alert-circle" size={24} color={Colors.danger} />
           <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>
             {(apiError as Error)?.message ?? 'Failed to load P&L'}
           </Text>
@@ -435,131 +478,37 @@ export function PnLAnalyticsDetailScreen() {
           </Text>
         </View>
       ) : (
-        <Col gap={16}>
-          {/* KPI Summary Block */}
-          <Row gap={10} style={{ flexWrap: 'wrap' }}>
-            <View style={[styles.kpiCard, { minWidth: 100 }]}>
-              <Row gap={4} align="center">
-                <Ionicons name="trending-up" size={14} color={GREEN} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>REVENUE</Text>
-              </Row>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: GREEN }]}>{formatMoney(revenueVal)}</Text>
-              {compData && <ComparisonBadge value={compData.revenue} />}
-            </View>
+        <Col gap={20}>
+          <MetricDeck cards={deckCards} sidePadding={sidePadding} testID="pnl_deck" />
 
-            <View style={[styles.kpiCard, { minWidth: 100 }]}>
-              <Row gap={4} align="center">
-                <Ionicons name="trending-down" size={14} color="#B91C1C" />
-                <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>EXPENSES</Text>
-              </Row>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: '#B91C1C' }]}>
-                {formatMoney(expensesVal)}
-              </Text>
-              {compData && <ComparisonBadge value={compData.expenses} isExpense />}
-            </View>
-
-            <View style={[styles.kpiCard, { minWidth: 100 }]}>
-              <Row gap={4} align="center">
-                <Ionicons name="cash" size={14} color={netVal >= 0 ? GREEN : '#B91C1C'} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>NET PROFIT</Text>
-              </Row>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: netVal >= 0 ? GREEN : '#B91C1C' }]}>
-                {formatMoney(netVal)}
-              </Text>
-              {compData && <ComparisonBadge value={compData.net} />}
-            </View>
-          </Row>
-
-          {/* 1 Year Compact Chart (only on standard 1y mode) */}
-          {interval === '1y' && (
-            <PnLChartPresentational
-              data={apiData ?? { monthly: [], totals: { revenue: 0, expenses: 0, net: 0 } }}
-              interval="1y"
-              onIntervalChange={() => {}}
-            />
+          {/* Revenue vs expenses, month by month. Full-bleed — no card, no gridlines; the
+              deck above already carries the exact figures. */}
+          {chartData.length > 0 && (
+            <TrendChart data={chartData} series={chartSeries} height={80} testID="pnl_chart" />
           )}
 
-          {/* Monthly Breakdown Table */}
-          <View style={styles.sectionCard}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeaderTitle}>📅 Monthly Breakdown</Text>
-            <Spacer size={12} />
-            <View style={styles.tableWrap}>
-              <View style={styles.tableHeader}>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, { flex: 1.5 }]}>Month</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, styles.thRight]}>Revenue</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, styles.thRight]}>Expenses</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.thCell, styles.thRight]}>Net Profit</Text>
-              </View>
-              {monthlyBreakdown.map((row, idx) => (
-                <View key={row.period || idx} style={styles.tableRow}>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.tdCell, { flex: 1.5, fontWeight: '700' }]}>
-                    {row.period}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.tdCell, styles.tdRight, { color: GREEN }]}>
-                    {formatMoney(row.revenue)}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.tdCell, styles.tdRight, { color: '#B91C1C' }]}>
-                    {formatMoney(row.expenses)}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3}
-                    style={[
-                      styles.tdCell,
-                      styles.tdRight,
-                      { color: row.net >= 0 ? GREEN : '#B91C1C', fontWeight: '800' },
-                    ]}
-                  >
-                    {formatMoney(row.net)}
-                  </Text>
-                </View>
+          {/* Where it went */}
+          <View>
+            <ListSectionHeader title="Where it went" count={categoriesList.filter((c) => c.amount > 0).length} />
+            <View style={styles.rowGroup}>
+              {categoriesList.filter((c) => c.amount > 0).map((c, i, arr) => (
+                <MetricRow
+                  key={c.key}
+                  label={c.label}
+                  meta={`${c.percentage.toFixed(0)}% of expenses`}
+                  value={formatMoney(c.amount)}
+                  last={i === arr.length - 1}
+                  testID={`pnl_category_${c.key}`}
+                />
               ))}
+              {categoriesList.every((c) => c.amount === 0) && (
+                <Text maxFontSizeMultiplier={1.3} style={styles.insightEmptyText}>No expenses logged for this period.</Text>
+              )}
             </View>
-          </View>
-
-          {/* P&L Summary (Category Breakdown) */}
-          <View style={styles.sectionCard}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeaderTitle}>📊 P&L Summary</Text>
-            <Spacer size={12} />
-            <Row justify="space-between" style={styles.pnlSummaryRow}>
-              <View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Collected</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.summaryVal, { color: GREEN }]}>{formatMoney(revenueVal)}</Text>
-              </View>
-              <View style={styles.summaryDivider} />
-              <View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Spent</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.summaryVal, { color: '#B91C1C' }]}>
-                  {formatMoney(expensesVal)}
-                </Text>
-              </View>
-              <View style={styles.summaryDivider} />
-              <View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.summaryLabel}>Net Profit</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.summaryVal, { color: netVal >= 0 ? GREEN : '#B91C1C' }]}>
-                  {formatMoney(netVal)}
-                </Text>
-              </View>
-            </Row>
-
-            <Spacer size={20} />
-            <Text maxFontSizeMultiplier={1.3} style={styles.subSectionTitle}>Expense Categories</Text>
-            <Spacer size={10} />
-            <Col gap={8}>
-              {categoriesList.map((c) => (
-                <View key={c.key} style={styles.categoryRow}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.categoryLabel}>{c.label}</Text>
-                  <Row gap={8} align="center">
-                    <Text maxFontSizeMultiplier={1.3} style={styles.categoryAmount}>{formatMoney(c.amount)}</Text>
-                    <View style={styles.categoryPercentagePill}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.categoryPercentageText}>{c.percentage.toFixed(1)}%</Text>
-                    </View>
-                  </Row>
-                </View>
-              ))}
-            </Col>
           </View>
 
           {/* Dynamic Insights */}
-          <View style={[styles.sectionCard, { backgroundColor: '#F0FDF4', borderColor: '#C6E8D4' }]}>
+          <View style={styles.sectionCard}>
             <Row gap={8} align="center">
               <Ionicons name="bulb" size={18} color={GREEN} />
               <Text maxFontSizeMultiplier={1.3} style={styles.insightHeaderTitle}>Dynamic Insights</Text>
@@ -594,19 +543,36 @@ export function PnLAnalyticsDetailScreen() {
   );
 }
 
-// ── Comparison Badge Component ───────────────────────────────────────────────
-function ComparisonBadge({ value, isExpense = false }: { value: number | null; isExpense?: boolean }) {
-  if (value === null || value === 0) return null;
+// ── Deck delta formatters ────────────────────────────────────────────────────
+// `MetricDeck` wants a plain string plus an 'up' | 'down' | 'flat' tone, not the 5-tone
+// `StatusTone` palette `MetricRow` uses — a deck card's own tint already carries most of the
+// colour, the delta only ever needs to say "good" or "bad" against it.
+function pctDelta(value: number | null, invert = false): { delta?: string; deltaTone?: 'up' | 'down' | 'flat' } {
+  if (value === null || value === 0) return {};
   const isPos = value > 0;
-  const formatted = `${isPos ? '↑' : '↓'} ${Math.abs(value).toFixed(1)}%`;
-  const isGood = isExpense ? !isPos : isPos;
-  const color = isGood ? GREEN : '#9F1239';
+  const good = invert ? !isPos : isPos;
+  return { delta: `${isPos ? '↑' : '↓'} ${Math.abs(value).toFixed(1)}%`, deltaTone: good ? 'up' : 'down' };
+}
 
-  return (
-    <Text maxFontSizeMultiplier={1.3} style={[styles.compText, { color }]}>
-      {formatted} <Text maxFontSizeMultiplier={1.3} style={{ color: MUTED }}>vs prev</Text>
-    </Text>
-  );
+function ptsDelta(value: number | null): { delta?: string; deltaTone?: 'up' | 'down' | 'flat' } {
+  if (value === null || Math.abs(value) < 0.05) return {};
+  const isPos = value > 0;
+  return { delta: `${isPos ? '↑' : '↓'} ${Math.abs(value).toFixed(1)} pts`, deltaTone: isPos ? 'up' : 'down' };
+}
+
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * `period` arrives in two different shapes from two different producers — "2026-08" from the
+ * server (`toPnLData`), "Aug 2026" from this screen's own client-computed custom-range
+ * fallback (`getMonthKey`) — a pre-existing mismatch the old table hid by printing whichever
+ * string showed up. A chart with up to 12 bars is where that stops being hideable.
+ */
+function shortMonthLabel(period: string): string {
+  const iso = period.match(/^(\d{4})-(\d{2})$/);
+  if (iso) return MONTH_ABBR[parseInt(iso[2], 10) - 1] ?? period;
+  const word = period.match(/^[A-Za-z]+/);
+  return word ? word[0].slice(0, 3) : period.slice(0, 3);
 }
 
 // ── Format Money ─────────────────────────────────────────────────────────────
@@ -627,142 +593,63 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     padding: 3,
     height: 48,
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   tabButton: {
     flex: 1,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: RADIUS - 3,
-  },
+    borderRadius: RADIUS - 3 },
   tabButtonSel: {
-    backgroundColor: GREEN,
-  },
+    backgroundColor: GREEN },
   tabLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: CHARCOAL,
-  },
+    color: CHARCOAL },
   tabLabelSel: {
     color: WHITE,
-    fontWeight: '800',
-  },
+    fontWeight: '800' },
 
   // Custom Range
   customCard: {
     backgroundColor: WHITE,
-    borderRadius: 18,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 16,
-    marginTop: 12,
-  },
+    marginTop: 12 },
   customTitle: { fontSize: 13, fontWeight: '800', color: CHARCOAL },
   customDateDisplay: { fontSize: 13, fontWeight: '700', color: GREEN },
-  inputLabel: { fontSize: 11, fontWeight: '600', color: MUTED, marginBottom: 5 },
-  dateInput: {
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: BG,
-    paddingHorizontal: 12,
-    fontSize: 13,
-    color: CHARCOAL,
-  },
   presetChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#EEF2FF',
-  },
-  presetChipText: { fontSize: 11, fontWeight: '700', color: GREEN },
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: Radii.control,
+    backgroundColor: '#EEF2FF' },
+  presetChipSel: { backgroundColor: GREEN },
+  presetChipText: { fontSize: 12, fontWeight: '700', color: GREEN },
+  presetChipTextSel: { color: Colors.textInverse },
 
-  // KPI
-  kpiCard: {
-    flex: 1,
-    backgroundColor: WHITE,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 12,
-  },
-  kpiLabel: { fontSize: 10, fontWeight: '700', color: MUTED, letterSpacing: 0.5 },
-  kpiValue: { fontSize: 16, fontWeight: '800', marginTop: 4 },
-  compText: { fontSize: 10, fontWeight: '700', marginTop: 4 },
+  // Where it went — plain `MetricRow`s, grouped by the same hairline every row group in the
+  // app now uses (see `Colors.separator` / `ListRow`).
+  rowGroup: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: Colors.separator },
 
-  // Table
   sectionCard: {
     backgroundColor: WHITE,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 16,
-  },
-  sectionHeaderTitle: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
-  tableWrap: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-    overflow: 'hidden',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: BG,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  thCell: { fontSize: 11, fontWeight: '700', color: MUTED },
-  thRight: { flex: 1, textAlign: 'right' },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  tdCell: { fontSize: 12, color: CHARCOAL },
-  tdRight: { flex: 1, textAlign: 'right' },
-
-  // Category
-  subSectionTitle: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-  categoryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: BG,
-  },
-  categoryLabel: { fontSize: 13, color: CHARCOAL },
-  categoryAmount: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-  categoryPercentagePill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: '#F3F4F6',
-  },
-  categoryPercentageText: { fontSize: 11, fontWeight: '600', color: MUTED },
-
-  // P&L summary row
-  pnlSummaryRow: {
-    backgroundColor: BG,
-    borderRadius: 12,
-    padding: 14,
-  },
-  summaryLabel: { fontSize: 11, fontWeight: '600', color: MUTED, marginBottom: 2 },
-  summaryVal: { fontSize: 14, fontWeight: '800' },
-  summaryDivider: { width: 1, backgroundColor: BORDER },
+    padding: 16 },
 
   // Insight
   insightHeaderTitle: { fontSize: 15, fontWeight: '700', color: GREEN },
   insightEmptyText: { fontSize: 12, color: MUTED },
   insightRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', paddingRight: 10 },
-  insightBullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN, marginTop: 6 },
+  insightBullet: { width: 6, height: 6, borderRadius: Radii.pill, backgroundColor: GREEN, marginTop: 6 },
   insightText: { fontSize: 12, color: CHARCOAL, lineHeight: 18 },
 
   // States
@@ -771,25 +658,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: WHITE,
-    borderRadius: 20,
-  },
+    borderRadius: Radii.sheet },
   loadingText: { fontSize: 13, color: MUTED },
   errorBox: {
     padding: 24,
     alignItems: 'center',
     gap: 8,
     backgroundColor: WHITE,
-    borderRadius: 20,
-  },
-  errorText: { fontSize: 13, color: '#B91C1C', fontWeight: '600' },
+    borderRadius: Radii.sheet },
+  errorText: { fontSize: 13, color: Colors.danger, fontWeight: '600' },
   emptyBox: {
     padding: 32,
     alignItems: 'center',
     backgroundColor: WHITE,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
+    borderColor: BORDER },
   emptyTitle: { fontSize: 15, fontWeight: '700', color: CHARCOAL, marginTop: 10 },
-  emptySub: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 4 },
-});
+  emptySub: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 4 } });

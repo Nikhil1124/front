@@ -1,16 +1,29 @@
 /**
- * TextPromptDialog — a cross-platform stand-in for `Alert.prompt`.
+ * TextPromptDialog — a cross-platform stand-in for `Alert.prompt`, and the app's centered
+ * confirm-with-a-reason surface.
  *
  * `Alert.prompt` is iOS-only (see react-native/Libraries/Alert/Alert.js — its entire body is
  * gated behind `if (Platform.OS === 'ios')`, with no Android branch at all). Two screens
  * (GroceryCartScreen, GroceryCheckoutScreen) called it to let someone edit their delivery
  * address; on Android that made "Change Address" a dead button — no dialog, no error, the
  * tap just did nothing. One small real modal, used by both, replaces it everywhere at once.
+ *
+ * That iOS-only limitation is also why this is the shape a "reject, and say why" confirmation
+ * has to take. A plain yes/no confirm stays a native `Alert.alert` (see `Sheet`'s header for
+ * that split), but the moment the confirmation needs a sentence typed into it, the native
+ * dialog cannot carry it on Android at all. Centered rather than bottom-anchored on purpose:
+ * it interrupts, which is what a confirmation is for — a bottom sheet reads as somewhere you
+ * went, and this is something that stopped you.
+ *
+ * `destructive` turns the confirm button red and is what the reject flows use; `required`
+ * refuses an empty answer with an inline error rather than silently disabling the button,
+ * which leaves someone tapping a dead control with no idea why.
  */
 import { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { Modal, View, Text, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
+import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
 export interface TextPromptDialogProps {
   visible: boolean;
@@ -21,6 +34,15 @@ export interface TextPromptDialogProps {
   placeholder?: string;
   onCancel: () => void;
   onSave: (text: string) => void;
+  /** Verb for the confirm button — "Save" by default, "Reject payment" for a decision. */
+  confirmLabel?: string;
+  /** Paints the confirm button as destructive. */
+  destructive?: boolean;
+  /** Refuse an empty answer, with the reason on the field. */
+  required?: boolean;
+  /** Shown under the field — "The resident sees this". */
+  helper?: string;
+  busy?: boolean;
 }
 
 export function TextPromptDialog({
@@ -32,13 +54,18 @@ export function TextPromptDialog({
   placeholder,
   onCancel,
   onSave,
-}: TextPromptDialogProps) {
+  confirmLabel = 'Save',
+  destructive = false,
+  required = false,
+  helper,
+  busy = false }: TextPromptDialogProps) {
   const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState<string | undefined>();
 
   // Re-seed the field every time the dialog opens, so a previous edit that was cancelled
   // does not leak into the next time it's shown.
   useEffect(() => {
-    if (visible) setValue(initialValue);
+    if (visible) { setValue(initialValue); setError(undefined); }
   }, [visible, initialValue]);
 
   return (
@@ -53,21 +80,30 @@ export function TextPromptDialog({
               label={label}
               placeholder={placeholder}
               value={value}
-              onChangeText={setValue}
+              onChangeText={(v) => { setValue(v); if (error) setError(undefined); }}
+              error={error}
+              helper={helper}
+              required={required}
+              multiline={required}
               style={{ marginTop: 12 }}
             />
             <View style={styles.row}>
-              <TouchableOpacity accessibilityRole="button" style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.8}>
+              <AnimatedPress accessibilityRole="button" style={styles.cancelBtn} onPress={onCancel}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button"
-                style={[styles.saveBtn, !value.trim() && styles.saveBtnDisabled]}
-                onPress={() => value.trim() && onSave(value.trim())}
-                disabled={!value.trim()}
-                activeOpacity={0.8}
+              </AnimatedPress>
+              <AnimatedPress accessibilityRole="button"
+                style={[styles.saveBtn, destructive && styles.destructiveBtn, busy && styles.saveBtnDisabled]}
+                // Stays enabled when empty and answers on use, rather than sitting disabled
+                // with no explanation — a dead button tells you nothing about why.
+                onPress={() => {
+                  const text = value.trim();
+                  if (required && !text) { setError('Say why — this is what the other person sees'); return; }
+                  onSave(text);
+                }}
+                disabled={busy}
               >
-                <Text maxFontSizeMultiplier={1.3} style={styles.saveText}>Save</Text>
-              </TouchableOpacity>
+                <Text maxFontSizeMultiplier={1.3} style={styles.saveText}>{busy ? 'Working…' : confirmLabel}</Text>
+              </AnimatedPress>
             </View>
           </View>
         </View>
@@ -77,67 +113,57 @@ export function TextPromptDialog({
 }
 
 const styles = StyleSheet.create({
+  destructiveBtn: { backgroundColor: Colors.danger },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(12,46,78,0.45)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-  },
+    padding: 24 },
   card: {
     width: '100%',
     maxWidth: 360,
     backgroundColor: Colors.surface,
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
     shadowRadius: 15,
-    elevation: 10,
-  },
+    elevation: 10 },
   title: {
     fontSize: 16,
     fontWeight: '800',
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   message: {
     fontSize: 13,
     color: Colors.textSecondary,
-    marginTop: 4,
-  },
+    marginTop: 4 },
   row: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 18,
-  },
+    marginTop: 18 },
   cancelBtn: {
     flex: 1,
     height: 44,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   cancelText: {
     fontSize: 13,
     fontWeight: '800',
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   saveBtn: {
     flex: 1,
     height: 44,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     backgroundColor: Colors.primary,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   saveBtnDisabled: {
-    opacity: 0.5,
-  },
+    opacity: 0.5 },
   saveText: {
     fontSize: 13,
     fontWeight: '800',
-    color: Colors.textInverse,
-  },
-});
+    color: Colors.textInverse } });

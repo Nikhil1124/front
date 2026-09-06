@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 
 export interface QuantityStepperProps {
   quantity: number;
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     height: 36,
     paddingHorizontal: 4,
     gap: 8,
@@ -59,12 +59,12 @@ const styles = StyleSheet.create({
   compact: {
     height: 28,
     gap: 6,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
   },
   btn: {
     width: 26,
     height: 26,
-    borderRadius: 5,
+    borderRadius: Radii.badge,
     backgroundColor: Colors.surfaceElevated,
     justifyContent: 'center',
     alignItems: 'center',
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   compactBtn: {
     width: 20,
     height: 20,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
   },
   qty: {
     fontSize: 14,

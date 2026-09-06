@@ -1,7 +1,5 @@
-import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 
 import { Palette, Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
@@ -79,7 +77,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     marginTop: 16,
     marginBottom: 16,
     borderWidth: 1,
@@ -88,38 +86,32 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 3,
-  },
+    elevation: 3 },
   avatar: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-  },
+    marginRight: 16 },
   avatarText: {
     color: '#fff',
     fontSize: 22,
-    fontWeight: '900',
-  },
+    fontWeight: '900' },
   userInfo: {
-    flex: 1,
-  },
+    flex: 1 },
   userName: {
     fontSize: 18,
     fontWeight: '800',
     color: Colors.textPrimary,
-    marginBottom: 2,
-  },
+    marginBottom: 2 },
   userPhone: {
     fontSize: 13,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   menuContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     paddingHorizontal: 16,
@@ -127,50 +119,41 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
-    elevation: 2,
-  },
+    elevation: 2 },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
+    paddingVertical: 14 },
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
+    gap: 12 },
   menuIconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceElevated,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center' },
   menuTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   divider: {
     height: 1,
     backgroundColor: Colors.borderSubtle,
-    marginLeft: 48,
-  },
+    marginLeft: 48 },
   logoutBtn: {
     marginTop: 24,
     marginBottom: 40,
     backgroundColor: Palette.TintRed,
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Palette.TintRed,
-  },
+    borderColor: Palette.TintRed },
   logoutText: {
     color: Colors.danger,
     fontSize: 15,
-    fontWeight: '800',
-  },
-});
+    fontWeight: '800' } });

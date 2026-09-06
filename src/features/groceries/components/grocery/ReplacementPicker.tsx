@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ReplacementPreference } from '../../store/useCartStore';
@@ -66,49 +65,39 @@ const styles = StyleSheet.create({
     marginTop: 8,
     backgroundColor: Colors.surfaceMuted,
     padding: 10,
-    borderRadius: Radii.xl,
+    borderRadius: Radii.card,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
+    borderColor: Colors.borderSubtle },
   title: {
     fontSize: 12,
     color: Colors.textSecondary,
-    marginBottom: 6,
-  },
+    marginBottom: 6 },
   optionsList: {
-    gap: 6,
-  },
+    gap: 6 },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 10,
-    borderRadius: Radii.md,
+    borderRadius: Radii.control,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    gap: 8,
-  },
+    gap: 8 },
   selectedOptionCard: {
     borderColor: Colors.primary,
-    backgroundColor: Colors.surfaceElevated,
-  },
+    backgroundColor: Colors.surfaceElevated },
   optionLabel: {
     flex: 1,
     fontSize: 13,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   selectedLabel: {
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   compactRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 4,
-  },
+    marginTop: 4 },
   compactText: {
     fontSize: 11,
-    color: Colors.primary,
-  },
-});
+    color: Colors.primary } });

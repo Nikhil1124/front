@@ -19,7 +19,7 @@
  * default, which collides with the StatusGreen we use everywhere else. A
  * hand-rolled Pressable gives us a single color story across both platforms.
  */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, Txt, Row, Col, Spacer } from '@/components/ui';
@@ -80,8 +80,7 @@ function useCountdown(targetMs: number | null): CountdownResult {
     hours: Math.floor(totalSec / 3600),
     minutes: Math.floor((totalSec % 3600) / 60),
     seconds: totalSec % 60,
-    isPast: false,
-  };
+    isPast: false };
 }
 
 const MEAL_META: Record<
@@ -90,8 +89,7 @@ const MEAL_META: Record<
 > = {
   breakfast: { icon: 'weather-sunny', label: 'Breakfast', tint: Colors.secondary },
   lunch: { icon: 'white-balance-sunny', label: 'Lunch', tint: Colors.primary },
-  dinner: { icon: 'weather-sunset-down', label: 'Dinner', tint: Colors.primaryDark },
-};
+  dinner: { icon: 'weather-sunset-down', label: 'Dinner', tint: Colors.primaryDark } };
 
 export function MealToggleWidget({ breakfast, lunch, dinner, onToggle }: MealToggleWidgetProps) {
   return (
@@ -119,7 +117,7 @@ function MealRow({ mealType, state, onToggle }: MealRowProps) {
   };
 
   return (
-    <Card containerColor={Colors.surface} borderRadius={Radii.xxl} padding={[14, 14]}>
+    <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[14, 14]}>
       <Row align="center" justify="space-between" gap={12}>
         <Row align="center" gap={12} style={{ flex: 1 }}>
           <View style={[styles.iconChip, { backgroundColor: `${meta.tint}22` }]}>
@@ -147,8 +145,7 @@ function MealRow({ mealType, state, onToggle }: MealRowProps) {
 function MealSwitch({
   enabled,
   onToggle,
-  tint,
-}: {
+  tint }: {
   enabled: boolean;
   onToggle: () => void;
   tint: string;
@@ -227,24 +224,20 @@ const styles = StyleSheet.create({
   iconChip: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   switchTrack: {
     width: 44,
     height: 24,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1.5,
     padding: 0,
     justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
+    paddingHorizontal: 2 },
   switchThumb: {
     width: 18,
     height: 18,
-    borderRadius: 9,
-  },
-});
+    borderRadius: Radii.pill } });
 
 export default MealToggleWidget;

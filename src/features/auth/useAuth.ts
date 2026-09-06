@@ -44,11 +44,14 @@ export function register(params: {
   });
 }
 
-export function login(params: { phone: string; password: string; asGuest?: boolean }): Promise<TokenResponse> {
-  const { asGuest, ...rest } = params;
+/** `POST /auth/login` takes only a phone and a password — the server resolves which role that
+ *  identity holds. There used to be an `asGuest` flag here, destructured straight back out and
+ *  never sent or read: it existed only because the sign-in form presented owner and resident as
+ *  separate tabs, when both were always this same call. */
+export function login(params: { phone: string; password: string }): Promise<TokenResponse> {
   return apiFetch<TokenResponse>(API.LOGIN, {
     method: "POST",
-    body: JSON.stringify(rest),
+    body: JSON.stringify(params),
     // A wrong password is this form's answer to show, not a reason to tear down the
     // session and bounce the user somewhere else.
     unauthorized: "throw",

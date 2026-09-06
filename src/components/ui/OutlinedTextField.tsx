@@ -1,22 +1,52 @@
 /**
- * OutlinedTextField — RN equivalent of Material 3 OutlinedTextField.
- * Label floats above input, leading icon supported, focus state changes border color.
+ * OutlinedTextField — the app's one text input.
+ *
+ * ── The shape, and why ───────────────────────────────────────────────────────────────────────
+ * A soft filled box with no border at rest, a brand border and ring on focus, and a red-tinted
+ * fill when it's wrong. The name is now historical: this stopped being an outlined Material
+ * field because thirteen outlined boxes on the add-resident screen read as a wall of boxes,
+ * while thirteen filled ones read as a form. A border is drawn when it means something —
+ * you're in this field — rather than permanently around everything.
+ *
+ * It pairs with `PickerField`, and the pairing is the point: a **filled box means you type
+ * here**, a **row with a chevron means you choose here**. Someone can see, without reading a
+ * word, which fields will make them use the keyboard. That is the "use a picker unless typing
+ * is genuinely necessary" rule made structural instead of a convention to remember.
+ *
+ * ── Errors live on the field ─────────────────────────────────────────────────────────────────
+ * `error` is new, and it is the reason this rewrite exists. There were 34 places calling
+ * `Alert.alert('Validation', 'Title and message are required.')` — a blocking OS popup that
+ * names the problem in prose, disappears when dismissed, and leaves the person to work out
+ * which of thirteen fields it meant. The field can say it itself, next to itself, and keep
+ * saying it until it's fixed.
+ *
+ * The border width stays 1.5 in every state (transparent when at rest) so focusing a field
+ * never shifts the layout of the fields under it.
  */
 import React, { useState } from 'react';
 import {
-  View, TextInput, ViewStyle, TextStyle,
-  KeyboardTypeOptions,
+  View, TextInput, type ViewStyle, type TextStyle,
+  type KeyboardTypeOptions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme';
-import { Layout } from '@/theme';
-import { Txt } from './index';
+
+import { Colors, Palette, Radii } from '@/theme';
+import { Txt } from './Txt';
 
 export interface OutlinedTextFieldProps {
   value: string;
   onChangeText: (text: string) => void;
   label?: string;
   placeholder?: string;
+  /** What's wrong, in words the person can act on — "Enter the monthly rent", not "Invalid".
+   *  Present ⇒ the field renders its error state and this replaces `helper`. */
+  error?: string;
+  /** The quiet line under the field, for a format hint or a consequence — "Everyone at the
+   *  property sees this". Hidden while `error` is showing. */
+  helper?: string;
+  /** Draws the asterisk and tells a screen reader. Does not itself validate anything — the
+   *  screen still decides what "missing" means and passes `error`. */
+  required?: boolean;
   leadingIcon?: keyof typeof Ionicons.glyphMap;
   leadingIconColor?: string;
   trailingIcon?: React.ReactNode;
@@ -40,40 +70,73 @@ export interface OutlinedTextFieldProps {
 }
 
 export function OutlinedTextField({
-  value, onChangeText, label, placeholder, leadingIcon, leadingIconColor,
+  value, onChangeText, label, placeholder, error, helper, required = false,
+  leadingIcon, leadingIconColor,
   trailingIcon, keyboardType = 'default', secureTextEntry = false, multiline = false,
   numberOfLines = 1, maxLength, editable = true, testID,
-  focusedBorderColor = Colors.borderFocus, unfocusedBorderColor = Colors.borderMuted,
+  focusedBorderColor = Colors.borderFocus, unfocusedBorderColor,
   focusedTextColor = Colors.textPrimary, unfocusedTextColor = Colors.textPrimary,
-  containerColor = Colors.surfaceMuted, borderRadius = Layout.borderRadiusButton, height, style, inputStyle,
+  containerColor, borderRadius = Radii.control, height, style, inputStyle,
 }: OutlinedTextFieldProps) {
   const [focused, setFocused] = useState(false);
-  const borderColor = focused ? focusedBorderColor : unfocusedBorderColor;
-  const textColor = focused ? focusedTextColor : unfocusedTextColor;
+  const invalid = !!error;
+
+  // Rest is fill-only. `unfocusedBorderColor` is still honoured when a caller passes one, so
+  // the handful of screens that deliberately draw an edge keep it.
+  const borderColor = invalid
+    ? Colors.danger
+    : focused
+      ? focusedBorderColor
+      : unfocusedBorderColor ?? 'transparent';
+
+  const fill = containerColor ?? (invalid ? Palette.TintRed : focused ? Colors.surface : Colors.surfaceMuted);
+  const labelColor = invalid ? Colors.danger : focused ? Colors.primary : Colors.textMuted;
+
   return (
-    <View style={[{
-      borderWidth: focused ? 1.5 : 1, borderColor, borderRadius,
-      backgroundColor: containerColor, paddingHorizontal: 12,
-      paddingVertical: 8, minHeight: height ?? (multiline ? 96 : 56),
-      flexDirection: 'row', alignItems: 'center', gap: 8,
-    }, style]}>
-      {leadingIcon && (
-        <Ionicons name={leadingIcon} size={18} color={leadingIconColor ?? (focused ? Colors.primary : Colors.textMuted)} />
-      )}
-      <View style={{ flex: 1 }}>
-        {label && (
-          <Txt variant="caption" color={focused ? Colors.primary : Colors.textMuted} weight="600" style={{ marginBottom: 2, letterSpacing: 0.4 }}>
-            {label}
-          </Txt>
+    <View style={style}>
+      {label ? (
+        <Txt size={11} weight="600" color={labelColor} style={{ marginBottom: 5, letterSpacing: 0.3 }}>
+          {label}{required ? ' *' : ''}
+        </Txt>
+      ) : null}
+
+      <View style={{
+        borderWidth: 1.5,
+        borderColor,
+        borderRadius,
+        backgroundColor: fill,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        minHeight: height ?? (multiline ? 88 : 46),
+        flexDirection: 'row',
+        alignItems: multiline ? 'flex-start' : 'center',
+        gap: 8,
+        // The ring only exists on focus, and only as a soft brand wash — enough to say "this
+        // one" on a screen of quiet filled boxes without becoming a second border.
+        ...(focused && !invalid ? {
+          shadowColor: Colors.primary,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.16,
+          shadowRadius: 4,
+          elevation: 2,
+        } : null),
+      }}>
+        {leadingIcon && (
+          <Ionicons
+            name={leadingIcon}
+            size={18}
+            color={leadingIconColor ?? (invalid ? Colors.danger : focused ? Colors.primary : Colors.textMuted)}
+          />
         )}
         <TextInput
           testID={testID}
-          // The `label` above is a sibling <Txt>, so a screen reader reads it as loose text
-          // and announces the field itself with nothing but its placeholder. Naming the input
-          // is what ties the two together — "Phone Number, edit box" instead of "edit box".
-          accessibilityLabel={label}
-          // Same 1.3x ceiling as Txt: this field has a fixed 56px minHeight, so unbounded
-          // system font scaling clips what the user is typing.
+          // The label is a sibling <Txt>, so a screen reader would otherwise read it as loose
+          // text and announce the field with nothing but its placeholder. Naming the input is
+          // what ties the two together — "Phone number, required, edit box".
+          accessibilityLabel={label ? `${label}${required ? ', required' : ''}` : undefined}
+          // The error has to reach a screen reader too, or the red fill is the only signal
+          // and it reaches nobody who can't see it.
+          accessibilityHint={error ?? helper}
           maxFontSizeMultiplier={1.3}
           value={value}
           onChangeText={onChangeText}
@@ -88,12 +151,25 @@ export function OutlinedTextField({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={[{
-            color: textColor, fontSize: 14, padding: 0,
-            minHeight: 22, textAlignVertical: 'top',
+            flex: 1,
+            color: focused ? focusedTextColor : unfocusedTextColor,
+            fontSize: 14,
+            padding: 0,
+            minHeight: 22,
+            textAlignVertical: multiline ? 'top' : 'center',
           }, inputStyle]}
         />
+        {trailingIcon}
       </View>
-      {trailingIcon}
+
+      {error || helper ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 }}>
+          {invalid ? <Ionicons name="alert-circle" size={13} color={Colors.danger} /> : null}
+          <Txt size={11} color={invalid ? Colors.danger : Colors.textMuted} style={{ flex: 1 }}>
+            {error ?? helper}
+          </Txt>
+        </View>
+      ) : null}
     </View>
   );
 }

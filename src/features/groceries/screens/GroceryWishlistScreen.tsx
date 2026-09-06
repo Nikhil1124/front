@@ -1,14 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
 import {
   FlatList,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from 'react-native';
+  View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCartStore } from '../store/useCartStore';
@@ -135,11 +133,9 @@ export function GroceryWishlistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.canvas,
-  },
+    backgroundColor: Colors.canvas },
   safeArea: {
-    flex: 1,
-  },
+    flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -148,104 +144,85 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
-  },
+    backgroundColor: Colors.surface },
   headerTitle: {
     fontSize: 18,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   headerCount: {
     fontSize: 13,
-    color: Colors.textSecondary,
-  },
+    color: Colors.textSecondary },
   listContent: {
     padding: 16,
-    paddingBottom: 110,
-  },
+    paddingBottom: 110 },
   card: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     padding: 12,
     marginBottom: 12,
     alignItems: 'center',
     position: 'relative',
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    ...Layout.shadowCard,
-  },
+    ...Layout.shadowCard },
   cardImage: {
     width: 80,
     height: 80,
-    borderRadius: Radii.xl,
+    borderRadius: Radii.card,
     resizeMode: 'contain',
-    backgroundColor: Colors.surfaceMuted,
-  },
+    backgroundColor: Colors.surfaceMuted },
   cardInfo: {
     flex: 1,
-    marginLeft: 14,
-  },
+    marginLeft: 14 },
   cardName: {
     fontSize: 14,
     color: Colors.textPrimary,
-    marginBottom: 2,
-  },
+    marginBottom: 2 },
   cardUnit: {
     fontSize: 11,
     color: Colors.textMuted,
-    marginBottom: 8,
-  },
+    marginBottom: 8 },
   cardBottom: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between' },
   cardPrice: {
     fontSize: 16,
-    color: Colors.textPrimary,
-  },
+    color: Colors.textPrimary },
   cardMRP: {
     fontSize: 11,
     color: Colors.textMuted,
-    textDecorationLine: 'line-through',
-  },
+    textDecorationLine: 'line-through' },
   addBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radii.pill,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
-  },
+    borderColor: Colors.primary },
   addBtnFilled: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
+    borderColor: Colors.primary },
   addBtnText: {
     fontSize: 11,
-    color: Colors.primary,
-  },
+    color: Colors.primary },
   addBtnTextFilled: {
-    color: '#fff',
-  },
+    color: '#fff' },
   backBtn: {
-    padding: 4,
-  },
+    padding: 4 },
   removeBtn: {
     position: 'absolute',
     top: 10,
-    right: 12,
-  },
+    right: 12 },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingBottom: 80,
-  },
+    paddingBottom: 80 },
   iconCircle: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: Radii.pill,
     backgroundColor: Palette.TintRed,
     justifyContent: 'center',
     alignItems: 'center',
@@ -254,29 +231,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 4,
-  },
+    elevation: 4 },
   emptyTitle: {
     fontSize: 18,
     color: Colors.textPrimary,
     marginBottom: 8,
-    textAlign: 'center',
-  },
+    textAlign: 'center' },
   emptySub: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 32,
-  },
+    marginBottom: 32 },
   shopBtn: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: Radii.pill,
-  },
+    borderRadius: Radii.pill },
   shopBtnText: {
     color: '#fff',
-    fontSize: 15,
-  },
-});
+    fontSize: 15 } });

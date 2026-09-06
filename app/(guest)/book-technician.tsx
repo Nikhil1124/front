@@ -2,36 +2,29 @@
  * Book a Technician Screen — Resident booking entry-point.
  * Standardized Cyber Mint design, matched exactly to the reference screenshots.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Modal,
-  Pressable,
   Alert,
-  TextInput,
   KeyboardAvoidingView,
-  Image,
-} from 'react-native';
+  Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, Chip } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, ChoiceChips, OutlinedTextField } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Layout } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import * as requestsApi from '@/features/requests/useComplaints';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { qk } from '@/data/queryKeys';
 import { formatDateTime } from '@/utils/format';
 import type { RequestRecord } from '@/features/requests/useComplaints';
-import { BlurView } from 'expo-blur';
 
 const REPAIR_CATEGORIES = ['Plumbing', 'Electrical', 'Carpenter', 'AC Repair', 'RO Servicing', 'Pest Control'];
 
@@ -67,17 +60,17 @@ export default function BookTechnicianScreen() {
 
   // Form State
   const [category, setCategory] = useState<string>('');
+  const [reqErrors, setReqErrors] = useState<{ category?: string; description?: string }>({});
   const [description, setDescription] = useState<string>('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [preferredDate, setPreferredDate] = useState<string>('');
   const [preferredTime, setPreferredTime] = useState<string>('');
 
   // Dropdowns Visibility
-  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
 
   // Submission State
+  // The next seven days, fixed for as long as this screen is open.
+  const next7Days = useMemo(() => getNext7Days(), []);
   const [submitting, setSubmitting] = useState(false);
   const [createdId, setCreatedId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState<string>('');
@@ -95,8 +88,7 @@ export default function BookTechnicianScreen() {
   const { data: selectedRequestDetail } = useQuery<RequestRecord>({
     queryKey: qk.requests.detail(pgId ?? '', selectedRequest?.id ?? ''),
     queryFn: () => requestsApi.getComplaint(selectedRequest!.id),
-    enabled: viewMode === 'DETAIL' && !!selectedRequest,
-  });
+    enabled: viewMode === 'DETAIL' && !!selectedRequest });
   const detailAttachments = selectedRequestDetail?.attachments ?? [];
 
   // Fetch only this resident's repair requests
@@ -107,8 +99,7 @@ export default function BookTechnicianScreen() {
       const res = await requestsApi.listComplaints(pgId, { kind: 'repair', limit: 100 });
       return res.items.filter((r) => r.raised_by === guest.id);
     },
-    enabled: !!pgId && !!guest?.id,
-  });
+    enabled: !!pgId && !!guest?.id });
 
   // Filter requests
   const filteredRequests = rawRequests.filter((r) => {
@@ -123,8 +114,7 @@ export default function BookTechnicianScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsMultipleSelection: true,
-      selectionLimit: 5 - photos.length,
-    });
+      selectionLimit: 5 - photos.length });
     if (!result.canceled) {
       setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 5));
     }
@@ -135,14 +125,12 @@ export default function BookTechnicianScreen() {
   };
 
   const handleRequestSubmit = async () => {
-    if (!category) {
-      Alert.alert('Validation', 'Please select a service type.');
-      return;
-    }
-    if (!description.trim()) {
-      Alert.alert('Validation', 'Please describe the problem.');
-      return;
-    }
+    const nextErrors = {
+      category: category ? undefined : 'Pick the kind of work needed',
+      description: description.trim() ? undefined : 'Describe what is wrong',
+    };
+    setReqErrors(nextErrors);
+    if (nextErrors.category || nextErrors.description) return;
     setSubmitting(true);
     try {
       const created = await requestsApi.submitComplaint({
@@ -156,9 +144,7 @@ export default function BookTechnicianScreen() {
           preferredDate,
           preferredTime,
           photosCount: photos.length,
-          urgency: 'Scheduled',
-        },
-      });
+          urgency: 'Scheduled' } });
 
       // Upload mock/real attachments if present
       if (photos.length > 0) {
@@ -214,8 +200,7 @@ export default function BookTechnicianScreen() {
           } finally {
             setIsCancelling(false);
           }
-        },
-      },
+        } },
     ]);
   };
 
@@ -260,29 +245,25 @@ export default function BookTechnicianScreen() {
       return {
         icon: 'flash-outline' as const,
         color: '#F97316', // orange
-        bg: '#FFEDD5',
-      };
+        bg: '#FFEDD5' };
     }
     if (c.includes('plumb')) {
       return {
         icon: 'water-outline' as const,
         color: '#3B82F6', // blue
-        bg: '#DBEAFE',
-      };
+        bg: '#DBEAFE' };
     }
     if (c.includes('fan') || c.includes('carpenter')) {
       return {
         icon: 'construct-outline' as const,
         color: Colors.success, // green
-        bg: '#D1FAE5',
-      };
+        bg: Palette.TintGreen };
     }
     // AC / Snowflake
     return {
       icon: 'snow-outline' as const,
       color: '#A855F7', // purple
-      bg: '#F3E8FF',
-    };
+      bg: '#F3E8FF' };
   };
 
   const timelineSteps = [
@@ -309,21 +290,21 @@ export default function BookTechnicianScreen() {
           </Col>
 
           {/* Details Card */}
-          <Card containerColor={Colors.surfaceElevated} borderRadius={20} borderWidth={1.5} borderColor={Colors.primary} padding={[20, 20]}>
+          <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.sheet} borderWidth={1.5} borderColor={Colors.primary} padding={[20, 20]}>
             <Row justify="space-between" align="center">
               <Txt size={13} color={Colors.textSecondary} weight="600">Request ID</Txt>
               <Row gap={6} align="center">
                 <Txt size={14} weight="800" color={Colors.textPrimary}>#{mockId}</Txt>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(mockId)}>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(mockId)}>
                   <Ionicons name="copy-outline" size={16} color={Colors.primary} />
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
             </Row>
             <Spacer size={12} />
             <Row justify="space-between" align="center">
               <Txt size={13} color={Colors.textSecondary} weight="600">Status</Txt>
-              <View style={[styles.statusPillBadge, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}>
-                <Txt size={10} weight="900" color="#F59E0B">OPEN</Txt>
+              <View style={[styles.statusPillBadge, { backgroundColor: Palette.TintAmber, borderColor: Colors.warning }]}>
+                <Txt size={10} weight="900" color={Colors.warning}>OPEN</Txt>
               </View>
             </Row>
           </Card>
@@ -338,11 +319,11 @@ export default function BookTechnicianScreen() {
               <Ionicons name="document-text-outline" size={16} color={Colors.primary} />
               <Row gap={4} align="center">
                 <Txt size={13} color={Colors.textSecondary}>You can track your request in</Txt>
-                <TouchableOpacity accessibilityRole="button" onPress={() => setViewMode('HISTORY')}>
+                <AnimatedPress accessibilityRole="button" onPress={() => setViewMode('HISTORY')}>
                   <Txt size={13} weight="700" color={Colors.primary} style={{ textDecorationLine: 'underline' }}>
                     My Requests
                   </Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
                 <Txt size={13} color={Colors.textSecondary}>.</Txt>
               </Row>
             </Row>
@@ -354,7 +335,7 @@ export default function BookTechnicianScreen() {
               onPress={() => { setViewMode('HISTORY'); }}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
-              borderRadius={Layout.borderRadiusButton}
+              borderRadius={Radii.control}
               height={48}
             >
               <Txt variant="body" weight="800" color={Colors.textInverse}>View My Requests</Txt>
@@ -363,7 +344,7 @@ export default function BookTechnicianScreen() {
               onPress={() => { router.back(); }}
               borderColor={Colors.primary}
               textColor={Colors.primary}
-              borderRadius={Layout.borderRadiusButton}
+              borderRadius={Radii.control}
               height={48}
             >
               <Txt variant="body" weight="700" color={Colors.primary}>Back to Home</Txt>
@@ -383,7 +364,7 @@ export default function BookTechnicianScreen() {
             {(['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((f) => {
               const isSelected = filter === f;
               return (
-                <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                   key={f}
                   style={[
                     styles.chipBtn,
@@ -394,7 +375,7 @@ export default function BookTechnicianScreen() {
                   <Txt size={11} weight="700" color={isSelected ? Colors.textInverse : Colors.textPrimary}>
                     {f === 'IN_PROGRESS' ? 'In Progress' : f[0] + f.slice(1).toLowerCase()}
                   </Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
               );
             })}
           </ScrollView>
@@ -421,7 +402,7 @@ export default function BookTechnicianScreen() {
                     scale={0.98}
                     onPress={() => { setSelectedRequest(item); setViewMode('DETAIL'); }}
                   >
-                    <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+                    <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                       <Row justify="space-between" align="center">
                         <Row gap={10} align="center" style={{ flex: 1 }}>
                           <View style={[styles.categoryIconCircle, { backgroundColor: styleAttrs.bg }]}>
@@ -468,7 +449,7 @@ export default function BookTechnicianScreen() {
       <HubScreenWrapper title="Request Details" onBack={() => setViewMode('HISTORY')}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 20, gap: 16 }}>
           {/* Header Info */}
-          <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Row justify="space-between" align="flex-start">
               <View style={[styles.statusPillBadge, { backgroundColor: `${statusColor}1A`, borderColor: statusColor }]}>
                 <Txt size={10} weight="900" color={statusColor}>{formatStatus(selectedRequest.status).toUpperCase()}</Txt>
@@ -477,9 +458,9 @@ export default function BookTechnicianScreen() {
                 <Txt size={10} color={Colors.textMuted} weight="700">REQUEST ID</Txt>
                 <Row gap={6} align="center" style={{ marginTop: 2 }}>
                   <Txt size={13} weight="800" color={Colors.textPrimary}>{itemMockId}</Txt>
-                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(itemMockId)}>
+                  <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(itemMockId)}>
                     <Ionicons name="copy-outline" size={14} color={Colors.primary} />
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </Row>
               </Col>
             </Row>
@@ -488,7 +469,7 @@ export default function BookTechnicianScreen() {
           </Card>
 
           {/* Stepper Timeline */}
-          <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 12 }}>STATUS TIMELINE</Txt>
             <View style={{ gap: 16 }}>
               {timelineSteps.map((step, idx) => (
@@ -508,7 +489,7 @@ export default function BookTechnicianScreen() {
           </Card>
 
           {/* Request Info */}
-          <Card containerColor={Colors.surface} borderRadius={16} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Row gap={6} align="center">
               <Ionicons name="flash-outline" size={14} color={Colors.primary} />
               <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>REQUEST INFORMATION</Txt>
@@ -565,7 +546,7 @@ export default function BookTechnicianScreen() {
 
           {/* Cancel Request Action */}
           {selectedRequest.status !== 'resolved' && selectedRequest.status !== 'cancelled' && (
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               onPress={() => handleCancelRequest(selectedRequest.id)}
               disabled={isCancelling}
               style={styles.cancelRequestBtn}
@@ -573,7 +554,7 @@ export default function BookTechnicianScreen() {
               <Txt size={14} weight="700" color={Colors.danger}>
                 {isCancelling ? 'Cancelling…' : 'Cancel Request'}
               </Txt>
-            </TouchableOpacity>
+            </AnimatedPress>
           )}
         </ScrollView>
       </HubScreenWrapper>
@@ -590,7 +571,7 @@ export default function BookTechnicianScreen() {
               <Txt size={18} weight="700" color={Colors.textPrimary}>Tell us what you need help with.</Txt>
             </Col>
             <View style={styles.illustrationCircle}>
-              <Txt size={32}>👨‍🔧</Txt>
+              <Ionicons name="construct" size={30} color={Colors.primary} />
             </View>
           </Row>
 
@@ -598,21 +579,21 @@ export default function BookTechnicianScreen() {
           <Col>
             <Row justify="space-between" align="center">
               <Txt size={13} weight="700" color={Colors.textPrimary}>Service Type *</Txt>
-              <TouchableOpacity accessibilityRole="button" onPress={() => { setViewMode('HISTORY'); }}>
+              <AnimatedPress accessibilityRole="button" onPress={() => { setViewMode('HISTORY'); }}>
                 <Txt size={12} weight="700" color={Colors.primary}>History ›</Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Row>
-            <Spacer size={6} />
-            <TouchableOpacity accessibilityRole="button"
-              onPress={() => { setShowCategoryMenu(true); }}
-              style={styles.dropdownBox}
-              testID="technician_service_dropdown"
-            >
-              <Txt size={14} color={category ? Colors.textPrimary : Colors.textMuted}>
-                {category || 'Select service'}
-              </Txt>
-              <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
-            </TouchableOpacity>
+            <Spacer size={8} />
+            {/* Six services, five slots, seven days: every list on this form fits on screen.
+                They were three separate blurred modals over a scrolling list — three taps and
+                a context switch to answer a question whose options could simply be shown. */}
+            <ChoiceChips
+              options={REPAIR_CATEGORIES}
+              value={category || null}
+              onChange={(v) => { setCategory(v); if (reqErrors.category) setReqErrors((e) => ({ ...e, category: undefined })); }}
+              error={reqErrors.category}
+              testID="technician_service"
+            />
           </Col>
 
           {/* Step 2: What's the problem */}
@@ -620,16 +601,15 @@ export default function BookTechnicianScreen() {
             <Txt size={13} weight="700" color={Colors.textPrimary}>What's the problem? *</Txt>
             <Spacer size={6} />
             <View style={styles.textAreaContainer}>
-              <TextInput maxFontSizeMultiplier={1.3} accessibilityLabel="Describe the issue in detail"
-                style={styles.textArea}
+              <OutlinedTextField
                 value={description}
-                onChangeText={(v) => v.length <= 500 && setDescription(v)}
-                placeholder="Describe the issue in detail..."
-                placeholderTextColor={Colors.textMuted}
+                onChangeText={(v) => { if (v.length <= 500) setDescription(v); if (reqErrors.description) setReqErrors((e) => ({ ...e, description: undefined })); }}
+                placeholder="Describe the issue in detail"
                 multiline
                 numberOfLines={4}
                 maxLength={500}
-                textAlignVertical="top"
+                error={reqErrors.description}
+                helper={`${description.length}/500`}
               />
               <Row justify="space-between" align="center" style={{ marginTop: 6 }}>
                 <Txt size={11} color={Colors.textMuted}>Example: Bathroom tap is leaking...</Txt>
@@ -644,7 +624,7 @@ export default function BookTechnicianScreen() {
             <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>Attach photos to help us understand the issue better.</Txt>
             <Spacer size={8} />
             
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               onPress={photos.length < 5 ? handleAddPhoto : undefined}
               style={[styles.uploadBox, photos.length >= 5 && { opacity: 0.5 }]}
               disabled={photos.length >= 5}
@@ -652,7 +632,7 @@ export default function BookTechnicianScreen() {
               <Ionicons name="camera-outline" size={26} color={Colors.primary} />
               <Txt size={13} weight="700" color={Colors.primary} style={{ marginTop: 4 }}>Upload Photos</Txt>
               <Txt size={10} color={Colors.textMuted} style={{ marginTop: 2 }}>Max 5 photos</Txt>
-            </TouchableOpacity>
+            </AnimatedPress>
             
             {photos.length > 0 && (
               <>
@@ -664,9 +644,9 @@ export default function BookTechnicianScreen() {
                         <Ionicons name="image" size={24} color={Colors.primary} />
                         <Txt size={8} color={Colors.textMuted}>Image {idx + 1}</Txt>
                       </View>
-                      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => handleRemovePhoto(idx)} style={styles.removePhotoBtn}>
+                      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => handleRemovePhoto(idx)} style={styles.removePhotoBtn}>
                         <Ionicons name="close" size={10} color={Colors.textInverse} />
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     </View>
                   ))}
                 </ScrollView>
@@ -677,26 +657,26 @@ export default function BookTechnicianScreen() {
           {/* Step 4: Preferred Time (Optional) */}
           <Col>
             <Txt size={13} weight="700" color={Colors.textPrimary}>Preferred Time (Optional)</Txt>
-            <Spacer size={6} />
-            <Row gap={10}>
-              <TouchableOpacity accessibilityRole="button" style={styles.pickerBtn} onPress={() => { setShowDatePicker(true); }}>
-                <Ionicons name="calendar-outline" size={15} color={Colors.primary} />
-                <Txt size={12} weight="700" color={preferredDate ? Colors.textPrimary : Colors.textMuted} style={{ marginLeft: 6 }}>
-                  {preferredDate || 'Select date'}
-                </Txt>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button" style={styles.pickerBtn} onPress={() => { setShowTimePicker(true); }}>
-                <Ionicons name="time-outline" size={15} color={Colors.primary} />
-                <Txt size={12} weight="700" color={preferredTime ? Colors.textPrimary : Colors.textMuted} style={{ marginLeft: 6 }}>
-                  {preferredTime || 'Select time'}
-                </Txt>
-              </TouchableOpacity>
-            </Row>
+            <Spacer size={8} />
+            <ChoiceChips
+              options={next7Days}
+              value={preferredDate || null}
+              onChange={setPreferredDate}
+              testID="technician_date"
+            />
+            <Spacer size={12} />
+            <ChoiceChips
+              options={TIME_SLOTS}
+              value={preferredTime || null}
+              onChange={setPreferredTime}
+              render={(t) => t.replace(/:00 /g, '').replace(' - ', '–')}
+              testID="technician_time"
+            />
           </Col>
 
           {/* Info Card */}
           <Spacer size={4} />
-          <Card containerColor={Colors.surfaceElevated} borderRadius={12} borderWidth={1} borderColor={Colors.primary} padding={[12, 14]}>
+          <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.primary} padding={[12, 14]}>
             <Row gap={10} align="center">
               <Ionicons name="shield-checkmark-outline" size={18} color={Colors.primary} />
               <Txt size={12} color={Colors.primaryDark} weight="600" style={{ flex: 1, lineHeight: 16 }}>
@@ -712,7 +692,7 @@ export default function BookTechnicianScreen() {
             loading={submitting}
             containerColor={Colors.primary}
             textColor={Colors.textInverse}
-            borderRadius={Layout.borderRadiusButton}
+            borderRadius={Radii.control}
             height={50}
             testID="submit_technician_btn"
           >
@@ -723,83 +703,6 @@ export default function BookTechnicianScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Category Selection Dropdown Modal */}
-      {showCategoryMenu && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowCategoryMenu(false)}>
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowCategoryMenu(false)} />
-            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
-              <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Service</Txt>
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
-                {REPAIR_CATEGORIES.map((cat) => (
-                  <TouchableOpacity accessibilityRole="button"
-                    key={cat}
-                    style={[styles.dropdownOption, category === cat && styles.dropdownOptionActive]}
-                    onPress={() => { setCategory(cat); setShowCategoryMenu(false); }}
-                  >
-                    <Txt size={13} weight={category === cat ? '700' : '400'} color={category === cat ? Colors.primary : Colors.textPrimary}>
-                      {cat}
-                    </Txt>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </Animated.View>
-          </Animated.View>
-        </Modal>
-      )}
-
-      {/* Date Dropdown Popup Modal */}
-      {showDatePicker && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowDatePicker(false)}>
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
-            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
-              <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Date</Txt>
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
-                {getNext7Days().map((d) => (
-                  <TouchableOpacity accessibilityRole="button"
-                    key={d}
-                    style={[styles.dropdownOption, preferredDate === d && styles.dropdownOptionActive]}
-                    onPress={() => { setPreferredDate(d); setShowDatePicker(false); }}
-                  >
-                    <Txt size={13} weight={preferredDate === d ? '700' : '400'} color={preferredDate === d ? Colors.primary : Colors.textPrimary}>
-                      {d}
-                    </Txt>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </Animated.View>
-          </Animated.View>
-        </Modal>
-      )}
-
-      {/* Time Dropdown Popup Modal */}
-      {showTimePicker && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowTimePicker(false)}>
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.modalBackdrop}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowTimePicker(false)} />
-            <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={styles.dropdownCard}>
-              <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginBottom: 10 }}>Select Time Slot</Txt>
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
-                {TIME_SLOTS.map((t) => (
-                  <TouchableOpacity accessibilityRole="button"
-                    key={t}
-                    style={[styles.dropdownOption, preferredTime === t && styles.dropdownOptionActive]}
-                    onPress={() => { setPreferredTime(t); setShowTimePicker(false); }}
-                  >
-                    <Txt size={13} weight={preferredTime === t ? '700' : '400'} color={preferredTime === t ? Colors.primary : Colors.textPrimary}>
-                      {t}
-                    </Txt>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </Animated.View>
-          </Animated.View>
-        </Modal>
-      )}
     </HubScreenWrapper>
   );
 }
@@ -808,172 +711,107 @@ const styles = StyleSheet.create({
   illustrationCircle: {
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.borderGlass,
-  },
-  dropdownBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: Colors.borderMuted,
-    borderRadius: Layout.borderRadiusButton,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: Colors.surface,
-  },
+    borderColor: Colors.borderGlass },
   textAreaContainer: {
     borderWidth: 1,
     borderColor: Colors.borderMuted,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: Colors.surface,
     padding: 12,
-    minHeight: 110,
-  },
-  textArea: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    height: 74,
-    paddingVertical: 0,
-  },
+    minHeight: 110 },
   uploadBox: {
     width: '100%',
     height: 110,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     borderWidth: 1.5,
-    borderColor: '#D1FAE5',
+    borderColor: Palette.TintGreen,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
-  },
+    backgroundColor: Colors.surface },
   thumbnailContainer: {
     position: 'relative',
     width: 80,
-    height: 80,
-  },
+    height: 80 },
   thumbnailPlaceholder: {
     width: 80,
     height: 80,
-    borderRadius: 12,
+    borderRadius: Radii.card,
     backgroundColor: Colors.surfaceMuted,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   removePhotoBtn: {
     position: 'absolute',
     top: -4,
     right: -4,
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
-  },
-  pickerBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 46,
-    borderRadius: Layout.borderRadiusButton,
-    borderWidth: 1,
-    borderColor: Colors.borderMuted,
-    backgroundColor: Colors.surface,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dropdownCard: {
-    width: '80%',
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    padding: 18,
-  },
-  dropdownOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  dropdownOptionActive: {
-    backgroundColor: Colors.surfaceElevated,
-  },
+    zIndex: 10 },
   successBadge: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: Radii.pill,
     backgroundColor: `${Colors.success}1A`,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   statusPillBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
+    borderRadius: Radii.badge,
+    borderWidth: 1 },
   categoryIconCircle: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   timelineNode: {
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: Radii.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
+    justifyContent: 'center' },
   chipBtn: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
+    borderRadius: Radii.control,
+    borderWidth: 1 },
   detailThumbnail: {
     width: 50,
     height: 50,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceMuted,
-  },
+    backgroundColor: Colors.surfaceMuted },
   detailThumbnailBadge: {
     width: 50,
     height: 50,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F1F5F9',
-  },
+    backgroundColor: '#F1F5F9' },
   cancelRequestBtn: {
     width: '100%',
     height: 48,
-    borderRadius: Layout.borderRadiusButton,
+    borderRadius: Radii.control,
     borderWidth: 1.5,
     borderColor: Colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.surface,
-    marginTop: 8,
-  },
-});
+    marginTop: 8 } });

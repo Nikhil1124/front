@@ -5,20 +5,19 @@
  */
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, ScrollView, StyleSheet, TouchableOpacity, Image,
-  RefreshControl, Dimensions,
-} from 'react-native';
+  View, ScrollView, StyleSheet, Image,
+  RefreshControl, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueries } from '@tanstack/react-query';
 
-import { Txt, Row, Col, Spacer, Card } from '@/components/ui';
+import { Txt, Row, Col, Spacer, Card, StatusChip, type StatusTone, AnimatedPress } from '@/components/ui';
 import { InfoTip } from '@/components/ui/InfoTip';
-import { DetailBottomSheet } from '@/components/DetailBottomSheet';
+import { Sheet } from '@/components/ui';
 import { MealToggleWidget } from '@/components/MealToggleWidget';
 import { FeaturedMonetizedAdCard } from '@/components/FeaturedMonetizedAdCard';
-import { Colors } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
@@ -30,6 +29,7 @@ import { qk } from '@/data/queryKeys';
 import { useSetAwayMutation } from '@/features/auth/useAuth';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -37,8 +37,7 @@ const MEAL_PREF_KEY = '@pgow/meal_preferences';
 const CUTOFF_HOURS: Record<'breakfast' | 'lunch' | 'dinner', number> = {
   breakfast: 8,
   lunch: 12,
-  dinner: 19,
-};
+  dinner: 19 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function getCutoffMs(mealType: string): number {
@@ -59,9 +58,8 @@ function cutoffLabel(ms: number): string {
 /** Chef-confirmed only (`MealNotificationEntity.dietaryType`) — null renders nothing. */
 const DIETARY_TAG: Record<'veg' | 'non_veg' | 'pure_veg', { label: string; color: string; bg: string }> = {
   veg: { label: '🥦 VEG', color: '#15803D', bg: '#DCFCE7' },
-  non_veg: { label: '🍗 NON-VEG', color: '#B91C1C', bg: '#FEE2E2' },
-  pure_veg: { label: '🥗 PURE VEG', color: '#166534', bg: '#DCFCE7' },
-};
+  non_veg: { label: '🍗 NON-VEG', color: Colors.danger, bg: Palette.TintRed },
+  pure_veg: { label: '🥗 PURE VEG', color: Colors.success, bg: '#DCFCE7' } };
 
 function buildWeekDays(): { label: string; short: string; date: number; isToday: boolean; full: Date }[] {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -75,8 +73,7 @@ function buildWeekDays(): { label: string; short: string; date: number; isToday:
       short: days[d.getDay()],
       date: d.getDate(),
       isToday: i === 0,
-      full: d,
-    });
+      full: d });
   }
   return result;
 }
@@ -100,6 +97,7 @@ const MEAL_TABS: { key: string; label: string; icon: any; time: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 export function GuestRSVPsTab() {
+  const dockScroll = useDockScroll();
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: notifications = [], isLoading, error: mealsError } = useMealsQuery(activePgId ?? undefined);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
@@ -119,8 +117,7 @@ export function GuestRSVPsTab() {
   const [mealPrefs, setMealPrefs] = useState<{ breakfast: boolean; lunch: boolean; dinner: boolean }>({
     breakfast: true,
     lunch: true,
-    dinner: true,
-  });
+    dinner: true });
 
   // Away/vacation mode — real, server-side (PATCH /v1/me/away): persists across devices and
   // shows up to staff reading a meal's roster (response.service.roster's `is_away`).
@@ -138,8 +135,7 @@ export function GuestRSVPsTab() {
           toast('success', 'Welcome Back! 🏠', "You're marked as home again.");
         }
       },
-      onError: () => toast('error', 'Could not update', 'Please try again.'),
-    });
+      onError: () => toast('error', 'Could not update', 'Please try again.') });
   }, [setAwayMutation, toast]);
 
   useEffect(() => {
@@ -151,8 +147,7 @@ export function GuestRSVPsTab() {
           setMealPrefs({
             breakfast: !!parsed.breakfast,
             lunch: !!parsed.lunch,
-            dinner: !!parsed.dinner,
-          });
+            dinner: !!parsed.dinner });
         } catch { /* best-effort */ }
       })
       .catch(() => {});
@@ -185,8 +180,7 @@ export function GuestRSVPsTab() {
         enabled: mealPrefs[mealType],
         cutoffTime: cutoffTimeStr,
         nextCutoffMs,
-        menuSummary: notif?.menuItems ?? '',
-      };
+        menuSummary: notif?.menuItems ?? '' };
     },
     [mealPrefs, notifications],
   );
@@ -209,9 +203,7 @@ export function GuestRSVPsTab() {
     queries: notifications.map((n) => ({
       queryKey: qk.meals.myResponse(activePgId ?? '', n.id),
       queryFn: () => getMyResponse(n.id),
-      enabled: !!activePgId,
-    })),
-  });
+      enabled: !!activePgId })) });
   const serverRsvpChoices = useMemo(() => {
     const map: Record<string, 'REQUIRED' | 'NOT_REQUIRED'> = {};
     notifications.forEach((n, i) => {
@@ -271,6 +263,7 @@ export function GuestRSVPsTab() {
       />
 
       <ScrollView
+        {...dockScroll}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -289,7 +282,7 @@ export function GuestRSVPsTab() {
           contentContainerStyle={[styles.dayStripContent, { paddingHorizontal: 16 }]}
         >
           {weekDays.map((d, i) => (
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               key={i}
               onPress={() => setSelectedDay(i)}
               style={[styles.dayPill, selectedDay === i && styles.dayPillActive]}
@@ -305,10 +298,10 @@ export function GuestRSVPsTab() {
               <Txt size={17} weight="800" color={selectedDay === i ? '#FFFFFF' : Colors.textPrimary}>
                 {String(d.date).padStart(2, '0')}
               </Txt>
-            </TouchableOpacity>
+            </AnimatedPress>
           ))}
           {/* Weekly View button */}
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={styles.weeklyViewBtn}
             onPress={() => { toast('info', 'Not Available Yet', 'A 7-day meal overview is coming soon.'); }}
           >
@@ -316,7 +309,7 @@ export function GuestRSVPsTab() {
             <Txt size={10} weight="700" color={Colors.primary} style={{ marginTop: 4, textAlign: 'center' }}>
               Weekly{'\n'}View
             </Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
         </ScrollView>
 
         {/* Optional: Persistent Preferences Widget when toggled or top section */}
@@ -347,18 +340,17 @@ export function GuestRSVPsTab() {
                     </Txt>
                   </Col>
                 </Row>
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={{
-                    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12,
-                    backgroundColor: isAwayFromPg ? '#FEF3C7' : '#E0F2F0',
-                    borderWidth: 1, borderColor: isAwayFromPg ? '#FDE68A' : '#BDD8D6',
-                  }}
+                    paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.card,
+                    backgroundColor: isAwayFromPg ? Palette.TintAmber : Palette.TintGreen,
+                    borderWidth: 1, borderColor: isAwayFromPg ? Palette.TintAmber : '#BDD8D6' }}
                   onPress={() => toggleVacationMode(!isAwayFromPg)}
                 >
-                  <Txt size={11} weight="900" color={isAwayFromPg ? '#D97706' : Colors.primary}>
+                  <Txt size={11} weight="900" color={isAwayFromPg ? Colors.warning : Colors.primary}>
                     {isAwayFromPg ? 'AWAY ✈️' : 'HOME 🏠'}
                   </Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
             </View>
           </View>
@@ -366,30 +358,30 @@ export function GuestRSVPsTab() {
 
         {/* Vacation Mode Active Banner */}
         {isAwayFromPg && (
-          <Card containerColor="#FFFBEB" borderRadius={18} borderWidth={1.5} borderColor="#FDE68A" padding={[14, 14]} style={{ marginBottom: 14 }}>
+          <Card containerColor={Palette.TintAmber} borderRadius={Radii.card} borderWidth={1.5} borderColor={Palette.TintAmber} padding={[14, 14]} style={{ marginBottom: 14 }}>
             <Row justify="space-between" align="center">
               <Row gap={10} style={{ flex: 1, paddingRight: 8 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="airplane" size={20} color="#D97706" />
+                <View style={{ width: 40, height: 40, borderRadius: Radii.pill, backgroundColor: Palette.TintAmber, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="airplane" size={20} color={Colors.warning} />
                 </View>
                 <Col style={{ flex: 1 }}>
                   <Row gap={6} align="center">
                     <Txt size={14} weight="900" color="#92400E">Away from PG (Home Visit)</Txt>
-                    <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: '#FEF3C7' }}>
-                      <Txt size={9} weight="800" color="#D97706">NOTED</Txt>
+                    <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radii.badge, backgroundColor: Palette.TintAmber }}>
+                      <Txt size={9} weight="800" color={Colors.warning}>NOTED</Txt>
                     </View>
                   </Row>
-                  <Txt size={11} color="#B45309" style={{ marginTop: 2, lineHeight: 15 }}>
+                  <Txt size={11} color={Colors.warning} style={{ marginTop: 2, lineHeight: 15 }}>
                     Staff can see you're away. Notifications keep coming and the kitchen still plans for you — RSVP "Not Attending" on each meal yourself.
                   </Txt>
                 </Col>
               </Row>
-              <TouchableOpacity accessibilityRole="button"
-                style={{ backgroundColor: '#D97706', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}
+              <AnimatedPress accessibilityRole="button"
+                style={{ backgroundColor: Colors.warning, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control }}
                 onPress={() => toggleVacationMode(false)}
               >
                 <Txt size={11} weight="800" color="#FFFFFF">I'm Back 🏠</Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Row>
           </Card>
         )}
@@ -408,11 +400,11 @@ export function GuestRSVPsTab() {
               Please confirm your meals before the cut-off time.
             </Txt>
           </Col>
-          <TouchableOpacity accessibilityRole="button" onPress={() => setShowPreferences(!showPreferences)}>
+          <AnimatedPress accessibilityRole="button" onPress={() => setShowPreferences(!showPreferences)}>
             <Txt size={12} weight="700" color={Colors.primary}>
               {showPreferences ? 'Hide Prefs' : 'How RSVP works >'}
             </Txt>
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
 
         <FeaturedMonetizedAdCard />
@@ -423,7 +415,7 @@ export function GuestRSVPsTab() {
           {MEAL_TABS.map((tab) => {
             const active = activeMealTab === tab.key;
             return (
-              <TouchableOpacity accessibilityState={{ selected: !!active }} accessibilityRole="button"
+              <AnimatedPress accessibilityState={{ selected: !!active }} accessibilityRole="button"
                 key={tab.key}
                 onPress={() => { setActiveMealTab(tab.key); }}
                 style={[styles.tabPill, active && styles.tabPillActive]}
@@ -433,13 +425,13 @@ export function GuestRSVPsTab() {
                   <Txt size={12} weight="800" color={active ? '#FFFFFF' : Colors.textPrimary}>{tab.label}</Txt>
                   <Txt size={10} color={active ? 'rgba(255,255,255,0.75)' : Colors.textSecondary}>{tab.time}</Txt>
                 </Col>
-              </TouchableOpacity>
+              </AnimatedPress>
             );
           })}
         </Row>
 
         {/* ── 5. MEAL HERO CARD ── */}
-        <TouchableOpacity accessibilityRole="button" activeOpacity={0.9} onPress={() => activeMealNotif && setDetailMeal(activeMealNotif)} style={styles.heroCard}>
+        <AnimatedPress accessibilityRole="button" onPress={() => activeMealNotif && setDetailMeal(activeMealNotif)} style={styles.heroCard}>
           {/* Food image - right */}
           <View style={styles.heroImageWrap}>
             <Image
@@ -448,12 +440,12 @@ export function GuestRSVPsTab() {
               resizeMode="cover"
             />
             <LinearGradient
-              colors={['#FFFFFF', 'transparent']}
+              colors={[Colors.surface, 'transparent']}
               start={{ x: 0, y: 0.5 }} end={{ x: 0.55, y: 0.5 }}
               style={StyleSheet.absoluteFill}
             />
             <LinearGradient
-              colors={['transparent', '#FFFFFF']}
+              colors={['transparent', Colors.surface]}
               start={{ x: 0.5, y: 0.6 }} end={{ x: 0.5, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
@@ -523,7 +515,7 @@ export function GuestRSVPsTab() {
               </View>
             ) : (
               <Row gap={12}>
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={[styles.attendBtn, isAttending && styles.attendBtnActive]}
                   onPress={() => handleRSVP(activeMealNotif.id, 'REQUIRED')}
                   disabled={!!submittingId}
@@ -532,8 +524,8 @@ export function GuestRSVPsTab() {
                   <Txt size={13} weight="800" color={isAttending ? '#FFFFFF' : Colors.textPrimary}>
                     {isAttending ? "I'll Attend" : "I'll Attend"}
                   </Txt>
-                </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="button"
+                </AnimatedPress>
+                <AnimatedPress accessibilityRole="button"
                   style={[styles.skipBtn, isSkipping && styles.skipBtnActive]}
                   onPress={() => handleRSVP(activeMealNotif.id, 'NOT_REQUIRED')}
                   disabled={!!submittingId}
@@ -541,7 +533,7 @@ export function GuestRSVPsTab() {
                   <Txt size={13} weight="800" color={isSkipping ? '#FFFFFF' : Colors.textSecondary}>
                     Not Attending
                   </Txt>
-                </TouchableOpacity>
+                </AnimatedPress>
               </Row>
             )
           )}
@@ -552,7 +544,7 @@ export function GuestRSVPsTab() {
               <View key={t.key} style={[styles.dotInd, activeMealTab === t.key && styles.dotIndActive]} />
             ))}
           </Row>
-        </TouchableOpacity>
+        </AnimatedPress>
 
         {/* Decision progress */}
         {totalMealsCount > 0 && (
@@ -590,7 +582,7 @@ export function GuestRSVPsTab() {
           contentContainerStyle={{ gap: 12, paddingHorizontal: 16, paddingBottom: 16 }}
         >
           {weekDays.map((d, i) => (
-            <TouchableOpacity accessibilityRole="button" key={i} onPress={() => setSelectedDay(i)}>
+            <AnimatedPress accessibilityRole="button" key={i} onPress={() => setSelectedDay(i)}>
               <Col align="center" style={{ width: 38 }}>
                 <Txt size={11} weight="600" color={Colors.textSecondary}>{d.label.slice(0, 3).toUpperCase()}</Txt>
                 <View style={[styles.weekDayCircle, selectedDay === i && styles.weekDayCircleActive]}>
@@ -599,7 +591,7 @@ export function GuestRSVPsTab() {
                   </Txt>
                 </View>
               </Col>
-            </TouchableOpacity>
+            </AnimatedPress>
           ))}
         </ScrollView>
 
@@ -626,16 +618,17 @@ export function GuestRSVPsTab() {
               const icon = lowerType === 'breakfast' ? 'sunny-outline' : lowerType === 'dinner' ? 'moon-outline' : 'restaurant-outline';
               const isLast = idx === notifications.length - 1;
 
-              let statusLabel = 'Not Decided';
-              let statusColor = '#F59E0B';
-              let statusIcon: any = 'remove-circle-outline';
-              if (isEat) { statusLabel = 'Attending'; statusColor = Colors.success; statusIcon = 'checkmark-circle'; }
-              if (isSkip) { statusLabel = 'Skipping'; statusColor = Colors.danger; statusIcon = 'close-circle'; }
+              // Skipping is a valid answer, not a failure — it reads `neutral`, not danger.
+              // Only "Not decided" past the cutoff is actually something to act on.
               const isUpcoming = !choice && getCutoffMs(n.mealType) > Date.now();
-              if (isUpcoming) { statusLabel = 'Upcoming'; statusColor = Colors.primary; statusIcon = 'time-outline'; }
+              const status: { label: string; tone: StatusTone } =
+                isEat ? { label: 'Attending', tone: 'ok' }
+                : isSkip ? { label: 'Skipping', tone: 'neutral' }
+                : isUpcoming ? { label: 'Upcoming', tone: 'info' }
+                : { label: 'Not decided', tone: 'warn' };
 
               return (
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   key={n.id}
                   onPress={() => setDetailMeal(n)}
                   style={[styles.mealRow, !isLast && styles.mealRowBorder]}
@@ -650,23 +643,17 @@ export function GuestRSVPsTab() {
                     </Txt>
                   </Col>
                   <Row align="center" gap={6}>
-                    <View style={[styles.statusChip, { borderColor: statusColor, backgroundColor: `${statusColor}18` }]}>
-                      <Ionicons name={statusIcon} size={13} color={statusColor} />
-                      <Txt size={11} weight="700" color={statusColor} style={{ marginLeft: 4 }}>
-                        {statusLabel}
-                      </Txt>
-                    </View>
+                    <StatusChip label={status.label} tone={status.tone} />
                     <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
                   </Row>
-                </TouchableOpacity>
+                </AnimatedPress>
               );
             })}
           </View>
         )}
 
         {/* ── 7. PAST MEALS & FEEDBACK ── */}
-        <TouchableOpacity accessibilityRole="button"
-          activeOpacity={0.88}
+        <AnimatedPress accessibilityRole="button"
           style={styles.pastCard}
           onPress={() => { toast('info', 'Not Available Yet', 'Meal feedback history is coming soon.'); }}
         >
@@ -683,11 +670,10 @@ export function GuestRSVPsTab() {
             <Txt size={12} weight="700" color={Colors.primary}>View All</Txt>
             <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
           </View>
-        </TouchableOpacity>
+        </AnimatedPress>
 
         {/* ── 8. FEEDBACK BANNER ── */}
-        <TouchableOpacity accessibilityRole="button"
-          activeOpacity={0.88}
+        <AnimatedPress accessibilityRole="button"
           style={styles.feedbackBanner}
           onPress={() => { toast('info', 'Not Available Yet', 'Meal feedback submission is coming soon.'); }}
         >
@@ -705,13 +691,13 @@ export function GuestRSVPsTab() {
             style={styles.feedbackImage}
             resizeMode="cover"
           />
-        </TouchableOpacity>
+        </AnimatedPress>
 
         <Spacer size={32} />
       </ScrollView>
 
       {/* Detail Sheet */}
-      <DetailBottomSheet
+      <Sheet
         visible={detailMeal != null}
         title={detailMeal?.mealType ?? 'Meal'}
         subtitle={`Service at ${detailMeal ? formatServiceTime12h(detailMeal.serviceTime) : ''}`}
@@ -721,27 +707,27 @@ export function GuestRSVPsTab() {
         footer={
           detailMeal ? (
             <Row gap={10}>
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={[styles.sheetBtn, { backgroundColor: Colors.primary }]}
                 onPress={() => { handleRSVP(detailMeal.id, 'REQUIRED'); setDetailMeal(null); }}
               >
                 <Ionicons name="checkmark" size={16} color="#FFF" />
                 <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>I'll Attend ✅</Txt>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button"
+              </AnimatedPress>
+              <AnimatedPress accessibilityRole="button"
                 style={[styles.sheetBtn, { backgroundColor: Colors.danger }]}
                 onPress={() => { handleRSVP(detailMeal.id, 'NOT_REQUIRED'); setDetailMeal(null); }}
               >
                 <Ionicons name="close" size={16} color="#FFF" />
                 <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>Skip Portion</Txt>
-              </TouchableOpacity>
+              </AnimatedPress>
             </Row>
           ) : null
         }
       >
         {detailMeal && (
           <View>
-            <Card containerColor="#F7FAFA" borderRadius={12} borderWidth={1} borderColor="#DCE9EA" padding={[14, 14]}>
+            <Card containerColor="#F7FAFA" borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[14, 14]}>
               <Row justify="space-between" align="center">
                 <Row align="center" gap={8}>
                   <Ionicons name="restaurant" size={18} color={Colors.primary} />
@@ -761,7 +747,7 @@ export function GuestRSVPsTab() {
                 <>
                   <Spacer size={8} />
                   <View style={styles.chefNote}>
-                    <Txt size={12} weight="700" color={Colors.textPrimary}>👨‍🍳 Chef Note: "{detailMeal.chefNote}"</Txt>
+                    <Txt size={12} weight="700" color={Colors.textPrimary}>Chef note: "{detailMeal.chefNote}"</Txt>
                   </View>
                 </>
               ) : null}
@@ -807,15 +793,15 @@ export function GuestRSVPsTab() {
                 );
               }
               return (
-                <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' }]}>
-                  <Ionicons name="hourglass" size={18} color="#F59E0B" />
-                  <Txt size={12} weight="800" color="#F59E0B" style={{ marginLeft: 8 }}>Pending — pick Attending or Skip below.</Txt>
+                <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: Colors.warning }]}>
+                  <Ionicons name="hourglass" size={18} color={Colors.warning} />
+                  <Txt size={12} weight="800" color={Colors.warning} style={{ marginLeft: 8 }}>Pending — pick Attending or Skip below.</Txt>
                 </View>
               );
             })()}
           </View>
         )}
-      </DetailBottomSheet>
+      </Sheet>
     </View>
   );
 }
@@ -824,7 +810,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
 
   // Header
-  hIconBtnActive: { backgroundColor: 'rgba(255,255,255,0.35)' },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
@@ -834,121 +819,107 @@ const styles = StyleSheet.create({
   dayStripContent: { gap: 8, paddingRight: 8 },
   dayPill: {
     minWidth: 54, paddingHorizontal: 8, paddingVertical: 10,
-    borderRadius: 16, backgroundColor: '#FFFFFF',
+    borderRadius: Radii.card, backgroundColor: '#FFFFFF',
     borderWidth: 1, borderColor: '#DCE9E9',
     alignItems: 'center',
-    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
-  },
+    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   dayPillActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
   weeklyViewBtn: {
-    width: 56, paddingVertical: 10, borderRadius: 16,
+    width: 56, paddingVertical: 10, borderRadius: Radii.card,
     backgroundColor: '#EAF5F4', borderWidth: 1, borderColor: '#BDD8D6',
-    alignItems: 'center', justifyContent: 'center',
-  },
+    alignItems: 'center', justifyContent: 'center' },
 
   // Prefs
   prefsWrapper: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#DCE9E9',
+    backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9E9',
     padding: 14, marginBottom: 16,
-    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
-  },
+    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
 
   // RSVP Banner
   rsvpBanner: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 16,
+    backgroundColor: '#FFFFFF', borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9E9',
     padding: 14, marginBottom: 12,
-    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
-  },
-  rsvpBannerIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center' },
+    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  rsvpBannerIcon: { width: 38, height: 38, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
 
   // Meal tabs
   tabRow: { marginBottom: 16, flexWrap: 'nowrap' },
   tabPill: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 14,
+    backgroundColor: '#FFFFFF', borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9E9',
-    paddingHorizontal: 10, paddingVertical: 10,
-  },
+    paddingHorizontal: 10, paddingVertical: 10 },
   tabPillActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
 
   // Hero card
   heroCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 24,
+    backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9E9',
     padding: 20, marginBottom: 0,
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 5,
-    overflow: 'hidden',
-  },
+    overflow: 'hidden' },
   heroImageWrap: { position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%' },
   heroImage: { width: '100%', height: '100%' },
   upcomingBadge: {
-    backgroundColor: '#E0F2F0', borderRadius: 20,
+    backgroundColor: Palette.TintGreen, borderRadius: Radii.sheet,
     paddingHorizontal: 12, paddingVertical: 5,
-    alignSelf: 'flex-start',
-  },
-  vegDotWrap: { width: 14, height: 14, borderRadius: 3, borderWidth: 1.5, borderColor: Colors.success, alignItems: 'center', justifyContent: 'center' },
-  vegDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
-  rsvpClosed: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F6F5', borderRadius: 12, height: 44, paddingHorizontal: 16 },
+    alignSelf: 'flex-start' },
+  vegDotWrap: { width: 14, height: 14, borderRadius: Radii.badge, borderWidth: 1.5, borderColor: Colors.success, alignItems: 'center', justifyContent: 'center' },
+  vegDot: { width: 6, height: 6, borderRadius: Radii.pill, backgroundColor: Colors.success },
+  rsvpClosed: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F6F5', borderRadius: Radii.card, height: 44, paddingHorizontal: 16 },
   attendBtn: {
-    flex: 1, height: 44, borderRadius: 12,
+    flex: 1, height: 44, borderRadius: Radii.card,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9',
-  },
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9' },
   attendBtnActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
   skipBtn: {
-    flex: 1, height: 44, borderRadius: 12,
+    flex: 1, height: 44, borderRadius: Radii.card,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9',
-  },
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9' },
   skipBtnActive: { backgroundColor: Colors.danger, borderColor: Colors.danger },
-  dotInd: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#D5E8E6' },
+  dotInd: { width: 7, height: 7, borderRadius: Radii.pill, backgroundColor: '#D5E8E6' },
   dotIndActive: { width: 20, backgroundColor: Colors.primaryDark },
 
   // Progress box
-  progressBox: { marginTop: 16, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#DCE9E9' },
-  progressTrack: { height: 6, backgroundColor: '#E0F2F0', borderRadius: 3, marginTop: 8, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 3 },
+  progressBox: { marginTop: 16, backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: '#DCE9E9' },
+  progressTrack: { height: 6, backgroundColor: Palette.TintGreen, borderRadius: Radii.badge, marginTop: 8, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: Radii.badge },
 
   // Week day circle
-  weekDayCircle: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginTop: 4, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9' },
+  weekDayCircle: { width: 38, height: 38, borderRadius: Radii.pill, alignItems: 'center', justifyContent: 'center', marginTop: 4, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9' },
   weekDayCircleActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
 
   // Meal list
-  mealListCard: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#DCE9E9', overflow: 'hidden', marginBottom: 16, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  mealListCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', overflow: 'hidden', marginBottom: 16, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
   mealRow: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   mealRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F0F6F5' },
-  mealRowIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center' },
-  statusChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
-  emptyBox: { alignItems: 'center', paddingVertical: 40, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#DCE9E9', marginBottom: 16 },
+  mealRowIcon: { width: 42, height: 42, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
+  emptyBox: { alignItems: 'center', paddingVertical: 40, backgroundColor: '#FFFFFF', borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', marginBottom: 16 },
 
   // Past Meals
   pastCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 20,
+    backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9E9',
     padding: 16, marginBottom: 12,
-    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3,
-  },
-  pastIcon: { width: 46, height: 46, borderRadius: 12, backgroundColor: '#E0F2F0', alignItems: 'center', justifyContent: 'center' },
-  viewAllChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#BDD8D6', paddingHorizontal: 12, paddingVertical: 7 },
+    shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  pastIcon: { width: 46, height: 46, borderRadius: Radii.card, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
+  viewAllChip: { flexDirection: 'row', alignItems: 'center', borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#BDD8D6', paddingHorizontal: 12, paddingVertical: 7 },
 
   // Feedback banner
   feedbackBanner: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#EAF5F4', borderRadius: 20,
+    backgroundColor: '#EAF5F4', borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#BDD8D6',
-    padding: 16, overflow: 'hidden',
-  },
-  feedbackIcon: { width: 46, height: 46, borderRadius: 12, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+    padding: 16, overflow: 'hidden' },
+  feedbackIcon: { width: 46, height: 46, borderRadius: Radii.card, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   feedbackImage: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 90, opacity: 0.35 },
 
   // Sheet
-  sheetBtn: { flex: 1, height: 46, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  chefNote: { marginTop: 10, backgroundColor: '#F0F6F5', borderRadius: 10, padding: 10 },
-  dietTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  sheetTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  sheetBtn: { flex: 1, height: 46, borderRadius: Radii.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  chefNote: { marginTop: 10, backgroundColor: '#F0F6F5', borderRadius: Radii.control, padding: 10 },
+  dietTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radii.control },
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
-  rsvpStatusBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, borderWidth: 1 },
-});
+  rsvpStatusBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: Radii.control, borderWidth: 1 } });

@@ -10,7 +10,7 @@ import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
 import PropertyMap from '@/components/PropertyMap';
 import type { PickedLocation } from '@/features/places/pendingLocation';
-import { Colors } from '@/theme';
+import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PGOwnerEntity } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -24,6 +24,8 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
   const updatePG = usePGowStore((s) => s.updatePGProperty);
   const [name, setName] = useState(pg.pgName);
   const [address, setAddress] = useState(pg.address);
+  const [nameError, setNameError] = useState<string | undefined>();
+  const [addressError, setAddressError] = useState<string | undefined>();
   const [totalBeds, setTotalBeds] = useState(String(pg.totalBeds || 36));
   const [mgrName, setMgrName] = useState(pg.managerName);
   const [mgrPhone, setMgrPhone] = useState(pg.managerPhone);
@@ -33,7 +35,8 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
 
   const handleSave = async () => {
     if (!name.trim() || !address.trim()) {
-      Alert.alert('Validation', 'PG Name and Address are required.');
+      setNameError(name.trim() ? undefined : 'Name the property');
+      setAddressError(address.trim() ? undefined : 'Enter the property address');
       return;
     }
     const result = await updatePG(
@@ -74,7 +77,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
         <View style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
           <Card
             containerColor={Colors.surface}
-            borderRadius={24}
+            borderRadius={Radii.sheet}
             borderWidth={1}
             borderColor={Colors.borderSubtle}
             padding={[20, 20]}
@@ -94,7 +97,8 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
             <OutlinedTextField
               label="Property / PG Name"
               value={name}
-              onChangeText={setName}
+              onChangeText={(v) => { setName(v); if (nameError) setNameError(undefined); }}
+              error={nameError}
               containerColor={Colors.surfaceMuted}
               focusedBorderColor={Colors.primary}
               unfocusedBorderColor={Colors.borderSubtle}
@@ -102,7 +106,8 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
             <OutlinedTextField
               label="Branch Location / Address"
               value={address}
-              onChangeText={setAddress}
+              onChangeText={(v) => { setAddress(v); if (addressError) setAddressError(undefined); }}
+              error={addressError}
               containerColor={Colors.surfaceMuted}
               focusedBorderColor={Colors.primary}
               unfocusedBorderColor={Colors.borderSubtle}
@@ -158,7 +163,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               onPress={handleSave}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
-              borderRadius={12}
+              borderRadius={Radii.card}
               height={44}
               style={{ flex: 1 }}
             >
@@ -168,7 +173,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
               onPress={onDismiss}
               borderColor={Colors.borderSubtle}
               textColor={Colors.textPrimary}
-              borderRadius={12}
+              borderRadius={Radii.card}
               height={44}
               style={{ flex: 1 }}
             >
@@ -188,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   headerIconBox: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: Radii.control,
     backgroundColor: '#EEF2FF',
     alignItems: 'center', justifyContent: 'center',
   },
