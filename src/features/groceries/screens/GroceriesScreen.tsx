@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
 import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { AnimatedPress, ErrorState, FormScroll, LoadingState, Txt } from '@/components/ui';
+import { AnimatedPress, ErrorState, LoadingState, Txt } from '@/components/ui';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';

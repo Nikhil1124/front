@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
-import { AnimatedPress, FormScroll, OutlinedTextField, Txt } from '@/components/ui';
+import { AnimatedPress, OutlinedTextField, Txt } from '@/components/ui';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';

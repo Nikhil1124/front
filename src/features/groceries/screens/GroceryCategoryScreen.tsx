@@ -2,7 +2,8 @@ import { SupplyCategory } from '@/types';
 import { toAmount } from '@/data/mappers';
 import { useMemo, useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
-import { AnimatedPress, FormScroll, Txt } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
