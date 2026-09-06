@@ -21,3 +21,4 @@ ios/
 # not part of the app.
 .claude/
 *.md
+export-android/
