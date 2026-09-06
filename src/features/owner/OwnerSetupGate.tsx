@@ -21,6 +21,7 @@ import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Txt } from '@/components/ui';
 
 import { Radii, Colors } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
