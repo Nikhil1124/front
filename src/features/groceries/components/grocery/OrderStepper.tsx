@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyOrderStatus } from '@/types/supply';
 import { Radii, Palette, Colors } from '@/theme';
+import { Txt } from '@/components/ui';
+
 
 export const SUPPLY_ORDER_STATUS_SEQUENCE: SupplyOrderStatus[] = [
   'placed',
@@ -36,7 +38,7 @@ export function OrderStepper({ status }: OrderStepperProps) {
     return (
       <View style={styles.cancelledBox}>
         <Ionicons name="close-circle" size={24} color={Colors.danger} />
-        <Text maxFontSizeMultiplier={1.3} style={styles.cancelledText}>This order has been cancelled.</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.cancelledText}>This order has been cancelled.</Txt>
       </View>
     );
   }
@@ -70,10 +72,10 @@ export function OrderStepper({ status }: OrderStepperProps) {
 
             {/* Right Text Details */}
             <View style={[styles.textColumn, isLast && styles.lastTextColumn]}>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.stepLabel, done || active ? styles.activeText : styles.inactiveText]}>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.stepLabel, done || active ? styles.activeText : styles.inactiveText]}>
                 {meta.label}
-              </Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.stepHint}>{meta.hint}</Text>
+              </Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.stepHint}>{meta.hint}</Txt>
             </View>
           </View>
         );

@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  useWindowDimensions,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-  ImageSourcePropType,
-} from 'react-native';
+import { StyleSheet, View, FlatList, Image, TouchableOpacity, useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent, ImageSourcePropType,  } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -131,7 +120,7 @@ export const MainBannerCarousel: React.FC<MainBannerCarouselProps> = ({ onBanner
           resizeMode="cover"
         />
         <View style={styles.ctaOverlayButton}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.ctaOverlayText}>{item.cta}</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.ctaOverlayText}>{item.cta}</Txt>
           <Ionicons name="arrow-forward" size={12} color={Colors.primary} />
         </View>
       </AnimatedPress>

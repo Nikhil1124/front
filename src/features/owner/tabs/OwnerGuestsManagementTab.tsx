@@ -8,7 +8,7 @@ import * as Clipboard from 'expo-clipboard';
 import { ListRow, ListSectionHeader, type StatusTone, Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, RoomPicker, AnimatedPress } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
-import { Sheet } from '@/components/ui';
+import { Sheet, Txt } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import { Colors, Palette, Radii } from '@/theme';

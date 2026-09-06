@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { ReplacementPreference } from '../../store/useCartStore';
 import { Colors, Radii } from '@/theme';
@@ -23,14 +23,14 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
     return (
       <View style={styles.compactRow}>
         <Ionicons name={current.icon} size={12} color={Colors.primary} />
-        <Text maxFontSizeMultiplier={1.3} style={styles.compactText}>{current.label}</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.compactText}>{current.label}</Txt>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text maxFontSizeMultiplier={1.3} style={styles.title}>If item is unavailable:</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.title}>If item is unavailable:</Txt>
       <View style={styles.optionsList}>
         {OPTIONS.map((opt) => {
           const selected = opt.value === value;
@@ -46,9 +46,9 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
                 size={18}
                 color={selected ? Colors.primary : Colors.textSecondary}
               />
-              <Text maxFontSizeMultiplier={1.3} style={[styles.optionLabel, selected && styles.selectedLabel]}>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.optionLabel, selected && styles.selectedLabel]}>
                 {opt.label}
-              </Text>
+              </Txt>
               <Ionicons
                 name={selected ? 'radio-button-on' : 'radio-button-off'}
                 size={18}

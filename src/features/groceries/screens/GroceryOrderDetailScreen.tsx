@@ -1,17 +1,7 @@
 import { useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Modal,
-  Alert,
-  KeyboardAvoidingView } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, Alert, KeyboardAvoidingView } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OrderStepper } from '../components/grocery/OrderStepper';
@@ -108,7 +98,7 @@ export function GroceryOrderDetailScreen() {
         <AppHeader title="Order Tracking" onBack={() => router.back()} />
         <View style={styles.emptyBox}>
           <Ionicons name="receipt-outline" size={64} color={Colors.textMuted} />
-          <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>Order not found</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.emptyText}>Order not found</Txt>
         </View>
       </View>
     );
@@ -140,21 +130,21 @@ export function GroceryOrderDetailScreen() {
       >
         {/* Status Card */}
         <View style={styles.statusHeroCard}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || order.status.toUpperCase()}</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.statusHeroSub}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.statusHeroTitle}>{STATUS_HERO[order.status] || order.status.toUpperCase()}</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.statusHeroSub}>
             {isDelivered
               ? `Delivered on ${new Date(order.updated_at || order.created_at).toLocaleDateString()}`
               : isCancelled
               ? 'This order was cancelled'
               : 'Tracking live updates from warehouse to delivery'}
-          </Text>
+          </Txt>
 
           <OrderStepper status={order.status} />
 
           {isDelivered && (
             <View style={styles.deliveredBadgeRow}>
               <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.deliveredText}>Order Completed Successfully 🎉</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.deliveredText}>Order Completed Successfully 🎉</Txt>
             </View>
           )}
 
@@ -162,10 +152,10 @@ export function GroceryOrderDetailScreen() {
             <View style={styles.tripInfoBox}>
               <Ionicons name="car-outline" size={18} color={Colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.tripTitle}>Delivery Vehicle: {tracking.trip.vehicle_label}</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.tripSub}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.tripTitle}>Delivery Vehicle: {tracking.trip.vehicle_label}</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.tripSub}>
                   Driver: {tracking.trip.driver_name} ({tracking.trip.driver_phone})
-                </Text>
+                </Txt>
               </View>
             </View>
           )}
@@ -173,48 +163,48 @@ export function GroceryOrderDetailScreen() {
 
         {/* Order Details & Summary */}
         <View style={styles.sectionCard}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order Summary</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Placed on {new Date(order.created_at).toLocaleString()}</Text>
-          {order.delivery_note ? <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>{order.delivery_note}</Text> : null}
-          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Method: {order.payment_method.toUpperCase()}</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Status: {order.payment_status.toUpperCase()}</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order Summary</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Placed on {new Date(order.created_at).toLocaleString()}</Txt>
+          {order.delivery_note ? <Txt maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>{order.delivery_note}</Txt> : null}
+          <Txt maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Method: {order.payment_method.toUpperCase()}</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Payment Status: {order.payment_status.toUpperCase()}</Txt>
 
           <View style={styles.divider} />
 
           {order.items?.map((item) => (
             <View key={item.id} style={styles.lineItem}>
               <View style={{ flex: 1 }}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.lineName}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.lineName}>
                   {item.item_name} ({item.unit_label}) x {item.quantity}
-                </Text>
+                </Txt>
                 {item.status ? (
-                  <Text maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.status}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.status}</Txt>
                 ) : null}
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.linePrice}>{formatINR(Number(item.total_price), 2)}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.linePrice}>{formatINR(Number(item.total_price), 2)}</Txt>
             </View>
           ))}
 
           <View style={styles.divider} />
 
           <View style={styles.billRow}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.taxable_amount), 2)}</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.taxable_amount), 2)}</Txt>
           </View>
           <View style={styles.billRow}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.tax_amount), 2)}</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.billVal}>{formatINR(Number(order.tax_amount), 2)}</Txt>
           </View>
           <View style={[styles.billRow, { marginTop: 6 }]}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.totalVal}>{formatINR(Number(order.total_amount), 2)}</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.totalVal}>{formatINR(Number(order.total_amount), 2)}</Txt>
           </View>
         </View>
 
         {needsUpiRef && (
           <View style={styles.sectionCard}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Confirm UPI Payment</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Paid via UPI? Enter the reference so it can be verified.</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Confirm UPI Payment</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>Paid via UPI? Enter the reference so it can be verified.</Txt>
             <View style={styles.upiRow}>
               <OutlinedTextField
                 style={{ flex: 1 }}
@@ -231,7 +221,7 @@ export function GroceryOrderDetailScreen() {
                 disabled={!upiRef.trim() || submitUpiPayment.isPending}
 
               >
-                <Text maxFontSizeMultiplier={1.3} style={styles.upiSubmitText}>{submitUpiPayment.isPending ? 'Submitting…' : 'Submit'}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.upiSubmitText}>{submitUpiPayment.isPending ? 'Submitting…' : 'Submit'}</Txt>
               </AnimatedPress>
             </View>
           </View>
@@ -240,7 +230,7 @@ export function GroceryOrderDetailScreen() {
         {canCancel && (
           <AnimatedPress accessibilityRole="button" style={styles.cancelOrderBtn} onPress={() => setShowCancelModal(true)}>
             <Ionicons name="close-circle-outline" size={18} color={Colors.danger} />
-            <Text maxFontSizeMultiplier={1.3} style={styles.cancelOrderBtnText}>Cancel Order</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.cancelOrderBtnText}>Cancel Order</Txt>
           </AnimatedPress>
         )}
       </ScrollView>

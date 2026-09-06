@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { SupplyCategory } from '@/types';
 import { Radii, Palette, Colors } from '@/theme';
 
@@ -58,9 +58,9 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Shop by Category</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Shop by Category</Txt>
         <AnimatedPress accessibilityRole="button" onPress={handleSeeAllPress}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Txt>
         </AnimatedPress>
       </View>
       <View style={styles.grid}>
@@ -79,9 +79,9 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
                   style={styles.image}
                 />
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.cardText} numberOfLines={2}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.cardText} numberOfLines={2}>
                 {cat.name}
-              </Text>
+              </Txt>
             </AnimatedPress>
           );
         })}

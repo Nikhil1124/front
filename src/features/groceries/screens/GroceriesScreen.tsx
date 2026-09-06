@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
-import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -31,7 +31,7 @@ import { FormScroll } from '@/components/ui/FormScroll';
  * "guest" items), so there is no toggle UI — see the mode-sync effect below.
  */
 import { useActiveProperty } from '@/features/properties/useProperties';
-import { LoadingState, ErrorState } from '@/components/ui';
+import { LoadingState, ErrorState, Txt } from '@/components/ui';
 
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();
@@ -188,9 +188,9 @@ export function GroceriesScreen() {
 
           {isSearching ? (
             <View style={styles.searchResultsWrapper}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.searchResultsTitle}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.searchResultsTitle}>
                 {searchResults.length > 0 ? `${searchResults.length} results for "${searchQuery}"` : `No results for "${searchQuery}"`}
-              </Text>
+              </Txt>
               {itemsLoading ? (
                 <LoadingState label="Loading catalog…" fill={false} />
               ) : itemsError ? (
@@ -198,7 +198,7 @@ export function GroceriesScreen() {
               ) : searchResults.length === 0 ? (
                 <View style={styles.noResultsBox}>
                   <Ionicons name="search" size={48} color={Colors.textMuted} />
-                  <Text maxFontSizeMultiplier={1.3} style={styles.noResultsText}>Try a different keyword</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.noResultsText}>Try a different keyword</Txt>
                 </View>
               ) : (
                 <FlatList
@@ -230,11 +230,11 @@ export function GroceriesScreen() {
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeaderRow}>
                   <View>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{dealsTitle}</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>{dealsSub}</Text>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{dealsTitle}</Txt>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>{dealsSub}</Txt>
                   </View>
                   <AnimatedPress accessibilityRole="button" onPress={openDeals}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Txt>
                   </AnimatedPress>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
@@ -247,11 +247,11 @@ export function GroceriesScreen() {
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeaderRow}>
                   <View>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Daily Essentials</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>Must-have daily items for your PG</Text>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Daily Essentials</Txt>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>Must-have daily items for your PG</Txt>
                   </View>
                   <AnimatedPress accessibilityRole="button" onPress={() => openSupplyCategory(null)}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Txt>
                   </AnimatedPress>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
@@ -277,16 +277,16 @@ export function GroceriesScreen() {
             <View style={styles.cartIconWrapper}>
               <Ionicons name="cart" size={14} color={Colors.textInverse} />
               <View style={styles.cartBadge}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.cartBadgeText}>{cartItemCount}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.cartBadgeText}>{cartItemCount}</Txt>
               </View>
             </View>
             <View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.cartTotalText}>₹{getCartTotal()}</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.cartSubtext}>FREE delivery unlocked!</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.cartTotalText}>₹{getCartTotal()}</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.cartSubtext}>FREE delivery unlocked!</Txt>
             </View>
           </View>
           <View style={styles.checkoutBtn}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.checkoutText}>View Cart</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutText}>View Cart</Txt>
             <MaterialIcons name="keyboard-arrow-right" size={18} color={Colors.textInverse} />
           </View>
         </AnimatedPress>

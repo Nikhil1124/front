@@ -1,6 +1,6 @@
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Palette, Colors, Radii } from '@/theme';
@@ -30,11 +30,11 @@ export function GroceryProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.avatarText}>{avatarLetter}</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.avatarText}>{avatarLetter}</Txt>
           </View>
           <View style={styles.userInfo}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.userName}>{name}</Text>
-            {!!phone && <Text maxFontSizeMultiplier={1.3} style={styles.userPhone}>{phone}</Text>}
+            <Txt maxFontSizeMultiplier={1.3} style={styles.userName}>{name}</Txt>
+            {!!phone && <Txt maxFontSizeMultiplier={1.3} style={styles.userPhone}>{phone}</Txt>}
           </View>
         </View>
 
@@ -56,7 +56,7 @@ export function GroceryProfileScreen() {
                   <View style={styles.menuIconContainer}>
                     <Ionicons name={item.icon} size={20} color={Colors.primary} />
                   </View>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.menuTitle}>{item.title}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.menuTitle}>{item.title}</Txt>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
               </AnimatedPress>
@@ -66,7 +66,7 @@ export function GroceryProfileScreen() {
         </View>
 
         <AnimatedPress accessibilityRole="button" style={styles.logoutBtn} onPress={() => logout()}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.logoutText}>Log Out</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.logoutText}>Log Out</Txt>
         </AnimatedPress>
       </ScrollView>
     </HubScreenWrapper>

@@ -1,19 +1,12 @@
 import { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, View, Modal, TouchableOpacity, ScrollView, TouchableWithoutFeedback } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii } from '@/theme';
 import { Txt, Row } from '@/components/ui';
-import { Sheet } from '@/components/ui';
+import { Sheet, Txt } from '@/components/ui';
 
 // A "Dietary Preferences" chip row (Organic/Gluten-Free/Vegan/Dairy-Free) used to live here.
 // `SupplyItem` (types/supply.ts) carries no dietary/tag field at all, so those chips filtered
@@ -89,7 +82,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
 
               {/* Header */}
               <View style={styles.header}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Sort & Filter</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Sort & Filter</Txt>
                 <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose} style={styles.closeBtn}>
                   <Ionicons name="close" size={22} color={Colors.textPrimary} />
                 </AnimatedPress>
@@ -97,7 +90,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
 
               <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
                 {/* Sort Section */}
-                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Sort by</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Sort by</Txt>
                 <View style={styles.sortList}>
                   {SORTS.map((s) => {
                     const selected = draft.sort === s.value;
@@ -108,9 +101,9 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                         onPress={() => setDraft((prev) => ({ ...prev, sort: s.value }))}
 
                       >
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.sortLabel, selected && styles.selectedSortLabel]}>
+                        <Txt maxFontSizeMultiplier={1.3} style={[styles.sortLabel, selected && styles.selectedSortLabel]}>
                           {s.label}
-                        </Text>
+                        </Txt>
                         <Ionicons
                           name={selected ? 'radio-button-on' : 'radio-button-off'}
                           size={20}
@@ -122,16 +115,16 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                 </View>
 
                 {/* Max Price */}
-                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Max Price</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Max Price</Txt>
                 <View style={styles.chipRow}>
                   <AnimatedPress accessibilityRole="button"
                     style={[styles.chip, draft.maxPrice === undefined && styles.activeChip]}
                     onPress={() => setDraft((prev) => ({ ...prev, maxPrice: undefined }))}
 
                   >
-                    <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.maxPrice === undefined && styles.activeChipText]}>
+                    <Txt maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.maxPrice === undefined && styles.activeChipText]}>
                       Any
-                    </Text>
+                    </Txt>
                   </AnimatedPress>
 
                   {PRICE_CAPS.map((cap) => {
@@ -143,16 +136,16 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                         onPress={() => setDraft((prev) => ({ ...prev, maxPrice: cap }))}
 
                       >
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, active && styles.activeChipText]}>
+                        <Txt maxFontSizeMultiplier={1.3} style={[styles.chipText, active && styles.activeChipText]}>
                           Under ₹{cap}
-                        </Text>
+                        </Txt>
                       </AnimatedPress>
                     );
                   })}
                 </View>
 
                 {/* Deal Filter */}
-                <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Offers</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Offers</Txt>
                 <AnimatedPress accessibilityRole="button"
                   style={[styles.chip, draft.onDealOnly && styles.activeChip, { alignSelf: 'flex-start' }]}
                   onPress={() => setDraft((prev) => ({ ...prev, onDealOnly: !prev.onDealOnly }))}
@@ -164,9 +157,9 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                     color={draft.onDealOnly ? Colors.textInverse : Colors.primary}
                     style={{ marginRight: 6 }}
                   />
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.onDealOnly && styles.activeChipText]}>
+                  <Txt maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.onDealOnly && styles.activeChipText]}>
                     On Deal Only
-                  </Text>
+                  </Txt>
                 </AnimatedPress>
               </ScrollView>
 

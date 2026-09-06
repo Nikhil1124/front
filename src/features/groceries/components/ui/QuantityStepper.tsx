@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
 
@@ -33,7 +33,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
         <Ionicons name="remove" size={compact ? 12 : 14} color={Colors.primary} />
       </AnimatedPress>
 
-      <Text maxFontSizeMultiplier={1.3} style={[styles.qty, compact && styles.compactQty]}>{quantity}</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={[styles.qty, compact && styles.compactQty]}>{quantity}</Txt>
 
       <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
         style={[styles.btn, compact && styles.compactBtn]}

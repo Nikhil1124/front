@@ -1,9 +1,9 @@
 import { SupplyCategory } from '@/types';
 import { toAmount } from '@/data/mappers';
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -110,9 +110,9 @@ export function GroceryCategoryScreen() {
           resizeMode="contain"
         />
       </View>
-      <Text maxFontSizeMultiplier={1.3} style={styles.catTitle} numberOfLines={2}>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.catTitle} numberOfLines={2}>
         {cat.name}
-      </Text>
+      </Txt>
     </AnimatedPress>
   );
 
@@ -161,7 +161,7 @@ export function GroceryCategoryScreen() {
         {!showProductList && sectionFilter && (
           <View style={styles.chipRow}>
             <View style={styles.activeChip}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Txt>
               <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setActiveSupplyCategory(null)}>
                 <Ionicons name="close" size={14} color={Colors.textMuted} />
               </AnimatedPress>
@@ -172,8 +172,8 @@ export function GroceryCategoryScreen() {
         {/* Title Banner when viewing an active category product grid */}
         {showProductList && (
           <View style={styles.activeSupplyCategoryHeader}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategorySub}>{products.length} items available</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategorySub}>{products.length} items available</Txt>
           </View>
         )}
 
@@ -250,7 +250,7 @@ export function GroceryCategoryScreen() {
 
               return grouped.map((g) => (
                 <View key={g.title} style={styles.sectionBlock}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>{g.title}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>{g.title}</Txt>
                   <View style={styles.gridRow}>
                     {g.cats.map(renderSupplyCategoryItem)}
                   </View>
@@ -270,8 +270,8 @@ export function GroceryCategoryScreen() {
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
             ListEmptyComponent={
               <View style={styles.emptyBox}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.emptyIcon}>🔍</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.emptyText}>No products found</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.emptyIcon}>🔍</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.emptyText}>No products found</Txt>
               </View>
             }
             renderItem={({ item }) => (
@@ -306,12 +306,12 @@ export function GroceryCategoryScreen() {
                 <Ionicons name="cart" size={18} color={Colors.textInverse} />
               </View>
               <View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.cartTotal}>₹{getCartTotal()}</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.cartSub}>{cartItemCount} item{cartItemCount > 1 ? 's' : ''}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.cartTotal}>₹{getCartTotal()}</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.cartSub}>{cartItemCount} item{cartItemCount > 1 ? 's' : ''}</Txt>
               </View>
             </View>
             <View style={styles.viewCartBtn}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart →</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart →</Txt>
             </View>
           </AnimatedPress>
         </View>

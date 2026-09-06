@@ -1,15 +1,14 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity,
-  Image, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
 import { Radii, Colors } from '@/theme';
 import { FormScroll } from '@/components/ui/FormScroll';
-import { OutlinedTextField } from '@/components/ui';
+import { OutlinedTextField, Txt } from '@/components/ui';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 
 interface CheckoutSlot {
@@ -175,9 +174,9 @@ export function GroceryCheckoutScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.stepBadge}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>1</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>1</Txt>
             </View>
-            <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery</Txt>
           </View>
 
           {/* Mode Switch row */}
@@ -195,9 +194,9 @@ export function GroceryCheckoutScreen() {
                 size={16}
                 color={fulfillmentMode === 'delivery' ? Colors.primary : Colors.textSecondary}
               />
-              <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
                 Delivery
-              </Text>
+              </Txt>
             </AnimatedPress>
 
             <AnimatedPress accessibilityRole="button"
@@ -213,15 +212,15 @@ export function GroceryCheckoutScreen() {
                 size={16}
                 color={fulfillmentMode === 'pickup' ? Colors.primary : Colors.textSecondary}
               />
-              <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
                 Store Pickup
-              </Text>
+              </Txt>
             </AnimatedPress>
           </View>
 
           {fulfillmentMode === 'delivery' ? (
             <>
-              <Text maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Select delivery time</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Select delivery time</Txt>
 
               {/* Slots list */}
               <View style={styles.slotList}>
@@ -245,27 +244,27 @@ export function GroceryCheckoutScreen() {
                         />
                         <View style={styles.slotDetails}>
                           <View style={styles.slotDayBadgeRow}>
-                            <Text maxFontSizeMultiplier={1.3} style={styles.slotDay}>{slot.day}</Text>
+                            <Txt maxFontSizeMultiplier={1.3} style={styles.slotDay}>{slot.day}</Txt>
                             <View style={[styles.slotBadge, isFastest ? styles.fastestBadge : styles.freeBadge]}>
-                              <Text maxFontSizeMultiplier={1.3} style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
+                              <Txt maxFontSizeMultiplier={1.3} style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
                                 {slot.badge}
-                              </Text>
+                              </Txt>
                             </View>
                           </View>
-                          <Text maxFontSizeMultiplier={1.3} style={styles.slotWindow}>{slot.window}</Text>
+                          <Txt maxFontSizeMultiplier={1.3} style={styles.slotWindow}>{slot.window}</Txt>
                         </View>
                       </View>
 
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
+                      <Txt maxFontSizeMultiplier={1.3} style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
                         {slot.feeText}
-                      </Text>
+                      </Txt>
                     </AnimatedPress>
                   );
                 })}
               </View>
             </>
           ) : (
-            <Text maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Pickup is free — collect your order from the store counter, no delivery fee.</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Pickup is free — collect your order from the store counter, no delivery fee.</Txt>
           )}
         </View>
 
@@ -274,20 +273,20 @@ export function GroceryCheckoutScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.stepBadge}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>2</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>2</Txt>
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery Address</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery Address</Txt>
             </View>
 
             {/* Location card */}
             <View style={styles.locationCard}>
               <Ionicons name="location" size={18} color={Colors.primary} style={styles.locationCardIcon} />
               <View style={styles.locationTextWrapper}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Txt>
               </View>
               <AnimatedPress accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Txt>
                 <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} />
               </AnimatedPress>
             </View>
@@ -308,9 +307,9 @@ export function GroceryCheckoutScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.stepBadge}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>{fulfillmentMode === 'delivery' ? 3 : 2}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>{fulfillmentMode === 'delivery' ? 3 : 2}</Txt>
             </View>
-            <Text maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Payment Method</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Payment Method</Txt>
           </View>
 
           <View style={styles.paymentList}>
@@ -348,26 +347,26 @@ export function GroceryCheckoutScreen() {
                     style={styles.paymentIcon}
                   />
                   <View style={styles.paymentLabelColumn}>
-                    <Text maxFontSizeMultiplier={1.3} style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
+                    <Txt maxFontSizeMultiplier={1.3} style={[styles.paymentLabel, isSelected && styles.selectedPaymentLabel]}>
                       {pm.label}
-                    </Text>
+                    </Txt>
                     {/* The gating above deliberately fails open — a failed status check must
                         not remove a payment method. But silently showing nothing implies the
                         limit was checked and was fine, which at a payment step is the wrong
                         impression to leave. */}
                     {isCredit && !creditAccount && creditError && (
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, styles.paymentWarnLabel]}>
+                      <Txt maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, styles.paymentWarnLabel]}>
                         Balance couldn&apos;t be checked just now — this order may be refused.
-                      </Text>
+                      </Txt>
                     )}
                     {isCredit && creditAccount && (
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, overCredit && styles.paymentWarnLabel]}>
+                      <Txt maxFontSizeMultiplier={1.3} style={[styles.paymentSubLabel, overCredit && styles.paymentWarnLabel]}>
                         {!creditAccount.is_active
                           ? 'This property has no active credit account.'
                           : overCredit
                             ? `Only ₹${creditAccount.available} left of ₹${creditAccount.credit_limit} — this order may be refused.`
                             : `₹${creditAccount.available} of ₹${creditAccount.credit_limit} available`}
-                      </Text>
+                      </Txt>
                     )}
                   </View>
                   <Ionicons
@@ -383,7 +382,7 @@ export function GroceryCheckoutScreen() {
 
         {/* Section 5: Order Summary */}
         <View style={styles.card}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.summaryTitle}>Order Summary</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.summaryTitle}>Order Summary</Txt>
           
           {/* Order preview items list */}
           <View style={styles.summaryList}>
@@ -394,10 +393,10 @@ export function GroceryCheckoutScreen() {
                   style={styles.summaryItemImg}
                 />
                 <View style={styles.summaryItemDetails}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemName} numberOfLines={1}>{item.name}</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemUnit}>{item.unit} × {item.quantity}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.summaryItemName} numberOfLines={1}>{item.name}</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.summaryItemUnit}>{item.unit} × {item.quantity}</Txt>
                 </View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.summaryItemPrice}>₹{item.price * item.quantity}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.summaryItemPrice}>₹{item.price * item.quantity}</Txt>
               </View>
             ))}
           </View>
@@ -405,32 +404,32 @@ export function GroceryCheckoutScreen() {
           {/* Pricing breakdown */}
           <View style={styles.billBreakdown}>
             <View style={styles.billRow}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Txt>
             </View>
 
             <View style={styles.billRow}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Txt>
             </View>
 
             <View style={styles.billRow}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total (incl. GST)</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(subtotal, 2)}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total (incl. GST)</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(subtotal, 2)}</Txt>
             </View>
 
             <View style={styles.billRow}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Text>
-              <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, deliveryFee === 0 && styles.greenText]}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, deliveryFee === 0 && styles.greenText]}>
                 {deliveryFee === 0 ? 'FREE' : formatINR(deliveryFee, 2)}
-              </Text>
+              </Txt>
             </View>
 
             <View style={[styles.billRow, styles.totalRow]}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Estimated Total</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>{formatINR(estimatedTotal, 2)}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Estimated Total</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.totalValue}>{formatINR(estimatedTotal, 2)}</Txt>
             </View>
-            <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item prices include GST. Your final invoice is confirmed when the order is placed.</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item prices include GST. Your final invoice is confirmed when the order is placed.</Txt>
           </View>
         </View>
       </FormScroll>
@@ -438,14 +437,14 @@ export function GroceryCheckoutScreen() {
       {/* Sticky Bottom Placement Bar */}
       <View style={[styles.stickyFooter, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.footerLeft}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.footerPrice}>{formatINR(estimatedTotal, 2)}</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.footerPrice}>{formatINR(estimatedTotal, 2)}</Txt>
           {totalSavings > 0 ? (
             <View style={styles.footerSavings}>
               <Ionicons name="leaf-outline" size={10} color={Colors.primary} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.footerSavingsText}>You save {formatINR(totalSavings, 2)}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.footerSavingsText}>You save {formatINR(totalSavings, 2)}</Txt>
             </View>
           ) : (
-            <Text maxFontSizeMultiplier={1.3} style={styles.footerItemText}>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.footerItemText}>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</Txt>
           )}
         </View>
 
@@ -458,10 +457,10 @@ export function GroceryCheckoutScreen() {
           <View style={styles.cartIconWrapper}>
             <Ionicons name="cart-outline" size={14} color={Colors.primary} />
             <View style={styles.cartCountBadge}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.cartCountText}>{cartItemCount}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.cartCountText}>{cartItemCount}</Txt>
             </View>
           </View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart</Txt>
         </AnimatedPress>
 
         <AnimatedPress accessibilityRole="button"
@@ -472,9 +471,9 @@ export function GroceryCheckoutScreen() {
           // decrements, two charges. `idempotency_key` below is the second line of defence.
           disabled={createOrderMutation.isPending}
         >
-          <Text maxFontSizeMultiplier={1.3} style={styles.placeOrderText}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.placeOrderText}>
             {createOrderMutation.isPending ? 'Placing…' : 'Place Order'}
-          </Text>
+          </Txt>
           <Ionicons name="arrow-forward" size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
         </AnimatedPress>
       </View>

@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Radii, Colors } from '@/theme';
+import { Txt } from '@/components/ui';
+
 
 export interface PriceDisplayProps {
   price: number;
@@ -30,19 +32,19 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
 
   return (
     <View style={styles.row}>
-      <Text maxFontSizeMultiplier={1.3} style={[styles.price, styles[`price_${size}`]]}>
+      <Txt maxFontSizeMultiplier={1.3} style={[styles.price, styles[`price_${size}`]]}>
         {prefix}{price}
-      </Text>
+      </Txt>
 
       {originalPrice && originalPrice > price ? (
-        <Text maxFontSizeMultiplier={1.3} style={[styles.strike, styles[`strike_${size}`]]}>
+        <Txt maxFontSizeMultiplier={1.3} style={[styles.strike, styles[`strike_${size}`]]}>
           {prefix}{originalPrice}
-        </Text>
+        </Txt>
       ) : null}
 
       {showBadge && discountPercent > 0 ? (
         <View style={styles.badge}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.badgeText}>{discountPercent}% off</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.badgeText}>{discountPercent}% off</Txt>
         </View>
       ) : null}
     </View>

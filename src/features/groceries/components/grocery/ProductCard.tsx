@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Image, StyleProp, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
+import { Image, StyleProp, StyleSheet, TouchableOpacity, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { SupplyItem } from '@/types';
 import { useCartStore } from '../../store/useCartStore';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { Radii, Palette, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Txt } from '@/components/ui';
+
 
 interface ProductCardProps {
   product: SupplyItem;
@@ -87,19 +89,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           />
         </View>
         <View style={styles.simpleDetails}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.simpleName} numberOfLines={1}>{product.name}</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.simpleUnit}>{selectedOption.unit}</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.simpleName} numberOfLines={1}>{product.name}</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.simpleUnit}>{selectedOption.unit}</Txt>
           <View style={styles.simpleBottomRow}>
             <View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.simplePrice}>₹{price}</Text>
-              {originalPrice && <Text maxFontSizeMultiplier={1.3} style={styles.simpleStrikePrice}>₹{originalPrice}</Text>}
+              <Txt maxFontSizeMultiplier={1.3} style={styles.simplePrice}>₹{price}</Txt>
+              {originalPrice && <Txt maxFontSizeMultiplier={1.3} style={styles.simpleStrikePrice}>₹{originalPrice}</Txt>}
             </View>
             {quantity > 0 ? (
               <View style={styles.simpleQuantityControl}>
                 <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleDecrease}>
                   <Ionicons name="remove" size={12} color={Colors.textInverse} />
                 </AnimatedPress>
-                <Text maxFontSizeMultiplier={1.3} style={styles.simpleQtyText}>{quantity}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.simpleQtyText}>{quantity}</Txt>
                 <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleIncrease}>
                   <Ionicons name="add" size={12} color={Colors.textInverse} />
                 </AnimatedPress>
@@ -126,7 +128,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <View style={styles.topRow}>
         {discountPercent > 0 ? (
           <View style={styles.discountBadge}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.discountBadgeText}>-{discountPercent}%</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.discountBadgeText}>-{discountPercent}%</Txt>
           </View>
         ) : (
           <View />
@@ -160,21 +162,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Product Info */}
       <View style={styles.detailsContainer}>
-        <Text maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={1}>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={1}>
           {product.name}
-        </Text>
+        </Txt>
 
         {/* Selected Unit/Option text */}
-        <Text maxFontSizeMultiplier={1.3} style={styles.unitText}>{selectedOption.unit}</Text>
+        <Txt maxFontSizeMultiplier={1.3} style={styles.unitText}>{selectedOption.unit}</Txt>
 
         {/* Price Row — no star rating here: SupplyItem carries no rating field, and there
             is no per-product review system anywhere in this app. A fixed "4.8" on every
             item was fabricated social proof, not a real number. */}
         <View style={styles.ratingPriceRow}>
           <View style={styles.priceContainer}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.price}>₹{price}</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.price}>₹{price}</Txt>
             {originalPrice && (
-              <Text maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{originalPrice}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{originalPrice}</Txt>
             )}
           </View>
         </View>
@@ -191,14 +193,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ]}
                 onPress={() => setSelectedIdx(i)}
               >
-                <Text maxFontSizeMultiplier={1.3}
+                <Txt maxFontSizeMultiplier={1.3}
                   style={[
                     styles.optionText,
                     selectedIdx === i && styles.selectedOptionText,
                   ]}
                 >
                   {opt.unit}
-                </Text>
+                </Txt>
               </AnimatedPress>
             ))}
           </View>
@@ -211,14 +213,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleDecrease}>
                 <Ionicons name="remove" size={16} color={Colors.textInverse} />
               </AnimatedPress>
-              <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{quantity}</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.qtyText}>{quantity}</Txt>
               <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleIncrease}>
                 <Ionicons name="add" size={16} color={Colors.textInverse} />
               </AnimatedPress>
             </View>
           ) : (
             <AnimatedPress accessibilityRole="button" style={styles.addBtn} onPress={handleAdd}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.addBtnText}>Add to Cart</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.addBtnText}>Add to Cart</Txt>
             </AnimatedPress>
           )}
         </View>

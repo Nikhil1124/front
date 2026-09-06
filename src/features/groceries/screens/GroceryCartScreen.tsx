@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCartStore } from '../store/useCartStore';
@@ -116,7 +116,7 @@ export function GroceryCartScreen() {
         actions={items.length > 0 ? (
           <AnimatedPress accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-            <Text maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Txt>
           </AnimatedPress>
         ) : undefined}
       />
@@ -127,12 +127,12 @@ export function GroceryCartScreen() {
           <View style={styles.emptyIconWrapper}>
             <Ionicons name="cart-outline" size={64} color={Colors.primary} />
           </View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your cart is empty</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.emptySubtitle}>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your cart is empty</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.emptySubtitle}>
             Add groceries for your PG kitchen or pick up essentials for your stay.
-          </Text>
+          </Txt>
           <AnimatedPress accessibilityRole="button" style={styles.shopBtn} onPress={() => router.back()}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Txt>
           </AnimatedPress>
         </View>
       ) : (
@@ -143,26 +143,26 @@ export function GroceryCartScreen() {
               <View style={styles.deliveryLeft}>
                 <View style={styles.deliveryHeaderRow}>
                   <Ionicons name="location-outline" size={16} color={Colors.info} style={styles.locationIcon} />
-                  <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTitle}>Deliver to</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryTitle}>Deliver to</Txt>
                 </View>
-                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryAddress} numberOfLines={1}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryAddress} numberOfLines={1}>
                   {deliveryAddress} <Ionicons name="chevron-down" size={11} color={Colors.textSecondary} />
-                </Text>
+                </Txt>
               </View>
               <View style={styles.deliveryRight}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Estimated Delivery</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Estimated Delivery</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Txt>
               </View>
             </AnimatedPress>
 
             {/* 4. Free Delivery Progress Box */}
             <View style={styles.freeDeliveryCard}>
               <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
-              <Text maxFontSizeMultiplier={1.3} style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Txt>
             </View>
 
             {/* 5. Cart Item Cards */}
-            <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Items in Cart</Text>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Items in Cart</Txt>
             {items.map((item) => {
               const isEditingReplacement = editingReplacementId === item.id;
               const hasDiscount = item.originalPrice && item.originalPrice > item.price;
@@ -184,22 +184,22 @@ export function GroceryCartScreen() {
 
                     {/* Middle: Product Info */}
                     <View style={styles.itemInfo}>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.itemUnit}>{item.unit}</Text>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.itemName} numberOfLines={2}>{item.name}</Txt>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.itemUnit}>{item.unit}</Txt>
                       
                       {perUnitRateText ? (
-                        <Text maxFontSizeMultiplier={1.3} style={styles.unitRateText}>{perUnitRateText}</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.unitRateText}>{perUnitRateText}</Txt>
                       ) : null}
 
                       <View style={styles.priceRow}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.itemPrice}>₹{item.price * item.quantity}</Txt>
                         {item.originalPrice ? (
-                          <Text maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{item.originalPrice * item.quantity}</Text>
+                          <Txt maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{item.originalPrice * item.quantity}</Txt>
                         ) : null}
                       </View>
 
                       {itemSavings > 0 ? (
-                        <Text maxFontSizeMultiplier={1.3} style={styles.itemSavingsText}>Save ₹{itemSavings}</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.itemSavingsText}>Save ₹{itemSavings}</Txt>
                       ) : null}
                     </View>
 
@@ -213,7 +213,7 @@ export function GroceryCartScreen() {
                         >
                           <Ionicons name="remove" size={14} color={Colors.primary} />
                         </AnimatedPress>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{item.quantity}</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.qtyText}>{item.quantity}</Txt>
                         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => updateQuantity(item.id, item.quantity + 1)}
@@ -229,7 +229,7 @@ export function GroceryCartScreen() {
 
                       >
                         <Ionicons name="trash-outline" size={12} color={Colors.danger} />
-                        <Text maxFontSizeMultiplier={1.3} style={styles.removeActionText}>Remove</Text>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.removeActionText}>Remove</Txt>
                       </AnimatedPress>
                     </View>
                   </View>
@@ -266,53 +266,53 @@ export function GroceryCartScreen() {
             {/* 13. Savings Summary banner card */}
             {totalSavings > 0 && (
               <View style={styles.savingsCard}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.savingsTagIcon}>🏷️</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.savingsTagIcon}>🏷️</Txt>
                 <View style={styles.savingsTextWrapper}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsCardTitle}>You save ₹{totalSavings} today!</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsCardSubtitle}>Great deal for your PG kitchen</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.savingsCardTitle}>You save ₹{totalSavings} today!</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.savingsCardSubtitle}>Great deal for your PG kitchen</Txt>
                 </View>
                 <View style={styles.savingsBadge}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.savingsBadgeText}>-₹{totalSavings}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.savingsBadgeText}>-₹{totalSavings}</Txt>
                 </View>
               </View>
             )}
 
             {/* 12. Bill Details Box */}
             <View style={styles.billCard}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billTitle}>Bill Details</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billTitle}>Bill Details</Txt>
               
               <View style={styles.billRow}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal}</Txt>
               </View>
 
               {totalSavings > 0 && (
                 <View style={styles.billRow}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Discount</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.danger }]}>-₹{totalSavings}</Text>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Discount</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.danger }]}>-₹{totalSavings}</Txt>
                 </View>
               )}
 
               <View style={styles.billRow}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Txt>
               </View>
 
               <View style={styles.billRow}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Txt>
               </View>
 
               <View style={styles.billRow}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.primary }]}>FREE</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.primary }]}>FREE</Txt>
               </View>
 
               <View style={[styles.billRow, styles.totalRow]}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Subtotal</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{billSubtotal}</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Subtotal</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{billSubtotal}</Txt>
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.billFootnote}>Item prices are GST-inclusive.</Text>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billFootnote}>Item prices are GST-inclusive.</Txt>
             </View>
 
             {/* 14. You May Also Need — shared MiniProductCard */}
@@ -341,15 +341,15 @@ export function GroceryCartScreen() {
             <View style={styles.reassuranceStrip}>
               <View style={styles.reassuranceItem}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Quality Checked</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Quality Checked</Txt>
               </View>
               <View style={styles.reassuranceItem}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Hygienically Packed</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Hygienically Packed</Txt>
               </View>
               <View style={styles.reassuranceItem}>
                 <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Easy Replacement</Text>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Easy Replacement</Txt>
               </View>
             </View>
           </ScrollView>
@@ -357,10 +357,10 @@ export function GroceryCartScreen() {
           {/* 16 & 17. Sticky Checkout Bar */}
           <View style={[styles.stickyCheckoutBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.checkoutBarLeft}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutPrice}>₹{billSubtotal}</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutInfoText}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutPrice}>₹{billSubtotal}</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutInfoText}>
                 {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}
-              </Text>
+              </Txt>
             </View>
 
             <AnimatedPress accessibilityRole="button"
@@ -369,9 +369,9 @@ export function GroceryCartScreen() {
 
               disabled={submittingRequisition}
             >
-              <Text maxFontSizeMultiplier={1.3} style={styles.checkoutBtnText}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutBtnText}>
                 {isChef ? (submittingRequisition ? 'Sending…' : 'Request via Manager') : 'Proceed to Checkout'}
-              </Text>
+              </Txt>
               <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
             </AnimatedPress>
           </View>

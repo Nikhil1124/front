@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyItem } from '@/types';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
@@ -61,7 +61,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       {/* Discount badge */}
       {discountPercent > 0 && (
         <View style={styles.discountBadge}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.discountText}>-{discountPercent}%</Text>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.discountText}>-{discountPercent}%</Txt>
         </View>
       )}
 
@@ -90,8 +90,8 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       </AnimatedPress>
 
       {/* Name & unit */}
-      <Text maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={2}>{product.name}</Text>
-      <Text maxFontSizeMultiplier={1.3} style={styles.unit}>{opt.unit}</Text>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={2}>{product.name}</Txt>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.unit}>{opt.unit}</Txt>
 
       {/* No star rating: SupplyItem carries no rating field and there is no per-product
           review system in this app. A fixed "4.8" on every card was fabricated, not real. */}
@@ -105,9 +105,9 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
         onPress={handleAdd}
 
       >
-        <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addedBtnText]}>
+        <Txt maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addedBtnText]}>
           {inCart ? '✓ Added' : '+ Add'}
-        </Text>
+        </Txt>
       </AnimatedPress>
     </View>
   );
