@@ -10,7 +10,7 @@ import { View, StyleSheet, RefreshControl, FlatList, BackHandler } from 'react-n
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import { ListRow, toneFor, Row, Col, Spacer, LoadingState, ErrorState, OutlinedTextField, AnimatedPress, Sheet } from '@/components/ui';
+import { ListRow, toneFor, Row, Col, Spacer, LoadingState, ErrorState, OutlinedTextField, AnimatedPress, Sheet, Txt } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';

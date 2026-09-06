@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { ListRow, Row, Col, Spacer, SearchField, AnimatedPress, Sheet } from '@/components/ui';
+import { ListRow, Row, Col, Spacer, SearchField, AnimatedPress, Sheet, Txt } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Radii, Colors } from '@/theme';

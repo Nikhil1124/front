@@ -6,9 +6,7 @@
 import { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Row, Col, Spacer, MetricDeck, TrendChart, MetricRow, ListSectionHeader,
-  type DeckCardData, type TrendChartPoint, type TrendChartSeries, AnimatedPress } from '@/components/ui';
+import { Row, Col, Spacer, MetricDeck, TrendChart, MetricRow, ListSectionHeader, type DeckCardData, type TrendChartPoint, type TrendChartSeries, AnimatedPress, Txt } from '@/components/ui';
 import { RefreshControl } from 'react-native';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { usePnL } from '@/features/billing/usePnL';

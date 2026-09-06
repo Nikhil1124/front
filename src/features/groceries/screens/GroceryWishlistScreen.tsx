@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCartStore } from '../store/useCartStore';

@@ -1,7 +1,7 @@
 import { SupplyOrderSummary } from '@/types';
 import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-import { AnimatedPress } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
