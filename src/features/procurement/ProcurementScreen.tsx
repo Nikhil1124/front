@@ -3,6 +3,7 @@ import { View, StyleSheet, Modal, Pressable, ScrollView, KeyboardAvoidingView, A
 import { Ionicons } from '@expo/vector-icons';
 
 import { StatusChip, toneFor, Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn, ListRow } from '@/components/ui';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -409,7 +410,6 @@ function ApprovalsSection() {
   const rejectOrder = useRejectProcurementOrder();
 
   const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
 
   // Approving buys the goods for real — the server turns the requisition into a supply
   // order charged on this method — so it is asked for, never assumed. (It also has to be
@@ -439,13 +439,12 @@ function ApprovalsSection() {
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = async (reason: string) => {
     if (!rejectingId) return;
     try {
-      await rejectOrder.mutateAsync({ orderId: rejectingId, reason: rejectReason.trim() || 'No reason given' });
+      await rejectOrder.mutateAsync({ orderId: rejectingId, reason });
       toast('warning', 'Requisition Rejected', 'Manager notified.');
       setRejectingId(null);
-      setRejectReason('');
     } catch (err: any) {
       toast('error', 'Reject failed', err?.message ?? 'Please try again.');
     }
@@ -529,7 +528,7 @@ function ApprovalsSection() {
                       <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 4 }}>Approve Order</Txt>
                     </Btn>
                     <OutlinedBtn
-                      onPress={() => { setRejectingId(req.id); setRejectReason(''); }}
+                      onPress={() => setRejectingId(req.id)}
                       borderColor={Colors.danger}
                       textColor={Colors.danger}
                       borderRadius={Radii.control}
@@ -547,56 +546,19 @@ function ApprovalsSection() {
         </View>
       )}
 
-      {rejectingId && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setRejectingId(null)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setRejectingId(null)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={Radii.sheet}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '90%', zIndex: 2 }}
-            >
-              <Txt size={16} weight="900" color={Colors.textPrimary}>Reject Requisition</Txt>
-              <Spacer size={10} />
-              <OutlinedTextField
-                label="Reason (shown to whoever submitted this)"
-                placeholder="Duplicate order, over budget, etc."
-                value={rejectReason}
-                onChangeText={setRejectReason}
-                containerColor={Colors.surfaceMuted}
-              />
-              <Spacer size={14} />
-              <Row gap={8}>
-                <Btn
-                  onPress={handleReject}
-                  loading={rejectOrder.isPending}
-                  disabled={rejectOrder.isPending}
-                  containerColor={Colors.danger}
-                  textColor={Colors.textInverse}
-                  borderRadius={Radii.control}
-                  height={44}
-                  style={{ flex: 1 }}
-                >
-                  <Txt size={12} weight="800" color={Colors.textInverse}>Confirm Rejection</Txt>
-                </Btn>
-                <OutlinedBtn
-                  onPress={() => setRejectingId(null)}
-                  borderColor={Colors.borderSubtle}
-                  textColor={Colors.textPrimary}
-                  borderRadius={Radii.control}
-                  height={44}
-                  style={{ flex: 1 }}
-                >
-                  <Txt size={12} weight="800" color={Colors.textPrimary}>Cancel</Txt>
-                </OutlinedBtn>
-              </Row>
-            </Card>
-          </View>
-        </Modal>
-      )}
+      <TextPromptDialog
+        visible={rejectingId != null}
+        title="Reject requisition"
+        label="Reason"
+        placeholder="Duplicate order, over budget…"
+        helper="Whoever submitted this sees it"
+        confirmLabel="Confirm rejection"
+        destructive
+        required
+        busy={rejectOrder.isPending}
+        onCancel={() => setRejectingId(null)}
+        onSave={handleReject}
+      />
     </>
   );
 }

@@ -41,14 +41,14 @@
  * on money someone already verified from the Payments tab.
  */
 import { useMemo, useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable, RefreshControl, Text, KeyboardAvoidingView, ScrollView, useWindowDimensions, BackHandler } from 'react-native';
+import { View, StyleSheet, Alert, RefreshControl, Text, ScrollView, useWindowDimensions, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { Row, Col, Spacer, Card, Txt, StatusChip, OutlinedTextField, AnimatedPress } from '@/components/ui';
+import { Row, Col, Spacer, Card, Txt, StatusChip, OutlinedTextField, AnimatedPress, Sheet } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Colors, Radii, DeckTints } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -569,30 +569,13 @@ export function OwnerAnnouncementsTab() {
 
       {/* ── Inbox Item Detail Modal ── */}
       {selectedInboxItem && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setSelectedInboxItem(null)}>
-          <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setSelectedInboxItem(null)} />
-            <Animated.View entering={SlideInDown.springify(150).dampingRatio(0.85)} style={styles.detailSheet}>
-              <View style={styles.sheetHandle} />
-
-              <Row justify="space-between" align="center" style={{ marginBottom: 20 }}>
-                <Row gap={8} align="center">
-                  <View style={styles.detailIconCircle}>
-                    <Ionicons name={selectedInboxItem.icon} size={18} color={PRIMARY} />
-                  </View>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailCategoryText}>{selectedInboxItem.kind}</Text>
-                </Row>
-                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSelectedInboxItem(null)} style={styles.closeIconBtn}>
-                  <Ionicons name="close" size={18} color={TEXT_SECONDARY} />
-                </AnimatedPress>
-              </Row>
-
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailTitleText}>
-                {selectedInboxItem.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
-              </Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.detailDateText}>{formatDateTime(selectedInboxItem.timestamp)}</Text>
-
-              <Spacer size={24} />
+        <Sheet
+          visible
+          title={selectedInboxItem.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}
+          subtitle={formatDateTime(selectedInboxItem.timestamp)}
+          icon={selectedInboxItem.icon}
+          onDismiss={() => setSelectedInboxItem(null)}
+        >
 
               {selectedInboxItem.kind === 'PAYMENT' ? (
                 <View style={[styles.detailMessageCard, { backgroundColor: SURFACE }]}>
@@ -694,14 +677,7 @@ export function OwnerAnnouncementsTab() {
                 </View>
               )}
 
-              {(selectedInboxItem.kind === 'ANNOUNCEMENT' || selectedInboxItem.kind === 'OTHER' || (selectedInboxItem.kind === 'PAYMENT' && !selectedInboxItem.payment)) && (
-                <AnimatedPress accessibilityRole="button" style={styles.primaryDismissBtn} onPress={() => setSelectedInboxItem(null)}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.primaryDismissBtnText}>Got it</Text>
-                </AnimatedPress>
-              )}
-            </Animated.View>
-          </Animated.View>
-        </Modal>
+        </Sheet>
       )}
 
       {/* ── Reject payment reason ── */}
@@ -736,14 +712,23 @@ export function OwnerAnnouncementsTab() {
 
       {/* ── Publish New Notice Dialog ── */}
       {showBroadcastModal && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowBroadcastModal(false)}>
-          <Animated.View entering={FadeIn.duration(150)} style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowBroadcastModal(false)} />
-            <KeyboardAvoidingView behavior="padding" style={{ width: '100%', alignItems: 'center' }}>
-              <Animated.View entering={SlideInDown.springify(150).dampingRatio(0.85)} style={styles.broadcastSheet}>
-                <View style={styles.sheetHandle} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.sheetTitle}>New Announcement</Text>
-                <Spacer size={16} />
+        <Sheet
+          visible
+          title="New announcement"
+          subtitle="Everyone you pick gets this on their phone"
+          icon="megaphone-outline"
+          onDismiss={() => setShowBroadcastModal(false)}
+          footer={
+            <Row gap={12}>
+              <AnimatedPress accessibilityRole="button" style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.publishBtnText}>{isPublishing ? 'Publishing…' : 'Publish'}</Text>
+              </AnimatedPress>
+              <AnimatedPress accessibilityRole="button" style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.publishCancelText}>Cancel</Text>
+              </AnimatedPress>
+            </Row>
+          }
+        >
                 <OutlinedTextField
                   label="Title"
                   required
@@ -777,19 +762,7 @@ export function OwnerAnnouncementsTab() {
                     </AnimatedPress>
                   ))}
                 </Row>
-                <Spacer size={24} />
-                <Row gap={12}>
-                  <AnimatedPress accessibilityRole="button" style={styles.publishBtn} onPress={handlePublishNotice} disabled={isPublishing}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.publishBtnText}>{isPublishing ? 'Publishing...' : 'Publish'}</Text>
-                  </AnimatedPress>
-                  <AnimatedPress accessibilityRole="button" style={styles.publishCancelBtn} onPress={() => setShowBroadcastModal(false)}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.publishCancelText}>Cancel</Text>
-                  </AnimatedPress>
-                </Row>
-              </Animated.View>
-            </KeyboardAvoidingView>
-          </Animated.View>
-        </Modal>
+        </Sheet>
       )}
     </View>
   );
@@ -955,17 +928,8 @@ const styles = StyleSheet.create({
   fabInner: { height: 48, paddingHorizontal: 16, borderRadius: Radii.sheet, backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   fabText: { fontSize: 14, fontWeight: '700', color: SURFACE, marginLeft: 8 },
 
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(23, 24, 28, 0.45)', justifyContent: 'flex-end' },
-  detailSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 48, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
-  broadcastSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 40 },
-  sheetHandle: { width: 48, height: 5, borderRadius: Radii.pill, backgroundColor: DIVIDER, alignSelf: 'center', marginBottom: 24 },
 
-  detailIconCircle: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
-  detailCategoryText: { fontSize: 12, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5, textTransform: 'uppercase' },
-  closeIconBtn: { width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
 
-  detailTitleText: { fontSize: 22, fontWeight: '800', color: TEXT_PRIMARY, lineHeight: 28 },
-  detailDateText: { fontSize: 13, fontWeight: '600', color: TEXT_SECONDARY, marginTop: 6 },
 
   detailMessageCard: { backgroundColor: '#F9FAFB', padding: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: DIVIDER },
   detailDescText: { fontSize: 15, color: '#374151', lineHeight: 24 },
@@ -983,10 +947,7 @@ const styles = StyleSheet.create({
   cardApproveBtn: { flex: 1, height: 44, backgroundColor: Colors.success, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' },
   cardRejectBtn: { flex: 1, height: 44, backgroundColor: SURFACE, borderWidth: 1, borderColor: Colors.danger, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' },
 
-  primaryDismissBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
-  primaryDismissBtnText: { fontSize: 16, fontWeight: '800', color: SURFACE },
 
-  sheetTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
   inputLabelStyle: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
   smallChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.control, backgroundColor: SURFACE, borderWidth: 1, borderColor: DIVIDER },
   smallChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },

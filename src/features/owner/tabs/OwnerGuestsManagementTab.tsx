@@ -4,21 +4,17 @@ import {
   View,
   StyleSheet,
   Alert,
-  Modal,
   RefreshControl,
   Text,
   ScrollView,
-  Pressable,
-  KeyboardAvoidingView,
   Share,
   BackHandler } from 'react-native';
 
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { ListRow, ListSectionHeader, type StatusTone, Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, RoomPicker, AnimatedPress } from '@/components/ui';
+import { ListRow, ListSectionHeader, type StatusTone, Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, RoomPicker, AnimatedPress } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { Sheet } from '@/components/ui';
@@ -952,24 +948,39 @@ export function OwnerGuestsManagementTab() {
       </Sheet>
 
       {/* Edit Dialog */}
-      <Modal visible={editing != null} transparent animationType="fade">
-        {/* KAV platform-aware: padding on Android only, iOS handles it natively */}
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <View style={styles.modalBackdrop}>
-            <Card
-              containerColor={WHITE}
-              borderRadius={Radii.sheet}
-              borderWidth={1}
-              borderColor={BORDER}
-              padding={[16, 16]}
-              style={{ width: '92%' }}
+      <Sheet
+        visible={editing != null}
+        title="Edit resident profile"
+        subtitle={editing?.name}
+        icon="create-outline"
+        onDismiss={() => setEditing(null)}
+        footer={
+          <Row gap={8}>
+            <Btn
+              onPress={handleUpdate}
+              disabled={isUpdating}
+              loading={isUpdating}
+              containerColor={GREEN}
+              textColor={WHITE}
+              borderRadius={Radii.control}
+              height={42}
+              style={{ flex: 1 }}
             >
-              <Txt variant="sectionTitle" weight="800" color={CHARCOAL}>
-                Edit Resident Profile
-              </Txt>
-              <Spacer size={12} />
-              {/* ScrollView so fields are reachable when keyboard pushes the card up */}
-              <ScrollView style={{ maxHeight: 340 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} automaticallyAdjustKeyboardInsets>
+              <Txt variant="body" weight="800" color={WHITE}>Save changes</Txt>
+            </Btn>
+            <OutlinedBtn
+              onPress={() => setEditing(null)}
+              borderColor={BORDER}
+              textColor={CHARCOAL}
+              borderRadius={Radii.control}
+              height={42}
+              style={{ flex: 1 }}
+            >
+              <Txt variant="body" weight="800" color={CHARCOAL}>Cancel</Txt>
+            </OutlinedBtn>
+          </Row>
+        }
+      >
                 <OutlinedTextField
                   label="Resident Full Name *"
                   value={editName}
@@ -1002,60 +1013,17 @@ export function OwnerGuestsManagementTab() {
                   containerColor={BG}
                   style={{ marginBottom: 4 }}
                 />
-              </ScrollView>
-              <Spacer size={12} />
-              <Row gap={8}>
-                <Btn
-                  onPress={handleUpdate}
-                  disabled={isUpdating}
-                  loading={isUpdating}
-                  containerColor={GREEN}
-                  textColor={WHITE}
-                  borderRadius={Radii.control}
-                  height={42}
-                  style={{ flex: 1 }}
-                >
-                  <Txt variant="body" weight="800" color={WHITE}>
-                    Save Changes
-                  </Txt>
-                </Btn>
-                <OutlinedBtn
-                  onPress={() => setEditing(null)}
-                  borderColor={BORDER}
-                  textColor={CHARCOAL}
-                  borderRadius={Radii.control}
-                  height={42}
-                  style={{ flex: 1 }}
-                >
-                  <Txt variant="body" weight="800" color={CHARCOAL}>
-                    Cancel
-                  </Txt>
-                </OutlinedBtn>
-              </Row>
-            </Card>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      </Sheet>
 
 
       {/* Review KYC Dialog */}
-      <Modal visible={reviewing != null} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <Card
-            containerColor={WHITE}
-            borderRadius={Radii.sheet}
-            borderWidth={1}
-            borderColor={BORDER}
-            padding={[20, 20]}
-            style={{ width: '92%' }}
-          >
-            <Row justify="space-between" align="center">
-              <Txt variant="sectionTitle" weight="800" color={CHARCOAL}>
-                KYC Document Review
-              </Txt>
-              <IconBtn onPress={() => setReviewing(null)} icon="close" size={20} tint={MUTED} />
-            </Row>
-            <Spacer size={12} />
+      <Sheet
+        visible={reviewing != null}
+        title="KYC document review"
+        subtitle={reviewing ? `${reviewing.name} · Room ${reviewing.roomNo}` : undefined}
+        icon="shield-checkmark-outline"
+        onDismiss={() => setReviewing(null)}
+      >
             {reviewing && (
               <Col>
                 <Txt variant="cardTitle" weight="800" color={CHARCOAL}>
@@ -1109,9 +1077,7 @@ export function OwnerGuestsManagementTab() {
                 </Row>
               </Col>
             )}
-          </Card>
-        </View>
-      </Modal>
+      </Sheet>
 
       <TextPromptDialog
         visible={rejecting != null}
@@ -1128,34 +1094,14 @@ export function OwnerGuestsManagementTab() {
 
       {/* Invite Resident Sign-up Link Sheet / Modal */}
       {showInviteModal && owner && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowInviteModal(false)}>
-          {/* behavior="padding" only on Android — iOS handles it natively */}
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-            <Animated.View entering={FadeIn.duration(200)} style={styles.modalBackdrop}>
-              <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowInviteModal(false)} />
-              
-              <Animated.View
-                entering={SlideInDown.springify(180).dampingRatio(0.85)}
-                style={styles.inviteSheet}
-              >
-                {/* Drag handle */}
-                <View style={styles.inviteHandleBar} />
-
-                {/* Header */}
-                <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-                  <Row gap={8} align="center">
-                    <View style={styles.inviteHeaderIcon}>
-                      <Ionicons name="link" size={18} color={GREEN} />
-                    </View>
-                    <Col>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteSheetTitle}>Resident Sign-Up Link</Text>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.inviteSheetSub}>Let residents register themselves</Text>
-                    </Col>
-                  </Row>
-                  <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowInviteModal(false)} style={styles.inviteCloseBtn}>
-                    <Ionicons name="close" size={20} color={MUTED} />
-                  </AnimatedPress>
-                </Row>
+        <Sheet
+          visible
+          title="Resident sign-up link"
+          subtitle="Let residents register themselves"
+          icon="link"
+          accent={GREEN}
+          onDismiss={() => setShowInviteModal(false)}
+        >
 
                 {owner.joinCode ? (
                   <>
@@ -1288,10 +1234,7 @@ export function OwnerGuestsManagementTab() {
                     Self sign-up is currently disabled. Only the property owner can turn this on.
                   </Text>
                 )}
-              </Animated.View>
-            </Animated.View>
-          </KeyboardAvoidingView>
-        </Modal>
+        </Sheet>
       )}
     </View>
   );
@@ -1486,11 +1429,6 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center' },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 18, 13, 0.55)',
-    alignItems: 'center',
-    justifyContent: 'center' },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1509,38 +1447,6 @@ const styles = StyleSheet.create({
     marginTop: 4 },
 
   // Invite Link Bottom Sheet Styles
-  inviteSheet: {
-    width: '100%',
-    backgroundColor: WHITE,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 34,
-    alignSelf: 'flex-end' },
-  inviteHandleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: Radii.badge,
-    backgroundColor: BORDER,
-    alignSelf: 'center',
-    marginBottom: 16 },
-  inviteHeaderIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: Radii.card,
-    backgroundColor: LIGHT_GREEN,
-    alignItems: 'center',
-    justifyContent: 'center' },
-  inviteSheetTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
-  inviteSheetSub: { fontSize: 12, color: MUTED, marginTop: 1 },
-  inviteCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.pill,
-    backgroundColor: BG,
-    alignItems: 'center',
-    justifyContent: 'center' },
   inviteExplain: { fontSize: 12, color: MUTED, lineHeight: 18 },
   inviteQrBox: { alignItems: 'center', paddingVertical: 6 },
   inviteCodeBox: {

@@ -4,18 +4,14 @@
  */
 import { useMemo, useState } from 'react';
 import {
-  Modal,
   View,
   StyleSheet,
   Alert,
   ScrollView,
-  Pressable,
-  KeyboardAvoidingView,
   Text } from 'react-native';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer, IconBtn, Chip, ChoiceChips, AnimatedPress } from '@/components/ui';
+import { Txt, Btn, Row, Col, Spacer, Chip, ChoiceChips, AnimatedPress, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -78,26 +74,25 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
   };
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <View style={styles.backdrop}>
-        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <View style={{ width: '92%', maxHeight: '85%', zIndex: 2 }}>
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={Radii.sheet}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[20, 20]}
-            style={{ width: '100%' }}
-          >
-          <Row justify="space-between" align="center" style={{ marginBottom: 12 }}>
-            <Row gap={8} align="center">
-              <Ionicons name="refresh" size={18} color={Colors.primary} />
-              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Daily Grocery Auto-Order</Txt>
-            </Row>
-            <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
-          </Row>
+    <Sheet
+      visible
+      title="Daily grocery auto-order"
+      icon="refresh"
+      onDismiss={onDismiss}
+      footer={
+        <Btn
+          onPress={handleSave}
+          loading={createSubscription.isPending}
+          disabled={createSubscription.isPending || cartItemCount === 0}
+          containerColor={Colors.primary}
+          textColor={Colors.textInverse}
+          borderRadius={Radii.card}
+          height={44}
+        >
+          <Txt variant="body" weight="800" color={Colors.textInverse}>Activate daily subscription</Txt>
+        </Btn>
+      }
+    >
 
           <OutlinedTextField
             label="Note (optional)"
@@ -162,24 +157,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
             <Txt variant="caption" weight="800" color={Colors.textMuted}>Estimated Daily Cost</Txt>
             <Txt variant="sectionTitle" weight="900" color={Colors.primaryDark}>₹{estimatedDailyCost.toLocaleString('en-IN')}</Txt>
           </Row>
-          <Spacer size={16} />
-
-          <Btn
-            onPress={handleSave}
-            loading={createSubscription.isPending}
-            disabled={createSubscription.isPending || cartItemCount === 0}
-            containerColor={Colors.primary}
-            textColor={Colors.textInverse}
-            borderRadius={Radii.card}
-            height={44}
-          >
-            <Txt variant="body" weight="800" color={Colors.textInverse}>Activate Daily Subscription</Txt>
-          </Btn>
-        </Card>
-        </View>
-      </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -217,7 +195,6 @@ const DIALOG_LIGHT_GREEN = Colors.surfaceElevated;
 export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   // Bottom sheet inside a Modal: nothing above it pads the gesture bar, and the hardcoded
   // 34px it used to carry was a guess at the home indicator that under-clears gesture nav.
-  const insets = useSafeAreaInsets();
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
   const [category, setCategory] = useState('Plumbing');
   const [issue, setIssue] = useState('');
@@ -243,32 +220,21 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
 
   return (
     <>
-      <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <View style={styles.backdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-            
-            <View
-              style={[styles.sheetCard, { paddingBottom: 34 + insets.bottom }]}
-            >
-              {/* Handlebar */}
-              <View style={styles.handlebar} />
-
-              {/* Header */}
-              <Row justify="space-between" align="center" style={{ marginBottom: 20 }}>
-                <Row gap={12} align="center">
-                  <View style={styles.headerIconCircle}>
-                    <Ionicons name="construct-outline" size={20} color={DIALOG_GREEN} />
-                  </View>
-                  <Col>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.sheetTitle}>Book a Repair</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubtitle}>Tell us what needs fixing</Text>
-                  </Col>
-                </Row>
-                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onDismiss} style={styles.closeBtn}>
-                  <Ionicons name="close" size={20} color={DIALOG_MUTED} />
-                </AnimatedPress>
-              </Row>
+      <Sheet
+        visible
+        title="Book a repair"
+        subtitle="Tell us what needs fixing"
+        icon="construct-outline"
+        accent={DIALOG_GREEN}
+        onDismiss={onDismiss}
+        footer={
+          <AnimatedPress accessibilityRole="button" style={styles.sheetSubmitBtn} onPress={handleDispatch}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubmitBtnText}>
+              {urgency === '15-Min Express' ? 'Request express repair' : 'Request repair'}
+            </Text>
+          </AnimatedPress>
+        }
+      >
 
               {/* Step 1: What needs repair */}
               <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>1. What needs repair?</Text>
@@ -385,29 +351,12 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                 </Text>
               </Row>
 
-              <Spacer size={20} />
-
-              {/* CTA Button */}
-              <AnimatedPress accessibilityRole="button"
-                style={styles.sheetSubmitBtn}
-                onPress={handleDispatch}
-              >
-                <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubmitBtnText}>
-                  {urgency === '15-Min Express' ? 'Request Express Repair' : 'Request Repair'}
-                </Text>
-              </AnimatedPress>
-
               <Spacer size={12} />
-              
-              {/* Security Disclaimer */}
               <Row gap={6} justify="center" align="center" style={styles.securityRow}>
                 <Ionicons name="lock-closed-outline" size={12} color={DIALOG_MUTED} />
                 <Text maxFontSizeMultiplier={1.3} style={styles.securityText}>Your request is secure and confidential</Text>
               </Row>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      </Sheet>
 
     </>
   );
@@ -439,28 +388,30 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
   };
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <View style={styles.backdrop}>
-        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <View style={{ width: '92%', zIndex: 2 }}>
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={Radii.sheet}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[20, 20]}
-            style={{ width: '100%' }}
+    <Sheet
+      visible
+      title="Doorstep laundry"
+      subtitle={`Room ${roomNo} · ${guestName}`}
+      icon="shirt-outline"
+      onDismiss={onDismiss}
+      footer={
+        <Row justify="space-between" align="center">
+          <Col>
+            <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Estimated total</Txt>
+            <Txt variant="sectionTitle" weight="900" color={Colors.primaryDark}>₹{est}</Txt>
+          </Col>
+          <Btn
+            onPress={handleBook}
+            containerColor={Colors.primary}
+            textColor={Colors.textInverse}
+            borderRadius={Radii.card}
+            height={44}
           >
-          <Row justify="space-between" align="center" style={{ marginBottom: 4 }}>
-            <Row gap={8} align="center">
-              <Ionicons name="shirt-outline" size={18} color={Colors.primary} />
-              <Txt variant="sectionTitle" weight="900" color={Colors.textPrimary}>Doorstep Laundry</Txt>
-            </Row>
-            <IconBtn onPress={onDismiss} icon="close" size={18} tint={Colors.textMuted} />
-          </Row>
-          <Txt variant="caption" weight="800" color={Colors.primaryDark}>Room {roomNo} • {guestName}</Txt>
-          <Spacer size={12} />
+            <Txt variant="caption" weight="800" color={Colors.textInverse}>Confirm pickup</Txt>
+          </Btn>
+        </Row>
+      }
+    >
 
           <Txt variant="caption" weight="800" color={Colors.textMuted}>Select Service Type</Txt>
           <Spacer size={6} />
@@ -533,35 +484,11 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
             style={{ marginBottom: 12 }}
           />
 
-          <Row justify="space-between" align="center">
-            <Col>
-              <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Estimated Total</Txt>
-              <Txt variant="sectionTitle" weight="900" color={Colors.primaryDark}>₹{est}</Txt>
-            </Col>
-            <Btn
-              onPress={handleBook}
-              containerColor={Colors.primary}
-              textColor={Colors.textInverse}
-              borderRadius={Radii.card}
-              height={44}
-            >
-              <Txt variant="caption" weight="800" color={Colors.textInverse}>Confirm Pickup</Txt>
-            </Btn>
-          </Row>
-        </Card>
-        </View>
-      </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 18, 13, 0.55)',
-    alignItems: 'center',
-    justifyContent: 'flex-end' },
   laundryOpt: {
     borderRadius: Radii.card,
     borderWidth: 1,
@@ -581,37 +508,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center' },
 
   // Bottom Sheet
-  sheetCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 34 },
-  handlebar: {
-    width: 36,
-    height: 4,
-    borderRadius: Radii.badge,
-    backgroundColor: '#E6EFEA',
-    alignSelf: 'center',
-    marginBottom: 16 },
-  headerIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: Radii.card,
-    backgroundColor: DIALOG_LIGHT_GREEN,
-    alignItems: 'center',
-    justifyContent: 'center' },
-  sheetTitle: { fontSize: 17, fontWeight: '700', color: '#17201A' },
-  sheetSubtitle: { fontSize: 13, color: '#66736B', marginTop: 1 },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.pill,
-    backgroundColor: '#F7FAF7',
-    alignItems: 'center',
-    justifyContent: 'center' },
   stepTitle: { fontSize: 14, fontWeight: '700', color: '#17201A' },
   chipsRow: {
     flexDirection: 'row',

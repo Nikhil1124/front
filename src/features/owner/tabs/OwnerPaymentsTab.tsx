@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 
 import { Card, Txt, Btn, Row, Col, Spacer, ListRow, toneFor, ChoiceChips, SearchField, AnimatedPress } from '@/components/ui';
 import { Sheet } from '@/components/ui';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { formatINR, formatDateTime } from '@/utils/format';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors, Palette } from '@/theme';
@@ -97,7 +98,6 @@ export function OwnerPaymentsTab() {
   const verifyPayment = useVerifyPaymentMutation(activePgId ?? undefined);
   const rejectPayment = useRejectPaymentMutation(activePgId ?? undefined);
   const [rejectingPayment, setRejectingPayment] = useState<PaymentEntity | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
 
   const handleVerifyPayment = async (p: PaymentEntity) => {
     try {
@@ -107,12 +107,11 @@ export function OwnerPaymentsTab() {
     }
   };
 
-  const handleRejectPayment = async () => {
+  const handleRejectPayment = async (reason: string) => {
     if (!rejectingPayment) return;
     try {
-      await rejectPayment.mutateAsync({ paymentId: rejectingPayment.id, reason: rejectReason.trim() || undefined });
+      await rejectPayment.mutateAsync({ paymentId: rejectingPayment.id, reason });
       setRejectingPayment(null);
-      setRejectReason('');
     } catch (err) {
       Alert.alert('Could not reject', err instanceof Error ? err.message : 'Please try again.');
     }
@@ -328,7 +327,7 @@ export function OwnerPaymentsTab() {
                 <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Verify</Txt>
               </Btn>
               <Btn
-                onPress={() => { const p = selectedReceipt; setSelectedReceipt(null); setRejectingPayment(p); setRejectReason(''); }}
+                onPress={() => { const p = selectedReceipt; setSelectedReceipt(null); setRejectingPayment(p); }}
                 containerColor={Palette.TintRed}
                 borderRadius={Radii.control}
                 height={44}
@@ -930,50 +929,20 @@ export function OwnerPaymentsTab() {
         />
       )}
 
-      {/* ── Reject Payment Modal ── */}
-      {rejectingPayment && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setRejectingPayment(null)}>
-          {/* KAV so the reason input isn't covered by keyboard on Android */}
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-            <View style={styles.pickerPopupBackdrop}>
-              <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setRejectingPayment(null)} />
-              <View style={[styles.pickerPopupCard, { padding: 20 }]}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.pickerPopupTitle}>Reject Payment</Text>
-                <Spacer size={4} />
-                <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, color: MUTED }}>
-                  {rejectingPayment.payerName} • ₹{Math.round(rejectingPayment.amount).toLocaleString('en-IN')}
-                </Text>
-                <Spacer size={14} />
-                <OutlinedTextField
-                  label="Reason (shown to the resident)"
-                  placeholder="Amount doesn't match, UTR not found, etc."
-                  value={rejectReason}
-                  onChangeText={setRejectReason}
-                />
-                <Spacer size={16} />
-                <Row gap={10}>
-                  <AnimatedPress accessibilityRole="button"
-                    onPress={() => setRejectingPayment(null)}
-                    style={{ flex: 1, height: 44, borderRadius: Radii.control, backgroundColor: '#F1F5F4', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '800', color: CHARCOAL }}>Cancel</Text>
-                  </AnimatedPress>
-                  <AnimatedPress accessibilityRole="button"
-                    onPress={handleRejectPayment}
-                    disabled={rejectPayment.isPending}
-                    style={{ flex: 1, height: 44, borderRadius: Radii.control, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center', opacity: rejectPayment.isPending ? 0.6 : 1 }}
-                  >
-                    <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '800', color: WHITE }}>
-                      {rejectPayment.isPending ? 'Rejecting…' : 'Confirm Rejection'}
-                    </Text>
-                  </AnimatedPress>
-                </Row>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
-      )}
 
+      <TextPromptDialog
+        visible={!!rejectingPayment}
+        title="Reject payment"
+        label="Reason"
+        placeholder="Amount doesn't match the UTR reference"
+        helper={rejectingPayment ? `${rejectingPayment.payerName} · ₹${Math.round(rejectingPayment.amount).toLocaleString('en-IN')} — they see this` : undefined}
+        confirmLabel="Confirm rejection"
+        destructive
+        required
+        busy={rejectPayment.isPending}
+        onCancel={() => setRejectingPayment(null)}
+        onSave={handleRejectPayment}
+      />
 
       {/* ── Custom Date Range Picker Modal ── */}
       {showDatePicker && (

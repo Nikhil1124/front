@@ -16,11 +16,11 @@
  * thing entirely; it is `"Add"` now.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Modal, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Row, Spacer, AnimatedPress } from '@/components/ui';
+import { Txt, Row, AnimatedPress, Sheet } from '@/components/ui';
 import { Dock, DockAlert, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
 import { centreOut, NAV_PROFILES } from '@/data/navTabs';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
@@ -173,28 +173,14 @@ export default function OwnerTabsLayout() {
 
       {/* ── PG Swapper Popover Menu ─────────────────────────────────────────── */}
       {showProfileMenu && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowProfileMenu(false)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowProfileMenu(false)} />
-            <View style={styles.swapperMenuCard}>
-              <Card
-                containerColor={WHITE}
-                borderRadius={Radii.sheet}
-                borderWidth={1}
-                borderColor={BORDER}
-                padding={[8, 8]}
-                style={{ width: '100%' }}
-              >
-                <View style={{ padding: 12 }}>
-                  <Txt size={15} weight="900" color={CHARCOAL}>{owner?.pgName ?? 'Select PG'}</Txt>
-                  <Txt size={11} color={MUTED} style={{ marginTop: 2 }}>
-                    {isManager ? `Manager: ${owner?.managerName ?? 'You'}` : `Owner: ${owner?.ownerName ?? 'You'}`}
-                  </Txt>
-                </View>
-                <View style={styles.menuDivider} />
-                
-                {/* List all properties to allow swapper mechanism */}
-                <ScrollView style={{ maxHeight: 200 }} showsVerticalScrollIndicator={false}>
+        <Sheet
+          visible
+          title={owner?.pgName ?? 'Select PG'}
+          subtitle={isManager ? `Manager: ${owner?.managerName ?? 'You'}` : `Owner: ${owner?.ownerName ?? 'You'}`}
+          icon="business-outline"
+          onDismiss={() => setShowProfileMenu(false)}
+        >
+                <>
                   {allPGs.map((pg) => {
                     const isCurrent = pg.id === activePgId;
                     return (
@@ -214,8 +200,8 @@ export default function OwnerTabsLayout() {
                       </AnimatedPress>
                     );
                   })}
-                </ScrollView>
-                
+                </>
+
                 <View style={styles.menuDivider} />
 
                 {!isManager && (
@@ -236,10 +222,7 @@ export default function OwnerTabsLayout() {
                     </AnimatedPress>
                   </>
                 )}
-              </Card>
-            </View>
-          </View>
-        </Modal>
+        </Sheet>
       )}
 
 
@@ -253,13 +236,13 @@ export default function OwnerTabsLayout() {
 
       {/* ── Add Options Sheet Menu ─────────────────────────────────────────── */}
       {showAddOptions && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowAddOptions(false)}>
-          <View style={styles.moreMenuBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowAddOptions(false)} />
-            <View style={styles.moreMenuSheet}>
-              <View style={styles.sheetHandle} />
-              <Txt size={16} weight="900" color={CHARCOAL} style={{ marginBottom: 16, textAlign: 'center' }}>Quick Creation</Txt>
-              
+        <Sheet
+          visible
+          title="Add"
+          subtitle="What are you adding?"
+          icon="add-circle-outline"
+          onDismiss={() => setShowAddOptions(false)}
+        >
               <Row justify="space-evenly" align="center" style={{ marginVertical: 10 }}>
                 {/* Add Resident */}
                 <AnimatedPress accessibilityRole="button"
@@ -298,13 +281,7 @@ export default function OwnerTabsLayout() {
                 </AnimatedPress>
               </Row>
 
-              <Spacer size={8} />
-              <AnimatedPress accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowAddOptions(false)}>
-                <Txt size={13} weight="800" color={MUTED} align="center">Cancel</Txt>
-              </AnimatedPress>
-            </View>
-          </View>
-        </Modal>
+        </Sheet>
       )}
     </Tabs>
   );
@@ -330,19 +307,6 @@ const styles = StyleSheet.create({
   // with every role.
 
   // Modals Backdrops
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(21, 23, 26, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center' },
-  swapperMenuCard: {
-    width: '84%',
-    maxWidth: 320,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6 },
   menuDivider: {
     height: 1,
     backgroundColor: BORDER,
@@ -357,29 +321,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EEF2FF' },
 
   // More Menu Bottom Sheet
-  moreMenuBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(21, 23, 26, 0.45)',
-    justifyContent: 'flex-end' },
-  moreMenuSheet: {
-    backgroundColor: WHITE,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 22,
-    paddingTop: 10,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 10 },
-  sheetHandle: {
-    width: 38,
-    height: 4,
-    borderRadius: Radii.badge,
-    backgroundColor: BORDER,
-    alignSelf: 'center',
-    marginBottom: 16 },
   moreIconBox: {
     width: 48,
     height: 48,
@@ -390,13 +331,5 @@ const styles = StyleSheet.create({
   addOptionItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 80 },
-  sheetCancelBtn: {
-    height: 48,
-    borderRadius: Radii.card,
-    backgroundColor: Colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    width: '100%' } });
+    width: 80 }, });
 

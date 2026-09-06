@@ -6,17 +6,13 @@ import {
   FlatList,
   Text,
   ScrollView,
-  Modal,
-  Pressable,
-  KeyboardAvoidingView,
   BackHandler } from 'react-native';
 import { router } from 'expo-router';
 
 
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { ListRow, Card, Row, Col, Spacer, SearchField, AnimatedPress } from '@/components/ui';
+import { ListRow, Row, Col, Spacer, SearchField, AnimatedPress, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
 import { Radii, Colors } from '@/theme';
@@ -578,19 +574,13 @@ export function StaffManagementTab() {
 
       {/* ── Action Menu Popup ── */}
       {showActionMenu && selectedStaff && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowActionMenu(false)}>
-          <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowActionMenu(false)} />
-            
-            <Animated.View entering={SlideInDown.springify(160).dampingRatio(0.85)} style={styles.actionSheet}>
-              <View style={styles.sheetHandle} />
-              
-              <Text maxFontSizeMultiplier={1.3} style={styles.actionSheetTitle}>{selectedStaff.name}</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.actionSheetSub}>
-                {ROLE_DISPLAY_NAMES[selectedStaff.role] || selectedStaff.role}
-              </Text>
-              
-              <Spacer size={16} />
+        <Sheet
+          visible
+          title={selectedStaff.name}
+          subtitle={ROLE_DISPLAY_NAMES[selectedStaff.role] || selectedStaff.role}
+          icon="person-outline"
+          onDismiss={() => setShowActionMenu(false)}
+        >
 
               <AnimatedPress accessibilityRole="button"
                 style={styles.sheetOptionRow}
@@ -619,36 +609,18 @@ export function StaffManagementTab() {
                 <Text maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: Colors.danger }]}>Delete Staff</Text>
               </AnimatedPress>
 
-              <Spacer size={8} />
-              <AnimatedPress accessibilityRole="button" style={styles.sheetCancelBtn} onPress={() => setShowActionMenu(false)}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.sheetCancelText}>Cancel</Text>
-              </AnimatedPress>
-            </Animated.View>
-          </Animated.View>
-        </Modal>
+        </Sheet>
       )}
 
       {/* ── Details Modal ── */}
       {showDetails && selectedStaff && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowDetails(false)}>
-          <View style={styles.modalBackdrop}>
-            <Card
-              containerColor={WHITE}
-              borderRadius={Radii.sheet}
-              borderWidth={1}
-              borderColor={BORDER}
-              padding={[20, 20]}
-              style={{ width: '90%' }}
-            >
-              <Row justify="space-between" align="center">
-                <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Staff Profile</Text>
-                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowDetails(false)}>
-                  <Ionicons name="close" size={20} color={MUTED} />
-                </AnimatedPress>
-              </Row>
-              
-              <Spacer size={16} />
-              
+        <Sheet
+          visible
+          title="Staff profile"
+          subtitle={selectedStaff.name}
+          icon="id-card-outline"
+          onDismiss={() => setShowDetails(false)}
+        >
               <Text maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>PERSONAL DETAILS</Text>
               <Spacer size={4} />
               <Text maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Name</Text>
@@ -707,50 +679,33 @@ export function StaffManagementTab() {
                 </AnimatedPress>
               </View>
 
-              <Spacer size={16} />
-              <AnimatedPress accessibilityRole="button"
-                style={styles.sheetCancelBtn}
-                onPress={() => setShowDetails(false)}
-              >
-                <Text maxFontSizeMultiplier={1.3} style={styles.sheetCancelText}>Close</Text>
-              </AnimatedPress>
-            </Card>
-          </View>
-        </Modal>
+        </Sheet>
       )}
 
       {/* ── Edit Staff Modal ── */}
+      {/* The capped height, the scrolling body and the always-visible Save/Cancel row were
+          all hand-built here — with a comment explaining the bug that came from getting it
+          wrong. `Sheet` does exactly that natively: content scrolls, `footer` stays put. */}
       {showEditModal && selectedStaff && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowEditModal(false)}>
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-            <View style={styles.modalBackdrop}>
-              <Card
-                containerColor={WHITE}
-                borderRadius={Radii.sheet}
-                borderWidth={1}
-                borderColor={BORDER}
-                padding={[20, 20]}
-                style={{ width: '90%' }}
-              >
-                <Row justify="space-between" align="center">
-                  <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Edit Staff Details</Text>
-                  <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowEditModal(false)}>
-                    <Ionicons name="close" size={20} color={MUTED} />
-                  </AnimatedPress>
-                </Row>
-
-                <Spacer size={16} />
-
-                {/* maxHeight caps the card so it fits on screen; ScrollView makes fields
-                    reachable instead of clipped when the card is taller than this cap.
-                    The Save/Cancel row lives outside the ScrollView so it is always visible
-                    — the previous bug was the opposite: only the buttons were visible. */}
-                <ScrollView
-                  style={{ maxHeight: 360 }}
-                  keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={false}
-                  automaticallyAdjustKeyboardInsets
-                >
+        <Sheet
+          visible
+          title="Edit staff details"
+          subtitle={selectedStaff.name}
+          icon="create-outline"
+          onDismiss={() => setShowEditModal(false)}
+          footer={
+            <Row gap={10}>
+              <AnimatedPress accessibilityRole="button" style={styles.editModalSaveBtn} onPress={handleUpdateStaff} disabled={isUpdating}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
+                  {isUpdating ? 'Saving…' : 'Save changes'}
+                </Text>
+              </AnimatedPress>
+              <AnimatedPress accessibilityRole="button" style={styles.editModalCancelBtn} onPress={() => setShowEditModal(false)}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Text>
+              </AnimatedPress>
+            </Row>
+          }
+        >
                   <OutlinedTextField
                     label="Full Name"
                     value={editName}
@@ -822,32 +777,7 @@ export function StaffManagementTab() {
                       })}
                     </Row>
                   </ScrollView>
-                </ScrollView>
-
-                <Spacer size={12} />
-
-                <Row gap={10}>
-                  <AnimatedPress accessibilityRole="button"
-                    style={styles.editModalSaveBtn}
-                    onPress={handleUpdateStaff}
-                    disabled={isUpdating}
-                  >
-                    <Text maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
-                      {isUpdating ? 'Saving...' : 'Save Changes'}
-                    </Text>
-                  </AnimatedPress>
-
-                  <AnimatedPress accessibilityRole="button"
-                    style={styles.editModalCancelBtn}
-                    onPress={() => setShowEditModal(false)}
-                  >
-                    <Text maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Text>
-                  </AnimatedPress>
-                </Row>
-              </Card>
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
+        </Sheet>
       )}
 
     </View>
@@ -899,7 +829,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40 },
   bodyTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
-  sectionHeader: { fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.5 },
 
   // Role selector chips
   roleChip: {
@@ -914,7 +843,6 @@ const styles = StyleSheet.create({
     borderColor: GREEN },
   roleChipText: { fontSize: 12, color: CHARCOAL, fontWeight: '600' },
   roleChipTextActive: { color: WHITE, fontWeight: '700' },
-  supportingText: { fontSize: 11, color: MUTED, marginTop: 4 },
 
   // Work Details fields
   inputLabelStyle: { fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 4 },
@@ -981,55 +909,10 @@ const styles = StyleSheet.create({
   filterChipTextActive: { color: WHITE, fontWeight: '700' },
 
   // Roster card items
-  roleIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: Radii.card,
-    backgroundColor: LIGHT_GREEN,
-    alignItems: 'center',
-    justifyContent: 'center' },
-  staffNameText: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
-  roleBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: Radii.badge,
-    backgroundColor: LIGHT_GREEN },
-  roleBadgeText: { fontSize: 9, fontWeight: '700', color: GREEN },
-  staffPhone: { fontSize: 11, color: MUTED, marginTop: 2 },
-  staffBranch: { fontSize: 10, color: MUTED, marginTop: 1 },
-  optionsBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center' },
 
   // Modal Sheet Backdrop
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 18, 13, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center' },
 
   // Bottom action sheet popup
-  actionSheet: {
-    width: '100%',
-    backgroundColor: WHITE,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 34,
-    alignSelf: 'flex-end' },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: Radii.badge,
-    backgroundColor: BORDER,
-    alignSelf: 'center',
-    marginBottom: 16 },
-  actionSheetTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
-  actionSheetSub: { fontSize: 12, color: MUTED, marginTop: 1 },
   sheetOptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1038,17 +921,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: BG },
   sheetOptionText: { fontSize: 14, fontWeight: '600', color: CHARCOAL },
-  sheetCancelBtn: {
-    height: 44,
-    backgroundColor: BG,
-    borderRadius: Radii.control,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8 },
-  sheetCancelText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
 
   // Details Modal styles
-  modalTitle: { fontSize: 16, fontWeight: '800', color: CHARCOAL },
   detailSecLabel: { fontSize: 9, fontWeight: '800', color: MUTED, letterSpacing: 0.5 },
   detailLabel: { fontSize: 11, color: MUTED },
   detailValue: { fontSize: 13, fontWeight: '700', color: CHARCOAL, marginTop: 2 },

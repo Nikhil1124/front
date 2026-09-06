@@ -4,12 +4,11 @@
  */
 import { useEffect, type ReactNode } from 'react';
 import {
-  Modal, View, StyleSheet, ScrollView, Pressable, Linking, Platform, BackHandler, Alert
+  View, StyleSheet, Linking, Platform, BackHandler, Alert
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, AnimatedPress } from '@/components/ui';
+import { Txt, Btn, OutlinedBtn, Row, Col, Spacer, AnimatedPress, Sheet } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
@@ -53,7 +52,6 @@ export function PaymentReceiptDialog({
   downloadLabel = 'Download PDF',
   actions }: Props) {
   // Bottom-pinned sheet: the receipt's last row would otherwise sit in the gesture strip.
-  const insets = useSafeAreaInsets();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const roomNo = payment.payerId === guest?.id ? guest?.roomNo : null;
   const isVerified = payment.status === 'VERIFIED';
@@ -90,40 +88,54 @@ export function PaymentReceiptDialog({
   };
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <View style={styles.backdrop}>
-        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <View
-          style={styles.modalContent}
-          onStartShouldSetResponder={() => true}
-        >
-          {/* Header */}
-          <Row justify="space-between" align="center" style={styles.header}>
-            <Row gap={8} align="center">
-              <Ionicons name="receipt" size={24} color={isVerified ? Colors.success : Colors.warning} />
-              <Col>
-                <Txt size={15} weight="900" color={Colors.textPrimary}>PGOW Digital Receipt</Txt>
-                <Txt size={11} color={Colors.textMuted}>Official Co-Living Verified Tax Invoice</Txt>
-              </Col>
-            </Row>
-            <IconBtn
+    <Sheet
+      visible
+      title="PGow digital receipt"
+      subtitle="Official co-living verified tax invoice"
+      icon="receipt"
+      accent={isVerified ? Colors.success : Colors.warning}
+      onDismiss={onDismiss}
+      footer={
+        <>
+          {actions ? (
+            <>
+              {actions}
+              <Spacer size={10} />
+            </>
+          ) : null}
+          <Row gap={10}>
+            {isVerified && (
+              <Btn
+                onPress={handleDownload}
+                containerColor={Colors.primary}
+                textColor={Colors.textInverse}
+                borderRadius={Radii.control}
+                height={42}
+                style={{ flex: 1 }}
+                testID="download_pdf_invoice_btn"
+              >
+                <Ionicons name="download" size={14} color={Colors.textInverse} />
+                <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
+                  {downloadLabel}
+                </Txt>
+              </Btn>
+            )}
+            <OutlinedBtn
               onPress={onDismiss}
-              icon="close"
-              size={18}
-              tint={Colors.textSecondary}
-              containerColor={Colors.surfaceMuted}
-              borderRadius={Radii.pill}
-              padding={6}
-              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-              testID="receipt_header_close_btn"
-            />
+              borderColor={Colors.borderMuted}
+              textColor={Colors.textSecondary}
+              borderRadius={Radii.control}
+              height={42}
+              style={isVerified ? undefined : { flex: 1 }}
+              testID="receipt_done_btn"
+            >
+              <Txt size={12} weight="700" color={Colors.textSecondary}>Done</Txt>
+            </OutlinedBtn>
           </Row>
-
-          {/* Scrollable Content inside Bottom Sheet */}
-          <ScrollView
-            contentContainerStyle={[styles.scrollBody, { paddingBottom: 24 + insets.bottom }]}
-            showsVerticalScrollIndicator={false}
-          >
+        </>
+      }
+    >
+          <View>
             {/* Status banner — compact card directly below header */}
             <View
               style={[
@@ -235,74 +247,12 @@ export function PaymentReceiptDialog({
                 </Row>
               </>
             )}
-          </ScrollView>
-
-          {/* Footer Action Bar */}
-          <View style={styles.footer}>
-            {actions ? (
-              <>
-                {actions}
-                <Spacer size={10} />
-              </>
-            ) : null}
-            <Row gap={10}>
-              {isVerified && (
-                <Btn
-                  onPress={handleDownload}
-                  containerColor={Colors.primary}
-                  textColor={Colors.textInverse}
-                  borderRadius={Radii.control}
-                  height={42}
-                  style={{ flex: 1 }}
-                  testID="download_pdf_invoice_btn"
-                >
-                  <Ionicons name="download" size={14} color={Colors.textInverse} />
-                  <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
-                    {downloadLabel}
-                  </Txt>
-                </Btn>
-              )}
-              <OutlinedBtn
-                onPress={onDismiss}
-                borderColor={Colors.borderMuted}
-                textColor={Colors.textSecondary}
-                borderRadius={Radii.control}
-                height={42}
-                style={isVerified ? undefined : { flex: 1 }}
-                testID="receipt_done_btn"
-              >
-                <Txt size={12} weight="700" color={Colors.textSecondary}>Done</Txt>
-              </OutlinedBtn>
-            </Row>
           </View>
-        </View>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    justifyContent: 'flex-end' },
-  modalContent: {
-    width: '100%',
-    maxHeight: '85%',
-    backgroundColor: Colors.canvas,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    overflow: 'hidden' },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface },
-  scrollBody: {
-    padding: 16,
-    paddingBottom: 24 },
   statusBanner: {
     borderRadius: Radii.control,
     borderWidth: 1,
@@ -323,9 +273,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: Radii.badge,
-    backgroundColor: Colors.surfaceMuted },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface } });
+    backgroundColor: Colors.surfaceMuted }, });

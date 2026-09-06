@@ -3,16 +3,14 @@ import {
   View,
   StyleSheet,
   Modal,
-  Pressable,
   ScrollView,
   KeyboardAvoidingView,
   RefreshControl,
   Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, IconBtn, ChoiceChips,
-  MetricDeck, type DeckCardData,
-} from '@/components/ui';
+  Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Chip, ChoiceChips,
+  MetricDeck, type DeckCardData, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { EmptyState } from '@/components/EmptyState';
@@ -948,30 +946,14 @@ export function BedVisualizerScreen() {
 
       {/* 8. BED ASSIGNMENT / VACATE ACTION DIALOG */}
       {activeBed && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setActiveBed(null)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setActiveBed(null)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={Radii.sheet}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '90%', zIndex: 2, maxHeight: '75%' }}
-            >
-              <Row justify="space-between" align="center">
-                <Col>
-                  <Txt size={16} weight="900" color={Colors.textPrimary}>
-                    Room {activeBed.room.roomNumber} • Bed {activeBed.bed.bedNumber}
-                  </Txt>
-                  <Txt size={11} color={Colors.textMuted}>
-                    {activeBed.bed.status === 'occupied' ? 'Currently Occupied' : 'Vacant & Available'}
-                  </Txt>
-                </Col>
-                <IconBtn onPress={() => setActiveBed(null)} icon="close" size={18} tint={Colors.textMuted} />
-              </Row>
-
-              <Spacer size={14} />
+        <Sheet
+          visible
+          title={`Room ${activeBed.room.roomNumber} · Bed ${activeBed.bed.bedNumber}`}
+          subtitle={activeBed.bed.status === 'occupied' ? 'Currently occupied' : 'Vacant and available'}
+          icon={activeBed.bed.status === 'occupied' ? 'person' : 'bed-outline'}
+          accent={activeBed.bed.status === 'occupied' ? Colors.primary : Colors.success}
+          onDismiss={() => setActiveBed(null)}
+        >
 
               {activeBed.bed.status === 'occupied' && activeBed.bed.tenant ? (
                 <>
@@ -1042,31 +1024,30 @@ export function BedVisualizerScreen() {
                   )}
                 </>
               )}
-            </Card>
-          </View>
-        </Modal>
+        </Sheet>
       )}
 
       {/* 9. ADD ROOM / FLOOR MODAL */}
       {showAddRoom && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowAddRoom(false)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowAddRoom(false)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={Radii.sheet}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '90%', zIndex: 2 }}
+        <Sheet
+          visible
+          title="Add room or floor"
+          icon="add-circle-outline"
+          onDismiss={() => setShowAddRoom(false)}
+          footer={
+            <Btn
+              onPress={handleAddRoom}
+              loading={createRoom.isPending}
+              disabled={createRoom.isPending}
+              containerColor={Colors.primary}
+              textColor={Colors.textInverse}
+              borderRadius={Radii.control}
+              height={44}
             >
-              <Row justify="space-between" align="center">
-                <Txt size={16} weight="900" color={Colors.textPrimary}>
-                  Add Room / Floor
-                </Txt>
-                <IconBtn onPress={() => setShowAddRoom(false)} icon="close" size={18} tint={Colors.textMuted} />
-              </Row>
-              <Spacer size={4} />
+              <Txt size={12} weight="800" color={Colors.textInverse}>Add room</Txt>
+            </Btn>
+          }
+        >
               <Txt size={11} color={Colors.textMuted}>
                 Total beds on this property is capped — adding beds beyond that is refused.
               </Txt>
@@ -1095,45 +1076,31 @@ export function BedVisualizerScreen() {
               />
               <Spacer size={12} />
               <OutlinedTextField label="Base rent per bed (₹, optional)" value={newBaseRent} onChangeText={setNewBaseRent} keyboardType="number-pad" />
-              <Spacer size={16} />
-              <Btn
-                onPress={handleAddRoom}
-                loading={createRoom.isPending}
-                disabled={createRoom.isPending}
-                containerColor={Colors.primary}
-                textColor={Colors.textInverse}
-                borderRadius={Radii.control}
-                height={44}
-              >
-                <Txt size={12} weight="800" color={Colors.textInverse}>
-                  Add Room
-                </Txt>
-              </Btn>
-            </Card>
-          </View>
-        </Modal>
+        </Sheet>
       )}
 
       {/* 10. INCREASE SHARING MODAL */}
       {increasingRoom && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setIncreasingRoom(null)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setIncreasingRoom(null)} />
-            <Card
-              containerColor={Colors.surface}
-              borderRadius={Radii.sheet}
-              borderWidth={1}
-              borderColor={Colors.borderSubtle}
-              padding={[20, 20]}
-              style={{ width: '90%', zIndex: 2 }}
+        <Sheet
+          visible
+          title="Change room sharing"
+          subtitle={`Room ${increasingRoom.roomNumber}`}
+          icon="people-outline"
+          onDismiss={() => setIncreasingRoom(null)}
+          footer={
+            <Btn
+              onPress={handleSetSharing}
+              loading={setSharing.isPending}
+              disabled={setSharing.isPending}
+              containerColor={Colors.primary}
+              textColor={Colors.textInverse}
+              borderRadius={Radii.control}
+              height={44}
             >
-              <Row justify="space-between" align="center">
-                <Txt size={16} weight="900" color={Colors.textPrimary}>
-                  Change Room Sharing
-                </Txt>
-                <IconBtn onPress={() => setIncreasingRoom(null)} icon="close" size={18} tint={Colors.textMuted} />
-              </Row>
-              <Spacer size={4} />
+              <Txt size={12} weight="800" color={Colors.textInverse}>Save</Txt>
+            </Btn>
+          }
+        >
               <Txt size={11} color={Colors.textMuted}>
                 Room {increasingRoom.roomNumber} currently holds {increasingRoom.sharingType} bed
                 {increasingRoom.sharingType === 1 ? '' : 's'}. Reducing it removes the
@@ -1148,23 +1115,7 @@ export function BedVisualizerScreen() {
                 render={(n) => (n === 1 ? 'Single' : `${n} share`)}
                 testID="set_sharing"
               />
-              <Spacer size={16} />
-              <Btn
-                onPress={handleSetSharing}
-                loading={setSharing.isPending}
-                disabled={setSharing.isPending}
-                containerColor={Colors.primary}
-                textColor={Colors.textInverse}
-                borderRadius={Radii.control}
-                height={44}
-              >
-                <Txt size={12} weight="800" color={Colors.textInverse}>
-                  Save
-                </Txt>
-              </Btn>
-            </Card>
-          </View>
-        </Modal>
+        </Sheet>
       )}
     </HubScreenWrapper>
   );
@@ -1331,9 +1282,4 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: Radii.control,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    alignItems: 'center',
-    justifyContent: 'center' } });
+    borderColor: Colors.borderSubtle }, });
