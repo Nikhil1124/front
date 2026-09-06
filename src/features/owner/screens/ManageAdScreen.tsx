@@ -14,13 +14,8 @@ import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
-import {
+import { useAdConfigQuery, useUpsertAdConfigMutation, useDeleteAdConfigMutation, type AdConfig } from '@/features/ads/useAds';
 import { Btn, Card, Col, ErrorState, LoadingState, OutlinedBtn, Row, Spacer, Txt } from '@/components/ui';
-  useAdConfigQuery,
-  useUpsertAdConfigMutation,
-  useDeleteAdConfigMutation,
-  type AdConfig,
-} from '@/features/ads/useAds';
 
 const BLANK: Omit<AdConfig, 'pg_id'> = {
   brand_name: '',
