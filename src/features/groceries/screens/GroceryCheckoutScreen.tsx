@@ -1,5 +1,64 @@
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
+import { FormScroll } from '@/components/ui/FormScroll';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useCartStore } from '../store/useCartStore';
+import { Radii, Colors } from '@/theme';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
+
+interface CheckoutSlot {
+  id: string;
+  day: string;
+  badge: string;
+  window: string;
+  fee: number;
+  feeText: string;
+}
+
+// Delivery is free across every slot for now — see GroceryCartScreen's matching notice.
+// When real pricing comes from the area-manager/warehouse portal, this table (and the
+// per-slot fee it carries) is what should start reading from that instead of a constant.
+const CHECKOUT_SLOTS: CheckoutSlot[] = [
+  { id: '1', day: 'Today', badge: 'FASTEST', window: 'Express • 15–25 min', fee: 0, feeText: 'FREE' },
+  { id: '2', day: 'Today', badge: 'FREE', window: '4:00 PM – 5:00 PM', fee: 0, feeText: 'FREE' },
+  { id: '3', day: 'Today', badge: 'FREE', window: '6:00 PM – 7:00 PM', fee: 0, feeText: 'FREE' },
+  { id: '4', day: 'Tomorrow', badge: 'FREE', window: '9:00 AM – 10:00 AM', fee: 0, feeText: 'FREE' },
+  { id: '5', day: 'Tomorrow', badge: 'FREE', window: '2:00 PM – 3:00 PM', fee: 0, feeText: 'FREE' },
+];
+
+/**
+ * Who may pay how, mirroring the server's own matrix (`ordering._METHODS_BY_BILLED_TO`).
+ *
+ * The split is not cosmetic: `create_order` derives `billed_to` from the placer's role at
+ * the property — owner/manager bills the property, everyone else bills themselves — and
+ * then rejects any method outside that row with a 422. One hardcoded list for everybody
+ * meant an owner picking Cash on Delivery and a guest picking Card both got a flat
+ * "Payment method is not available for this order" at submit, and that credit — the whole
+ * point of the property's credit line — was never offered to anyone at all.
+ *
+ * ponytail: 'upi' and 'card' are still valid on the server (`PaymentMethodName`), but
+ * neither has a real payment gateway behind it — 'upi' is a manual-UTR-then-ops-verifies
+ * flow and 'card' has no processing path at all — so they're hidden here for now. Only the
+ * two methods that are actually workable end-to-end without a gateway stay offered. Add
+ * them back to these lists once a real processor is wired up.
+ */
+const PROPERTY_BILLED_METHODS = [
+  { id: 'credit', label: 'Pay on credit (property account)', icon: 'business-outline' },
+];
+
+const GUEST_BILLED_METHODS = [
+  { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
+];
+
+import { useActiveProperty } from '@/features/properties/useProperties';
+import { useAuthStore } from '@/store/authStore';
+import { useCreateSupplyOrderMutation, useCreditAccountQuery } from '../useSupplyOrders';
+import { formatINR } from '@/utils/format';
+import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, OutlinedTextField, Txt } from '@/components/ui';
-;
 
 export function GroceryCheckoutScreen() {
   const { activeEntity: owner } = useActiveProperty();

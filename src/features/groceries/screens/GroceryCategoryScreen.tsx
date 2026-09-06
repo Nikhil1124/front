@@ -1,5 +1,21 @@
+import { SupplyCategory } from '@/types';
+import { toAmount } from '@/data/mappers';
+import { useMemo, useState } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
+import { FormScroll } from '@/components/ui/FormScroll';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
+import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
+
+import { ProductCard } from '../components/grocery/ProductCard';
+import { useCartStore } from '../store/useCartStore';
+import { useShoppingModeStore } from '../store/useShoppingModeStore';
+import { useSupplyCategories, useSupplyItems } from '../useSupply';
+import { useAuthStore } from '@/store/authStore';
+import { Colors, Layout, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
-;
 
 
 
