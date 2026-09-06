@@ -1,4 +1,5 @@
-import { Txt } from '@/components/ui';\nimport { useState } from 'react';
+import { Txt } from '@/components/ui';
+import { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, Alert, KeyboardAvoidingView } from 'react-native';
 
 import { router, useLocalSearchParams } from 'expo-router';

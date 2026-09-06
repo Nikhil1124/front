@@ -1,4 +1,5 @@
-import { Txt } from '@/components/ui';\nimport { SupplyOrderSummary } from '@/types';
+import { Txt } from '@/components/ui';
+import { SupplyOrderSummary } from '@/types';
 import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 import { router } from 'expo-router';
