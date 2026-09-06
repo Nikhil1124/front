@@ -320,7 +320,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
           <Text maxFontSizeMultiplier={1.3} style={styles.title}>🍽️ Today's Kitchen Needs</Text>
           <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>Everything needed for today's PG menu</Text>
         </View>
-        <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllCategoriesPress}>
+        <AnimatedPress accessibilityRole="button" onPress={onSeeAllCategoriesPress}>
           <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
         </AnimatedPress>
       </View>
@@ -332,7 +332,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
             key={type}
             style={[styles.tabButton, activeTab === type && styles.activeTabButton]}
             onPress={() => handleTabPress(type)}
-            activeOpacity={0.8}
+
           >
             <Text maxFontSizeMultiplier={1.3} style={[styles.tabButtonText, activeTab === type && styles.activeTabButtonText]}>
               {type === 'veg' ? '🥦 Veg Needs' : '🍗 Non-Veg Needs'}

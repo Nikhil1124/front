@@ -99,7 +99,7 @@ export function GateNotice({ error, compact = false }: { error: unknown; compact
       <Wrapper
         style={styles.compact}
         onPress={copy.action?.go}
-        activeOpacity={copy.action ? 0.7 : 1}
+
       >
         <Txt variant="cardTitle" color={copy.tint} numberOfLines={2} style={styles.compactTitle}>
           {copy.title}

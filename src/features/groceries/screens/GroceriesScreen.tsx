@@ -233,7 +233,7 @@ export function GroceriesScreen() {
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{dealsTitle}</Text>
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>{dealsSub}</Text>
                   </View>
-                  <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={openDeals}>
+                  <AnimatedPress accessibilityRole="button" onPress={openDeals}>
                     <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
                   </AnimatedPress>
                 </View>
@@ -250,7 +250,7 @@ export function GroceriesScreen() {
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Daily Essentials</Text>
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>Must-have daily items for your PG</Text>
                   </View>
-                  <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={() => openSupplyCategory(null)}>
+                  <AnimatedPress accessibilityRole="button" onPress={() => openSupplyCategory(null)}>
                     <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
                   </AnimatedPress>
                 </View>
@@ -271,7 +271,7 @@ export function GroceriesScreen() {
       </View>
 
       <Animated.View style={[styles.floatingCartContainer, { transform: [{ translateY: cartAnimY }], opacity: cartOpacity, bottom: 24 }]}>
-        <AnimatedPress accessibilityRole="button" style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>
+        <AnimatedPress accessibilityRole="button" style={styles.floatingCart} onPress={openCart}>
           <BlurView intensity={80} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: Radii.sheet }]} />
           <View style={styles.cartInfo}>
             <View style={styles.cartIconWrapper}>

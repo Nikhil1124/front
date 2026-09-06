@@ -114,7 +114,7 @@ export function GroceryCartScreen() {
         title={`Your Cart (${cartItemCount})`}
         onBack={() => router.back()}
         actions={items.length > 0 ? (
-          <AnimatedPress accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
+          <AnimatedPress accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
             <Text maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Text>
           </AnimatedPress>
@@ -131,7 +131,7 @@ export function GroceryCartScreen() {
           <Text maxFontSizeMultiplier={1.3} style={styles.emptySubtitle}>
             Add groceries for your PG kitchen or pick up essentials for your stay.
           </Text>
-          <AnimatedPress accessibilityRole="button" style={styles.shopBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.shopBtn} onPress={() => router.back()}>
             <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
           </AnimatedPress>
         </View>
@@ -139,7 +139,7 @@ export function GroceryCartScreen() {
         <>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             {/* 3. Delivery Information */}
-            <AnimatedPress accessibilityRole="button" style={styles.deliveryCard} onPress={handleUpdateAddress} activeOpacity={0.9}>
+            <AnimatedPress accessibilityRole="button" style={styles.deliveryCard} onPress={handleUpdateAddress}>
               <View style={styles.deliveryLeft}>
                 <View style={styles.deliveryHeaderRow}>
                   <Ionicons name="location-outline" size={16} color={Colors.info} style={styles.locationIcon} />
@@ -209,7 +209,7 @@ export function GroceryCartScreen() {
                         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : handleRemoveItem(item.id, item.name)}
-                          activeOpacity={0.7}
+
                         >
                           <Ionicons name="remove" size={14} color={Colors.primary} />
                         </AnimatedPress>
@@ -217,7 +217,7 @@ export function GroceryCartScreen() {
                         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => updateQuantity(item.id, item.quantity + 1)}
-                          activeOpacity={0.7}
+
                         >
                           <Ionicons name="add" size={14} color={Colors.primary} />
                         </AnimatedPress>
@@ -226,7 +226,7 @@ export function GroceryCartScreen() {
                       <AnimatedPress accessibilityRole="button"
                         style={styles.removeAction}
                         onPress={() => handleRemoveItem(item.id, item.name)}
-                        activeOpacity={0.7}
+
                       >
                         <Ionicons name="trash-outline" size={12} color={Colors.danger} />
                         <Text maxFontSizeMultiplier={1.3} style={styles.removeActionText}>Remove</Text>
@@ -238,7 +238,7 @@ export function GroceryCartScreen() {
                   <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
                     style={styles.replacementToggle}
                     onPress={() => setEditingReplacementId(isEditingReplacement ? null : item.id)}
-                    activeOpacity={0.8}
+
                   >
                     <ReplacementPicker value={item.replacement || 'best-match'} onChange={() => {}} compact />
                     <Ionicons
@@ -366,7 +366,7 @@ export function GroceryCartScreen() {
             <AnimatedPress accessibilityRole="button"
               style={[styles.checkoutBtn, submittingRequisition && { opacity: 0.6 }]}
               onPress={handleCheckoutOrRequest}
-              activeOpacity={0.8}
+
               disabled={submittingRequisition}
             >
               <Text maxFontSizeMultiplier={1.3} style={styles.checkoutBtnText}>

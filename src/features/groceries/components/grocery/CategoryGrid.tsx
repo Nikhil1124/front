@@ -59,7 +59,7 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Shop by Category</Text>
-        <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={handleSeeAllPress}>
+        <AnimatedPress accessibilityRole="button" onPress={handleSeeAllPress}>
           <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
         </AnimatedPress>
       </View>
@@ -70,7 +70,7 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
             <AnimatedPress accessibilityRole="button"
               key={cat.id}
               style={[styles.cardItem, { width: cardWidth }]}
-              activeOpacity={0.8}
+
               onPress={() => handleSupplyCategoryPress(cat)}
             >
               <View style={[styles.imageWrapper, { backgroundColor: bgColor, width: cardWidth, height: cardWidth }]}>

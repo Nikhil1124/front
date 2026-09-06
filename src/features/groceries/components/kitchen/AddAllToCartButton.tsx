@@ -18,7 +18,7 @@ export const AddAllToCartButton: React.FC<AddAllToCartButtonProps> = ({
   return (
     <AnimatedPress accessibilityRole="button"
       style={styles.button}
-      activeOpacity={0.85}
+
       onPress={onPress}
     >
       <Text maxFontSizeMultiplier={1.3} style={styles.text}>

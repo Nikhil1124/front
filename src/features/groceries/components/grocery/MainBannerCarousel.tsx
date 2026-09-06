@@ -122,7 +122,7 @@ export const MainBannerCarousel: React.FC<MainBannerCarouselProps> = ({ onBanner
     return (
       <AnimatedPress accessibilityRole="button"
         style={[styles.bannerContainer, { width: itemWidth, marginRight: gap }]}
-        activeOpacity={0.95}
+
         onPress={() => onBannerPress?.(item)}
       >
         <Image

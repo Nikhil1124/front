@@ -137,17 +137,17 @@ export function GroceryProductScreen() {
           for the notch/status bar directly rather than sitting in normal flow under it.
           insets.top + 14 matches every other grocery screen's header. */}
       <View style={[styles.floatingHeader, { paddingTop: insets.top + 14 }]}>
-        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
         </AnimatedPress>
         <View style={styles.headerRight}>
-          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Share" accessibilityRole="button" style={styles.headerBtn} onPress={handleShare} activeOpacity={0.7}>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Share" accessibilityRole="button" style={styles.headerBtn} onPress={handleShare}>
             <Ionicons name="share-social-outline" size={18} color={Colors.textPrimary} />
           </AnimatedPress>
-          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Search" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/categories')} activeOpacity={0.7}>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Search" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/categories')}>
             <Ionicons name="search" size={18} color={Colors.textPrimary} />
           </AnimatedPress>
-          <AnimatedPress accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/cart')} activeOpacity={0.7}>
+          <AnimatedPress accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/cart')}>
             <Ionicons name="cart-outline" size={18} color={Colors.textPrimary} />
             {cartItemCount > 0 && (
               <View style={styles.headerCartBadge}>
@@ -174,7 +174,7 @@ export function GroceryProductScreen() {
             <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
               style={styles.wishlistBtn}
               onPress={() => toggleWishlist(product)}
-              activeOpacity={0.8}
+
             >
               <Ionicons
                 name={isWishlisted ? 'heart' : 'heart-outline'}
@@ -245,7 +245,7 @@ export function GroceryProductScreen() {
                       key={opt.unit}
                       style={[styles.packTab, isSelected && styles.selectedPackTab]}
                       onPress={() => setSelectedIdx(i)}
-                      activeOpacity={0.8}
+
                     >
                       <Text maxFontSizeMultiplier={1.3} style={[styles.packText, isSelected && styles.selectedPackText]}>
                         {opt.unit}{isSelected ? ' ✓' : ''}
@@ -260,7 +260,7 @@ export function GroceryProductScreen() {
               {quantity > 0 ? (
                 <QuantityStepper quantity={quantity} onIncrease={handleIncrease} onDecrease={handleDecrease} />
               ) : (
-                <AnimatedPress accessibilityRole="button" style={styles.inlineAddBtn} onPress={handleAdd} activeOpacity={0.8}>
+                <AnimatedPress accessibilityRole="button" style={styles.inlineAddBtn} onPress={handleAdd}>
                   <Text maxFontSizeMultiplier={1.3} style={styles.inlineAddText}>Add to Cart</Text>
                 </AnimatedPress>
               )}
@@ -315,7 +315,7 @@ export function GroceryProductScreen() {
             <AnimatedPress accessibilityRole="button"
               style={styles.accordionHeader}
               onPress={() => setIsDetailsExpanded(!isDetailsExpanded)}
-              activeOpacity={0.7}
+
             >
               <Text maxFontSizeMultiplier={1.3} style={styles.accordionHeading}>Product Details</Text>
               <Ionicons
@@ -365,19 +365,19 @@ export function GroceryProductScreen() {
         </View>
 
         {cartItemCount > 0 && (
-          <AnimatedPress accessibilityRole="button" style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')}>
             <Ionicons name="cart-outline" size={14} color={Colors.primary} />
             <Text maxFontSizeMultiplier={1.3} style={styles.stickyCartText}>View Cart ({cartItemCount})</Text>
           </AnimatedPress>
         )}
 
         {quantity > 0 ? (
-          <AnimatedPress accessibilityRole="button" style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')}>
             <Ionicons name="checkmark-circle-outline" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
             <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Added ✓</Text>
           </AnimatedPress>
         ) : (
-          <AnimatedPress accessibilityRole="button" style={styles.stickyAddBtn} onPress={handleAdd} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.stickyAddBtn} onPress={handleAdd}>
             <Ionicons name="cart" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
             <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Add to Cart</Text>
           </AnimatedPress>

@@ -11,7 +11,7 @@
  * The groceries mini-app is 39 files and ~7,400 lines awaiting its own redesign pass, and
  * converting its buttons now only to restyle them again later is work done twice. It also
  * holds the only two places that genuinely want no press feedback at all (a nested
- * `activeOpacity={1}` pair in TodaysKitchenNeeds) and the one full-bleed backdrop, where a
+ * `` pair in TodaysKitchenNeeds) and the one full-bleed backdrop, where a
  * scale would look broken rather than responsive — those need deciding one at a time, not by
  * codemod. So the number is written down and may only shrink, same ratchet as
  * `sheets.check.ts`.

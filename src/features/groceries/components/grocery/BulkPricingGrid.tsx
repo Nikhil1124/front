@@ -48,7 +48,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
                 key={opt.unit}
                 style={[styles.column, isSelected && styles.selectedColumn]}
                 onPress={() => onSelect(i)}
-                activeOpacity={0.8}
+
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.columnUnit}>{opt.unit}</Text>
                 <Text maxFontSizeMultiplier={1.3} style={styles.columnPrice}>₹{opt.price}</Text>

@@ -23,7 +23,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
     <View style={styles.row}>
       <Text maxFontSizeMultiplier={1.3} style={styles.title}>{title}</Text>
       {actionLabel && onAction ? (
-        <AnimatedPress accessibilityRole="button" onPress={onAction} activeOpacity={0.7}>
+        <AnimatedPress accessibilityRole="button" onPress={onAction}>
           <Text maxFontSizeMultiplier={1.3} style={styles.action}>{actionLabel}</Text>
         </AnimatedPress>
       ) : null}

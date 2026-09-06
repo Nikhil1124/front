@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
   const avatarLetter = (userName?.trim().charAt(0).toUpperCase()) || 'P';
   return (
     <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 14 }]}>
-      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={onBack}>
         <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
       </AnimatedPress>
       <View style={styles.headerLeft}>
@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
       <AnimatedPress accessibilityRole="button"
         style={styles.profileIconBtn}
         onPress={onProfilePress}
-        activeOpacity={0.8}
+
       >
         <View style={styles.profileAvatar}>
           <Text maxFontSizeMultiplier={1.3} style={styles.profileAvatarText}>{avatarLetter}</Text>

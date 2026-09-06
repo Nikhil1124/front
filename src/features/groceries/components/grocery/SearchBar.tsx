@@ -87,12 +87,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <View style={styles.divider} />
 
         {onFilterPress ? (
-          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button" activeOpacity={0.7} style={styles.scanBtn} onPress={onFilterPress}>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button" style={styles.scanBtn} onPress={onFilterPress}>
             <Ionicons name="options-outline" size={22} color={hasActiveFilters ? Colors.primary : Colors.textSecondary} />
             {hasActiveFilters && <View style={styles.filterDot} />}
           </AnimatedPress>
         ) : (
-          <AnimatedPress accessibilityRole="button" activeOpacity={0.7} style={styles.scanBtn}>
+          <AnimatedPress accessibilityRole="button" style={styles.scanBtn}>
             <MaterialCommunityIcons name="line-scan" size={22} color={Colors.primary} />
           </AnimatedPress>
         )}
@@ -101,7 +101,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       {/* Separate cart circle button */}
       <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Cart" accessibilityRole="button"
         style={styles.cartBtn}
-        activeOpacity={0.8}
+
         onPress={onCartPress}
       >
         <Ionicons name="cart-outline" size={22} color={Colors.textPrimary} />

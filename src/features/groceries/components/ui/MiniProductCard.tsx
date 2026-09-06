@@ -70,7 +70,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
           style={styles.wishlistBtn}
           onPress={() => toggleItem(product)}
-          activeOpacity={0.7}
+
         >
           <Ionicons
             name={isWishlisted ? 'heart' : 'heart-outline'}
@@ -81,7 +81,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       )}
 
       {/* Product image */}
-      <AnimatedPress accessibilityRole="button" onPress={onPress} activeOpacity={0.9} style={styles.imageContainer}>
+      <AnimatedPress accessibilityRole="button" onPress={onPress} style={styles.imageContainer}>
         <Image
           source={product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')}
           style={styles.image}
@@ -103,7 +103,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       <AnimatedPress accessibilityRole="button"
         style={[styles.addBtn, inCart && styles.addedBtn]}
         onPress={handleAdd}
-        activeOpacity={0.8}
+
       >
         <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addedBtnText]}>
           {inCart ? '✓ Added' : '+ Add'}

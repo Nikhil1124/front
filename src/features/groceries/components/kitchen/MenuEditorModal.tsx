@@ -114,7 +114,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
               onChangeText={onNewDishTextChange}
               placeholder="Search or type a dish"
             />
-            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.addDishBtn} onPress={onAddDish} activeOpacity={0.8}>
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.addDishBtn} onPress={onAddDish}>
               <Ionicons name="add" size={20} color={Colors.surface} />
             </AnimatedPress>
           </View>
@@ -130,7 +130,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                 <AnimatedPress accessibilityRole="button"
                   key={prod.id}
                   style={[styles.relatedCard, isAdded && styles.relatedCardAdded]}
-                  activeOpacity={0.8}
+
                   onPress={() => {
                     if (!dishes.includes(prod.name)) {
                       onNewDishTextChange('');

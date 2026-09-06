@@ -32,7 +32,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{title}</Text>
-        <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllPress}>
+        <AnimatedPress accessibilityRole="button" onPress={onSeeAllPress}>
           <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
         </AnimatedPress>
       </View>

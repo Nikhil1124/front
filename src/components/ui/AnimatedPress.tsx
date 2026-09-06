@@ -10,7 +10,7 @@
  * behaviour, so it can replace `TouchableOpacity`/`Pressable` in existing
  * screens without restructuring.
  *
- * Was built on `TouchableOpacity` with `activeOpacity={scale}` — `scale` values at every
+ * Was built on `TouchableOpacity` with `` — `scale` values at every
  * call site are 0.85-0.98 (a gentle shrink), but `activeOpacity` is a transparency, not a
  * transform: passing 0.92 there means "stay 92% opaque while pressed", i.e. barely dim at
  * all. So the documented "scale-down" never happened — every one of this component's ~83

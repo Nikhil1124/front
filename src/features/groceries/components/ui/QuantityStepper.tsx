@@ -28,7 +28,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
       <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
         style={[styles.btn, compact && styles.compactBtn]}
         onPress={onDecrease}
-        activeOpacity={0.7}
+
       >
         <Ionicons name="remove" size={compact ? 12 : 14} color={Colors.primary} />
       </AnimatedPress>
@@ -38,7 +38,7 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
       <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
         style={[styles.btn, compact && styles.compactBtn]}
         onPress={onIncrease}
-        activeOpacity={0.7}
+
       >
         <Ionicons name="add" size={compact ? 12 : 14} color={Colors.primary} />
       </AnimatedPress>

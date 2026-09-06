@@ -50,7 +50,7 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
       <View style={styles.footerRow}>
         <AnimatedPress accessibilityRole="button"
           style={[styles.viewMenuBtn, { backgroundColor: isVeg ? Colors.success : Colors.warning }]}
-          activeOpacity={0.8}
+
           onPress={onViewMenuPress}
         >
           <Text maxFontSizeMultiplier={1.3} style={styles.viewMenuText}>View Menu</Text>

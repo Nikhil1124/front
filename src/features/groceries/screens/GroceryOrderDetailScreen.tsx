@@ -229,7 +229,7 @@ export function GroceryOrderDetailScreen() {
                 style={[styles.upiSubmitBtn, (!upiRef.trim() || submitUpiPayment.isPending) && styles.btnDisabled]}
                 onPress={handleSubmitUpiRef}
                 disabled={!upiRef.trim() || submitUpiPayment.isPending}
-                activeOpacity={0.8}
+
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.upiSubmitText}>{submitUpiPayment.isPending ? 'Submitting…' : 'Submit'}</Text>
               </AnimatedPress>
@@ -238,7 +238,7 @@ export function GroceryOrderDetailScreen() {
         )}
 
         {canCancel && (
-          <AnimatedPress accessibilityRole="button" style={styles.cancelOrderBtn} onPress={() => setShowCancelModal(true)} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.cancelOrderBtn} onPress={() => setShowCancelModal(true)}>
             <Ionicons name="close-circle-outline" size={18} color={Colors.danger} />
             <Text maxFontSizeMultiplier={1.3} style={styles.cancelOrderBtnText}>Cancel Order</Text>
           </AnimatedPress>

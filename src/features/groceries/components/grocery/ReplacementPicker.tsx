@@ -39,7 +39,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
               key={opt.value}
               style={[styles.optionCard, selected && styles.selectedOptionCard]}
               onPress={() => onChange(opt.value)}
-              activeOpacity={0.8}
+
             >
               <Ionicons
                 name={opt.icon}

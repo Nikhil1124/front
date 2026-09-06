@@ -105,7 +105,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 </AnimatedPress>
               </View>
             ) : (
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleAddButton} onPress={handleAdd} activeOpacity={0.85}>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleAddButton} onPress={handleAdd}>
                 <Ionicons name="add" size={16} color={Colors.textInverse} />
               </AnimatedPress>
             )}
@@ -135,7 +135,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
           style={styles.wishlistBtn}
           onPress={() => toggleItem(product)}
-          activeOpacity={0.7}
+
         >
           <Ionicons
             name={isWishlisted ? 'heart' : 'heart-outline'}
@@ -217,7 +217,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </AnimatedPress>
             </View>
           ) : (
-            <AnimatedPress accessibilityRole="button" style={styles.addBtn} onPress={handleAdd} activeOpacity={0.85}>
+            <AnimatedPress accessibilityRole="button" style={styles.addBtn} onPress={handleAdd}>
               <Text maxFontSizeMultiplier={1.3} style={styles.addBtnText}>Add to Cart</Text>
             </AnimatedPress>
           )}

@@ -106,7 +106,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                         key={s.value}
                         style={styles.sortRow}
                         onPress={() => setDraft((prev) => ({ ...prev, sort: s.value }))}
-                        activeOpacity={0.8}
+
                       >
                         <Text maxFontSizeMultiplier={1.3} style={[styles.sortLabel, selected && styles.selectedSortLabel]}>
                           {s.label}
@@ -127,7 +127,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                   <AnimatedPress accessibilityRole="button"
                     style={[styles.chip, draft.maxPrice === undefined && styles.activeChip]}
                     onPress={() => setDraft((prev) => ({ ...prev, maxPrice: undefined }))}
-                    activeOpacity={0.8}
+
                   >
                     <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.maxPrice === undefined && styles.activeChipText]}>
                       Any
@@ -141,7 +141,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                         key={cap}
                         style={[styles.chip, active && styles.activeChip]}
                         onPress={() => setDraft((prev) => ({ ...prev, maxPrice: cap }))}
-                        activeOpacity={0.8}
+
                       >
                         <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, active && styles.activeChipText]}>
                           Under ₹{cap}
@@ -156,7 +156,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                 <AnimatedPress accessibilityRole="button"
                   style={[styles.chip, draft.onDealOnly && styles.activeChip, { alignSelf: 'flex-start' }]}
                   onPress={() => setDraft((prev) => ({ ...prev, onDealOnly: !prev.onDealOnly }))}
-                  activeOpacity={0.8}
+
                 >
                   <Ionicons
                     name="pricetag"

@@ -100,7 +100,7 @@ export function GroceryCategoryScreen() {
     <AnimatedPress accessibilityRole="button"
       key={cat.id}
       style={[styles.catItem, { width: itemWidth }]}
-      activeOpacity={0.85}
+
       onPress={() => setActiveSupplyCategory(cat.name)}
     >
       <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: Colors.surfaceElevated }]}>
@@ -132,7 +132,7 @@ export function GroceryCategoryScreen() {
                 router.back();
               }
             }}
-            activeOpacity={0.7}
+
           >
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </AnimatedPress>
@@ -294,7 +294,7 @@ export function GroceryCategoryScreen() {
           <AnimatedPress accessibilityRole="button"
             style={styles.floatingCart}
             onPress={() => router.push('/groceries/cart')}
-            activeOpacity={0.9}
+
           >
             <BlurView
               intensity={80}

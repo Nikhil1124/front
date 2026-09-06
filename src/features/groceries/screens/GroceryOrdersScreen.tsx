@@ -87,7 +87,7 @@ export function GroceryOrdersScreen() {
                 <AnimatedPress accessibilityRole="button"
                   style={styles.activeBanner}
                   onPress={() => openOrder(activeOrder.id)}
-                  activeOpacity={0.9}
+
                 >
                   <View style={styles.activeBannerLeft}>
                     <View style={styles.pulseDot} />

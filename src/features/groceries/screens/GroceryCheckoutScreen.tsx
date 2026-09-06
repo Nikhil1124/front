@@ -188,7 +188,7 @@ export function GroceryCheckoutScreen() {
                 fulfillmentMode === 'delivery' && styles.selectedFulfillmentBtn
               ]}
               onPress={() => setFulfillmentMode('delivery')}
-              activeOpacity={0.8}
+
             >
               <Ionicons
                 name="bicycle"
@@ -206,7 +206,7 @@ export function GroceryCheckoutScreen() {
                 fulfillmentMode === 'pickup' && styles.selectedFulfillmentBtn
               ]}
               onPress={() => setFulfillmentMode('pickup')}
-              activeOpacity={0.8}
+
             >
               <Ionicons
                 name="basket-outline"
@@ -234,7 +234,7 @@ export function GroceryCheckoutScreen() {
                       key={slot.id}
                       style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
                       onPress={() => setSelectedSlotId(slot.id)}
-                      activeOpacity={0.8}
+
                     >
                       <View style={styles.slotRowLeft}>
                         <Ionicons
@@ -286,7 +286,7 @@ export function GroceryCheckoutScreen() {
                 <Text maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Text>
                 <Text maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Text>
               </View>
-              <AnimatedPress accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn} activeOpacity={0.7}>
+              <AnimatedPress accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Text>
                 <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} />
               </AnimatedPress>
@@ -339,7 +339,7 @@ export function GroceryCheckoutScreen() {
                   ]}
                   onPress={() => !isDisabled && setPaymentMethod(pm.id)}
                   disabled={isDisabled}
-                  activeOpacity={0.8}
+
                 >
                   <Ionicons
                     name={pm.icon as any}
@@ -453,7 +453,7 @@ export function GroceryCheckoutScreen() {
         <AnimatedPress accessibilityRole="button"
           style={styles.viewCartBadgeBtn}
           onPress={() => router.push('/groceries/cart')}
-          activeOpacity={0.8}
+
         >
           <View style={styles.cartIconWrapper}>
             <Ionicons name="cart-outline" size={14} color={Colors.primary} />
@@ -467,7 +467,7 @@ export function GroceryCheckoutScreen() {
         <AnimatedPress accessibilityRole="button"
           style={[styles.placeOrderBtn, createOrderMutation.isPending && { opacity: 0.6 }]}
           onPress={handlePlaceOrder}
-          activeOpacity={0.8}
+
           // Unguarded, a double-tap fired two POSTs — two real orders, two stock
           // decrements, two charges. `idempotency_key` below is the second line of defence.
           disabled={createOrderMutation.isPending}

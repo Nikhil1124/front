@@ -32,7 +32,7 @@ export function GroceryWishlistScreen() {
       <View style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
-            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </AnimatedPress>
             <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
@@ -49,7 +49,7 @@ export function GroceryWishlistScreen() {
             <AnimatedPress accessibilityRole="button"
               style={styles.shopBtn}
               onPress={() => router.push('/groceries')}
-              activeOpacity={0.8}
+
             >
               <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
             </AnimatedPress>
@@ -64,7 +64,7 @@ export function GroceryWishlistScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </AnimatedPress>
             <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
@@ -86,7 +86,7 @@ export function GroceryWishlistScreen() {
             return (
               <AnimatedPress accessibilityRole="button"
                 style={styles.card}
-                activeOpacity={0.9}
+
                 onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: item.id } })}
               >
                 <Image
@@ -108,7 +108,7 @@ export function GroceryWishlistScreen() {
                     <AnimatedPress accessibilityRole="button"
                       style={[styles.addBtn, inCart && styles.addBtnFilled]}
                       onPress={() => handleAddToCart(item, option)}
-                      activeOpacity={0.8}
+
                     >
                       <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addBtnTextFilled]}>
                         {inCart ? `In Cart (${inCart.quantity})` : '+ Add'}
@@ -119,7 +119,7 @@ export function GroceryWishlistScreen() {
                 <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Save to wishlist" accessibilityRole="button"
                   style={styles.removeBtn}
                   onPress={() => toggleItem(item)}
-                  activeOpacity={0.7}
+
                 >
                   <Ionicons name="heart" size={20} color={Colors.danger} />
                 </AnimatedPress>
