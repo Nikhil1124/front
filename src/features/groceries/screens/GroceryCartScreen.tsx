@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { StyleSheet, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
-
 import { AnimatedPress, Txt } from '@/components/ui';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCartStore } from '../store/useCartStore';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
-
 import { AnimatedPress, Txt } from '@/components/ui';
+
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyItem } from '@/types';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';

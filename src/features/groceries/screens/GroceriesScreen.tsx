@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
 import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { AnimatedPress, ErrorState, FormScroll, LoadingState, Txt } from '@/components/ui';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -22,7 +22,6 @@ import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { FormScroll } from '@/components/ui/FormScroll';
 
 /**
  * Home/catalog screen — the source app let the shopper flip a "PG Stock" /
@@ -31,7 +30,6 @@ import { FormScroll } from '@/components/ui/FormScroll';
  * "guest" items), so there is no toggle UI — see the mode-sync effect below.
  */
 import { useActiveProperty } from '@/features/properties/useProperties';
-import { LoadingState, ErrorState, Txt } from '@/components/ui';
 
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();

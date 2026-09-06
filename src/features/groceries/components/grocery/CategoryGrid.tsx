@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
-
 import { AnimatedPress, Txt } from '@/components/ui';
+
 import { SupplyCategory } from '@/types';
 import { Radii, Palette, Colors } from '@/theme';
 

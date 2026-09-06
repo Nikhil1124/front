@@ -6,8 +6,7 @@ import { useCartStore } from '../../store/useCartStore';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { Radii, Palette, Colors } from '@/theme';
-import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { Txt } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 
 interface ProductCardProps {

@@ -1,14 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
+import { AnimatedPress, FormScroll, OutlinedTextField, Txt } from '@/components/ui';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../store/useCartStore';
 import { Radii, Colors } from '@/theme';
-import { FormScroll } from '@/components/ui/FormScroll';
-import { OutlinedTextField, Txt } from '@/components/ui';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 
 interface CheckoutSlot {

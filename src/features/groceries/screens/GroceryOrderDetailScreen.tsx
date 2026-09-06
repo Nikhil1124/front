@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, Alert, KeyboardAvoidingView } from 'react-native';
+import { AnimatedPress, Btn, ErrorState, OutlinedTextField, Sheet, Txt } from '@/components/ui';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OrderStepper } from '../components/grocery/OrderStepper';
@@ -10,7 +10,6 @@ import {
   useSupplyTrackingQuery,
   useCancelSupplyOrderMutation,
   useSubmitUpiPaymentMutation } from '../useSupplyOrders';
-import { ErrorState, OutlinedTextField, Sheet, Btn, Txt } from '@/components/ui';
 import { Radii, Colors, Layout } from '@/theme';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';

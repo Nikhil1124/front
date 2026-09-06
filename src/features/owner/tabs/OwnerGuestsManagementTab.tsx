@@ -1,15 +1,13 @@
 import { useMemo, useState, useEffect } from 'react';
 import { SectionList, View, StyleSheet, Alert, RefreshControl, ScrollView, Share, BackHandler } from 'react-native';
+import { AnimatedPress, Btn, Card, Col, ListRow, ListSectionHeader, OutlinedBtn, OutlinedTextField, RoomPicker, Row, Sheet, Spacer, Txt, type StatusTone } from '@/components/ui';
 
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 
-import { ListRow, ListSectionHeader, type StatusTone, Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, RoomPicker, AnimatedPress } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
-import { Sheet, Txt } from '@/components/ui';
-import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import { Colors, Palette, Radii } from '@/theme';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';

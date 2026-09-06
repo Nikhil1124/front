@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, Modal, TouchableOpacity, ScrollView, TouchableWithoutFeedback } from 'react-native';
+import { AnimatedPress, Row, Sheet, Txt } from '@/components/ui';
 
-import { AnimatedPress, Txt } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii } from '@/theme';
-import { Txt, Row } from '@/components/ui';
-import { Sheet, Txt } from '@/components/ui';
 
 // A "Dietary Preferences" chip row (Organic/Gluten-Free/Vegan/Dairy-Free) used to live here.
 // `SupplyItem` (types/supply.ts) carries no dietary/tag field at all, so those chips filtered

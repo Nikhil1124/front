@@ -1,6 +1,6 @@
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
-
 import { AnimatedPress, Txt } from '@/components/ui';
+
 import { Ionicons } from '@expo/vector-icons';
 import { ReplacementPreference } from '../../store/useCartStore';
 import { Colors, Radii } from '@/theme';

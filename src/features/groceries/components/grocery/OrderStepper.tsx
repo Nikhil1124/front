@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Txt } from '@/components/ui';
 
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyOrderStatus } from '@/types/supply';
 import { Radii, Palette, Colors } from '@/theme';
-import { Txt } from '@/components/ui';
 
 
 export const SUPPLY_ORDER_STATUS_SEQUENCE: SupplyOrderStatus[] = [

@@ -1,8 +1,8 @@
 import { SupplyItem } from '@/types';
 import { useState, useMemo, useEffect } from 'react';
 import { Share, StyleSheet, View, TouchableOpacity, ScrollView, Image } from 'react-native';
-
 import { AnimatedPress, Txt } from '@/components/ui';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
