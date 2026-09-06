@@ -26,9 +26,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 22, not 20: `npm run check` executes `.ts` files directly under plain node, which
+      # needs native type stripping — added in 22.6 behind a flag, unflagged from 22.18.
+      # Node 20 fails these with ERR_UNKNOWN_FILE_EXTENSION. Kept in step with .nvmrc and
+      # the `engines` field, so a local machine and CI cannot silently disagree again.
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .nvmrc
           cache: npm
 
       # `npm ci`, not `npm install`: installs exactly the lockfile, so CI can never go green on

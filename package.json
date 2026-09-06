@@ -2,6 +2,9 @@
   "name": "pgow-app",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
