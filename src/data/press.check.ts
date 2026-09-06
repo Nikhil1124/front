@@ -27,7 +27,7 @@ import { join } from 'node:path';
 const ROOT = new URL('../..', import.meta.url).pathname;
 
 /** Total `<TouchableOpacity` still inside the groceries mini-app. Lower it as they convert. */
-const GROCERIES_BUDGET = 96;
+const GROCERIES_BUDGET = 0;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {

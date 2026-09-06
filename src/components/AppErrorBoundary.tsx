@@ -6,11 +6,9 @@
  * tree beneath the root layout. Without it, a single bad render anywhere in the app unmounts
  * the whole tree and the user is left staring at a blank screen with no way back.
  *
- * Deliberately built from bare `react-native` primitives and plain theme constants: this
- * renders *because* something below already failed, and Expo Router mounts it around the root
- * layout's output — so the providers that layout sets up (safe-area, query client, gesture
- * handler) are not guaranteed to be there. Anything this component needed from a provider or
- * a store would be a second crash with nothing left to catch it.
+ * Deliberately avoids providers and stores: this renders *because* something below already
+ * failed, and Expo Router mounts it around the root layout's output — so the providers that
+ * layout sets up are not guaranteed to be there.
  */
 import { Component, type ReactNode } from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
@@ -18,6 +16,7 @@ import type { ErrorBoundaryProps } from 'expo-router';
 
 import { Radii, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Txt } from '@/components/ui/Txt';
 
 export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   // No crash reporter wired up yet, so this console line is the only record that survives.
@@ -29,27 +28,27 @@ export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
     <View style={styles.root}>
       <View style={styles.card}>
         <Text maxFontSizeMultiplier={1.3} style={styles.emoji}>⚠️</Text>
-        <Text maxFontSizeMultiplier={1.3} style={styles.title}>Something went wrong</Text>
-        <Text maxFontSizeMultiplier={1.3} style={styles.body}>
+        <Txt variant="screenTitle" color={Colors.textPrimary} align="center">Something went wrong</Txt>
+        <Txt variant="body" color={Colors.textMuted} align="center" style={styles.body}>
           This screen ran into an unexpected problem. Your data is safe — nothing you saved has
           been lost.
-        </Text>
+        </Txt>
 
         {__DEV__ && (
           <ScrollView style={styles.devBox} contentContainerStyle={{ padding: 12 }}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.devLabel}>DEV ONLY — {error.name}</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.devText}>{error.message}</Text>
-            {!!error.stack && <Text maxFontSizeMultiplier={1.3} style={styles.devStack}>{error.stack}</Text>}
+            <Txt variant="caption" weight="600" color={Colors.danger}>DEV ONLY — {error.name}</Txt>
+            <Txt variant="meta" color={Colors.textPrimary} style={styles.devText}>{error.message}</Txt>
+            {!!error.stack && <Txt variant="caption" color={Colors.textMuted} style={styles.devStack}>{error.stack}</Txt>}
           </ScrollView>
         )}
 
         <AnimatedPress accessibilityRole="button" style={styles.button} onPress={retry}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>Try Again</Text>
+          <Txt variant="button" color={Colors.textInverse}>Try Again</Txt>
         </AnimatedPress>
 
-        <Text maxFontSizeMultiplier={1.3} style={styles.hint}>
+        <Txt variant="meta" color={Colors.textMuted} align="center" style={styles.hint}>
           If it keeps happening, close the app fully and reopen it.
-        </Text>
+        </Txt>
       </View>
     </View>
   );
@@ -107,12 +106,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emoji: { fontSize: 40, marginBottom: 12 },
-  title: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center' },
   body: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: Colors.textMuted,
-    textAlign: 'center',
     marginTop: 8,
   },
   devBox: {
@@ -124,9 +118,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
   },
-  devLabel: { fontSize: 10, fontWeight: '800', color: Colors.danger, letterSpacing: 0.5 },
-  devText: { fontSize: 12, color: Colors.textPrimary, marginTop: 6 },
-  devStack: { fontSize: 10, color: Colors.textMuted, marginTop: 8, lineHeight: 14 },
+  devText: { marginTop: 6 },
+  devStack: { marginTop: 8 },
   button: {
     alignSelf: 'stretch',
     height: 50,
@@ -136,6 +129,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 20,
   },
-  buttonText: { fontSize: 15, fontWeight: '800', color: Colors.textInverse },
-  hint: { fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginTop: 12 },
+  hint: { marginTop: 12 },
 });

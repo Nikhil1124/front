@@ -7,8 +7,7 @@ import {
   View,
   StyleSheet,
   Alert,
-  ScrollView,
-  Text } from 'react-native';
+  ScrollView } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { Txt, Btn, Row, Col, Spacer, Chip, ChoiceChips, AnimatedPress, Sheet } from '@/components/ui';
@@ -18,6 +17,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useProcurementCatalog } from '@/features/procurement/useProcurement';
 import { useCreateSubscriptionMutation } from '@/features/subscriptions/useSubscriptions';
+import { formatINR } from '@/utils/format';
 
 // ===== AddPgDailySubscriptionDialog =====
 const DELIVERY_SLOTS: Array<[string, string]> = [
@@ -89,7 +89,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
           borderRadius={Radii.card}
           height={44}
         >
-          <Txt variant="body" weight="800" color={Colors.textInverse}>Activate daily subscription</Txt>
+          <Txt variant="button" color={Colors.textInverse}>Activate daily subscription</Txt>
         </Btn>
       }
     >
@@ -102,7 +102,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
             style={{ marginBottom: 12 }}
           />
 
-          <Txt variant="caption" weight="800" color={Colors.textMuted}>Delivery Time</Txt>
+          <Txt variant="meta" weight="600" color={Colors.textMuted}>Delivery Time</Txt>
           <Spacer size={6} />
           <Row gap={6} style={{ flexWrap: 'wrap' }}>
             {DELIVERY_SLOTS.map(([label, value]) => (
@@ -111,7 +111,7 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
           </Row>
           <Spacer size={12} />
 
-          <Txt variant="caption" weight="800" color={Colors.textMuted}>Items — from the real Supply catalog</Txt>
+          <Txt variant="meta" weight="600" color={Colors.textMuted}>Items — from the real Supply catalog</Txt>
           <Spacer size={6} />
           <OutlinedTextField
             placeholder="Search items…"
@@ -133,14 +133,14 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
                   return (
                     <Row key={item.id} justify="space-between" align="center" style={styles.catalogRow}>
                       <Col style={{ flex: 1 }}>
-                        <Txt size={13} weight="800" color={Colors.textPrimary}>{item.itemName}</Txt>
-                        <Txt size={11} color={Colors.textMuted}>{item.unit} • ₹{item.defaultPrice}</Txt>
+                        <Txt variant="cardTitle" color={Colors.textPrimary}>{item.itemName}</Txt>
+                        <Txt variant="meta" color={Colors.textMuted} tabular>{item.unit} • {formatINR(item.defaultPrice)}</Txt>
                       </Col>
                       <Row gap={8} align="center">
                         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" onPress={() => updateQty(item.id, -1)} style={styles.qtyBtn}>
                           <Ionicons name="remove" size={14} color={Colors.textPrimary} />
                         </AnimatedPress>
-                        <Txt size={13} weight="900" color={Colors.primaryDark}>{qty}</Txt>
+                        <Txt variant="body" weight="600" color={Colors.primaryDark} tabular>{qty}</Txt>
                         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => updateQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]}>
                           <Ionicons name="add" size={14} color={Colors.textInverse} />
                         </AnimatedPress>
@@ -154,8 +154,8 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
 
           <Spacer size={14} />
           <Row justify="space-between" align="center">
-            <Txt variant="caption" weight="800" color={Colors.textMuted}>Estimated Daily Cost</Txt>
-            <Txt variant="sectionTitle" weight="900" color={Colors.primaryDark}>₹{estimatedDailyCost.toLocaleString('en-IN')}</Txt>
+            <Txt variant="meta" weight="600" color={Colors.textMuted}>Estimated Daily Cost</Txt>
+            <Txt variant="metric" color={Colors.primaryDark} tabular>{formatINR(estimatedDailyCost)}</Txt>
           </Row>
     </Sheet>
   );
@@ -229,15 +229,15 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
         onDismiss={onDismiss}
         footer={
           <AnimatedPress accessibilityRole="button" style={styles.sheetSubmitBtn} onPress={handleDispatch}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.sheetSubmitBtnText}>
+            <Txt variant="button" color={Colors.textInverse}>
               {urgency === '15-Min Express' ? 'Request express repair' : 'Request repair'}
-            </Text>
+            </Txt>
           </AnimatedPress>
         }
       >
 
               {/* Step 1: What needs repair */}
-              <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>1. What needs repair?</Text>
+              <Txt variant="cardTitle" color={Colors.textPrimary}>1. What needs repair?</Txt>
               <Spacer size={8} />
               <View style={styles.chipsRow}>
                 {REPAIR_CATEGORIES.map((cat) => {
@@ -248,9 +248,12 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                       style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
                       onPress={() => setCategory(cat)}
                     >
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
+                      <Txt
+                        variant="button"
+                        color={isSelected ? Colors.textInverse : Colors.textPrimary}
+                      >
                         {cat}
-                      </Text>
+                      </Txt>
                     </AnimatedPress>
                   );
                 })}
@@ -259,7 +262,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               <Spacer size={16} />
 
               {/* Step 2: What's the issue */}
-              <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>2. What's the issue?</Text>
+              <Txt variant="cardTitle" color={Colors.textPrimary}>2. What's the issue?</Txt>
               <Spacer size={8} />
               <OutlinedTextField
                 value={issue}
@@ -276,7 +279,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               <Spacer size={16} />
 
               {/* Step 3: When do you need help */}
-              <Text maxFontSizeMultiplier={1.3} style={styles.stepTitle}>3. When do you need help?</Text>
+              <Txt variant="cardTitle" color={Colors.textPrimary}>3. When do you need help?</Txt>
               <Spacer size={8} />
               <Row gap={10}>
                 <AnimatedPress accessibilityRole="button"
@@ -286,14 +289,12 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   ]}
                   onPress={() => setUrgency('15-Min Express')}
                 >
-                  <Text maxFontSizeMultiplier={1.3}
-                    style={[
-                      styles.urgencyBtnText,
-                      urgency === '15-Min Express' && styles.urgencyBtnTextActive,
-                    ]}
+                  <Txt
+                    variant="button"
+                    color={urgency === '15-Min Express' ? DIALOG_GREEN : DIALOG_MUTED}
                   >
                     Express · 15 min
-                  </Text>
+                  </Txt>
                 </AnimatedPress>
                 <AnimatedPress accessibilityRole="button"
                   style={[
@@ -302,14 +303,12 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   ]}
                   onPress={() => setUrgency('Scheduled Today')}
                 >
-                  <Text maxFontSizeMultiplier={1.3}
-                    style={[
-                      styles.urgencyBtnText,
-                      urgency === 'Scheduled Today' && styles.urgencyBtnTextActive,
-                    ]}
+                  <Txt
+                    variant="button"
+                    color={urgency === 'Scheduled Today' ? DIALOG_GREEN : DIALOG_MUTED}
                   >
                     Schedule
-                  </Text>
+                  </Txt>
                 </AnimatedPress>
               </Row>
 
@@ -344,17 +343,17 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
               {/* Warning / ETA strip */}
               <Row gap={8} align="center" style={styles.etaStrip}>
                 <Ionicons name={urgency === '15-Min Express' ? 'time-outline' : 'calendar-clear-outline'} size={16} color={DIALOG_GREEN} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.etaText}>
+                <Txt variant="meta" weight="600" color={DIALOG_GREEN} style={styles.etaText}>
                   {urgency === '15-Min Express'
                     ? 'Technician will be at your PG in approximately 15 minutes.'
                     : 'You can schedule up to 7 days in advance.'}
-                </Text>
+                </Txt>
               </Row>
 
               <Spacer size={12} />
               <Row gap={6} justify="center" align="center" style={styles.securityRow}>
                 <Ionicons name="lock-closed-outline" size={12} color={DIALOG_MUTED} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.securityText}>Your request is secure and confidential</Text>
+                <Txt variant="meta" color={DIALOG_MUTED}>Your request is secure and confidential</Txt>
               </Row>
       </Sheet>
 
@@ -398,7 +397,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
         <Row justify="space-between" align="center">
           <Col>
             <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Estimated total</Txt>
-            <Txt variant="sectionTitle" weight="900" color={Colors.primaryDark}>₹{est}</Txt>
+            <Txt variant="metric" color={Colors.primaryDark} tabular>{formatINR(est)}</Txt>
           </Col>
           <Btn
             onPress={handleBook}
@@ -407,13 +406,13 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
             borderRadius={Radii.card}
             height={44}
           >
-            <Txt variant="caption" weight="800" color={Colors.textInverse}>Confirm pickup</Txt>
+            <Txt variant="button" color={Colors.textInverse}>Confirm pickup</Txt>
           </Btn>
         </Row>
       }
     >
 
-          <Txt variant="caption" weight="800" color={Colors.textMuted}>Select Service Type</Txt>
+          <Txt variant="meta" weight="600" color={Colors.textMuted}>Select Service Type</Txt>
           <Spacer size={6} />
           <View style={{ gap: 6 }}>
             {Object.entries(LAUNDRY_RATES).map(([srv, rate]) => (
@@ -428,9 +427,9 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
                 ]}
               >
                 <Row justify="space-between" align="center">
-                  <Txt variant="caption" weight="800" color={Colors.textPrimary}>{srv}</Txt>
-                  <Txt size={11} weight="900" color={Colors.primaryDark}>
-                    ₹{rate}{srv.includes('Shoe') ? '/pair' : srv.includes('Dry') ? '/pc' : '/kg'}
+                  <Txt variant="cardTitle" color={Colors.textPrimary}>{srv}</Txt>
+                  <Txt variant="meta" weight="600" color={Colors.primaryDark} tabular>
+                    {formatINR(rate)}{srv.includes('Shoe') ? '/pair' : srv.includes('Dry') ? '/pc' : '/kg'}
                   </Txt>
                 </Row>
               </AnimatedPress>
@@ -438,7 +437,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
           </View>
           <Spacer size={12} />
 
-          <Txt variant="caption" weight="800" color={Colors.textMuted}>Quantity / Weight</Txt>
+          <Txt variant="meta" weight="600" color={Colors.textMuted}>Quantity / Weight</Txt>
           <Row gap={8} style={{ marginTop: 6 }}>
             {['5 kg', '10 kg', '15 kg'].map((w) => (
               <Btn
@@ -450,7 +449,7 @@ export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismis
                 height={34}
                 style={{ flex: 1 }}
               >
-                <Txt variant="caption" weight="800" color={weight === w ? Colors.textInverse : Colors.textPrimary}>{w}</Txt>
+                <Txt variant="button" color={weight === w ? Colors.textInverse : Colors.textPrimary}>{w}</Txt>
               </Btn>
             ))}
           </Row>
@@ -517,15 +516,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: Radii.control,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: '#E6EFEA' },
   categoryChipSelected: {
     backgroundColor: DIALOG_GREEN,
     borderColor: DIALOG_GREEN },
-  categoryChipText: { fontSize: 13, fontWeight: '600', color: '#17201A' },
-  categoryChipTextSelected: { color: '#FFFFFF', fontWeight: '700' },
-
   // Textarea
 
   // Urgency selector
@@ -537,21 +533,18 @@ const styles = StyleSheet.create({
     borderColor: '#E6EFEA',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF' },
+    backgroundColor: Colors.surface },
   urgencyBtnActive: {
     borderColor: DIALOG_GREEN,
     backgroundColor: DIALOG_LIGHT_GREEN,
     borderWidth: 1.5 },
-  urgencyBtnText: { fontSize: 13, fontWeight: '600', color: '#66736B' },
-  urgencyBtnTextActive: { color: DIALOG_GREEN, fontWeight: '800' },
-
   // ETA strip
   etaStrip: {
     backgroundColor: DIALOG_LIGHT_GREEN,
     borderRadius: Radii.control,
     paddingHorizontal: 12,
     paddingVertical: 10 },
-  etaText: { fontSize: 12, color: DIALOG_GREEN, fontWeight: '600', flex: 1, lineHeight: 16 },
+  etaText: { flex: 1 },
 
   // Submit
   sheetSubmitBtn: {
@@ -560,14 +553,10 @@ const styles = StyleSheet.create({
     borderRadius: Radii.card,
     alignItems: 'center',
     justifyContent: 'center' },
-  sheetSubmitBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
-
   // Security info
   securityRow: { marginTop: 4 },
-  securityText: { fontSize: 11, color: '#66736B', marginLeft: 4 },
 
   // Picker dropdowns
 
   // Picker popup modals
 });
-

@@ -203,10 +203,10 @@ export default function GuestHomeTab() {
             {/* Left: icon + name */}
             <Row gap={12} align="center" style={{ flex: 1, marginRight: 12 }}>
               <View style={styles.buildingIconWrap}>
-                <Ionicons name="business" size={22} color="#FFFFFF" />
+                <Ionicons name="business" size={22} color={Colors.textInverse} />
               </View>
               <Col style={{ flex: 1 }}>
-                <Txt size={15} weight="800" color={Colors.textPrimary} numberOfLines={1}>
+                <Txt size={15} weight="700" color={Colors.textPrimary} numberOfLines={1}>
                   {property?.name ?? 'PGow Residence'}
                 </Txt>
                 <Txt size={12} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
@@ -219,7 +219,7 @@ export default function GuestHomeTab() {
             <Col align="flex-end">
               <View style={styles.rentStatusChip}>
                 <Txt size={12} weight="700" color={Colors.primary}>Rent Status</Txt>
-                <Ionicons name="chevron-forward" size={14} color={Colors.primary} style={{ marginLeft: 2 }} />
+                <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ marginLeft: 2 }} />
               </View>
               <View style={{ marginTop: 7 }}>
                 <StatusChip label={isBillPaid ? 'Paid' : 'Pending'} tone={isBillPaid ? 'ok' : 'warn'} />
@@ -259,11 +259,11 @@ export default function GuestHomeTab() {
 
               <Col style={{ flex: 1 }}>
                 <Row gap={6} align="center">
-                  <Txt size={13} weight="800" color={isAwayFromPg ? "#92400E" : Colors.textPrimary}>
+                  <Txt size={13} weight="700" color={isAwayFromPg ? "#92400E" : Colors.textPrimary}>
                     {isAwayFromPg ? "Away from PG (Home Visit)" : "Meal Notifications"}
                   </Txt>
                   <View style={[styles.vacationChip, { backgroundColor: isAwayFromPg ? Palette.TintAmber : Colors.surfaceElevated }]}>
-                    <Txt size={9} weight="900" color={isAwayFromPg ? Colors.warning : Colors.primary}>
+                    <Txt size={9} weight="700" color={isAwayFromPg ? Colors.warning : Colors.primary}>
                       {isAwayFromPg ? "MUTED ✈️" : "ACTIVE 🔔"}
                     </Txt>
                   </View>
@@ -277,7 +277,7 @@ export default function GuestHomeTab() {
             </Row>
 
             <View style={[styles.vacationTogglePill, isAwayFromPg && styles.vacationTogglePillActive]}>
-              <Txt size={11} weight="800" color={isAwayFromPg ? "#FFFFFF" : Colors.primary}>
+              <Txt size={11} weight="700" color={isAwayFromPg ? Colors.textInverse : Colors.primary}>
                 {isAwayFromPg ? "I'm Back 🏠" : "Mark Away ✈️"}
               </Txt>
             </View>
@@ -301,7 +301,7 @@ export default function GuestHomeTab() {
             </Col>
             {kycStatus !== 'PENDING' && (
               <AnimatedPress accessibilityRole="button" onPress={() => setShowKycDialog(true)} style={styles.kycUploadBtn}>
-                <Txt size={12} weight="800" color="#FFFFFF">Upload</Txt>
+                <Txt size={12} weight="700" color={Colors.textInverse}>Upload</Txt>
               </AnimatedPress>
             )}
           </Animated.View>
@@ -342,19 +342,19 @@ export default function GuestHomeTab() {
 
           {/* Content */}
           <View style={styles.mealContent}>
-            <Txt size={11} weight="800" color={Colors.primary} style={{ letterSpacing: 1 }}>
+            <Txt size={11} weight="700" color={Colors.primary} style={{ letterSpacing: 1 }}>
               YOUR NEXT MEAL
             </Txt>
 
             <Row gap={8} align="center" style={{ marginTop: 8 }}>
-              <Txt size={26} weight="900" color={Colors.textPrimary}>
+              <Txt size={26} weight="700" color={Colors.textPrimary}>
                 {upcomingMeal
                   ? upcomingMeal.mealType[0] + upcomingMeal.mealType.slice(1).toLowerCase()
                   : 'No meal'}
               </Txt>
               {upcomingMeal?.dietaryType && (
                 <View style={[styles.dietTag, { backgroundColor: DIETARY_TAG[upcomingMeal.dietaryType].bg }]}>
-                  <Txt size={10} weight="800" color={DIETARY_TAG[upcomingMeal.dietaryType].color}>
+                  <Txt size={10} weight="700" color={DIETARY_TAG[upcomingMeal.dietaryType].color}>
                     {DIETARY_TAG[upcomingMeal.dietaryType].label}
                   </Txt>
                 </View>
@@ -410,8 +410,8 @@ export default function GuestHomeTab() {
                     style={[styles.rsvpBtn, isAttending && styles.rsvpBtnActive]}
                     onPress={() => toggleAttending(true)}
                   >
-                    {isAttending && <Ionicons name="checkmark" size={14} color="#FFF" style={{ marginRight: 5 }} />}
-                    <Txt size={13} weight="700" color={isAttending ? '#FFFFFF' : Colors.textSecondary}>
+                    {isAttending && <Ionicons name="checkmark" size={14} color={Colors.textInverse} style={{ marginRight: 5 }} />}
+                    <Txt size={13} weight="700" color={isAttending ? Colors.textInverse : Colors.textSecondary}>
                       Attending
                     </Txt>
                   </AnimatedPress>
@@ -429,7 +429,7 @@ export default function GuestHomeTab() {
 
         {/* ── 4. TODAY AT PGOW ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
-          <Txt size={17} weight="800" color={Colors.textPrimary}>Today at PGow</Txt>
+          <Txt size={17} weight="700" color={Colors.textPrimary}>Today at PGow</Txt>
           <AnimatedPress accessibilityRole="button" onPress={() => router.push('/meals')}>
             <Txt size={13} weight="700" color={Colors.textSecondary}>View All</Txt>
           </AnimatedPress>
@@ -472,7 +472,7 @@ export default function GuestHomeTab() {
                     item.state === 'completed' && styles.tlNodeDone,
                     item.state === 'current' && styles.tlNodeCurrent,
                   ]}>
-                    {item.state === 'completed' && <Ionicons name="checkmark" size={11} color="#FFF" />}
+                    {item.state === 'completed' && <Ionicons name="checkmark" size={11} color={Colors.textInverse} />}
                     {item.state === 'current' && <View style={styles.tlDot} />}
                   </View>
                   {/* Text */}
@@ -503,7 +503,7 @@ export default function GuestHomeTab() {
         )}
 
         {/* ── 5. QUICK SERVICES ── */}
-        <Txt size={17} weight="800" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
+        <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
           Quick Services
         </Txt>
         <View style={styles.grid}>
@@ -535,7 +535,7 @@ export default function GuestHomeTab() {
         </View>
 
         {/* ── 6. COMMUNITY NOTICE ── */}
-        <Txt size={17} weight="800" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
+        <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
           Community Notice
         </Txt>
         {noticesLoading ? (
@@ -561,16 +561,16 @@ export default function GuestHomeTab() {
             {notices.map((n) => (
               <AnimatedPress accessibilityRole="button" key={n.id} onPress={() => router.push('/notifications')} style={styles.noticeCard}>
                 <View style={styles.noticeIcon}>
-                  <Ionicons name="megaphone" size={18} color="#FFFFFF" />
+                  <Ionicons name="megaphone" size={18} color={Colors.textInverse} />
                 </View>
                 <Col style={{ flex: 1, marginLeft: 12 }}>
-                  <Txt size={14} weight="800" color={Colors.textPrimary} numberOfLines={1}>{n.title}</Txt>
+                  <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1}>{n.title}</Txt>
                   <Txt size={12} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 4, lineHeight: 17 }}>
                     {n.message}
                   </Txt>
                   <Row align="center" gap={4} style={{ marginTop: 10 }}>
-                    <Txt size={12} weight="800" color={Colors.primary}>View Notice</Txt>
-                    <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
+                    <Txt size={12} weight="700" color={Colors.primary}>View Notice</Txt>
+                    <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} />
                   </Row>
                 </Col>
               </AnimatedPress>
@@ -607,7 +607,7 @@ function SvcCard({
         <Row align="center" gap={4}>
           <Txt
             size={13}
-            weight="800"
+            weight="700"
             color={Colors.textPrimary}
             numberOfLines={2}
             style={{ flexShrink: 1, lineHeight: 17 }}
@@ -616,7 +616,7 @@ function SvcCard({
           </Txt>
           {badge ? (
             <View style={styles.svcBadge}>
-              <Txt size={9} weight="800" color="#FFF">{badge}</Txt>
+              <Txt size={9} weight="700" color={Colors.textInverse}>{badge}</Txt>
             </View>
           ) : null}
         </Row>
@@ -627,7 +627,7 @@ function SvcCard({
 
       {/* Arrow */}
       <View style={styles.svcArrow}>
-        <Ionicons name="chevron-forward" size={13} color="#FFFFFF" />
+        <Ionicons name="chevron-forward" size={13} color={Colors.textInverse} />
       </View>
     </AnimatedPress>
   );
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceElevated },
   // Bell
   vacationHomeCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9EA',
     padding: 14, marginTop: 14,
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   // ── Residence card (overlaps header curve)
   residenceCard: {
     marginTop: -16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: '#DCE9E9',
@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#BDD8D6',
     borderRadius: Radii.sheet,
     paddingHorizontal: 10, paddingVertical: 5,
-    backgroundColor: '#FFFFFF' },
+    backgroundColor: Colors.surface },
   rentBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginTop: 12,
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   kycBanner: {
     flexDirection: 'row', alignItems: 'center',
     marginTop: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderWidth: 1, borderColor: Colors.borderSubtle,
     padding: 14,
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
   cutoffPill: {
     position: 'absolute', top: 14, right: 14, zIndex: 5,
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.sheet, paddingHorizontal: 10, paddingVertical: 6,
     borderWidth: 1, borderColor: '#D5E8E6',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
     height: 40, paddingHorizontal: 16 },
   rsvpBtn: {
     flex: 1, height: 42, borderRadius: Radii.card,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: '#D5E8E6',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   rsvpBtnActive: {
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     width: 1.5, backgroundColor: '#D5E8E6', zIndex: 1 },
   tlNode: {
     width: 20, height: 20, borderRadius: Radii.pill, marginRight: 14, zIndex: 2,
-    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#C0D8D5',
+    backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: '#C0D8D5',
     alignItems: 'center', justifyContent: 'center' },
   tlNodeDone: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
   tlNodeCurrent: { borderColor: Colors.primary, borderWidth: 2.5 },
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   svcCard: {
     width: (SCREEN_WIDTH - 32 - 10) / 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#D9EDED',
     padding: 12,
@@ -812,11 +812,11 @@ const styles = StyleSheet.create({
   // ── Community notice
   noNoticeCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: Radii.card,
+    backgroundColor: Colors.surface, borderRadius: Radii.card,
     padding: 16, borderWidth: 1, borderColor: '#D9EDED' },
   noticeCard: {
     width: 290,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#D9EDED',
     padding: 16,
     flexDirection: 'row', alignItems: 'flex-start',

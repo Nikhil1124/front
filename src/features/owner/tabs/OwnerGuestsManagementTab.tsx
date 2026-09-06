@@ -604,7 +604,7 @@ export function OwnerGuestsManagementTab() {
                     <Row gap={10} align="center" style={{ flex: 1 }}>
                       <Ionicons name="bed-outline" size={18} color={GREEN} />
                       <Col style={{ flex: 1 }}>
-                        <Txt size={13} weight="900" color={CHARCOAL}>
+                        <Txt size={13} weight="700" color={CHARCOAL}>
                           Bed Layout
                         </Txt>
                         <Txt variant="caption" color={MUTED}>
@@ -627,7 +627,7 @@ export function OwnerGuestsManagementTab() {
                 >
                   <Row gap={8} align="center">
                     <Ionicons name="hourglass" size={20} color={Colors.warning} />
-                    <Txt size={13} weight="900" color="#92400E">
+                    <Txt size={13} weight="700" color="#92400E">
                       Pending Resident KYC ({pendingKyc.length})
                     </Txt>
                   </Row>
@@ -644,7 +644,7 @@ export function OwnerGuestsManagementTab() {
                     >
                       <Row justify="space-between" align="center">
                         <Col style={{ flex: 1 }}>
-                          <Txt variant="body" weight="800" color={CHARCOAL}>
+                          <Txt variant="body" weight="700" color={CHARCOAL}>
                             {g.name}
                           </Txt>
                           <Txt variant="caption" color={MUTED}>
@@ -664,7 +664,7 @@ export function OwnerGuestsManagementTab() {
                           height={32}
                           contentStyle={{ paddingHorizontal: 10 }}
                         >
-                          <Txt variant="caption" weight="800" color={GREEN}>
+                          <Txt variant="caption" weight="700" color={GREEN}>
                             Review Docs
                           </Txt>
                         </Btn>
@@ -679,7 +679,7 @@ export function OwnerGuestsManagementTab() {
                           height={34}
                           style={{ flex: 1 }}
                         >
-                          <Txt variant="caption" weight="800" color={WHITE}>
+                          <Txt variant="caption" weight="700" color={WHITE}>
                             ✅ Approve
                           </Txt>
                         </Btn>
@@ -691,7 +691,7 @@ export function OwnerGuestsManagementTab() {
                           height={34}
                           style={{ flex: 1 }}
                         >
-                          <Txt variant="caption" weight="800" color={WHITE}>
+                          <Txt variant="caption" weight="700" color={WHITE}>
                             ❌ Reject
                           </Txt>
                         </Btn>
@@ -715,7 +715,7 @@ export function OwnerGuestsManagementTab() {
                     <Txt variant="caption" color={MUTED}>
                       {owner?.totalBeds ?? 0} total beds
                     </Txt>
-                    <Txt variant="caption" weight="800" color={GREEN}>
+                    <Txt variant="caption" weight="700" color={GREEN}>
                       Edit ›
                     </Txt>
                   </Row>
@@ -775,7 +775,7 @@ export function OwnerGuestsManagementTab() {
                 style={{ flex: 1 }}
               >
                 <Ionicons name="create" size={16} color={WHITE} />
-                <Txt variant="caption" weight="800" color={WHITE} style={{ marginLeft: 6 }}>
+                <Txt variant="caption" weight="700" color={WHITE} style={{ marginLeft: 6 }}>
                   Edit
                 </Txt>
               </Btn>
@@ -792,7 +792,7 @@ export function OwnerGuestsManagementTab() {
                   style={{ flex: 1 }}
                 >
                   <Ionicons name="shield-checkmark" size={16} color={WHITE} />
-                  <Txt variant="caption" weight="800" color={WHITE} style={{ marginLeft: 6 }}>
+                  <Txt variant="caption" weight="700" color={WHITE} style={{ marginLeft: 6 }}>
                     Review KYC
                   </Txt>
                 </Btn>
@@ -809,7 +809,7 @@ export function OwnerGuestsManagementTab() {
                 style={{ flex: 1 }}
               >
                 <Ionicons name="trash" size={16} color={WHITE} />
-                <Txt variant="caption" weight="800" color={WHITE} style={{ marginLeft: 6 }}>
+                <Txt variant="caption" weight="700" color={WHITE} style={{ marginLeft: 6 }}>
                   Delete
                 </Txt>
               </Btn>
@@ -828,12 +828,12 @@ export function OwnerGuestsManagementTab() {
             >
               <Row align="center" gap={12}>
                 <View style={[styles.avatar, { width: 56, height: 56, borderRadius: Radii.pill }]}>
-                  <Txt variant="statValue" weight="900" color={GREEN}>
+                  <Txt variant="statValue" weight="700" color={GREEN}>
                     {detailGuest.name.charAt(0).toUpperCase()}
                   </Txt>
                 </View>
                 <Col style={{ flex: 1 }}>
-                  <Txt variant="sectionTitle" weight="800" color={CHARCOAL}>
+                  <Txt variant="sectionTitle" weight="700" color={CHARCOAL}>
                     {detailGuest.name}
                   </Txt>
                   <Txt variant="caption" color={MUTED}>
@@ -847,7 +847,7 @@ export function OwnerGuestsManagementTab() {
             </Card>
 
             <Spacer size={14} />
-            <Txt size={11} weight="900" color={GREEN} style={{ letterSpacing: 1 }}>
+            <Txt size={11} weight="700" color={GREEN} style={{ letterSpacing: 1 }}>
               ROOM & CONTACT
             </Txt>
             <Spacer size={6} />
@@ -871,7 +871,7 @@ export function OwnerGuestsManagementTab() {
             </View>
 
             <Spacer size={14} />
-            <Txt size={11} weight="900" color={GREEN} style={{ letterSpacing: 1 }}>
+            <Txt size={11} weight="700" color={GREEN} style={{ letterSpacing: 1 }}>
               PAYMENT STATUS
             </Txt>
             <Spacer size={6} />
@@ -893,7 +893,7 @@ export function OwnerGuestsManagementTab() {
             </View>
 
             <Spacer size={14} />
-            <Txt size={11} weight="900" color={GREEN} style={{ letterSpacing: 1 }}>
+            <Txt size={11} weight="700" color={GREEN} style={{ letterSpacing: 1 }}>
               KYC VERIFICATION
             </Txt>
             <Spacer size={6} />
@@ -966,7 +966,7 @@ export function OwnerGuestsManagementTab() {
               height={42}
               style={{ flex: 1 }}
             >
-              <Txt variant="body" weight="800" color={WHITE}>Save changes</Txt>
+              <Txt variant="body" weight="700" color={WHITE}>Save changes</Txt>
             </Btn>
             <OutlinedBtn
               onPress={() => setEditing(null)}
@@ -976,7 +976,7 @@ export function OwnerGuestsManagementTab() {
               height={42}
               style={{ flex: 1 }}
             >
-              <Txt variant="body" weight="800" color={CHARCOAL}>Cancel</Txt>
+              <Txt variant="body" weight="700" color={CHARCOAL}>Cancel</Txt>
             </OutlinedBtn>
           </Row>
         }
@@ -1026,7 +1026,7 @@ export function OwnerGuestsManagementTab() {
       >
             {reviewing && (
               <Col>
-                <Txt variant="cardTitle" weight="800" color={CHARCOAL}>
+                <Txt variant="cardTitle" weight="700" color={CHARCOAL}>
                   {reviewing.name} (Room {reviewing.roomNo})
                 </Txt>
                 <Txt variant="caption" color={MUTED}>
@@ -1055,7 +1055,7 @@ export function OwnerGuestsManagementTab() {
                     height={42}
                     style={{ flex: 1 }}
                   >
-                    <Txt variant="caption" weight="800" color={WHITE}>
+                    <Txt variant="caption" weight="700" color={WHITE}>
                       Approve KYC
                     </Txt>
                   </Btn>
@@ -1070,7 +1070,7 @@ export function OwnerGuestsManagementTab() {
                     height={42}
                     style={{ flex: 1 }}
                   >
-                    <Txt variant="caption" weight="800" color={WHITE}>
+                    <Txt variant="caption" weight="700" color={WHITE}>
                       Reject KYC
                     </Txt>
                   </Btn>
@@ -1164,7 +1164,7 @@ export function OwnerGuestsManagementTab() {
                             height={52}
                             style={{ width: 88 }}
                           >
-                            <Txt variant="caption" weight="800" color={GREEN}>
+                            <Txt variant="caption" weight="700" color={GREEN}>
                               Save
                             </Txt>
                           </OutlinedBtn>
@@ -1355,7 +1355,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10 },
-  submitBtnText: { fontSize: 14, fontWeight: '800', color: WHITE },
+  submitBtnText: { fontSize: 14, fontWeight: '700', color: WHITE },
 
   // Workflow section
   workflowTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
@@ -1460,7 +1460,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16 },
   inviteCodeLabel: { fontSize: 9, fontWeight: '700', color: GREEN, letterSpacing: 0.5 },
-  inviteCodeText: { fontSize: 24, fontWeight: '900', color: CHARCOAL, letterSpacing: 4, marginTop: 2 },
+  inviteCodeText: { fontSize: 24, fontWeight: '700', color: CHARCOAL, letterSpacing: 4, marginTop: 2 },
   inviteRentRow: {
     paddingVertical: 4 },
   inviteRentLabel: { fontSize: 12, color: MUTED },
@@ -1473,7 +1473,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center' },
-  inviteShareBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  inviteShareBtnText: { fontSize: 13, fontWeight: '700', color: WHITE },
   inviteRotateBtn: {
     flex: 1,
     height: 48,
@@ -1492,4 +1492,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center' },
-  inviteEnableBtnText: { fontSize: 13, fontWeight: '800', color: WHITE } });
+  inviteEnableBtnText: { fontSize: 13, fontWeight: '700', color: WHITE } });

@@ -80,21 +80,21 @@ function ChefKitchenView() {
         <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderGlass} padding={[14, 14]}>
           <Row gap={10} align="center">
             <Ionicons name="trending-up" size={20} color={Colors.primary} />
-            <Txt size={13} weight="800" color={Colors.primaryDark} style={{ flex: 1 }}>View RSVP Trends</Txt>
-            <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
+            <Txt size={13} weight="700" color={Colors.primaryDark} style={{ flex: 1 }}>View RSVP Trends</Txt>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
           </Row>
         </Card>
       </AnimatedPress>
 
-      <Txt size={15} weight="900" color={Colors.textPrimary}>Kitchen Preparation Status</Txt>
+      <Txt size={15} weight="700" color={Colors.textPrimary}>Kitchen Preparation Status</Txt>
       <Spacer size={8} />
       <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
         <Row gap={8}>
           {['PREPPING 🥕', 'COOKING 🔥', 'READY 🍽️'].map((s) => {
             const sel = prepState === s.split(' ')[0];
             return (
-              <Btn key={s} onPress={() => setPrepState(s.split(' ')[0])} containerColor={sel ? Colors.primary : Colors.surfaceMuted} textColor={sel ? '#FFFFFF' : Colors.textSecondary} borderRadius={Radii.control} height={42} style={{ flex: 1 }}>
-                <Txt size={11} weight="800" color={sel ? '#FFFFFF' : Colors.textSecondary}>{s}</Txt>
+              <Btn key={s} onPress={() => setPrepState(s.split(' ')[0])} containerColor={sel ? Colors.primary : Colors.surfaceMuted} textColor={sel ? Colors.textInverse : Colors.textSecondary} borderRadius={Radii.control} height={42} style={{ flex: 1 }}>
+                <Txt size={11} weight="700" color={sel ? Colors.textInverse : Colors.textSecondary}>{s}</Txt>
               </Btn>
             );
           })}
@@ -102,8 +102,8 @@ function ChefKitchenView() {
         {prepState === 'READY' && (
           <>
             <Spacer size={14} />
-            <Btn onPress={async () => { if (await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!')) Alert.alert('Success', '🔔 Alert dispatched to all residents!'); }} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.control} height={44}>
-              <Txt size={12} weight="800" color="#FFFFFF">Broadcast 'Meal is Served' to Residents 📢</Txt>
+            <Btn onPress={async () => { if (await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!')) Alert.alert('Success', '🔔 Alert dispatched to all residents!'); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={44}>
+              <Txt size={12} weight="700" color={Colors.textInverse}>Broadcast 'Meal is Served' to Residents 📢</Txt>
             </Btn>
           </>
         )}
@@ -115,23 +115,23 @@ function ChefKitchenView() {
           it — removed rather than left showing numbers that never move. */}
 
       <Spacer size={24} />
-      <Txt size={15} weight="900" color={Colors.textPrimary}>Broadcast Custom Message</Txt>
+      <Txt size={15} weight="700" color={Colors.textPrimary}>Broadcast Custom Message</Txt>
       <Spacer size={12} />
       <OutlinedTextField placeholder="Type your kitchen update" value={chefBroadcast} onChangeText={(v) => { setChefBroadcast(v); if (broadcastError) setBroadcastError(undefined); }} error={broadcastError} multiline numberOfLines={4} />
       
       <Spacer size={20} />
-      <Txt size={13} weight="800" color={Colors.textPrimary}>Quick Templates</Txt>
+      <Txt size={13} weight="700" color={Colors.textPrimary}>Quick Templates</Txt>
       <Spacer size={10} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {ANNOUNCEMENTS.map((msg) => (
           <Btn key={msg} onPress={() => setChefBroadcast(msg)} containerColor={Colors.primaryGlow} textColor={Colors.primaryDark} borderRadius={Radii.control} height={34} contentStyle={{ paddingHorizontal: 12 }}>
-            <Txt size={11} weight="800" color={Colors.primaryDark}>{msg}</Txt>
+            <Txt size={11} weight="700" color={Colors.primaryDark}>{msg}</Txt>
           </Btn>
         ))}
       </View>
       <Spacer size={24} />
-      <Btn onPress={sendCustomAnnouncement} disabled={!chefBroadcast.trim()} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.card} height={54}>
-        <Txt size={14} weight="900" color="#FFFFFF">Send Announcement to Residents 🚀</Txt>
+      <Btn onPress={sendCustomAnnouncement} disabled={!chefBroadcast.trim()} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.card} height={54}>
+        <Txt size={14} weight="700" color={Colors.textInverse}>Send Announcement to Residents 🚀</Txt>
       </Btn>
     </FormScroll>
   );
@@ -174,7 +174,7 @@ function DeliveryProfileRoute() {
             <Ionicons name="bicycle" size={30} color={Colors.primary} />
           </View>
           <Spacer size={12} />
-          <Txt size={22} weight="900" color={Colors.primaryDark}>{staff?.name ?? 'Name unavailable'}</Txt>
+          <Txt size={22} weight="700" color={Colors.primaryDark}>{staff?.name ?? 'Name unavailable'}</Txt>
           <Txt size={14} weight="700" color={Colors.primary}>Delivery Agent</Txt>
           <Spacer size={4} />
           <Txt size={12} color={Colors.textMuted}>Employee ID: {staff?.id ? `DA-${staff.id.slice(0, 4)}` : 'Unavailable'}</Txt>
@@ -182,21 +182,21 @@ function DeliveryProfileRoute() {
 
         <Spacer size={20} />
         <View style={styles.sectionHeader}>
-          <Txt size={13} weight="900" color={Colors.textSecondary}>STATUS & CONTACT</Txt>
+          <Txt size={13} weight="700" color={Colors.textSecondary}>STATUS & CONTACT</Txt>
         </View>
         <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle}>
           <Row justify="space-between" align="center" style={styles.profileRow}>
             <Row gap={12} align="center">
               <View style={[styles.iconBox, { backgroundColor: '#F0FDF4' }]}><Ionicons name="radio-button-on" size={18} color={Colors.success} /></View>
-              <Txt size={14} weight="800" color={Colors.textPrimary}>Availability</Txt>
+              <Txt size={14} weight="700" color={Colors.textPrimary}>Availability</Txt>
             </Row>
-            <Txt size={14} weight="800" color={Colors.success}>Available</Txt>
+            <Txt size={14} weight="700" color={Colors.success}>Available</Txt>
           </Row>
           <View style={styles.divider} />
           <Row justify="space-between" align="center" style={styles.profileRow}>
             <Row gap={12} align="center">
               <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="call" size={18} color={Colors.textPrimary} /></View>
-              <Txt size={14} weight="800" color={Colors.textPrimary}>Phone</Txt>
+              <Txt size={14} weight="700" color={Colors.textPrimary}>Phone</Txt>
             </Row>
             <Txt size={14} weight="700" color={Colors.textMuted}>{staff?.phone ?? 'Not on file'}</Txt>
           </Row>
@@ -204,16 +204,16 @@ function DeliveryProfileRoute() {
           <Row justify="space-between" align="center" style={styles.profileRow}>
             <Row gap={12} align="center">
               <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="bicycle" size={18} color={Colors.textPrimary} /></View>
-              <Txt size={14} weight="800" color={Colors.textPrimary}>Vehicle</Txt>
+              <Txt size={14} weight="700" color={Colors.textPrimary}>Vehicle</Txt>
             </Row>
             <Txt size={14} weight="700" color={Colors.textMuted}>{vehicle}</Txt>
           </Row>
         </Card>
 
         <Spacer size={16} />
-        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor="#FFF" borderRadius={Radii.control} height={50}>
-          <Ionicons name="exit" size={20} color="#FFF" />
-          <Txt size={14} weight="900" style={{ marginLeft: 8 }}>Sign Out</Txt>
+        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
+          <Ionicons name="exit" size={20} color={Colors.textInverse} />
+          <Txt size={14} weight="700" style={{ marginLeft: 8 }}>Sign Out</Txt>
         </Btn>
       </FormScroll>
 

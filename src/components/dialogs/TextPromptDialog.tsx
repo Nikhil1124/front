@@ -20,8 +20,9 @@
  * which leaves someone tapping a dead control with no idea why.
  */
 import { useEffect, useState } from 'react';
-import { Modal, View, Text, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
+import { Txt } from '@/components/ui/Txt';
 import { Radii, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
@@ -74,8 +75,8 @@ export function TextPromptDialog({
         <View style={styles.backdrop}>
           <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onCancel} />
           <View style={styles.card}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.title}>{title}</Text>
-            {message ? <Text maxFontSizeMultiplier={1.3} style={styles.message}>{message}</Text> : null}
+            <Txt variant="sectionTitle" color={Colors.textPrimary}>{title}</Txt>
+            {message ? <Txt variant="body" color={Colors.textSecondary} style={styles.message}>{message}</Txt> : null}
             <OutlinedTextField
               label={label}
               placeholder={placeholder}
@@ -89,7 +90,7 @@ export function TextPromptDialog({
             />
             <View style={styles.row}>
               <AnimatedPress accessibilityRole="button" style={styles.cancelBtn} onPress={onCancel}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.cancelText}>Cancel</Text>
+                <Txt variant="button" color={Colors.textPrimary}>Cancel</Txt>
               </AnimatedPress>
               <AnimatedPress accessibilityRole="button"
                 style={[styles.saveBtn, destructive && styles.destructiveBtn, busy && styles.saveBtnDisabled]}
@@ -102,7 +103,7 @@ export function TextPromptDialog({
                 }}
                 disabled={busy}
               >
-                <Text maxFontSizeMultiplier={1.3} style={styles.saveText}>{busy ? 'Working…' : confirmLabel}</Text>
+                <Txt variant="button" color={Colors.textInverse}>{busy ? 'Working…' : confirmLabel}</Txt>
               </AnimatedPress>
             </View>
           </View>
@@ -131,13 +132,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 15,
     elevation: 10 },
-  title: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary },
   message: {
-    fontSize: 13,
-    color: Colors.textSecondary,
     marginTop: 4 },
   row: {
     flexDirection: 'row',
@@ -150,10 +145,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center' },
-  cancelText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.textPrimary },
   saveBtn: {
     flex: 1,
     height: 44,
@@ -163,7 +154,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center' },
   saveBtnDisabled: {
     opacity: 0.5 },
-  saveText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.textInverse } });
+});

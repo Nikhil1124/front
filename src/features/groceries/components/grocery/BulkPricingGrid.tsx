@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import { getPerUnitRateLabel, parseUnitQuantity } from '../../utils/pricing';
 
@@ -42,7 +44,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
             const calcSavings = Math.round(expected - opt.price);
 
             return (
-              <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+              <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                 key={opt.unit}
                 style={[styles.column, isSelected && styles.selectedColumn]}
                 onPress={() => onSelect(i)}
@@ -61,7 +63,7 @@ export const BulkPricingGrid: React.FC<BulkPricingGridProps> = ({
                     <Text maxFontSizeMultiplier={1.3} style={styles.savingsTagText}>Save ₹{calcSavings}</Text>
                   </View>
                 ) : null}
-              </TouchableOpacity>
+              </AnimatedPress>
             );
           })}
         </View>

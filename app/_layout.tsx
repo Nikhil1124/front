@@ -9,6 +9,11 @@ import { StyleSheet } from 'react-native';
 import { Stack, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import { PlusJakartaSans_400Regular } from '@expo-google-fonts/plus-jakarta-sans/400Regular';
+import { PlusJakartaSans_500Medium } from '@expo-google-fonts/plus-jakarta-sans/500Medium';
+import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-sans/600SemiBold';
+import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -75,6 +80,12 @@ function RootLayoutNav() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const activeRole = useAuthStore((s) => s.activeRole);
   const user = useAuthStore((s) => s.user);
+  const [fontsLoaded, fontError] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
 
   // Keeps `useAuthStore.user` fresh in the background once signed in (5-minute staleTime).
   // The initial value on login/register/etc comes from each mutation's own `useTokenLanding`,
@@ -117,9 +128,11 @@ function RootLayoutNav() {
   // flips to their dashboard a moment later. That flash was latent in the old screenStack
   // system too (it always booted at WELCOME), just never fixed; folding this in now since
   // the boot sequence is already being rewritten.
+  const appReady = isHydrated && (fontsLoaded || !!fontError);
+
   const onRootLayout = useCallback(() => {
-    if (isHydrated) SplashScreen.hideAsync().catch(() => {});
-  }, [isHydrated]);
+    if (appReady) SplashScreen.hideAsync().catch(() => {});
+  }, [appReady]);
 
   useEffect(() => {
     onRootLayout();
@@ -228,7 +241,7 @@ function RootLayoutNav() {
           Anything rendering in a `<Modal>` needs its own insets regardless: a Modal is a
           separate native window and nothing here reaches it. */}
       <SafeAreaView style={styles.container} edges={[]}>
-        {isHydrated ? (
+        {appReady ? (
           <Stack screenOptions={{ headerShown: false, animation: 'none', gestureEnabled: true }}>
             {/* The root index route must be explicitly included because we are providing manual children to Stack */}
             <Stack.Screen name="index" />

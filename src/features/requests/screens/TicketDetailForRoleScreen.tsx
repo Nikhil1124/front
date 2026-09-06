@@ -50,7 +50,7 @@ export function TicketDetailForRoleScreen() {
                 />
               </View>
               <Col style={{ flex: 1 }}>
-                <Txt size={15} weight="800" color={Colors.textPrimary}>{ticket.title}</Txt>
+                <Txt size={15} weight="700" color={Colors.textPrimary}>{ticket.title}</Txt>
                 <Txt size={12} color={Colors.textMuted} style={{ marginTop: 2 }}>
                   {ticket.guestName}{ticket.roomNo ? ` • Room ${ticket.roomNo}` : ''} • {ticket.status}
                 </Txt>
@@ -61,7 +61,7 @@ export function TicketDetailForRoleScreen() {
           </Card>
 
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-            <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+            <Txt size={12} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
               {ticket.mediaUri ? 'ATTACHED EVIDENCE' : 'EVIDENCE'}
             </Txt>
             <Spacer size={10} />
@@ -70,7 +70,7 @@ export function TicketDetailForRoleScreen() {
 
           {ticket.adminResponse ? (
             <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-              <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>YOUR RESPONSE</Txt>
+              <Txt size={12} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>YOUR RESPONSE</Txt>
               <Spacer size={6} />
               <Txt size={13} color={Colors.textPrimary}>{ticket.adminResponse}</Txt>
             </Card>
@@ -85,7 +85,7 @@ export function TicketDetailForRoleScreen() {
               height={50}
             >
               <Ionicons name={spec.icon as any} size={18} color={Colors.textInverse} />
-              <Txt size={14} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>{spec.label}</Txt>
+              <Txt size={14} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>{spec.label}</Txt>
             </Btn>
           ) : null}
         </View>

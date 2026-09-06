@@ -30,7 +30,7 @@ export default function TicketDetailRoute() {
   if (!ticket) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <Txt size={14} weight="800" color={Colors.textPrimary}>Ticket not found</Txt>
+        <Txt size={14} weight="700" color={Colors.textPrimary}>Ticket not found</Txt>
         <Txt size={12} color={Colors.textMuted} style={{ marginTop: 4, textAlign: 'center' }}>
           It may have been closed, or it belongs to a different property.
         </Txt>

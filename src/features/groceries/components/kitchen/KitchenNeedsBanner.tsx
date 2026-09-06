@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { DayMenuConfig } from '../../data/WeeklyMenuTypes';
 import { Radii, Palette, Colors } from '@/theme';
 
@@ -46,13 +48,13 @@ export const KitchenNeedsBanner: React.FC<KitchenNeedsBannerProps> = ({
 
       {/* Bottom View Menu Button */}
       <View style={styles.footerRow}>
-        <TouchableOpacity accessibilityRole="button"
+        <AnimatedPress accessibilityRole="button"
           style={[styles.viewMenuBtn, { backgroundColor: isVeg ? Colors.success : Colors.warning }]}
           activeOpacity={0.8}
           onPress={onViewMenuPress}
         >
           <Text maxFontSizeMultiplier={1.3} style={styles.viewMenuText}>View Menu</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
     </View>
   );
@@ -114,7 +116,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.control,
   },
   viewMenuText: {
-    color: '#FFFFFF',
+    color: Colors.textInverse,
     fontSize: 11,
   },
 });

@@ -173,7 +173,7 @@ export function ManagePropertiesScreen() {
                     {isCurrent && (
                       <View style={styles.activePill}>
                         <View style={styles.activeDot} />
-                        <Txt size={11} weight="800" color={WHITE}>Active</Txt>
+                        <Txt size={11} weight="700" color={WHITE}>Active</Txt>
                       </View>
                     )}
                   </View>
@@ -183,7 +183,7 @@ export function ManagePropertiesScreen() {
                     {/* Title and Edit Row */}
                     <Row justify="space-between" align="flex-start">
                       <View style={{ flex: 1, paddingRight: 8 }}>
-                        <Txt size={20} weight="900" color={CHARCOAL}>{pg.pgName}</Txt>
+                        <Txt size={20} weight="700" color={CHARCOAL}>{pg.pgName}</Txt>
                         <Spacer size={6} />
                         <Row gap={4} align="flex-start">
                           <Ionicons name="location-outline" size={14} color={MUTED} style={{ marginTop: 2 }} />
@@ -213,7 +213,7 @@ export function ManagePropertiesScreen() {
                           </View>
                           <Col style={{ flex: 1 }}>
                             <Txt size={11} color={MUTED} weight="700">ASSIGNED MANAGER</Txt>
-                            <Txt size={13} weight="800" color={CHARCOAL} style={{ marginTop: 2 }}>
+                            <Txt size={13} weight="700" color={CHARCOAL} style={{ marginTop: 2 }}>
                               {pg.managerName || 'Not Assigned'}
                             </Txt>
                             <Txt size={11} color={MUTED} style={{ marginTop: 1 }}>
@@ -241,8 +241,8 @@ export function ManagePropertiesScreen() {
                     {/* Bed Occupancy Progress */}
                     <View>
                       <Row justify="space-between" align="center">
-                        <Txt size={13} weight="800" color={CHARCOAL}>Beds Occupancy</Txt>
-                        <Txt size={12} weight="800" color={PRIMARY}>
+                        <Txt size={13} weight="700" color={CHARCOAL}>Beds Occupancy</Txt>
+                        <Txt size={12} weight="700" color={PRIMARY}>
                           {Math.round(occupancyPct * 100)}% Filled
                         </Txt>
                       </Row>
@@ -260,8 +260,8 @@ export function ManagePropertiesScreen() {
                     {/* Revenue & Managing CTA */}
                     <Row justify="space-between" align="center">
                       <Col>
-                        <Txt size={10} color={MUTED} weight="800" style={{ letterSpacing: 0.5 }}>COLLECTED THIS MONTH</Txt>
-                        <Txt size={18} weight="900" color={PRIMARY} style={{ marginTop: 2 }}>
+                        <Txt size={10} color={MUTED} weight="700" style={{ letterSpacing: 0.5 }}>COLLECTED THIS MONTH</Txt>
+                        <Txt size={18} weight="700" color={PRIMARY} style={{ marginTop: 2 }}>
                           ₹{Math.round(pgRevenue).toLocaleString('en-IN')}
                         </Txt>
                       </Col>
@@ -276,7 +276,7 @@ export function ManagePropertiesScreen() {
                         height={40}
                         style={{ paddingHorizontal: 16 }}
                       >
-                        <Txt size={12} weight="800" color={isCurrent ? WHITE : PRIMARY}>
+                        <Txt size={12} weight="700" color={isCurrent ? WHITE : PRIMARY}>
                           {isCurrent ? 'Managing Now' : 'Switch Property'}
                         </Txt>
                         <Spacer size={6} horizontal />
@@ -324,7 +324,7 @@ function PropertyStats({ totalPGs, totalGuests, totalBeds, totalRevenue, totalCo
           <Ionicons name="business" size={18} color={PRIMARY} />
         </View>
         <Txt size={11} color={MUTED} weight="700">Total PGs</Txt>
-        <Txt size={20} weight="900" color={CHARCOAL} style={{ marginTop: 4 }}>{totalPGs}</Txt>
+        <Txt size={20} weight="700" color={CHARCOAL} style={{ marginTop: 4 }}>{totalPGs}</Txt>
         <Txt size={10} color={MUTED} style={{ marginTop: 2 }}>Properties</Txt>
       </View>
 
@@ -334,7 +334,7 @@ function PropertyStats({ totalPGs, totalGuests, totalBeds, totalRevenue, totalCo
           <Ionicons name="bed" size={18} color={SUCCESS} />
         </View>
         <Txt size={11} color={MUTED} weight="700">Occupancy</Txt>
-        <Txt size={20} weight="900" color={SUCCESS} style={{ marginTop: 4 }}>{totalGuests}/{totalBeds}</Txt>
+        <Txt size={20} weight="700" color={SUCCESS} style={{ marginTop: 4 }}>{totalGuests}/{totalBeds}</Txt>
         <Txt size={10} color={MUTED} style={{ marginTop: 2 }}>{occupancyPct}% Filled</Txt>
       </View>
 
@@ -344,7 +344,7 @@ function PropertyStats({ totalPGs, totalGuests, totalBeds, totalRevenue, totalCo
           <Ionicons name="wallet" size={18} color={WARNING} />
         </View>
         <Txt size={11} color={MUTED} weight="700">Revenue</Txt>
-        <Txt size={20} weight="900" color={WARNING} style={{ marginTop: 4 }}>₹{Math.round(totalRevenue).toLocaleString('en-IN')}</Txt>
+        <Txt size={20} weight="700" color={WARNING} style={{ marginTop: 4 }}>₹{Math.round(totalRevenue).toLocaleString('en-IN')}</Txt>
         <Txt size={10} color={MUTED} style={{ marginTop: 2 }}>Collected</Txt>
       </View>
 
@@ -354,7 +354,7 @@ function PropertyStats({ totalPGs, totalGuests, totalBeds, totalRevenue, totalCo
           <Ionicons name="alert-circle" size={18} color={ERROR} />
         </View>
         <Txt size={11} color={MUTED} weight="700">Open Issues</Txt>
-        <Txt size={20} weight="900" color={totalComplaints > 0 ? ERROR : CHARCOAL} style={{ marginTop: 4 }}>{totalComplaints}</Txt>
+        <Txt size={20} weight="700" color={totalComplaints > 0 ? ERROR : CHARCOAL} style={{ marginTop: 4 }}>{totalComplaints}</Txt>
         <Txt size={10} color={MUTED} style={{ marginTop: 2 }}>{totalComplaints > 0 ? 'Urgent Alerts' : 'All Clear'}</Txt>
       </View>
     </ScrollView>
@@ -396,7 +396,7 @@ function AddPropertyCTA({ onPress }: AddPropertyCTAProps) {
             <Ionicons name="business-outline" size={24} color={PRIMARY} />
           </View>
           <Col style={{ flex: 1 }}>
-            <Txt size={14} weight="900" color={CHARCOAL}>Manage more PGs</Txt>
+            <Txt size={14} weight="700" color={CHARCOAL}>Manage more PGs</Txt>
             <Txt size={11} color={MUTED} style={{ marginTop: 2 }}>
               Add another property and manage everything from one place.
             </Txt>
@@ -410,7 +410,7 @@ function AddPropertyCTA({ onPress }: AddPropertyCTAProps) {
           height={38}
           style={{ paddingHorizontal: 12 }}
         >
-          <Txt size={12} weight="800" color={PRIMARY}>+ Add New PG</Txt>
+          <Txt size={12} weight="700" color={PRIMARY}>+ Add New PG</Txt>
         </OutlinedBtn>
       </Row>
     </Card>

@@ -147,14 +147,14 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 1,
     color: Colors.textMuted,
     marginBottom: 6,
   },
   title: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     marginTop: 22,
   },
-  buttonText: { fontSize: 15, fontWeight: '800', color: Colors.textInverse },
+  buttonText: { fontSize: 15, fontWeight: '700', color: Colors.textInverse },
   progressRow: { flexDirection: 'row', gap: 6, marginTop: 18 },
   pip: {
     width: 26,

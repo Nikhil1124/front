@@ -2,6 +2,8 @@ import { SupplyCategory } from '@/types';
 import { toAmount } from '@/data/mappers';
 import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -95,7 +97,7 @@ export function GroceryCategoryScreen() {
 
   // Render a single category item card in the 4-column layout
   const renderSupplyCategoryItem = (cat: SupplyCategory) => (
-    <TouchableOpacity accessibilityRole="button"
+    <AnimatedPress accessibilityRole="button"
       key={cat.id}
       style={[styles.catItem, { width: itemWidth }]}
       activeOpacity={0.85}
@@ -111,7 +113,7 @@ export function GroceryCategoryScreen() {
       <Text maxFontSizeMultiplier={1.3} style={styles.catTitle} numberOfLines={2}>
         {cat.name}
       </Text>
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 
   return (
@@ -120,7 +122,7 @@ export function GroceryCategoryScreen() {
       <View style={{ flex: 1 }}>
         {/* Top Header Search Bar */}
         <View style={[styles.topHeader, { paddingTop: insets.top + 14 }]}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
             style={styles.backBtn}
             onPress={() => {
               if (activeSupplyCategory) {
@@ -133,7 +135,7 @@ export function GroceryCategoryScreen() {
             activeOpacity={0.7}
           >
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </TouchableOpacity>
+          </AnimatedPress>
 
           <View style={styles.searchBarContainer}>
             <Ionicons name="search" size={20} color={Colors.primary} />
@@ -148,9 +150,9 @@ export function GroceryCategoryScreen() {
               <Ionicons name="mic-outline" size={20} color={Colors.textSecondary} />
             )}
             {search.length > 0 && showProductList && (
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSearch('')}>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSearch('')}>
                 <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-              </TouchableOpacity>
+              </AnimatedPress>
             )}
           </View>
         </View>
@@ -160,9 +162,9 @@ export function GroceryCategoryScreen() {
           <View style={styles.chipRow}>
             <View style={styles.activeChip}>
               <Text maxFontSizeMultiplier={1.3} style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Text>
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setActiveSupplyCategory(null)}>
-                <Ionicons name="close" size={14} color={Colors.primary} />
-              </TouchableOpacity>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setActiveSupplyCategory(null)}>
+                <Ionicons name="close" size={14} color={Colors.textMuted} />
+              </AnimatedPress>
             </View>
           </View>
         )}
@@ -289,7 +291,7 @@ export function GroceryCategoryScreen() {
       {/* Floating Cart Bar */}
       {cartItemCount > 0 && (
         <View style={[styles.floatingCartContainer, { bottom: Math.max(insets.bottom + 85, 105) }]}>
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             style={styles.floatingCart}
             onPress={() => router.push('/groceries/cart')}
             activeOpacity={0.9}
@@ -301,7 +303,7 @@ export function GroceryCategoryScreen() {
             />
             <View style={styles.cartInfo}>
               <View style={styles.cartIconWrapper}>
-                <Ionicons name="cart" size={18} color="#fff" />
+                <Ionicons name="cart" size={18} color={Colors.textInverse} />
               </View>
               <View>
                 <Text maxFontSizeMultiplier={1.3} style={styles.cartTotal}>₹{getCartTotal()}</Text>
@@ -311,7 +313,7 @@ export function GroceryCategoryScreen() {
             <View style={styles.viewCartBtn}>
               <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart →</Text>
             </View>
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
       )}
     </View>
@@ -390,8 +392,7 @@ const styles = StyleSheet.create({
   sectionHeading: {
     fontSize: 18,
     color: Colors.textPrimary,
-    marginBottom: 14,
-    letterSpacing: -0.2 },
+    marginBottom: 14 },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -470,5 +471,5 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14 },
   viewCartText: {
-    color: '#fff',
+    color: Colors.textInverse,
     fontSize: 12 } });

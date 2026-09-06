@@ -1,13 +1,15 @@
 import { SupplyItem } from '@/types';
 import React from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
   Image,
   StyleSheet,
 } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
+import { Sheet, Txt, Btn } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Palette, Colors } from '@/theme';
 
@@ -57,101 +59,105 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
   }, [newDishText, products]);
 
   return (
-    <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.title}>🍳 Edit PG Menu</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>Customize recipe schedule details</Text>
-            </View>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose}>
-              <Ionicons name="close" size={24} color={Colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-
-          <FormScroll style={styles.scroll} showsVerticalScrollIndicator={false}>
-            {/* Current dishes */}
-            <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Current Dishes</Text>
-            {dishes.map((dish, index) => (
-              <View key={index} style={styles.dishRow}>
-                <OutlinedTextField
-                  style={{ flex: 1 }}
-                  value={dish}
-                  onChangeText={(text: string) => onDishTextChange(index, text)}
-                  placeholder="Enter dish name"
-                />
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button" style={styles.removeDishBtn} onPress={() => onRemoveDish(index)}>
-                  <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-                </TouchableOpacity>
-              </View>
-            ))}
-
-            {/* Add new dish */}
-            <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Add New Dish</Text>
-            <View style={styles.addDishRow}>
-              <SearchField
-                style={{ flex: 1 }}
-                value={newDishText}
-                onChangeText={onNewDishTextChange}
-                placeholder="Search or type a dish"
-              />
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.addDishBtn} onPress={onAddDish} activeOpacity={0.8}>
-                <Ionicons name="add" size={20} color={Colors.surface} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Product suggestions */}
-            <Text maxFontSizeMultiplier={1.3} style={styles.relatedHeading}>
-              {newDishText.trim() ? 'Matching Stock Products' : 'Popular Ingredients'}
-            </Text>
-            <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
-              {suggestions.map((prod) => {
-                const isAdded = dishes.includes(prod.name);
-                return (
-                  <TouchableOpacity accessibilityRole="button"
-                    key={prod.id}
-                    style={[styles.relatedCard, isAdded && styles.relatedCardAdded]}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      if (!dishes.includes(prod.name)) {
-                        onNewDishTextChange('');
-                        // parent handles this via onAddDish with the text pre-set
-                        // We trigger the parent to add prod.name
-                        onNewDishTextChange(prod.name);
-                      }
-                    }}
-                  >
-                    <View style={styles.relatedImageWrapper}>
-                      <Image
-                        source={prod.image_url ? { uri: prod.image_url } : require('../../../../../assets/img_app_icon.jpg')}
-                        style={styles.relatedImage}
-                        resizeMode="contain"
-                      />
-                    </View>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.relatedName} numberOfLines={1}>{prod.name}</Text>
-                    <View style={[styles.relatedAddBadge, isAdded && styles.relatedAddBadgeAdded]}>
-                      <Ionicons name={isAdded ? 'checkmark' : 'add'} size={10} color={Colors.surface} />
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </FormScroll>
-          </FormScroll>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity accessibilityRole="button" style={styles.cancelBtn} onPress={onClose}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button" style={styles.saveBtn} onPress={onSave}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.saveText}>Save Changes</Text>
-            </TouchableOpacity>
-          </View>
+    <Sheet
+      visible={visible}
+      title="Edit PG Menu"
+      subtitle="Customize recipe schedule details"
+      onDismiss={onClose}
+      testID="menu_editor_modal"
+      footer={
+        <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+          <Btn onPress={onClose} borderRadius={Radii.card} containerColor={Colors.surface} textColor={Colors.textPrimary} style={{ flex: 1 }}>
+            <Txt size={14}>Cancel</Txt>
+          </Btn>
+          <Btn onPress={onSave} borderRadius={Radii.card} containerColor={Colors.primary} textColor={Colors.textInverse} style={{ flex: 1 }}>
+            <Txt size={14} weight="700">Save Changes</Txt>
+          </Btn>
         </View>
+      }
+    >
+      <View style={styles.content}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Txt size={18} weight="700" style={styles.title}>🍳 Edit PG Menu</Txt>
+            <Txt size={11} color={Colors.textSecondary} style={styles.subtitle}>Customize recipe schedule details</Txt>
+          </View>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose}>
+            <Ionicons name="close" size={24} color={Colors.textPrimary} />
+          </AnimatedPress>
+        </View>
+
+        <FormScroll style={styles.scroll} showsVerticalScrollIndicator={false}>
+          {/* Current dishes */}
+          <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Current Dishes</Text>
+          {dishes.map((dish, index) => (
+            <View key={index} style={styles.dishRow}>
+              <OutlinedTextField
+                style={{ flex: 1 }}
+                value={dish}
+                onChangeText={(text: string) => onDishTextChange(index, text)}
+                placeholder="Enter dish name"
+              />
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button" style={styles.removeDishBtn} onPress={() => onRemoveDish(index)}>
+                <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+              </AnimatedPress>
+            </View>
+          ))}
+
+          {/* Add new dish */}
+          <Text maxFontSizeMultiplier={1.3} style={styles.listHeading}>Add New Dish</Text>
+          <View style={styles.addDishRow}>
+            <SearchField
+              style={{ flex: 1 }}
+              value={newDishText}
+              onChangeText={onNewDishTextChange}
+              placeholder="Search or type a dish"
+            />
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.addDishBtn} onPress={onAddDish} activeOpacity={0.8}>
+              <Ionicons name="add" size={20} color={Colors.surface} />
+            </AnimatedPress>
+          </View>
+
+          {/* Product suggestions */}
+          <Text maxFontSizeMultiplier={1.3} style={styles.relatedHeading}>
+            {newDishText.trim() ? 'Matching Stock Products' : 'Popular Ingredients'}
+          </Text>
+          <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
+            {suggestions.map((prod) => {
+              const isAdded = dishes.includes(prod.name);
+              return (
+                <AnimatedPress accessibilityRole="button"
+                  key={prod.id}
+                  style={[styles.relatedCard, isAdded && styles.relatedCardAdded]}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (!dishes.includes(prod.name)) {
+                      onNewDishTextChange('');
+                      // parent handles this via onAddDish with the text pre-set
+                      // We trigger the parent to add prod.name
+                      onNewDishTextChange(prod.name);
+                    }
+                  }}
+                >
+                  <View style={styles.relatedImageWrapper}>
+                    <Image
+                      source={prod.image_url ? { uri: prod.image_url } : require('../../../../../assets/img_app_icon.jpg')}
+                      style={styles.relatedImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.relatedName} numberOfLines={1}>{prod.name}</Text>
+                  <View style={[styles.relatedAddBadge, isAdded && styles.relatedAddBadgeAdded]}>
+                    <Ionicons name={isAdded ? 'checkmark' : 'add'} size={10} color={Colors.surface} />
+                  </View>
+                </AnimatedPress>
+              );
+            })}
+          </FormScroll>
+        </FormScroll>
       </View>
-    </Modal>
+    </Sheet>
   );
 };
 

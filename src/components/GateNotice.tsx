@@ -14,7 +14,7 @@
  * app's gate handler is a no-op on purpose (see `app/_layout.tsx`) because moving someone on
  * a gate changes the flow instead of reporting it.
  */
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -22,6 +22,7 @@ import { Radii, Colors } from '@/theme';
 import { PGowApiError } from '@/data/apiClient';
 import { gateCodeFrom, type GateCode } from '@/data/gateCodes';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Txt } from '@/components/ui/Txt';
 
 /** The gate code behind an error, or null when it is an ordinary failure. The rule itself
  *  lives in `data/gateCodes.ts` so it can be checked without a react-native import. */
@@ -100,13 +101,13 @@ export function GateNotice({ error, compact = false }: { error: unknown; compact
         onPress={copy.action?.go}
         activeOpacity={copy.action ? 0.7 : 1}
       >
-        <Text maxFontSizeMultiplier={1.3} style={[styles.compactTitle, { color: copy.tint }]} numberOfLines={2}>
+        <Txt variant="cardTitle" color={copy.tint} numberOfLines={2} style={styles.compactTitle}>
           {copy.title}
-        </Text>
+        </Txt>
         {copy.action && (
           <View style={styles.compactCta}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.compactCtaText}>{copy.action.label}</Text>
-            <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
+            <Txt variant="meta" weight="600" color={Colors.primary}>{copy.action.label}</Txt>
+            <Ionicons name="chevron-forward" size={13} color={Colors.textMuted} />
           </View>
         )}
       </Wrapper>
@@ -118,11 +119,11 @@ export function GateNotice({ error, compact = false }: { error: unknown; compact
       <View style={[styles.iconWrap, { backgroundColor: `${copy.tint}1A` }]}>
         <Ionicons name={copy.icon} size={26} color={copy.tint} />
       </View>
-      <Text maxFontSizeMultiplier={1.3} style={styles.title}>{copy.title}</Text>
-      <Text maxFontSizeMultiplier={1.3} style={styles.body}>{copy.body}</Text>
+      <Txt variant="sectionTitle" color={Colors.textPrimary} align="center">{copy.title}</Txt>
+      <Txt variant="body" color={Colors.textMuted} align="center" style={styles.body}>{copy.body}</Txt>
       {copy.action && (
         <AnimatedPress accessibilityRole="button" style={styles.button} onPress={copy.action.go}>
-          <Text maxFontSizeMultiplier={1.3} style={styles.buttonText}>{copy.action.label}</Text>
+          <Txt variant="button" color={Colors.textInverse}>{copy.action.label}</Txt>
         </AnimatedPress>
       )}
     </View>
@@ -148,17 +149,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 14,
   },
-  title: {
-    fontSize: 15.5,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
   body: {
-    fontSize: 13,
-    lineHeight: 19.5,
-    color: Colors.textMuted,
-    textAlign: 'center',
     marginTop: 8,
   },
   button: {
@@ -171,10 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 18,
   },
-  buttonText: { fontSize: 14, fontWeight: '800', color: Colors.textInverse },
-
   compact: { marginTop: 4 },
-  compactTitle: { fontSize: 13.5, fontWeight: '800', lineHeight: 18 },
+  compactTitle: { lineHeight: 18 },
   compactCta: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
-  compactCtaText: { fontSize: 12, fontWeight: '700', color: Colors.primary },
 });

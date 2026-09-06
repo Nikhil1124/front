@@ -30,7 +30,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { BlurView } from 'expo-blur';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, AnimatedPress } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, IconBtn, AnimatedPress, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -158,78 +158,79 @@ export function KycUploadDialog({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      {/* behavior="padding" only on Android — iOS natively handles keyboard avoidance via
-          automaticallyAdjustKeyboardInsets. Using "padding" on iOS double-counts the
-          keyboard height and leaves a blank gap above the keyboard instead. */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <Pressable accessibilityRole="button" style={styles.backdrop} onPress={onDismiss}>
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-        <Pressable accessibilityRole="button" onPress={() => {/* swallow tap so it doesn't bubble */}} style={styles.cardWrap}>
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={Radii.sheet}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[20, 20]}
-            style={{ width: '100%', maxWidth: 480 }}
+    <Sheet
+      visible={visible}
+      title={reupload ? 'Re-upload Documents' : 'Verify Your Identity'}
+      subtitle={reupload ? 'Update your KYC and resubmit for review' : 'Required for resident onboarding'}
+      icon="ribbon"
+      accent={Colors.primary}
+      onDismiss={onDismiss}
+      testID="kyc_upload_dialog"
+      footer={
+        <Row gap={10}>
+          <Btn
+            onPress={handleSubmit}
+            containerColor={Colors.primary}
+            textColor={Colors.textInverse}
+            borderRadius={Radii.control}
+            height={48}
+            loading={submitting}
+            style={{ flex: 1 }}
+            testID="kyc_submit_btn"
           >
-            {/* Header — title + sticky close button */}
-            <Row justify="space-between" align="center">
-              <Row gap={8}>
-                <View style={styles.titleIconWrap}>
-                  <Ionicons name="ribbon" size={22} color={Colors.primary} />
-                </View>
-                <Col>
-                  <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>
-                    {reupload ? 'Re-upload Documents' : 'Verify Your Identity'}
-                  </Txt>
-                  <Txt variant="caption" color={Colors.textMuted}>
-                    {reupload ? 'Update your KYC and resubmit for review' : 'Required for resident onboarding'}
+            <Ionicons name="send" size={16} color={Colors.textInverse} />
+            <Txt variant="button" color={Colors.textInverse} style={{ marginLeft: 8 }}>
+              {submitting ? 'Submitting…' : 'Submit for Verification'}
+            </Txt>
+          </Btn>
+          <OutlinedBtn
+            onPress={onDismiss}
+            borderColor={Colors.borderMuted}
+            textColor={Colors.textSecondary}
+            borderRadius={Radii.control}
+            height={48}
+            testID="kyc_cancel_btn"
+          >
+            <Txt variant="body" weight="700" color={Colors.textSecondary}>Cancel</Txt>
+          </OutlinedBtn>
+        </Row>
+      }
+    >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+        <Card
+          containerColor={Colors.surface}
+          borderRadius={Radii.sheet}
+          borderWidth={1}
+          borderColor={Colors.borderSubtle}
+          padding={[20, 20]}
+          style={{ width: '100%', maxWidth: 480 }}
+        >
+          {/* Rejected banner — only when re-uploading */}
+          {reupload && (
+            <>
+              <Spacer size={14} />
+              <View style={styles.rejectedBanner}>
+                <Ionicons name="warning" size={18} color={Colors.danger} />
+                <Col style={{ flex: 1 }}>
+                  <Txt variant="statusChip" color={Colors.danger}>Action Required</Txt>
+                  <Txt variant="caption" color={Colors.textSecondary}>
+                    {guest?.kycRejectReason
+                      ? `Reason: ${guest.kycRejectReason}`
+                      : 'Your previous submission was rejected. Please update and resubmit.'}
                   </Txt>
                 </Col>
-              </Row>
-              <IconBtn
-                onPress={onDismiss}
-                icon="close"
-                size={20}
-                tint={Colors.textSecondary}
-                containerColor={Colors.surfaceMuted}
-                borderRadius={Radii.pill}
-                padding={6}
-                hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                testID="kyc_upload_close_btn"
-              />
-            </Row>
+              </View>
+            </>
+          )}
 
-            {/* Rejected banner — only when re-uploading */}
-            {reupload && (
-              <>
-                <Spacer size={14} />
-                <View style={styles.rejectedBanner}>
-                  <Ionicons name="warning" size={18} color={Colors.danger} />
-                  <Col style={{ flex: 1 }}>
-                    <Txt variant="caption" weight="800" color={Colors.danger}>Action Required</Txt>
-                    <Txt variant="caption" color={Colors.textSecondary}>
-                      {guest?.kycRejectReason
-                        ? `Reason: ${guest.kycRejectReason}`
-                        : 'Your previous submission was rejected. Please update and resubmit.'}
-                    </Txt>
-                  </Col>
-                </View>
-              </>
-            )}
+          <Spacer size={16} />
 
-            <Spacer size={16} />
-
-            {/* ScrollView caps the form content so the card never exceeds the screen height;
-                the Submit/Cancel row lives outside it and is always visible. */}
-            <ScrollView
-              style={{ maxHeight: 370 }}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              automaticallyAdjustKeyboardInsets
-            >
+          <ScrollView
+            style={{ maxHeight: 370 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            automaticallyAdjustKeyboardInsets
+          >
 
             {/* 1. Selfie / Profile photo */}
             <Txt variant="body" weight="700" color={Colors.primary}>1. Selfie / Profile Photo</Txt>
@@ -268,24 +269,27 @@ export function KycUploadDialog({
               <Txt variant="body" color={Colors.textPrimary}>{selectedIdType}</Txt>
               <Ionicons name="chevron-down" size={18} color={Colors.textMuted} />
             </AnimatedPress>
-            {/* Dropdown modal — for clean tap-outside-to-close */}
-            <Modal visible={showDropdown} transparent animationType="fade" onRequestClose={() => setShowDropdown(false)}>
-              <Pressable accessibilityRole="button" style={styles.dropdownBackdrop} onPress={() => setShowDropdown(false)}>
-                <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                <View style={styles.dropdownMenu}>
-                  {ID_TYPES.map((t) => (
-                    <AnimatedPress accessibilityRole="button"
-                      key={t}
-                      onPress={() => { setSelectedIdType(t); setShowDropdown(false); }}
-                      style={styles.dropdownItem}
-                    >
-                      <Txt variant="body" color={Colors.textPrimary}>{t}</Txt>
-                      {selectedIdType === t && <Ionicons name="checkmark" size={16} color={Colors.primary} />}
-                    </AnimatedPress>
-                  ))}
-                </View>
-              </Pressable>
-            </Modal>
+            {/* Dropdown sheet — replaces the old anchored Modal so backdrop tap-to-close still works. */}
+            <Sheet
+              visible={showDropdown}
+              title="Choose ID type"
+              onDismiss={() => setShowDropdown(false)}
+              testID="kyc_id_type_dropdown_sheet"
+            >
+              <View style={styles.dropdownMenu}>
+                {ID_TYPES.map((t) => (
+                  <AnimatedPress
+                    accessibilityRole="button"
+                    key={t}
+                    onPress={() => { setSelectedIdType(t); setShowDropdown(false); }}
+                    style={styles.dropdownItem}
+                  >
+                    <Txt variant="body" color={Colors.textPrimary}>{t}</Txt>
+                    {selectedIdType === t && <Ionicons name="checkmark" size={16} color={Colors.primary} />}
+                  </AnimatedPress>
+                ))}
+              </View>
+            </Sheet>
 
             <Spacer size={12} />
 
@@ -331,43 +335,11 @@ export function KycUploadDialog({
               </Col>
             </Row>
 
-            </ScrollView>
+          </ScrollView>
 
-            <Spacer size={16} />
-
-            {/* Bottom action row — distinct Submit / Cancel affordances */}
-            <Row gap={10}>
-              <Btn
-                onPress={handleSubmit}
-                containerColor={Colors.primary}
-                textColor={Colors.textInverse}
-                borderRadius={Radii.control}
-                height={48}
-                loading={submitting}
-                style={{ flex: 1 }}
-                testID="kyc_submit_btn"
-              >
-                <Ionicons name="send" size={16} color={Colors.textInverse} />
-                <Txt variant="cardTitle" weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
-                  {submitting ? 'Submitting…' : 'Submit for Verification'}
-                </Txt>
-              </Btn>
-              <OutlinedBtn
-                onPress={onDismiss}
-                borderColor={Colors.borderMuted}
-                textColor={Colors.textSecondary}
-                borderRadius={Radii.control}
-                height={48}
-                testID="kyc_cancel_btn"
-              >
-                <Txt variant="body" weight="700" color={Colors.textSecondary}>Cancel</Txt>
-              </OutlinedBtn>
-            </Row>
-          </Card>
-        </Pressable>
-      </Pressable>
+        </Card>
       </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -390,7 +362,7 @@ const styles = StyleSheet.create({
   },
   rejectedBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.alertGradientStart,
+    backgroundColor: Colors.dangerPale,
     borderWidth: 1, borderColor: Colors.danger,
     borderRadius: Radii.card, padding: 12,
   },

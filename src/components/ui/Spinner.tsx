@@ -6,9 +6,10 @@
  * "reduce motion" without any work here. The only thing worth owning is the colour, which
  * defaults to the brand green so a spinner never shows up in iOS grey on a mint canvas.
  */
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
+import { Txt } from './Txt';
 
 export interface SpinnerProps {
   /** 'small' ≈ 20dp, 'large' ≈ 36dp — the two sizes RN actually supports on both platforms. */
@@ -36,9 +37,9 @@ export function LoadingState({ label, size = 'large', fill = true, style }: Load
     <View style={[fill ? styles.fill : styles.block, style]}>
       <Spinner size={size} />
       {label ? (
-        <Text maxFontSizeMultiplier={1.3} style={[styles.label, { fontSize: 12, fontWeight: '600', color: Colors.textMuted }]}>
+        <Txt variant="meta" weight="600" color={Colors.textMuted} align="center" style={styles.label}>
           {label}
-        </Text>
+        </Txt>
       ) : null}
     </View>
   );
@@ -65,17 +66,17 @@ export function ErrorState({ error, title = 'Could not load this', onRetry, fill
       <View style={styles.errIcon}>
         <Ionicons name="cloud-offline-outline" size={28} color={Colors.danger} />
       </View>
-      <Text maxFontSizeMultiplier={1.3} style={[styles.label, { fontSize: 14, fontWeight: '800', color: Colors.textPrimary }]}>
+      <Txt variant="cardTitle" color={Colors.textPrimary} align="center" style={styles.label}>
         {title}
-      </Text>
-      <Text maxFontSizeMultiplier={1.3} style={[styles.message, { fontSize: 12, color: Colors.textMuted }]}>
+      </Txt>
+      <Txt variant="meta" color={Colors.textMuted} align="center" style={styles.message}>
         {message}
-      </Text>
+      </Txt>
       {onRetry ? (
         <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Retry loading" style={styles.retry}>
-          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: Colors.primary }}>
+          <Txt variant="button" color={Colors.primary}>
             Tap to retry
-          </Text>
+          </Txt>
         </Pressable>
       ) : null}
     </View>
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   block: { alignItems: 'center', justifyContent: 'center', paddingVertical: 28, paddingHorizontal: 24 },
   label: { marginTop: 10, textAlign: 'center' },
-  message: { marginTop: 4, textAlign: 'center', lineHeight: 17 },
+  message: { marginTop: 4 },
   retry: { marginTop: 12 },
   errIcon: {
     width: 56, height: 56, borderRadius: Radii.pill,

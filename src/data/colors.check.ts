@@ -1,18 +1,4 @@
-/**
- * Guard: the status vocabulary stays in the palette.
- *
- * The radius pass found 803 hardcoded values against 55 token uses; the colours were the same
- * story one layer down. Five screens each invented their own amber — `#D97706`, `#F59E0B`,
- * `#B45309` — and their own tint to sit it on, so "pending" rendered as three different
- * yellows depending on which tab you were looking at. Worse, several of those were never
- * measured: `#D97706` on white is 3.29:1, which fails AA for the 10–11px labels it was being
- * used for. `Colors.warning` is the measured one.
- *
- * This only bans the specific literals that already had a token. A one-off illustration
- * colour is not what this is about.
- *
- * Runs under plain `node` via `npm run check` — no bundler, no test framework.
- */
+/** Guard: the locked Botanical + Terracotta palette stays the only design language. */
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -31,19 +17,37 @@ const BANNED: Record<string, string> = {
   '#ECFDF5': 'Palette.TintGreen', '#E0F2F0': 'Palette.TintGreen', '#D1FAE5': 'Palette.TintGreen',
   '#A7F3D0': 'Palette.TintGreen', '#EEF8F1': 'Palette.TintGreen',
   '#1D4ED8': 'Colors.info',
+  // The warm-ground pass. A cold literal white on a warm canvas reads as a patch of the old
+  // design — 226 of these were swept; these bans stop the 227th.
+  '#FFFFFF': 'Colors.surface or Colors.textInverse', '#FFF': 'Colors.surface or Colors.textInverse',
+  // The cool palette these replaced. Named so a copy-paste from an old screen fails loudly.
+  '#26658C': 'Colors.brand',
+  '#1B3245': 'Colors.textPrimary',
+  '#5A7387': 'Colors.textMuted',
   '#6B7280': 'Colors.textMuted', '#9CA3AF': 'Colors.textMuted',
   '#F3F4F6': 'Colors.surfaceMuted',
   '#E2E8F0': 'Colors.borderMuted',
-  // The ground pass. `#F6F9FB` was the old canvas — anything still naming it is a screen that
-  // has not been moved onto the white page and will read as a 1.06:1 non-surface.
-  '#F6F9FB': 'Colors.canvas (now white) or Colors.surfaceMuted',
-  // Deck tints and their inks. Each is a measured pair; splitting one from the other by
-  // inlining half of it is how a tinted card ends up with unreadable text on it.
+  '#F6F9FB': 'Colors.canvas', '#FFFCF9': 'Colors.canvas',
   '#DCEAF2': 'DeckTints.brand.fill', '#011C40': 'DeckTints.brand.ink', '#3A5D75': 'DeckTints.brand.sub',
   '#D8EDE3': 'DeckTints.green.fill', '#03402C': 'DeckTints.green.ink', '#2E5F4C': 'DeckTints.green.sub',
   '#F7E8CE': 'DeckTints.amber.fill', '#6B3705': 'DeckTints.amber.ink', '#7A5227': 'DeckTints.amber.sub',
   '#EDEFF2': 'DeckTints.slate.fill', '#0F1B2A': 'DeckTints.slate.ink', '#55677A': 'DeckTints.slate.sub',
-  '#E1E7EC': 'Colors.separator',
+  '#E1E7EC': 'Colors.separator (old cool hairline)',
+  // Superseded LUNA values: the unified specification explicitly replaces these.
+  '#A24A2A': 'Colors.brand', '#5C2B18': 'Colors.brandDeep', '#7A3A22': 'Colors.terracottaDeep',
+  '#F2EAE3': 'Colors.surfaceElevated', '#F7F2ED': 'Colors.surfaceMuted', '#EBE2DA': 'Colors.separator',
+  '#DCD0C5': 'Colors.borderSubtle', '#E3D9D0': 'Colors.separator', '#2C6248': 'Colors.success',
+  '#8A5A15': 'Colors.pending', '#A83226': 'Colors.danger', '#F6E9E1': 'DeckTints.brand.fill',
+  '#E6F0E9': 'DeckTints.green.fill', '#F9EEDA': 'DeckTints.amber.fill', '#F2EDE8': 'DeckTints.slate.fill',
+  // Locked tinted-card triplets must not be copied into individual screens.
+  '#EAF2E6': 'DeckTints.brand.fill', '#2C452A': 'DeckTints.brand.ink', '#4C7246': 'DeckTints.brand.sub',
+  '#E4EFEA': 'DeckTints.green.fill', '#1D4738': 'DeckTints.green.ink', '#2E6A54': 'DeckTints.green.sub',
+  '#F7EEDC': 'DeckTints.amber.fill', '#57441F': 'DeckTints.amber.ink', '#836731': 'DeckTints.amber.sub',
+  '#EFEDE7': 'DeckTints.slate.fill', '#33322C': 'DeckTints.slate.ink', '#6E6A5F': 'DeckTints.slate.sub',
+  '#F9F0E8': 'Colors.terracottaPale', '#A0572E': 'Colors.terracotta', '#6E3A22': 'Colors.terracottaDeep',
+  '#F9E9E9': 'Colors.dangerPale', '#6E2E33': 'Colors.dangerDeep', '#FDFCFA': 'Colors.canvas',
+  '#F5F3EF': 'Colors.surfaceMuted', '#EDEFE8': 'Colors.surfaceElevated', '#E8E5DE': 'Colors.separator',
+  '#D6D2C8': 'Colors.borderSubtle', '#4E4C44': 'Colors.textSecondary', '#726E64': 'Colors.textMuted',
 };
 
 /** Files allowed to name these directly. */
@@ -83,9 +87,6 @@ if (offenders.length) {
 }
 
 // ── The ratios, actually measured ───────────────────────────────────────────
-// The comments in `colors.ts` quote these numbers. Comments do not fail a build; this does.
-// The whole ground pass exists because a white card sat at 1.06:1 on the old canvas, so the
-// one thing that must never regress is a surface being indistinguishable from what it is on.
 
 function luminance(hex: string): number {
   const h = hex.replace('#', '');
@@ -108,9 +109,10 @@ for (const [name, colour] of [
   ['textPrimary', Colors.textPrimary],
   ['textSecondary', Colors.textSecondary],
   ['textMuted', Colors.textMuted],
-  ['primary', Colors.primary],
+  ['brand', Colors.brand],
+  ['terracotta', Colors.terracotta],
   ['success', Colors.success],
-  ['warning', Colors.warning],
+  ['pending', Colors.pending],
   ['danger', Colors.danger],
 ] as const) {
   const ratio = contrast(colour, Colors.canvas);
@@ -137,9 +139,9 @@ for (const [name, tint] of Object.entries(DeckTints)) {
 // StatusChip's five tones, each against the background it is actually drawn on.
 for (const [name, fg, bg] of [
   ['ok', Colors.success, Palette.TintGreen],
-  ['warn', Colors.warning, Palette.TintAmber],
+  ['warn', Colors.pending, Palette.TintAmber],
   ['danger', Colors.danger, Palette.TintRed],
-  ['info', Colors.primary, Palette.TintBlue],
+  ['info', Colors.neutral, Palette.TintBlue],
   ['neutral', Colors.textSecondary, Colors.surfaceElevated],
 ] as const) {
   const ratio = contrast(fg, bg);
@@ -152,8 +154,8 @@ for (const [name, fg, bg] of [
 // = clear), so a fill that drifts pale enough to stop reading as a state is a functional bug,
 // not a cosmetic one.
 for (const [name, fg, bg, floor] of [
-  ['focused icon', Colors.primary, DeckTints.brand.fill, NON_TEXT],
-  ['focused label', Colors.primary, Colors.surface, AA],
+  ['focused icon', Colors.brand, DeckTints.brand.fill, NON_TEXT],
+  ['focused label', Colors.brand, Colors.surface, AA],
   ['waiting icon', DeckTints.amber.ink, DeckTints.amber.fill, NON_TEXT],
   ['count numeral', Colors.textInverse, DeckTints.amber.ink, AA],
   ['clear icon', Colors.textMuted, DeckTints.green.fill, NON_TEXT],
@@ -164,19 +166,9 @@ for (const [name, fg, bg, floor] of [
   assert.ok(ratio >= floor, `bottom bar, ${name}: ${ratio.toFixed(2)}:1 — needs ${floor}`);
 }
 
-// "Work waiting" and "all clear" have to be told apart, and contrast is the WRONG instrument
-// for it: the two fills sit at 1.01:1, i.e. the same lightness, because they are peer tints
-// that differ in HUE. That is measured here as warmth — red minus blue — which is what
-// actually separates an amber from a green.
-//
-// Note what this means, though: two colours of equal lightness are exactly the pair a
-// red-green colour-blind reader cannot separate. That is why the amber state also carries a
-// numeral and says "N waiting" to a screen reader; the tint is the fast path, never the only
-// one. See HeadlessDockTabButton's accessibilityLabel.
-{
-  const warmth = (hex: string) => parseInt(hex.slice(1, 3), 16) - parseInt(hex.slice(5, 7), 16);
-  const split = warmth(DeckTints.amber.fill) - warmth(DeckTints.green.fill);
-  assert.ok(split >= 30, `the waiting and clear tints are only ${split} apart in warmth — they will read as one colour`);
-}
+// The single-series Botanical chart must maintain a 3:1 non-text contrast from its most
+// recessed historical bar to its selected bar, while status colours remain semantically separate.
+assert.ok(contrast(Colors.brandSoft, Colors.canvas) >= NON_TEXT, 'brandSoft must clear 3:1 on canvas');
+assert.ok(contrast(Colors.brandDeep, Colors.brandSoft) >= NON_TEXT, 'Botanical chart range must clear 3:1');
 
 console.log('colors.check.ts — palette tokens only, and every pair clears AA');

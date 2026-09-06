@@ -38,6 +38,7 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTi
 
 import { Txt } from './Txt';
 import { Colors, Radii } from '@/theme';
+import { fontFamilyForWeight } from '@/theme/typography';
 
 export interface TrendChartSeries {
   key: string;
@@ -131,11 +132,11 @@ export function TrendChart({
       <View onLayout={onLayout} testID={testID}>
         {activePoint && (
           <Animated.View pointerEvents="none" style={[styles.tooltip, tooltipStyle]}>
-            <Txt size={10} weight="700" color={Colors.surface} align="center">{activePoint.label}</Txt>
+            <Txt variant="caption" weight="600" color={Colors.surface} align="center">{activePoint.label}</Txt>
             {series.map((s) => (
               <View key={s.key} style={styles.tooltipRow}>
                 {showLegend && <View style={[styles.tooltipDot, { backgroundColor: s.color }]} />}
-                <Txt size={11.5} weight="700" color={Colors.surface} tabular>
+                <Txt variant="meta" weight="600" color={Colors.surface} tabular>
                   {formatValue(activePoint.values[s.key] ?? 0)}
                 </Txt>
               </View>
@@ -152,8 +153,9 @@ export function TrendChart({
                 <SvgText
                   x={groupX + groupWidth / 2}
                   y={height + 13}
-                  fontSize={10}
-                  fontWeight={isActive ? 'bold' : 'normal'}
+                  fontFamily={fontFamilyForWeight(isActive ? '600' : '400')}
+                  fontSize={10.5}
+                  fontWeight={isActive ? '600' : '400'}
                   fill={isActive ? Colors.textPrimary : Colors.textMuted}
                   textAnchor="middle"
                 >
@@ -214,7 +216,7 @@ export function TrendChart({
             {series.map((s) => (
               <View key={s.key} style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: s.color }]} />
-                <Txt size={10.5} color={Colors.textMuted}>{s.label ?? s.key}</Txt>
+                <Txt variant="caption" color={Colors.textMuted}>{s.label ?? s.key}</Txt>
               </View>
             ))}
           </View>

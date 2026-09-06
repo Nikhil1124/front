@@ -83,24 +83,23 @@ export function MetricDeck({ cards, sidePadding = 16, testID }: MetricDeckProps)
           const t = DeckTints[c.tint];
           return (
             <View key={c.key} style={[styles.card, { width: cardWidth, backgroundColor: t.fill }]}>
-              <Txt size={10.5} color={t.sub}>{c.label}</Txt>
+              <Txt variant="meta" color={t.sub}>{c.label}</Txt>
               {c.numericValue !== undefined && c.format ? (
                 <CountUp
                   value={c.numericValue}
                   format={c.format}
-                  size={27}
-                  weight="700"
+                  variant="metric"
                   color={t.ink}
                   numberOfLines={1}
                   style={styles.value}
                 />
               ) : (
-                <Txt size={27} weight="700" color={t.ink} tabular numberOfLines={1} style={styles.value}>
+                <Txt variant="metric" color={t.ink} tabular numberOfLines={1} style={styles.value}>
                   {c.value}
                 </Txt>
               )}
               {c.delta ? (
-                <Txt size={11} weight="600" color={deltaColor(c.deltaTone, t.sub)} tabular numberOfLines={1} style={styles.delta}>
+                <Txt variant="meta" weight="600" color={deltaColor(c.deltaTone, t.sub)} tabular numberOfLines={1} style={styles.delta}>
                   {c.delta}
                 </Txt>
               ) : null}
@@ -127,7 +126,7 @@ function deltaColor(tone: DeckCardData['deltaTone'], sub: string): string {
 
 const styles = StyleSheet.create({
   card: { height: CARD_HEIGHT, borderRadius: Radii.feature, padding: 16 },
-  value: { marginTop: 3, letterSpacing: -0.5 },
+  value: { marginTop: 3 },
   delta: { marginTop: 4 },
   dots: { flexDirection: 'row', gap: 5, justifyContent: 'center', marginTop: 10 },
   dot: { width: 5, height: 5, borderRadius: Radii.pill, backgroundColor: Colors.separator },

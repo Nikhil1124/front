@@ -247,7 +247,7 @@ export interface PillProps {
 
 export function Pill({
   label, color = Colors.primary, bg = `${color}26`, borderColor = 'transparent',
-  borderWidth = 0, size = 10, weight = '700', paddingH = 10, paddingV = 4, borderRadius = Radii.pill }: PillProps) {
+  borderWidth = 0, size = 10.5, weight = '600', paddingH = 10, paddingV = 4, borderRadius = Radii.pill }: PillProps) {
   return (
     <View style={{
       backgroundColor: bg, borderRadius, paddingHorizontal: paddingH, paddingVertical: paddingV,

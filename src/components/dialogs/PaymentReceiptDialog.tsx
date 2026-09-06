@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Txt, Btn, OutlinedBtn, Row, Col, Spacer, AnimatedPress, Sheet } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, formatINR } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PaymentEntity } from '@/types';
@@ -115,7 +115,7 @@ export function PaymentReceiptDialog({
                 testID="download_pdf_invoice_btn"
               >
                 <Ionicons name="download" size={14} color={Colors.textInverse} />
-                <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
+                <Txt variant="button" color={Colors.textInverse} style={{ marginLeft: 6 }}>
                   {downloadLabel}
                 </Txt>
               </Btn>
@@ -141,7 +141,7 @@ export function PaymentReceiptDialog({
               style={[
                 styles.statusBanner,
                 {
-                  backgroundColor: isVerified ? Colors.surfaceElevated : Colors.alertGradientStart,
+                  backgroundColor: isVerified ? Colors.successPale : Colors.pendingPale,
                   borderColor: isVerified ? Colors.success : Colors.warning },
               ]}
             >
@@ -152,16 +152,16 @@ export function PaymentReceiptDialog({
                   color={isVerified ? Colors.success : Colors.warning}
                 />
                 <Col style={{ flex: 1 }}>
-                  <Txt size={12} weight="900" color={isVerified ? Colors.success : Colors.tertiary}>
+                  <Txt variant="meta" weight="600" color={isVerified ? Colors.success : Colors.pending}>
                     {isVerified ? 'STATUS: PAID & VERIFIED' : 'STATUS: VERIFICATION PENDING'}
                   </Txt>
-                  <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                  <Txt variant="caption" color={Colors.textSecondary} style={{ marginTop: 2 }}>
                     {isVerified
                       ? `Receipt ID: ${payment.receiptId}`
                       : 'Slip unlocks automatically once the owner verifies your payment.'}
                   </Txt>
                   {isVerified && payment.verifiedByName ? (
-                    <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                    <Txt variant="caption" color={Colors.textSecondary} style={{ marginTop: 2 }}>
                       Verified by {payment.verifiedByName}
                       {payment.verificationDate ? ` on ${formatDateTime(payment.verificationDate)}` : ''}
                     </Txt>
@@ -173,21 +173,21 @@ export function PaymentReceiptDialog({
             <Spacer size={12} />
             {/* Resident details */}
             <View style={styles.detailsCard}>
-              <Txt size={10} weight="800" color={Colors.primary} style={{ letterSpacing: 0.5 }}>RESIDENT</Txt>
+              <Txt variant="statusChip" color={Colors.primary}>RESIDENT</Txt>
               <Spacer size={4} />
-              <Txt size={15} weight="900" color={Colors.textPrimary}>{payment.payerName || 'Resident'}</Txt>
+              <Txt variant="sectionTitle" color={Colors.textPrimary}>{payment.payerName || 'Resident'}</Txt>
               {roomNo ? (
-                <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                <Txt variant="meta" color={Colors.textSecondary} tabular style={{ marginTop: 2 }}>
                   Room {roomNo}
                 </Txt>
               ) : null}
               <Spacer size={6} />
               <Row gap={8} style={{ marginTop: 2 }}>
                 <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.pgId); Alert.alert('Copied', 'PG ID copied to clipboard.'); }} style={styles.idChip}>
-                  <Txt size={9} color={Colors.textMuted}>PG ID: {payment.pgId.slice(0, 8)}...</Txt>
+                  <Txt variant="caption" color={Colors.textMuted} tabular>PG ID: {payment.pgId.slice(0, 8)}...</Txt>
                 </AnimatedPress>
                 <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.payerId); Alert.alert('Copied', 'Resident ID copied to clipboard.'); }} style={styles.idChip}>
-                  <Txt size={9} color={Colors.textMuted}>Res ID: {payment.payerId.slice(0, 8)}...</Txt>
+                  <Txt variant="caption" color={Colors.textMuted} tabular>Res ID: {payment.payerId.slice(0, 8)}...</Txt>
                 </AnimatedPress>
               </Row>
             </View>
@@ -195,35 +195,35 @@ export function PaymentReceiptDialog({
             <Spacer size={12} />
             {/* Billing & Transaction Summary */}
             <View style={styles.detailsCard}>
-              <Txt size={10} weight="800" color={Colors.primary} style={{ letterSpacing: 0.5 }}>BILLING & TRANSACTION SUMMARY</Txt>
+              <Txt variant="statusChip" color={Colors.primary}>BILLING & TRANSACTION SUMMARY</Txt>
               <Spacer size={8} />
               <Row justify="space-between">
-                <Txt size={11} color={Colors.textMuted}>Billing Period</Txt>
-                <Txt size={11} weight="700" color={Colors.textPrimary}>
+                <Txt variant="meta" color={Colors.textMuted}>Billing Period</Txt>
+                <Txt variant="meta" weight="600" color={Colors.textPrimary} tabular>
                   {payment.monthYear || periodToMonthYear(currentPeriod(new Date(payment.timestamp || Date.now())))}
                 </Txt>
               </Row>
               <Row justify="space-between" style={{ marginTop: 6 }}>
-                <Txt size={11} color={Colors.textMuted}>Payment Type</Txt>
-                <Txt size={11} weight="700" color={Colors.textPrimary}>{formatPaymentType(payment.paymentType)}</Txt>
+                <Txt variant="meta" color={Colors.textMuted}>Payment Type</Txt>
+                <Txt variant="meta" weight="600" color={Colors.textPrimary}>{formatPaymentType(payment.paymentType)}</Txt>
               </Row>
               <Row justify="space-between" style={{ marginTop: 6 }}>
-                <Txt size={11} color={Colors.textMuted}>Payment Mode</Txt>
-                <Txt size={11} weight="700" color={Colors.textPrimary}>{modeLabel}</Txt>
+                <Txt variant="meta" color={Colors.textMuted}>Payment Mode</Txt>
+                <Txt variant="meta" weight="600" color={Colors.textPrimary}>{modeLabel}</Txt>
               </Row>
               <Row justify="space-between" style={{ marginTop: 6 }}>
-                <Txt size={11} color={Colors.textMuted}>Transaction Ref</Txt>
-                <Txt size={11} weight="700" color={Colors.textPrimary}>{payment.transactionRef || '—'}</Txt>
+                <Txt variant="meta" color={Colors.textMuted}>Transaction Ref</Txt>
+                <Txt variant="meta" weight="600" color={Colors.textPrimary} tabular>{payment.transactionRef || '—'}</Txt>
               </Row>
               {payment.utrRef ? (
                 <Row justify="space-between" style={{ marginTop: 6 }}>
-                  <Txt size={11} color={Colors.textMuted}>12-Digit UTR Ref</Txt>
-                  <Txt size={11} weight="700" color={Colors.tertiary}>{payment.utrRef}</Txt>
+                  <Txt variant="meta" color={Colors.textMuted}>12-Digit UTR Ref</Txt>
+                  <Txt variant="meta" weight="600" color={Colors.tertiary} tabular>{payment.utrRef}</Txt>
                 </Row>
               ) : null}
               <Row justify="space-between" style={{ marginTop: 6 }}>
-                <Txt size={11} color={Colors.textMuted}>Date & Time</Txt>
-                <Txt size={11} color={Colors.textPrimary}>{formatDateTime(payment.timestamp)}</Txt>
+                <Txt variant="meta" color={Colors.textMuted}>Date & Time</Txt>
+                <Txt variant="meta" color={Colors.textPrimary} tabular>{formatDateTime(payment.timestamp)}</Txt>
               </Row>
             </View>
 
@@ -231,9 +231,9 @@ export function PaymentReceiptDialog({
             {/* Total Amount Paid Section */}
             <View style={styles.amountCard}>
               <Row justify="space-between" align="center">
-                <Txt size={11} weight="800" color={Colors.textSecondary}>TOTAL AMOUNT PAID</Txt>
-                <Txt size={22} weight="900" color={Colors.primary}>
-                  ₹{Math.round(payment.amount)}.00
+                <Txt variant="meta" weight="600" color={Colors.textSecondary}>TOTAL AMOUNT PAID</Txt>
+                <Txt variant="metric" color={Colors.primary} tabular>
+                  {formatINR(Math.round(payment.amount), 2)}
                 </Txt>
               </Row>
             </View>
@@ -243,7 +243,7 @@ export function PaymentReceiptDialog({
                 <Spacer size={12} />
                 <Row gap={6} align="center" justify="center">
                   <Ionicons name="lock-closed" size={12} color={Colors.tertiary} />
-                  <Txt size={11} weight="700" color={Colors.tertiary}>Receipt locked until owner approval.</Txt>
+                  <Txt variant="meta" weight="600" color={Colors.tertiary}>Receipt locked until owner approval.</Txt>
                 </Row>
               </>
             )}

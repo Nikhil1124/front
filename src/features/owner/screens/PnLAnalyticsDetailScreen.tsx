@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     color: CHARCOAL },
   tabLabelSel: {
     color: WHITE,
-    fontWeight: '800' },
+    fontWeight: '700' },
 
   // Custom Range
   customCard: {
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     padding: 16,
     marginTop: 12 },
-  customTitle: { fontSize: 13, fontWeight: '800', color: CHARCOAL },
+  customTitle: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   customDateDisplay: { fontSize: 13, fontWeight: '700', color: GREEN },
   presetChip: {
     minHeight: 40,

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Palette, Colors } from '@/theme';
+import { Sheet, Txt, Btn } from '@/components/ui';
 
 export type AlertType = 'success' | 'info' | 'error';
 
@@ -32,25 +33,25 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({ state, onClo
   const iconCfg = ICON_CONFIG[state.type];
 
   return (
-    <Modal
-      animationType="fade"
-      transparent
+    <Sheet
       visible={state.visible}
-      onRequestClose={onClose}
+      title={state.title}
+      onDismiss={onClose}
+      testID="custom_alert_modal"
+      footer={
+        <Btn onPress={onClose} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={44}>
+          <Txt size={14} color={Colors.textInverse}>OK</Txt>
+        </Btn>
+      }
     >
-      <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <View style={[styles.iconCircle, { backgroundColor: iconCfg.bg }]}>
-            <Ionicons name={iconCfg.name} size={42} color={iconCfg.color} />
-          </View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.title}>{state.title}</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.message}>{state.message}</Text>
-          <TouchableOpacity accessibilityRole="button" style={styles.confirmBtn} onPress={onClose} activeOpacity={0.8}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.confirmText}>OK</Text>
-          </TouchableOpacity>
+      <View style={styles.card}>
+        <View style={[styles.iconCircle, { backgroundColor: iconCfg.bg }]}>
+          <Ionicons name={iconCfg.name} size={42} color={iconCfg.color} />
         </View>
+        <Txt size={18} weight="700" color={Colors.textPrimary} style={styles.title}>{state.title}</Txt>
+        <Txt size={13} color={Colors.textSecondary} style={styles.message}>{state.message}</Txt>
       </View>
-    </Modal>
+    </Sheet>
   );
 };
 

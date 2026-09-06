@@ -61,7 +61,7 @@ export function OrderStepper({ status }: OrderStepperProps) {
                   <Ionicons
                     name={done ? 'checkmark' : meta.icon}
                     size={14}
-                    color={done || active ? '#fff' : Colors.textMuted}
+                    color={done || active ? Colors.textInverse : Colors.textMuted}
                   />
                 </View>
               </View>

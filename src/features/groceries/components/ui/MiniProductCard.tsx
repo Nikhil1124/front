@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyItem } from '@/types';
 import { useShoppingModeStore } from '../../store/useShoppingModeStore';
@@ -65,7 +67,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
 
       {/* Wishlist button */}
       {showWishlist && (
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
+        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
           style={styles.wishlistBtn}
           onPress={() => toggleItem(product)}
           activeOpacity={0.7}
@@ -75,17 +77,17 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
             size={13}
             color={isWishlisted ? Colors.danger : Colors.textMuted}
           />
-        </TouchableOpacity>
+        </AnimatedPress>
       )}
 
       {/* Product image */}
-      <TouchableOpacity accessibilityRole="button" onPress={onPress} activeOpacity={0.9} style={styles.imageContainer}>
+      <AnimatedPress accessibilityRole="button" onPress={onPress} activeOpacity={0.9} style={styles.imageContainer}>
         <Image
           source={product.image_url ? { uri: product.image_url } : require('../../../../../assets/img_app_icon.jpg')}
           style={styles.image}
           resizeMode="contain"
         />
-      </TouchableOpacity>
+      </AnimatedPress>
 
       {/* Name & unit */}
       <Text maxFontSizeMultiplier={1.3} style={styles.name} numberOfLines={2}>{product.name}</Text>
@@ -98,7 +100,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
       <PriceDisplay price={opt.price} originalPrice={opt.originalPrice} size="sm" />
 
       {/* Add button */}
-      <TouchableOpacity accessibilityRole="button"
+      <AnimatedPress accessibilityRole="button"
         style={[styles.addBtn, inCart && styles.addedBtn]}
         onPress={handleAdd}
         activeOpacity={0.8}
@@ -106,7 +108,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
         <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addedBtnText]}>
           {inCart ? '✓ Added' : '+ Add'}
         </Text>
-      </TouchableOpacity>
+      </AnimatedPress>
     </View>
   );
 };

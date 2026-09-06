@@ -48,7 +48,7 @@
  */
 import { forwardRef, useEffect, useMemo, useRef } from 'react';
 import {
-  View, Pressable, StyleSheet, Text, type PressableProps, type NativeSyntheticEvent, type NativeScrollEvent,
+  View, Pressable, StyleSheet, type PressableProps, type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabList } from 'expo-router/ui';
@@ -65,6 +65,7 @@ import { useAllPaymentsQuery, useRentDueQuery } from '@/features/payments/usePay
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { Txt } from '@/components/ui/Txt';
 
 /** Same function reference as `TabList`, so `isTabList(child)` still passes. */
 export { TabList as Dock };
@@ -235,9 +236,9 @@ export function DockAlert({ alert }: { alert: { text: string; href: string } | n
       style={[styles.alert, { bottom }]}
     >
       <Ionicons name="alert-circle" size={15} color={DeckTints.amber.ink} />
-      <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={styles.alertText}>
+      <Txt variant="meta" color={DeckTints.amber.ink} numberOfLines={1} maxFontSizeMultiplier={1.2} style={styles.alertText}>
         {alert.text}
-      </Text>
+      </Txt>
       <Ionicons name="chevron-forward" size={14} color={DeckTints.amber.sub} />
     </AnimatedPress>
   );
@@ -313,23 +314,25 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
           <Ionicons name={icon} size={18} color={iconColor} />
           {waiting ? (
             <View style={styles.count}>
-              <Text style={styles.countText} maxFontSizeMultiplier={1.1}>
+              <Txt variant="statusChip" color={Colors.textInverse} tabular style={styles.countText} maxFontSizeMultiplier={1.1}>
                 {pending > 9 ? '9+' : pending}
-              </Text>
+              </Txt>
             </View>
           ) : null}
         </View>
         <Animated.View style={[styles.labelBox, labelStyle]}>
-          <Text
+          <Txt
             maxFontSizeMultiplier={1.3}
             numberOfLines={1}
+            variant="statusChip"
+            weight={isFocused ? '700' : '600'}
             style={[
               styles.label,
-              { color: isFocused ? activeColor : inactiveColor, fontWeight: isFocused ? '800' : '600' },
+              { color: isFocused ? activeColor : inactiveColor },
             ]}
           >
             {label}
-          </Text>
+          </Txt>
         </Animated.View>
       </Pressable>
     );
@@ -388,9 +391,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.surface,
   },
   countText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: Colors.textInverse,
+    textAlign: 'center',
   },
   labelBox: {
     // Clips the label as the box folds shut rather than letting it spill over the icon.
@@ -398,7 +399,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    fontSize: 10,
     textAlign: 'center',
   },
   alert: {
@@ -422,8 +422,5 @@ const styles = StyleSheet.create({
   },
   alertText: {
     flex: 1,
-    fontSize: 12,
-    fontWeight: '700',
-    color: DeckTints.amber.ink,
   },
 });

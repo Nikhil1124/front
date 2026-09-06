@@ -301,7 +301,7 @@ export function OwnerSubscriptionScreen() {
                     {isOneTime ? 'TOTAL BEDS' : 'INITIAL SEAT ALLOCATION'}
                   </Txt>
                   <Spacer size={10} />
-                  <Txt size={48} weight="700" color={Colors.textPrimary} tabular style={{ letterSpacing: -1 }}>
+                  <Txt size={48} weight="700" color={Colors.textPrimary} tabular>
                     {isOneTime ? bedsCount : selected.included_units}
                   </Txt>
                   <Txt size={12.5} color={Colors.textMuted}>

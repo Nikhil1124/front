@@ -104,7 +104,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
         borderColor={Colors.borderSubtle}
         padding={[16, 14]}
       >
-        <Txt variant="caption" weight="800" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>
+        <Txt variant="caption" weight="700" color={Colors.textPrimary} style={{ letterSpacing: 0.5 }}>
           STATUS TRACKER
         </Txt>
         <Spacer size={12} />
@@ -154,7 +154,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
         padding={[16, 16]}
       >
         <Row justify="space-between" align="center">
-          <Txt variant="body" weight="800" color={Colors.textPrimary}>Ticket Details</Txt>
+          <Txt variant="body" weight="700" color={Colors.textPrimary}>Ticket Details</Txt>
           <Pill
             label={ticket.category || 'General'}
             color={Colors.primaryDark}

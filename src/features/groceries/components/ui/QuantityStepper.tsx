@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
 
@@ -23,23 +25,23 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
 }) => {
   return (
     <View style={[styles.container, compact && styles.compact]}>
-      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
+      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
         style={[styles.btn, compact && styles.compactBtn]}
         onPress={onDecrease}
         activeOpacity={0.7}
       >
         <Ionicons name="remove" size={compact ? 12 : 14} color={Colors.primary} />
-      </TouchableOpacity>
+      </AnimatedPress>
 
       <Text maxFontSizeMultiplier={1.3} style={[styles.qty, compact && styles.compactQty]}>{quantity}</Text>
 
-      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
+      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
         style={[styles.btn, compact && styles.compactBtn]}
         onPress={onIncrease}
         activeOpacity={0.7}
       >
         <Ionicons name="add" size={compact ? 12 : 14} color={Colors.primary} />
-      </TouchableOpacity>
+      </AnimatedPress>
     </View>
   );
 };

@@ -294,7 +294,7 @@ export default function BookTechnicianScreen() {
             <Row justify="space-between" align="center">
               <Txt size={13} color={Colors.textSecondary} weight="600">Request ID</Txt>
               <Row gap={6} align="center">
-                <Txt size={14} weight="800" color={Colors.textPrimary}>#{mockId}</Txt>
+                <Txt size={14} weight="700" color={Colors.textPrimary}>#{mockId}</Txt>
                 <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(mockId)}>
                   <Ionicons name="copy-outline" size={16} color={Colors.primary} />
                 </AnimatedPress>
@@ -304,7 +304,7 @@ export default function BookTechnicianScreen() {
             <Row justify="space-between" align="center">
               <Txt size={13} color={Colors.textSecondary} weight="600">Status</Txt>
               <View style={[styles.statusPillBadge, { backgroundColor: Palette.TintAmber, borderColor: Colors.warning }]}>
-                <Txt size={10} weight="900" color={Colors.warning}>OPEN</Txt>
+                <Txt size={10} weight="700" color={Colors.warning}>OPEN</Txt>
               </View>
             </Row>
           </Card>
@@ -338,7 +338,7 @@ export default function BookTechnicianScreen() {
               borderRadius={Radii.control}
               height={48}
             >
-              <Txt variant="body" weight="800" color={Colors.textInverse}>View My Requests</Txt>
+              <Txt variant="body" weight="700" color={Colors.textInverse}>View My Requests</Txt>
             </Btn>
             <OutlinedBtn
               onPress={() => { router.back(); }}
@@ -414,7 +414,7 @@ export default function BookTechnicianScreen() {
                           </Col>
                         </Row>
                         <View style={[styles.statusPillBadge, { backgroundColor: `${statusColor}1A`, borderColor: statusColor }]}>
-                          <Txt size={10} weight="900" color={statusColor}>{formatStatus(item.status).toUpperCase()}</Txt>
+                          <Txt size={10} weight="700" color={statusColor}>{formatStatus(item.status).toUpperCase()}</Txt>
                         </View>
                       </Row>
                       
@@ -452,12 +452,12 @@ export default function BookTechnicianScreen() {
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Row justify="space-between" align="flex-start">
               <View style={[styles.statusPillBadge, { backgroundColor: `${statusColor}1A`, borderColor: statusColor }]}>
-                <Txt size={10} weight="900" color={statusColor}>{formatStatus(selectedRequest.status).toUpperCase()}</Txt>
+                <Txt size={10} weight="700" color={statusColor}>{formatStatus(selectedRequest.status).toUpperCase()}</Txt>
               </View>
               <Col align="flex-end">
                 <Txt size={10} color={Colors.textMuted} weight="700">REQUEST ID</Txt>
                 <Row gap={6} align="center" style={{ marginTop: 2 }}>
-                  <Txt size={13} weight="800" color={Colors.textPrimary}>{itemMockId}</Txt>
+                  <Txt size={13} weight="700" color={Colors.textPrimary}>{itemMockId}</Txt>
                   <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Copy" accessibilityRole="button" onPress={() => copyToClipboard(itemMockId)}>
                     <Ionicons name="copy-outline" size={14} color={Colors.primary} />
                   </AnimatedPress>
@@ -470,7 +470,7 @@ export default function BookTechnicianScreen() {
 
           {/* Stepper Timeline */}
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-            <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 12 }}>STATUS TIMELINE</Txt>
+            <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 12 }}>STATUS TIMELINE</Txt>
             <View style={{ gap: 16 }}>
               {timelineSteps.map((step, idx) => (
                 <Row key={step.label} gap={12} align="flex-start">
@@ -492,7 +492,7 @@ export default function BookTechnicianScreen() {
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Row gap={6} align="center">
               <Ionicons name="flash-outline" size={14} color={Colors.primary} />
-              <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>REQUEST INFORMATION</Txt>
+              <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>REQUEST INFORMATION</Txt>
             </Row>
             
             <Spacer size={12} />
@@ -524,7 +524,7 @@ export default function BookTechnicianScreen() {
                   )}
                   {detailAttachments.length > 3 ? (
                     <View style={styles.detailThumbnailBadge}>
-                      <Txt size={12} weight="800" color={Colors.textSecondary}>
+                      <Txt size={12} weight="700" color={Colors.textSecondary}>
                         +{detailAttachments.length - 3}
                       </Txt>
                     </View>
@@ -696,7 +696,7 @@ export default function BookTechnicianScreen() {
             height={50}
             testID="submit_technician_btn"
           >
-            <Txt variant="body" weight="800" color={Colors.textInverse}>
+            <Txt variant="body" weight="700" color={Colors.textInverse}>
               {submitting ? 'Requesting…' : 'Request Technician'}
             </Txt>
           </Btn>

@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   ScrollView,
   TouchableWithoutFeedback } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii } from '@/theme';
+import { Txt, Row } from '@/components/ui';
+import { Sheet } from '@/components/ui';
 
 // A "Dietary Preferences" chip row (Organic/Gluten-Free/Vegan/Dairy-Free) used to live here.
 // `SupplyItem` (types/supply.ts) carries no dietary/tag field at all, so those chips filtered
@@ -58,17 +62,37 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
   }, [visible, value]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={[styles.sheetContainer, { paddingBottom: 24 + insets.bottom }]}>
+    <Sheet
+      visible={visible}
+      title="Sort & Filter"
+      onDismiss={onClose}
+      testID="grocery_filter_sheet"
+      footer={
+        <Row style={{ width: '100%' }} gap={12}>
+          <AnimatedPress accessibilityRole="button"
+            style={styles.resetBtn}
+            onPress={() => setDraft(DEFAULT_FILTERS)}
+          >
+            <Txt size={15} color={Colors.primary}>Reset</Txt>
+          </AnimatedPress>
+
+          <AnimatedPress accessibilityRole="button"
+            style={styles.applyBtn}
+            onPress={() => { onApply(draft); onClose(); }}
+          >
+            <Txt size={15} color={Colors.textInverse}>Apply Filters</Txt>
+          </AnimatedPress>
+        </Row>
+      }
+    >
+      <View style={[styles.sheetContainer, { paddingBottom: 24 + insets.bottom }]}>
+
               {/* Header */}
               <View style={styles.header}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Sort & Filter</Text>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose} style={styles.closeBtn}>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose} style={styles.closeBtn}>
                   <Ionicons name="close" size={22} color={Colors.textPrimary} />
-                </TouchableOpacity>
+                </AnimatedPress>
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
@@ -78,7 +102,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                   {SORTS.map((s) => {
                     const selected = draft.sort === s.value;
                     return (
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         key={s.value}
                         style={styles.sortRow}
                         onPress={() => setDraft((prev) => ({ ...prev, sort: s.value }))}
@@ -92,7 +116,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                           size={20}
                           color={selected ? Colors.primary : Colors.textMuted}
                         />
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     );
                   })}
                 </View>
@@ -100,7 +124,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                 {/* Max Price */}
                 <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Max Price</Text>
                 <View style={styles.chipRow}>
-                  <TouchableOpacity accessibilityRole="button"
+                  <AnimatedPress accessibilityRole="button"
                     style={[styles.chip, draft.maxPrice === undefined && styles.activeChip]}
                     onPress={() => setDraft((prev) => ({ ...prev, maxPrice: undefined }))}
                     activeOpacity={0.8}
@@ -108,12 +132,12 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                     <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.maxPrice === undefined && styles.activeChipText]}>
                       Any
                     </Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
 
                   {PRICE_CAPS.map((cap) => {
                     const active = draft.maxPrice === cap;
                     return (
-                      <TouchableOpacity accessibilityState={{ selected: !!active }} accessibilityRole="button"
+                      <AnimatedPress accessibilityState={{ selected: !!active }} accessibilityRole="button"
                         key={cap}
                         style={[styles.chip, active && styles.activeChip]}
                         onPress={() => setDraft((prev) => ({ ...prev, maxPrice: cap }))}
@@ -122,14 +146,14 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                         <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, active && styles.activeChipText]}>
                           Under ₹{cap}
                         </Text>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     );
                   })}
                 </View>
 
                 {/* Deal Filter */}
                 <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Offers</Text>
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={[styles.chip, draft.onDealOnly && styles.activeChip, { alignSelf: 'flex-start' }]}
                   onPress={() => setDraft((prev) => ({ ...prev, onDealOnly: !prev.onDealOnly }))}
                   activeOpacity={0.8}
@@ -137,40 +161,18 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
                   <Ionicons
                     name="pricetag"
                     size={14}
-                    color={draft.onDealOnly ? '#fff' : Colors.primary}
+                    color={draft.onDealOnly ? Colors.textInverse : Colors.primary}
                     style={{ marginRight: 6 }}
                   />
                   <Text maxFontSizeMultiplier={1.3} style={[styles.chipText, draft.onDealOnly && styles.activeChipText]}>
                     On Deal Only
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               </ScrollView>
 
-              {/* Action Footer */}
-              <View style={styles.footer}>
-                <TouchableOpacity accessibilityRole="button"
-                  style={styles.resetBtn}
-                  onPress={() => setDraft(DEFAULT_FILTERS)}
-                >
-                  <Text maxFontSizeMultiplier={1.3} style={styles.resetText}>Reset</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity accessibilityRole="button"
-                  style={styles.applyBtn}
-                  onPress={() => {
-                    onApply(draft);
-                    onClose();
-                  }}
-                >
-                  <Text maxFontSizeMultiplier={1.3} style={styles.applyText}>Apply Filters</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
-  );
+    </View>
+  </Sheet>
+);
 }
 
 const styles = StyleSheet.create({
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary },
   activeChipText: {
-    color: '#fff' },
+    color: Colors.textInverse },
   footer: {
     flexDirection: 'row',
     gap: 12,
@@ -262,5 +264,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center' },
   applyText: {
-    color: '#fff',
+    color: Colors.textInverse,
     fontSize: 15 } });

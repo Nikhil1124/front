@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity,
   Image, Alert } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -180,7 +182,7 @@ export function GroceryCheckoutScreen() {
 
           {/* Mode Switch row */}
           <View style={styles.fulfillmentContainer}>
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               style={[
                 styles.fulfillmentBtn,
                 fulfillmentMode === 'delivery' && styles.selectedFulfillmentBtn
@@ -196,9 +198,9 @@ export function GroceryCheckoutScreen() {
               <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
                 Delivery
               </Text>
-            </TouchableOpacity>
+            </AnimatedPress>
 
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               style={[
                 styles.fulfillmentBtn,
                 fulfillmentMode === 'pickup' && styles.selectedFulfillmentBtn
@@ -214,7 +216,7 @@ export function GroceryCheckoutScreen() {
               <Text maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
                 Store Pickup
               </Text>
-            </TouchableOpacity>
+            </AnimatedPress>
           </View>
 
           {fulfillmentMode === 'delivery' ? (
@@ -228,7 +230,7 @@ export function GroceryCheckoutScreen() {
                   const isFastest = slot.badge === 'FASTEST';
 
                   return (
-                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                    <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={slot.id}
                       style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
                       onPress={() => setSelectedSlotId(slot.id)}
@@ -257,7 +259,7 @@ export function GroceryCheckoutScreen() {
                       <Text maxFontSizeMultiplier={1.3} style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
                         {slot.feeText}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   );
                 })}
               </View>
@@ -284,10 +286,10 @@ export function GroceryCheckoutScreen() {
                 <Text maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Text>
                 <Text maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Text>
               </View>
-              <TouchableOpacity accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn} activeOpacity={0.7}>
+              <AnimatedPress accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn} activeOpacity={0.7}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Text>
-                <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
-              </TouchableOpacity>
+                <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} />
+              </AnimatedPress>
             </View>
 
             {/* Instruction input */}
@@ -328,7 +330,7 @@ export function GroceryCheckoutScreen() {
                 Number(creditAccount.available) < estimatedTotal;
 
               return (
-                <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                   key={pm.id}
                   style={[
                     styles.paymentRow,
@@ -373,7 +375,7 @@ export function GroceryCheckoutScreen() {
                     size={16}
                     color={isSelected ? Colors.primary : Colors.textMuted}
                   />
-                </TouchableOpacity>
+                </AnimatedPress>
               );
             })}
           </View>
@@ -448,7 +450,7 @@ export function GroceryCheckoutScreen() {
         </View>
 
         {/* View Cart mini trigger */}
-        <TouchableOpacity accessibilityRole="button"
+        <AnimatedPress accessibilityRole="button"
           style={styles.viewCartBadgeBtn}
           onPress={() => router.push('/groceries/cart')}
           activeOpacity={0.8}
@@ -460,9 +462,9 @@ export function GroceryCheckoutScreen() {
             </View>
           </View>
           <Text maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
 
-        <TouchableOpacity accessibilityRole="button"
+        <AnimatedPress accessibilityRole="button"
           style={[styles.placeOrderBtn, createOrderMutation.isPending && { opacity: 0.6 }]}
           onPress={handlePlaceOrder}
           activeOpacity={0.8}
@@ -474,7 +476,7 @@ export function GroceryCheckoutScreen() {
             {createOrderMutation.isPending ? 'Placing…' : 'Place Order'}
           </Text>
           <Ionicons name="arrow-forward" size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
       <TextPromptDialog
         visible={showAddressPrompt}

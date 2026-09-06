@@ -272,7 +272,7 @@ function ChefBroadcastView() {
             </View>
             <View>
               <Row gap={4} align="center">
-                <Txt size={18} weight="900" color={Colors.textPrimary}>Hi Chef {staff?.name?.split(' ')[0] ?? 'there'}</Txt>
+                <Txt size={18} weight="700" color={Colors.textPrimary}>Hi Chef {staff?.name?.split(' ')[0] ?? 'there'}</Txt>
                 <Ionicons name="hand-left-outline" size={18} color={Colors.primary} />
               </Row>
               <Txt size={12} color={Colors.textSecondary}>Plan today's menu & keep everyone happy</Txt>
@@ -300,7 +300,7 @@ function ChefBroadcastView() {
         {/* "How it works?" used to sit here with no onPress — dead, and redundant with the
             InfoTip right below anyway, which already explains the mechanic. */}
         <Row gap={6} align="center">
-          <Txt size={18} weight="900" color={Colors.textPrimary}>Plan &amp; Broadcast Food Alert</Txt>
+          <Txt size={18} weight="700" color={Colors.textPrimary}>Plan &amp; Broadcast Food Alert</Txt>
           <InfoTip text="Tap dishes to build menu plate. Registered residents will receive instant push notifications." />
         </Row>
 
@@ -313,13 +313,13 @@ function ChefBroadcastView() {
               </Txt>
             </Row>
             <AnimatedPress accessibilityRole="button" onPress={cancelEditingMeal}>
-              <Txt size={12} weight="800" color={Colors.textSecondary}>Cancel</Txt>
+              <Txt size={12} weight="700" color={Colors.textSecondary}>Cancel</Txt>
             </AnimatedPress>
           </View>
         ) : todaysMeals.length > 0 ? (
           <>
             <Spacer size={10} />
-            <Txt size={12} weight="800" color={Colors.textSecondary}>Today's meals — tap to edit</Txt>
+            <Txt size={12} weight="700" color={Colors.textSecondary}>Today's meals — tap to edit</Txt>
             <Spacer size={6} />
             <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {todaysMeals.map((meal) => (
@@ -334,7 +334,7 @@ function ChefBroadcastView() {
         ) : null}
 
         <Spacer size={8} />
-        <Txt size={13} weight="800" color={Colors.textPrimary}>Meal Type</Txt>
+        <Txt size={13} weight="700" color={Colors.textPrimary}>Meal Type</Txt>
         <Row gap={8} style={{ marginTop: 6 }}>
           {[
             { id: 'Breakfast', icon: 'partly-sunny' },
@@ -351,8 +351,8 @@ function ChefBroadcastView() {
                   isSel ? styles.mealPillActive : styles.mealPillInactive
                 ]}
               >
-                <Ionicons name={m.icon as any} size={16} color={isSel ? '#FFFFFF' : Colors.textSecondary} />
-                <Txt size={13} weight="700" color={isSel ? '#FFFFFF' : Colors.textPrimary}>{m.id}</Txt>
+                <Ionicons name={m.icon as any} size={16} color={isSel ? Colors.textInverse : Colors.textSecondary} />
+                <Txt size={13} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{m.id}</Txt>
               </AnimatedPress>
             );
           })}
@@ -360,7 +360,7 @@ function ChefBroadcastView() {
 
         <Spacer size={12} />
         <Row gap={6} align="center">
-          <Txt size={13} weight="800" color={Colors.textPrimary}>Dietary Tag</Txt>
+          <Txt size={13} weight="700" color={Colors.textPrimary}>Dietary Tag</Txt>
           <InfoTip text="Shown to residents on the meal card. Suggested from the dishes you pick below — tap to override." />
         </Row>
         <Row gap={8} style={{ marginTop: 6 }}>
@@ -380,7 +380,7 @@ function ChefBroadcastView() {
                 ]}
               >
                 <Txt size={14}>{d.icon}</Txt>
-                <Txt size={13} weight="700" color={isSel ? '#FFFFFF' : Colors.textPrimary}>{d.label}</Txt>
+                <Txt size={13} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{d.label}</Txt>
               </AnimatedPress>
             );
           })}
@@ -400,7 +400,7 @@ function ChefBroadcastView() {
               )}
             </View>
             <View>
-              <Txt size={15} weight="900" color={Colors.textPrimary}>Today's Selected Menu</Txt>
+              <Txt size={15} weight="700" color={Colors.textPrimary}>Today's Selected Menu</Txt>
               <Spacer size={2} />
               <Txt size={13} color={menuError ? Colors.danger : Colors.textMuted}>{selectedDishes.length > 0 ? `${selectedDishes.length} items selected for ${mealTypeSelected}` : `Tap dishes below to build menu`}</Txt>
               {menuError ? (
@@ -416,7 +416,7 @@ function ChefBroadcastView() {
           </Row>
           <AnimatedPress accessibilityRole="button" onPress={() => { clearMenuError(); setSelectedDishes([]); set('menuItemsInput', ''); }}>
             <Row align="center" gap={2}>
-              <Txt size={12} weight="800" color={Colors.primaryDark}>View Menu</Txt>
+              <Txt size={12} weight="700" color={Colors.primaryDark}>View Menu</Txt>
               <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
             </Row>
           </AnimatedPress>
@@ -426,7 +426,7 @@ function ChefBroadcastView() {
       <Spacer size={16} />
       {/* "See all" used to sit here with no onPress — dead, and redundant: the category
           chips below default to "All", which already shows every dish. */}
-      <Txt size={14} weight="900" color={Colors.textPrimary}>Tap dishes to add to today's menu</Txt>
+      <Txt size={14} weight="700" color={Colors.textPrimary}>Tap dishes to add to today's menu</Txt>
       <Spacer size={10} />
       <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {['All', '🍞 Breakfast', '🍚 Rice & Dal', '🌶 Curry & Fry', '🍬 Sweets', '🥤 Beverages'].map((c) => {
@@ -443,7 +443,7 @@ function ChefBroadcastView() {
                 isSel ? styles.categoryChipActive : styles.categoryChipInactive
               ]}
             >
-              <Txt size={12} weight="700" color={isSel ? '#FFFFFF' : Colors.textPrimary}>{label}</Txt>
+              <Txt size={12} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{label}</Txt>
             </AnimatedPress>
           );
         })}
@@ -472,15 +472,15 @@ function ChefBroadcastView() {
                 {/* Add/Check Button */}
                 <View style={[styles.foodAddBtn, isSel && styles.foodAddBtnSelected]}>
                   {isSel ? (
-                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={16} color={Colors.textInverse} />
                   ) : (
-                    <Ionicons name="add" size={16} color="#FFFFFF" />
+                    <Ionicons name="add" size={16} color={Colors.textInverse} />
                   )}
                 </View>
               </View>
 
               <View style={styles.foodCardBody}>
-                <Txt size={14} weight="800" color={Colors.textPrimary} numberOfLines={1}>{dish.name}</Txt>
+                <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1}>{dish.name}</Txt>
                 
                 <Row justify="space-between" align="center" style={{ marginTop: 4 }}>
                   <Row gap={4} align="center">
@@ -491,7 +491,7 @@ function ChefBroadcastView() {
                   {dish.rating && (
                     <Row gap={2} align="center" style={styles.ratingBadge}>
                       <Ionicons name="star" size={10} color={Colors.warning} />
-                      <Txt size={10} weight="800" color={Colors.textPrimary}>{dish.rating}</Txt>
+                      <Txt size={10} weight="700" color={Colors.textPrimary}>{dish.rating}</Txt>
                     </Row>
                   )}
                 </Row>
@@ -508,7 +508,7 @@ function ChefBroadcastView() {
         style={styles.addCustomBtn}
       >
         <Ionicons name={showManualInput ? "remove" : "add"} size={16} color={Colors.primaryDark} />
-        <Txt size={14} weight="800" color={Colors.primaryDark}>{showManualInput ? 'Close Custom Item' : 'Add Custom Item'}</Txt>
+        <Txt size={14} weight="700" color={Colors.primaryDark}>{showManualInput ? 'Close Custom Item' : 'Add Custom Item'}</Txt>
       </AnimatedPress>
       {showManualInput && (
         <View style={{ marginTop: 8 }}>
@@ -521,7 +521,7 @@ function ChefBroadcastView() {
       {/* Notes */}
       <View>
         <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
-          <Txt size={13} weight="800" color={Colors.textPrimary}>Note / Instructions <Txt color={Colors.textMuted} weight="600">(Visible to guests)</Txt></Txt>
+          <Txt size={13} weight="700" color={Colors.textPrimary}>Note / Instructions <Txt color={Colors.textMuted} weight="600">(Visible to guests)</Txt></Txt>
           <View style={{ backgroundColor: Colors.primaryGlow, width: 36, height: 36, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="pencil" size={18} color={Colors.primaryDark} />
           </View>
@@ -539,13 +539,13 @@ function ChefBroadcastView() {
                 <Ionicons name="settings" size={20} color={Colors.primaryDark} />
               </View>
               <View>
-                <Txt size={14} weight="900" color={Colors.textPrimary}>Automation Settings</Txt>
+                <Txt size={14} weight="700" color={Colors.textPrimary}>Automation Settings</Txt>
                 <Spacer size={2} />
                 <Txt variant="labelSmall" weight="600" color={Colors.textMuted}>3 daily alarms • Follow-up {autoFollowup ? 'ON' : 'OFF'}</Txt>
               </View>
             </Row>
             <AnimatedPress accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primaryGlow, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.sheet }}>
-               <Txt size={12} weight="800" color={Colors.primaryDark}>Manage</Txt>
+               <Txt size={12} weight="700" color={Colors.primaryDark}>Manage</Txt>
                <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
             </AnimatedPress>
           </Row>
@@ -563,7 +563,7 @@ function ChefBroadcastView() {
                   <Row gap={8} style={{ flex: 1 }} align="center">
                     <Txt size={18}>⏰</Txt>
                     <View style={{ flex: 1 }}>
-                      <Txt size={12} weight="800" color={Colors.textPrimary}>{row.time}</Txt>
+                      <Txt size={12} weight="700" color={Colors.textPrimary}>{row.time}</Txt>
                       <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{row.label}</Txt>
                     </View>
                   </Row>
@@ -584,7 +584,7 @@ function ChefBroadcastView() {
                 <Ionicons name="alert-circle" size={18} color={Colors.danger} />
                 <View style={{ flex: 1 }}>
                   <Row gap={4} align="center">
-                    <Txt size={12} weight="800" color={Colors.textPrimary}>15-Min Check-in Reminder</Txt>
+                    <Txt size={12} weight="700" color={Colors.textPrimary}>15-Min Check-in Reminder</Txt>
                     <InfoTip text="Nudges your phone every 15 minutes to check who hasn't responded — it doesn't notify residents by itself. Tap Send Follow-up Now below to actually re-notify them." />
                   </Row>
                   <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>{noResponse} not responded</Txt>
@@ -596,8 +596,8 @@ function ChefBroadcastView() {
             </View>
             {noResponse > 0 && (
               <View style={{ paddingHorizontal: 8, paddingBottom: 6 }}>
-                <Btn onPress={() => triggerFollowup()} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.control} height={36}>
-                  <Txt size={11} weight="800" color="#FFFFFF">Send follow-up now ({noResponse})</Txt>
+                <Btn onPress={() => triggerFollowup()} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={36}>
+                  <Txt size={11} weight="700" color={Colors.textInverse}>Send follow-up now ({noResponse})</Txt>
                 </Btn>
               </View>
             )}
@@ -607,12 +607,12 @@ function ChefBroadcastView() {
 
       <Row align="center" gap={6} style={{ marginTop: 14, justifyContent: 'center' }}>
         <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
-        <Txt size={13} weight="700" color={Colors.textSecondary}>{mealTypeSelected} will be broadcast at <Txt color={Colors.primaryDark} weight="900">7:30 AM</Txt></Txt>
+        <Txt size={13} weight="700" color={Colors.textSecondary}>{mealTypeSelected} will be broadcast at <Txt color={Colors.primaryDark} weight="700">7:30 AM</Txt></Txt>
       </Row>
 
       <Spacer size={20} />
-      <Btn onPress={handleSubmit} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.card} height={56} style={styles.broadcastBtn}>
-        <Txt size={14} weight="900" color="#FFFFFF">
+      <Btn onPress={handleSubmit} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.card} height={56} style={styles.broadcastBtn}>
+        <Txt size={14} weight="700" color={Colors.textInverse}>
           {editingMealId ? 'Save Changes ✏️' : 'Broadcast Menu & Send Food Alerts to Guests 🚀'}
         </Txt>
       </Btn>
@@ -643,7 +643,7 @@ function DeliveryHistoryRoute() {
   return (
     <View style={styles.root}>
       <FormScroll {...dockScroll} contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
-        <Txt size={18} weight="900" color={Colors.primaryDark}>Delivery History</Txt>
+        <Txt size={18} weight="700" color={Colors.primaryDark}>Delivery History</Txt>
         <Spacer size={6} />
         {tripsLoading || tripsError || history.length === 0 ? (
           <EmptyState
@@ -668,12 +668,12 @@ function DeliveryHistoryRoute() {
                   )}
                 </View>
                 <View>
-                  <Txt size={14} weight="900" color={Colors.textPrimary}>{item.pgName}</Txt>
+                  <Txt size={14} weight="700" color={Colors.textPrimary}>{item.pgName}</Txt>
                   <Txt size={12} color={Colors.textMuted}>{item.date} · {item.orders} Orders</Txt>
                 </View>
               </Row>
               <View style={[styles.statusPill, { backgroundColor: item.status === 'Delivered' ? '#F0FDF4' : Palette.TintRed }]}>
-                <Txt size={11} weight="800" color={item.status === 'Delivered' ? Colors.success : Colors.danger}>{item.status}</Txt>
+                <Txt size={11} weight="700" color={item.status === 'Delivered' ? Colors.success : Colors.danger}>{item.status}</Txt>
               </View>
             </Row>
           </Card>
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
   automationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 8 },
   automationDivider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 2 },
   switchTrack: { width: 44, height: 24, borderRadius: Radii.card, padding: 2, flexDirection: 'row' },
-  switchThumb: { width: 20, height: 20, borderRadius: Radii.pill, backgroundColor: '#FFFFFF' },
+  switchThumb: { width: 20, height: 20, borderRadius: Radii.pill, backgroundColor: Colors.surface },
   historyThumbBox: { width: 44, height: 44, borderRadius: Radii.control, backgroundColor: Colors.surfaceMuted, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   editingBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.primary, padding: 10, marginTop: 10 },
   mealEditChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.sheet, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: 12, paddingVertical: 8 },
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: Radii.pill,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: Radii.pill,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4 },
   mealPillInactive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderColor: Colors.borderSubtle },
   categoryChip: {
     paddingHorizontal: 16,
@@ -758,11 +758,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderColor: Colors.primary },
   categoryChipInactive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderColor: Colors.borderSubtle },
   foodCard: {
     width: 140,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: Colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,

@@ -1,4 +1,6 @@
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Palette, Colors, Radii } from '@/theme';
@@ -46,7 +48,7 @@ export function GroceryProfileScreen() {
                   do exist, but only for some roles, at routes ('/support', '/profile') that
                   don't exist for the others. Rather than silently do nothing on tap, or guess
                   wrong and send someone to a route their role doesn't have, this says so. */}
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.menuItem}
                 onPress={() => Alert.alert(item.title, 'Not available yet — coming soon.')}
               >
@@ -57,15 +59,15 @@ export function GroceryProfileScreen() {
                   <Text maxFontSizeMultiplier={1.3} style={styles.menuTitle}>{item.title}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
+              </AnimatedPress>
               {index < MENU_ITEMS.length - 1 && <View style={styles.divider} />}
             </View>
           ))}
         </View>
 
-        <TouchableOpacity accessibilityRole="button" style={styles.logoutBtn} onPress={() => logout()}>
+        <AnimatedPress accessibilityRole="button" style={styles.logoutBtn} onPress={() => logout()}>
           <Text maxFontSizeMultiplier={1.3} style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       </ScrollView>
     </HubScreenWrapper>
   );
@@ -76,7 +78,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.sheet,
     marginTop: 16,
     marginBottom: 16,
@@ -96,21 +98,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16 },
   avatarText: {
-    color: '#fff',
+    color: Colors.textInverse,
     fontSize: 22,
-    fontWeight: '900' },
+    fontWeight: '700' },
   userInfo: {
     flex: 1 },
   userName: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 2 },
   userPhone: {
     fontSize: 13,
     color: Colors.textSecondary },
   menuContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.sheet,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
@@ -156,4 +158,4 @@ const styles = StyleSheet.create({
   logoutText: {
     color: Colors.danger,
     fontSize: 15,
-    fontWeight: '800' } });
+    fontWeight: '700' } });

@@ -161,6 +161,8 @@ export function JoinPgScreen({ initialCode }: { initialCode?: string } = {}) {
                 placeholder="DZQP9899"
                 value={code}
                 onChangeText={(v) => setCode(v.toUpperCase())}
+                textContentType="oneTimeCode"
+                autoComplete="off"
                 testID="join_code"
               />
               <Spacer size={10} />
@@ -217,13 +219,43 @@ export function JoinPgScreen({ initialCode }: { initialCode?: string } = {}) {
               <View style={styles.pad}>
                 <Txt size={13} weight="700" color={Colors.textPrimary}>About you</Txt>
                 <Spacer size={12} />
-                <OutlinedTextField label="Full name" value={name} onChangeText={setName} testID="join_name" />
+                <OutlinedTextField
+                  label="Full name"
+                  value={name}
+                  onChangeText={setName}
+                  textContentType="name"
+                  autoComplete="name"
+                  testID="join_name"
+                />
                 <Spacer size={10} />
-                <OutlinedTextField label="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" testID="join_phone" />
+                <OutlinedTextField
+                  label="Phone number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  textContentType="telephoneNumber"
+                  autoComplete="tel"
+                  testID="join_phone"
+                />
                 <Spacer size={10} />
-                <OutlinedTextField label="Email (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" />
+                <OutlinedTextField
+                  label="Email (optional)"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                />
                 <Spacer size={10} />
-                <OutlinedTextField label="Password (min 8)" value={password} onChangeText={setPassword} secureTextEntry testID="join_password" />
+                <OutlinedTextField
+                  label="Password (min 8)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  textContentType="newPassword"
+                  autoComplete="new-password"
+                  testID="join_password"
+                />
               </View>
             </>
           )}
@@ -267,7 +299,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.card,
-    shadowColor: '#1B3245',
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.07,
     shadowRadius: 14,

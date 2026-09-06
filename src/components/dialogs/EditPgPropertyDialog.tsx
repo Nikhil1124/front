@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Modal, View, StyleSheet, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
@@ -71,119 +71,121 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
   }
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <View style={styles.backdrop}>
-        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <View style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={Radii.sheet}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[20, 20]}
-            style={{ width: '100%', maxHeight: '100%' }}
+    <Sheet
+      visible
+      title="Edit Property Details"
+      subtitle={pg.pgName}
+      onDismiss={onDismiss}
+      testID="edit_pg_property_dialog"
+      footer={
+        <Row gap={8}>
+          <Btn
+            onPress={handleSave}
+            containerColor={Colors.primary}
+            textColor={Colors.textInverse}
+            borderRadius={Radii.card}
+            height={44}
+            style={{ flex: 1 }}
           >
-          <Row align="center" gap={8} style={{ marginBottom: 12 }}>
-            <View style={styles.headerIconBox}>
-              <Ionicons name="create-outline" size={20} color={Colors.primary} />
-            </View>
-            <Col>
-              <Txt variant="screenTitle" weight="900" color={Colors.textPrimary}>Edit Property Details</Txt>
-              <Txt variant="caption" color={Colors.textMuted}>{pg.pgName}</Txt>
-            </Col>
-          </Row>
+            <Txt variant="button" color={Colors.textInverse}>Update Branch</Txt>
+          </Btn>
+          <OutlinedBtn
+            onPress={onDismiss}
+            borderColor={Colors.borderSubtle}
+            textColor={Colors.textPrimary}
+            borderRadius={Radii.card}
+            height={44}
+            style={{ flex: 1 }}
+          >
+            <Txt variant="button" color={Colors.textPrimary}>Cancel</Txt>
+          </OutlinedBtn>
+        </Row>
+      }
+    >
+      <Card
+        containerColor={Colors.surface}
+        borderRadius={Radii.sheet}
+        borderWidth={1}
+        borderColor={Colors.borderSubtle}
+        padding={[20, 20]}
+        style={{ width: '100%' }}
+      >
+        <Row align="center" gap={8} style={{ marginBottom: 12 }}>
+          <View style={styles.headerIconBox}>
+            <Ionicons name="create-outline" size={20} color={Colors.primary} />
+          </View>
+          <Col>
+            <Txt variant="screenTitle" color={Colors.textPrimary}>Edit Property Details</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>{pg.pgName}</Txt>
+          </Col>
+        </Row>
 
-          <FormScroll style={{ flex: 0, maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-            <OutlinedTextField
-              label="Property / PG Name"
-              value={name}
-              onChangeText={(v) => { setName(v); if (nameError) setNameError(undefined); }}
-              error={nameError}
-              containerColor={Colors.surfaceMuted}
-              focusedBorderColor={Colors.primary}
-              unfocusedBorderColor={Colors.borderSubtle}
-            />
-            <OutlinedTextField
-              label="Branch Location / Address"
-              value={address}
-              onChangeText={(v) => { setAddress(v); if (addressError) setAddressError(undefined); }}
-              error={addressError}
-              containerColor={Colors.surfaceMuted}
-              focusedBorderColor={Colors.primary}
-              unfocusedBorderColor={Colors.borderSubtle}
-            />
-            <PropertyMap
-              formattedAddress={pg.formattedAddress}
-              latitude={pg.latitude}
-              longitude={pg.longitude}
-              height={110}
-            />
-            <LocationField
-              value={location}
-              onPress={() => setPicking(true)}
-              placeholder={pg.formattedAddress || 'Pin the location on the map'}
-            />
+        <FormScroll style={{ flex: 0, maxHeight: 420 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          <OutlinedTextField
+            label="Property / PG Name"
+            value={name}
+            onChangeText={(v) => { setName(v); if (nameError) setNameError(undefined); }}
+            error={nameError}
+            containerColor={Colors.surfaceMuted}
+            focusedBorderColor={Colors.primary}
+            unfocusedBorderColor={Colors.borderSubtle}
+          />
+          <OutlinedTextField
+            label="Branch Location / Address"
+            value={address}
+            onChangeText={(v) => { setAddress(v); if (addressError) setAddressError(undefined); }}
+            error={addressError}
+            containerColor={Colors.surfaceMuted}
+            focusedBorderColor={Colors.primary}
+            unfocusedBorderColor={Colors.borderSubtle}
+          />
+          <PropertyMap
+            formattedAddress={pg.formattedAddress}
+            latitude={pg.latitude}
+            longitude={pg.longitude}
+            height={110}
+          />
+          <LocationField
+            value={location}
+            onPress={() => setPicking(true)}
+            placeholder={pg.formattedAddress || 'Pin the location on the map'}
+          />
 
+          <OutlinedTextField
+            label="Total Bed Capacity"
+            value={totalBeds}
+            onChangeText={setTotalBeds}
+            keyboardType="number-pad"
+            containerColor={Colors.surfaceMuted}
+          />
+          <OutlinedTextField
+            label="Assigned Manager Name"
+            value={mgrName}
+            onChangeText={setMgrName}
+            containerColor={Colors.surfaceMuted}
+          />
+          <Row gap={8}>
             <OutlinedTextField
-              label="Total Bed Capacity"
-              value={totalBeds}
-              onChangeText={setTotalBeds}
+              label="Manager Phone Number"
+              value={mgrPhone}
+              onChangeText={setMgrPhone}
+              keyboardType="phone-pad"
+              containerColor={Colors.surfaceMuted}
+              style={{ flex: 2 }}
+            />
+            <OutlinedTextField
+              label="Manager PIN"
+              value={mgrPin}
+              onChangeText={setMgrPin}
               keyboardType="number-pad"
               containerColor={Colors.surfaceMuted}
-            />
-            <OutlinedTextField
-              label="Assigned Manager Name"
-              value={mgrName}
-              onChangeText={setMgrName}
-              containerColor={Colors.surfaceMuted}
-            />
-            <Row gap={8}>
-              <OutlinedTextField
-                label="Manager Phone Number"
-                value={mgrPhone}
-                onChangeText={setMgrPhone}
-                keyboardType="phone-pad"
-                containerColor={Colors.surfaceMuted}
-                style={{ flex: 2 }}
-              />
-              <OutlinedTextField
-                label="Manager PIN"
-                value={mgrPin}
-                onChangeText={setMgrPin}
-                keyboardType="number-pad"
-                containerColor={Colors.surfaceMuted}
-                style={{ flex: 1 }}
-              />
-            </Row>
-          </FormScroll>
-
-          <Spacer size={14} />
-          <Row gap={8}>
-            <Btn
-              onPress={handleSave}
-              containerColor={Colors.primary}
-              textColor={Colors.textInverse}
-              borderRadius={Radii.card}
-              height={44}
               style={{ flex: 1 }}
-            >
-              <Txt variant="body" weight="800" color={Colors.textInverse}>Update Branch</Txt>
-            </Btn>
-            <OutlinedBtn
-              onPress={onDismiss}
-              borderColor={Colors.borderSubtle}
-              textColor={Colors.textPrimary}
-              borderRadius={Radii.card}
-              height={44}
-              style={{ flex: 1 }}
-            >
-              <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
-            </OutlinedBtn>
+            />
           </Row>
-          </Card>
-        </View>
-      </View>
-    </Modal>
+        </FormScroll>
+
+      </Card>
+    </Sheet>
   );
 }
 

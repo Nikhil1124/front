@@ -1,6 +1,8 @@
 import { SupplyItem } from '@/types';
 import { useState, useMemo, useEffect } from 'react';
 import { Share, StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -90,9 +92,9 @@ export function GroceryProductScreen() {
         <View style={styles.errorState}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textSecondary} />
           <Text maxFontSizeMultiplier={1.3} style={styles.errorText}>Product not found</Text>
-          <TouchableOpacity accessibilityRole="button" style={styles.backBtnError} onPress={() => router.back()}>
+          <AnimatedPress accessibilityRole="button" style={styles.backBtnError} onPress={() => router.back()}>
             <Text maxFontSizeMultiplier={1.3} style={styles.backBtnText}>Go Back</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
       </View>
     );
@@ -135,24 +137,24 @@ export function GroceryProductScreen() {
           for the notch/status bar directly rather than sitting in normal flow under it.
           insets.top + 14 matches every other grocery screen's header. */}
       <View style={[styles.floatingHeader, { paddingTop: insets.top + 14 }]}>
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
-        </TouchableOpacity>
+        </AnimatedPress>
         <View style={styles.headerRight}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Share" accessibilityRole="button" style={styles.headerBtn} onPress={handleShare} activeOpacity={0.7}>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Share" accessibilityRole="button" style={styles.headerBtn} onPress={handleShare} activeOpacity={0.7}>
             <Ionicons name="share-social-outline" size={18} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Search" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/categories')} activeOpacity={0.7}>
+          </AnimatedPress>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Search" accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/categories')} activeOpacity={0.7}>
             <Ionicons name="search" size={18} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/cart')} activeOpacity={0.7}>
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.headerBtn} onPress={() => router.push('/groceries/cart')} activeOpacity={0.7}>
             <Ionicons name="cart-outline" size={18} color={Colors.textPrimary} />
             {cartItemCount > 0 && (
               <View style={styles.headerCartBadge}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.headerCartBadgeText}>{cartItemCount}</Text>
               </View>
             )}
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
       </View>
 
@@ -169,7 +171,7 @@ export function GroceryProductScreen() {
                 <Text maxFontSizeMultiplier={1.3} style={styles.discountBadgeText}>-{discountPercent}%</Text>
               </View>
             )}
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
               style={styles.wishlistBtn}
               onPress={() => toggleWishlist(product)}
               activeOpacity={0.8}
@@ -179,7 +181,7 @@ export function GroceryProductScreen() {
                 size={18}
                 color={isWishlisted ? Colors.danger : Colors.textSecondary}
               />
-            </TouchableOpacity>
+            </AnimatedPress>
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
               {imagesList.map((imgUrl: any, idx: number) => (
                 <View key={idx} style={styles.mainImageWrapper}>
@@ -239,7 +241,7 @@ export function GroceryProductScreen() {
                 {options.map((opt, i) => {
                   const isSelected = selectedIdx === i;
                   return (
-                    <TouchableOpacity accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                    <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
                       key={opt.unit}
                       style={[styles.packTab, isSelected && styles.selectedPackTab]}
                       onPress={() => setSelectedIdx(i)}
@@ -248,7 +250,7 @@ export function GroceryProductScreen() {
                       <Text maxFontSizeMultiplier={1.3} style={[styles.packText, isSelected && styles.selectedPackText]}>
                         {opt.unit}{isSelected ? ' ✓' : ''}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   );
                 })}
               </View>
@@ -258,9 +260,9 @@ export function GroceryProductScreen() {
               {quantity > 0 ? (
                 <QuantityStepper quantity={quantity} onIncrease={handleIncrease} onDecrease={handleDecrease} />
               ) : (
-                <TouchableOpacity accessibilityRole="button" style={styles.inlineAddBtn} onPress={handleAdd} activeOpacity={0.8}>
+                <AnimatedPress accessibilityRole="button" style={styles.inlineAddBtn} onPress={handleAdd} activeOpacity={0.8}>
                   <Text maxFontSizeMultiplier={1.3} style={styles.inlineAddText}>Add to Cart</Text>
-                </TouchableOpacity>
+                </AnimatedPress>
               )}
             </View>
           </View>
@@ -310,7 +312,7 @@ export function GroceryProductScreen() {
 
           {/* Collapsible product details */}
           <View style={styles.detailsAccordionCard}>
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               style={styles.accordionHeader}
               onPress={() => setIsDetailsExpanded(!isDetailsExpanded)}
               activeOpacity={0.7}
@@ -321,7 +323,7 @@ export function GroceryProductScreen() {
                 size={18}
                 color={Colors.textPrimary}
               />
-            </TouchableOpacity>
+            </AnimatedPress>
             {isDetailsExpanded && (
               <View style={styles.accordionContent}>
                 {productDetails.map((detail, idx) => (
@@ -363,22 +365,22 @@ export function GroceryProductScreen() {
         </View>
 
         {cartItemCount > 0 && (
-          <TouchableOpacity accessibilityRole="button" style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.stickyBarMiddle} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
             <Ionicons name="cart-outline" size={14} color={Colors.primary} />
             <Text maxFontSizeMultiplier={1.3} style={styles.stickyCartText}>View Cart ({cartItemCount})</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         )}
 
         {quantity > 0 ? (
-          <TouchableOpacity accessibilityRole="button" style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={[styles.stickyAddBtn, styles.addedBtn]} onPress={() => router.push('/groceries/cart')} activeOpacity={0.8}>
             <Ionicons name="checkmark-circle-outline" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
             <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Added ✓</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         ) : (
-          <TouchableOpacity accessibilityRole="button" style={styles.stickyAddBtn} onPress={handleAdd} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.stickyAddBtn} onPress={handleAdd} activeOpacity={0.8}>
             <Ionicons name="cart" size={16} color={Colors.surface} style={{ marginRight: 4 }} />
             <Text maxFontSizeMultiplier={1.3} style={styles.stickyAddBtnText}>Add to Cart</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         )}
       </View>
     </View>
@@ -455,7 +457,7 @@ const styles = StyleSheet.create({
   mrpText: { fontSize: 11, color: Colors.textMuted, textDecorationLine: 'line-through' as const, fontWeight: '400' as const },
   savingsAmountText: { fontSize: 11, color: Colors.danger, fontWeight: '700' as const },
   miniWholesaleText: { fontSize: 10, fontWeight: '700' as const, color: Colors.primary, lineHeight: 14 },
-  greenBold: { color: Colors.primary, fontWeight: '800' as const },
+  greenBold: { color: Colors.primary, fontWeight: '700' as const },
   sectionHeading: { fontSize: 12, fontWeight: '700' as const, color: Colors.textPrimary, marginBottom: 6 },
   packText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '700' as const },
   quantityLabel: { fontSize: 11, fontWeight: '700' as const, color: Colors.textPrimary, marginBottom: 6 },

@@ -76,12 +76,12 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
         />
         <View style={styles.thumbOverlay}>
           <View style={styles.badgePill}>
-            <Ionicons name={badgeIcon === 'card' ? 'card-outline' : 'person-outline'} size={12} color="#FFF" />
-            <Txt size={10} weight="800" color="#FFF">{label}</Txt>
+            <Ionicons name={badgeIcon === 'card' ? 'card-outline' : 'person-outline'} size={12} color={Colors.textInverse} />
+            <Txt variant="statusChip" color={Colors.textInverse}>{label}</Txt>
           </View>
           <View style={styles.inspectHint}>
             <Ionicons name="scan-outline" size={11} color={Colors.secondary} />
-            <Txt size={9} weight="800" color={Colors.secondary}>TAP TO ENLARGE</Txt>
+            <Txt variant="caption" weight="600" color={Colors.secondary}>TAP TO ENLARGE</Txt>
           </View>
         </View>
       </Pressable>
@@ -108,11 +108,11 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
         <View style={styles.zoomBackdrop}>
           <View style={styles.zoomHeader}>
             <View>
-              <Txt size={15} weight="900" color="#FFFFFF">{zoomed?.label}</Txt>
+              <Txt variant="sectionTitle" color={Colors.textInverse}>{zoomed?.label}</Txt>
               <Txt size={11} color="#A7EBF2" style={{ marginTop: 2 }}>Official KYC Verification Document</Txt>
             </View>
             <Pressable hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" onPress={() => setZoomed(null)} style={styles.closeBtn} accessibilityRole="button">
-              <Ionicons name="close" size={24} color="#FFFFFF" />
+              <Ionicons name="close" size={24} color={Colors.textInverse} />
             </Pressable>
           </View>
 
@@ -124,8 +124,8 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
 
           <View style={styles.zoomFooter}>
             <Pressable accessibilityRole="button" style={styles.closeModalBtn} onPress={() => setZoomed(null)}>
-              <Ionicons name="checkmark-circle" size={18} color="#FFF" />
-              <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>Done Inspecting</Txt>
+              <Ionicons name="checkmark-circle" size={18} color={Colors.textInverse} />
+              <Txt variant="button" color={Colors.textInverse} style={{ marginLeft: 6 }}>Done Inspecting</Txt>
             </Pressable>
           </View>
         </View>
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: Radii.control,

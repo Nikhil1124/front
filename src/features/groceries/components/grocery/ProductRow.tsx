@@ -1,5 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { SupplyItem } from '@/types';
 import { ProductCard } from './ProductCard';
 
@@ -30,9 +32,9 @@ export const ProductRow: React.FC<ProductRowProps> = ({
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{title}</Text>
-        <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllPress}>
+        <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllPress}>
           <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
       <FlatList
         horizontal

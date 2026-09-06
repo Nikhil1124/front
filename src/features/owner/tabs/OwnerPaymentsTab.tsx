@@ -4,9 +4,7 @@ import {
   StyleSheet,
   RefreshControl,
   FlatList,
-  Text,
   ScrollView,
-  Modal,
   Pressable,
   Alert,
   KeyboardAvoidingView } from 'react-native';
@@ -405,9 +403,9 @@ export function OwnerPaymentsTab() {
             }}
           >
             <Ionicons name="bar-chart-outline" size={16} color={subTab === 0 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
+            <Txt variant="button" color={subTab === 0 ? WHITE : CHARCOAL}>
               Balance Sheet
-            </Text>
+            </Txt>
           </AnimatedPress>
 
           <AnimatedPress accessibilityRole="button"
@@ -417,9 +415,9 @@ export function OwnerPaymentsTab() {
             }}
           >
             <Ionicons name="cash-outline" size={16} color={subTab === 1 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
+            <Txt variant="button" color={subTab === 1 ? WHITE : CHARCOAL}>
               Expenses
-            </Text>
+            </Txt>
           </AnimatedPress>
 
           <AnimatedPress accessibilityRole="button"
@@ -429,9 +427,9 @@ export function OwnerPaymentsTab() {
             }}
           >
             <Ionicons name="receipt-outline" size={16} color={subTab === 2 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Text maxFontSizeMultiplier={1.3} style={[styles.segBtnText, subTab === 2 && styles.segBtnTextActive]}>
+            <Txt variant="button" color={subTab === 2 ? WHITE : CHARCOAL}>
               Collections
-            </Text>
+            </Txt>
           </AnimatedPress>
         </Row>
       </View>
@@ -445,9 +443,9 @@ export function OwnerPaymentsTab() {
               setPeriod('month');
             }}
           >
-            <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === 'month' && styles.periodBtnTextActive]}>
+            <Txt variant="meta" weight={period === 'month' ? '700' : '600'} color={period === 'month' ? WHITE : CHARCOAL}>
               This Month
-            </Text>
+            </Txt>
           </AnimatedPress>
           <AnimatedPress accessibilityRole="button"
             style={[styles.periodBtn, period === '3m' && styles.periodBtnActive]}
@@ -455,9 +453,9 @@ export function OwnerPaymentsTab() {
               setPeriod('3m');
             }}
           >
-            <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === '3m' && styles.periodBtnTextActive]}>
+            <Txt variant="meta" weight={period === '3m' ? '700' : '600'} color={period === '3m' ? WHITE : CHARCOAL} tabular>
               3 Months
-            </Text>
+            </Txt>
           </AnimatedPress>
           <AnimatedPress accessibilityRole="button"
             style={[styles.periodBtn, period === '6m' && styles.periodBtnActive]}
@@ -465,9 +463,9 @@ export function OwnerPaymentsTab() {
               setPeriod('6m');
             }}
           >
-            <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === '6m' && styles.periodBtnTextActive]}>
+            <Txt variant="meta" weight={period === '6m' ? '700' : '600'} color={period === '6m' ? WHITE : CHARCOAL} tabular>
               6 Months
-            </Text>
+            </Txt>
           </AnimatedPress>
           <AnimatedPress accessibilityRole="button"
             style={[styles.periodBtn, period === '1y' && styles.periodBtnActive]}
@@ -475,9 +473,9 @@ export function OwnerPaymentsTab() {
               setPeriod('1y');
             }}
           >
-            <Text maxFontSizeMultiplier={1.3} style={[styles.periodBtnText, period === '1y' && styles.periodBtnTextActive]}>
+            <Txt variant="meta" weight={period === '1y' ? '700' : '600'} color={period === '1y' ? WHITE : CHARCOAL} tabular>
               1 Year
-            </Text>
+            </Txt>
           </AnimatedPress>
           
           <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Choose a date" accessibilityRole="button"
@@ -490,7 +488,7 @@ export function OwnerPaymentsTab() {
           </AnimatedPress>
         </Row>
         {period === 'custom' && customLabel ? (
-          <Text maxFontSizeMultiplier={1.3} style={styles.customDateText}>Selected: {customLabel}</Text>
+          <Txt variant="meta" weight="600" color={GREEN} tabular style={styles.customDateText}>Selected: {customLabel}</Txt>
         ) : null}
       </View>
 
@@ -505,10 +503,10 @@ export function OwnerPaymentsTab() {
         >
           <Ionicons name="card-outline" size={20} color={GREEN} />
           <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.subscriptionRowTitle}>Subscription & Billing</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.subscriptionRowSub}>
+            <Txt variant="cardTitle" color={CHARCOAL}>Subscription & Billing</Txt>
+            <Txt variant="meta" color={MUTED} style={styles.subscriptionRowSub}>
               {owner?.subscriptionActive ? 'Plan active — view invoices, increase beds' : 'No active plan — activate to get started'}
-            </Text>
+            </Txt>
           </View>
           <Ionicons name="chevron-forward" size={18} color={MUTED} />
         </AnimatedPress>
@@ -530,29 +528,29 @@ export function OwnerPaymentsTab() {
               <View style={styles.emptyIconBg}>
                 <Ionicons name="receipt-outline" size={32} color={MUTED} />
               </View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>No financial activity</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.emptyDesc}>
+              <Txt variant="sectionTitle" color={CHARCOAL}>No financial activity</Txt>
+              <Txt variant="body" color={MUTED} align="center" style={styles.emptyDesc}>
                 No collections or expenses have been recorded for this period.
-              </Text>
+              </Txt>
               <Spacer size={16} />
               <AnimatedPress accessibilityRole="button"
                 style={styles.emptyActionBtn}
                 onPress={() => setSubTab(2)}
               >
-                <Text maxFontSizeMultiplier={1.3} style={styles.emptyActionText}>View Collections</Text>
+                <Txt variant="button" color={WHITE}>View Collections</Txt>
               </AnimatedPress>
               <AnimatedPress accessibilityRole="button"
                 style={styles.emptySecBtn}
                 onPress={() => setSubTab(1)}
               >
-                <Text maxFontSizeMultiplier={1.3} style={styles.emptySecText}>Add Expense</Text>
+                <Txt variant="button" color={GREEN}>Add Expense</Txt>
               </AnimatedPress>
             </View>
           ) : (
             /* Standard Dashboard Content */
             <>
               {/* Financial Overview KPIs */}
-              <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeader}>Financial Overview</Text>
+              <Txt variant="sectionTitle" color={CHARCOAL}>Financial Overview</Txt>
               <Spacer size={10} />
               <Row gap={10} style={{ flexWrap: 'wrap' }}>
                 {/* KPI 1: Collected */}
@@ -561,12 +559,12 @@ export function OwnerPaymentsTab() {
                     <View style={[styles.kpiIconCircle, { backgroundColor: Palette.TintGreen }]}>
                       <Ionicons name="wallet-outline" size={16} color={GREEN} />
                     </View>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>Collected</Text>
+                    <Txt variant="meta" weight="600" color={CHARCOAL}>Collected</Txt>
                   </Row>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: GREEN }]}>
-                    ₹{Math.round(verifiedRevenue).toLocaleString('en-IN')}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.kpiSub}>Verified Receipts</Text>
+                  <Txt variant="metric" color={GREEN} tabular style={styles.kpiValue}>
+                    {formatINR(Math.round(verifiedRevenue))}
+                  </Txt>
+                  <Txt variant="caption" color={MUTED} style={styles.kpiSub}>Verified Receipts</Txt>
                 </View>
 
                 {/* KPI 2: Expenses */}
@@ -575,12 +573,12 @@ export function OwnerPaymentsTab() {
                     <View style={[styles.kpiIconCircle, { backgroundColor: Palette.TintRed }]}>
                       <Ionicons name="briefcase-outline" size={16} color={Colors.danger} />
                     </View>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>Expenses</Text>
+                    <Txt variant="meta" weight="600" color={CHARCOAL}>Expenses</Txt>
                   </Row>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: Colors.danger }]}>
-                    ₹{Math.round(totalOutflows).toLocaleString('en-IN')}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.kpiSub}>Total logged</Text>
+                  <Txt variant="metric" color={Colors.danger} tabular style={styles.kpiValue}>
+                    {formatINR(Math.round(totalOutflows))}
+                  </Txt>
+                  <Txt variant="caption" color={MUTED} style={styles.kpiSub}>Total logged</Txt>
                 </View>
 
                 {/* KPI 3: Net Profit */}
@@ -589,12 +587,12 @@ export function OwnerPaymentsTab() {
                     <View style={[styles.kpiIconCircle, { backgroundColor: '#EFF6FF' }]}>
                       <Ionicons name="trending-up-outline" size={16} color="#2563EB" />
                     </View>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.kpiLabel}>Net Profit</Text>
+                    <Txt variant="meta" weight="600" color={CHARCOAL}>Net Profit</Txt>
                   </Row>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.kpiValue, { color: '#2563EB' }]}>
-                    ₹{Math.round(netProfit).toLocaleString('en-IN')}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.kpiSub}>{profitMargin.toFixed(1)}% margin</Text>
+                  <Txt variant="metric" color="#2563EB" tabular style={styles.kpiValue}>
+                    {formatINR(Math.round(netProfit))}
+                  </Txt>
+                  <Txt variant="caption" color={MUTED} tabular style={styles.kpiSub}>{profitMargin.toFixed(1)}% margin</Txt>
                 </View>
               </Row>
 
@@ -603,7 +601,7 @@ export function OwnerPaymentsTab() {
               {/* Status strip */}
               <Row gap={6} align="center" style={styles.statusStripBox}>
                 <Ionicons name="analytics-outline" size={15} color={GREEN} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.statusStripText}>{statusStrip}</Text>
+                <Txt variant="meta" weight="600" color={GREEN}>{statusStrip}</Txt>
               </Row>
 
               <Spacer size={24} />
@@ -613,11 +611,11 @@ export function OwnerPaymentsTab() {
                 <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
                   <Row gap={8} align="center">
                     <Ionicons name="pie-chart-outline" size={18} color={GREEN} />
-                    <Text maxFontSizeMultiplier={1.3} style={styles.cardHeaderTitle}>Expense Breakdown</Text>
+                    <Txt variant="cardTitle" color={CHARCOAL}>Expense Breakdown</Txt>
                   </Row>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.cardHeaderValue}>
-                    Total Expenses: ₹{Math.round(totalOutflows).toLocaleString('en-IN')}
-                  </Text>
+                  <Txt variant="meta" weight="600" color={MUTED} tabular>
+                    Total Expenses: {formatINR(Math.round(totalOutflows))}
+                  </Txt>
                 </Row>
 
                 {expenseBreakdown.map((item) => (
@@ -625,15 +623,15 @@ export function OwnerPaymentsTab() {
                     <Row justify="space-between" align="center" style={{ marginBottom: 4 }}>
                       <Row gap={8} align="center">
                         <Ionicons name={item.icon as any} size={15} color={MUTED} />
-                        <Text maxFontSizeMultiplier={1.3} style={styles.breakdownLabel}>{item.name}</Text>
+                        <Txt variant="meta" weight="600" color={CHARCOAL}>{item.name}</Txt>
                       </Row>
                       <Row gap={12} align="center">
-                        <Text maxFontSizeMultiplier={1.3} style={styles.breakdownAmount}>
-                          ₹{Math.round(item.amount).toLocaleString('en-IN')}
-                        </Text>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.breakdownPercent}>
+                        <Txt variant="meta" weight="600" color={CHARCOAL} tabular>
+                          {formatINR(Math.round(item.amount))}
+                        </Txt>
+                        <Txt variant="meta" color={MUTED} align="right" tabular style={styles.breakdownPercent}>
                           {item.percentage.toFixed(1)}%
-                        </Text>
+                        </Txt>
                       </Row>
                     </Row>
                     {totalOutflows > 0 && item.amount > 0 && (
@@ -651,35 +649,35 @@ export function OwnerPaymentsTab() {
               <View style={styles.cardBox}>
                 <Row gap={8} align="center" style={{ marginBottom: 16 }}>
                   <Ionicons name="calculator-outline" size={18} color={GREEN} />
-                  <Text maxFontSizeMultiplier={1.3} style={styles.cardHeaderTitle}>Balance Details</Text>
+                  <Txt variant="cardTitle" color={CHARCOAL}>Balance Details</Txt>
                 </Row>
 
                 <View style={styles.detailItemRow}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailItemLabel}>Total Collections</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: GREEN }]}>
-                    ₹{Math.round(verifiedRevenue).toLocaleString('en-IN')}
-                  </Text>
+                  <Txt variant="meta" weight="600" color={CHARCOAL}>Total Collections</Txt>
+                  <Txt variant="body" weight="600" color={GREEN} tabular>
+                    {formatINR(Math.round(verifiedRevenue))}
+                  </Txt>
                 </View>
 
                 <View style={styles.detailItemRow}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailItemLabel}>Total Expenses</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: Colors.danger }]}>
-                    ₹{Math.round(totalOutflows).toLocaleString('en-IN')}
-                  </Text>
+                  <Txt variant="meta" weight="600" color={CHARCOAL}>Total Expenses</Txt>
+                  <Txt variant="body" weight="600" color={Colors.danger} tabular>
+                    {formatINR(Math.round(totalOutflows))}
+                  </Txt>
                 </View>
 
                 <View style={styles.detailItemRow}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailItemLabel}>Net Profit</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: '#2563EB' }]}>
-                    ₹{Math.round(netProfit).toLocaleString('en-IN')}
-                  </Text>
+                  <Txt variant="meta" weight="600" color={CHARCOAL}>Net Profit</Txt>
+                  <Txt variant="body" weight="600" color="#2563EB" tabular>
+                    {formatINR(Math.round(netProfit))}
+                  </Txt>
                 </View>
 
                 <View style={[styles.detailItemRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.detailItemLabel}>Outstanding</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={[styles.detailItemValue, { color: Colors.warning }]}>
-                    ₹{Math.round(outstandingTotal).toLocaleString('en-IN')} · {outstandingPayments.length} payments
-                  </Text>
+                  <Txt variant="meta" weight="600" color={CHARCOAL}>Outstanding</Txt>
+                  <Txt variant="body" weight="600" color={Colors.warning} tabular align="right">
+                    {formatINR(Math.round(outstandingTotal))} · {outstandingPayments.length} payments
+                  </Txt>
                 </View>
               </View>
             </>
@@ -703,10 +701,10 @@ export function OwnerPaymentsTab() {
             <View style={{ gap: 14, marginBottom: 12 }}>
               {/* Total Expenses Header */}
               <View style={styles.totalHeaderBox}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.totalHeaderLabel}>TOTAL EXPENSES</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.totalHeaderValueText}>
-                  ₹{Math.round(totalOutflows).toLocaleString('en-IN')}
-                </Text>
+                <Txt variant="meta" weight="600" color={MUTED}>TOTAL EXPENSES</Txt>
+                <Txt variant="metric" color={Colors.danger} tabular style={styles.totalHeaderValueText}>
+                  {formatINR(Math.round(totalOutflows))}
+                </Txt>
               </View>
 
               {/* Log expense — `create_expense` on the server is `require_manage` (owner OR
@@ -714,7 +712,7 @@ export function OwnerPaymentsTab() {
                   meant an owner running a property with no manager could not log an expense
                   from this screen at all, despite the server allowing it. */}
               <Card containerColor={WHITE} borderRadius={RADIUS} borderWidth={1} borderColor={BORDER} padding={[16, 16]}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.formTitle}>Log Daily Expense</Text>
+                  <Txt variant="cardTitle" color={CHARCOAL}>Log Daily Expense</Txt>
                   <Spacer size={8} />
 
                   {/* Preset Quick Chips */}
@@ -724,19 +722,19 @@ export function OwnerPaymentsTab() {
                         style={styles.presetChip}
                         onPress={() => handlePresetSelect('Chef Monthly Salary - Ramesh', 'Staff Salary', '15000', 'Ramesh Kumar')}
                       >
-                        <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>👨‍🍳 Chef Salary ₹15k</Text>
+                        <Txt variant="meta" weight="600" color={CHARCOAL} tabular>👨‍🍳 Chef Salary ₹15k</Txt>
                       </AnimatedPress>
                       <AnimatedPress accessibilityRole="button"
                         style={styles.presetChip}
                         onPress={() => handlePresetSelect('Daily Mess Grocery Procurement', 'Daily Mess Groceries', '2450', 'Wholesale Mart')}
                       >
-                        <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>🛒 Groceries ₹2.4k</Text>
+                        <Txt variant="meta" weight="600" color={CHARCOAL} tabular>🛒 Groceries ₹2.4k</Txt>
                       </AnimatedPress>
                       <AnimatedPress accessibilityRole="button"
                         style={styles.presetChip}
                         onPress={() => handlePresetSelect('PG Electricity Power Bill', 'Utility Bills', '6800', 'Electricity Board')}
                       >
-                        <Text maxFontSizeMultiplier={1.3} style={styles.presetChipText}>⚡ Electricity ₹6.8k</Text>
+                        <Txt variant="meta" weight="600" color={CHARCOAL} tabular>⚡ Electricity ₹6.8k</Txt>
                       </AnimatedPress>
                     </Row>
                   </ScrollView>
@@ -803,7 +801,7 @@ export function OwnerPaymentsTab() {
                     disabled={isSubmitting || !expenseAmount.trim()}
                   >
                     <Ionicons name="cloud-upload-outline" size={16} color={WHITE} style={{ marginRight: 6 }} />
-                    <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>{isSubmitting ? 'Saving...' : 'Log Expense Entry'}</Text>
+                    <Txt variant="button" color={WHITE}>{isSubmitting ? 'Saving...' : 'Log Expense Entry'}</Txt>
                   </AnimatedPress>
                 </Card>
 
@@ -823,9 +821,9 @@ export function OwnerPaymentsTab() {
                       style={[styles.filterChip, categoryFilter === cat && styles.filterChipActive]}
                       onPress={() => setCategoryFilter(cat)}
                     >
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, categoryFilter === cat && styles.filterChipTextActive]}>
+                      <Txt variant="meta" weight={categoryFilter === cat ? '700' : '600'} color={categoryFilter === cat ? WHITE : CHARCOAL}>
                         {cat}
-                      </Text>
+                      </Txt>
                     </AnimatedPress>
                   ))}
                 </Row>
@@ -847,7 +845,7 @@ export function OwnerPaymentsTab() {
               title={e.title}
               meta={`${e.category}${e.recipientName ? ` · ${e.recipientName}` : ''} · ${e.paymentMode} · ${new Date(e.dateLogged || Date.now()).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`}
               leading={<Ionicons name="receipt-outline" size={17} color={Colors.danger} />}
-              amount={`-₹${Math.round(e.amount).toLocaleString('en-IN')}`}
+              amount={`-${formatINR(Math.round(e.amount))}`}
               onPress={() => setDetailExpense(e)}
               first={index === 0}
               last={index === displayedExpenses.length - 1}
@@ -873,10 +871,10 @@ export function OwnerPaymentsTab() {
             <View style={{ gap: 14, marginBottom: 12 }}>
               {/* Total Collected Header */}
               <View style={styles.totalHeaderBox}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.totalHeaderLabel}>TOTAL COLLECTED</Text>
-                <Text maxFontSizeMultiplier={1.3} style={[styles.totalHeaderValueText, { color: GREEN }]}>
-                  ₹{Math.round(verifiedRevenue).toLocaleString('en-IN')}
-                </Text>
+                <Txt variant="meta" weight="600" color={MUTED}>TOTAL COLLECTED</Txt>
+                <Txt variant="metric" color={GREEN} tabular style={styles.totalHeaderValueText}>
+                  {formatINR(Math.round(verifiedRevenue))}
+                </Txt>
               </View>
 
               {/* Search collections */}
@@ -895,9 +893,9 @@ export function OwnerPaymentsTab() {
                       style={[styles.filterChip, statusFilter === status && styles.filterChipActive]}
                       onPress={() => setStatusFilter(status)}
                     >
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.filterChipText, statusFilter === status && styles.filterChipTextActive]}>
+                      <Txt variant="meta" weight={statusFilter === status ? '700' : '600'} color={statusFilter === status ? WHITE : CHARCOAL}>
                         {status}
-                      </Text>
+                      </Txt>
                     </AnimatedPress>
                   ))}
                 </Row>
@@ -918,7 +916,7 @@ export function OwnerPaymentsTab() {
             <ListRow
               title={p.payerName}
               meta={`${p.paymentType.replace(/_/g, ' ').toLowerCase()} · Room ${getPayerRoom(p.payerId)}${p.utrRef ? ` · UTR ${p.utrRef}` : ''}`}
-              amount={`+₹${Math.round(p.amount).toLocaleString('en-IN')}`}
+              amount={`+${formatINR(Math.round(p.amount))}`}
               status={{ label: p.status, tone: toneFor(p.status) }}
               onPress={() => setSelectedReceipt(p)}
               first={index === 0}
@@ -935,7 +933,7 @@ export function OwnerPaymentsTab() {
         title="Reject payment"
         label="Reason"
         placeholder="Amount doesn't match the UTR reference"
-        helper={rejectingPayment ? `${rejectingPayment.payerName} · ₹${Math.round(rejectingPayment.amount).toLocaleString('en-IN')} — they see this` : undefined}
+        helper={rejectingPayment ? `${rejectingPayment.payerName} · ${formatINR(Math.round(rejectingPayment.amount))} — they see this` : undefined}
         confirmLabel="Confirm rejection"
         destructive
         required
@@ -944,49 +942,45 @@ export function OwnerPaymentsTab() {
         onSave={handleRejectPayment}
       />
 
-      {/* ── Custom Date Range Picker Modal ── */}
+      {/* ── Custom Date Range Picker Sheet ── */}
       {showDatePicker && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-          <View style={styles.pickerPopupBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} />
-            <View style={styles.pickerPopupCard}>
-              <Text maxFontSizeMultiplier={1.3} style={styles.pickerPopupTitle}>Select Custom Range</Text>
-              
-              <Text maxFontSizeMultiplier={1.3} style={styles.pickerSectionLabel}>Select Month Range</Text>
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220, marginTop: 8 }}>
-                {getPast12Months().map((m) => {
-                  const isSelected = customLabel === m.label;
-                  return (
-                    <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
-                      key={m.label}
-                      style={[styles.pickerPopupOption, isSelected && styles.pickerPopupOptionActive]}
-                      onPress={() => {
-                        setCustomStart(m.start);
-                        setCustomEnd(m.end);
-                        setCustomLabel(m.label);
-                        setPeriod('custom');
-                        setShowDatePicker(false);
-                      }}
-                    >
-                      <Text maxFontSizeMultiplier={1.3} style={[styles.pickerPopupOptionText, isSelected && styles.pickerPopupOptionTextActive]}>
-                        {m.label}
-                      </Text>
-                    </AnimatedPress>
-                  );
-                })}
-              </ScrollView>
+        <Sheet
+          visible={showDatePicker}
+          title="Select Custom Range"
+          onDismiss={() => setShowDatePicker(false)}
+          testID="owner-payments-custom-range"
+          footer={
+            <AnimatedPress accessibilityRole="button" style={styles.pickerCancelBtn} onPress={() => setShowDatePicker(false)}>
+              <Txt variant="button" color={CHARCOAL}>Close</Txt>
+            </AnimatedPress>
+          }
+        >
+          <Txt variant="sectionTitle" color={CHARCOAL} style={styles.pickerPopupTitle}>Select Custom Range</Txt>
 
-              <Spacer size={16} />
-              
-              <AnimatedPress accessibilityRole="button"
-                style={styles.pickerCancelBtn}
-                onPress={() => setShowDatePicker(false)}
-              >
-                <Text maxFontSizeMultiplier={1.3} style={styles.pickerCancelBtnText}>Close</Text>
-              </AnimatedPress>
-            </View>
-          </View>
-        </Modal>
+          <Txt variant="meta" weight="600" color={MUTED} style={styles.pickerSectionLabel}>Select Month Range</Txt>
+          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220, marginTop: 8 }}>
+            {getPast12Months().map((m) => {
+              const isSelected = customLabel === m.label;
+              return (
+                <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                  key={m.label}
+                  style={[styles.pickerPopupOption, isSelected && styles.pickerPopupOptionActive]}
+                  onPress={() => {
+                    setCustomStart(m.start);
+                    setCustomEnd(m.end);
+                    setCustomLabel(m.label);
+                    setPeriod('custom');
+                    setShowDatePicker(false);
+                  }}
+                >
+                  <Txt variant="body" weight={isSelected ? '600' : '400'} color={isSelected ? GREEN : CHARCOAL} tabular>
+                    {m.label}
+                  </Txt>
+                </AnimatedPress>
+              );
+            })}
+          </ScrollView>
+        </Sheet>
       )}
     </View>
   );
@@ -1091,7 +1085,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center' },
   kpiLabel: { fontSize: 11, fontWeight: '700', color: CHARCOAL },
-  kpiValue: { fontSize: 17, fontWeight: '800', marginTop: 8 },
+  kpiValue: { marginTop: 8 },
   kpiSub: { fontSize: 9, color: MUTED, marginTop: 2 },
 
   // Status Strip
@@ -1169,7 +1163,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%' },
-  emptyActionText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  emptyActionText: { fontSize: 13, fontWeight: '700', color: WHITE },
   emptySecBtn: {
     height: 44,
     width: '100%',
@@ -1189,8 +1183,8 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     padding: 16,
     alignItems: 'center' },
-  totalHeaderLabel: { fontSize: 10, fontWeight: '800', color: MUTED, letterSpacing: 0.5 },
-  totalHeaderValueText: { fontSize: 24, fontWeight: '800', color: Colors.danger, marginTop: 4 },
+  totalHeaderLabel: { fontSize: 10.5, fontWeight: '600', color: MUTED, letterSpacing: 0 },
+  totalHeaderValueText: { marginTop: 4 },
 
   // Log Form
   formTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
@@ -1210,7 +1204,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center' },
-  submitBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  submitBtnText: { fontSize: 14, fontWeight: '600', color: WHITE },
 
   // Outflow item card
 
@@ -1239,14 +1233,14 @@ const styles = StyleSheet.create({
     alignItems: 'center' },
   pickerPopupCard: {
     width: '80%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: BORDER,
     padding: 18 },
   pickerPopupTitle: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
     color: CHARCOAL,
     marginBottom: 10 },
   pickerSectionLabel: {
@@ -1281,8 +1275,8 @@ const styles = StyleSheet.create({
 function DetailLine({ label, value }: { label: string; value: string }) {
   return (
     <Row justify="space-between" align="flex-start" gap={16}>
-      <Txt size={12} color={Colors.textMuted}>{label}</Txt>
-      <Txt size={12.5} weight="700" color={Colors.textPrimary} style={{ flex: 1, textAlign: 'right' }}>{value}</Txt>
+      <Txt variant="meta" color={Colors.textMuted}>{label}</Txt>
+      <Txt variant="meta" weight="600" color={Colors.textPrimary} tabular style={{ flex: 1, textAlign: 'right' }}>{value}</Txt>
     </Row>
   );
 }

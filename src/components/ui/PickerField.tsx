@@ -79,12 +79,12 @@ export function PickerField({
           />
         ) : null}
 
-        <Txt size={13} color={invalid ? Colors.danger : Colors.textMuted} style={styles.label} numberOfLines={1}>
+        <Txt variant="body" color={invalid ? Colors.danger : Colors.textMuted} style={styles.label} numberOfLines={1}>
           {label}{required ? ' *' : ''}
         </Txt>
 
         <Txt
-          size={13}
+          variant="body"
           weight={value ? '600' : '400'}
           color={disabled ? Colors.textMuted : value ? Colors.textPrimary : Colors.textMuted}
           numberOfLines={1}
@@ -103,7 +103,7 @@ export function PickerField({
       {error || helper ? (
         <View style={styles.message}>
           {invalid ? <Ionicons name="alert-circle" size={13} color={Colors.danger} /> : null}
-          <Txt size={11} color={invalid ? Colors.danger : Colors.textMuted} style={{ flex: 1 }}>
+          <Txt variant="meta" color={invalid ? Colors.danger : Colors.textMuted} style={{ flex: 1 }}>
             {error ?? helper}
           </Txt>
         </View>

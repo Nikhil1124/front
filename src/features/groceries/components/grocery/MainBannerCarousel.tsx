@@ -11,6 +11,8 @@ import {
   NativeScrollEvent,
   ImageSourcePropType,
 } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -118,7 +120,7 @@ export const MainBannerCarousel: React.FC<MainBannerCarouselProps> = ({ onBanner
 
   const renderItem = ({ item }: { item: BannerConfig }) => {
     return (
-      <TouchableOpacity accessibilityRole="button"
+      <AnimatedPress accessibilityRole="button"
         style={[styles.bannerContainer, { width: itemWidth, marginRight: gap }]}
         activeOpacity={0.95}
         onPress={() => onBannerPress?.(item)}
@@ -132,7 +134,7 @@ export const MainBannerCarousel: React.FC<MainBannerCarouselProps> = ({ onBanner
           <Text maxFontSizeMultiplier={1.3} style={styles.ctaOverlayText}>{item.cta}</Text>
           <Ionicons name="arrow-forward" size={12} color={Colors.primary} />
         </View>
-      </TouchableOpacity>
+      </AnimatedPress>
     );
   };
 
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
     left: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: Colors.surface,
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: Radii.control,

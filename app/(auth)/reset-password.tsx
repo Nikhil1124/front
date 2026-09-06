@@ -76,7 +76,7 @@ export default function ResetPasswordScreen() {
     <FormScroll contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 24 }]} style={styles.root}>
       <Row align="center" style={{ marginBottom: 16 }}>
         <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
-        <Txt variant="statValue" weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>
+        <Txt variant="statValue" weight="700" color={Colors.textPrimary} style={{ marginLeft: 8 }}>
           Reset Password
         </Txt>
       </Row>
@@ -92,6 +92,8 @@ export default function ResetPasswordScreen() {
             value={phone}
             onChangeText={setPhone}
             leadingIcon="call"
+            textContentType="telephoneNumber"
+            autoComplete="tel"
             keyboardType="phone-pad"
             style={{ marginBottom: 16 }}
           />
@@ -121,6 +123,8 @@ export default function ResetPasswordScreen() {
             error={resetErrors.token}
             leadingIcon="key"
             editable={!tokenParam}
+            textContentType="oneTimeCode"
+            autoComplete="sms-otp"
             style={{ marginBottom: 12, opacity: tokenParam ? 0.6 : 1 }}
           />
           <OutlinedTextField
@@ -131,6 +135,8 @@ export default function ResetPasswordScreen() {
             helper="At least 8 characters"
             leadingIcon="lock-closed"
             secureTextEntry
+            textContentType="newPassword"
+            autoComplete="new-password"
             style={{ marginBottom: 12 }}
           />
           <OutlinedTextField
@@ -140,6 +146,8 @@ export default function ResetPasswordScreen() {
             error={resetErrors.confirm}
             leadingIcon="lock-closed"
             secureTextEntry
+            textContentType="newPassword"
+            autoComplete="new-password"
             style={{ marginBottom: 16 }}
           />
           <Btn

@@ -115,7 +115,7 @@ export function OwnerRegisterScreen() {
     <FormScroll contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 24 }]} style={styles.root}>
       <Row align="center" style={{ marginBottom: 16 }}>
         <IconBtn onPress={() => router.back()} icon="arrow-back" size={22} tint={Colors.textPrimary} />
-        <Txt variant="statValue" weight="800" color={Colors.textPrimary} style={{ marginLeft: 8 }}>Register PG Owner</Txt>
+        <Txt variant="statValue" weight="700" color={Colors.textPrimary} style={{ marginLeft: 8 }}>Register PG Owner</Txt>
       </Row>
 
       <Txt variant="body" color={Colors.textMuted} style={{ marginBottom: 24 }}>
@@ -146,6 +146,8 @@ export function OwnerRegisterScreen() {
         value={ownerEmailInput}
         onChangeText={(v) => set('ownerEmailInput', v)}
         leadingIcon="mail"
+        textContentType="emailAddress"
+        autoComplete="email"
         keyboardType="email-address"
         testID="owner_email_input"
         style={{ marginBottom: 12 }}
@@ -157,6 +159,8 @@ export function OwnerRegisterScreen() {
         error={regErrors.phone}
         leadingIcon="call"
         keyboardType="phone-pad"
+        textContentType="telephoneNumber"
+        autoComplete="tel"
         style={{ marginBottom: 12 }}
       />
       <OutlinedTextField
@@ -166,6 +170,8 @@ export function OwnerRegisterScreen() {
         error={regErrors.password}
         leadingIcon="lock-closed"
         secureTextEntry
+        textContentType="newPassword"
+        autoComplete="new-password"
         testID="owner_password_input"
         style={{ marginBottom: 12 }}
       />

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
 import { Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -231,9 +233,9 @@ export function GroceriesScreen() {
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{dealsTitle}</Text>
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>{dealsSub}</Text>
                   </View>
-                  <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={openDeals}>
+                  <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={openDeals}>
                     <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
                   {deals.map((prod) => (
@@ -248,9 +250,9 @@ export function GroceriesScreen() {
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Daily Essentials</Text>
                     <Text maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>Must-have daily items for your PG</Text>
                   </View>
-                  <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={() => openSupplyCategory(null)}>
+                  <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={() => openSupplyCategory(null)}>
                     <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
-                  </TouchableOpacity>
+                  </AnimatedPress>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
                   {dailyEssentials.map((prod) => (
@@ -269,11 +271,11 @@ export function GroceriesScreen() {
       </View>
 
       <Animated.View style={[styles.floatingCartContainer, { transform: [{ translateY: cartAnimY }], opacity: cartOpacity, bottom: 24 }]}>
-        <TouchableOpacity accessibilityRole="button" style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>
+        <AnimatedPress accessibilityRole="button" style={styles.floatingCart} onPress={openCart} activeOpacity={0.9}>
           <BlurView intensity={80} tint="light" style={[StyleSheet.absoluteFill, { borderRadius: Radii.sheet }]} />
           <View style={styles.cartInfo}>
             <View style={styles.cartIconWrapper}>
-              <Ionicons name="cart" size={14} color="#fff" />
+              <Ionicons name="cart" size={14} color={Colors.textInverse} />
               <View style={styles.cartBadge}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.cartBadgeText}>{cartItemCount}</Text>
               </View>
@@ -285,9 +287,9 @@ export function GroceriesScreen() {
           </View>
           <View style={styles.checkoutBtn}>
             <Text maxFontSizeMultiplier={1.3} style={styles.checkoutText}>View Cart</Text>
-            <MaterialIcons name="keyboard-arrow-right" size={18} color="#fff" />
+            <MaterialIcons name="keyboard-arrow-right" size={18} color={Colors.textInverse} />
           </View>
-        </TouchableOpacity>
+        </AnimatedPress>
       </Animated.View>
     </View>
   );
@@ -315,12 +317,12 @@ const styles = StyleSheet.create({
   sectionContainer: { marginVertical: 14 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 },
   horizontalListContent: { paddingHorizontal: 16 },
-  cartBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' as const },
+  cartBadgeText: { color: Colors.textInverse, fontSize: 9, fontWeight: '700' as const },
   cartTotalText: { color: Colors.textPrimary, fontWeight: '700' as const, fontSize: 14 },
   cartSubtext: { color: Colors.textSecondary, fontSize: 10, fontWeight: '400' as const, marginTop: 1 },
-  checkoutText: { color: '#FFFFFF', fontWeight: '700' as const, fontSize: 12 },
+  checkoutText: { color: Colors.textInverse, fontWeight: '700' as const, fontSize: 12 },
   searchResultsTitle: { fontSize: 13, fontWeight: '700' as const, color: Colors.textMuted, marginBottom: 12 },
   noResultsText: { fontSize: 14, color: Colors.textMuted, fontWeight: '600' as const },
-  sectionTitle: { fontSize: 18, fontWeight: '800' as const, color: Colors.textPrimary },
+  sectionTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.textPrimary },
   sectionSubtitle: { fontSize: 12, fontWeight: '400' as const, color: Colors.textSecondary, marginTop: 2 },
   seeAllText: { fontSize: 13, fontWeight: '600' as const, color: Colors.primary } });

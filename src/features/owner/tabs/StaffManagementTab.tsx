@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     marginTop: 10 },
-  primaryBtnText: { fontSize: 14, fontWeight: '800', color: WHITE },
+  primaryBtnText: { fontSize: 14, fontWeight: '700', color: WHITE },
 
   // Directory Styles
   listContainer: {
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
   sheetOptionText: { fontSize: 14, fontWeight: '600', color: CHARCOAL },
 
   // Details Modal styles
-  detailSecLabel: { fontSize: 9, fontWeight: '800', color: MUTED, letterSpacing: 0.5 },
+  detailSecLabel: { fontSize: 9, fontWeight: '700', color: MUTED, letterSpacing: 0.5 },
   detailLabel: { fontSize: 11, color: MUTED },
   detailValue: { fontSize: 13, fontWeight: '700', color: CHARCOAL, marginTop: 2 },
   resetPinBox: {
@@ -939,7 +939,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16 },
-  resetPinBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  resetPinBtnText: { fontSize: 13, fontWeight: '700', color: WHITE },
 
   // Edit Staff Modal styles
   editModalSaveBtn: {
@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center' },
-  editModalSaveText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  editModalSaveText: { fontSize: 13, fontWeight: '700', color: WHITE },
   editModalCancelBtn: {
     flex: 1,
     height: 48,

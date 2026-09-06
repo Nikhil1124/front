@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Image, Modal, RefreshControl } from 'react-native';
+import { View, StyleSheet, Alert, Image, RefreshControl } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn, LoadingState, ErrorState, ChoiceChips, RoomPicker, OutlinedTextField, AnimatedPress } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, Divider, IconBtn, LoadingState, ErrorState, ChoiceChips, RoomPicker, OutlinedTextField, AnimatedPress, Sheet } from '@/components/ui';
 import { Colors, Palette, Radii, DeckTints } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
@@ -155,43 +155,43 @@ export function MaintenanceStatsSummary({ inspections, issues, onGoToChecks }: a
   return (
     <>
       <Row justify="space-between" align="center" style={{ marginTop: 10 }}>
-        <Txt size={15} weight="900" color={Colors.textPrimary}>Today's Inspection Summary</Txt>
+        <Txt size={15} weight="700" color={Colors.textPrimary}>Today's Inspection Summary</Txt>
       </Row>
 
       <Row gap={10} style={{ flexWrap: 'wrap' }}>
         <AnimatedPress accessibilityRole="button" onPress={() => onGoToChecks?.('Electrical')} style={{ flex: 1, minWidth: 100 }}>
           <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-            <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1}>Electrical</Txt>
+            <Txt size={11} weight="700" color={Colors.textPrimary} align="center" numberOfLines={1}>Electrical</Txt>
             <Spacer size={8} />
             <View style={{ width: 24, height: 24, borderRadius: Radii.pill, backgroundColor: elec.statusColor === Colors.success ? Colors.primary : elec.statusColor, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={elec.statusColor === Colors.success ? "checkmark" : elec.statusColor === Colors.danger ? "close" : "warning"} size={14} color="#FFF" />
+              <Ionicons name={elec.statusColor === Colors.success ? "checkmark" : elec.statusColor === Colors.danger ? "close" : "warning"} size={14} color={Colors.textInverse} />
             </View>
             <Spacer size={8} />
-            <Txt size={16} weight="900" color={Colors.textPrimary}>{elec.good} / {elec.total}</Txt>
+            <Txt size={16} weight="700" color={Colors.textPrimary}>{elec.good} / {elec.total}</Txt>
             <Txt size={10} weight="700" color={elec.statusColor}>{elec.statusText}</Txt>
           </Card>
         </AnimatedPress>
         <AnimatedPress accessibilityRole="button" onPress={() => onGoToChecks?.('Cleanliness')} style={{ flex: 1, minWidth: 100 }}>
           <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-            <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1}>Cleanliness</Txt>
+            <Txt size={11} weight="700" color={Colors.textPrimary} align="center" numberOfLines={1}>Cleanliness</Txt>
             <Spacer size={8} />
             <View style={{ width: 24, height: 24, borderRadius: Radii.pill, backgroundColor: clean.statusColor === Colors.success ? Colors.primary : clean.statusColor, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={clean.statusColor === Colors.success ? "checkmark" : clean.statusColor === Colors.danger ? "close" : "warning"} size={14} color="#FFF" />
+              <Ionicons name={clean.statusColor === Colors.success ? "checkmark" : clean.statusColor === Colors.danger ? "close" : "warning"} size={14} color={Colors.textInverse} />
             </View>
             <Spacer size={8} />
-            <Txt size={16} weight="900" color={Colors.textPrimary}>{clean.good} / {clean.total}</Txt>
+            <Txt size={16} weight="700" color={Colors.textPrimary}>{clean.good} / {clean.total}</Txt>
             <Txt size={10} weight="700" color={clean.statusColor}>{clean.statusText}</Txt>
           </Card>
         </AnimatedPress>
         <AnimatedPress accessibilityRole="button" onPress={() => onGoToChecks?.('Kitchen Hygiene')} style={{ flex: 1, minWidth: 100 }}>
           <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-            <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1}>Kitchen Hygiene</Txt>
+            <Txt size={11} weight="700" color={Colors.textPrimary} align="center" numberOfLines={1}>Kitchen Hygiene</Txt>
             <Spacer size={8} />
             <View style={{ width: 24, height: 24, borderRadius: Radii.pill, backgroundColor: kitch.statusColor === Colors.success ? Colors.primary : kitch.statusColor, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={kitch.statusColor === Colors.success ? "checkmark" : kitch.statusColor === Colors.danger ? "close" : "warning"} size={14} color="#FFF" />
+              <Ionicons name={kitch.statusColor === Colors.success ? "checkmark" : kitch.statusColor === Colors.danger ? "close" : "warning"} size={14} color={Colors.textInverse} />
             </View>
             <Spacer size={8} />
-            <Txt size={16} weight="900" color={Colors.textPrimary}>{kitch.good} / {kitch.total}</Txt>
+            <Txt size={16} weight="700" color={Colors.textPrimary}>{kitch.good} / {kitch.total}</Txt>
             <Txt size={10} weight="700" color={kitch.statusColor}>{kitch.statusText}</Txt>
           </Card>
         </AnimatedPress>
@@ -200,25 +200,25 @@ export function MaintenanceStatsSummary({ inspections, issues, onGoToChecks }: a
       <Row gap={10} style={{ flexWrap: 'wrap' }}>
         <AnimatedPress accessibilityRole="button" onPress={() => onGoToChecks?.('Plumbing')} style={{ flex: 1, minWidth: 100 }}>
           <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-            <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1}>Plumbing</Txt>
+            <Txt size={11} weight="700" color={Colors.textPrimary} align="center" numberOfLines={1}>Plumbing</Txt>
             <Spacer size={8} />
             <View style={{ width: 24, height: 24, borderRadius: Radii.pill, backgroundColor: plumb.statusColor === Colors.success ? Colors.primary : plumb.statusColor, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={plumb.statusColor === Colors.success ? "checkmark" : plumb.statusColor === Colors.danger ? "close" : "warning"} size={14} color="#FFF" />
+              <Ionicons name={plumb.statusColor === Colors.success ? "checkmark" : plumb.statusColor === Colors.danger ? "close" : "warning"} size={14} color={Colors.textInverse} />
             </View>
             <Spacer size={8} />
-            <Txt size={16} weight="900" color={Colors.textPrimary}>{plumb.good} / {plumb.total}</Txt>
+            <Txt size={16} weight="700" color={Colors.textPrimary}>{plumb.good} / {plumb.total}</Txt>
             <Txt size={10} weight="700" color={plumb.statusColor}>{plumb.statusText}</Txt>
           </Card>
         </AnimatedPress>
         <AnimatedPress accessibilityRole="button" onPress={() => onGoToChecks?.('General')} style={{ flex: 1, minWidth: 100 }}>
           <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[12, 8]} style={{ flex: 1, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-            <Txt size={11} weight="800" color={Colors.textPrimary} align="center" numberOfLines={1}>General Facilities</Txt>
+            <Txt size={11} weight="700" color={Colors.textPrimary} align="center" numberOfLines={1}>General Facilities</Txt>
             <Spacer size={8} />
             <View style={{ width: 24, height: 24, borderRadius: Radii.pill, backgroundColor: gen.statusColor === Colors.success ? Colors.primary : gen.statusColor, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={gen.statusColor === Colors.success ? "checkmark" : gen.statusColor === Colors.danger ? "close" : "warning"} size={14} color="#FFF" />
+              <Ionicons name={gen.statusColor === Colors.success ? "checkmark" : gen.statusColor === Colors.danger ? "close" : "warning"} size={14} color={Colors.textInverse} />
             </View>
             <Spacer size={8} />
-            <Txt size={16} weight="900" color={Colors.textPrimary}>{gen.good} / {gen.total}</Txt>
+            <Txt size={16} weight="700" color={Colors.textPrimary}>{gen.good} / {gen.total}</Txt>
             <Txt size={10} weight="700" color={gen.statusColor}>{gen.statusText}</Txt>
           </Card>
         </AnimatedPress>
@@ -226,20 +226,20 @@ export function MaintenanceStatsSummary({ inspections, issues, onGoToChecks }: a
 
       <Row gap={10} style={{ marginTop: 4, flexWrap: 'wrap' }}>
         <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ flex: 1, minWidth: 140, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-          <Txt size={24} weight="900" color={Colors.primaryDark}>{totalInspections}</Txt>
-          <Txt size={12} weight="900" color={Colors.textPrimary}>Total Inspections</Txt>
+          <Txt size={24} weight="700" color={Colors.primaryDark}>{totalInspections}</Txt>
+          <Txt size={12} weight="700" color={Colors.textPrimary}>Total Inspections</Txt>
           <Txt size={11} color={Colors.textMuted}>This Month</Txt>
         </Card>
         <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ flex: 1, minWidth: 140, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-          <Txt size={24} weight="900" color={Colors.danger}>{issues.length}</Txt>
-          <Txt size={12} weight="900" color={Colors.textPrimary}>Issues Found</Txt>
+          <Txt size={24} weight="700" color={Colors.danger}>{issues.length}</Txt>
+          <Txt size={12} weight="700" color={Colors.textPrimary}>Issues Found</Txt>
           <Txt size={11} color={Colors.textMuted}>Today</Txt>
         </Card>
       </Row>
 
       <Spacer size={4} />
       <Row justify="space-between" align="center">
-        <Txt size={15} weight="900" color={Colors.textPrimary}>Recent Observations</Txt>
+        <Txt size={15} weight="700" color={Colors.textPrimary}>Recent Observations</Txt>
       </Row>
       <Col gap={8}>
         {issues.slice(0, 3).map((iss: any, idx: number) => {
@@ -255,11 +255,11 @@ export function MaintenanceStatsSummary({ inspections, issues, onGoToChecks }: a
                   <Ionicons name="warning" size={20} color={color} />
                 )}
                 <Col style={{ flex: 1 }}>
-                  <Txt size={14} weight="900" color={Colors.textPrimary}>{iss.title}</Txt>
+                  <Txt size={14} weight="700" color={Colors.textPrimary}>{iss.title}</Txt>
                   <Txt size={12} color={Colors.textMuted}>{iss.location}</Txt>
                 </Col>
                 <Col align="flex-end">
-                  <Txt size={12} weight="800" color={color}>{iss.priority}</Txt>
+                  <Txt size={12} weight="700" color={color}>{iss.priority}</Txt>
                   <Txt size={10} color={Colors.textMuted}>{iss.time}</Txt>
                 </Col>
               </Row>
@@ -283,7 +283,7 @@ function MaintenanceDashView({ staff, inspections, issues, onGoToChecks, refresh
             <Ionicons name="person" size={24} color={Colors.primary} />
           </View>
           <Col>
-            <Txt size={18} weight="900" color={Colors.primaryDark}>{getGreeting()}, {firstName} 👋</Txt>
+            <Txt size={18} weight="700" color={Colors.primaryDark}>{getGreeting()}, {firstName} 👋</Txt>
             <Txt size={12} weight="700" color={Colors.textMuted}>Maintenance Staff</Txt>
           </Col>
         </Row>
@@ -362,7 +362,7 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
   return (
     <View style={{ flex: 1 }}>
       <View style={{ padding: 18, paddingBottom: 16, backgroundColor: Colors.canvas, zIndex: 10, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 }}>
-        <Txt size={22} weight="900" color={Colors.primaryDark}>Facility Checks</Txt>
+        <Txt size={22} weight="700" color={Colors.primaryDark}>Facility Checks</Txt>
         <Spacer size={16} />
         <Row justify="space-between" style={{ paddingHorizontal: 4 }}>
           {cats.map(c => {
@@ -370,7 +370,7 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
             return (
               <AnimatedPress accessibilityRole="button" key={c.id} onPress={() => handleCatChange(c.id)} style={{ alignItems: 'center', flex: 1 }}>
                 <View style={{ width: 56, height: 56, borderRadius: Radii.card, backgroundColor: isSelected ? Colors.primary : Colors.surface, borderWidth: isSelected ? 0 : 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', marginBottom: 8, shadowColor: isSelected ? Colors.primary : 'transparent', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: isSelected ? 4 : 0 }}>
-                  <Ionicons name={c.icon as any} size={24} color={isSelected ? '#FFF' : Colors.textMuted} />
+                  <Ionicons name={c.icon as any} size={24} color={isSelected ? Colors.textInverse : Colors.textMuted} />
                 </View>
                 <Txt size={10} weight={isSelected ? "900" : "700"} color={isSelected ? Colors.primaryDark : Colors.textMuted} align="center">{c.id.split(' ')[0]}</Txt>
               </AnimatedPress>
@@ -382,8 +382,8 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
       <FormScroll bottomPadding={160} contentContainerStyle={{ padding: 18, paddingTop: 18, gap: 16 }}>
         {/* Progress Header */}
         <Row justify="space-between" align="flex-end">
-          <Txt size={15} weight="900" color={Colors.textPrimary}>{selectedCat} Inspection</Txt>
-          <Txt size={12} weight="800" color={Colors.primary}>{completedItems} / {totalItems} Completed</Txt>
+          <Txt size={15} weight="700" color={Colors.textPrimary}>{selectedCat} Inspection</Txt>
+          <Txt size={12} weight="700" color={Colors.primary}>{completedItems} / {totalItems} Completed</Txt>
         </Row>
         <View style={[styles.progressTrack, { height: 6, backgroundColor: Colors.surfaceElevated }]}>
           <View style={[styles.progressFill, { width: totalItems ? `${(completedItems / totalItems) * 100}%` : '0%', backgroundColor: Colors.primary, borderRadius: Radii.badge }]} />
@@ -398,7 +398,7 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
               <Row justify="space-between" align="center">
                 <Txt size={14} color={Colors.textMuted}>Select Area / Floor</Txt>
                 <Row align="center" gap={4}>
-                  <Txt size={14} weight="800" color={Colors.textPrimary}>{activeArea}</Txt>
+                  <Txt size={14} weight="700" color={Colors.textPrimary}>{activeArea}</Txt>
                   <Ionicons name={showAreaPicker ? "chevron-up" : "chevron-down"} size={16} color={Colors.textMuted} />
                 </Row>
               </Row>
@@ -421,7 +421,7 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
         {/* Room Checklists */}
         {displayedRooms.map((roomGrp: any, rIdx: number) => (
           <Card key={roomGrp.room} containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-            <Txt size={16} weight="900" color={Colors.primaryDark}>{roomGrp.room}</Txt>
+            <Txt size={16} weight="700" color={Colors.primaryDark}>{roomGrp.room}</Txt>
             <Spacer size={12} />
             {roomGrp.items.map((item: any, iIdx: number) => {
               const dropdownKey = `${rIdx}-${iIdx}`;
@@ -429,7 +429,7 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
               return (
                 <View key={item.name} style={{ marginVertical: 6 }}>
                   <Row justify="space-between" align="center">
-                    <Txt size={14} weight="800" color={Colors.textPrimary}>{item.name}</Txt>
+                    <Txt size={14} weight="700" color={Colors.textPrimary}>{item.name}</Txt>
                     <AnimatedPress accessibilityRole="button"
                       onPress={() => setOpenDropdown(isOpen ? null : dropdownKey)}
                       style={{ minWidth: 130, alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row', backgroundColor: Colors.surfaceMuted, paddingHorizontal: 10, paddingVertical: 8, borderRadius: Radii.control, borderWidth: 1, borderColor: isOpen ? Colors.primary : Colors.borderSubtle }}
@@ -438,7 +438,7 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
                         {item.status === 'Working' && <Ionicons name="checkmark-circle" size={16} color={Colors.success} />}
                         {item.status === 'Needs Attention' && <Ionicons name="warning" size={16} color="#F97316" />}
                         {item.status === 'Not Working' && <Ionicons name="close-circle" size={16} color={Colors.danger} />}
-                        <Txt size={13} weight="800" color={item.status === 'Working' ? Colors.success : item.status === 'Needs Attention' ? '#F97316' : Colors.danger}>
+                        <Txt size={13} weight="700" color={item.status === 'Working' ? Colors.success : item.status === 'Needs Attention' ? '#F97316' : Colors.danger}>
                           {item.status === 'Needs Attention' ? 'Attention' : item.status === 'Not Working' ? 'Broken' : 'Working'}
                         </Txt>
                       </Row>
@@ -449,13 +449,13 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
                   {isOpen && (
                     <View style={{ backgroundColor: Colors.canvas, borderRadius: Radii.control, marginTop: 8, padding: 4, borderWidth: 1, borderColor: Colors.borderSubtle }}>
                       <AnimatedPress accessibilityRole="button" onPress={() => handleSelectStatus(rIdx, iIdx, 'Working')} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle }}>
-                        <Ionicons name="checkmark-circle" size={18} color={Colors.success} /><Txt size={14} weight="800" color={Colors.textPrimary}>Working</Txt>
+                        <Ionicons name="checkmark-circle" size={18} color={Colors.success} /><Txt size={14} weight="700" color={Colors.textPrimary}>Working</Txt>
                       </AnimatedPress>
                       <AnimatedPress accessibilityRole="button" onPress={() => handleSelectStatus(rIdx, iIdx, 'Needs Attention')} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle }}>
-                        <Ionicons name="warning" size={18} color="#F97316" /><Txt size={14} weight="800" color={Colors.textPrimary}>Needs Attention</Txt>
+                        <Ionicons name="warning" size={18} color="#F97316" /><Txt size={14} weight="700" color={Colors.textPrimary}>Needs Attention</Txt>
                       </AnimatedPress>
                       <AnimatedPress accessibilityRole="button" onPress={() => handleSelectStatus(rIdx, iIdx, 'Not Working')} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
-                        <Ionicons name="close-circle" size={18} color={Colors.danger} /><Txt size={14} weight="800" color={Colors.textPrimary}>Broken</Txt>
+                        <Ionicons name="close-circle" size={18} color={Colors.danger} /><Txt size={14} weight="700" color={Colors.textPrimary}>Broken</Txt>
                       </AnimatedPress>
                     </View>
                   )}
@@ -468,52 +468,39 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
         <Spacer size={20} />
 
         {/* Save Progress Button */}
-        <Btn containerColor={Colors.primary} textColor="#FFF" borderRadius={Radii.control} height={56} onPress={saveProgress} style={{ shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 }}>
-          <Txt size={16} weight="900">Save Progress</Txt>
+        <Btn containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={56} onPress={saveProgress} style={{ shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 }}>
+          <Txt size={16} weight="700">Save Progress</Txt>
         </Btn>
       </FormScroll>
 
-      <Modal transparent visible={showSaveConfirm} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: Colors.surface, borderRadius: Radii.sheet, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
-            <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-              <View style={{ width: 48, height: 48, borderRadius: Radii.pill, backgroundColor: isSyncSuccess ? '#F0FDF4' : '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={isSyncSuccess ? "checkmark" : "phone-portrait-outline"} size={24} color={isSyncSuccess ? Colors.success : Colors.primary} />
-              </View>
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }} style={{ width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="close" size={20} color={Colors.textMuted} />
-              </AnimatedPress>
-            </Row>
-            {/* Every toggle above already writes to this device's storage the instant it's
-                tapped (see handleSelectStatus) — this dialog is a confirmation, not the save
-                itself, and says so honestly. There is no server endpoint for a facility
-                checklist yet (see useMaintenanceChecklist), so "synced to the server" would
-                have been a claim nothing behind it could back up. */}
-            <Txt size={20} weight="900" color={Colors.primaryDark}>{isSyncSuccess ? 'Saved on this Device' : 'Finish this Check?'}</Txt>
-            <Spacer size={8} />
-            <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              {isSyncSuccess
-                ? 'Your inspection progress is saved on this device and will still be here next time you open the app.'
-                : 'Your changes are already saved as you tick them — this just confirms you\'re done with this round.'}
-            </Txt>
-            <Spacer size={24} />
-            {isSyncSuccess ? (
-              <Btn onPress={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }} containerColor={Colors.primary} textColor="#FFF" borderRadius={Radii.control} height={50}>
-                <Txt size={15} weight="900">Done</Txt>
-              </Btn>
-            ) : (
-              <Row gap={12}>
-                <AnimatedPress accessibilityRole="button" onPress={() => setShowSaveConfirm(false)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight="800" color={Colors.textPrimary}>Keep Checking</Txt>
-                </AnimatedPress>
-                <AnimatedPress accessibilityRole="button" onPress={() => setIsSyncSuccess(true)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight="800" color="#FFF">Done for Now</Txt>
-                </AnimatedPress>
-              </Row>
-            )}
-          </View>
-        </View>
-      </Modal>
+      <Sheet
+        visible={showSaveConfirm}
+        title={isSyncSuccess ? 'Saved on this Device' : 'Finish this Check?'}
+        icon={isSyncSuccess ? 'checkmark' : 'phone-portrait-outline'}
+        accent={isSyncSuccess ? Colors.success : Colors.primary}
+        onDismiss={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }}
+        testID="housekeeping-save-confirm"
+        footer={isSyncSuccess ? (
+          <Btn onPress={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
+            <Txt size={15} weight="700">Done</Txt>
+          </Btn>
+        ) : (
+          <Row gap={12}>
+            <AnimatedPress accessibilityRole="button" onPress={() => setShowSaveConfirm(false)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <Txt size={15} weight="700" color={Colors.textPrimary}>Keep Checking</Txt>
+            </AnimatedPress>
+            <AnimatedPress accessibilityRole="button" onPress={() => setIsSyncSuccess(true)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+              <Txt size={15} weight="700" color={Colors.textInverse}>Done for Now</Txt>
+            </AnimatedPress>
+          </Row>
+        )}
+      >
+        <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
+          {isSyncSuccess
+            ? 'Your inspection progress is saved on this device and will still be here next time you open the app.'
+            : 'Your changes are already saved as you tick them — this just confirms you\'re done with this round.'}
+        </Txt>
+      </Sheet>
     </View>
   );
 }
@@ -559,12 +546,12 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           <View style={{ width: 80, height: 80, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
             <Ionicons name="checkmark" size={40} color={Colors.success} />
           </View>
-          <Txt size={24} weight="900" color={Colors.primaryDark} align="center">Issue Reported</Txt>
+          <Txt size={24} weight="700" color={Colors.primaryDark} align="center">Issue Reported</Txt>
           <Spacer size={12} />
           <Txt size={15} color={Colors.textMuted} align="center">The maintenance issue has been added successfully.</Txt>
           <Spacer size={32} />
-          <Btn containerColor={Colors.primary} textColor="#FFF" borderRadius={Radii.control} height={50} style={{ width: '100%' }} onPress={() => { setShowForm(false); setIsSuccess(false); }}>
-            <Txt size={16} weight="900">View Issues</Txt>
+          <Btn containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={50} style={{ width: '100%' }} onPress={() => { setShowForm(false); setIsSuccess(false); }}>
+            <Txt size={16} weight="700">View Issues</Txt>
           </Btn>
         </View>
       );
@@ -656,7 +643,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           {/* Header */}
           <Row align="flex-start" justify="space-between">
             <Col>
-              <Txt size={24} weight="900" color={Colors.primaryDark}>Report Issue</Txt>
+              <Txt size={24} weight="700" color={Colors.primaryDark}>Report Issue</Txt>
               <Txt size={13} weight="700" color={Colors.textMuted} style={{ marginTop: 2 }}>Help keep the PG safe and well maintained</Txt>
             </Col>
             <View style={{ marginTop: -4 }}><IconBtn onPress={() => setShowForm(false)} icon="close" size={28} tint={Colors.textMuted} /></View>
@@ -667,12 +654,12 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           {/* Validation Error */}
           {err ? (
             <View style={{ backgroundColor: Palette.TintRed, padding: 12, borderRadius: Radii.control, marginBottom: 16 }}>
-              <Txt size={13} weight="800" color={Colors.danger}>{err}</Txt>
+              <Txt size={13} weight="700" color={Colors.danger}>{err}</Txt>
             </View>
           ) : null}
 
           {/* Category */}
-          <Txt size={14} weight="900" color={Colors.textPrimary}>Category</Txt>
+          <Txt size={14} weight="700" color={Colors.textPrimary}>Category</Txt>
           <Spacer size={8} />
           <ChoiceChips
             options={CATS}
@@ -688,7 +675,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
               chips are all visible at once and the form does not move. When the area is a
               room, the room itself comes from the property layout rather than a number box —
               "204" typed here does not have to be a room that exists. */}
-          <Txt size={14} weight="900" color={Colors.textPrimary}>Where is it?</Txt>
+          <Txt size={14} weight="700" color={Colors.textPrimary}>Where is it?</Txt>
           <Spacer size={8} />
           <ChoiceChips
             options={LOCS}
@@ -706,7 +693,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           <Spacer size={20} />
 
           {/* Issue Description */}
-          <Txt size={14} weight="900" color={Colors.textPrimary}>What's wrong?</Txt>
+          <Txt size={14} weight="700" color={Colors.textPrimary}>What's wrong?</Txt>
           <Spacer size={8} />
           <View style={[styles.inputBox, { height: 100, justifyContent: 'flex-start', paddingVertical: 12, backgroundColor: Colors.surface }]}>
             <OutlinedTextField
@@ -720,42 +707,42 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           <Spacer size={20} />
 
           {/* Priority */}
-          <Txt size={14} weight="900" color={Colors.textPrimary}>Priority</Txt>
+          <Txt size={14} weight="700" color={Colors.textPrimary}>Priority</Txt>
           <Spacer size={8} />
           <Row gap={10}>
             <AnimatedPress accessibilityRole="button" onPress={() => setNewPriority('Low')} style={{ flex: 1, height: 46, borderRadius: Radii.control, backgroundColor: newPriority === 'Low' ? Colors.surfaceMuted : Colors.surface, borderWidth: 2, borderColor: newPriority === 'Low' ? Colors.textMuted : Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
               {newPriority === 'Low' && <Ionicons name="checkmark" size={16} color={Colors.textPrimary} />}
-              <Txt size={14} weight="900" color={Colors.textPrimary}>Low</Txt>
+              <Txt size={14} weight="700" color={Colors.textPrimary}>Low</Txt>
             </AnimatedPress>
             <AnimatedPress accessibilityRole="button" onPress={() => setNewPriority('Medium')} style={{ flex: 1, height: 46, borderRadius: Radii.control, backgroundColor: newPriority === 'Medium' ? '#FFEDD5' : Colors.surface, borderWidth: 2, borderColor: newPriority === 'Medium' ? '#F97316' : Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
               {newPriority === 'Medium' && <Ionicons name="checkmark" size={16} color="#F97316" />}
-              <Txt size={14} weight="900" color={newPriority === 'Medium' ? '#F97316' : Colors.textPrimary}>Medium</Txt>
+              <Txt size={14} weight="700" color={newPriority === 'Medium' ? '#F97316' : Colors.textPrimary}>Medium</Txt>
             </AnimatedPress>
             <AnimatedPress accessibilityRole="button" onPress={() => setNewPriority('High')} style={{ flex: 1, height: 46, borderRadius: Radii.control, backgroundColor: newPriority === 'High' ? Palette.TintRed : Colors.surface, borderWidth: 2, borderColor: newPriority === 'High' ? Colors.danger : Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
               {newPriority === 'High' && <Ionicons name="checkmark" size={16} color={Colors.danger} />}
-              <Txt size={14} weight="900" color={newPriority === 'High' ? Colors.danger : Colors.textPrimary}>High</Txt>
+              <Txt size={14} weight="700" color={newPriority === 'High' ? Colors.danger : Colors.textPrimary}>High</Txt>
             </AnimatedPress>
           </Row>
 
           <Spacer size={20} />
 
           {/* Photo */}
-          <Txt size={14} weight="900" color={Colors.textPrimary}>Add Photo</Txt>
+          <Txt size={14} weight="700" color={Colors.textPrimary}>Add Photo</Txt>
           <Txt size={12} weight="700" color={Colors.textMuted} style={{ marginTop: 2 }}>Optional · Recommended for faster resolution</Txt>
           <Spacer size={8} />
           {hasPhoto && photoUri ? (
             <View style={{ height: 160, borderRadius: Radii.card, backgroundColor: '#E5E7EB', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.borderSubtle }}>
               <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%', position: 'absolute' }} resizeMode="cover" />
               <Row gap={16} style={{ position: 'absolute', bottom: 16 }}>
-                <AnimatedPress accessibilityRole="button" onPress={handleCapturePhoto} style={{ backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radii.sheet }}><Txt size={13} weight="800" color={Colors.textPrimary}>Retake</Txt></AnimatedPress>
-                <AnimatedPress accessibilityRole="button" onPress={() => { setHasPhoto(false); setPhotoUri(null); }} style={{ backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radii.sheet }}><Txt size={13} weight="800" color={Colors.danger}>Remove</Txt></AnimatedPress>
+                <AnimatedPress accessibilityRole="button" onPress={handleCapturePhoto} style={{ backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radii.sheet }}><Txt size={13} weight="700" color={Colors.textPrimary}>Retake</Txt></AnimatedPress>
+                <AnimatedPress accessibilityRole="button" onPress={() => { setHasPhoto(false); setPhotoUri(null); }} style={{ backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radii.sheet }}><Txt size={13} weight="700" color={Colors.danger}>Remove</Txt></AnimatedPress>
               </Row>
             </View>
           ) : (
             <AnimatedPress accessibilityRole="button" onPress={handleCapturePhoto} style={{ height: 100, borderRadius: Radii.card, backgroundColor: Colors.surface, borderStyle: 'dashed', borderWidth: 2, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="camera" size={32} color={Colors.primary} />
               <Spacer size={4} />
-              <Txt size={14} weight="900" color={Colors.primary}>Add Photo</Txt>
+              <Txt size={14} weight="700" color={Colors.primary}>Add Photo</Txt>
               <Txt size={12} color={Colors.textMuted}>Show the issue clearly</Txt>
             </AnimatedPress>
           )}
@@ -763,7 +750,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           <Spacer size={20} />
 
           {/* Additional Notes */}
-          <Txt size={14} weight="900" color={Colors.textPrimary}>Additional Notes</Txt>
+          <Txt size={14} weight="700" color={Colors.textPrimary}>Additional Notes</Txt>
           <Spacer size={8} />
           <View style={[styles.inputBox, { height: 80, justifyContent: 'flex-start', paddingVertical: 12, backgroundColor: Colors.surface }]}>
             <OutlinedTextField
@@ -780,14 +767,14 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100, backgroundColor: Colors.canvas, borderTopWidth: 1, borderColor: Colors.borderSubtle }}>
           <Btn
             containerColor={Colors.primary}
-            textColor="#FFF"
+            textColor={Colors.textInverse}
             borderRadius={Radii.card}
             height={56}
             onPress={handleAddIssue}
             disabled={submitIssue.isPending}
             loading={submitIssue.isPending}
           >
-            <Txt size={16} weight="900">{submitIssue.isPending ? 'Reporting…' : 'Report Issue'}</Txt>
+            <Txt size={16} weight="700">{submitIssue.isPending ? 'Reporting…' : 'Report Issue'}</Txt>
           </Btn>
         </View>
       </View>
@@ -802,9 +789,9 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
     <View style={{ flex: 1 }}>
       <View style={{ padding: 18, paddingBottom: 0 }}>
         <Row justify="space-between" align="center">
-          <Txt size={22} weight="900" color={Colors.primaryDark}>Issues Found</Txt>
-          <Btn containerColor={Colors.primary} textColor="#FFF" borderRadius={Radii.control} height={32} contentStyle={{ paddingHorizontal: 12 }} onPress={() => setShowForm(true)}>
-            <Txt size={11} weight="800">+ Report Issue</Txt>
+          <Txt size={22} weight="700" color={Colors.primaryDark}>Issues Found</Txt>
+          <Btn containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={32} contentStyle={{ paddingHorizontal: 12 }} onPress={() => setShowForm(true)}>
+            <Txt size={11} weight="700">+ Report Issue</Txt>
           </Btn>
         </Row>
         <Spacer size={16} />
@@ -812,8 +799,8 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           {filters.map(f => {
             const isSelected = activeFilter === f;
             let color: string = Colors.textMuted;
-            if (isSelected && f === 'All') color = '#FFF';
-            else if (isSelected) color = '#FFF';
+            if (isSelected && f === 'All') color = Colors.textInverse;
+            else if (isSelected) color = Colors.textInverse;
             else if (f === 'High') color = Colors.danger;
             else if (f === 'Medium') color = '#F97316';
             else if (f === 'Low') color = '#EAB308';
@@ -821,7 +808,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
 
             return (
               <Btn key={f} onPress={() => setActiveFilter(f)} containerColor={isSelected ? Colors.primary : Colors.canvas} textColor={color} borderRadius={Radii.card} height={32} contentStyle={{ paddingHorizontal: 12 }}>
-                <Txt size={13} weight="800" color={color}>{f}</Txt>
+                <Txt size={13} weight="700" color={color}>{f}</Txt>
               </Btn>
             );
           })}
@@ -861,14 +848,14 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
                         </View>
                         <Col style={{ flex: 1 }}>
                           <View style={{ backgroundColor: bgColor, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.control, alignSelf: 'flex-start', marginBottom: 4 }}>
-                            <Txt size={10} weight="800" color={color}>{iss.priority}</Txt>
+                            <Txt size={10} weight="700" color={color}>{iss.priority}</Txt>
                           </View>
-                          <Txt size={16} weight="900" color={Colors.textPrimary}>{iss.title}</Txt>
+                          <Txt size={16} weight="700" color={Colors.textPrimary}>{iss.title}</Txt>
                           <Txt size={13} color={Colors.textMuted} style={{ marginTop: 2 }}>{iss.location}</Txt>
                         </Col>
                       </Row>
                       <Col align="flex-end">
-                        <Txt size={12} weight="800" color={iss.status === 'Resolved' ? Colors.success : Colors.primary}>{iss.status}</Txt>
+                        <Txt size={12} weight="700" color={iss.status === 'Resolved' ? Colors.success : Colors.primary}>{iss.status}</Txt>
                       </Col>
                     </Row>
                     <Spacer size={16} />
@@ -888,64 +875,50 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           onPress={() => setShowForm(true)}
           style={{ width: 60, height: 60, borderRadius: Radii.pill, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 }}
         >
-          <Ionicons name="add" size={32} color="#FFF" />
+          <Ionicons name="add" size={32} color={Colors.textInverse} />
         </AnimatedPress>
       </View>
 
-      <Modal transparent visible={!!selectedIssue} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: Colors.surface, borderRadius: Radii.sheet, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
-            {/* "Reopen" used to be offered here too — a local status flip with nothing behind
-                it. The server has no un-resolve transition (resolve_request: "This ticket is
-                already closed." — a hard CONFLICT, not a toggle), so a resolved ticket now
-                only shows that it's resolved, rather than a button that could never work. */}
-            <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-              <View style={{ width: 48, height: 48, borderRadius: Radii.pill, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="checkmark-done" size={24} color={Colors.success} />
-              </View>
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSelectedIssue(null)} style={{ width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="close" size={20} color={Colors.textMuted} />
-              </AnimatedPress>
-            </Row>
-            <Txt size={20} weight="900" color={Colors.primaryDark}>
-              {selectedIssue?.status === 'Resolved' ? 'Already Resolved' : 'Mark as Resolved?'}
-            </Txt>
-            <Spacer size={8} />
-            <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              {selectedIssue?.status === 'Resolved'
-                ? `"${selectedIssue?.title}" has been resolved.`
-                : `Mark "${selectedIssue?.title}" as resolved? The resident who reported it will be able to see this.`}
-            </Txt>
-            <Spacer size={24} />
-            {selectedIssue?.status === 'Resolved' ? (
-              <Btn onPress={() => setSelectedIssue(null)} containerColor={Colors.surfaceMuted} textColor={Colors.textPrimary} borderRadius={Radii.card} height={50}>
-                <Txt size={15} weight="800" color={Colors.textPrimary}>Close</Txt>
-              </Btn>
-            ) : (
-              <Row gap={12}>
-                <AnimatedPress accessibilityRole="button" onPress={() => setSelectedIssue(null)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                  <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
-                </AnimatedPress>
-                <AnimatedPress accessibilityRole="button"
-                  disabled={resolveIssue.isPending}
-                  onPress={async () => {
-                    if (!selectedIssue) return;
-                    try {
-                      await resolveIssue.mutateAsync({ id: selectedIssue.id });
-                      setSelectedIssue(null);
-                    } catch (err) {
-                      Alert.alert('Could not resolve', err instanceof Error ? err.message : 'Please try again.');
-                    }
-                  }}
-                  style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.success, alignItems: 'center', justifyContent: 'center', opacity: resolveIssue.isPending ? 0.6 : 1 }}
-                >
-                  <Txt size={15} weight="800" color="#FFF">{resolveIssue.isPending ? 'Resolving…' : 'Resolve'}</Txt>
-                </AnimatedPress>
-              </Row>
-            )}
-          </View>
-        </View>
-      </Modal>
+      <Sheet
+        visible={!!selectedIssue}
+        title={selectedIssue?.status === 'Resolved' ? 'Already Resolved' : 'Mark as Resolved?'}
+        icon="checkmark-done"
+        accent={Colors.success}
+        onDismiss={() => setSelectedIssue(null)}
+        testID="housekeeping-issue-sheet"
+        footer={selectedIssue?.status === 'Resolved' ? (
+          <Btn onPress={() => setSelectedIssue(null)} containerColor={Colors.surfaceMuted} textColor={Colors.textPrimary} borderRadius={Radii.card} height={50}>
+            <Txt size={15} weight="700" color={Colors.textPrimary}>Close</Txt>
+          </Btn>
+        ) : (
+          <Row gap={12}>
+            <AnimatedPress accessibilityRole="button" onPress={() => setSelectedIssue(null)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <Txt size={15} weight="700" color={Colors.textPrimary}>Cancel</Txt>
+            </AnimatedPress>
+            <AnimatedPress accessibilityRole="button"
+              disabled={resolveIssue.isPending}
+              onPress={async () => {
+                if (!selectedIssue) return;
+                try {
+                  await resolveIssue.mutateAsync({ id: selectedIssue.id });
+                  setSelectedIssue(null);
+                } catch (err) {
+                  Alert.alert('Could not resolve', err instanceof Error ? err.message : 'Please try again.');
+                }
+              }}
+              style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.success, alignItems: 'center', justifyContent: 'center', opacity: resolveIssue.isPending ? 0.6 : 1 }}
+            >
+              <Txt size={15} weight="700" color={Colors.textInverse}>{resolveIssue.isPending ? 'Resolving…' : 'Resolve'}</Txt>
+            </AnimatedPress>
+          </Row>
+        )}
+      >
+        <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
+          {selectedIssue?.status === 'Resolved'
+            ? `"${selectedIssue?.title}" has been resolved.`
+            : `Mark "${selectedIssue?.title}" as resolved? The resident who reported it will be able to see this.`}
+        </Txt>
+      </Sheet>
     </View>
   );
 }
@@ -969,7 +942,7 @@ function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues
           <Ionicons name="construct" size={26} color={DeckTints.brand.ink} />
         </View>
         <Spacer size={10} />
-        <Txt size={19} weight="800" color={DeckTints.brand.ink}>{staff?.name ?? 'Staff'}</Txt>
+        <Txt size={19} weight="700" color={DeckTints.brand.ink}>{staff?.name ?? 'Staff'}</Txt>
         <Txt size={13} weight="600" color={DeckTints.brand.sub}>Maintenance staff</Txt>
         <Spacer size={4} />
         <Txt size={11.5} color={DeckTints.brand.sub} tabular>
@@ -979,21 +952,21 @@ function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues
 
       <Spacer size={20} />
       <View style={styles.sectionHeader}>
-        <Txt size={13} weight="900" color={Colors.textSecondary}>STATUS & INFO</Txt>
+        <Txt size={13} weight="700" color={Colors.textSecondary}>STATUS & INFO</Txt>
       </View>
       <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle}>
         <Row justify="space-between" align="center" style={styles.profileRow}>
           <Row gap={12} align="center">
             <View style={[styles.iconBox, { backgroundColor: '#F0FDF4' }]}><Ionicons name="radio-button-on" size={18} color={Colors.success} /></View>
-            <Txt size={14} weight="800" color={Colors.textPrimary}>Availability</Txt>
+            <Txt size={14} weight="700" color={Colors.textPrimary}>Availability</Txt>
           </Row>
-          <Txt size={14} weight="800" color={Colors.success}>Available</Txt>
+          <Txt size={14} weight="700" color={Colors.success}>Available</Txt>
         </Row>
         <View style={styles.divider} />
         <Row justify="space-between" align="center" style={styles.profileRow}>
           <Row gap={12} align="center">
             <View style={[styles.iconBox, { backgroundColor: Colors.surfaceMuted }]}><Ionicons name="business" size={18} color={Colors.textPrimary} /></View>
-            <Txt size={14} weight="800" color={Colors.textPrimary}>Department</Txt>
+            <Txt size={14} weight="700" color={Colors.textPrimary}>Department</Txt>
           </Row>
           <Txt size={14} weight="700" color={Colors.textMuted}>Facility Maintenance</Txt>
         </Row>
@@ -1008,9 +981,9 @@ function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues
 
       <Spacer size={16} />
       {!hideLogout && (
-        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor="#FFF" borderRadius={Radii.control} height={50}>
-          <Ionicons name="exit" size={20} color="#FFF" />
-          <Txt size={14} weight="900" style={{ marginLeft: 8 }}>Sign Out</Txt>
+        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
+          <Ionicons name="exit" size={20} color={Colors.textInverse} />
+          <Txt size={14} weight="700" style={{ marginLeft: 8 }}>Sign Out</Txt>
         </Btn>
       )}
 

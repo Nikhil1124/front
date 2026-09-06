@@ -164,7 +164,7 @@ export function TenantListScreen() {
                     <Txt size={13} weight="700" color={Colors.primary}>{initialsOf(g.name ?? '?')}</Txt>
                   </View>
                   <Col style={{ flex: 1 }}>
-                    <Txt size={14} weight="800" color={Colors.textPrimary}>{g.name}</Txt>
+                    <Txt size={14} weight="700" color={Colors.textPrimary}>{g.name}</Txt>
                     <Txt size={11} color={Colors.textMuted}>Room {g.roomNo || '—'} • {g.phone || 'No phone'}</Txt>
                   </Col>
                   <StatusChip label={kycLabel} tone={toneFor(g.kycStatus)} />

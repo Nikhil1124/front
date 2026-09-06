@@ -6,9 +6,9 @@
  * not somebody else's promotion.
  */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Image } from 'react-native';
+import { View, StyleSheet, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, Row, Col, Spacer, Sheet } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { useAdConfigQuery, useRecordAdEventMutation } from '@/features/ads/useAds';
@@ -36,7 +36,7 @@ export function FeaturedMonetizedAdCard() {
       {/* Sponsored Header */}
       <View style={styles.sponsoredHeader}>
         <Row gap={8} align="center" style={{ flex: 1 }}>
-          <View style={styles.sponsoredTag}><Txt size={8} weight="900" color="#FFD700" style={{ letterSpacing: 0.5 }}>SPONSORED PARTNER</Txt></View>
+          <View style={styles.sponsoredTag}><Txt variant="caption" weight="600" color="#FFD700">SPONSORED PARTNER</Txt></View>
           <Txt variant="labelSmall" color={Colors.textMuted}>Monetized Channel</Txt>
         </Row>
       </View>
@@ -48,7 +48,7 @@ export function FeaturedMonetizedAdCard() {
           <View style={styles.bannerOverlay} />
           {!!ad.delivery_time && (
             <View style={styles.bannerPillsRow}>
-              <View style={styles.bannerPill}><Txt variant="labelSmall" color="#FFFFFF">⏱️ {ad.delivery_time}</Txt></View>
+              <View style={styles.bannerPill}><Txt variant="labelSmall" color={Colors.textInverse}>⏱️ {ad.delivery_time}</Txt></View>
             </View>
           )}
         </View>
@@ -56,7 +56,7 @@ export function FeaturedMonetizedAdCard() {
 
       <View style={{ padding: 16 }}>
         <Col style={{ flex: 1 }}>
-          <Txt variant="sectionTitle" weight="800" color="#FFFFFF">{ad.brand_name}</Txt>
+          <Txt variant="sectionTitle" color={Colors.textInverse}>{ad.brand_name}</Txt>
           {!!ad.tagline && <Txt variant="caption" weight="600" color={Colors.accentRose}>{ad.tagline}</Txt>}
         </Col>
         {!!ad.description && (
@@ -89,61 +89,67 @@ export function FeaturedMonetizedAdCard() {
               borderColor="rgba(255,215,0,0.5)"
             >
               <Ionicons name="copy" size={14} color="#FFD700" />
-              <Txt size={11} weight="900" color="#FFD700" style={{ marginLeft: 6, letterSpacing: 0.5 }}>{ad.discount_code}</Txt>
+              <Txt variant="meta" weight="600" color="#FFD700" tabular style={{ marginLeft: 6 }}>{ad.discount_code}</Txt>
             </Btn>
           )}
           <Btn
             onPress={() => { recordClick(); setShowCheckout(true); }}
             containerColor={Colors.accentRose}
-            textColor="#FFFFFF"
+            textColor={Colors.textInverse}
             borderRadius={Radii.control}
             height={40}
             style={{ flex: 1 }}
           >
-            <Txt variant="caption" weight="800" color="#FFFFFF">Order Now 🛵</Txt>
+            <Txt variant="button" color={Colors.textInverse}>Order Now 🛵</Txt>
           </Btn>
         </Row>
       </View>
 
       {/* Checkout simulation — there is no real cross-app checkout integration; this mirrors
           the copy-code-and-continue flow the prototype offered. */}
-      <Modal visible={showCheckout} transparent animationType="fade">
-        <View style={styles.backdrop}>
-          <Card containerColor="#0F0B21" borderRadius={Radii.sheet} borderWidth={1} borderColor={Colors.accentRose} padding={[20, 20]} style={{ width: '92%' }}>
-            <Col align="center">
-              <View style={styles.successIcon}><Ionicons name="checkmark-circle" size={32} color={Colors.success} /></View>
-              <Spacer size={16} />
-              <Txt variant="sectionTitle" weight="900" color="#FFFFFF" align="center">{ad.brand_name}</Txt>
-              <Txt variant="caption" color={Colors.textMuted}>Exclusive PG Partner Integration</Txt>
-              <Spacer size={16} /><View style={{ height: 1, backgroundColor: Colors.borderSubtle, width: '100%' }} /><Spacer size={12} />
-              {!!ad.discount_code && (
-                <Row justify="space-between" style={{ width: '100%' }}>
-                  <Txt variant="caption" color={Colors.textMuted}>Resident Meal Voucher</Txt>
-                  <Txt variant="caption" weight="700" color={Colors.success}>
-                    {ad.discount_percent > 0 ? `- ${ad.discount_percent}% Off Applied` : 'Applied'}
-                  </Txt>
-                </Row>
-              )}
-              {!!ad.delivery_time && (
-                <Row justify="space-between" style={{ width: '100%', marginTop: 6 }}>
-                  <Txt variant="caption" color={Colors.textMuted}>Estimated Arrival</Txt>
-                  <Txt variant="caption" weight="700" color={Colors.textInverse}>{ad.delivery_time}</Txt>
-                </Row>
-              )}
-              <Spacer size={20} />
-              <Txt variant="caption" color={Colors.textMuted} align="center">
-                {ad.discount_code
-                  ? `Voucher code '${ad.discount_code}' is copied and active. You can complete order on their platform.`
-                  : 'You can complete your order on their platform.'}
+      <Sheet
+        visible={showCheckout}
+        title={ad.brand_name}
+        subtitle="Exclusive PG partner integration"
+        accent={Colors.accentRose}
+        icon="checkmark-circle"
+        onDismiss={() => setShowCheckout(false)}
+        footer={(
+          <Btn
+            onPress={() => setShowCheckout(false)}
+            containerColor={Colors.accentRose}
+            textColor={Colors.textInverse}
+            borderRadius={Radii.control}
+            height={44}
+            style={{ width: '100%' }}
+          >
+            <Txt variant="button" color={Colors.textInverse}>Continue</Txt>
+          </Btn>
+        )}
+      >
+        <Col>
+          {!!ad.discount_code && (
+            <Row justify="space-between">
+              <Txt variant="body" color={Colors.textMuted}>Resident meal voucher</Txt>
+              <Txt variant="body" weight="600" color={Colors.success} tabular>
+                {ad.discount_percent > 0 ? `-${ad.discount_percent}% off applied` : 'Applied'}
               </Txt>
-              <Spacer size={20} />
-              <Btn onPress={() => setShowCheckout(false)} containerColor={Colors.accentRose} textColor="#FFFFFF" borderRadius={Radii.card} height={44} style={{ width: '100%' }}>
-                <Txt variant="body" weight="700" color="#FFFFFF">Awesome, Continue</Txt>
-              </Btn>
-            </Col>
-          </Card>
-        </View>
-      </Modal>
+            </Row>
+          )}
+          {!!ad.delivery_time && (
+            <Row justify="space-between" style={{ marginTop: ad.discount_code ? 8 : 0 }}>
+              <Txt variant="body" color={Colors.textMuted}>Estimated arrival</Txt>
+              <Txt variant="body" weight="600" color={Colors.textPrimary}>{ad.delivery_time}</Txt>
+            </Row>
+          )}
+          <Spacer size={16} />
+          <Txt variant="body" color={Colors.textSecondary}>
+            {ad.discount_code
+              ? `Voucher code '${ad.discount_code}' is copied and active. You can complete the order on their platform.`
+              : 'You can complete your order on their platform.'}
+          </Txt>
+        </Col>
+      </Sheet>
     </Card>
   );
 }
@@ -158,5 +164,4 @@ const styles = StyleSheet.create({
   bannerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
   bannerPillsRow: { position: 'absolute', bottom: 8, left: 16, flexDirection: 'row', gap: 8 },
   bannerPill: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: Radii.badge, backgroundColor: 'rgba(30,41,59,0.8)' },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
-  successIcon: { width: 56, height: 56, borderRadius: Radii.pill, backgroundColor: 'rgba(16,185,129,0.15)', alignItems: 'center', justifyContent: 'center' } });
+});

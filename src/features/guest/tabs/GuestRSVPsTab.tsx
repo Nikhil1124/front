@@ -288,14 +288,14 @@ export function GuestRSVPsTab() {
               style={[styles.dayPill, selectedDay === i && styles.dayPillActive]}
             >
               {d.isToday && (
-                <Txt size={9} weight="800" color={selectedDay === i ? '#FFFFFF' : Colors.primary} style={{ letterSpacing: 0.5 }}>
+                <Txt size={9} weight="700" color={selectedDay === i ? Colors.textInverse : Colors.primary} style={{ letterSpacing: 0.5 }}>
                   Today
                 </Txt>
               )}
               <Txt size={11} weight="600" color={selectedDay === i ? 'rgba(255,255,255,0.75)' : Colors.textSecondary}>
                 {d.isToday ? d.short : d.label}
               </Txt>
-              <Txt size={17} weight="800" color={selectedDay === i ? '#FFFFFF' : Colors.textPrimary}>
+              <Txt size={17} weight="700" color={selectedDay === i ? Colors.textInverse : Colors.textPrimary}>
                 {String(d.date).padStart(2, '0')}
               </Txt>
             </AnimatedPress>
@@ -318,7 +318,7 @@ export function GuestRSVPsTab() {
             <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
               <Row gap={6} align="center">
                 <Ionicons name="restaurant" size={16} color={Colors.primary} />
-                <Txt size={14} weight="800" color={Colors.textPrimary}>Default Daily Meal Preferences</Txt>
+                <Txt size={14} weight="700" color={Colors.textPrimary}>Default Daily Meal Preferences</Txt>
               </Row>
               <InfoTip text="Toggle each meal on/off as a personal reminder for today. This is saved on your device only — RSVP on the actual posted meal to let the kitchen know." />
             </Row>
@@ -334,7 +334,7 @@ export function GuestRSVPsTab() {
                 <Row gap={10} style={{ flex: 1 }}>
                   <Ionicons name="airplane-outline" size={18} color={Colors.primary} />
                   <Col style={{ flex: 1 }}>
-                    <Txt size={13} weight="800" color={Colors.textPrimary}>Away from PG / Vacation Mode</Txt>
+                    <Txt size={13} weight="700" color={Colors.textPrimary}>Away from PG / Vacation Mode</Txt>
                     <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2 }}>
                       Staff can see this on the roster. It doesn't change your notifications or auto-submit RSVPs.
                     </Txt>
@@ -347,7 +347,7 @@ export function GuestRSVPsTab() {
                     borderWidth: 1, borderColor: isAwayFromPg ? Palette.TintAmber : '#BDD8D6' }}
                   onPress={() => toggleVacationMode(!isAwayFromPg)}
                 >
-                  <Txt size={11} weight="900" color={isAwayFromPg ? Colors.warning : Colors.primary}>
+                  <Txt size={11} weight="700" color={isAwayFromPg ? Colors.warning : Colors.primary}>
                     {isAwayFromPg ? 'AWAY ✈️' : 'HOME 🏠'}
                   </Txt>
                 </AnimatedPress>
@@ -366,9 +366,9 @@ export function GuestRSVPsTab() {
                 </View>
                 <Col style={{ flex: 1 }}>
                   <Row gap={6} align="center">
-                    <Txt size={14} weight="900" color="#92400E">Away from PG (Home Visit)</Txt>
+                    <Txt size={14} weight="700" color="#92400E">Away from PG (Home Visit)</Txt>
                     <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radii.badge, backgroundColor: Palette.TintAmber }}>
-                      <Txt size={9} weight="800" color={Colors.warning}>NOTED</Txt>
+                      <Txt size={9} weight="700" color={Colors.warning}>NOTED</Txt>
                     </View>
                   </Row>
                   <Txt size={11} color={Colors.warning} style={{ marginTop: 2, lineHeight: 15 }}>
@@ -380,7 +380,7 @@ export function GuestRSVPsTab() {
                 style={{ backgroundColor: Colors.warning, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control }}
                 onPress={() => toggleVacationMode(false)}
               >
-                <Txt size={11} weight="800" color="#FFFFFF">I'm Back 🏠</Txt>
+                <Txt size={11} weight="700" color={Colors.textInverse}>I'm Back 🏠</Txt>
               </AnimatedPress>
             </Row>
           </Card>
@@ -393,7 +393,7 @@ export function GuestRSVPsTab() {
           </View>
           <Col style={{ flex: 1, marginLeft: 12 }}>
             <Row gap={4} align="center">
-              <Txt size={13} weight="800" color={Colors.textPrimary}>RSVP helps us serve better</Txt>
+              <Txt size={13} weight="700" color={Colors.textPrimary}>RSVP helps us serve better</Txt>
               <InfoTip text="Chefs prepare meals based on precise responses. Tap a meal card to view nutrition details & RSVP!" />
             </Row>
             <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
@@ -420,9 +420,9 @@ export function GuestRSVPsTab() {
                 onPress={() => { setActiveMealTab(tab.key); }}
                 style={[styles.tabPill, active && styles.tabPillActive]}
               >
-                <Ionicons name={tab.icon} size={15} color={active ? '#FFFFFF' : Colors.textSecondary} />
+                <Ionicons name={tab.icon} size={15} color={active ? Colors.textInverse : Colors.textSecondary} />
                 <Col style={{ marginLeft: 6 }}>
-                  <Txt size={12} weight="800" color={active ? '#FFFFFF' : Colors.textPrimary}>{tab.label}</Txt>
+                  <Txt size={12} weight="700" color={active ? Colors.textInverse : Colors.textPrimary}>{tab.label}</Txt>
                   <Txt size={10} color={active ? 'rgba(255,255,255,0.75)' : Colors.textSecondary}>{tab.time}</Txt>
                 </Col>
               </AnimatedPress>
@@ -454,7 +454,7 @@ export function GuestRSVPsTab() {
           {/* Top badges */}
           <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
             <View style={styles.upcomingBadge}>
-              <Txt size={11} weight="800" color={Colors.primary}>Upcoming</Txt>
+              <Txt size={11} weight="700" color={Colors.primary}>Upcoming</Txt>
             </View>
             {cutoffMs && !cutoffPassed && (
               <Row align="center" gap={5}>
@@ -466,7 +466,7 @@ export function GuestRSVPsTab() {
 
           {/* Meal name */}
           <Row align="center" gap={8}>
-            <Txt size={30} weight="900" color={Colors.textPrimary}>
+            <Txt size={30} weight="700" color={Colors.textPrimary}>
               {activeMealNotif
                 ? activeMealNotif.mealType[0] + activeMealNotif.mealType.slice(1).toLowerCase()
                 : 'No meal'}
@@ -520,8 +520,8 @@ export function GuestRSVPsTab() {
                   onPress={() => handleRSVP(activeMealNotif.id, 'REQUIRED')}
                   disabled={!!submittingId}
                 >
-                  {isAttending && <Ionicons name="checkmark" size={15} color="#FFF" style={{ marginRight: 5 }} />}
-                  <Txt size={13} weight="800" color={isAttending ? '#FFFFFF' : Colors.textPrimary}>
+                  {isAttending && <Ionicons name="checkmark" size={15} color={Colors.textInverse} style={{ marginRight: 5 }} />}
+                  <Txt size={13} weight="700" color={isAttending ? Colors.textInverse : Colors.textPrimary}>
                     {isAttending ? "I'll Attend" : "I'll Attend"}
                   </Txt>
                 </AnimatedPress>
@@ -530,7 +530,7 @@ export function GuestRSVPsTab() {
                   onPress={() => handleRSVP(activeMealNotif.id, 'NOT_REQUIRED')}
                   disabled={!!submittingId}
                 >
-                  <Txt size={13} weight="800" color={isSkipping ? '#FFFFFF' : Colors.textSecondary}>
+                  <Txt size={13} weight="700" color={isSkipping ? Colors.textInverse : Colors.textSecondary}>
                     Not Attending
                   </Txt>
                 </AnimatedPress>
@@ -551,7 +551,7 @@ export function GuestRSVPsTab() {
           <View style={styles.progressBox}>
             <Row justify="space-between" align="center">
               <Txt size={12} weight="700" color={Colors.textPrimary}>Decision Progress</Txt>
-              <Txt size={12} weight="800" color={answeredMealsCount === totalMealsCount ? Colors.success : Colors.primary}>
+              <Txt size={12} weight="700" color={answeredMealsCount === totalMealsCount ? Colors.success : Colors.primary}>
                 {answeredMealsCount} of {totalMealsCount} Decided
               </Txt>
             </Row>
@@ -563,7 +563,7 @@ export function GuestRSVPsTab() {
 
         {/* ── 6. WEEKLY MENU ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 24, marginBottom: 16 }}>
-          <Txt size={17} weight="800" color={Colors.textPrimary}>Weekly Menu</Txt>
+          <Txt size={17} weight="700" color={Colors.textPrimary}>Weekly Menu</Txt>
           <Row align="center" gap={4}>
             <Txt size={12} color={Colors.textSecondary}>
               {weekRangeLabel(weekDays[0].full, weekDays[6].full)}
@@ -586,7 +586,7 @@ export function GuestRSVPsTab() {
               <Col align="center" style={{ width: 38 }}>
                 <Txt size={11} weight="600" color={Colors.textSecondary}>{d.label.slice(0, 3).toUpperCase()}</Txt>
                 <View style={[styles.weekDayCircle, selectedDay === i && styles.weekDayCircleActive]}>
-                  <Txt size={13} weight="800" color={selectedDay === i ? '#FFFFFF' : Colors.textPrimary}>
+                  <Txt size={13} weight="700" color={selectedDay === i ? Colors.textInverse : Colors.textPrimary}>
                     {String(d.date).padStart(2, '0')}
                   </Txt>
                 </View>
@@ -637,7 +637,7 @@ export function GuestRSVPsTab() {
                     <Ionicons name={icon} size={18} color={Colors.primaryDark} />
                   </View>
                   <Col style={{ flex: 1, marginLeft: 12 }}>
-                    <Txt size={14} weight="800" color={Colors.textPrimary}>{n.mealType[0] + n.mealType.slice(1).toLowerCase()}</Txt>
+                    <Txt size={14} weight="700" color={Colors.textPrimary}>{n.mealType[0] + n.mealType.slice(1).toLowerCase()}</Txt>
                     <Txt size={12} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
                       {n.menuItems ?? '—'}
                     </Txt>
@@ -661,14 +661,14 @@ export function GuestRSVPsTab() {
             <Ionicons name="receipt-outline" size={20} color={Colors.primaryDark} />
           </View>
           <Col style={{ flex: 1, marginLeft: 12 }}>
-            <Txt size={14} weight="800" color={Colors.textPrimary}>Past Meals & Feedback</Txt>
+            <Txt size={14} weight="700" color={Colors.textPrimary}>Past Meals & Feedback</Txt>
             <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
               Rate your meals and help us improve.
             </Txt>
           </Col>
           <View style={styles.viewAllChip}>
             <Txt size={12} weight="700" color={Colors.primary}>View All</Txt>
-            <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
+            <Ionicons name="chevron-forward" size={13} color={Colors.textMuted} />
           </View>
         </AnimatedPress>
 
@@ -681,7 +681,7 @@ export function GuestRSVPsTab() {
             <Ionicons name="star-outline" size={20} color={Colors.primaryDark} />
           </View>
           <Col style={{ flex: 1, marginLeft: 12 }}>
-            <Txt size={14} weight="800" color={Colors.textPrimary}>Your feedback matters!</Txt>
+            <Txt size={14} weight="700" color={Colors.textPrimary}>Your feedback matters!</Txt>
             <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
               Help us serve you better every day.
             </Txt>
@@ -711,15 +711,15 @@ export function GuestRSVPsTab() {
                 style={[styles.sheetBtn, { backgroundColor: Colors.primary }]}
                 onPress={() => { handleRSVP(detailMeal.id, 'REQUIRED'); setDetailMeal(null); }}
               >
-                <Ionicons name="checkmark" size={16} color="#FFF" />
-                <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>I'll Attend ✅</Txt>
+                <Ionicons name="checkmark" size={16} color={Colors.textInverse} />
+                <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>I'll Attend ✅</Txt>
               </AnimatedPress>
               <AnimatedPress accessibilityRole="button"
                 style={[styles.sheetBtn, { backgroundColor: Colors.danger }]}
                 onPress={() => { handleRSVP(detailMeal.id, 'NOT_REQUIRED'); setDetailMeal(null); }}
               >
-                <Ionicons name="close" size={16} color="#FFF" />
-                <Txt size={13} weight="800" color="#FFF" style={{ marginLeft: 6 }}>Skip Portion</Txt>
+                <Ionicons name="close" size={16} color={Colors.textInverse} />
+                <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Skip Portion</Txt>
               </AnimatedPress>
             </Row>
           ) : null
@@ -731,18 +731,18 @@ export function GuestRSVPsTab() {
               <Row justify="space-between" align="center">
                 <Row align="center" gap={8}>
                   <Ionicons name="restaurant" size={18} color={Colors.primary} />
-                  <Txt size={12} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>MENU DETAILS</Txt>
+                  <Txt size={12} weight="700" color={Colors.primary} style={{ letterSpacing: 1 }}>MENU DETAILS</Txt>
                 </Row>
                 {detailMeal.dietaryType && (
                   <View style={[styles.dietTag, { backgroundColor: DIETARY_TAG[detailMeal.dietaryType].bg }]}>
-                    <Txt size={10} weight="800" color={DIETARY_TAG[detailMeal.dietaryType].color}>
+                    <Txt size={10} weight="700" color={DIETARY_TAG[detailMeal.dietaryType].color}>
                       {DIETARY_TAG[detailMeal.dietaryType].label}
                     </Txt>
                   </View>
                 )}
               </Row>
               <Spacer size={8} />
-              <Txt size={16} weight="800" color={Colors.textPrimary}>{detailMeal.menuItems}</Txt>
+              <Txt size={16} weight="700" color={Colors.textPrimary}>{detailMeal.menuItems}</Txt>
               {detailMeal.chefNote ? (
                 <>
                   <Spacer size={8} />
@@ -754,7 +754,7 @@ export function GuestRSVPsTab() {
             </Card>
 
             <Spacer size={14} />
-            <Txt size={11} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>SERVICE TIMELINE</Txt>
+            <Txt size={11} weight="700" color={Colors.primary} style={{ letterSpacing: 1 }}>SERVICE TIMELINE</Txt>
             <Spacer size={6} />
             <View style={styles.timelineRow}>
               <Ionicons name="time" size={14} color={Colors.textSecondary} />
@@ -772,7 +772,7 @@ export function GuestRSVPsTab() {
             </View>
 
             <Spacer size={14} />
-            <Txt size={11} weight="900" color={Colors.primary} style={{ letterSpacing: 1 }}>YOUR RSVP STATUS</Txt>
+            <Txt size={11} weight="700" color={Colors.primary} style={{ letterSpacing: 1 }}>YOUR RSVP STATUS</Txt>
             <Spacer size={6} />
             {(() => {
               const choice = detailMeal ? effectiveChoices[detailMeal.id] : null;
@@ -780,7 +780,7 @@ export function GuestRSVPsTab() {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.12)', borderColor: Colors.success }]}>
                     <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
-                    <Txt size={12} weight="800" color={Colors.success} style={{ marginLeft: 8 }}>You're eating! Your portion is reserved.</Txt>
+                    <Txt size={12} weight="700" color={Colors.success} style={{ marginLeft: 8 }}>You're eating! Your portion is reserved.</Txt>
                   </View>
                 );
               }
@@ -788,14 +788,14 @@ export function GuestRSVPsTab() {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(239,68,68,0.12)', borderColor: Colors.danger }]}>
                     <Ionicons name="close-circle" size={18} color={Colors.danger} />
-                    <Txt size={12} weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>You're skipping. Thank you for helping reduce waste!</Txt>
+                    <Txt size={12} weight="700" color={Colors.danger} style={{ marginLeft: 8 }}>You're skipping. Thank you for helping reduce waste!</Txt>
                   </View>
                 );
               }
               return (
                 <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: Colors.warning }]}>
                   <Ionicons name="hourglass" size={18} color={Colors.warning} />
-                  <Txt size={12} weight="800" color={Colors.warning} style={{ marginLeft: 8 }}>Pending — pick Attending or Skip below.</Txt>
+                  <Txt size={12} weight="700" color={Colors.warning} style={{ marginLeft: 8 }}>Pending — pick Attending or Skip below.</Txt>
                 </View>
               );
             })()}
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
   dayStripContent: { gap: 8, paddingRight: 8 },
   dayPill: {
     minWidth: 54, paddingHorizontal: 8, paddingVertical: 10,
-    borderRadius: Radii.card, backgroundColor: '#FFFFFF',
+    borderRadius: Radii.card, backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: '#DCE9E9',
     alignItems: 'center',
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
@@ -831,14 +831,14 @@ const styles = StyleSheet.create({
 
   // Prefs
   prefsWrapper: {
-    backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9E9',
+    backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9E9',
     padding: 14, marginBottom: 16,
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
 
   // RSVP Banner
   rsvpBanner: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: Radii.card,
+    backgroundColor: Colors.surface, borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9E9',
     padding: 14, marginBottom: 12,
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
@@ -848,14 +848,14 @@ const styles = StyleSheet.create({
   tabRow: { marginBottom: 16, flexWrap: 'nowrap' },
   tabPill: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: Radii.card,
+    backgroundColor: Colors.surface, borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9E9',
     paddingHorizontal: 10, paddingVertical: 10 },
   tabPillActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
 
   // Hero card
   heroCard: {
-    backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
+    backgroundColor: Colors.surface, borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9E9',
     padding: 20, marginBottom: 0,
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 5,
@@ -872,36 +872,36 @@ const styles = StyleSheet.create({
   attendBtn: {
     flex: 1, height: 44, borderRadius: Radii.card,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9' },
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9E9' },
   attendBtnActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
   skipBtn: {
     flex: 1, height: 44, borderRadius: Radii.card,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9' },
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9E9' },
   skipBtnActive: { backgroundColor: Colors.danger, borderColor: Colors.danger },
   dotInd: { width: 7, height: 7, borderRadius: Radii.pill, backgroundColor: '#D5E8E6' },
   dotIndActive: { width: 20, backgroundColor: Colors.primaryDark },
 
   // Progress box
-  progressBox: { marginTop: 16, backgroundColor: '#FFFFFF', borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: '#DCE9E9' },
+  progressBox: { marginTop: 16, backgroundColor: Colors.surface, borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: '#DCE9E9' },
   progressTrack: { height: 6, backgroundColor: Palette.TintGreen, borderRadius: Radii.badge, marginTop: 8, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: Radii.badge },
 
   // Week day circle
-  weekDayCircle: { width: 38, height: 38, borderRadius: Radii.pill, alignItems: 'center', justifyContent: 'center', marginTop: 4, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9E9' },
+  weekDayCircle: { width: 38, height: 38, borderRadius: Radii.pill, alignItems: 'center', justifyContent: 'center', marginTop: 4, backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9E9' },
   weekDayCircleActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
 
   // Meal list
-  mealListCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', overflow: 'hidden', marginBottom: 16, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  mealListCard: { backgroundColor: Colors.surface, borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', overflow: 'hidden', marginBottom: 16, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
   mealRow: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   mealRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F0F6F5' },
   mealRowIcon: { width: 42, height: 42, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
-  emptyBox: { alignItems: 'center', paddingVertical: 40, backgroundColor: '#FFFFFF', borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', marginBottom: 16 },
+  emptyBox: { alignItems: 'center', paddingVertical: 40, backgroundColor: Colors.surface, borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#DCE9E9', marginBottom: 16 },
 
   // Past Meals
   pastCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
+    backgroundColor: Colors.surface, borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9E9',
     padding: 16, marginBottom: 12,
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAF5F4', borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#BDD8D6',
     padding: 16, overflow: 'hidden' },
-  feedbackIcon: { width: 46, height: 46, borderRadius: Radii.card, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  feedbackIcon: { width: 46, height: 46, borderRadius: Radii.card, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
   feedbackImage: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 90, opacity: 0.35 },
 
   // Sheet

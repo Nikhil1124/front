@@ -45,17 +45,17 @@ export function MetricRow({ label, meta, value, numericValue, format, delta, onP
   const body = (
     <View style={[styles.row, !last && styles.divider]}>
       <View style={styles.col}>
-        <Txt size={13.5} weight="500" color={Colors.textPrimary} numberOfLines={1}>{label}</Txt>
-        {meta ? <Txt size={11} color={Colors.textMuted} numberOfLines={1} style={styles.meta}>{meta}</Txt> : null}
+        <Txt variant="cardTitle" color={Colors.textPrimary} numberOfLines={1}>{label}</Txt>
+        {meta ? <Txt variant="meta" color={Colors.textMuted} numberOfLines={1} style={styles.meta}>{meta}</Txt> : null}
       </View>
       <View style={styles.right}>
         {numericValue !== undefined && format ? (
-          <CountUp value={numericValue} format={format} size={13.5} weight="600" color={Colors.textPrimary} />
+          <CountUp value={numericValue} format={format} variant="body" weight="600" color={Colors.textPrimary} />
         ) : (
-          <Txt size={13.5} weight="600" color={Colors.textPrimary} tabular>{value}</Txt>
+          <Txt variant="body" weight="600" color={Colors.textPrimary} tabular>{value}</Txt>
         )}
         {delta ? (
-          <Txt size={11} weight="600" color={DELTA_COLOR[delta.tone]} tabular style={styles.meta}>
+          <Txt variant="meta" weight="600" color={DELTA_COLOR[delta.tone]} tabular style={styles.meta}>
             {delta.label}
           </Txt>
         ) : null}

@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { SupplyCategory } from '@/types';
 import { Radii, Palette, Colors } from '@/theme';
 
@@ -57,15 +59,15 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Shop by Category</Text>
-        <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={handleSeeAllPress}>
+        <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={handleSeeAllPress}>
           <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
       <View style={styles.grid}>
         {visibleCategories.map((cat) => {
           const bgColor = getSupplyCategoryBgColor(cat.name);
           return (
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               key={cat.id}
               style={[styles.cardItem, { width: cardWidth }]}
               activeOpacity={0.8}
@@ -80,7 +82,7 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
               <Text maxFontSizeMultiplier={1.3} style={styles.cardText} numberOfLines={2}>
                 {cat.name}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPress>
           );
         })}
       </View>

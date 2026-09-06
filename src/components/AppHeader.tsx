@@ -66,16 +66,16 @@ export function AppHeader({
   const titleBlock = (
     <View style={styles.titleCol}>
       {eyebrow && !onBack ? (
-        <Txt size={12} weight="500" color={Colors.textMuted} numberOfLines={1}>{eyebrow}</Txt>
+        <Txt variant="meta" color={Colors.textMuted} numberOfLines={1}>{eyebrow}</Txt>
       ) : null}
       <View style={styles.titleRow}>
-        <Txt size={17} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ flexShrink: 1 }}>
+        <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1} style={{ flexShrink: 1 }}>
           {title}
         </Txt>
         {titleAdornment}
       </View>
       {subtitle ? (
-        <Txt size={12} weight="500" color={Colors.textMuted} numberOfLines={1}>{subtitle}</Txt>
+        <Txt variant="meta" color={Colors.textMuted} numberOfLines={1}>{subtitle}</Txt>
       ) : null}
     </View>
   );

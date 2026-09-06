@@ -21,11 +21,11 @@ export function ChefGroceriesShortcut() {
           <Row gap={12} align="center">
             <Image source={require('../../../assets/img_meal_service_ad_1784642265436.jpg')} style={styles.image} />
             <Col>
-              <Txt variant="cardTitle" weight="900" color={Colors.primaryDark}>Groceries</Txt>
+              <Txt variant="cardTitle" weight="700" color={Colors.primaryDark}>Groceries</Txt>
               <Txt size={11} color={Colors.textSecondary}>Request kitchen supplies from the Manager</Txt>
             </Col>
           </Row>
-          <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
+          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
         </Row>
       </Card>
     </AnimatedPress>

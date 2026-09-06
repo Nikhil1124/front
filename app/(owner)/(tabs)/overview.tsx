@@ -18,7 +18,6 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Modal,
   Pressable,
   Linking,
   Text,
@@ -32,7 +31,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Card, Row, Col, Spacer, Btn, toneFor, ListRow, ListSectionHeader, MetricRow,
+  Card, Row, Col, Spacer, Btn, toneFor, ListRow, ListSectionHeader, MetricRow, Sheet,
   MetricDeck, TrendChart, type DeckCardData, type TrendChartPoint, type TrendChartSeries,
 } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -656,103 +655,87 @@ export default function OwnerOverviewTab() {
         )}
       </ScrollView>
 
-      {/* ── Overdue Detail Modal ──────────────────────────────────────────── */}
+      {/* ── Overdue Detail Sheet ──────────────────────────────────────────── */}
       {showOverdueModal && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setShowOverdueModal(false)}>
-          <View style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowOverdueModal(false)} />
-            <View style={styles.modalCard}>
-              <Row justify="space-between" align="center">
-                <Row gap={10} align="center">
-                  <View style={styles.modalIconBox}>
-                    <Ionicons name="alert-circle" size={20} color={WARNING} />
-                  </View>
+        <Sheet
+          visible={showOverdueModal}
+          title="Pending Rent Dues"
+          subtitle={`${overdueCount} Unpaid Resident${overdueCount === 1 ? '' : 's'}`}
+          icon="alert-circle"
+          accent={WARNING}
+          onDismiss={() => setShowOverdueModal(false)}
+          testID="owner-overdue-sheet"
+          footer={
+            <Row gap={10}>
+              <AnimatedPress accessibilityRole="button"
+                style={[styles.modalPrimaryBtn, { flex: 1 }]}
+                onPress={async () => {
+                  try {
+                    const result = await sendRentRemindersMutation.mutateAsync();
+                    setShowOverdueModal(false);
+                    usePGowStore.getState().set('activeAlert', {
+                      ...rentReminderAlert(result),
+                      type: 'PAYMENT',
+                      timestamp: Date.now() });
+                  } catch (err) {
+                    usePGowStore.getState().set('activeAlert', {
+                      title: '❌ REMINDERS NOT SENT',
+                      description: err instanceof Error ? err.message : 'Nothing was sent. Try again.',
+                      type: 'PAYMENT',
+                      timestamp: Date.now() });
+                  }
+                }}
+              >
+                <Text maxFontSizeMultiplier={1.3} style={styles.modalPrimaryBtnText}>⚡ Remind All Unpaid</Text>
+              </AnimatedPress>
+              <AnimatedPress accessibilityRole="button"
+                style={[styles.modalSecondaryBtn, { flex: 1 }]}
+                onPress={() => { setShowOverdueModal(false); router.push('/guests'); }}
+              >
+                <Text maxFontSizeMultiplier={1.3} style={styles.modalSecondaryBtnText}>Open Ledger ›</Text>
+              </AnimatedPress>
+            </Row>
+          }
+        >
+          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 300 }}>
+            {guests.filter(g => !g.isBillPaid).length === 0 ? (
+              <View style={styles.allPaidBox}>
+                <Ionicons name="checkmark-circle" size={32} color={SUCCESS} />
+                <Text maxFontSizeMultiplier={1.3} style={styles.allPaidTitle}>All Rent Collected!</Text>
+                <Text maxFontSizeMultiplier={1.3} style={styles.allPaidSub}>Zero overdue residents in this property.</Text>
+              </View>
+            ) : (
+              guests.filter(g => !g.isBillPaid).map(g => (
+                <View key={g.id} style={styles.overdueRow}>
                   <View style={{ flex: 1 }}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Pending Rent Dues</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.modalSub}>
-                      {overdueCount} Unpaid Resident{overdueCount === 1 ? '' : 's'}
+                    <Row gap={8} align="center">
+                      <Text maxFontSizeMultiplier={1.3} style={styles.overdueGuestName}>{g.name}</Text>
+                      <View style={styles.roomPill}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.roomPillText}>Room {g.roomNo}</Text>
+                      </View>
+                    </Row>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.overdueGuestSub}>
+                      {g.phone || 'No phone'} · Due since 1st
                     </Text>
                   </View>
-                </Row>
-                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowOverdueModal(false)} style={styles.closeBtn}>
-                  <Ionicons name="close" size={18} color={MUTED} />
-                </AnimatedPress>
-              </Row>
-
-              <View style={styles.menuDivider} />
-
-              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 300 }}>
-                {guests.filter(g => !g.isBillPaid).length === 0 ? (
-                  <View style={styles.allPaidBox}>
-                    <Ionicons name="checkmark-circle" size={32} color={SUCCESS} />
-                    <Text maxFontSizeMultiplier={1.3} style={styles.allPaidTitle}>All Rent Collected!</Text>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.allPaidSub}>Zero overdue residents in this property.</Text>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.overdueAmount}>
+                      {g.rentAmount ? `₹${Math.round(g.rentAmount)}` : '—'}
+                    </Text>
+                    {g.phone && (
+                      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Call" accessibilityRole="button"
+                        onPress={() => Linking.openURL(`tel:${g.phone.replace(/\s+/g, '')}`)}
+                        style={styles.callBtn}
+                      >
+                        <Ionicons name="call" size={13} color={PRIMARY} />
+                      </AnimatedPress>
+                    )}
                   </View>
-                ) : (
-                  guests.filter(g => !g.isBillPaid).map(g => (
-                    <View key={g.id} style={styles.overdueRow}>
-                      <View style={{ flex: 1 }}>
-                        <Row gap={8} align="center">
-                          <Text maxFontSizeMultiplier={1.3} style={styles.overdueGuestName}>{g.name}</Text>
-                          <View style={styles.roomPill}>
-                            <Text maxFontSizeMultiplier={1.3} style={styles.roomPillText}>Room {g.roomNo}</Text>
-                          </View>
-                        </Row>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.overdueGuestSub}>
-                          {g.phone || 'No phone'} · Due since 1st
-                        </Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.overdueAmount}>
-                          {g.rentAmount ? `₹${Math.round(g.rentAmount)}` : '—'}
-                        </Text>
-                        {g.phone && (
-                          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Call" accessibilityRole="button"
-                            onPress={() => Linking.openURL(`tel:${g.phone.replace(/\s+/g, '')}`)}
-                            style={styles.callBtn}
-                          >
-                            <Ionicons name="call" size={13} color={PRIMARY} />
-                          </AnimatedPress>
-                        )}
-                      </View>
-                    </View>
-                  ))
-                )}
-              </ScrollView>
-
-              <View style={styles.menuDivider} />
-              <Row gap={10}>
-                <AnimatedPress accessibilityRole="button"
-                  style={[styles.modalPrimaryBtn, { flex: 1 }]}
-                  onPress={async () => {
-                    try {
-                      const result = await sendRentRemindersMutation.mutateAsync();
-                      setShowOverdueModal(false);
-                      usePGowStore.getState().set('activeAlert', {
-                        ...rentReminderAlert(result),
-                        type: 'PAYMENT',
-                        timestamp: Date.now() });
-                    } catch (err) {
-                      usePGowStore.getState().set('activeAlert', {
-                        title: '❌ REMINDERS NOT SENT',
-                        description: err instanceof Error ? err.message : 'Nothing was sent. Try again.',
-                        type: 'PAYMENT',
-                        timestamp: Date.now() });
-                    }
-                  }}
-                >
-                  <Text maxFontSizeMultiplier={1.3} style={styles.modalPrimaryBtnText}>⚡ Remind All Unpaid</Text>
-                </AnimatedPress>
-                <AnimatedPress accessibilityRole="button"
-                  style={[styles.modalSecondaryBtn, { flex: 1 }]}
-                  onPress={() => { setShowOverdueModal(false); router.push('/guests'); }}
-                >
-                  <Text maxFontSizeMultiplier={1.3} style={styles.modalSecondaryBtnText}>Open Ledger ›</Text>
-                </AnimatedPress>
-              </Row>
-            </View>
-          </View>
-        </Modal>
+                </View>
+              ))
+            )}
+          </ScrollView>
+        </Sheet>
       )}
       {showBookRepair && (
         <BookRepairDialog
@@ -797,9 +780,9 @@ const styles = StyleSheet.create({
   tileIconBox: {
     width: 46, height: 46, borderRadius: Radii.card,
     alignItems: 'center', justifyContent: 'center' },
-  noMembershipTitle: { fontSize: 20, fontWeight: '900', color: CHARCOAL },
+  noMembershipTitle: { fontSize: 20, fontWeight: '700', color: CHARCOAL },
   noMembershipDesc: { color: MUTED, fontSize: 13, lineHeight: 18 },
-  btnText: { fontSize: 14, fontWeight: '800', color: WHITE },
+  btnText: { fontSize: 14, fontWeight: '700', color: WHITE },
 
   // 1. Property Hero Card
 
@@ -810,7 +793,7 @@ const styles = StyleSheet.create({
     marginBottom: 10 },
   sectionHeading: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
     color: CHARCOAL },
   viewAllText: {
     fontSize: 12,
@@ -854,7 +837,7 @@ const styles = StyleSheet.create({
     gap: 8 },
   emptyRequestsText: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
     color: SUCCESS },
 
   // 7. Recent Activity Timeline
@@ -880,7 +863,7 @@ const styles = StyleSheet.create({
     borderColor: WHITE },
   timelineTitle: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
     color: CHARCOAL },
   timelineTime: {
     fontSize: 10,
@@ -905,7 +888,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center' },
   noticeHeroTitle: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: CHARCOAL },
   noticeHeroDesc: {
     fontSize: 11,
@@ -919,7 +902,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center' },
   remindBtnText: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
     color: WHITE },
   noticeBulletDot: {
     width: 6,
@@ -956,7 +939,7 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.TintAmber,
     alignItems: 'center',
     justifyContent: 'center' },
-  modalTitle: { fontSize: 16, fontWeight: '900', color: CHARCOAL },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   modalSub: { fontSize: 12, color: MUTED, marginTop: 1 },
   menuDivider: { height: 1, backgroundColor: BORDER, marginVertical: 14 },
   closeBtn: {
@@ -966,7 +949,7 @@ const styles = StyleSheet.create({
   allPaidBox: {
     alignItems: 'center', padding: 24,
     backgroundColor: Palette.TintGreen, borderRadius: Radii.card, marginBottom: 8 },
-  allPaidTitle: { fontSize: 14, fontWeight: '800', color: SUCCESS, marginTop: 8 },
+  allPaidTitle: { fontSize: 14, fontWeight: '700', color: SUCCESS, marginTop: 8 },
   allPaidSub: { fontSize: 12, color: MUTED, marginTop: 2 },
   overdueRow: {
     flexDirection: 'row',
@@ -976,7 +959,7 @@ const styles = StyleSheet.create({
     borderBottomColor: BORDER },
   overdueGuestName: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   overdueGuestSub: { fontSize: 12, color: MUTED, marginTop: 2 },
-  overdueAmount: { fontSize: 15, fontWeight: '800', color: WARNING },
+  overdueAmount: { fontSize: 15, fontWeight: '700', color: WARNING },
   callBtn: {
     marginTop: 4, width: 28, height: 28, borderRadius: Radii.pill,
     backgroundColor: Palette.TintBlue, alignItems: 'center', justifyContent: 'center' },
@@ -987,7 +970,7 @@ const styles = StyleSheet.create({
   modalPrimaryBtn: {
     height: 46, backgroundColor: PRIMARY,
     borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
-  modalPrimaryBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  modalPrimaryBtnText: { fontSize: 13, fontWeight: '700', color: WHITE },
   modalSecondaryBtn: {
     height: 46,
     borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center',

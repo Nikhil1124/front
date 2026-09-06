@@ -7,6 +7,8 @@ import {
   Text,
   TouchableOpacity,
   View } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCartStore } from '../store/useCartStore';
@@ -30,9 +32,9 @@ export function GroceryWishlistScreen() {
       <View style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-            </TouchableOpacity>
+            </AnimatedPress>
             <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
             <View style={{ width: 28 }} />
           </View>
@@ -44,13 +46,13 @@ export function GroceryWishlistScreen() {
             <Text maxFontSizeMultiplier={1.3} style={styles.emptySub}>
               Tap the ♡ on any product to save it here.
             </Text>
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               style={styles.shopBtn}
               onPress={() => router.push('/groceries')}
               activeOpacity={0.8}
             >
               <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
-            </TouchableOpacity>
+            </AnimatedPress>
           </View>
         </SafeAreaView>
       </View>
@@ -62,9 +64,9 @@ export function GroceryWishlistScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-            </TouchableOpacity>
+            </AnimatedPress>
             <Text maxFontSizeMultiplier={1.3} style={styles.headerTitle}>My Wishlist</Text>
           </View>
           <Text maxFontSizeMultiplier={1.3} style={styles.headerCount}>{items.length} items</Text>
@@ -82,7 +84,7 @@ export function GroceryWishlistScreen() {
             const compoundId = `${item.id}-${option.unit}`;
             const inCart = cartItems.find((c) => c.id === compoundId);
             return (
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={styles.card}
                 activeOpacity={0.9}
                 onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: item.id } })}
@@ -103,7 +105,7 @@ export function GroceryWishlistScreen() {
                         <Text maxFontSizeMultiplier={1.3} style={styles.cardMRP}>₹{option.originalPrice}</Text>
                       )}
                     </View>
-                    <TouchableOpacity accessibilityRole="button"
+                    <AnimatedPress accessibilityRole="button"
                       style={[styles.addBtn, inCart && styles.addBtnFilled]}
                       onPress={() => handleAddToCart(item, option)}
                       activeOpacity={0.8}
@@ -111,17 +113,17 @@ export function GroceryWishlistScreen() {
                       <Text maxFontSizeMultiplier={1.3} style={[styles.addBtnText, inCart && styles.addBtnTextFilled]}>
                         {inCart ? `In Cart (${inCart.quantity})` : '+ Add'}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPress>
                   </View>
                 </View>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Save to wishlist" accessibilityRole="button"
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Save to wishlist" accessibilityRole="button"
                   style={styles.removeBtn}
                   onPress={() => toggleItem(item)}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="heart" size={20} color={Colors.danger} />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                </AnimatedPress>
+              </AnimatedPress>
             );
           }}
         />
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.primary },
   addBtnTextFilled: {
-    color: '#fff' },
+    color: Colors.textInverse },
   backBtn: {
     padding: 4 },
   removeBtn: {
@@ -249,5 +251,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: Radii.pill },
   shopBtnText: {
-    color: '#fff',
+    color: Colors.textInverse,
     fontSize: 15 } });

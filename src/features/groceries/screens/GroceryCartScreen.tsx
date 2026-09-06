@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useCartStore } from '../store/useCartStore';
@@ -112,10 +114,10 @@ export function GroceryCartScreen() {
         title={`Your Cart (${cartItemCount})`}
         onBack={() => router.back()}
         actions={items.length > 0 ? (
-          <TouchableOpacity accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
+          <AnimatedPress accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn} activeOpacity={0.7}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
             <Text maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         ) : undefined}
       />
 
@@ -129,15 +131,15 @@ export function GroceryCartScreen() {
           <Text maxFontSizeMultiplier={1.3} style={styles.emptySubtitle}>
             Add groceries for your PG kitchen or pick up essentials for your stay.
           </Text>
-          <TouchableOpacity accessibilityRole="button" style={styles.shopBtn} onPress={() => router.back()} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.shopBtn} onPress={() => router.back()} activeOpacity={0.8}>
             <Text maxFontSizeMultiplier={1.3} style={styles.shopBtnText}>Start Shopping</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
       ) : (
         <>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             {/* 3. Delivery Information */}
-            <TouchableOpacity accessibilityRole="button" style={styles.deliveryCard} onPress={handleUpdateAddress} activeOpacity={0.9}>
+            <AnimatedPress accessibilityRole="button" style={styles.deliveryCard} onPress={handleUpdateAddress} activeOpacity={0.9}>
               <View style={styles.deliveryLeft}>
                 <View style={styles.deliveryHeaderRow}>
                   <Ionicons name="location-outline" size={16} color={Colors.info} style={styles.locationIcon} />
@@ -151,7 +153,7 @@ export function GroceryCartScreen() {
                 <Text maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Estimated Delivery</Text>
                 <Text maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Text>
               </View>
-            </TouchableOpacity>
+            </AnimatedPress>
 
             {/* 4. Free Delivery Progress Box */}
             <View style={styles.freeDeliveryCard}>
@@ -204,36 +206,36 @@ export function GroceryCartScreen() {
                     {/* Right: Quantity Adjuster & Delete Action */}
                     <View style={styles.actionsContainer}>
                       <View style={styles.quantityControl}>
-                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
+                        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : handleRemoveItem(item.id, item.name)}
                           activeOpacity={0.7}
                         >
                           <Ionicons name="remove" size={14} color={Colors.primary} />
-                        </TouchableOpacity>
+                        </AnimatedPress>
                         <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{item.quantity}</Text>
-                        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
+                        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => updateQuantity(item.id, item.quantity + 1)}
                           activeOpacity={0.7}
                         >
                           <Ionicons name="add" size={14} color={Colors.primary} />
-                        </TouchableOpacity>
+                        </AnimatedPress>
                       </View>
 
-                      <TouchableOpacity accessibilityRole="button"
+                      <AnimatedPress accessibilityRole="button"
                         style={styles.removeAction}
                         onPress={() => handleRemoveItem(item.id, item.name)}
                         activeOpacity={0.7}
                       >
                         <Ionicons name="trash-outline" size={12} color={Colors.danger} />
                         <Text maxFontSizeMultiplier={1.3} style={styles.removeActionText}>Remove</Text>
-                      </TouchableOpacity>
+                      </AnimatedPress>
                     </View>
                   </View>
 
                   {/* Replacement Picker option */}
-                  <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
+                  <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
                     style={styles.replacementToggle}
                     onPress={() => setEditingReplacementId(isEditingReplacement ? null : item.id)}
                     activeOpacity={0.8}
@@ -244,7 +246,7 @@ export function GroceryCartScreen() {
                       size={14}
                       color={Colors.primary}
                     />
-                  </TouchableOpacity>
+                  </AnimatedPress>
 
                   {isEditingReplacement && (
                     <View style={styles.replacementPickerWrapper}>
@@ -361,7 +363,7 @@ export function GroceryCartScreen() {
               </Text>
             </View>
 
-            <TouchableOpacity accessibilityRole="button"
+            <AnimatedPress accessibilityRole="button"
               style={[styles.checkoutBtn, submittingRequisition && { opacity: 0.6 }]}
               onPress={handleCheckoutOrRequest}
               activeOpacity={0.8}
@@ -371,7 +373,7 @@ export function GroceryCartScreen() {
                 {isChef ? (submittingRequisition ? 'Sending…' : 'Request via Manager') : 'Proceed to Checkout'}
               </Text>
               <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
-            </TouchableOpacity>
+            </AnimatedPress>
           </View>
         </>
       )}

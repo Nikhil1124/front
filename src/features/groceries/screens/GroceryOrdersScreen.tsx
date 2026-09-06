@@ -1,5 +1,7 @@
 import { SupplyOrderSummary } from '@/types';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,9 +52,9 @@ export function GroceryOrdersScreen() {
         title="Your Orders"
         onBack={() => router.back()}
         actions={
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Log out" accessibilityRole="button" onPress={logout}>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Log out" accessibilityRole="button" onPress={logout}>
             <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
-          </TouchableOpacity>
+          </AnimatedPress>
         }
       />
 
@@ -82,7 +84,7 @@ export function GroceryOrdersScreen() {
             <>
               {/* Active Order Banner */}
               {activeOrder && (
-                <TouchableOpacity accessibilityRole="button"
+                <AnimatedPress accessibilityRole="button"
                   style={styles.activeBanner}
                   onPress={() => openOrder(activeOrder.id)}
                   activeOpacity={0.9}
@@ -98,8 +100,8 @@ export function GroceryOrdersScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
-                </TouchableOpacity>
+                  <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+                </AnimatedPress>
               )}
 
               <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order History</Text>

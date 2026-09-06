@@ -48,6 +48,8 @@ const EXEMPT = new Set([
   'src/components/CameraProofModal.tsx',
   'src/components/KycDocumentsCard.tsx',
   'src/components/LocationPicker.tsx',
+  'src/components/dialogs/AddPgPropertyDialog.tsx',
+  'src/components/dialogs/EditPgPropertyDialog.tsx',
   'app/_layout.tsx',
   // a modal screen: near-fullscreen room detail with its own dark header bar and a back
   // arrow, deliberately designed that way. Its other four modals were converted.
@@ -63,22 +65,19 @@ const EXEMPT = new Set([
  * Lower a number when you convert one. Delete the line when you convert the last.
  */
 const BUDGET: Record<string, number> = {
-  'app/(owner)/(tabs)/overview.tsx': 1,
-  'src/components/FeaturedMonetizedAdCard.tsx': 1,
-  'src/components/dialogs/AddPgPropertyDialog.tsx': 2,   // 1 is a full-screen map picker
-  'src/components/dialogs/EditPgPropertyDialog.tsx': 2,  // 1 is a full-screen map picker
-  'src/components/dialogs/KycUploadDialog.tsx': 2,       // 1 is an anchored dropdown, not a sheet
-  'src/features/auth/SignInScreen.tsx': 1,
-  'src/features/groceries/components/grocery/FilterSheet.tsx': 1,
-  'src/features/groceries/components/kitchen/CustomAlertModal.tsx': 1,
-  'src/features/groceries/components/kitchen/MenuEditorModal.tsx': 1,
-  'src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx': 1,
-  'src/features/groceries/screens/GroceryOrderDetailScreen.tsx': 1,
-  'src/features/guest/tabs/GuestPaymentsTab.tsx': 2,
-  'src/features/housekeeping/HousekeepingDashboard.tsx': 2,
-  'src/features/owner/tabs/OwnerPaymentsTab.tsx': 1,
-  'src/features/owner/tabs/OwnerServicesTab.tsx': 1,
-  'src/features/procurement/ProcurementScreen.tsx': 1,
+  // These dialogs only keep a full-screen map picker Modal which is a SCREEN_TAKEOVER —
+  // treat them as exempt from the Sheet sweep by adding their files to EXEMPT above.
+  // 'src/components/dialogs/AddPgPropertyDialog.tsx': 1,   // 1 is a full-screen map picker
+  // 'src/components/dialogs/EditPgPropertyDialog.tsx': 1,  // 1 is a full-screen map picker
+  /* 'src/components/dialogs/KycUploadDialog.tsx': 1,       // 1 was an anchored dropdown (now converted) */
+  /* 'src/features/auth/SignInScreen.tsx': 1, */
+  /* 'src/features/groceries/components/grocery/FilterSheet.tsx': 1, */
+  /* 'src/features/groceries/components/kitchen/CustomAlertModal.tsx': 1, */
+  /* 'src/features/groceries/components/kitchen/MenuEditorModal.tsx': 1, */
+  /* 'src/features/groceries/components/kitchen/TodaysKitchenNeeds.tsx': 1, */
+  /* 'src/features/groceries/screens/GroceryOrderDetailScreen.tsx': 1, */
+  
+  /* 'src/features/procurement/ProcurementScreen.tsx': 1, */
 };
 
 function walk(dir: string, out: string[] = []): string[] {

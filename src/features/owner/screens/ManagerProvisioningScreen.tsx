@@ -55,9 +55,9 @@ export function ManagerProvisioningScreen() {
         padding={[14, 14]}
       >
         <Row justify="space-between" align="center">
-          <Txt variant="body" weight="800" color={Colors.textPrimary}>Active Managers</Txt>
+          <Txt variant="body" weight="700" color={Colors.textPrimary}>Active Managers</Txt>
           <View style={styles.countPill}>
-            <Txt variant="caption" weight="800" color={Colors.primaryDark}>{managers.length}</Txt>
+            <Txt variant="caption" weight="700" color={Colors.primaryDark}>{managers.length}</Txt>
           </View>
         </Row>
         <Spacer size={10} />

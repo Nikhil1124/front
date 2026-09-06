@@ -26,11 +26,12 @@
 import React, { useState } from 'react';
 import {
   View, TextInput, type ViewStyle, type TextStyle,
-  type KeyboardTypeOptions,
+  type KeyboardTypeOptions, type TextInputProps,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Palette, Radii } from '@/theme';
+import { fontFamilyForWeight } from '@/theme/typography';
 import { Txt } from './Txt';
 
 export interface OutlinedTextFieldProps {
@@ -51,6 +52,10 @@ export interface OutlinedTextFieldProps {
   leadingIconColor?: string;
   trailingIcon?: React.ReactNode;
   keyboardType?: KeyboardTypeOptions;
+  /** Native password-manager and autofill metadata. Passed through unchanged so each screen
+   * can state what the field actually collects instead of guessing from a label. */
+  textContentType?: TextInputProps['textContentType'];
+  autoComplete?: TextInputProps['autoComplete'];
   secureTextEntry?: boolean;
   multiline?: boolean;
   numberOfLines?: number;
@@ -73,6 +78,7 @@ export function OutlinedTextField({
   value, onChangeText, label, placeholder, error, helper, required = false,
   leadingIcon, leadingIconColor,
   trailingIcon, keyboardType = 'default', secureTextEntry = false, multiline = false,
+  textContentType, autoComplete,
   numberOfLines = 1, maxLength, editable = true, testID,
   focusedBorderColor = Colors.borderFocus, unfocusedBorderColor,
   focusedTextColor = Colors.textPrimary, unfocusedTextColor = Colors.textPrimary,
@@ -95,7 +101,7 @@ export function OutlinedTextField({
   return (
     <View style={style}>
       {label ? (
-        <Txt size={11} weight="600" color={labelColor} style={{ marginBottom: 5, letterSpacing: 0.3 }}>
+        <Txt variant="meta" weight="600" color={labelColor} style={{ marginBottom: 5 }}>
           {label}{required ? ' *' : ''}
         </Txt>
       ) : null}
@@ -143,6 +149,8 @@ export function OutlinedTextField({
           placeholder={placeholder}
           placeholderTextColor={Colors.textMuted}
           keyboardType={keyboardType}
+          textContentType={textContentType}
+          autoComplete={autoComplete}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
           numberOfLines={numberOfLines}
@@ -154,6 +162,9 @@ export function OutlinedTextField({
             flex: 1,
             color: focused ? focusedTextColor : unfocusedTextColor,
             fontSize: 14,
+            lineHeight: 20,
+            fontFamily: fontFamilyForWeight('400'),
+            fontWeight: '400',
             padding: 0,
             minHeight: 22,
             textAlignVertical: multiline ? 'top' : 'center',
@@ -165,7 +176,7 @@ export function OutlinedTextField({
       {error || helper ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 }}>
           {invalid ? <Ionicons name="alert-circle" size={13} color={Colors.danger} /> : null}
-          <Txt size={11} color={invalid ? Colors.danger : Colors.textMuted} style={{ flex: 1 }}>
+          <Txt variant="meta" color={invalid ? Colors.danger : Colors.textMuted} style={{ flex: 1 }}>
             {error ?? helper}
           </Txt>
         </View>

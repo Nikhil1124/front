@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Dimensions } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
 import LocationPicker from '@/components/LocationPicker';
@@ -76,44 +76,63 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
   }
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <View style={styles.backdrop}>
-        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <View style={{ width: '92%', maxHeight: '90%', zIndex: 2 }}>
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={Radii.sheet}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[20, 20]}
-            style={{ width: '100%', maxHeight: '100%' }}
+    <Sheet
+      visible
+      title="Register New Property"
+      subtitle="Set up branches, floors, rooms & capacity"
+      onDismiss={onDismiss}
+      testID="add_pg_property_dialog"
+      footer={
+        <Row gap={8}>
+          <Btn
+            onPress={handleSave}
+            containerColor={Colors.primary}
+            textColor={Colors.textInverse}
+            borderRadius={Radii.card}
+            height={44}
+            style={{ flex: 1 }}
           >
-          <Row align="center" gap={8} style={{ marginBottom: 12 }}>
-            <View style={styles.headerIconBox}>
-              <Ionicons name="business" size={20} color={Colors.primary} />
-            </View>
-            <Col>
-              <Txt variant="screenTitle" weight="900" color={Colors.textPrimary}>Register New Property</Txt>
-              <Txt variant="caption" color={Colors.textMuted}>Set up branches, floors, rooms & capacity</Txt>
-            </Col>
-          </Row>
+            <Txt variant="button" color={Colors.textInverse}>Save Property</Txt>
+          </Btn>
+          <OutlinedBtn
+            onPress={onDismiss}
+            borderColor={Colors.borderSubtle}
+            textColor={Colors.textPrimary}
+            borderRadius={Radii.card}
+            height={44}
+            style={{ flex: 1 }}
+          >
+            <Txt variant="button" color={Colors.textPrimary}>Cancel</Txt>
+          </OutlinedBtn>
+        </Row>
+      }
+    >
+      <Card
+        containerColor={Colors.surface}
+        borderRadius={Radii.sheet}
+        borderWidth={1}
+        borderColor={Colors.borderSubtle}
+        padding={[20, 20]}
+        style={{ width: '100%' }}
+      >
+        <Row align="center" gap={8} style={{ marginBottom: 12 }}>
+          <View style={styles.headerIconBox}>
+            <Ionicons name="business" size={20} color={Colors.primary} />
+          </View>
+          <Col>
+            <Txt variant="screenTitle" color={Colors.textPrimary}>Register New Property</Txt>
+            <Txt variant="caption" color={Colors.textMuted}>Set up branches, floors, rooms & capacity</Txt>
+          </Col>
+        </Row>
 
-          {/* FormScroll doesn't work here: its inner ScrollView is hardcoded flex: 1, which
-              needs an ancestor with a real (non-content-sized) height to fill — this Card
-              has none (it's centered and sized to its own content, capped by maxHeight:
-              '90%', not flex: 1), so flex: 1 collapsed to zero exactly like the flex: 0 it
-              replaced did. A plain maxHeight-bounded ScrollView (no flex anywhere in the
-              chain) is the correct pattern for a scrollable region inside a content-sized
-              modal card — it sizes to content up to the cap, then scrolls, with no
-              circular dependency on a parent that isn't flex-bounded itself. */}
-          <KeyboardAvoidingView behavior="padding">
-            <ScrollView
-              style={{ maxHeight: SCREEN_H * 0.45 }}
-              contentContainerStyle={{ gap: 10 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              automaticallyAdjustKeyboardInsets
-            >
+        <KeyboardAvoidingView behavior="padding">
+          <ScrollView
+            style={{ maxHeight: SCREEN_H * 0.45 }}
+            contentContainerStyle={{ gap: 10 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
+          >
             <OutlinedTextField
               label="Property / PG Name *"
               placeholder="Koramangala Executive Hub"
@@ -130,13 +149,10 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               onChangeText={(v) => { setAddress(v); if (addressError) setAddressError(undefined); }}
               error={addressError}
               onLocationResolved={(loc) => {
-                // Pre-seed map pin from autocomplete pick; user can still open the picker to adjust
                 if (!location) setLocation(loc);
               }}
             />
             <LocationField value={location} onPress={() => setPicking(true)} />
-
-
 
             <OutlinedTextField
               label="Total Bed Capacity *"
@@ -146,11 +162,10 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
               containerColor={Colors.surfaceMuted}
             />
 
-            {/* Manager Assignment (Supports up to 3 Managers per property) */}
             <View style={styles.sectionCard}>
               <Row align="center" gap={6} style={{ marginBottom: 6 }}>
                 <Ionicons name="people" size={16} color={Colors.primary} />
-                <Txt variant="caption" weight="800" color={Colors.textPrimary}>Assigned Primary Manager</Txt>
+                <Txt variant="cardTitle" color={Colors.textPrimary}>Assigned Primary Manager</Txt>
               </Row>
               <OutlinedTextField
                 label="Manager Name"
@@ -182,36 +197,10 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
                 ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
               </Txt>
             </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-
-          <Spacer size={14} />
-          <Row gap={8}>
-            <Btn
-              onPress={handleSave}
-              containerColor={Colors.primary}
-              textColor={Colors.textInverse}
-              borderRadius={Radii.card}
-              height={44}
-              style={{ flex: 1 }}
-            >
-              <Txt variant="body" weight="800" color={Colors.textInverse}>Save Property</Txt>
-            </Btn>
-            <OutlinedBtn
-              onPress={onDismiss}
-              borderColor={Colors.borderSubtle}
-              textColor={Colors.textPrimary}
-              borderRadius={Radii.card}
-              height={44}
-              style={{ flex: 1 }}
-            >
-              <Txt variant="body" weight="800" color={Colors.textPrimary}>Cancel</Txt>
-            </OutlinedBtn>
-          </Row>
-          </Card>
-        </View>
-      </View>
-    </Modal>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Card>
+    </Sheet>
   );
 }
 

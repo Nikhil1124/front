@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, StyleSheet, Modal, Pressable, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { StatusChip, toneFor, Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn, ListRow } from '@/components/ui';
+import { StatusChip, toneFor, Card, Txt, Btn, Row, Col, Spacer, OutlinedBtn, IconBtn, ListRow, Sheet } from '@/components/ui';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
@@ -74,7 +74,7 @@ export function ProcurementScreen() {
             onPress={() => { setTab('order'); }}
             style={[styles.tabBtn, tab === 'order' && styles.tabBtnActive]}
           >
-            <Txt size={12} weight="800" color={tab === 'order' ? Colors.textInverse : Colors.textPrimary}>
+            <Txt size={12} weight="700" color={tab === 'order' ? Colors.textInverse : Colors.textPrimary}>
               Order Supplies
             </Txt>
           </AnimatedPress>
@@ -82,7 +82,7 @@ export function ProcurementScreen() {
             onPress={() => { setTab('approvals'); }}
             style={[styles.tabBtn, tab === 'approvals' && styles.tabBtnActive]}
           >
-            <Txt size={12} weight="800" color={tab === 'approvals' ? Colors.textInverse : Colors.textPrimary}>
+            <Txt size={12} weight="700" color={tab === 'approvals' ? Colors.textInverse : Colors.textPrimary}>
               Approvals
             </Txt>
           </AnimatedPress>
@@ -172,7 +172,7 @@ function OrderSuppliesSection() {
               onPress={() => { setSelectedCat(tab.key); }}
             >
               <View style={[styles.catPill, isSel && styles.catPillActive]}>
-                <Txt size={12} weight="800" color={isSel ? Colors.textInverse : Colors.textPrimary}>
+                <Txt size={12} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>
                   {tab.label}
                 </Txt>
               </View>
@@ -212,7 +212,7 @@ function OrderSuppliesSection() {
       {myOrders.length > 0 && (
         <>
           <Spacer size={20} />
-          <Txt size={14} weight="900" color={Colors.textPrimary}>Recent Requisitions</Txt>
+          <Txt size={14} weight="700" color={Colors.textPrimary}>Recent Requisitions</Txt>
           <Spacer size={8} />
           <View>
             {myOrders.map((ord, i) => (
@@ -239,9 +239,9 @@ function OrderSuppliesSection() {
         >
           <Row gap={8} align="center">
             <View style={styles.cartCountPill}>
-              <Txt size={12} weight="900" color={Colors.primaryDark}>{cartItemCount}</Txt>
+              <Txt size={12} weight="700" color={Colors.primaryDark}>{cartItemCount}</Txt>
             </View>
-            <Txt size={13} weight="900" color={Colors.textInverse}>
+            <Txt size={13} weight="700" color={Colors.textInverse}>
               View Requisition Cart • ₹{cartTotalAmount.toLocaleString('en-IN')}
             </Txt>
             <Ionicons name="arrow-forward" size={16} color={Colors.textInverse} />
@@ -249,53 +249,72 @@ function OrderSuppliesSection() {
         </AnimatedPress>
       )}
 
-      <Modal visible={showCartModal} transparent animationType="slide" onRequestClose={() => setShowCartModal(false)}>
-        <View style={styles.modalBackdrop}>
-          <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowCartModal(false)} />
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={Radii.sheet}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[20, 20]}
-            style={{ width: '92%', maxHeight: '80%', zIndex: 2 }}
-          >
-            <Row justify="space-between" align="center">
-              <Col>
-                <Txt size={18} weight="900" color={Colors.textPrimary}>Requisition Summary</Txt>
-                <Txt size={11} color={Colors.textMuted}>{cartItemCount} items selected for {owner?.pgName ?? 'this property'}</Txt>
-              </Col>
-              <IconBtn onPress={() => setShowCartModal(false)} icon="close" size={18} tint={Colors.textMuted} />
-            </Row>
+      <Sheet
+        visible={showCartModal}
+        title="Requisition Summary"
+        subtitle={`${cartItemCount} items selected for ${owner?.pgName ?? 'this property'}`}
+        onDismiss={() => setShowCartModal(false)}
+        testID="procurement_cart_sheet"
+        footer={
+          <Row gap={8} style={{ width: '100%' }}>
+            <Btn onPress={() => setShowCartModal(false)} containerColor={Colors.surfaceMuted} textColor={Colors.textPrimary} borderRadius={Radii.card} style={{ flex: 1 }}>
+              Close
+            </Btn>
+            <Btn
+              onPress={handleSubmitRequisition}
+              loading={submitOrder.isPending}
+              disabled={submitOrder.isPending}
+              containerColor={Colors.primary}
+              textColor={Colors.textInverse}
+              borderRadius={Radii.card}
+              style={{ flex: 1 }}
+            >
+              <Ionicons name="send" size={16} color={Colors.textInverse} />
+              <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>
+                Submit Requisition 📦
+              </Txt>
+            </Btn>
+          </Row>
+        }
+      >
+        <Card
+          containerColor={Colors.surface}
+          borderRadius={Radii.sheet}
+          borderWidth={1}
+          borderColor={Colors.borderSubtle}
+          padding={[0, 0]}
+          style={{ width: '100%', maxHeight: '70%' }}
+        >
+          <Row justify="space-between" align="center" style={{ padding: 20 }}>
+            <Col>
+              <Txt size={18} weight="700" color={Colors.textPrimary}>Requisition Summary</Txt>
+              <Txt size={11} color={Colors.textMuted}>{cartItemCount} items selected for {owner?.pgName ?? 'this property'}</Txt>
+            </Col>
+            <IconBtn onPress={() => setShowCartModal(false)} icon="close" size={18} tint={Colors.textMuted} />
+          </Row>
 
-            <Spacer size={14} />
-
-            {/* Same real fix as AddPgPropertyDialog/EditPgPropertyDialog: FormScroll's inner
-                ScrollView is hardcoded flex: 1, which needs a flex-bounded ancestor — this
-                Card sizes to its own content (maxHeight: '80%' is a cap, not flex: 1), so
-                flex: 1 collapsed to zero the same way flex: 0 did. Plain maxHeight-bounded
-                ScrollView instead, no flex anywhere in the chain. */}
+          <View style={{ paddingHorizontal: 20 }}>
             <KeyboardAvoidingView behavior="padding">
               <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <View style={{ gap: 8 }}>
-                {Object.entries(cart).map(([id, qty]) => {
-                  const it = catalog.find((c) => c.id === id);
-                  if (!it) return null;
-                  const itemTotal = it.defaultPrice * qty;
-                  return (
-                    <Row key={id} justify="space-between" align="center" style={styles.cartRow}>
-                      <Col style={{ flex: 1 }}>
-                        <Txt size={13} weight="800" color={Colors.textPrimary}>{it.itemName}</Txt>
-                        <Txt size={11} color={Colors.textMuted}>{it.unit} • ₹{it.defaultPrice} each</Txt>
-                      </Col>
-                      <Row gap={8} align="center">
-                        <Txt size={12} weight="800" color={Colors.textMuted}>×{qty}</Txt>
-                        <Txt size={13} weight="900" color={Colors.primaryDark}>₹{itemTotal.toLocaleString('en-IN')}</Txt>
+                <View style={{ gap: 8 }}>
+                  {Object.entries(cart).map(([id, qty]) => {
+                    const it = catalog.find((c) => c.id === id);
+                    if (!it) return null;
+                    const itemTotal = it.defaultPrice * qty;
+                    return (
+                      <Row key={id} justify="space-between" align="center" style={styles.cartRow}>
+                        <Col style={{ flex: 1 }}>
+                          <Txt size={13} weight="700" color={Colors.textPrimary}>{it.itemName}</Txt>
+                          <Txt size={11} color={Colors.textMuted}>{it.unit} • ₹{it.defaultPrice} each</Txt>
+                        </Col>
+                        <Row gap={8} align="center">
+                          <Txt size={12} weight="700" color={Colors.textMuted}>×{qty}</Txt>
+                          <Txt size={13} weight="700" color={Colors.primaryDark}>₹{itemTotal.toLocaleString('en-IN')}</Txt>
+                        </Row>
                       </Row>
-                    </Row>
-                  );
-                })}
-              </View>
+                    );
+                  })}
+                </View>
               </ScrollView>
             </KeyboardAvoidingView>
 
@@ -304,29 +323,14 @@ function OrderSuppliesSection() {
             <Spacer size={12} />
 
             <Row justify="space-between" align="center">
-              <Txt size={14} weight="800" color={Colors.textPrimary}>Estimated Total Cost</Txt>
-              <Txt size={20} weight="900" color={Colors.primaryDark}>₹{cartTotalAmount.toLocaleString('en-IN')}</Txt>
+              <Txt size={14} weight="700" color={Colors.textPrimary}>Estimated Total Cost</Txt>
+              <Txt size={20} weight="700" color={Colors.primaryDark}>₹{cartTotalAmount.toLocaleString('en-IN')}</Txt>
             </Row>
 
             <Spacer size={16} />
-
-            <Btn
-              onPress={handleSubmitRequisition}
-              loading={submitOrder.isPending}
-              disabled={submitOrder.isPending}
-              containerColor={Colors.primary}
-              textColor={Colors.textInverse}
-              borderRadius={Radii.card}
-              height={48}
-            >
-              <Ionicons name="send" size={16} color={Colors.textInverse} />
-              <Txt size={13} weight="800" color={Colors.textInverse} style={{ marginLeft: 6 }}>
-                Submit Requisition 📦
-              </Txt>
-            </Btn>
-          </Card>
-        </View>
-      </Modal>
+          </View>
+        </Card>
+      </Sheet>
     </>
   );
 }
@@ -347,9 +351,9 @@ function CatalogRow({
             <Ionicons name={CATEGORY_ICONS[item.category] ?? 'cube'} size={22} color={qty > 0 ? Colors.primary : Colors.primaryDark} />
           </View>
           <Col style={{ flex: 1 }}>
-            <Txt size={14} weight="800" color={Colors.textPrimary} numberOfLines={2}>{item.itemName}</Txt>
+            <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={2}>{item.itemName}</Txt>
             <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>{item.unit}</Txt>
-            <Txt size={14} weight="900" color={Colors.primaryDark} style={{ marginTop: 4 }}>
+            <Txt size={14} weight="700" color={Colors.primaryDark} style={{ marginTop: 4 }}>
               ₹{item.defaultPrice.toLocaleString('en-IN')}
             </Txt>
           </Col>
@@ -362,7 +366,7 @@ function CatalogRow({
                 <Ionicons name="remove" size={16} color={Colors.textPrimary} />
               </AnimatedPress>
               <View style={styles.qtyBox}>
-                <Txt size={13} weight="900" color={Colors.primaryDark}>{qty}</Txt>
+                <Txt size={13} weight="700" color={Colors.primaryDark}>{qty}</Txt>
               </View>
               <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" onPress={() => onChangeQty(item.id, 1)} style={[styles.qtyBtn, { backgroundColor: Colors.primary }]}>
                 <Ionicons name="add" size={16} color={Colors.textInverse} />
@@ -378,7 +382,7 @@ function CatalogRow({
               contentStyle={{ paddingHorizontal: 12 }}
             >
               <Ionicons name="add" size={14} color={Colors.textInverse} />
-              <Txt size={11} weight="800" color={Colors.textInverse} style={{ marginLeft: 4 }}>+ Add</Txt>
+              <Txt size={11} weight="700" color={Colors.textInverse} style={{ marginLeft: 4 }}>+ Add</Txt>
             </Btn>
           )}
         </Row>
@@ -487,12 +491,12 @@ function ApprovalsSection() {
                     <StatusBadge status={req.status} />
                     <Txt size={11} color={Colors.textMuted}>{new Date(req.createdAt).toLocaleDateString()}</Txt>
                   </Row>
-                  <Txt size={15} weight="900" color={Colors.textPrimary} style={{ marginTop: 6 }}>
+                  <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 6 }}>
                     {req.orderType.charAt(0).toUpperCase() + req.orderType.slice(1)} requisition
                   </Txt>
                   {req.notes ? <Txt size={11} color={Colors.textMuted}>{req.notes}</Txt> : null}
                 </Col>
-                <Txt size={18} weight="900" color={Colors.primaryDark}>
+                <Txt size={18} weight="700" color={Colors.primaryDark}>
                   ₹{req.totalCost.toLocaleString('en-IN')}
                 </Txt>
               </Row>
@@ -505,7 +509,7 @@ function ApprovalsSection() {
                 {req.items.map((it) => (
                   <Row key={it.id} justify="space-between">
                     <Txt size={12} color={Colors.textSecondary}>{it.quantity}× {it.itemName}</Txt>
-                    <Txt size={12} weight="800" color={Colors.textPrimary}>₹{it.lineTotal.toLocaleString('en-IN')}</Txt>
+                    <Txt size={12} weight="700" color={Colors.textPrimary}>₹{it.lineTotal.toLocaleString('en-IN')}</Txt>
                   </Row>
                 ))}
               </View>
@@ -525,7 +529,7 @@ function ApprovalsSection() {
                       style={{ flex: 1 }}
                     >
                       <Ionicons name="checkmark-circle" size={16} color={Colors.textInverse} />
-                      <Txt size={12} weight="800" color={Colors.textInverse} style={{ marginLeft: 4 }}>Approve Order</Txt>
+                      <Txt size={12} weight="700" color={Colors.textInverse} style={{ marginLeft: 4 }}>Approve Order</Txt>
                     </Btn>
                     <OutlinedBtn
                       onPress={() => setRejectingId(req.id)}
@@ -536,7 +540,7 @@ function ApprovalsSection() {
                       style={{ flex: 1 }}
                     >
                       <Ionicons name="close-circle" size={16} color={Colors.danger} />
-                      <Txt size={12} weight="800" color={Colors.danger} style={{ marginLeft: 4 }}>Reject</Txt>
+                      <Txt size={12} weight="700" color={Colors.danger} style={{ marginLeft: 4 }}>Reject</Txt>
                     </OutlinedBtn>
                   </Row>
                 </>
@@ -622,7 +626,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6 },
   cartCountPill: {
-    backgroundColor: Colors.textInverse,
+    backgroundColor: Colors.surface,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: Radii.control },

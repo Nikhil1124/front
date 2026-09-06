@@ -8,11 +8,10 @@ import {
   Alert,
   View,
   StyleSheet,
-  Text,
   ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Row, Col, OutlinedTextField, AnimatedPress } from '@/components/ui';
+import { Row, Col, OutlinedTextField, AnimatedPress, Txt } from '@/components/ui';
 import { Colors, Palette, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
@@ -116,7 +115,7 @@ export function UpiConfigSection() {
     return (
       <View style={styles.loadingBox}>
         <ActivityIndicator color={GREEN} />
-        <Text maxFontSizeMultiplier={1.3} style={styles.loadingText}>Loading UPI accounts...</Text>
+        <Txt variant="meta" color={MUTED}>Loading UPI accounts...</Txt>
       </View>
     );
   }
@@ -126,10 +125,10 @@ export function UpiConfigSection() {
       {/* ── Rent Collection List ── */}
       <Col gap={12}>
         <View>
-          <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Rent Collection</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.sectionSub}>
+          <Txt variant="sectionTitle" color={CHARCOAL}>Rent Collection</Txt>
+          <Txt variant="meta" color={MUTED} style={styles.sectionSub}>
             Manage the UPI handles used to receive rent payments.
-          </Text>
+          </Txt>
         </View>
 
         {isError ? (
@@ -138,20 +137,20 @@ export function UpiConfigSection() {
              that is already on the account. */
           <View style={styles.emptyCard}>
             <Ionicons name="cloud-offline-outline" size={32} color={Colors.danger} />
-            <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Could not load your UPI handles</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.emptySubText}>
+            <Txt variant="cardTitle" color={CHARCOAL} style={styles.emptyTitle}>Could not load your UPI handles</Txt>
+            <Txt variant="meta" color={MUTED} align="center" style={styles.emptySubText}>
               Pull to refresh, or check your connection. Do not add a handle until this loads —
               you may already have one.
-            </Text>
+            </Txt>
           </View>
         ) : upiList.length === 0 ? (
           /* Empty State */
           <View style={styles.emptyCard}>
             <Ionicons name="card-outline" size={32} color={MUTED} />
-            <Text maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>No UPI handles added</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.emptySubText}>
+            <Txt variant="cardTitle" color={CHARCOAL} style={styles.emptyTitle}>No UPI handles added</Txt>
+            <Txt variant="meta" color={MUTED} align="center" style={styles.emptySubText}>
               Add a UPI ID to start receiving rent payments.
-            </Text>
+            </Txt>
           </View>
         ) : (
           <Col gap={10}>
@@ -174,12 +173,12 @@ export function UpiConfigSection() {
                         />
                       </View>
                       <Col style={{ flex: 1 }}>
-                        <Text maxFontSizeMultiplier={1.3} style={styles.vpaText} numberOfLines={1}>
+                        <Txt variant="body" weight="600" color={CHARCOAL} tabular numberOfLines={1}>
                           {item.vpa_address}
-                        </Text>
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.statusLabel, isPrimary && styles.statusLabelActive]}>
+                        </Txt>
+                        <Txt variant="meta" weight="600" color={isPrimary ? GREEN : MUTED} style={styles.statusLabel}>
                           {isPrimary ? 'Primary · Active' : 'Secondary'}
-                        </Text>
+                        </Txt>
                       </Col>
                     </Row>
                     <Row gap={8} align="center">
@@ -188,7 +187,7 @@ export function UpiConfigSection() {
                           style={styles.primaryBtnAction}
                           onPress={() => handleSetPrimary(item.id, item.vpa_address)}
                         >
-                          <Text maxFontSizeMultiplier={1.3} style={styles.primaryBtnActionText}>Set as Primary</Text>
+                          <Txt variant="button" color={WHITE}>Set as Primary</Txt>
                         </AnimatedPress>
                       )}
                       <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Delete" accessibilityRole="button"
@@ -208,7 +207,7 @@ export function UpiConfigSection() {
 
       {/* ── Add UPI Handle ── */}
       <Col gap={12}>
-        <Text maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Add UPI Handle</Text>
+        <Txt variant="sectionTitle" color={CHARCOAL}>Add UPI Handle</Txt>
         <OutlinedTextField
           label="Enter UPI ID"
           required
@@ -231,7 +230,7 @@ export function UpiConfigSection() {
           {addMutation.isPending ? (
             <ActivityIndicator color={WHITE} />
           ) : (
-            <Text maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Add UPI Handle</Text>
+            <Txt variant="button" color={WHITE}>Add UPI Handle</Txt>
           )}
         </AnimatedPress>
       </Col>
@@ -244,11 +243,8 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: 'center',
     gap: 8 },
-  loadingText: { fontSize: 13, color: MUTED },
-
   // Sections
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
-  sectionSub: { fontSize: 13, color: MUTED, marginTop: 2 },
+  sectionSub: { marginTop: 2 },
 
   // Cards
   upiCard: {
@@ -265,9 +261,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.pill,
     alignItems: 'center',
     justifyContent: 'center' },
-  vpaText: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
-  statusLabel: { fontSize: 11, fontWeight: '600', color: MUTED, marginTop: 2 },
-  statusLabelActive: { color: GREEN },
+  statusLabel: { marginTop: 2 },
 
   // Actions
   primaryBtnAction: {
@@ -275,7 +269,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: Radii.control },
-  primaryBtnActionText: { fontSize: 12, fontWeight: '800', color: WHITE },
   deleteBtn: {
     width: 32,
     height: 32,
@@ -293,7 +286,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center' },
   submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { fontSize: 15, fontWeight: '800', color: WHITE },
 
   // Empty state
   emptyCard: {
@@ -303,5 +295,5 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     padding: 24,
     alignItems: 'center' },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL, marginTop: 8 },
-  emptySubText: { fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 2 } });
+  emptyTitle: { marginTop: 8 },
+  emptySubText: { marginTop: 2 } });

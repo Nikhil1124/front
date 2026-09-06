@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Colors } from '@/theme';
 
 export interface SectionHeaderProps {
@@ -21,9 +23,9 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
     <View style={styles.row}>
       <Text maxFontSizeMultiplier={1.3} style={styles.title}>{title}</Text>
       {actionLabel && onAction ? (
-        <TouchableOpacity accessibilityRole="button" onPress={onAction} activeOpacity={0.7}>
+        <AnimatedPress accessibilityRole="button" onPress={onAction} activeOpacity={0.7}>
           <Text maxFontSizeMultiplier={1.3} style={styles.action}>{actionLabel}</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       ) : null}
     </View>
   );

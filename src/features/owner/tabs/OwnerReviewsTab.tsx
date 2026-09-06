@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
 
   // Header Rating
   headerRatingBox: { alignItems: 'flex-end' },
-  headerRatingText: { fontSize: 16, fontWeight: '800', color: GREEN },
+  headerRatingText: { fontSize: 16, fontWeight: '700', color: GREEN },
   headerRatingCount: { fontSize: 11, color: MUTED, marginTop: 1 },
   noRatingText: { fontSize: 12, color: MUTED },
 
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center' },
-  summaryValueText: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
+  summaryValueText: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
   summaryLabel: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   summaryCountSub: { fontSize: 9, color: MUTED, marginTop: 2 },
 
@@ -413,14 +413,14 @@ const styles = StyleSheet.create({
   noStaffText: { fontSize: 12, color: MUTED },
 
   // Drill down staff profile sheet
-  detailSecTitle: { fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.5, marginBottom: 8 },
+  detailSecTitle: { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.5, marginBottom: 8 },
   sheetKpiCard: {
     flex: 1,
     backgroundColor: BG,
     borderRadius: Radii.card,
     padding: 12,
     alignItems: 'center' },
-  sheetKpiVal: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
+  sheetKpiVal: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
   sheetKpiLabel: { fontSize: 10, color: MUTED, marginTop: 2 },
   noReviewsAvailableText: { fontSize: 12, color: MUTED, fontStyle: 'italic', paddingVertical: 12 },
   sharedNoticeText: { fontSize: 11, color: MUTED, lineHeight: 16, backgroundColor: BG, borderRadius: Radii.control, padding: 10 },

@@ -168,7 +168,7 @@ function InboxRow({ item, onPress, onDismiss }: { item: InboxItem; onPress: () =
             <Row justify="space-between" align="center">
               <Row align="center" gap={6}>
                 {!item.isRead && <View style={styles.unreadDot} />}
-                <Txt size={10.5} weight="800" color={PRIMARY} style={{ letterSpacing: 0.4 }}>{item.kind}</Txt>
+                <Txt size={10.5} weight="700" color={PRIMARY} style={{ letterSpacing: 0.4 }}>{item.kind}</Txt>
               </Row>
               <Txt size={11} color={TEXT_SECONDARY}>{formatTimeAgo(item.timestamp)}</Txt>
             </Row>
@@ -230,7 +230,7 @@ function ReceiptBody({ title, payment, tone }: { title: string; payment?: Paymen
               <Txt size={10.5} color={TEXT_SECONDARY}>{payment.payerName} · {payment.paymentType.replace(/_/g, ' ')}</Txt>
               <Txt size={10} color={TEXT_SECONDARY}>{payment.paymentMode.replace(/_/g, ' ')}</Txt>
             </Col>
-            <Txt size={19} weight="800" color={TEXT_PRIMARY} tabular>₹{payment.amount.toLocaleString('en-IN')}</Txt>
+            <Txt size={19} weight="700" color={TEXT_PRIMARY} tabular>₹{payment.amount.toLocaleString('en-IN')}</Txt>
           </Row>
         </>
       ) : null}
@@ -791,11 +791,11 @@ function DecisionCard({
       <AnimatedPress accessibilityRole="button" onPress={onPress}>
         <Row gap={8} align="center">
           <Ionicons name={item.icon} size={16} color={tint.ink} />
-          <Txt size={11} weight="800" color={tint.ink} style={{ letterSpacing: 0.4, flex: 1 }}>{item.kind} · NEEDS YOUR DECISION</Txt>
+          <Txt size={11} weight="700" color={tint.ink} style={{ letterSpacing: 0.4, flex: 1 }}>{item.kind} · NEEDS YOUR DECISION</Txt>
           <Txt size={11} color={tint.sub}>{formatTimeAgo(item.timestamp)}</Txt>
         </Row>
         <Spacer size={8} />
-        <Txt size={15} weight="800" color={tint.ink}>{item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}</Txt>
+        <Txt size={15} weight="700" color={tint.ink}>{item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim()}</Txt>
         <Spacer size={4} />
         <Txt size={12.5} color={tint.sub}>{item.desc}</Txt>
       </AnimatedPress>
@@ -937,12 +937,12 @@ const styles = StyleSheet.create({
   pinnedGlyph: { position: 'absolute', top: 10, left: 16, transform: [{ rotate: '-18deg' }] },
 
   actionBlockBox: { backgroundColor: SURFACE, borderWidth: 1, borderColor: PRIMARY, borderRadius: Radii.card, padding: 20 },
-  actionBlockLabel: { fontSize: 14, fontWeight: '800', color: PRIMARY },
+  actionBlockLabel: { fontSize: 14, fontWeight: '700', color: PRIMARY },
   actionBlockDesc: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 4 },
   actionApproveBtn: { flex: 1, height: 48, backgroundColor: Colors.success, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
-  actionApproveText: { fontSize: 15, fontWeight: '800', color: SURFACE },
+  actionApproveText: { fontSize: 15, fontWeight: '700', color: SURFACE },
   actionRejectBtn: { flex: 1, height: 48, backgroundColor: Colors.danger, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
-  actionRejectText: { fontSize: 15, fontWeight: '800', color: SURFACE },
+  actionRejectText: { fontSize: 15, fontWeight: '700', color: SURFACE },
 
   cardApproveBtn: { flex: 1, height: 44, backgroundColor: Colors.success, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' },
   cardRejectBtn: { flex: 1, height: 44, backgroundColor: SURFACE, borderWidth: 1, borderColor: Colors.danger, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' },

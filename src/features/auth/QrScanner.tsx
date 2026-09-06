@@ -88,11 +88,11 @@ export function QrScanner({
       {/* Aiming frame — the camera reads the whole view, this only tells the eye where to aim. */}
       <View style={styles.overlay} pointerEvents="none">
         <View style={styles.frame} />
-        <Txt size={13} weight="700" color="#FFFFFF" align="center" style={{ marginTop: 18 }}>
+        <Txt size={13} weight="700" color={Colors.textInverse} align="center" style={{ marginTop: 18 }}>
           Point at the QR on your lobby poster
         </Txt>
         {rejected ? (
-          <Txt size={12} color="#FFFFFF" align="center" style={{ marginTop: 8, opacity: 0.85 }}>
+          <Txt size={12} color={Colors.textInverse} align="center" style={{ marginTop: 8, opacity: 0.85 }}>
             That code is not a PGow join code.
           </Txt>
         ) : null}
@@ -100,7 +100,7 @@ export function QrScanner({
 
       <View style={styles.footer}>
         <AnimatedPress onPress={onCancel} style={styles.link} accessibilityLabel="Cancel scanning">
-          <Txt size={14} weight="700" color="#FFFFFF">Type the code instead</Txt>
+          <Txt size={14} weight="700" color={Colors.textInverse}>Type the code instead</Txt>
         </AnimatedPress>
       </View>
     </View>
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     height: 240,
     borderRadius: Radii.card,
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: Colors.surface,
     backgroundColor: 'transparent',
   },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 44, alignItems: 'center' },

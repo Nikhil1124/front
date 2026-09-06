@@ -96,18 +96,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </View>
             {quantity > 0 ? (
               <View style={styles.simpleQuantityControl}>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleDecrease}>
-                  <Ionicons name="remove" size={12} color="#FFFFFF" />
-                </TouchableOpacity>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleDecrease}>
+                  <Ionicons name="remove" size={12} color={Colors.textInverse} />
+                </AnimatedPress>
                 <Text maxFontSizeMultiplier={1.3} style={styles.simpleQtyText}>{quantity}</Text>
-                <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleIncrease}>
-                  <Ionicons name="add" size={12} color="#FFFFFF" />
-                </TouchableOpacity>
+                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleQtyBtn} onPress={handleIncrease}>
+                  <Ionicons name="add" size={12} color={Colors.textInverse} />
+                </AnimatedPress>
               </View>
             ) : (
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleAddButton} onPress={handleAdd} activeOpacity={0.85}>
-                <Ionicons name="add" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.simpleAddButton} onPress={handleAdd} activeOpacity={0.85}>
+                <Ionicons name="add" size={16} color={Colors.textInverse} />
+              </AnimatedPress>
             )}
           </View>
         </View>
@@ -132,7 +132,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <View />
         )}
 
-        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
+        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
           style={styles.wishlistBtn}
           onPress={() => toggleItem(product)}
           activeOpacity={0.7}
@@ -142,7 +142,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             size={18}
             color={isWishlisted ? Colors.danger : Colors.textMuted}
           />
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
 
       {/* Image Container */}
@@ -183,7 +183,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {options.length > 1 && (
           <View style={styles.optionsWrapper}>
             {options.map((opt, i) => (
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 key={opt.unit}
                 style={[
                   styles.optionTab,
@@ -199,7 +199,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 >
                   {opt.unit}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             ))}
           </View>
         )}
@@ -208,18 +208,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <View style={styles.actionContainer}>
           {quantity > 0 ? (
             <View style={styles.qtyControl}>
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleDecrease}>
-                <Ionicons name="remove" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleDecrease}>
+                <Ionicons name="remove" size={16} color={Colors.textInverse} />
+              </AnimatedPress>
               <Text maxFontSizeMultiplier={1.3} style={styles.qtyText}>{quantity}</Text>
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleIncrease}>
-                <Ionicons name="add" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
+              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button" style={styles.qtyBtn} onPress={handleIncrease}>
+                <Ionicons name="add" size={16} color={Colors.textInverse} />
+              </AnimatedPress>
             </View>
           ) : (
-            <TouchableOpacity accessibilityRole="button" style={styles.addBtn} onPress={handleAdd} activeOpacity={0.85}>
+            <AnimatedPress accessibilityRole="button" style={styles.addBtn} onPress={handleAdd} activeOpacity={0.85}>
               <Text maxFontSizeMultiplier={1.3} style={styles.addBtnText}>Add to Cart</Text>
-            </TouchableOpacity>
+            </AnimatedPress>
           )}
         </View>
       </View>
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.control,
     shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 1 },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '700',
     color: Colors.primary,
   },
   strikePrice: {
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.badge,
     borderWidth: 1,
     borderColor: Colors.borderSubtle,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
   },
   selectedOptionTab: {
     borderColor: Colors.primary,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   qtyText: {
-    color: '#FFFFFF',
+    color: Colors.textInverse,
     fontSize: 13,
   },
 
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   },
   simplePrice: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
     color: Colors.primary,
   },
   simpleStrikePrice: {
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   simpleQtyText: {
-    color: '#FFFFFF',
+    color: Colors.textInverse,
     fontSize: 11,
     minWidth: 12,
     textAlign: 'center',

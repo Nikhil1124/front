@@ -28,13 +28,13 @@ export function SettingsScreen() {
 
   return (
     <HubScreenWrapper title="Settings" subtitle={owner?.pgName ?? 'Account'}>
-      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>ACCOUNT</Txt>
+      <Txt variant="body" weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>ACCOUNT</Txt>
       <Spacer size={8} />
       <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 14]}>
         <Row gap={10} align="center">
           <Ionicons name="person-circle" size={22} color={Colors.primary} />
           <Col style={{ flex: 1 }}>
-            <Txt variant="body" weight="800" color={Colors.textPrimary}>{isManager ? owner?.managerName ?? 'Manager' : owner?.ownerName ?? 'Owner'}</Txt>
+            <Txt variant="body" weight="700" color={Colors.textPrimary}>{isManager ? owner?.managerName ?? 'Manager' : owner?.ownerName ?? 'Owner'}</Txt>
             <Txt variant="caption" color={Colors.textMuted}>{isManager ? 'Manager' : 'Owner'} • {owner?.pgName ?? 'Property'}</Txt>
           </Col>
         </Row>
@@ -59,7 +59,7 @@ export function SettingsScreen() {
       </Card>
 
       <Spacer size={20} />
-      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>PAYMENT & UPI CONFIGURATION</Txt>
+      <Txt variant="body" weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>PAYMENT & UPI CONFIGURATION</Txt>
       <Spacer size={8} />
       <UpiConfigSection />
 
@@ -69,7 +69,7 @@ export function SettingsScreen() {
           owner looks for them. Manager provisioning is owner-only: a manager cannot appoint
           other managers. */}
       <Spacer size={20} />
-      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>PROPERTY & PLAN</Txt>
+      <Txt variant="body" weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>PROPERTY & PLAN</Txt>
       <Spacer size={8} />
       <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 4]}>
         {!isManager && (
@@ -134,7 +134,7 @@ export function SettingsScreen() {
       </Card>
 
       <Spacer size={20} />
-      <Txt variant="body" weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>MONETIZATION</Txt>
+      <Txt variant="body" weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>MONETIZATION</Txt>
       <Spacer size={8} />
       <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[4, 4]}>
         <AnimatedPress
@@ -155,7 +155,7 @@ export function SettingsScreen() {
       <Spacer size={20} />
       <Btn onPress={confirmLogout} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={Radii.card} height={48} borderWidth={1} borderColor="#FECACA">
         <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
-        <Txt variant="body" weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>Log Out</Txt>
+        <Txt variant="body" weight="700" color={Colors.danger} style={{ marginLeft: 8 }}>Log Out</Txt>
       </Btn>
     </HubScreenWrapper>
   );

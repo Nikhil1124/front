@@ -57,14 +57,14 @@ export function StatusChip({ label, tone, variant = 'chip' }: StatusChipProps) {
     return (
       <View style={styles.dotRow}>
         <View style={[styles.dot, { backgroundColor: fg }]} />
-        <Txt size={11} weight="500" color={fg} numberOfLines={1}>{label}</Txt>
+        <Txt variant="meta" color={fg} numberOfLines={1}>{label}</Txt>
       </View>
     );
   }
 
   return (
     <View style={[styles.chip, { backgroundColor: bg }]}>
-      <Txt size={10} weight="700" color={fg} numberOfLines={1}>{label}</Txt>
+      <Txt variant="statusChip" color={fg} numberOfLines={1}>{label}</Txt>
     </View>
   );
 }

@@ -89,7 +89,7 @@ export function BookTechnicianScreen() {
                 <Ionicons name={spec.icon as any} size={20} color={Colors.primary} />
               </View>
               <Col style={{ flex: 1 }}>
-                <Txt size={15} weight="800" color={Colors.textPrimary}>{ticket.title}</Txt>
+                <Txt size={15} weight="700" color={Colors.textPrimary}>{ticket.title}</Txt>
                 <Txt size={12} color={Colors.textMuted} style={{ marginTop: 2 }}>
                   {ticket.roomNo ? `Room ${ticket.roomNo}` : 'Room not recorded'}
                   {ticket.guestName ? ` • ${ticket.guestName}` : ''}
@@ -117,7 +117,7 @@ export function BookTechnicianScreen() {
               borderColor={Colors.borderSubtle}
               padding={[16, 16]}
             >
-              <Txt size={12} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+              <Txt size={12} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
                 RESIDENT'S PHOTO
               </Txt>
               <Spacer size={10} />
@@ -133,7 +133,7 @@ export function BookTechnicianScreen() {
             borderColor={Colors.borderSubtle}
             padding={[16, 16]}
           >
-            <Txt size={13} weight="800" color={Colors.textPrimary}>Brief for the area manager</Txt>
+            <Txt size={13} weight="700" color={Colors.textPrimary}>Brief for the area manager</Txt>
             <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2, lineHeight: 16 }}>
               They cannot see this ticket's photos — what you write here is what they dispatch from.
             </Txt>
@@ -159,7 +159,7 @@ export function BookTechnicianScreen() {
             testID="book_technician_submit"
           >
             <Ionicons name={spec.icon as any} size={18} color={Colors.textInverse} />
-            <Txt size={14} weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
+            <Txt size={14} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>
               {escalate.isPending ? 'Sending…' : spec.label}
             </Txt>
           </Btn>

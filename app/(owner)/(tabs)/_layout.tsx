@@ -102,7 +102,7 @@ export default function OwnerTabsLayout() {
                 <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
                 {isManager && (
                   <View style={styles.managerBadge}>
-                    <Txt size={8} weight="900" color={Colors.primary}>MANAGER</Txt>
+                    <Txt size={8} weight="700" color={Colors.primary}>MANAGER</Txt>
                   </View>
                 )}
               </>
@@ -253,7 +253,7 @@ export default function OwnerTabsLayout() {
                   }}
                 >
                   <View style={[styles.moreIconBox, { backgroundColor: Palette.TintGreen }]}><Ionicons name="person-add-outline" size={22} color={Colors.success} /></View>
-                  <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Resident</Txt>
+                  <Txt size={12} weight="700" color={CHARCOAL} style={{ marginTop: 8 }}>Resident</Txt>
                 </AnimatedPress>
 
                 {/* Add Staff */}
@@ -265,7 +265,7 @@ export default function OwnerTabsLayout() {
                   }}
                 >
                   <View style={[styles.moreIconBox, { backgroundColor: '#EEF2FF' }]}><Ionicons name="ribbon-outline" size={22} color={PRIMARY} /></View>
-                  <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Staff</Txt>
+                  <Txt size={12} weight="700" color={CHARCOAL} style={{ marginTop: 8 }}>Staff</Txt>
                 </AnimatedPress>
 
                 {/* Add Property */}
@@ -277,7 +277,7 @@ export default function OwnerTabsLayout() {
                   }}
                 >
                   <View style={[styles.moreIconBox, { backgroundColor: Palette.TintAmber }]}><Ionicons name="business-outline" size={22} color={Colors.warning} /></View>
-                  <Txt size={12} weight="800" color={CHARCOAL} style={{ marginTop: 8 }}>Property</Txt>
+                  <Txt size={12} weight="700" color={CHARCOAL} style={{ marginTop: 8 }}>Property</Txt>
                 </AnimatedPress>
               </Row>
 

@@ -31,32 +31,51 @@ export type FontWeight =
   | '800'
   | '900';
 
+export type LoadedFontWeight = '400' | '500' | '600' | '700';
+
+export const FontFamilies: Record<LoadedFontWeight, string> = {
+  '400': 'PlusJakartaSans_400Regular',
+  '500': 'PlusJakartaSans_500Medium',
+  '600': 'PlusJakartaSans_600SemiBold',
+  '700': 'PlusJakartaSans_700Bold',
+};
+
 export interface TypographyToken {
   fontSize: number;
   lineHeight: number;
   letterSpacing: number;
-  fontWeight: FontWeight;
+  fontWeight: LoadedFontWeight;
 }
 
 export const Typography = {
   /** Screen's main title — top of a HubScreenWrapper / tab header */
-  screenTitle:  { fontSize: 20, lineHeight: 26, letterSpacing: -0.3, fontWeight: '800' as FontWeight },
+  screenTitle:  { fontSize: 22, lineHeight: 28, letterSpacing: 0, fontWeight: '700' as LoadedFontWeight },
   /** Section heading within a screen ("QUICK ACTIONS", "TOTALS") */
-  sectionTitle: { fontSize: 18, lineHeight: 24, letterSpacing: 0,    fontWeight: '700' as FontWeight },
+  sectionTitle: { fontSize: 16, lineHeight: 22, letterSpacing: 0, fontWeight: '600' as LoadedFontWeight },
   /** A card's own title (list item name, banner heading) */
-  cardTitle:    { fontSize: 16, lineHeight: 22, letterSpacing: 0.1,  fontWeight: '700' as FontWeight },
+  cardTitle:    { fontSize: 14, lineHeight: 20, letterSpacing: 0, fontWeight: '600' as LoadedFontWeight },
   /** Regular paragraph / body text */
-  body:         { fontSize: 14, lineHeight: 20, letterSpacing: 0.2,  fontWeight: '500' as FontWeight },
+  body:         { fontSize: 14, lineHeight: 20, letterSpacing: 0, fontWeight: '400' as LoadedFontWeight },
   /** Secondary / muted supporting text under a title */
-  caption:      { fontSize: 12, lineHeight: 16, letterSpacing: 0.2,  fontWeight: '400' as FontWeight },
-  /** All-caps section label (letter-spacing built for uppercase) */
-  label:        { fontSize: 12, lineHeight: 16, letterSpacing: 1.0,  fontWeight: '700' as FontWeight },
+  caption:      { fontSize: 10.5, lineHeight: 14, letterSpacing: 0, fontWeight: '400' as LoadedFontWeight },
+  /** Button label */
+  button:       { fontSize: 14, lineHeight: 20, letterSpacing: 0, fontWeight: '600' as LoadedFontWeight },
+  /** Small metadata line */
+  meta:         { fontSize: 11, lineHeight: 16, letterSpacing: 0, fontWeight: '500' as LoadedFontWeight },
+  /** All-caps section label */
+  label:        { fontSize: 11, lineHeight: 16, letterSpacing: 0, fontWeight: '500' as LoadedFontWeight },
   /** Tiny badge / pill / all-caps tag */
-  labelSmall:   { fontSize: 10, lineHeight: 14, letterSpacing: 1.2,  fontWeight: '700' as FontWeight },
+  labelSmall:   { fontSize: 10.5, lineHeight: 14, letterSpacing: 0, fontWeight: '600' as LoadedFontWeight },
+  /** Status chip text */
+  statusChip:   { fontSize: 10.5, lineHeight: 14, letterSpacing: 0, fontWeight: '600' as LoadedFontWeight },
   /** Big number in a stat tile / price / balance */
-  statValue:    { fontSize: 24, lineHeight: 30, letterSpacing: -0.5, fontWeight: '700' as FontWeight },
+  statValue:    { fontSize: 22, lineHeight: 28, letterSpacing: 0, fontWeight: '700' as LoadedFontWeight },
+  /** Approved metric alias */
+  metric:       { fontSize: 22, lineHeight: 28, letterSpacing: 0, fontWeight: '700' as LoadedFontWeight },
   /** The single biggest figure on a screen — hero card headline */
-  heroNumber:   { fontSize: 32, lineHeight: 38, letterSpacing: -1.0, fontWeight: '800' as FontWeight },
+  heroNumber:   { fontSize: 28, lineHeight: 34, letterSpacing: 0, fontWeight: '700' as LoadedFontWeight },
+  /** Approved hero alias */
+  hero:         { fontSize: 28, lineHeight: 34, letterSpacing: 0, fontWeight: '700' as LoadedFontWeight },
 } as const;
 
 export type TypographyKey = keyof typeof Typography;
@@ -65,9 +84,21 @@ export type TypographyKey = keyof typeof Typography;
 export function textStyle(key: TypographyKey): TextStyle {
   const t = Typography[key];
   return {
+    fontFamily: fontFamilyForWeight(t.fontWeight),
     fontSize: t.fontSize,
     lineHeight: t.lineHeight,
     letterSpacing: t.letterSpacing,
     fontWeight: t.fontWeight,
   };
+}
+
+export function normalizeFontWeight(weight: FontWeight | undefined): LoadedFontWeight {
+  if (weight === 'normal' || weight === '100' || weight === '200' || weight === '300' || weight === '400') return '400';
+  if (weight === '500') return '500';
+  if (weight === '600') return '600';
+  return weight === 'bold' || weight === '700' || weight === '800' || weight === '900' ? '700' : '400';
+}
+
+export function fontFamilyForWeight(weight: FontWeight | undefined): string {
+  return FontFamilies[normalizeFontWeight(weight)];
 }

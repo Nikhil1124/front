@@ -118,7 +118,7 @@ export function ManageAdScreen() {
             <>
               <Spacer size={10} />
               <Txt variant="caption" color={Colors.textSecondary}>
-                Code <Txt variant="caption" weight="800" color={Colors.primary}>{data.discount_code}</Txt>
+                Code <Txt variant="caption" weight="700" color={Colors.primary}>{data.discount_code}</Txt>
                 {data.discount_percent > 0 ? ` · ${data.discount_percent}% off` : ''}
               </Txt>
             </>
@@ -142,9 +142,9 @@ export function ManageAdScreen() {
               Residents see nothing on the RSVP tab until you add one.
             </Txt>
             <Spacer size={6} />
-            <Btn onPress={() => setIsEditing(true)} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.control} height={44}>
-              <Ionicons name="add" size={18} color="#FFFFFF" />
-              <Txt variant="body" weight="800" color="#FFFFFF" style={{ marginLeft: 6 }}>Add Sponsored Ad</Txt>
+            <Btn onPress={() => setIsEditing(true)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={44}>
+              <Ionicons name="add" size={18} color={Colors.textInverse} />
+              <Txt variant="body" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Add Sponsored Ad</Txt>
             </Btn>
           </Col>
         </Card>
@@ -175,8 +175,8 @@ export function ManageAdScreen() {
                 <Txt variant="body" weight="700" color={Colors.textSecondary}>Cancel</Txt>
               </OutlinedBtn>
             )}
-            <Btn onPress={save} loading={upsert.isPending} containerColor={Colors.primary} textColor="#FFFFFF" borderRadius={Radii.control} height={44} style={{ flex: 1 }}>
-              <Txt variant="body" weight="800" color="#FFFFFF">Save Ad</Txt>
+            <Btn onPress={save} loading={upsert.isPending} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={44} style={{ flex: 1 }}>
+              <Txt variant="body" weight="700" color={Colors.textInverse}>Save Ad</Txt>
             </Btn>
           </Row>
         </ScrollView>

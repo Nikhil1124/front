@@ -38,7 +38,7 @@ export function ChoiceChips<T extends string | number>({
   return (
     <View>
       {label ? (
-        <Txt size={11} weight="700" color={error ? Colors.danger : Colors.textMuted} style={styles.label}>
+        <Txt variant="meta" weight="600" color={error ? Colors.danger : Colors.textMuted} style={styles.label}>
           {label.toUpperCase()}{required ? ' *' : ''}
         </Txt>
       ) : null}
@@ -55,7 +55,7 @@ export function ChoiceChips<T extends string | number>({
               testID={testID ? `${testID}_${option}` : undefined}
               style={[styles.chip, selected && styles.chipOn]}
             >
-              <Txt size={13} weight="700" color={selected ? Colors.textInverse : Colors.textPrimary}>
+              <Txt variant="button" color={selected ? Colors.textInverse : Colors.textPrimary}>
                 {text}
               </Txt>
             </AnimatedPress>
@@ -65,7 +65,7 @@ export function ChoiceChips<T extends string | number>({
       {error ? (
         <View style={styles.message}>
           <Ionicons name="alert-circle" size={13} color={Colors.danger} />
-          <Txt size={11} color={Colors.danger} style={{ flex: 1 }}>{error}</Txt>
+          <Txt variant="meta" color={Colors.danger} style={{ flex: 1 }}>{error}</Txt>
         </View>
       ) : null}
     </View>
@@ -74,7 +74,7 @@ export function ChoiceChips<T extends string | number>({
 
 const styles = StyleSheet.create({
   message: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
-  label: { letterSpacing: 0.6, marginBottom: 7 },
+  label: { marginBottom: 7 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   chip: {
     // 44 tall clears the touch-target minimum without a hitSlop that would overlap its

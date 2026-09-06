@@ -68,7 +68,7 @@ function bannerFor(status: KycStatus, rejectReason: string | undefined): BannerC
       };
     case 'PENDING':
       return {
-        bg: Colors.alertGradientStart,
+        bg: Colors.pendingPale,
         border: Colors.warning,
         icon: 'hourglass',
         iconColor: Colors.warning,
@@ -125,7 +125,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
       {/* Section title */}
       <Row justify="space-between" align="center">
         <Col style={{ flex: 1 }}>
-          <Txt variant="sectionTitle" weight="800" color={Colors.textPrimary}>Identity Verification (KYC)</Txt>
+          <Txt variant="sectionTitle" weight="700" color={Colors.textPrimary}>Identity Verification (KYC)</Txt>
         </Col>
         <View style={[styles.statusIconBubble, { backgroundColor: `${banner.iconColor}1A` }]}>
           <Ionicons name={banner.icon as any} size={26} color={banner.iconColor} />
@@ -143,7 +143,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
         <Row gap={12} align="flex-start">
           <Ionicons name={banner.icon as any} size={24} color={banner.iconColor} />
           <Col style={{ flex: 1 }}>
-            <Txt variant="cardTitle" weight="800" color={banner.iconColor}>{banner.title}</Txt>
+            <Txt variant="cardTitle" weight="700" color={banner.iconColor}>{banner.title}</Txt>
             <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 18, marginTop: 4 }}>
               {banner.message}
             </Txt>
@@ -198,7 +198,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
             testID="kyc_open_upload_btn"
           >
             <Ionicons name={kycStatus === 'REJECTED' ? 'refresh-circle' : 'cloud-upload'} size={18} color={Colors.textInverse} />
-            <Txt variant="cardTitle" weight="800" color={Colors.textInverse} style={{ marginLeft: 8 }}>
+            <Txt variant="cardTitle" weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>
               {kycStatus === 'REJECTED' ? 'Re-upload Documents' : 'Start KYC Submission'}
             </Txt>
           </Btn>

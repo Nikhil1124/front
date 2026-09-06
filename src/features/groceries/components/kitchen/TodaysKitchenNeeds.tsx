@@ -1,7 +1,10 @@
 import { SupplyItem } from '@/types';
 import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
+import { Sheet } from '@/components/ui';
 import { useCartStore } from '../../store/useCartStore';
 import { toAmount } from '@/data/mappers';
 
@@ -317,15 +320,15 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
           <Text maxFontSizeMultiplier={1.3} style={styles.title}>🍽️ Today's Kitchen Needs</Text>
           <Text maxFontSizeMultiplier={1.3} style={styles.subtitle}>Everything needed for today's PG menu</Text>
         </View>
-        <TouchableOpacity accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllCategoriesPress}>
+        <AnimatedPress accessibilityRole="button" activeOpacity={0.7} onPress={onSeeAllCategoriesPress}>
           <Text maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Text>
-        </TouchableOpacity>
+        </AnimatedPress>
       </View>
 
       {/* Veg / Non-Veg toggle */}
       <View style={styles.tabContainer}>
         {(['veg', 'nonVeg'] as const).map((type) => (
-          <TouchableOpacity accessibilityRole="button"
+          <AnimatedPress accessibilityRole="button"
             key={type}
             style={[styles.tabButton, activeTab === type && styles.activeTabButton]}
             onPress={() => handleTabPress(type)}
@@ -334,7 +337,7 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
             <Text maxFontSizeMultiplier={1.3} style={[styles.tabButtonText, activeTab === type && styles.activeTabButtonText]}>
               {type === 'veg' ? '🥦 Veg Needs' : '🍗 Non-Veg Needs'}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         ))}
       </View>
 
@@ -386,49 +389,53 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
       />
 
       {/* ── See All Bottom Sheet ── */}
-      <Modal animationType="slide" transparent visible={isSeeAllOpen} onRequestClose={() => setIsSeeAllOpen(false)}>
-        <TouchableOpacity accessibilityRole="button" style={styles.bottomSheetBackdrop} activeOpacity={1} onPress={() => setIsSeeAllOpen(false)}>
-          <TouchableOpacity accessibilityRole="button" style={styles.bottomSheetContainer} activeOpacity={1}>
-            <View style={styles.grabHandle} />
-            <View style={styles.bottomSheetHeader}>
-              <View style={{ flex: 1 }}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetTitle}>Today's Kitchen Needs</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Text>
-              </View>
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setIsSeeAllOpen(false)} style={{ padding: 4 }}>
-                <Ionicons name="close" size={24} color={Colors.textPrimary} />
-              </TouchableOpacity>
+      <Sheet
+        visible={isSeeAllOpen}
+        title="Today's Kitchen Needs"
+        subtitle="All recipe ingredients categorized"
+        onDismiss={() => setIsSeeAllOpen(false)}
+        testID="todays_kitchen_needs_sheet"
+      >
+        <View style={styles.bottomSheetContainer}>
+          <View style={styles.grabHandle} />
+          <View style={styles.bottomSheetHeader}>
+            <View style={{ flex: 1 }}>
+              <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetTitle}>Today's Kitchen Needs</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Text>
             </View>
-            <ScrollView style={styles.bottomSheetScroll} showsVerticalScrollIndicator={false}>
-              {[
-                { label: '🍗 Non-Vegetarian Recipe Supplies', items: categorizedIngredients.nonVeg },
-                { label: '🥦 Vegetarian Recipe Supplies', items: categorizedIngredients.veg },
-              ].map(({ label, items }) => (
-                <View key={label} style={styles.categorySection}>
-                  <View style={styles.categoryHeadingRow}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.categoryName}>{label}</Text>
-                  </View>
-                  <View style={styles.gridContainer}>
-                    {items.map((ing: MenuIngredient) => {
-                      const productObj = findProduct(ing.productId);
-                      if (!productObj) return null;
-                      return (
-                        <View key={ing.productId} style={styles.gridCardWrapper}>
-                          <ProductCard
-                            product={productObj}
-                            onPress={(p) => handleProductPress(p.id)}
-                            style={{ width: '100%', marginRight: 0 }}
-                          />
-                        </View>
-                      );
-                    })}
-                  </View>
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setIsSeeAllOpen(false)} style={{ padding: 4 }}>
+              <Ionicons name="close" size={24} color={Colors.textPrimary} />
+            </AnimatedPress>
+          </View>
+          <ScrollView style={styles.bottomSheetScroll} showsVerticalScrollIndicator={false}>
+            {[
+              { label: '🍗 Non-Vegetarian Recipe Supplies', items: categorizedIngredients.nonVeg },
+              { label: '🥦 Vegetarian Recipe Supplies', items: categorizedIngredients.veg },
+            ].map(({ label, items }) => (
+              <View key={label} style={styles.categorySection}>
+                <View style={styles.categoryHeadingRow}>
+                  <Text maxFontSizeMultiplier={1.3} style={styles.categoryName}>{label}</Text>
                 </View>
-              ))}
-            </ScrollView>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+                <View style={styles.gridContainer}>
+                  {items.map((ing: MenuIngredient) => {
+                    const productObj = findProduct(ing.productId);
+                    if (!productObj) return null;
+                    return (
+                      <View key={ing.productId} style={styles.gridCardWrapper}>
+                        <ProductCard
+                          product={productObj}
+                          onPress={(p) => handleProductPress(p.id)}
+                          style={{ width: '100%', marginRight: 0 }}
+                        />
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </Sheet>
 
       {/* ── Custom Alert ── */}
       <CustomAlertModal
@@ -461,13 +468,13 @@ const styles = StyleSheet.create({
   categoryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, paddingBottom: 6 },
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
   gridCardWrapper: { width: '48%', marginBottom: 8 },
-  title: { fontSize: 20, fontWeight: '800' as const, color: Colors.textPrimary },
+  title: { fontSize: 20, fontWeight: '700' as const, color: Colors.textPrimary },
   subtitle: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' as const, marginTop: 2 },
-  seeAllText: { fontSize: 13, fontWeight: '800' as const, color: Colors.primary },
-  tabButtonText: { fontSize: 12, fontWeight: '800' as const, color: Colors.textSecondary },
-  bottomSheetTitle: { color: Colors.textPrimary, fontSize: 18, fontWeight: '800' as const },
+  seeAllText: { fontSize: 13, fontWeight: '700' as const, color: Colors.primary },
+  tabButtonText: { fontSize: 12, fontWeight: '700' as const, color: Colors.textSecondary },
+  bottomSheetTitle: { color: Colors.textPrimary, fontSize: 18, fontWeight: '700' as const },
   bottomSheetSubtitle: { color: Colors.textSecondary, fontSize: 11, marginTop: 2, fontWeight: '500' as const },
-  categoryName: { fontSize: 14, fontWeight: '800' as const, color: Colors.textPrimary },
+  categoryName: { fontSize: 14, fontWeight: '700' as const, color: Colors.textPrimary },
 });
 
 export default TodaysKitchenNeeds;

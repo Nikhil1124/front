@@ -167,11 +167,11 @@ export function GuestSecurityTab() {
                   <Ionicons name="person" size={32} color={Colors.primaryDark} />
                 )}
                 <View style={styles.avatarCameraBadge}>
-                  <Ionicons name={isUploadingPhoto ? 'hourglass' : 'camera'} size={12} color="#FFFFFF" />
+                  <Ionicons name={isUploadingPhoto ? 'hourglass' : 'camera'} size={12} color={Colors.textInverse} />
                 </View>
               </AnimatedPress>
               <Col style={{ flex: 1 }}>
-                <Txt size={18} weight="900" color={Colors.textPrimary}>
+                <Txt size={18} weight="700" color={Colors.textPrimary}>
                   {guest?.name ?? 'Resident'}
                 </Txt>
                 <Txt size={12} weight="600" color={Colors.textSecondary} style={{ marginTop: 2 }}>
@@ -202,11 +202,11 @@ export function GuestSecurityTab() {
         </View>
 
         {/* ── 3. IDENTITY DOCUMENT (KYC) VERIFICATION ── */}
-        <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
+        <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
           Identity Verification (KYC)
         </Txt>
         <Card
-          containerColor="#FFFFFF"
+          containerColor={Colors.surface}
           borderRadius={Radii.sheet}
           borderWidth={1}
           borderColor={Colors.borderSubtle}
@@ -217,17 +217,17 @@ export function GuestSecurityTab() {
             <View style={styles.sectionIconWrap}>
               <Ionicons name="shield-checkmark" size={18} color={Colors.primary} />
             </View>
-            <Txt size={15} weight="800" color={Colors.textPrimary}>Official Document Verification</Txt>
+            <Txt size={15} weight="700" color={Colors.textPrimary}>Official Document Verification</Txt>
           </Row>
           <GuestKycVerificationTab scrollable={false} />
         </Card>
 
         {/* ── 4. SECURITY & PASSCODE MANAGEMENT ── */}
-        <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
+        <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
           Security & Passcode
         </Txt>
         <Card
-          containerColor="#FFFFFF"
+          containerColor={Colors.surface}
           borderRadius={Radii.sheet}
           borderWidth={1}
           borderColor={Colors.borderSubtle}
@@ -238,7 +238,7 @@ export function GuestSecurityTab() {
             <View style={styles.sectionIconWrap}>
               <Ionicons name="key" size={18} color={Colors.primary} />
             </View>
-            <Txt size={15} weight="800" color={Colors.textPrimary}>Change Login Passcode</Txt>
+            <Txt size={15} weight="700" color={Colors.textPrimary}>Change Login Passcode</Txt>
           </Row>
 
           <OutlinedTextField
@@ -269,8 +269,8 @@ export function GuestSecurityTab() {
             disabled={isUpdating}
             style={styles.updatePasscodeBtn}
           >
-            <Ionicons name="lock-closed" size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Txt size={13} weight="800" color="#FFFFFF">Update Passcode</Txt>
+            <Ionicons name="lock-closed" size={16} color={Colors.textInverse} style={{ marginRight: 8 }} />
+            <Txt size={13} weight="700" color={Colors.textInverse}>Update Passcode</Txt>
           </AnimatedPress>
         </Card>
 
@@ -281,7 +281,7 @@ export function GuestSecurityTab() {
           style={styles.logoutBtn}
         >
           <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
-          <Txt size={14} weight="800" color={Colors.danger} style={{ marginLeft: 8 }}>
+          <Txt size={14} weight="700" color={Colors.danger} style={{ marginLeft: 8 }}>
             Log Out of PGow Account
           </Txt>
         </AnimatedPress>
@@ -293,7 +293,7 @@ export function GuestSecurityTab() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: Colors.surface },
 
   // Header
 
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
 
   // Profile Card
   profileCard: {
-    marginTop: -14, backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
+    marginTop: -14, backgroundColor: Colors.surface, borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16,
     shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
   avatarRing: {
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: -2, right: -2,
     width: 20, height: 20, borderRadius: Radii.pill,
     backgroundColor: Colors.primary,
-    borderWidth: 2, borderColor: '#FFFFFF',
+    borderWidth: 2, borderColor: Colors.surface,
     alignItems: 'center', justifyContent: 'center' },
   contactDetailsBox: {
     marginTop: 14, paddingTop: 12,

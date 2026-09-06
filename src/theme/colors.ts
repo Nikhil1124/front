@@ -1,21 +1,4 @@
-/**
- * 🌙 PGow "LUNA" Design System — palette.
- *
- * Ocean blue stays the brand; what changed is that every value is now measured rather than
- * chosen by eye. Three rules it holds to, and the reasons they exist here:
- *
- * 1. **Anything carrying white text clears 4.5:1.** The previous teal, green and cyan-warning
- *    fills sat at 2.5–2.6:1 — a white label on them was barely legible in daylight.
- * 2. **Status colours are different HUES, not different blues.** `warning` was `#54ACBF`,
- *    the exact same cyan as `secondary`, so "pay your rent" and "here's an accent" rendered
- *    identically. Amber now means caution, green means good, red means stop.
- * 3. **Body text is softened, not maximised.** `textPrimary` was 15.94:1 — near the maximum
- *    possible, and that near-black-on-near-white is a well-known source of eye strain over a
- *    long session. 12.5:1 is still crisp and considerably kinder.
- *
- * Ratios below are against `canvas` (#F6F9FB) for text, and against white for fills.
- * If you change a value here, re-check it — the three rules above are the contract.
- */
+/** Locked PGow Botanical + Terracotta palette. See PGow_REDESIGN_UNIFIED.md §4.1. */
 export const Colors = {
   // ── Surfaces & Canvas ─────────────────────────────────────────────────────
   //
@@ -25,56 +8,64 @@ export const Colors = {
   // near-white page; the page has to stop being near-white. Structure now comes from the
   // hairline (`separator`) and from type, and a filled surface is reserved for something that
   // means it: a tinted metric card, a role-tinted total, an alert.
-  canvas: '#FFFFFF',              // The page. Nothing is painted on top of it "for free".
-  surface: '#FFFFFF',             // Pure white cards & dialogs
-  surfaceCard: '#FFFFFF',         // Card background
-  surfaceElevated: '#EDF4F8',     // Soft highlighted ice tiles / active chips
-  surfaceGlass: 'rgba(255, 255, 255, 0.94)', // Glassmorphism modals & floating bars
-  surfaceMuted: '#F6F9FB',        // Secondary background for text fields & disabled states
+  canvas: '#FDFCFA',
+  surface: '#FDFCFA',
+  surfaceCard: '#FDFCFA',
+  surfaceElevated: '#EDEFE8',
+  surfaceGlass: 'rgba(253, 252, 250, 0.94)',
+  surfaceMuted: '#F5F3EF',
 
   // ── Brand & Accents ───────────────────────────────────────────────────────
-  primary: '#26658C',             // Deep Ocean Blue brand
-  primaryDark: '#011C40',         // Obsidian Navy Blue for pressed states & headers
-  primaryGlow: 'rgba(38, 101, 140, 0.14)', // Soft ocean shadow glow
-  secondary: '#2F7F92',           // Cyan Teal for sub-headings & secondary chips
-  tertiary: '#2F7F92',            // Cyan Teal Accent
-  accentWarm: '#B45309',          // Cyan Teal Accent
-  accentCool: '#3B6E9E',          // Cyan Teal
-  accentRose: '#BE123C',          // Critical / Panic / Expired badges
+  brandPale: '#EAF2E6',
+  brandSoft: '#74926D',
+  brand: '#4C7246',
+  brandDeep: '#2C452A',
+  terracottaPale: '#F9F0E8',
+  terracotta: '#A0572E',
+  terracottaDeep: '#6E3A22',
+  // Compatibility aliases retain the current API while callers are audited by meaning.
+  primary: '#4C7246',
+  primaryDark: '#2C452A',
+  primaryGlow: 'rgba(76, 114, 70, 0.12)',
+  secondary: '#A0572E',
+  tertiary: '#A0572E',
+  accentWarm: '#A0572E',
+  accentCool: '#4E4C44',
+  accentRose: '#A6474E',
 
   // ── Status Colors ─────────────────────────────────────────────────────────
-  success: '#046C4E',             // Active / Paid / Vacant bed green
-  warning: '#B45309',             // Pending / Due soon cyan teal
-  danger: '#C81E1E',              // Overdue / Rejected / Panic red
-  info: '#3B6E9E',                // Notice / Info ocean blue
+  successPale: '#E4EFEA',
+  success: '#2E6A54',
+  successDeep: '#1D4738',
+  pendingPale: '#F7EEDC',
+  pending: '#836731',
+  pendingDeep: '#57441F',
+  dangerPale: '#F9E9E9',
+  danger: '#A6474E',
+  dangerDeep: '#6E2E33',
+  neutralPale: '#EFEDE7',
+  neutral: '#6E6A5F',
+  // Existing callers name pending as warning and non-opinionated information as info.
+  warning: '#836731',
+  info: '#6E6A5F',
 
   // ── Typography & Content ───────────────────────────────────────────────────
-  textPrimary: '#1B3245',         // Obsidian Navy Blue text (High contrast)
-  textSecondary: '#2C4A63',       // Deep Midnight Blue subtitle text
-  textMuted: '#5A7387',           // Muted ocean caption text
-  textInverse: '#FFFFFF',         // White text on primary buttons
-  textAccent: '#26658C',          // Ocean blue text for links & active tab labels
+  textPrimary: '#33322C',
+  textSecondary: '#4E4C44',
+  textMuted: '#726E64',
+  textInverse: '#FDFCFA',
+  textAccent: '#4C7246',
 
   // ── Borders & Dividers ─────────────────────────────────────────────────────
   //
   // `separator` is new and load-bearing: with no tinted page behind them, a run of rows is
   // held together by this hairline and nothing else. `surfaceElevated` used to do this job at
   // 1.11:1 against white, which is invisible — it is a tile fill, not a rule.
-  separator: '#E1E7EC',           // 1.25:1 on white — row rules and group edges
-  borderSubtle: '#C9D8E2',        // Ice Cyan border
-  borderFocus: '#26658C',         // 2px active input focus border
-  borderGlass: 'rgba(44, 74, 99, 0.16)', // Glassmorphic borders
-  borderMuted: '#D3E0E9',         // Divider lines
-
-  // ── Gradients ─────────────────────────────────────────────────────────────
-  heroGradientStart: '#011C40',   // Top header gradient (Obsidian Navy)
-  heroGradientEnd: '#023859',     // Deep Midnight Blue end
-  cardGradientStart: '#FFFFFF',
-  cardGradientEnd: '#F4F9FB',
-  alertGradientStart: '#EBF7FA',
-  alertGradientEnd: '#CBEFF4',
-  panicGradientStart: '#EF4444',
-  panicGradientEnd: '#DC2626',
+  separator: '#E8E5DE',
+  borderSubtle: '#D6D2C8',
+  borderFocus: '#4C7246',
+  borderGlass: 'rgba(78, 76, 68, 0.16)',
+  borderMuted: '#E8E5DE',
 } as const;
 
 export type ColorToken = keyof typeof Colors;
@@ -91,21 +82,14 @@ export type ColorToken = keyof typeof Colors;
  */
 export const Palette = {
   // Modal background scrim — no semantic Colors.* equivalent
-  BgScrim: 'rgba(1, 28, 64, 0.45)',
-
-  // Gradient pair used in AlertOverlay & panic screens
-  GradientStart: '#011C40',
-  GradientEnd: '#023859',
-
-  // Distinct status variants not covered by Colors.success / Colors.danger
-  StatusGreen: '#046C4E',
-  StatusGreenSoft: '#D1FAE5',
-  StatusRed: '#C81E1E',
-  // Badge backgrounds — each verified ≥4.5:1 against its own status colour above.
-  TintAmber: '#FEF3C7',
-  TintGreen: '#D1FAE5',
-  TintRed: '#FEE2E2',
-  TintBlue: '#E6F1F7',
+  BgScrim: 'rgba(44, 69, 42, 0.45)',
+  StatusGreen: '#2E6A54',
+  StatusGreenSoft: '#E4EFEA',
+  StatusRed: '#A6474E',
+  TintAmber: '#F7EEDC',
+  TintGreen: '#E4EFEA',
+  TintRed: '#F9E9E9',
+  TintBlue: '#EFEDE7',
 } as const;
 
 /**
@@ -122,10 +106,10 @@ export const Palette = {
  * reads as a card on the white page — white-on-white is the bug this whole pass exists to fix.
  */
 export const DeckTints = {
-  brand: { fill: '#DCEAF2', ink: '#011C40', sub: '#3A5D75' },
-  green: { fill: '#D8EDE3', ink: '#03402C', sub: '#2E5F4C' },
-  amber: { fill: '#F7E8CE', ink: '#6B3705', sub: '#7A5227' },
-  slate: { fill: '#EDEFF2', ink: '#0F1B2A', sub: '#55677A' },
+  brand: { fill: '#EAF2E6', ink: '#2C452A', sub: '#4C7246' },
+  green: { fill: '#E4EFEA', ink: '#1D4738', sub: '#2E6A54' },
+  amber: { fill: '#F7EEDC', ink: '#57441F', sub: '#836731' },
+  slate: { fill: '#EFEDE7', ink: '#33322C', sub: '#6E6A5F' },
 } as const;
 
 export type DeckTint = keyof typeof DeckTints;
@@ -149,21 +133,21 @@ export const Layout = {
   // because a second name for the same five values is exactly the trap `Radii` exists to
   // close — see `src/data/tokens.check.ts`.
   shadowCard: {
-    shadowColor: '#011C40',
+    shadowColor: '#2C452A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   } as const,
   shadowHero: {
-    shadowColor: '#011C40',
+    shadowColor: '#2C452A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 5,
   } as const,
   shadowFloatingBar: {
-    shadowColor: '#011C40',
+    shadowColor: '#2C452A',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
     shadowRadius: 12,

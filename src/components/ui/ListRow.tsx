@@ -55,20 +55,20 @@ export function ListRow({
     <>
       <View style={styles.tile}>
         {typeof leading === 'string' || leading == null ? (
-          <Txt size={12} weight="700" color={Colors.primary}>
+          <Txt variant="meta" weight="700" color={Colors.primary}>
             {typeof leading === 'string' ? leading : initialsOf(title)}
           </Txt>
         ) : leading}
       </View>
 
       <View style={styles.col}>
-        <Txt size={13.5} weight="700" color={Colors.textPrimary} numberOfLines={1}>{title}</Txt>
-        {meta ? <Txt size={11} color={Colors.textMuted} numberOfLines={1}>{meta}</Txt> : null}
+        <Txt variant="cardTitle" color={Colors.textPrimary} numberOfLines={1}>{title}</Txt>
+        {meta ? <Txt variant="meta" color={Colors.textMuted} numberOfLines={1}>{meta}</Txt> : null}
       </View>
 
       {(amount || status) && (
         <View style={styles.right}>
-          {amount ? <Txt size={13} weight="700" color={Colors.textPrimary}>{amount}</Txt> : null}
+          {amount ? <Txt variant="body" weight="600" color={Colors.textPrimary} tabular>{amount}</Txt> : null}
           {status ? <StatusChip variant="dot" label={status.label} tone={status.tone} /> : null}
         </View>
       )}
@@ -100,14 +100,14 @@ export function ListRow({
 /** The small heading over a run of rows. Renders the count so "40" is answerable at a glance. */
 export function ListSectionHeader({ title, count }: { title: string; count?: number }) {
   return (
-    <Txt size={10} weight="700" color={Colors.textMuted} style={styles.cap}>
+    <Txt variant="meta" color={Colors.textMuted} tabular style={styles.cap}>
       {title.toUpperCase()}{count == null ? '' : ` · ${count}`}
     </Txt>
   );
 }
 
 const styles = StyleSheet.create({
-  cap: { letterSpacing: 0.7, marginTop: 16, marginBottom: 7, marginLeft: 4 },
+  cap: { marginTop: 16, marginBottom: 7, marginLeft: 4 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

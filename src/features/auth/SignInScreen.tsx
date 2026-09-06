@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 
-import { Txt, Btn, Row, Spacer, AnimatedPress } from '@/components/ui';
+import { Txt, Btn, Row, Spacer, AnimatedPress, Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors, Radii } from '@/theme';
@@ -162,6 +162,8 @@ export function SignInScreen() {
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
+            textContentType="telephoneNumber"
+            autoComplete="tel"
             testID="signin_phone"
           />
           <Spacer size={12} />
@@ -171,6 +173,8 @@ export function SignInScreen() {
             onChangeText={setSecret}
             secureTextEntry
             keyboardType={mode === 'pin' ? 'number-pad' : 'default'}
+            textContentType={mode === 'pin' ? 'oneTimeCode' : 'password'}
+            autoComplete={mode === 'pin' ? 'sms-otp' : 'current-password'}
             testID="signin_secret"
           />
           {error ? (
@@ -210,26 +214,24 @@ export function SignInScreen() {
       </FormScroll>
 
       {/* ── First-time password ─────────────────────────────────────────────── */}
-      <Modal visible={showFTP} transparent animationType="fade" onRequestClose={() => setShowFTP(false)}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.backdrop}>
-            <View style={styles.sheet}>
-              <Txt size={16} weight="700" color={Colors.textPrimary}>Set your password</Txt>
-              <Txt size={12} color={Colors.textMuted} style={{ marginTop: 3 }}>
-                Your account is still on the temporary password you were given. Choose your own to continue.
-              </Txt>
-              <Spacer size={16} />
-              <OutlinedTextField label="New password" value={ftpNew} onChangeText={setFtpNew} secureTextEntry />
-              <Spacer size={12} />
-              <OutlinedTextField label="Confirm password" value={ftpConfirm} onChangeText={setFtpConfirm} secureTextEntry />
-              <Spacer size={18} />
-              <Btn onPress={handleFTPSubmit} height={50} borderRadius={Radii.card}>
-                <Txt size={14.5} weight="700" color={Colors.textInverse}>Save and continue</Txt>
-              </Btn>
-            </View>
-          </View>
+      <Sheet
+        visible={showFTP}
+        title="Set your password"
+        subtitle="Your account is still on the temporary password you were given. Choose your own to continue."
+        onDismiss={() => setShowFTP(false)}
+        testID="signin_set_password"
+        footer={
+          <Btn onPress={handleFTPSubmit} height={50} borderRadius={Radii.card} style={{ width: '100%' }}>
+            <Txt size={14.5} weight="700" color={Colors.textInverse}>Save and continue</Txt>
+          </Btn>
+        }
+      >
+        <KeyboardAvoidingView style={{}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <OutlinedTextField label="New password" value={ftpNew} onChangeText={setFtpNew} secureTextEntry />
+          <Spacer size={12} />
+          <OutlinedTextField label="Confirm password" value={ftpConfirm} onChangeText={setFtpConfirm} secureTextEntry />
         </KeyboardAvoidingView>
-      </Modal>
+      </Sheet>
     </View>
   );
 }
@@ -247,7 +249,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     padding: 16,
-    shadowColor: '#1B3245',
+    shadowColor: Colors.textPrimary,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.07,
     shadowRadius: 14,

@@ -10,6 +10,8 @@ import {
   Modal,
   Alert,
   KeyboardAvoidingView } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OrderStepper } from '../components/grocery/OrderStepper';
@@ -18,7 +20,7 @@ import {
   useSupplyTrackingQuery,
   useCancelSupplyOrderMutation,
   useSubmitUpiPaymentMutation } from '../useSupplyOrders';
-import { ErrorState, OutlinedTextField } from '@/components/ui';
+import { ErrorState, OutlinedTextField, Sheet, Btn, Txt } from '@/components/ui';
 import { Radii, Colors, Layout } from '@/theme';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
@@ -125,9 +127,9 @@ export function GroceryOrderDetailScreen() {
         title={`Order #${order.order_no || order.id.slice(-6)}`}
         onBack={() => router.back()}
         actions={
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Refresh" accessibilityRole="button" onPress={() => refetch()}>
+          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Refresh" accessibilityRole="button" onPress={() => refetch()}>
             <Ionicons name="refresh-outline" size={22} color={Colors.textPrimary} />
-          </TouchableOpacity>
+          </AnimatedPress>
         }
       />
 
@@ -223,55 +225,52 @@ export function GroceryOrderDetailScreen() {
                 keyboardType="number-pad"
                 maxLength={22}
               />
-              <TouchableOpacity accessibilityRole="button"
+              <AnimatedPress accessibilityRole="button"
                 style={[styles.upiSubmitBtn, (!upiRef.trim() || submitUpiPayment.isPending) && styles.btnDisabled]}
                 onPress={handleSubmitUpiRef}
                 disabled={!upiRef.trim() || submitUpiPayment.isPending}
                 activeOpacity={0.8}
               >
                 <Text maxFontSizeMultiplier={1.3} style={styles.upiSubmitText}>{submitUpiPayment.isPending ? 'Submitting…' : 'Submit'}</Text>
-              </TouchableOpacity>
+              </AnimatedPress>
             </View>
           </View>
         )}
 
         {canCancel && (
-          <TouchableOpacity accessibilityRole="button" style={styles.cancelOrderBtn} onPress={() => setShowCancelModal(true)} activeOpacity={0.8}>
+          <AnimatedPress accessibilityRole="button" style={styles.cancelOrderBtn} onPress={() => setShowCancelModal(true)} activeOpacity={0.8}>
             <Ionicons name="close-circle-outline" size={18} color={Colors.danger} />
             <Text maxFontSizeMultiplier={1.3} style={styles.cancelOrderBtnText}>Cancel Order</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         )}
       </ScrollView>
 
-      <Modal visible={showCancelModal} transparent animationType="fade" onRequestClose={() => setShowCancelModal(false)}>
-        <KeyboardAvoidingView style={styles.modalBackdrop} behavior="padding">
-          <View style={styles.modalCard}>
-            <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>Cancel this order?</Text>
-            <Text maxFontSizeMultiplier={1.3} style={styles.modalSub}>This can't be undone. Let us know why.</Text>
-            <OutlinedTextField
-              label="Reason for cancelling"
-              placeholder="Tell us what changed"
-              value={cancelReason}
-              onChangeText={(v) => { setCancelReason(v); if (cancelError) setCancelError(undefined); }}
-              error={cancelError}
-              multiline
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity accessibilityRole="button" style={styles.modalKeepBtn} onPress={() => setShowCancelModal(false)} activeOpacity={0.8}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.modalKeepText}>Keep Order</Text>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button"
-                style={[styles.modalConfirmBtn, cancelOrder.isPending && styles.btnDisabled]}
-                onPress={handleCancel}
-                disabled={cancelOrder.isPending}
-                activeOpacity={0.8}
-              >
-                <Text maxFontSizeMultiplier={1.3} style={styles.modalConfirmText}>{cancelOrder.isPending ? 'Cancelling…' : 'Cancel Order'}</Text>
-              </TouchableOpacity>
-            </View>
+      <Sheet
+        visible={showCancelModal}
+        title="Cancel this order?"
+        subtitle="This can't be undone. Let us know why."
+        onDismiss={() => setShowCancelModal(false)}
+        testID="grocery_cancel_order_sheet"
+        footer={
+          <View style={{ flexDirection: 'row', gap: 10, width: '100%' }}>
+            <Btn onPress={() => setShowCancelModal(false)} containerColor={Colors.surfaceMuted} textColor={Colors.textPrimary} borderRadius={Radii.control} style={{ flex: 1 }}>
+              <Txt>Keep Order</Txt>
+            </Btn>
+            <Btn onPress={handleCancel} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} style={{ flex: 1 }} loading={cancelOrder.isPending}>
+              <Txt>{cancelOrder.isPending ? 'Cancelling…' : 'Cancel Order'}</Txt>
+            </Btn>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        }
+      >
+        <OutlinedTextField
+          label="Reason for cancelling"
+          placeholder="Tell us what changed"
+          value={cancelReason}
+          onChangeText={(v) => { setCancelReason(v); if (cancelError) setCancelError(undefined); }}
+          error={cancelError}
+          multiline
+        />
+      </Sheet>
     </View>
   );
 }
@@ -407,7 +406,7 @@ const styles = StyleSheet.create({
   upiSubmitText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF' },
+    color: Colors.textInverse },
   btnDisabled: {
     opacity: 0.5 },
   cancelOrderBtn: {
@@ -438,7 +437,7 @@ const styles = StyleSheet.create({
     padding: 20 },
   modalTitle: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     color: Colors.textPrimary },
   modalSub: {
     fontSize: 12,
@@ -469,4 +468,4 @@ const styles = StyleSheet.create({
   modalConfirmText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF' } });
+    color: Colors.textInverse } });

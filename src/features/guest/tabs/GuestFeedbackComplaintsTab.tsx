@@ -165,13 +165,13 @@ export function GuestFeedbackComplaintsTab() {
               <View style={styles.complaintIconWrap}>
                 <Ionicons name="document-text-outline" size={22} color={Colors.danger} />
                 <View style={styles.alertBadgeDot}>
-                  <Ionicons name="alert" size={10} color="#FFFFFF" />
+                  <Ionicons name="alert" size={10} color={Colors.textInverse} />
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={16} color={Colors.danger} />
             </Row>
             <Spacer size={12} />
-            <Txt size={15} weight="900" color={Colors.danger}>Raise Complaint</Txt>
+            <Txt size={15} weight="700" color={Colors.danger}>Raise Complaint</Txt>
             <Txt size={11} color="#991B1B" style={{ marginTop: 3, lineHeight: 15 }}>
               Report an issue or request support
             </Txt>
@@ -186,13 +186,13 @@ export function GuestFeedbackComplaintsTab() {
               <View style={styles.feedbackIconWrap}>
                 <Ionicons name="document-text-outline" size={22} color={Colors.primary} />
                 <View style={styles.starBadgeDot}>
-                  <Ionicons name="star" size={10} color="#FFFFFF" />
+                  <Ionicons name="star" size={10} color={Colors.textInverse} />
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
+              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
             </Row>
             <Spacer size={12} />
-            <Txt size={15} weight="900" color={Colors.textPrimary}>Write Feedback</Txt>
+            <Txt size={15} weight="700" color={Colors.textPrimary}>Write Feedback</Txt>
             <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 3, lineHeight: 15 }}>
               Share your experience and suggestions
             </Txt>
@@ -203,7 +203,7 @@ export function GuestFeedbackComplaintsTab() {
         {submissionType === 'COMPLAINT' ? (
           <>
             {/* COMPLAINT CATEGORY SELECTION */}
-            <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 22, marginBottom: 10 }}>
+            <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 22, marginBottom: 10 }}>
               Select Complaint Category
             </Txt>
             <ScrollView
@@ -222,8 +222,8 @@ export function GuestFeedbackComplaintsTab() {
                     onPress={() => { setCategory(c.label); }}
                     style={[styles.catPill, active && styles.catPillActive]}
                   >
-                    <Ionicons name={c.icon as any} size={16} color={active ? '#FFFFFF' : Colors.textSecondary} />
-                    <Txt size={12} weight="800" color={active ? '#FFFFFF' : Colors.textPrimary} style={{ marginLeft: 6 }}>
+                    <Ionicons name={c.icon as any} size={16} color={active ? Colors.textInverse : Colors.textSecondary} />
+                    <Txt size={12} weight="700" color={active ? Colors.textInverse : Colors.textPrimary} style={{ marginLeft: 6 }}>
                       {c.label}
                     </Txt>
                   </AnimatedPress>
@@ -268,7 +268,7 @@ export function GuestFeedbackComplaintsTab() {
 
             {/* ATTACH PHOTO/VIDEO EVIDENCE */}
             <Spacer size={14} />
-            <Txt size={12} weight="800" color={Colors.textSecondary}>
+            <Txt size={12} weight="700" color={Colors.textSecondary}>
               Attach Photo or Video Evidence <Txt weight="400" color={Colors.textSecondary}>(Optional)</Txt>
             </Txt>
             <Spacer size={8} />
@@ -276,7 +276,7 @@ export function GuestFeedbackComplaintsTab() {
               <AnimatedPress accessibilityRole="button" onPress={() => attach('photo')} style={styles.attachBtn}>
                 <Ionicons name="image-outline" size={20} color={Colors.danger} />
                 <Col style={{ marginLeft: 8 }}>
-                  <Txt size={12} weight="800" color={Colors.textPrimary}>Add Photo</Txt>
+                  <Txt size={12} weight="700" color={Colors.textPrimary}>Add Photo</Txt>
                   <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
                 </Col>
               </AnimatedPress>
@@ -284,7 +284,7 @@ export function GuestFeedbackComplaintsTab() {
               <AnimatedPress accessibilityRole="button" onPress={() => attach('video')} style={styles.attachBtn}>
                 <Ionicons name="videocam-outline" size={20} color={Colors.danger} />
                 <Col style={{ marginLeft: 8 }}>
-                  <Txt size={12} weight="800" color={Colors.textPrimary}>Add Video</Txt>
+                  <Txt size={12} weight="700" color={Colors.textPrimary}>Add Video</Txt>
                   <Txt size={9} color={Colors.textSecondary}>Upload from gallery</Txt>
                 </Col>
               </AnimatedPress>
@@ -309,9 +309,9 @@ export function GuestFeedbackComplaintsTab() {
               disabled={isSubmitting}
               style={[styles.submitCtaBtn, { backgroundColor: Colors.danger }]}
             >
-              <Ionicons name="megaphone" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Ionicons name="megaphone" size={18} color={Colors.textInverse} style={{ marginRight: 8 }} />
               <Col align="center">
-                <Txt size={15} weight="900" color="#FFFFFF">
+                <Txt size={15} weight="700" color={Colors.textInverse}>
                   Broadcast Official Complaint
                 </Txt>
                 <Txt size={10} color="rgba(255,255,255,0.78)" style={{ marginTop: 2 }}>
@@ -324,10 +324,10 @@ export function GuestFeedbackComplaintsTab() {
           <>
             {/* RATE YOUR PG EXPERIENCE */}
             <Row justify="space-between" align="center" style={{ marginTop: 22, marginBottom: 12 }}>
-              <Txt size={16} weight="800" color={Colors.textPrimary}>Rate Your PG Experience</Txt>
+              <Txt size={16} weight="700" color={Colors.textPrimary}>Rate Your PG Experience</Txt>
               <View style={styles.overallScoreChip}>
                 <Ionicons name="star" size={13} color={Colors.warning} />
-                <Txt size={11} weight="800" color={Colors.textPrimary} style={{ marginLeft: 4 }}>
+                <Txt size={11} weight="700" color={Colors.textPrimary} style={{ marginLeft: 4 }}>
                   Overall Rating: {calculatedOverall.toFixed(1)} / 5.0
                 </Txt>
               </View>
@@ -390,9 +390,9 @@ export function GuestFeedbackComplaintsTab() {
               disabled={isSubmitting}
               style={[styles.submitCtaBtn, { backgroundColor: Colors.primaryDark }]}
             >
-              <Ionicons name="heart" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Ionicons name="heart" size={18} color={Colors.textInverse} style={{ marginRight: 8 }} />
               <Col align="center">
-                <Txt size={15} weight="900" color="#FFFFFF">
+                <Txt size={15} weight="700" color={Colors.textInverse}>
                   Send Constructive Review
                 </Txt>
                 <Txt size={10} color="rgba(255,255,255,0.78)" style={{ marginTop: 2 }}>
@@ -405,11 +405,11 @@ export function GuestFeedbackComplaintsTab() {
 
         {/* ── 4. MY RECENT SUBMISSIONS WITH DYNAMIC FILTERING ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 12 }}>
-          <Txt size={17} weight="800" color={Colors.textPrimary}>My Recent Submissions</Txt>
+          <Txt size={17} weight="700" color={Colors.textPrimary}>My Recent Submissions</Txt>
           <AnimatedPress accessibilityRole="button" onPress={() => toast('info', 'Submissions', 'Showing your grievance & review tickets.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
-              <Ionicons name="chevron-forward" size={13} color={Colors.primary} />
+              <Ionicons name="chevron-forward" size={13} color={Colors.textMuted} />
             </Row>
           </AnimatedPress>
         </Row>
@@ -420,7 +420,7 @@ export function GuestFeedbackComplaintsTab() {
             style={[styles.filterChip, listFilter === 'ALL' && styles.filterChipActive]}
             onPress={() => { setListFilter('ALL'); }}
           >
-            <Txt size={11} weight="800" color={listFilter === 'ALL' ? '#FFFFFF' : Colors.textSecondary}>
+            <Txt size={11} weight="700" color={listFilter === 'ALL' ? Colors.textInverse : Colors.textSecondary}>
               All ({submissions.length})
             </Txt>
           </AnimatedPress>
@@ -428,7 +428,7 @@ export function GuestFeedbackComplaintsTab() {
             style={[styles.filterChip, listFilter === 'COMPLAINT' && styles.filterChipComplaintActive]}
             onPress={() => { setListFilter('COMPLAINT'); }}
           >
-            <Txt size={11} weight="800" color={listFilter === 'COMPLAINT' ? '#FFFFFF' : Colors.textSecondary}>
+            <Txt size={11} weight="700" color={listFilter === 'COMPLAINT' ? Colors.textInverse : Colors.textSecondary}>
               Complaints 🚨 ({submissions.filter((s) => s.type === 'COMPLAINT').length})
             </Txt>
           </AnimatedPress>
@@ -436,7 +436,7 @@ export function GuestFeedbackComplaintsTab() {
             style={[styles.filterChip, listFilter === 'FEEDBACK' && styles.filterChipFeedbackActive]}
             onPress={() => { setListFilter('FEEDBACK'); }}
           >
-            <Txt size={11} weight="800" color={listFilter === 'FEEDBACK' ? '#FFFFFF' : Colors.textSecondary}>
+            <Txt size={11} weight="700" color={listFilter === 'FEEDBACK' ? Colors.textInverse : Colors.textSecondary}>
               Feedback 🌟 ({submissions.filter((s) => s.type === 'FEEDBACK').length})
             </Txt>
           </AnimatedPress>
@@ -475,11 +475,11 @@ export function GuestFeedbackComplaintsTab() {
 
                     <Col style={{ flex: 1 }}>
                       <Row gap={6} align="center">
-                        <Txt size={10} weight="900" color={item.type === 'COMPLAINT' ? Colors.danger : Colors.primary} style={{ letterSpacing: 0.5 }}>
+                        <Txt size={10} weight="700" color={item.type === 'COMPLAINT' ? Colors.danger : Colors.primary} style={{ letterSpacing: 0.5 }}>
                           {item.type === 'COMPLAINT' ? 'COMPLAINT' : 'FEEDBACK'} • {item.category.toUpperCase()}
                         </Txt>
                       </Row>
-                      <Txt size={14} weight="800" color={Colors.textPrimary} numberOfLines={1} style={{ marginTop: 2 }}>
+                      <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ marginTop: 2 }}>
                         {item.title}
                       </Txt>
                       <Txt size={11} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2 }}>
@@ -499,7 +499,7 @@ export function GuestFeedbackComplaintsTab() {
                   <View style={styles.adminReplyBox}>
                     <Row gap={6} align="center">
                       <Ionicons name="shield-checkmark" size={14} color={Colors.primary} />
-                      <Txt size={10} weight="900" color={Colors.primary} style={{ letterSpacing: 0.5 }}>
+                      <Txt size={10} weight="700" color={Colors.primary} style={{ letterSpacing: 0.5 }}>
                         ADMINISTRATOR WORKFLOW REPLY
                       </Txt>
                     </Row>
@@ -519,11 +519,11 @@ export function GuestFeedbackComplaintsTab() {
       {/* Preview Modal */}
       <Modal visible={preview != null} transparent animationType="fade">
         <View style={styles.backdrop}>
-          <Card containerColor="#FFFFFF" borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[16, 16]} style={{ width: '92%' }}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[16, 16]} style={{ width: '92%' }}>
             {preview && (
               <>
                 <Row justify="space-between" align="center">
-                  <Txt size={12} weight="800" color={Colors.textSecondary}>{preview.isVideo ? 'VIDEO ATTACHMENT' : 'PHOTO EVIDENCE'}</Txt>
+                  <Txt size={12} weight="700" color={Colors.textSecondary}>{preview.isVideo ? 'VIDEO ATTACHMENT' : 'PHOTO EVIDENCE'}</Txt>
                   <IconBtn onPress={() => setPreview(null)} icon="close" size={20} tint={Colors.textPrimary} />
                 </Row>
                 <Spacer size={12} />
@@ -549,7 +549,7 @@ function RatingCard({
       <View style={styles.ratingIconWrap}>
         <Ionicons name={icon} size={22} color={Colors.primaryDark} />
       </View>
-      <Txt size={11} weight="800" color={Colors.textPrimary} align="center" style={{ marginTop: 8, height: 28 }}>
+      <Txt size={11} weight="700" color={Colors.textPrimary} align="center" style={{ marginTop: 8, height: 28 }}>
         {title}
       </Txt>
       <Row gap={2} style={{ marginTop: 6 }}>
@@ -559,7 +559,7 @@ function RatingCard({
           </AnimatedPress>
         ))}
       </Row>
-      <Txt size={12} weight="900" color={Colors.textPrimary} style={{ marginTop: 6 }}>
+      <Txt size={12} weight="700" color={Colors.textPrimary} style={{ marginTop: 6 }}>
         {rating.toFixed(1)}
       </Txt>
     </View>
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   // Top action cards
   topCardsRow: { marginTop: 14, zIndex: 20 },
   actionCard: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
+    flex: 1, backgroundColor: Colors.surface, borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9EA', padding: 14,
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
   complaintCard: { backgroundColor: '#FFF5F5', borderColor: '#FECACA' },
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   // Category pills
   catPill: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: Radii.sheet,
+    backgroundColor: Colors.surface, borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9EA',
     paddingHorizontal: 14, paddingVertical: 9 },
   catPillActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
 
   // Rating card
   ratingCard: {
-    width: 110, backgroundColor: '#FFFFFF', borderRadius: Radii.card,
+    width: 110, backgroundColor: Colors.surface, borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#DCE9EA',
     padding: 12, alignItems: 'center', justifyContent: 'center',
     shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center',
     marginRight: 8 },
 
-  attachBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1.5, borderColor: '#DCE9EA', borderStyle: 'dashed', padding: 12 },
+  attachBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1.5, borderColor: '#DCE9EA', borderStyle: 'dashed', padding: 12 },
   mediaPreviewChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 10, marginTop: 10 },
 
   // Submit CTA
@@ -627,16 +627,16 @@ const styles = StyleSheet.create({
     shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 },
 
   // Submissions Filter Chips
-  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.card, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DCE9EA' },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.card, backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#DCE9EA' },
   filterChipActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
   filterChipComplaintActive: { backgroundColor: Colors.danger, borderColor: Colors.danger },
   filterChipFeedbackActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
 
   // Submissions
-  submissionCard: { backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA', padding: 14, marginBottom: 10, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  submissionCard: { backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA', padding: 14, marginBottom: 10, shadowColor: '#0A6060', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   subCatIconWrap: { width: 40, height: 40, borderRadius: Radii.pill, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
   adminReplyBox: { backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 10, marginTop: 10 },
-  emptySubmissionsCard: { alignItems: 'center', paddingVertical: 32, backgroundColor: '#FFFFFF', borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA' },
+  emptySubmissionsCard: { alignItems: 'center', paddingVertical: 32, backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: '#DCE9EA' },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.6)', alignItems: 'center', justifyContent: 'center' },
   previewBox: { height: 180, backgroundColor: '#F8FAFC', borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' } });

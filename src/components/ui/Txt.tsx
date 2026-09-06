@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TextStyle, StyleProp } from 'react-native';
 import { Colors } from '@/theme';
-import { Typography, type TypographyKey } from '@/theme/typography';
+import { Typography, fontFamilyForWeight, normalizeFontWeight, type TypographyKey } from '@/theme/typography';
 import type { FontWeight } from '@/theme/typography';
 
 type RNFontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
@@ -51,19 +51,24 @@ export function Txt({
 }: TxtProps) {
   const base = variant ? Typography[variant] : null;
   const resolvedSize = size ?? base?.fontSize ?? 13;
-  const resolvedWeight = (weight ?? base?.fontWeight ?? '400') as RNFontWeight;
+  const requestedWeight = weight ?? base?.fontWeight ?? '400';
+  const resolvedWeight = normalizeFontWeight(requestedWeight) as RNFontWeight;
   const resolvedLineHeight = lineHeight ?? base?.lineHeight ?? resolvedSize * 1.35;
   const resolvedLetterSpacing = letterSpacing ?? base?.letterSpacing ?? 0;
   return (
     <Text
       style={[{
+        fontFamily: fontFamilyForWeight(requestedWeight),
         fontSize: resolvedSize,
         fontWeight: resolvedWeight,
         color,
         textAlign: align,
         lineHeight: resolvedLineHeight,
         letterSpacing: resolvedLetterSpacing,
-      }, tabular && styles.tabular, style]}
+      }, style, tabular && styles.tabular, {
+        fontFamily: fontFamilyForWeight(requestedWeight),
+        fontWeight: resolvedWeight,
+      }]}
       numberOfLines={numberOfLines}
       ellipsizeMode={ellipsizeMode}
       maxFontSizeMultiplier={maxFontSizeMultiplier}

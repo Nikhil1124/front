@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { AnimatedPress } from './AnimatedPress';
 import { Colors, Radii } from '@/theme';
+import { fontFamilyForWeight } from '@/theme/typography';
 
 export interface SearchFieldProps {
   value: string;
@@ -97,7 +98,10 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 13.5,
+    fontFamily: fontFamilyForWeight('400'),
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
     color: Colors.textPrimary,
     padding: 0,
   },

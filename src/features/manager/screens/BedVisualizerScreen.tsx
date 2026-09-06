@@ -278,7 +278,7 @@ export function BedVisualizerScreen() {
           </Row>
 
           <Spacer size={10} />
-          <Txt size={14} weight="900" color={isSelected ? Colors.primary : Colors.textPrimary}>
+          <Txt size={14} weight="700" color={isSelected ? Colors.primary : Colors.textPrimary}>
             {title}
           </Txt>
           <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
@@ -312,7 +312,7 @@ export function BedVisualizerScreen() {
           <Row gap={10} align="center">
             <Ionicons name="cloud-offline" size={22} color={Colors.danger} />
             <Col style={{ flex: 1 }}>
-              <Txt variant="body" weight="800" color={Colors.danger}>
+              <Txt variant="body" weight="700" color={Colors.danger}>
                 Couldn't load property layout
               </Txt>
               <Txt variant="caption" color={Colors.textMuted}>
@@ -344,7 +344,7 @@ export function BedVisualizerScreen() {
             height={42}
           >
             <Ionicons name="add-circle-outline" size={16} color={Colors.primary} />
-            <Txt size={12} weight="800" color={Colors.primary} style={{ marginLeft: 6 }}>
+            <Txt size={12} weight="700" color={Colors.primary} style={{ marginLeft: 6 }}>
               Add Room / Floor
             </Txt>
           </OutlinedBtn>
@@ -355,7 +355,7 @@ export function BedVisualizerScreen() {
           {/* 2. DEDICATED ROOM TYPES SELECTOR */}
           <Col>
             <Row justify="space-between" align="center">
-              <Txt size={15} weight="900" color={Colors.textPrimary}>
+              <Txt size={15} weight="700" color={Colors.textPrimary}>
                 Room Types
               </Txt>
               <Txt size={11} color={Colors.textMuted}>
@@ -404,7 +404,7 @@ export function BedVisualizerScreen() {
 
           {/* 5. ROOMS LIST HEADER & SORTING */}
           <Row justify="space-between" align="center">
-            <Txt size={15} weight="900" color={Colors.textPrimary}>
+            <Txt size={15} weight="700" color={Colors.textPrimary}>
               Available Rooms ({filteredRooms.length})
             </Txt>
 
@@ -422,7 +422,7 @@ export function BedVisualizerScreen() {
                 style={styles.sortBtnPill}
               >
                 <Ionicons name="swap-vertical" size={12} color={Colors.primary} />
-                <Txt size={10} weight="800" color={Colors.primary}>
+                <Txt size={10} weight="700" color={Colors.primary}>
                   {roomFilterSort === 'ALL'
                     ? 'Default Sort'
                     : roomFilterSort === 'AVAILABLE_FIRST'
@@ -440,7 +440,7 @@ export function BedVisualizerScreen() {
             <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[24, 20]} style={{ alignItems: 'center' }}>
               <Ionicons name="filter-outline" size={32} color={Colors.textMuted} />
               <Spacer size={8} />
-              <Txt size={14} weight="800" color={Colors.textPrimary}>
+              <Txt size={14} weight="700" color={Colors.textPrimary}>
                 No rooms match the selected filter
               </Txt>
               <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2, textAlign: 'center' }}>
@@ -458,7 +458,7 @@ export function BedVisualizerScreen() {
                 height={36}
                 style={{ paddingHorizontal: 16 }}
               >
-                <Txt size={12} weight="800" color={Colors.textInverse}>
+                <Txt size={12} weight="700" color={Colors.textInverse}>
                   Reset Filters
                 </Txt>
               </Btn>
@@ -493,7 +493,7 @@ export function BedVisualizerScreen() {
                             <Ionicons name="key" size={14} color={Colors.primary} />
                           </View>
                           <Col>
-                            <Txt size={16} weight="900" color={Colors.textPrimary}>
+                            <Txt size={16} weight="700" color={Colors.textPrimary}>
                               Room {room.roomNumber}
                             </Txt>
                             <Txt size={11} color={Colors.textMuted}>
@@ -514,7 +514,7 @@ export function BedVisualizerScreen() {
                         >
                           <Txt
                             size={10}
-                            weight="800"
+                            weight="700"
                             color={isFull ? Colors.danger : isPart ? Colors.warning : Colors.success}
                           >
                             {isFull ? 'Fully Occupied' : isPart ? `${vacCount} Beds Available` : 'Fully Vacant'}
@@ -546,7 +546,7 @@ export function BedVisualizerScreen() {
                                 />
                                 <Txt
                                   size={9}
-                                  weight="800"
+                                  weight="700"
                                   color={isOcc ? Colors.danger : Colors.success}
                                   style={{ marginLeft: 2 }}
                                 >
@@ -558,10 +558,10 @@ export function BedVisualizerScreen() {
                         </Row>
 
                         <Row gap={4} align="center">
-                          <Txt size={12} weight="800" color={Colors.primary}>
+                          <Txt size={12} weight="700" color={Colors.primary}>
                             View Room
                           </Txt>
-                          <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+                          <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
                         </Row>
                       </Row>
                     </Card>
@@ -591,10 +591,10 @@ export function BedVisualizerScreen() {
                       onPress={() => setSelectedRoomDetail(null)}
                       style={styles.detailBackBtn}
                     >
-                      <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                      <Ionicons name="arrow-back" size={20} color={Colors.textInverse} />
                     </AnimatedPress>
                     <Col>
-                      <Txt size={18} weight="900" color="#FFFFFF">
+                      <Txt size={18} weight="700" color={Colors.textInverse}>
                         Room {activeRoomDetailObject.roomNumber}
                       </Txt>
                       <Txt size={11} color="#A7EBF2">
@@ -604,8 +604,8 @@ export function BedVisualizerScreen() {
                   </Row>
 
                   <View style={styles.detailSharingTag}>
-                    <Ionicons name="people" size={14} color="#FFFFFF" />
-                    <Txt size={11} weight="800" color="#FFFFFF" style={{ marginLeft: 4 }}>
+                    <Ionicons name="people" size={14} color={Colors.textInverse} />
+                    <Txt size={11} weight="700" color={Colors.textInverse} style={{ marginLeft: 4 }}>
                       {activeRoomDetailObject.sharingType} Sharing
                     </Txt>
                   </View>
@@ -614,16 +614,16 @@ export function BedVisualizerScreen() {
 
               <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
                 {/* ROOM OVERVIEW CARD */}
-                <Card containerColor="#FFFFFF" borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+                <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                   <Row gap={14} align="center">
                     {/* 2D Floorplan Preview */}
                     <Image source={FLOORPLAN_IMG} style={styles.floorplanImage} resizeMode="cover" />
 
                     <Col style={{ flex: 1 }}>
-                      <Txt size={10} weight="800" color={Colors.primary} style={{ letterSpacing: 0.5 }}>
+                      <Txt size={10} weight="700" color={Colors.primary} style={{ letterSpacing: 0.5 }}>
                         ROOM OVERVIEW
                       </Txt>
-                      <Txt size={16} weight="900" color={Colors.textPrimary} style={{ marginTop: 2 }}>
+                      <Txt size={16} weight="700" color={Colors.textPrimary} style={{ marginTop: 2 }}>
                         {activeRoomDetailObject.sharingType} Sharing Room
                       </Txt>
 
@@ -632,7 +632,7 @@ export function BedVisualizerScreen() {
                       <Row gap={6}>
                         <View style={styles.overviewMiniPill}>
                           <Ionicons name="bed-outline" size={14} color={Colors.primary} />
-                          <Txt size={11} weight="900" color={Colors.textPrimary} style={{ marginTop: 2 }}>
+                          <Txt size={11} weight="700" color={Colors.textPrimary} style={{ marginTop: 2 }}>
                             {activeRoomDetailObject.beds.length} Beds
                           </Txt>
                           <Txt size={9} color={Colors.textMuted}>Total</Txt>
@@ -640,7 +640,7 @@ export function BedVisualizerScreen() {
 
                         <View style={[styles.overviewMiniPill, { backgroundColor: Palette.TintRed }]}>
                           <Ionicons name="person-outline" size={14} color={Colors.danger} />
-                          <Txt size={11} weight="900" color={Colors.danger} style={{ marginTop: 2 }}>
+                          <Txt size={11} weight="700" color={Colors.danger} style={{ marginTop: 2 }}>
                             {activeRoomDetailObject.beds.filter((b) => b.status === 'occupied').length} Occupied
                           </Txt>
                           <Txt size={9} color={Colors.danger}>Active</Txt>
@@ -648,7 +648,7 @@ export function BedVisualizerScreen() {
 
                         <View style={[styles.overviewMiniPill, { backgroundColor: Palette.TintGreen }]}>
                           <Ionicons name="checkmark-circle-outline" size={14} color={Colors.success} />
-                          <Txt size={11} weight="900" color={Colors.success} style={{ marginTop: 2 }}>
+                          <Txt size={11} weight="700" color={Colors.success} style={{ marginTop: 2 }}>
                             {activeRoomDetailObject.beds.filter((b) => b.status !== 'occupied').length} Vacant
                           </Txt>
                           <Txt size={9} color={Colors.success}>Available</Txt>
@@ -670,12 +670,12 @@ export function BedVisualizerScreen() {
                     <Ionicons
                       name="bed"
                       size={14}
-                      color={detailActiveTab === 'ALLOCATION' ? '#FFFFFF' : Colors.primary}
+                      color={detailActiveTab === 'ALLOCATION' ? Colors.textInverse : Colors.primary}
                     />
                     <Txt
                       size={12}
-                      weight="800"
-                      color={detailActiveTab === 'ALLOCATION' ? '#FFFFFF' : Colors.primary}
+                      weight="700"
+                      color={detailActiveTab === 'ALLOCATION' ? Colors.textInverse : Colors.primary}
                       style={{ marginLeft: 6 }}
                     >
                       Bed Allocation
@@ -692,12 +692,12 @@ export function BedVisualizerScreen() {
                     <Ionicons
                       name="information-circle-outline"
                       size={14}
-                      color={detailActiveTab === 'DETAILS' ? '#FFFFFF' : Colors.primary}
+                      color={detailActiveTab === 'DETAILS' ? Colors.textInverse : Colors.primary}
                     />
                     <Txt
                       size={12}
-                      weight="800"
-                      color={detailActiveTab === 'DETAILS' ? '#FFFFFF' : Colors.primary}
+                      weight="700"
+                      color={detailActiveTab === 'DETAILS' ? Colors.textInverse : Colors.primary}
                       style={{ marginLeft: 6 }}
                     >
                       Room Details
@@ -707,9 +707,9 @@ export function BedVisualizerScreen() {
 
                 {/* TAB CONTENT: BED ALLOCATION */}
                 {detailActiveTab === 'ALLOCATION' && (
-                  <Card containerColor="#FFFFFF" borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+                  <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
                     <Row justify="space-between" align="center">
-                      <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+                      <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
                         BED ALLOCATION
                       </Txt>
 
@@ -721,7 +721,7 @@ export function BedVisualizerScreen() {
                         style={styles.editBedsBtn}
                       >
                         <Ionicons name="create-outline" size={13} color={Colors.primary} />
-                        <Txt size={11} weight="800" color={Colors.primary} style={{ marginLeft: 4 }}>
+                        <Txt size={11} weight="700" color={Colors.primary} style={{ marginLeft: 4 }}>
                           Edit Beds
                         </Txt>
                       </AnimatedPress>
@@ -758,11 +758,11 @@ export function BedVisualizerScreen() {
                                     size={16}
                                     color={isOcc ? Colors.danger : Colors.success}
                                   />
-                                  <Txt size={12} weight="900" color={isOcc ? Colors.danger : Colors.success}>
+                                  <Txt size={12} weight="700" color={isOcc ? Colors.danger : Colors.success}>
                                     Bed {bed.bedNumber}
                                   </Txt>
                                 </Row>
-                                <Txt size={9} weight="800" color={isOcc ? Colors.danger : Colors.success}>
+                                <Txt size={9} weight="700" color={isOcc ? Colors.danger : Colors.success}>
                                   {isOcc ? 'Occupied' : 'Vacant'}
                                 </Txt>
                               </Row>
@@ -782,7 +782,7 @@ export function BedVisualizerScreen() {
 
                               <Txt
                                 size={12}
-                                weight="800"
+                                weight="700"
                                 color={Colors.textPrimary}
                                 align="center"
                                 numberOfLines={1}
@@ -806,7 +806,7 @@ export function BedVisualizerScreen() {
                               >
                                 <Txt
                                   size={10}
-                                  weight="800"
+                                  weight="700"
                                   color={isOcc ? Colors.danger : Colors.success}
                                 >
                                   {isOcc ? 'Occupied' : 'Assign Resident'}
@@ -829,7 +829,7 @@ export function BedVisualizerScreen() {
                             <Txt size={11} color={Colors.textMuted}>
                               Room Capacity
                             </Txt>
-                            <Txt size={13} weight="900" color={Colors.textPrimary}>
+                            <Txt size={13} weight="700" color={Colors.textPrimary}>
                               {activeRoomDetailObject.sharingType} People
                             </Txt>
                           </Col>
@@ -839,7 +839,7 @@ export function BedVisualizerScreen() {
                           <Txt size={11} color={Colors.textMuted}>
                             Current Occupancy
                           </Txt>
-                          <Txt size={13} weight="900" color={Colors.primary}>
+                          <Txt size={13} weight="700" color={Colors.primary}>
                             {activeRoomDetailObject.beds.filter((b) => b.status === 'occupied').length} / {activeRoomDetailObject.beds.length}
                           </Txt>
                         </Col>
@@ -849,7 +849,7 @@ export function BedVisualizerScreen() {
                     <Spacer size={16} />
 
                     {/* Quick Actions Row */}
-                    <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+                    <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
                       QUICK ACTIONS
                     </Txt>
 
@@ -873,7 +873,7 @@ export function BedVisualizerScreen() {
                         style={styles.detailQuickActionBtn}
                       >
                         <Ionicons name="person-add-outline" size={14} color={Colors.primary} />
-                        <Txt size={11} weight="800" color={Colors.textPrimary} style={{ marginLeft: 6 }}>
+                        <Txt size={11} weight="700" color={Colors.textPrimary} style={{ marginLeft: 6 }}>
                           Add Occupant
                         </Txt>
                       </AnimatedPress>
@@ -882,7 +882,7 @@ export function BedVisualizerScreen() {
                     <Spacer size={16} />
 
                     {/* About This Room Details Grid */}
-                    <Txt size={11} weight="800" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+                    <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
                       ABOUT THIS ROOM
                     </Txt>
                     <Spacer size={8} />
@@ -892,7 +892,7 @@ export function BedVisualizerScreen() {
                         <Ionicons name="bed-outline" size={14} color={Colors.primary} />
                         <Col>
                           <Txt size={9} color={Colors.textMuted}>Room Type</Txt>
-                          <Txt size={11} weight="800" color={Colors.textPrimary}>{activeRoomDetailObject.sharingType} Sharing</Txt>
+                          <Txt size={11} weight="700" color={Colors.textPrimary}>{activeRoomDetailObject.sharingType} Sharing</Txt>
                         </Col>
                       </View>
 
@@ -900,7 +900,7 @@ export function BedVisualizerScreen() {
                         <Ionicons name="key-outline" size={14} color={Colors.primary} />
                         <Col>
                           <Txt size={9} color={Colors.textMuted}>Room Number</Txt>
-                          <Txt size={11} weight="800" color={Colors.textPrimary}>{activeRoomDetailObject.roomNumber}</Txt>
+                          <Txt size={11} weight="700" color={Colors.textPrimary}>{activeRoomDetailObject.roomNumber}</Txt>
                         </Col>
                       </View>
 
@@ -908,7 +908,7 @@ export function BedVisualizerScreen() {
                         <Ionicons name="layers-outline" size={14} color={Colors.primary} />
                         <Col>
                           <Txt size={9} color={Colors.textMuted}>Floor</Txt>
-                          <Txt size={11} weight="800" color={Colors.textPrimary}>Floor {activeRoomDetailObject.floorNumber}</Txt>
+                          <Txt size={11} weight="700" color={Colors.textPrimary}>Floor {activeRoomDetailObject.floorNumber}</Txt>
                         </Col>
                       </View>
 
@@ -923,14 +923,14 @@ export function BedVisualizerScreen() {
                     PgRoom model has no amenities or area column). Base Monthly Rent is the
                     one real fact here. */}
                 {detailActiveTab === 'DETAILS' && (
-                  <Card containerColor="#FFFFFF" borderRadius={Radii.card} padding={[16, 16]}>
-                    <Txt size={14} weight="900" color={Colors.textPrimary}>
+                  <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[16, 16]}>
+                    <Txt size={14} weight="700" color={Colors.textPrimary}>
                       Room Specifications
                     </Txt>
                     <Spacer size={14} />
                     <Row justify="space-between" align="center" style={styles.aboutRoomChip}>
                       <Txt size={12} color={Colors.textMuted}>Base Monthly Rent</Txt>
-                      <Txt size={14} weight="900" color={activeRoomDetailObject.baseRent ? Colors.primary : Colors.textMuted}>
+                      <Txt size={14} weight="700" color={activeRoomDetailObject.baseRent ? Colors.primary : Colors.textMuted}>
                         {activeRoomDetailObject.baseRent
                           ? `₹${activeRoomDetailObject.baseRent.toLocaleString('en-IN')} / mo`
                           : 'Not set'}
@@ -958,7 +958,7 @@ export function BedVisualizerScreen() {
               {activeBed.bed.status === 'occupied' && activeBed.bed.tenant ? (
                 <>
                   <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.card} padding={[12, 12]}>
-                    <Txt size={13} weight="800" color={Colors.textPrimary}>
+                    <Txt size={13} weight="700" color={Colors.textPrimary}>
                       {activeBed.bed.tenant.fullName}
                     </Txt>
                     <Txt size={11} color={Colors.textMuted}>
@@ -980,7 +980,7 @@ export function BedVisualizerScreen() {
                     borderRadius={Radii.control}
                     height={44}
                   >
-                    <Txt size={12} weight="800" color={Colors.textInverse}>
+                    <Txt size={12} weight="700" color={Colors.textInverse}>
                       Vacate Bed
                     </Txt>
                   </Btn>
@@ -1009,7 +1009,7 @@ export function BedVisualizerScreen() {
                               onPress={() => handleAssign(g.id, g.name)}
                             >
                               <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.control} padding={[10, 12]}>
-                                <Txt size={12} weight="800" color={Colors.textPrimary}>
+                                <Txt size={12} weight="700" color={Colors.textPrimary}>
                                   {g.name}
                                 </Txt>
                                 <Txt size={11} color={Colors.textMuted}>
@@ -1044,7 +1044,7 @@ export function BedVisualizerScreen() {
               borderRadius={Radii.control}
               height={44}
             >
-              <Txt size={12} weight="800" color={Colors.textInverse}>Add room</Txt>
+              <Txt size={12} weight="700" color={Colors.textInverse}>Add room</Txt>
             </Btn>
           }
         >
@@ -1097,7 +1097,7 @@ export function BedVisualizerScreen() {
               borderRadius={Radii.control}
               height={44}
             >
-              <Txt size={12} weight="800" color={Colors.textInverse}>Save</Txt>
+              <Txt size={12} weight="700" color={Colors.textInverse}>Save</Txt>
             </Btn>
           }
         >
@@ -1136,7 +1136,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3 },
   roomTypeCardUnselected: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderColor: Colors.borderSubtle },
   roomTypeIconBox: {
     width: 32,
@@ -1219,7 +1219,7 @@ const styles = StyleSheet.create({
     padding: 8,
     alignItems: 'center' },
   detailSegmentedBar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     padding: 4,
     borderWidth: 1,
@@ -1250,7 +1250,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: Radii.pill,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1266,7 +1266,7 @@ const styles = StyleSheet.create({
   detailQuickActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: Radii.control,

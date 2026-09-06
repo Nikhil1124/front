@@ -1,4 +1,6 @@
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { ReplacementPreference } from '../../store/useCartStore';
 import { Colors, Radii } from '@/theme';
@@ -33,7 +35,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
         {OPTIONS.map((opt) => {
           const selected = opt.value === value;
           return (
-            <TouchableOpacity accessibilityState={{ selected: !!selected }} accessibilityRole="button"
+            <AnimatedPress accessibilityState={{ selected: !!selected }} accessibilityRole="button"
               key={opt.value}
               style={[styles.optionCard, selected && styles.selectedOptionCard]}
               onPress={() => onChange(opt.value)}
@@ -52,7 +54,7 @@ export function ReplacementPicker({ value, onChange, compact }: ReplacementPicke
                 size={18}
                 color={selected ? Colors.primary : Colors.textMuted}
               />
-            </TouchableOpacity>
+            </AnimatedPress>
           );
         })}
       </View>

@@ -28,7 +28,7 @@ const BG = '#F7FAF7';
 const CHARCOAL = '#17201A';
 const MUTED = '#66736B';
 const BORDER = '#DDE8E0';
-const WHITE = '#FFFFFF';
+const WHITE = Colors.surface;
 const LIGHT_GREEN = Palette.TintGreen;
 
 export function OwnerComplaintsTab() {
@@ -245,7 +245,7 @@ function ActiveItemEvidence({ id, pgId }: { id: string; pgId: string | null }) {
   return (
     <>
       <Spacer size={12} />
-      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Text>
+      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 0.4 }}>ATTACHED EVIDENCE</Text>
       <Spacer size={6} />
       <KycDocumentsCard idPhotoUri={full.mediaUri} selfieUri={null} />
     </>
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center' },
-  dialogSaveBtnText: { fontSize: 13, fontWeight: '800', color: WHITE },
+  dialogSaveBtnText: { fontSize: 13, fontWeight: '700', color: WHITE },
   dialogCancelBtn: {
     flex: 1,
     height: 44,
@@ -317,4 +317,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     borderWidth: 1.5, borderColor: GREEN, borderRadius: Radii.card, paddingVertical: 12,
     backgroundColor: `${GREEN}0D` },
-  bookTechBtnText: { fontSize: 13, fontWeight: '800', color: GREEN } });
+  bookTechBtnText: { fontSize: 13, fontWeight: '700', color: GREEN } });

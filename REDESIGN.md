@@ -105,22 +105,30 @@ needed to be "modern, smart, attractive" — while staying familiar. Several rou
 were presented; the direction chosen was the one that keeps a flat white ground and earns
 attention through type, hairlines and a small number of *meaningful* filled surfaces.
 
-### 2.2 The ground: why the page is white
+### 2.2 The ground: warm white, and why
 
-The old canvas was `#F6F9FB`. A white card on it measured **1.06:1** — optically the same
-colour. So nothing on any screen read as a surface, and the only thing drawing a card edge was
-a 1.46:1 border, which is invisible.
+**Two passes happened here. Read both — the second superseded the first.**
 
-You cannot make a white card visible on a near-white page. The page has to stop being
-near-white. So:
+**Pass one (the fix).** The original canvas was `#F6F9FB`. A white card on it measured
+**1.06:1** — optically the same colour. So nothing read as a surface, and the only thing
+drawing a card edge was a 1.46:1 border, which is invisible. You cannot make a white card
+visible on a near-white page; the page has to stop being near-white. Canvas and surface both
+became pure `#FFFFFF`, and structure moved to `separator` hairlines and to type.
 
-- `canvas` and `surface` are both `#FFFFFF`
-- Structure comes from `separator` (`#E1E7EC`, 1.25:1) hairlines and from type
-- **A filled surface is reserved for something that means it** — a metric card, a state tint,
-  an alert. Not "for free" behind every card.
+**Pass two (the warm direction).** Pure white plus a cool ocean-blue brand read as *correct
+and corporate* — right for a bank, wrong for an app about where people live. The ground is now
+a warm white, `#FFFCF9`.
 
-This is why you should be suspicious of any new tinted background. If it doesn't carry meaning,
-it shouldn't be tinted.
+The rule that survived both passes, and matters more than either value:
+
+> **The warmth lives in the ground, the hairlines and the type — never in large coloured
+> fills.** Big tinted areas are what make a warm palette look beige and cheap. Hairlines and
+> warm near-black type are what make it look considered.
+
+`canvas` and `surface` are still the *same value*, deliberately. Structure still comes from
+`separator`, not from a background difference. **A filled surface is still reserved for
+something that means it** — a metric card, a state tint, an alert. Be suspicious of any new
+tinted background: if it doesn't carry meaning, it shouldn't be tinted.
 
 ### 2.3 Colour: measured, not chosen
 
@@ -293,10 +301,36 @@ stripping, which is why every guarded module must stay free of runtime imports.
 
 ### 4.1 Tokens — `src/theme/`
 
-Never write a raw hex or radius; the guards fail.
+Never write a raw hex or radius; the guards fail. **The ban list in `colors.check.ts` now also
+bans raw white and every value of the old cool palette**, so a copy-paste from an old screen
+fails loudly instead of quietly leaving a cold patch on a warm page.
 
-- **`Colors`** — `canvas`/`surface` both `#FFFFFF`; `separator` `#E1E7EC` for hairlines
-- **`DeckTints`** — `brand` / `green` / `amber` / `slate`, each `{ fill, ink, sub }`
+**Colours — the warm palette (every pair verified, see 2.3):**
+
+| Token | Value | Role |
+|---|---|---|
+| `canvas` / `surface` | `#FFFCF9` | Warm white. Same value on purpose |
+| `surfaceMuted` | `#F7F2ED` | Input fills, secondary grounds |
+| `surfaceElevated` | `#F2EAE3` | Active chips, soft highlights |
+| `separator` | `#EBE2DA` | The hairline that groups. 1.25:1 |
+| `borderSubtle` | `#DCD0C5` | A visible edge when one is needed |
+| `primary` | `#A24A2A` | Terracotta. **The accent — not chrome** |
+| `primaryDark` | `#5C2B18` | Pressed states, deep headings |
+| `textPrimary` | `#3A2F25` | Warm near-black, 12.73:1 — softened on purpose |
+| `textSecondary` | `#4B3F36` | Supporting copy |
+| `textMuted` | `#77685C` | Captions, meta, **navigation chrome** |
+| `textInverse` | `#FFFCF9` | Text on a coloured fill |
+| `success` / `warning` / `danger` | `#2C6248` / `#8A5A15` / `#A83226` | Three distinct hues, warm-world |
+
+**`DeckTints`** — `{ fill, ink, sub }` triplets, ink and sub both verified on their own fill:
+
+| | fill | ink | sub |
+|---|---|---|---|
+| `brand` | `#F6E9E1` | `#5C2B18` | `#8A5138` |
+| `green` | `#E6F0E9` | `#1F4A37` | `#3F6B56` |
+| `amber` | `#F9EEDA` | `#6A4310` | `#825D2C` |
+| `slate` | `#F2EDE8` | `#2A231E` | `#6B5D52` |
+
 - **`Radii`** — `badge` 6 · `control` 10 · `card` 18 · `sheet` 22 · `feature` 24 · `pill` 999
 - **`Motion`** — `timing.micro` 120 · `.small` 180 · `.tab` 200 · `.sheet` 300 · `.chart` 500
 
@@ -553,6 +587,191 @@ thing that matters can be loud.
 
 ---
 
+## 4.7 Making it attractive — the remaining work, in order
+
+The warm palette (2.2) is **done and verified**. Everything below is not. It is ordered by
+impact per unit of effort, and each item says what to do, what *not* to do, and how to check.
+
+**The principle that governs all of it:** users describe a good interface as "clean",
+"premium", "easy". They cannot usually point at *why*. That is because the quality comes from
+clarity, consistency, spacing, readable type and meaningful emphasis — not from decoration.
+Every item below buys one of those. Nothing below is ornament.
+
+---
+
+### 4.7.1 Typography — the single biggest remaining lever
+
+**Current state:** zero custom fonts. `useFonts` is never called. Every screen renders in the
+platform default — San Francisco on iOS, Roboto on Android. So the app looks like *two
+different apps* depending on the phone, and like a system utility on both.
+
+**Why this is first:** one good typeface changes every screen at once, costs no layout work,
+and is the difference people read as "premium" without being able to name it.
+
+**What to do:**
+
+1. Add `@expo-google-fonts/<family>` and load in `app/_layout.tsx` with `useFonts`, holding the
+   splash until loaded (`SplashScreen.preventAutoHideAsync`) — a font pop on first paint is
+   worse than a slightly longer splash.
+2. Wire it into `Txt` as the default `fontFamily`, so it lands everywhere at once. **Do not**
+   set `fontFamily` at call sites; `Txt` is the only place it belongs.
+3. Numbers keep `tabular`.
+
+**Choosing the family — the constraints, not a recommendation:**
+
+- It must have **true tabular figures**, or the money columns lose their alignment and you have
+  undone 2.6. Verify before committing.
+- It needs **400 / 500 / 600 / 700** at minimum. The app uses all four.
+- It must stay legible at **10px** (captions) and **27px** (hero numbers).
+- A warm, slightly humanist face suits the ground better than a geometric one. Geometric sans
+  on a warm ground reads cold and fights it.
+- **One family, not two.** A display face plus a body face is a real design system decision and
+  this app does not need it.
+
+**What not to do:** do not load four weights you don't use — each is a real download on a slow
+connection. Do not use a font with lining-only figures. Do not put a serif in the chrome.
+
+**Check:** every screen still renders; no `fontFamily` outside `Txt`; the P&L and Payments
+columns still line up.
+
+---
+
+### 4.7.2 Accent discipline — terracotta must stay rare
+
+**Current state after the palette pass:**
+
+| Use of `Colors.primary` | Count | Verdict |
+|---|---|---|
+| Icon tints | ~206 | **Mostly wrong.** Most are chrome |
+| Filled surfaces | ~149 | Some right (primary buttons), many wrong |
+| Text colour | ~200 | Mixed |
+| Borders | ~72 | Mostly wrong — a border is structure |
+| Navigation chevrons | **0** | Already swept ✓ |
+
+**The rule:** on any given screen, the accent should appear on **at most three** things. If you
+can see more than three terracotta elements at once, the accent has stopped meaning anything —
+it has become the new grey, which is exactly what happened to the ocean blue it replaced.
+
+**What earns the accent:**
+- The one primary action on the screen
+- The active state of a control the user is currently in
+- A single number or status that is genuinely the point of the screen
+
+**What does not, and should be `textMuted` or `textPrimary`:**
+- Chevrons, close buttons, back arrows *(done)*
+- Decorative icons beside a label — the label already says it
+- Borders and dividers — that is `separator`'s job
+- Icons in a list where every row has one. Forty accent icons is a texture, not an emphasis
+- Section-heading icons
+
+**How to work through it:** do not codemod this. Go screen by screen, open it, count the
+terracotta. If it is more than three, decide which three earn it and demote the rest. This is
+judgement, and a regex cannot make it.
+
+**Check:** screenshot a screen, squint at it. The accent should draw your eye to the thing you
+came to do. If your eye goes nowhere in particular, there is too much of it.
+
+---
+
+### 4.7.3 Spacing rhythm
+
+**Current state:** spacing is per-screen and ad hoc. `Spacing` tokens exist (`xs` 4 · `sm` 8 ·
+`md` 12 · `lg` 16 · `xl` 20 · `xxl` 24 · `section` 28) and are inconsistently used; most screens
+write raw numbers.
+
+**The rhythm to apply:**
+
+| Gap | Value | Between |
+|---|---|---|
+| Inside a component | 8–12 | Icon and its label, a label and its value |
+| Between rows in a run | 0 | The hairline does it — never add margin between rows |
+| Between a heading and its content | 8 | |
+| Between sections | **24–28** | This is the one that makes a screen feel calm |
+| Screen horizontal padding | 16–20 | Use `useResponsivePadding` |
+
+**The single most common mistake** in the current screens: sections separated by 12px, which
+reads as one continuous wall of content. Section separation is the primary thing that makes an
+interface feel effortless — it tells the eye where one idea ends.
+
+**What not to do:** do not add a card, a border or a background change to separate sections.
+Space does it. That is 4.6.4, and it is the difference between calm and busy.
+
+---
+
+### 4.7.4 Empty, loading and error states
+
+**Current state:** an Ionicon, a title, a subtitle. Functional and forgettable. This is where
+personality lives in every app that has any, and PGow currently has none.
+
+**What to do, in priority order:**
+
+1. **Make the copy do the work first.** "Start your first property" beats "No data". An empty
+   state is an invitation, not an apology. This costs nothing and is most of the benefit.
+2. **Always offer the action.** An empty list that doesn't tell you how to fill it is a
+   dead end.
+3. **Then, and only then, consider illustration.** If you add one: a single simple line
+   illustration in `textMuted` weight with one terracotta accent, sized ~120px, used on maybe
+   five screens — first run, empty residents, empty payments, empty tickets, all-caught-up.
+   **Not one per screen.** A different illustration on all 44 screens is a zoo.
+4. **Loading is not empty.** `EmptyState` already takes `loading` and `error` separately, and
+   they must stay separate — a query in flight, a query that returned nothing, and a 403 are
+   three different messages. A permissions failure that reads "nothing here yet" is a lie.
+
+**What not to do:** no spinners on a full screen where a skeleton would be calmer; no
+animated illustrations; no mascot.
+
+---
+
+### 4.7.5 Depth — where elevation is allowed
+
+**Current state:** flat, with `Layout.shadowCard` available and rarely used.
+
+**The rule:** at most **one** elevated thing on screen at a time.
+
+| Surface | Depth |
+|---|---|
+| Rows in a list | **None.** Hairlines. Never a shadow — per-view overdraw is what stutters a long list on Android |
+| The hero deck card | A soft shadow is allowed, or none. Not both a shadow and a border |
+| A `Sheet` | Yes — it is genuinely floating |
+| The nav bar | The upward hairline shadow it already has |
+| Buttons | None. A fill is enough |
+
+**What not to do:** do not put a shadow on something that also has a border — pick one. Forty
+soft shadows read as fog, not as depth.
+
+---
+
+### 4.7.6 Micro-interactions — three worth building
+
+Motion should be almost invisible (4.6.7). These three are worth it because each carries
+*information*, not decoration:
+
+1. **A confirmation that draws itself.** After verify/approve, a checkmark that strokes in over
+   ~250ms. It says "this landed" better than a toast, and it's at the moment of highest
+   consequence. Pairs with the haptic that already fires there.
+2. **The deck settling on refresh.** `CountUp` already exists and is wired on Overview only —
+   extend it to the other analytics screens. Numbers that count read as live data.
+3. **Row press that follows the finger.** `AnimatedPress` already springs. Verify it *feels*
+   right on a slow Android device; the value is currently a guess (0.97/0.99).
+
+**What not to do:** no staggered list entrance animations (they delay content for decoration),
+no page transitions beyond the existing tab cross-fade, nothing that moves on its own.
+
+---
+
+### 4.7.7 The order to do this in
+
+1. **Typography** — one change, every screen, largest perceived gain
+2. **Spacing rhythm** on the eight screens that matter most (4.6.1's "where you spend")
+3. **Accent discipline** on those same eight, screen by screen with judgement
+4. **Empty-state copy** everywhere; illustration on five screens at most
+5. **Micro-interactions** last — they are the polish on top of a thing that is already good
+
+**Do steps 1–3 on ONE screen first and look at it on a device.** If it doesn't feel different,
+the direction is wrong and you have spent one screen finding out rather than forty.
+
+---
+
 ## 5. The method for redesigning a screen
 
 ### Step 1 — measure it
@@ -787,7 +1006,89 @@ project — every one of the verified colour pairs needs a dark counterpart and
 
 ---
 
-## 6.8 Definition of done, per screen
+## 6.8 Production standards audit — what is missing, and what already isn't
+
+Audited against what a shipped React Native app is expected to have. Three buckets.
+
+### A. UX-facing gaps — these belong in the redesign
+
+**1. No autofill or password-manager support anywhere.** `textContentType` and `autoComplete`
+appear on **zero** fields in the app. Every login, registration, phone, OTP and address field
+should carry them; without it, iOS won't offer the saved password, Android won't offer the SMS
+code, and people retype things they shouldn't have to.
+
+This is a `OutlinedTextField` change plus a pass over the auth screens:
+
+```tsx
+// password
+textContentType="password"        autoComplete="current-password"
+// new password
+textContentType="newPassword"     autoComplete="new-password"
+// phone
+textContentType="telephoneNumber" autoComplete="tel"          keyboardType="phone-pad"
+// email
+textContentType="emailAddress"    autoComplete="email"        keyboardType="email-address"
+// one-time code
+textContentType="oneTimeCode"     autoComplete="sms-otp"
+```
+
+Do it once in the primitive as pass-through props, then apply per field. It pairs naturally
+with 6.6 (auth), which is where most of the affected fields live.
+
+**2. Images have no placeholder, no caching, no transition.** 24 files render RN's `<Image>`;
+`expo-image` is not installed. Exactly **one** file handles `onError`. So every remote image —
+KYC documents, property photos, dish images, ad banners — pops in when it arrives, shows
+nothing while loading, and shows nothing at all if it fails.
+
+`expo-image` gives a placeholder, a fade-in transition, memory/disk caching and a proper error
+slot. It's a drop-in for most call sites. This is one of the most *visible* quality differences
+in the whole list — image pop-in is the thing that reads as "unfinished" fastest.
+
+The one place already handling this well is `KycDocumentsCard`, which tracks `idFailed` /
+`selfieFailed` and falls back to a labelled empty box. Copy that behaviour, don't reinvent it.
+
+**3. Offline is handled but never shown.** `apiClient` deals with connection failures, and four
+screens mention offline in passing, but there is no app-level indication that you are offline.
+A person on a bad connection sees a spinner or an error card and can't tell whether it's the
+app, the property's data, or their signal.
+
+The right surface for this is a **persistent strip**, not a toast (see 4.2b) — it's state that
+lasts until it changes. `DockAlert` is the existing precedent for a thin strip above the nav.
+
+### B. Already solid — do not "fix" these
+
+Checked, and better than expected. Leave them alone:
+
+- **Error boundary** — `AppErrorBoundary` is wired through Expo Router's own `ErrorBoundary`
+  export convention in `app/_layout.tsx`, so a render error shows a real screen rather than a
+  white one.
+- **401 handling** — `apiClient` raises *typed* errors and notifies a registered handler rather
+  than driving navigation itself, specifically so a 401 during a background refresh can't tear
+  down the screen someone is typing into. Auth endpoints that answer 401 for bad credentials
+  surface it to their own form instead of triggering session recovery. That's careful work.
+- **Token storage** — `SecureStore`, not AsyncStorage.
+- **Screen-capture guard** — active while KYC documents are on screen.
+- **Keyboard avoidance** — `FormScroll` on both platforms, with the reasoning documented.
+- **Safe areas** — runtime insets everywhere, no hardcoded platform guesses.
+- **Orientation** — locked to portrait in `app.json`, which is right for this app.
+
+### C. Engineering gaps — real, but outside a redesign's scope
+
+Worth knowing; don't let them block UI work, and don't quietly take them on either.
+
+- **No test framework at all.** No Jest, no Vitest, no component tests. The eight `.check.ts`
+  guards plus `tsc` are the entire safety net. They're good at what they cover — pure logic,
+  tokens, contrast, structural drift — and cover no rendering behaviour whatsoever.
+- **No ESLint and no Prettier config.** Formatting consistency is by hand and by convention.
+- **No crash reporting** (Sentry/Bugsnag). A crash in the wild is currently invisible.
+- **No OTA update path** — `expo-updates` isn't configured, so every fix needs a store release.
+- **No i18n.** Copy is English string literals throughout. Like dark mode, treat this as a
+  deliberate scope decision rather than an oversight — but if the app ever needs another
+  language, it is a project, not a pass.
+
+---
+
+## 6.9 Definition of done, per screen
 
 A screen is finished when **all** of these are true:
 
@@ -802,6 +1103,12 @@ A screen is finished when **all** of these are true:
       alert for decisions, badge/strip for anything that persists
 - [ ] No invented numbers, no fabricated deltas (rule 1.1)
 - [ ] Copy is sentence case, buttons are verb-first
+- [ ] Images have a placeholder and an error fallback (6.8 A2)
+- [ ] Auth/contact fields carry `textContentType` + `autoComplete` (6.8 A1)
+- [ ] At most **three** terracotta elements visible at once (4.7.2)
+- [ ] Sections separated by 24–28px of space, not by a card or a border (4.7.3)
+- [ ] Empty state is an invitation with an action, not an apology (4.7.4)
+- [ ] At most one elevated surface on screen (4.7.5)
 - [ ] **It passes the 4.6.9 test** — one clear hero, obvious primary action, nothing shouting
       without a reason, and something removed rather than added
 - [ ] `tsc`, all guards, and the Android bundle pass
@@ -809,7 +1116,7 @@ A screen is finished when **all** of these are true:
 
 ---
 
-## 6.9 The honest gap: nothing has been run
+## 6.10 The honest gap: nothing has been run
 
 **This entire redesign was verified by typecheck, guards and a successful bundle build. It has
 not been opened on a device or emulator.**
@@ -876,6 +1183,12 @@ Concrete failure modes from this work, so you can catch yourself:
 - **You used a toast to carry information the user must act on.** A toast is a confirmation,
   not a task. Anything that persists until acted on belongs in a badge or the nav strip.
 - **You anchored a toast to the bottom**, or above the header. Both were bugs here — see 4.2b.
+- **You can see more than three terracotta things at once.** The accent has become the new
+  grey — exactly what happened to the ocean blue it replaced. See 4.7.2.
+- **You separated sections with a card or a border.** Space does that. See 4.7.3.
+- **You set `fontFamily` at a call site.** It belongs in `Txt`, once. See 4.7.1.
+- **You added a shadow to something that already has a border.** Pick one. See 4.7.5.
+- **You gave every screen its own illustration.** That's a zoo, not a design language.
 - **You implemented before showing the design.** See 1.5.
 
 ---

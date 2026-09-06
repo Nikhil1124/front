@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Text, Modal, Pressable, Alert } from 'react-native';
+import { ScrollView, View, StyleSheet, Text, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { SlideInDown, ZoomIn } from 'react-native-reanimated';
-import { Row, Col, Spacer, LoadingState, ErrorState, ListRow, toneFor, ChoiceChips, SearchField, AnimatedPress } from '@/components/ui';
+import { Row, Col, Spacer, LoadingState, ErrorState, ListRow, toneFor, ChoiceChips, SearchField, AnimatedPress, Sheet, Txt, Btn } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useRepairRequestsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
@@ -14,6 +13,7 @@ import { AddPgDailySubscriptionDialog } from '@/components/dialogs/HubDialogs';
 
 import { Colors, Palette, Radii } from '@/theme';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
+import { formatINR } from '@/utils/format';
 
 // ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
 const PRIMARY = Colors.primary;       // Deep Ocean Blue
@@ -156,7 +156,7 @@ export function OwnerServicesTab() {
         <Row align="center" style={{ flex: 1 }}>
           <View style={styles.fallbackIconWrap}>
             <Ionicons name="construct" size={28} color={CHARCOAL} />
-            <View style={styles.speechBubble}><Text maxFontSizeMultiplier={1.3} style={{fontSize: 8, fontWeight: '900', color: PRIMARY}}>...</Text></View>
+            <View style={styles.speechBubble}><Text maxFontSizeMultiplier={1.3} style={{fontSize: 8, fontWeight: '700', color: PRIMARY}}>...</Text></View>
           </View>
           <Col style={{ flex: 1, paddingLeft: 12, paddingRight: 8 }}>
             <Text maxFontSizeMultiplier={1.3} style={styles.fallbackTitle}>Can't find what you need?</Text>
@@ -356,98 +356,86 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
   };
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onDismiss}>
-      <View style={styles.modalBackdrop}>
-        <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={success ? undefined : onDismiss} />
-        <Animated.View entering={SlideInDown.springify(200).dampingRatio(0.85)} style={styles.modalSheet}>
-          {success ? (
-            <Animated.View entering={ZoomIn.duration(250)} style={styles.successView}>
-              <View style={styles.successCircle}>
-                <Ionicons name="checkmark" size={32} color={SURFACE} />
-              </View>
-              <Text maxFontSizeMultiplier={1.3} style={styles.successTitle}>Request Created</Text>
-              <Spacer size={8} />
-              <View style={styles.successBox}>
-                <Row justify="space-between" style={{marginBottom: 4}}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.successLabel}>Service</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.successVal}>{service.name}</Text>
-                </Row>
-                <Row justify="space-between" style={{marginBottom: 4}}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.successLabel}>Time</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.successVal}>{time}</Text>
-                </Row>
-                <Row justify="space-between">
-                  <Text maxFontSizeMultiplier={1.3} style={styles.successLabel}>Status</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.successVal}>Assigning Technician</Text>
-                </Row>
-              </View>
-            </Animated.View>
-          ) : (
-            <>
-              <View style={styles.sheetHandle} />
-              <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-                <View style={styles.modalIconBox}>
-                  <Ionicons name={service.icon} size={24} color={PRIMARY} />
-                </View>
-                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onDismiss} style={styles.closeBtn}>
-                  <Ionicons name="close" size={20} color={MUTED} />
-                </AnimatedPress>
-              </Row>
+    <Sheet
+      visible
+      title={success ? 'Request created' : service.name}
+      subtitle={success ? 'Technician assignment is in progress.' : service.desc}
+      accent={success ? Colors.success : PRIMARY}
+      icon={success ? 'checkmark-circle' : service.icon}
+      onDismiss={success ? () => {} : onDismiss}
+      footer={!success ? (
+        <Btn
+          onPress={handleBook}
+          containerColor={PRIMARY}
+          textColor={SURFACE}
+          borderRadius={Radii.control}
+          height={48}
+          style={{ width: '100%' }}
+        >
+          <Txt variant="button" color={SURFACE}>Book service</Txt>
+        </Btn>
+      ) : undefined}
+    >
+      {success ? (
+        <View style={styles.successBox}>
+          <Row justify="space-between" style={{ marginBottom: 6 }}>
+            <Txt variant="body" color={MUTED}>Service</Txt>
+            <Txt variant="body" weight="600" color={CHARCOAL}>{service.name}</Txt>
+          </Row>
+          <Row justify="space-between" style={{ marginBottom: 6 }}>
+            <Txt variant="body" color={MUTED}>Time</Txt>
+            <Txt variant="body" weight="600" color={CHARCOAL}>{time}</Txt>
+          </Row>
+          <Row justify="space-between">
+            <Txt variant="body" color={MUTED}>Status</Txt>
+            <Txt variant="body" weight="600" color={CHARCOAL}>Assigning technician</Txt>
+          </Row>
+        </View>
+      ) : (
+        <>
+          <Txt variant="sectionTitle" color={CHARCOAL}>Common problems</Txt>
+          <Spacer size={8} />
+          {service.problems.map((prob, i) => (
+            <Row key={i} gap={8} align="center" style={{ marginBottom: 6 }}>
+              <Ionicons name="alert-circle-outline" size={14} color={MUTED} />
+              <Txt variant="body" color={CHARCOAL}>{prob}</Txt>
+            </Row>
+          ))}
 
-              <Text maxFontSizeMultiplier={1.3} style={styles.modalTitle}>{service.name}</Text>
-              <Text maxFontSizeMultiplier={1.3} style={styles.modalDesc}>{service.desc}</Text>
-              <Spacer size={24} />
+          <Spacer size={16} />
 
-              <Text maxFontSizeMultiplier={1.3} style={styles.modalSectionTitle}>Common problems</Text>
-              <Spacer size={8} />
-              {service.problems.map((prob, i) => (
-                <Row key={i} gap={8} align="center" style={{ marginBottom: 6 }}>
-                  <Ionicons name="alert-circle-outline" size={14} color={MUTED} />
-                  <Text maxFontSizeMultiplier={1.3} style={styles.modalListItem}>{prob}</Text>
-                </Row>
-              ))}
-              
-              <Spacer size={16} />
+          <Txt variant="sectionTitle" color={CHARCOAL}>What's included</Txt>
+          <Spacer size={8} />
+          {service.includes.map((inc, i) => (
+            <Row key={i} gap={8} align="center" style={{ marginBottom: 6 }}>
+              <Ionicons name="checkmark-circle-outline" size={14} color={Colors.success} />
+              <Txt variant="body" color={CHARCOAL}>{inc}</Txt>
+            </Row>
+          ))}
 
-              <Text maxFontSizeMultiplier={1.3} style={styles.modalSectionTitle}>What's included</Text>
-              <Spacer size={8} />
-              {service.includes.map((inc, i) => (
-                <Row key={i} gap={8} align="center" style={{ marginBottom: 6 }}>
-                  <Ionicons name="checkmark-circle-outline" size={14} color={Colors.success} />
-                  <Text maxFontSizeMultiplier={1.3} style={styles.modalListItem}>{inc}</Text>
-                </Row>
-              ))}
+          <Spacer size={24} />
 
-              <Spacer size={24} />
+          {/* Five slots shown, not hidden behind an Alert. The chevron here originally
+              had no onPress at all, so every booking went out as "Today, 2:00 PM". */}
+          <ChoiceChips
+            label="Preferred time"
+            options={TIME_SLOT_OPTIONS}
+            value={time}
+            onChange={setTime}
+            testID="service_time"
+          />
 
-              {/* Five slots shown, not hidden behind an Alert. The chevron here originally
-                  had no onPress at all, so every booking went out as "Today, 2:00 PM". */}
-              <ChoiceChips
-                label="Preferred time"
-                options={TIME_SLOT_OPTIONS}
-                value={time}
-                onChange={setTime}
-                testID="service_time"
-              />
+          <Spacer size={16} />
 
-              <Spacer size={16} />
-
-              <View style={styles.bookingBox}>
-                <Row justify="space-between" align="center">
-                  <Text maxFontSizeMultiplier={1.3} style={styles.bookingLabel}>Estimated charges</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.bookingCost}>₹{service.cost}</Text>
-                </Row>
-              </View>
-
-              <Spacer size={24} />
-              <AnimatedPress accessibilityRole="button" style={styles.bookBtn} onPress={handleBook}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.bookBtnText}>Book Service</Text>
-              </AnimatedPress>
-            </>
-          )}
-        </Animated.View>
-      </View>
-    </Modal>
+          <View style={styles.bookingBox}>
+            <Row justify="space-between" align="center">
+              <Txt variant="meta" color={MUTED}>Estimated charges</Txt>
+              <Txt variant="sectionTitle" color={CHARCOAL} tabular>{formatINR(service.cost)}</Txt>
+            </Row>
+          </View>
+        </>
+      )}
+    </Sheet>
   );
 }
 
@@ -461,7 +449,7 @@ const styles = StyleSheet.create({
   
   sectionContainer: { marginTop: 24 },
   sectionHeaderRow: { paddingHorizontal: 20, marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: CHARCOAL },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
   
   horizontalScroll: { paddingHorizontal: 20, gap: 12 },
   gridContainer: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -469,16 +457,16 @@ const styles = StyleSheet.create({
   serviceCard: { width: 140, backgroundColor: SURFACE, borderRadius: Radii.card, padding: 12, borderWidth: 1, borderColor: BORDER, shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
   serviceIconFrame: { height: 90, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB', borderRadius: Radii.card, marginBottom: 12 },
   
-  serviceName: { fontSize: 13, fontWeight: '800', color: CHARCOAL },
+  serviceName: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   serviceDesc: { fontSize: 11, color: MUTED, lineHeight: 14, marginTop: 2, height: 28 },
   priceRow: { marginTop: 8, gap: 6 },
-  priceText: { fontSize: 15, fontWeight: '800', color: CHARCOAL },
+  priceText: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
   originalPriceText: { fontSize: 12, color: MUTED, textDecorationLine: 'line-through' },
   
   fallbackBanner: { flexDirection: 'row', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 16, marginHorizontal: 20, marginTop: 24, borderWidth: 1, borderColor: '#D1EAE0' },
   fallbackIconWrap: { position: 'relative' },
   speechBubble: { position: 'absolute', top: -4, right: -12, backgroundColor: SURFACE, paddingHorizontal: 4, paddingVertical: 2, borderRadius: Radii.control, borderWidth: 1, borderColor: '#D1EAE0' },
-  fallbackTitle: { fontSize: 14, fontWeight: '800', color: CHARCOAL },
+  fallbackTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   fallbackSub: { fontSize: 11, color: MUTED, marginTop: 2 },
   requestBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control },
   requestBtnText: { fontSize: 12, fontWeight: '700', color: SURFACE, marginLeft: 4 },
@@ -489,31 +477,10 @@ const styles = StyleSheet.create({
   emptyLegacyCard: { backgroundColor: BG, borderRadius: Radii.card, padding: 20, alignItems: 'center' },
   emptyLegacyText: { fontSize: 13, color: MUTED },
 
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(10, 18, 13, 0.45)', justifyContent: 'flex-end' },
-  modalSheet: { width: '100%', backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 40 },
-  sheetHandle: { width: 40, height: 4, borderRadius: Radii.badge, backgroundColor: BORDER, alignSelf: 'center', marginBottom: 20 },
-  closeBtn: { width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
-  modalIconBox: { width: 56, height: 56, borderRadius: Radii.card, backgroundColor: LIGHT_INDIGO, alignItems: 'center', justifyContent: 'center' },
-  modalTitle: { fontSize: 24, fontWeight: '800', color: CHARCOAL },
-  modalDesc: { fontSize: 14, color: MUTED, marginTop: 4 },
-  modalSectionTitle: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
-  modalListItem: { fontSize: 14, color: CHARCOAL },
-  
   bookingBox: { backgroundColor: BG, borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: BORDER },
-  bookingLabel: { fontSize: 12, color: MUTED, fontWeight: '500' },
-  bookingCost: { fontSize: 18, fontWeight: '800', color: CHARCOAL, marginTop: 4 },
-  
-  bookBtn: { height: 52, backgroundColor: PRIMARY, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
-  bookBtnText: { fontSize: 16, fontWeight: '800', color: SURFACE },
-  
-  successView: { alignItems: 'center', paddingVertical: 40 },
-  successCircle: { width: 64, height: 64, borderRadius: Radii.pill, backgroundColor: Colors.success, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  successTitle: { fontSize: 20, fontWeight: '800', color: CHARCOAL },
   successBox: { width: '100%', backgroundColor: BG, borderRadius: Radii.card, padding: 16, marginTop: 16 },
-  successLabel: { fontSize: 13, color: MUTED },
-  successVal: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
 
   bottomNavBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: SURFACE, borderTopWidth: 1, borderTopColor: BORDER, paddingTop: 12 },
   navTab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   navTabText: { fontSize: 10, fontWeight: '600', color: MUTED, marginTop: 4 },
-  navTabTextActive: { color: PRIMARY, fontWeight: '800' } });
+  navTabTextActive: { color: PRIMARY, fontWeight: '700' } });

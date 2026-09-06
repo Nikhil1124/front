@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+
+import { AnimatedPress } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
@@ -26,13 +28,13 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
   const avatarLetter = (userName?.trim().charAt(0).toUpperCase()) || 'P';
   return (
     <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 14 }]}>
-      <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
         <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-      </TouchableOpacity>
+      </AnimatedPress>
       <View style={styles.headerLeft}>
         <View style={styles.deliveryContainer}>
           <View style={styles.deliveryBadge}>
-            <Ionicons name="time" size={13} color="#fff" />
+            <Ionicons name="time" size={13} color={Colors.textInverse} />
             {/* Matches checkout's actual fastest slot ("Express • 15–25 min") — this used
                 to promise a flat "10 MINS", a number nothing in the order flow can meet. */}
             <Text maxFontSizeMultiplier={1.3} style={styles.deliveryBadgeText}>EXPRESS</Text>
@@ -46,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
         </View>
       </View>
 
-      <TouchableOpacity accessibilityRole="button"
+      <AnimatedPress accessibilityRole="button"
         style={styles.profileIconBtn}
         onPress={onProfilePress}
         activeOpacity={0.8}
@@ -54,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, o
         <View style={styles.profileAvatar}>
           <Text maxFontSizeMultiplier={1.3} style={styles.profileAvatarText}>{avatarLetter}</Text>
         </View>
-      </TouchableOpacity>
+      </AnimatedPress>
     </BlurView>
   );
 };
@@ -99,7 +101,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   deliveryBadgeText: {
-    color: '#fff',
+    color: Colors.textInverse,
     fontSize: 10,
     letterSpacing: 0.3,
   },
@@ -138,7 +140,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   profileAvatarText: {
-    color: '#fff',
+    color: Colors.textInverse,
     fontSize: 16,
   },
 });
