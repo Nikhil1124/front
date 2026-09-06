@@ -1,10 +1,10 @@
 /** Chef dashboard "Kitchen" tab or Delivery Agent Profile */
 import { useEffect, useState } from 'react';
-import { Alert, View, StyleSheet, Modal, Pressable, RefreshControl } from 'react-native';
+import { Alert, View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, Spacer, Col, AnimatedPress } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
-import { Colors, Palette, Radii } from '@/theme';
+import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -12,7 +12,6 @@ import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { useBroadcastNotificationMutation, BROADCAST_AUDIENCE_MAP } from '@/features/notifications/useNotifications';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 const ANNOUNCEMENTS = [
   'Special Dessert today! 🍨',
@@ -145,7 +144,14 @@ function DeliveryProfileRoute() {
   const dockScroll = useDockScroll();
   const staff = usePGowStore((s) => s.loggedInStaff);
   const logout = usePGowStore((s) => s.logout);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  // A plain yes/no confirmation, so the OS one — it is familiar, accessible, cannot drift
+  // out of style, and is what the other thirty confirms in this app already use.
+  const confirmSignOut = () => {
+    Alert.alert('Sign out?', 'You will need your PIN to get back in.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: () => { logout(); router.replace('/'); } },
+    ]);
+  };
   const { data: realTrips = [], error: tripsError, refetch: refetchTrips, isRefetching: tripsRefetching } = useMyTripsQuery();
   
   const activeTrip = realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0];
@@ -205,42 +211,13 @@ function DeliveryProfileRoute() {
         </Card>
 
         <Spacer size={16} />
-        <Btn onPress={() => setShowLogoutConfirm(true)} containerColor={Colors.danger} textColor="#FFF" borderRadius={Radii.control} height={50}>
+        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor="#FFF" borderRadius={Radii.control} height={50}>
           <Ionicons name="exit" size={20} color="#FFF" />
           <Txt size={14} weight="900" style={{ marginLeft: 8 }}>Sign Out</Txt>
         </Btn>
       </FormScroll>
 
-      <Modal transparent visible={showLogoutConfirm} animationType="none" onRequestClose={() => setShowLogoutConfirm(false)}>
-        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setShowLogoutConfirm(false)} />
-          <Animated.View entering={FadeIn.duration(200).delay(40)} exiting={FadeOut.duration(120)} style={{ backgroundColor: Colors.surface, borderRadius: Radii.sheet, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
-            <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-              <View style={{ width: 48, height: 48, borderRadius: Radii.pill, backgroundColor: Palette.TintRed, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="log-out" size={24} color={Colors.danger} />
-              </View>
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowLogoutConfirm(false)} style={{ width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="close" size={20} color={Colors.textMuted} />
-              </AnimatedPress>
-            </Row>
-            <Txt size={20} weight="900" color={Colors.primaryDark}>Sign Out?</Txt>
-            <Spacer size={8} />
-            <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              Are you sure you want to sign out of your account?
-            </Txt>
-            <Spacer size={24} />
-            <Row gap={12}>
-              <AnimatedPress accessibilityRole="button" onPress={() => setShowLogoutConfirm(false)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
-              </AnimatedPress>
-              <AnimatedPress accessibilityRole="button" onPress={() => { setShowLogoutConfirm(false); logout(); router.replace('/'); }} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt size={15} weight="800" color="#FFF">Sign Out</Txt>
-              </AnimatedPress>
-            </Row>
-          </Animated.View>
-        </Animated.View>
-      </Modal>
-    </View>
+</View>
   );
 }
 

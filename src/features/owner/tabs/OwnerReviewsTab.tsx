@@ -1,10 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import { View, StyleSheet, Modal, Pressable, RefreshControl, ScrollView, Text, BackHandler } from 'react-native';
+import { View, StyleSheet, RefreshControl, ScrollView, Text, BackHandler } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
-import { Row, Col, Spacer, LoadingState, ErrorState, ListRow, SearchField, AnimatedPress } from '@/components/ui';
+import { Row, Col, Spacer, LoadingState, ErrorState, ListRow, SearchField, AnimatedPress, Sheet } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 const GREEN = Colors.primary;        // Deep Ocean Blue
@@ -294,25 +293,17 @@ export function OwnerReviewsTab() {
         </View>
       )}
 
-      {/* ── Staff Performance Detail Modal ── */}
+      {/* The handle, the header row and the close button all came free the moment this became
+          a `Sheet` — they were hand-built here, and again on eight other screens. */}
       {selectedStaff && (
-        <Modal visible transparent animationType="none" onRequestClose={() => setSelectedStaff(null)}>
-          <Animated.View entering={FadeIn.duration(180)} style={styles.modalBackdrop}>
-            <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setSelectedStaff(null)} />
-            
-            <Animated.View entering={SlideInDown.springify(160).dampingRatio(0.85)} style={styles.drillDownSheet}>
-              <View style={styles.sheetHandle} />
-
-              <Row gap={12} align="center" style={{ marginBottom: 16 }}>
-                <View style={styles.staffAvatarCircle}>
-                  <Ionicons name={selectedStaff.icon} size={20} color={GREEN} />
-                </View>
-                <Col>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetStaffName}>{selectedStaff.name}</Text>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.sheetStaffRole}>{selectedStaff.subtitle}</Text>
-                </Col>
-              </Row>
-
+        <Sheet
+          visible
+          title={selectedStaff.name}
+          subtitle={selectedStaff.subtitle}
+          icon={selectedStaff.icon}
+          accent={GREEN}
+          onDismiss={() => setSelectedStaff(null)}
+        >
               <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Performance Ratings</Text>
               
               <Row gap={8} style={{ marginBottom: 16 }}>
@@ -338,7 +329,7 @@ export function OwnerReviewsTab() {
               ) : null}
 
               <Text maxFontSizeMultiplier={1.3} style={styles.detailSecTitle}>Recent Feedback History</Text>
-              <ScrollView style={{ maxHeight: 220, marginBottom: 12 }}>
+              <View style={{ marginBottom: 12 }}>
                 {selectedStaff.reviews.length === 0 ? (
                   <Text maxFontSizeMultiplier={1.3} style={styles.noReviewsAvailableText}>No reviews available</Text>
                 ) : (
@@ -352,14 +343,8 @@ export function OwnerReviewsTab() {
                     </View>
                   ))
                 )}
-              </ScrollView>
-
-              <AnimatedPress accessibilityRole="button" style={styles.sheetCloseBtn} onPress={() => setSelectedStaff(null)}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.sheetCloseBtnText}>Close</Text>
-              </AnimatedPress>
-            </Animated.View>
-          </Animated.View>
-        </Modal>
+              </View>
+        </Sheet>
       )}
 
     </ScrollView>
@@ -424,40 +409,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BORDER,
     overflow: 'hidden' },
-  staffAvatarCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.control,
-    backgroundColor: LIGHT_GREEN,
-    alignItems: 'center',
-    justifyContent: 'center' },
   noStaffBox: { padding: 16, alignItems: 'center' },
   noStaffText: { fontSize: 12, color: MUTED },
 
   // Drill down staff profile sheet
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 18, 13, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center' },
-  drillDownSheet: {
-    width: '100%',
-    backgroundColor: WHITE,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 34,
-    alignSelf: 'flex-end' },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: Radii.badge,
-    backgroundColor: BORDER,
-    alignSelf: 'center',
-    marginBottom: 16 },
-  sheetStaffName: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
-  sheetStaffRole: { fontSize: 12, color: MUTED, marginTop: 1 },
   detailSecTitle: { fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.5, marginBottom: 8 },
   sheetKpiCard: {
     flex: 1,
@@ -476,11 +431,4 @@ const styles = StyleSheet.create({
     marginBottom: 8 },
   revGuestName: { fontSize: 11, fontWeight: '700', color: CHARCOAL },
   revRating: { fontSize: 11, fontWeight: '700', color: Colors.warning },
-  revDesc: { fontSize: 11, color: MUTED, marginTop: 4, fontStyle: 'italic' },
-  sheetCloseBtn: {
-    height: 44,
-    backgroundColor: BG,
-    borderRadius: Radii.control,
-    alignItems: 'center',
-    justifyContent: 'center' },
-  sheetCloseBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL } });
+  revDesc: { fontSize: 11, color: MUTED, marginTop: 4, fontStyle: 'italic' }, });

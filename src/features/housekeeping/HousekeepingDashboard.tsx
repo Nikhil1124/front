@@ -951,7 +951,13 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
 }
 
 function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues }: any) {
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  // Same reasoning as every other plain confirmation in the app — see Sheet's header.
+  const confirmSignOut = () => {
+    Alert.alert('Sign out?', 'You will need your PIN to get back in.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: logout },
+    ]);
+  };
 
   return (
     <FormScroll bottomPadding={120} contentContainerStyle={{ padding: 18, gap: 16 }}>
@@ -1002,41 +1008,13 @@ function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues
 
       <Spacer size={16} />
       {!hideLogout && (
-        <Btn onPress={() => setShowLogoutConfirm(true)} containerColor={Colors.danger} textColor="#FFF" borderRadius={Radii.control} height={50}>
+        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor="#FFF" borderRadius={Radii.control} height={50}>
           <Ionicons name="exit" size={20} color="#FFF" />
           <Txt size={14} weight="900" style={{ marginLeft: 8 }}>Sign Out</Txt>
         </Btn>
       )}
 
-      <Modal transparent visible={showLogoutConfirm} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: Colors.surface, borderRadius: Radii.sheet, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
-            <Row justify="space-between" align="center" style={{ marginBottom: 16 }}>
-              <View style={{ width: 48, height: 48, borderRadius: Radii.pill, backgroundColor: Palette.TintRed, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="exit" size={24} color={Colors.danger} />
-              </View>
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setShowLogoutConfirm(false)} style={{ width: 32, height: 32, borderRadius: Radii.pill, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="close" size={20} color={Colors.textMuted} />
-              </AnimatedPress>
-            </Row>
-            <Txt size={20} weight="900" color={Colors.primaryDark}>Sign Out?</Txt>
-            <Spacer size={8} />
-            <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-              Are you sure you want to sign out from your maintenance account?
-            </Txt>
-            <Spacer size={24} />
-            <Row gap={12}>
-              <AnimatedPress accessibilityRole="button" onPress={() => setShowLogoutConfirm(false)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt size={15} weight="800" color={Colors.textPrimary}>Cancel</Txt>
-              </AnimatedPress>
-              <AnimatedPress accessibilityRole="button" onPress={logout} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.danger, alignItems: 'center', justifyContent: 'center' }}>
-                <Txt size={15} weight="800" color="#FFF">Sign Out</Txt>
-              </AnimatedPress>
-            </Row>
-          </View>
-        </View>
-      </Modal>
-    </FormScroll>
+</FormScroll>
   );
 }
 

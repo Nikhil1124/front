@@ -25,16 +25,16 @@
  *     chasing compliance actually needs and this screen never showed.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, Pressable, FlatList, KeyboardAvoidingView } from 'react-native';
+import { View, StyleSheet, Alert, Pressable, FlatList } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, LoadingState, ErrorState, StatusChip, toneFor,
+  Card, Txt, Btn, Row, Col, Spacer, LoadingState, ErrorState, StatusChip, toneFor,
   initialsOf, MetricDeck, type DeckCardData,
 } from '@/components/ui';
-import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { Colors, Palette, Radii } from '@/theme';
+import { Colors, Radii } from '@/theme';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { useResponsivePadding } from '@/utils/responsive';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { GuestEntity } from '@/types';
@@ -59,8 +59,6 @@ export function TenantListScreen() {
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
 
   const [rejectGuestId, setRejectGuestId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [rejectError, setRejectError] = useState<string | undefined>();
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -82,21 +80,13 @@ export function TenantListScreen() {
     );
   };
 
-  const handleRejectSubmit = async () => {
+  const handleRejectSubmit = async (reason: string) => {
     if (!rejectGuestId) return;
-    if (!rejectReason.trim()) {
-      setRejectError('The resident sees this — say what was wrong');
-      return;
-    }
     setSubmittingId(rejectGuestId);
-    const r = await verifyKyc(rejectGuestId, false, rejectReason.trim());
+    const r = await verifyKyc(rejectGuestId, false, reason);
     setSubmittingId(null);
-    if (r.ok) {
-      setRejectGuestId(null);
-      setRejectReason('');
-    } else {
-      Alert.alert('Failed', r.error ?? 'Could not reject.');
-    }
+    if (r.ok) setRejectGuestId(null);
+    else Alert.alert('Failed', r.error ?? 'Could not reject.');
   };
 
   const pending = guests.filter((g) => g.kycStatus === 'PENDING');
@@ -215,7 +205,7 @@ export function TenantListScreen() {
                     </Btn>
                   )}
                   <Btn
-                    onPress={() => { setRejectGuestId(g.id); setRejectReason(''); }}
+                    onPress={() => setRejectGuestId(g.id)}
                     containerColor={Colors.danger}
                     textColor={Colors.textInverse}
                     borderRadius={Radii.control}
@@ -235,65 +225,23 @@ export function TenantListScreen() {
         }}
       />
 
-      {/* Reject reason modal */}
-      <Modal visible={rejectGuestId !== null} transparent animationType="fade" onRequestClose={() => setRejectGuestId(null)}>
-        {/* KAV so the text input isn't hidden behind the keyboard on Android */}
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <Pressable accessibilityRole="button" style={styles.backdrop} onPress={() => setRejectGuestId(null)}>
-            <Pressable accessibilityRole="button" onPress={() => {/* swallow */}} style={styles.rejectCardWrap}>
-              <Card containerColor={Colors.surface} borderRadius={Radii.sheet} borderWidth={1} borderColor={Colors.borderSubtle} padding={[20, 20]}>
-                <Row gap={8} align="center">
-                  <View style={styles.titleIconWrap}>
-                    <Ionicons name="warning" size={20} color={Colors.danger} />
-                  </View>
-                  <Col>
-                    <Txt size={16} weight="800" color={Colors.textPrimary}>Reject KYC Submission</Txt>
-                    <Txt size={11} color={Colors.textMuted}>The resident will be asked to re-upload</Txt>
-                  </Col>
-                </Row>
-                <Spacer size={16} />
-                <OutlinedTextField
-                  label="Reason for rejection *"
-                  placeholder="Photo blurry — please retake"
-                  value={rejectReason}
-                  onChangeText={(v) => { setRejectReason(v); if (rejectError) setRejectError(undefined); }}
-                  error={rejectError}
-                  multiline
-                  height={80}
-                  testID="tenant_reject_reason_input"
-                />
-                <Spacer size={14} />
-                <Row gap={10}>
-                  <Btn
-                    onPress={handleRejectSubmit}
-                    containerColor={Colors.danger}
-                    textColor={Colors.textInverse}
-                    borderRadius={Radii.control}
-                    height={44}
-                    loading={!!submittingId}
-                    style={{ flex: 1 }}
-                    testID="tenant_reject_submit_btn"
-                  >
-                    <Ionicons name="close-circle" size={16} color={Colors.textInverse} />
-                    <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 8 }}>Reject Submission</Txt>
-                  </Btn>
-                  <OutlinedBtn
-                    onPress={() => setRejectGuestId(null)}
-                    borderColor={Colors.borderMuted}
-                    textColor={Colors.textSecondary}
-                    borderRadius={Radii.control}
-                    height={44}
-                  >
-                    <Txt size={13} weight="700" color={Colors.textSecondary}>Cancel</Txt>
-                  </OutlinedBtn>
-                </Row>
-              </Card>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Modal>
-
-    </HubScreenWrapper>
+      {/* Centered, and the same dialog the notifications inbox uses to reject a payment —
+          a confirmation that needs a sentence typed into it cannot be a native alert,
+          because `Alert.prompt` is iOS-only. */}
+      <TextPromptDialog
+        visible={rejectGuestId !== null}
+        title="Reject KYC submission"
+        label="Reason for rejection"
+        placeholder="Photo blurry — please retake"
+        helper="The resident is asked to re-upload against this"
+        confirmLabel="Reject"
+        destructive
+        required
+        busy={!!submittingId}
+        onCancel={() => setRejectGuestId(null)}
+        onSave={handleRejectSubmit}
+      />
+</HubScreenWrapper>
   );
 }
 
@@ -301,12 +249,4 @@ const styles = StyleSheet.create({
   avatar: {
     width: 40, height: 40, borderRadius: Radii.control,
     backgroundColor: Colors.surfaceElevated,
-    alignItems: 'center', justifyContent: 'center' },
-  backdrop: {
-    flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    justifyContent: 'center', paddingHorizontal: 16 },
-  rejectCardWrap: { width: '100%', maxWidth: 480, alignSelf: 'center' },
-  titleIconWrap: {
-    width: 36, height: 36, borderRadius: Radii.control,
-    backgroundColor: Palette.TintRed,
-    alignItems: 'center', justifyContent: 'center' } });
+    alignItems: 'center', justifyContent: 'center' }, });

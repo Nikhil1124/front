@@ -5,13 +5,13 @@
  * sentiment. Same underlying query (`useComplaintsQuery`), two different jobs.
  */
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, Modal, Pressable, RefreshControl, FlatList,
-  Text, KeyboardAvoidingView, BackHandler } from 'react-native';
+import { View, StyleSheet, RefreshControl, FlatList,
+  Text, BackHandler } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import { ListRow, toneFor, Card, Row, Col, Spacer, LoadingState, ErrorState, OutlinedTextField, AnimatedPress } from '@/components/ui';
+import { ListRow, toneFor, Row, Col, Spacer, LoadingState, ErrorState, OutlinedTextField, AnimatedPress, Sheet } from '@/components/ui';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
@@ -158,16 +158,23 @@ export function OwnerComplaintsTab() {
 
       {/* ── Guest Issue Response Modal ── */}
       {activeItem && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setActiveItem(null)}>
-          {/* KAV: text area hidden under keyboard on Android without this */}
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-            <View style={styles.modalBackdrop}>
-              <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setActiveItem(null)} />
-              <Card containerColor={WHITE} borderRadius={Radii.sheet} borderWidth={1} borderColor={BORDER} padding={[20, 20]} style={{ width: '90%' }}>
-                <Text maxFontSizeMultiplier={1.3} style={styles.dialogTitle}>Review Response & Action</Text>
-                <Text maxFontSizeMultiplier={1.3} style={styles.dialogSub}>
-                  Resident: {activeItem.guestName} (Room {activeItem.roomNo})
-                </Text>
+        <Sheet
+          visible
+          title="Review response"
+          subtitle={`${activeItem.guestName} · Room ${activeItem.roomNo}`}
+          icon="construct-outline"
+          onDismiss={() => setActiveItem(null)}
+          footer={
+            <Row gap={10}>
+              <AnimatedPress accessibilityRole="button" style={styles.dialogSaveBtn} onPress={handleSaveReply}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.dialogSaveBtnText}>Save response</Text>
+              </AnimatedPress>
+              <AnimatedPress accessibilityRole="button" style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)}>
+                <Text maxFontSizeMultiplier={1.3} style={styles.dialogCancelBtnText}>Cancel</Text>
+              </AnimatedPress>
+            </Row>
+          }
+        >
 
                 {/* The list row this modal opens from never carries an attachment — the list
                     endpoint's response shape omits attachments entirely; only the per-ticket
@@ -216,20 +223,7 @@ export function OwnerComplaintsTab() {
                   ))}
                 </Row>
 
-                <Spacer size={20} />
-
-                <Row gap={10}>
-                  <AnimatedPress accessibilityRole="button" style={styles.dialogSaveBtn} onPress={handleSaveReply}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.dialogSaveBtnText}>Save Response</Text>
-                  </AnimatedPress>
-                  <AnimatedPress accessibilityRole="button" style={styles.dialogCancelBtn} onPress={() => setActiveItem(null)}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.dialogCancelBtnText}>Cancel</Text>
-                  </AnimatedPress>
-                </Row>
-              </Card>
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
+        </Sheet>
       )}
 
     </>
@@ -286,14 +280,7 @@ const styles = StyleSheet.create({
   noIssuesSub: { fontSize: 11, color: MUTED, marginLeft: 6 },
 
 
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 18, 13, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center' },
 
-  dialogTitle: { fontSize: 16, fontWeight: '800', color: CHARCOAL },
-  dialogSub: { fontSize: 12, color: MUTED, marginTop: 2 },
   inputLabelStyle: { fontSize: 11, fontWeight: '700', color: MUTED },
   smallChip: {
     paddingHorizontal: 12,

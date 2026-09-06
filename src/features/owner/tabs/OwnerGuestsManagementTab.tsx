@@ -25,6 +25,7 @@ import { Sheet } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import { Colors, Palette, Radii } from '@/theme';
+import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -88,7 +89,6 @@ export function OwnerGuestsManagementTab() {
   // KYC review states
   const [reviewing, setReviewing] = useState<GuestEntity | null>(null);
   const [rejecting, setRejecting] = useState<GuestEntity | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
 
   // Join code states
   const [rentInput, setRentInput] = useState('6500');
@@ -246,13 +246,14 @@ export function OwnerGuestsManagementTab() {
     setReviewing(null);
   };
 
-  const handleReject = async () => {
+  // The reason used to fall back to the canned string "Document or photo unreadable." when
+  // left blank, so a resident whose ID was merely cropped was told the wrong thing and had to
+  // guess. `required` on the dialog means there is always a real one.
+  const handleReject = async (reason: string) => {
     if (!rejecting) return;
-    const reason = rejectionReason.trim() || 'Document or photo unreadable.';
     await verifyGuestKycByOwner(rejecting.id, false, reason);
     toast('warning', 'KYC Rejected', 'Resident notified. They can re-upload documents.');
     setRejecting(null);
-    setRejectionReason('');
   };
 
   const openEdit = (g: GuestEntity) => {
@@ -1112,65 +1113,18 @@ export function OwnerGuestsManagementTab() {
         </View>
       </Modal>
 
-      {/* Reject Reason Dialog */}
-      <Modal visible={rejecting != null} transparent animationType="fade">
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <View style={styles.modalBackdrop}>
-            <Card
-              containerColor={WHITE}
-              borderRadius={Radii.sheet}
-              borderWidth={1}
-              borderColor={BORDER}
-              padding={[16, 16]}
-              style={{ width: '92%' }}
-            >
-              <Txt variant="sectionTitle" weight="800" color={Colors.danger}>
-                Reject KYC for {rejecting?.name}
-              </Txt>
-              <Spacer size={12} />
-              <Txt variant="caption" color={MUTED}>
-                Provide a reason so the resident can re-upload clear documents:
-              </Txt>
-              <Spacer size={8} />
-              <OutlinedTextField
-                label="Rejection Reason"
-                placeholder="ID photo blurry or ID number mismatch"
-                value={rejectionReason}
-                onChangeText={setRejectionReason}
-                containerColor={BG}
-                style={{ marginBottom: 16 }}
-              />
-              <Row gap={8}>
-                <Btn
-                  onPress={handleReject}
-                  containerColor={Colors.danger}
-                  textColor={WHITE}
-                  borderRadius={Radii.control}
-                  height={42}
-                  style={{ flex: 1 }}
-                >
-                  <Txt variant="body" weight="800" color={WHITE}>
-                    Reject & Notify
-                  </Txt>
-                </Btn>
-                <OutlinedBtn
-                  onPress={() => setRejecting(null)}
-                  borderColor={BORDER}
-                  textColor={CHARCOAL}
-                  borderRadius={Radii.control}
-                  height={42}
-                  style={{ flex: 1 }}
-                >
-                  <Txt variant="body" weight="800" color={CHARCOAL}>
-                    Cancel
-                  </Txt>
-                </OutlinedBtn>
-              </Row>
-            </Card>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
+      <TextPromptDialog
+        visible={rejecting != null}
+        title={`Reject KYC for ${rejecting?.name ?? 'this resident'}`}
+        label="Reason for rejection"
+        placeholder="ID photo is cropped — please re-upload the full card"
+        helper="The resident re-uploads against this, so name the actual problem"
+        confirmLabel="Reject"
+        destructive
+        required
+        onCancel={() => setRejecting(null)}
+        onSave={handleReject}
+      />
 
       {/* Invite Resident Sign-up Link Sheet / Modal */}
       {showInviteModal && owner && (
@@ -1362,38 +1316,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
   // Header styles
-  header: {
-    height: 64,
-    paddingHorizontal: 20,
-    backgroundColor: WHITE,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    justifyContent: 'center' },
-  logoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: Radii.control,
-    backgroundColor: LIGHT_GREEN,
-    alignItems: 'center',
-    justifyContent: 'center' },
-  headerTitle: { fontSize: 15, fontWeight: '700', color: CHARCOAL },
-  headerSub: { fontSize: 11, color: MUTED, marginTop: 1 },
-  headerIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: Radii.control,
-    backgroundColor: BG,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative' },
-  notiBadge: {
-    width: 8,
-    height: 8,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.danger,
-    position: 'absolute',
-    top: 10,
-    right: 10 },
 
   // Segmented Tab bar
   tabContainer: {
@@ -1569,13 +1491,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10, 18, 13, 0.55)',
     alignItems: 'center',
     justifyContent: 'center' },
-  photoBox: {
-    height: 140,
-    backgroundColor: BG,
-    borderRadius: Radii.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4 },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
