@@ -229,9 +229,23 @@ export function SignInScreen() {
         }
       >
         <KeyboardAvoidingView style={{}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <OutlinedTextField label="New password" value={ftpNew} onChangeText={setFtpNew} secureTextEntry />
+          <OutlinedTextField
+            key="signin-ftp-new-password"
+            label="New password"
+            value={ftpNew}
+            onChangeText={setFtpNew}
+            secureTextEntry
+            autoComplete="off"
+          />
           <Spacer size={12} />
-          <OutlinedTextField label="Confirm password" value={ftpConfirm} onChangeText={setFtpConfirm} secureTextEntry />
+          <OutlinedTextField
+            key="signin-ftp-confirm-password"
+            label="Confirm password"
+            value={ftpConfirm}
+            onChangeText={setFtpConfirm}
+            secureTextEntry
+            autoComplete="off"
+          />
         </KeyboardAvoidingView>
       </Sheet>
     </View>

@@ -242,23 +242,27 @@ export function GuestSecurityTab() {
           </Row>
 
           <OutlinedTextField
+            key="guest-current-passcode"
             label="Current Passcode"
             value={currentPassword}
             onChangeText={(v) => { setCurrentPassword(v); if (pwErrors.current) setPwErrors((e) => ({ ...e, current: undefined })); }}
             error={pwErrors.current}
             secureTextEntry
+            autoComplete="off"
             focusedBorderColor={Colors.primary}
             borderRadius={Radii.card}
             style={{ marginBottom: 12 }}
           />
 
           <OutlinedTextField
+            key="guest-new-passcode"
             label="New Passcode (min 8 characters)"
             value={newPassword}
             onChangeText={(v) => { setNewPassword(v); if (pwErrors.next) setPwErrors((e) => ({ ...e, next: undefined })); }}
             error={pwErrors.next}
             helper="At least 8 characters"
             secureTextEntry
+            autoComplete="off"
             focusedBorderColor={Colors.primary}
             borderRadius={Radii.card}
             style={{ marginBottom: 16 }}
