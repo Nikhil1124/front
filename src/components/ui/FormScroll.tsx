@@ -11,7 +11,14 @@
  * — the automatic-insets path did not reliably bring the focused field above the keyboard, so
  * both platforms now share the one mechanism that does.
  */
-import { KeyboardAvoidingView, Platform, ScrollView, type ScrollViewProps } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+  type KeyboardAvoidingViewProps,
+  type ScrollViewProps,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing } from '@/theme';
 
@@ -19,6 +26,8 @@ interface FormScrollProps extends ScrollViewProps {
   children: React.ReactNode;
   /** Extra room under the last field, on top of the safe-area inset. */
   bottomPadding?: number;
+  /** Allows screens with sensitive touch layouts to opt out of Android relayout. */
+  keyboardAvoidingBehavior?: KeyboardAvoidingViewProps['behavior'];
 }
 
 export function FormScroll({
@@ -27,6 +36,7 @@ export function FormScroll({
   contentContainerStyle,
   bottomPadding = Spacing.xxl,
   horizontal,
+  keyboardAvoidingBehavior,
   ...rest
 }: FormScrollProps) {
   const insets = useSafeAreaInsets();
@@ -43,34 +53,51 @@ export function FormScroll({
     );
   }
 
-  return (
-    // `style` (e.g. a dialog capping this at `maxHeight: 420` so it fits inside a bounded
-    // Card) belongs on this outer box, same as it would on a bare `<ScrollView style={...}>` —
-    // the inner ScrollView just fills whatever bound this box ends up with. `flex: 1` is only
-    // a default: putting it first in the array lets the caller's own `style` override it.
-    <KeyboardAvoidingView
-      style={[{ flex: 1 }, style]}
-      behavior="padding"
+  const scroll = (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[
+        { flexGrow: 1 },
+        contentContainerStyle,
+        // Without this the last field can be scrolled to but not *past*, so it sits flush
+        // against the keyboard with its error text (or the submit button) clipped off.
+        { paddingBottom: bottomPadding + insets.bottom },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      // iOS: drag-to-dismiss interactively.
+      // Android: 'on-drag' treats any micro-movement or scroll adjustment during a tap as
+      // a drag and instantly dismisses the keyboard (keyboard flashes for a split second).
+      // 'none' allows the keyboard to stay open while keyboardShouldPersistTaps manages taps.
+      keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+      overScrollMode="never"
+      {...rest}
     >
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[
-          contentContainerStyle,
-          // Without this the last field can be scrolled to but not *past*, so it sits flush
-          // against the keyboard with its error text (or the submit button) clipped off.
-          { paddingBottom: bottomPadding + insets.bottom },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        // Drag down over the form to dismiss, rather than hunting for a Done button.
-        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-        overScrollMode="never"
-        {...rest}
-      >
-        {children}
-      </ScrollView>
+      {children}
+    </ScrollView>
+  );
+
+  // iOS requires KeyboardAvoidingView (behavior="padding") because the OS does not resize
+  // the window for the software keyboard.
+  // On Android, KeyboardAvoidingView with behavior="padding" triggers an abrupt resize on
+  // keyboard show, causing native Android ScrollView on Fabric to reset its scroll offset
+  // back to y=0 (jumping back to the top 3 fields) and breaking the native InputConnection.
+  // Android's native window handling (adjustResize) and ScrollView manage keyboard avoidance
+  // cleanly without container layout jumps.
+  const effectiveBehavior =
+    keyboardAvoidingBehavior !== undefined
+      ? keyboardAvoidingBehavior
+      : Platform.OS === 'ios'
+        ? 'padding'
+        : undefined;
+
+  return effectiveBehavior ? (
+    <KeyboardAvoidingView style={[{ flex: 1 }, style]} behavior={effectiveBehavior}>
+      {scroll}
     </KeyboardAvoidingView>
+  ) : (
+    <View style={[{ flex: 1 }, style]}>{scroll}</View>
   );
 }
 

@@ -151,6 +151,7 @@ export function OutlinedTextField({
           keyboardType={keyboardType}
           textContentType={textContentType}
           autoComplete={autoComplete}
+          importantForAutofill={autoComplete === 'off' ? 'no' : undefined}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
           numberOfLines={numberOfLines}
