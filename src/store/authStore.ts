@@ -1,6 +1,22 @@
 import { create } from "zustand";
+import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const storage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === 'web') return AsyncStorage.getItem(key);
+    return SecureStore.getItemAsync(key);
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === 'web') return AsyncStorage.setItem(key, value);
+    return SecureStore.setItemAsync(key, value);
+  },
+  deleteItem: async (key: string): Promise<void> => {
+    if (Platform.OS === 'web') return AsyncStorage.removeItem(key);
+    return SecureStore.deleteItemAsync(key);
+  },
+};
 
 // ─── Types (matching /v1/me response) ────────────────────────────────────────
 
@@ -88,8 +104,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setDeviceId: (id) => set({ deviceId: id }),
 
   setTokens: async (access, refresh) => {
-    await SecureStore.setItemAsync(KEYS.ACCESS, access);
-    await SecureStore.setItemAsync(KEYS.REFRESH, refresh);
+    await storage.setItem(KEYS.ACCESS, access);
+    await storage.setItem(KEYS.REFRESH, refresh);
     set({ accessToken: access, refreshToken: refresh });
   },
 
@@ -108,7 +124,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!held && membership) {
       // Heal the persisted value so this correction sticks instead of silently
       // re-happening from memory on every subsequent load.
-      SecureStore.setItemAsync(KEYS.PG_ID, membership.pg_id).catch(() => {});
+      storage.setItem(KEYS.PG_ID, membership.pg_id).catch(() => {});
     }
     set({
       user,
@@ -118,7 +134,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setActivePgId: async (pgId) => {
-    await SecureStore.setItemAsync(KEYS.PG_ID, pgId);
+    await storage.setItem(KEYS.PG_ID, pgId);
     const { user, activePgId } = get();
     const membership = user?.memberships.find((m) => m.pg_id === pgId);
     set({ activePgId: pgId, activeRole: membership?.role ?? null });
@@ -145,9 +161,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       deviceId: null,
     });
     await Promise.all([
-      SecureStore.deleteItemAsync(KEYS.ACCESS),
-      SecureStore.deleteItemAsync(KEYS.REFRESH),
-      SecureStore.deleteItemAsync(KEYS.PG_ID),
+      storage.deleteItem(KEYS.ACCESS),
+      storage.deleteItem(KEYS.REFRESH),
+      storage.deleteItem(KEYS.PG_ID),
     ]).catch(() => {
       // Best-effort — the in-memory session is already cleared, which is what matters for
       // the guard. A leftover SecureStore entry is overwritten on the next successful login.
@@ -155,9 +171,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   hydrateFromStorage: async () => {
-    const access = await SecureStore.getItemAsync(KEYS.ACCESS);
-    const refresh = await SecureStore.getItemAsync(KEYS.REFRESH);
-    const pgId = await SecureStore.getItemAsync(KEYS.PG_ID);
+    const access = await storage.getItem(KEYS.ACCESS);
+    const refresh = await storage.getItem(KEYS.REFRESH);
+    const pgId = await storage.getItem(KEYS.PG_ID);
     set({
       accessToken: access ?? null,
       refreshToken: refresh ?? null,

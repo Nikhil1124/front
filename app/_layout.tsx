@@ -5,7 +5,7 @@
  * every one of the 23 screens that used to wrap themselves in it.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { Stack, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -139,6 +139,7 @@ function RootLayoutNav() {
   }, [onRootLayout]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     // Independent of auth: channels/categories must exist before a push naming one can
     // arrive, and this device may receive one before anyone signs in.
     registerNotificationChannels();

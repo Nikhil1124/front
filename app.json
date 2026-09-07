@@ -26,7 +26,8 @@
         "backgroundColor": "#F7F9F7"
       },
       "package": "com.pgow.app",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "androidStatusBar": {
       "translucent": true,
