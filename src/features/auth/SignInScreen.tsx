@@ -158,23 +158,25 @@ export function SignInScreen() {
 
         <View style={styles.card}>
           <OutlinedTextField
+            key="signin-phone"
             label="Phone number"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
             textContentType="telephoneNumber"
-            autoComplete="tel"
+            autoComplete="off"
             testID="signin_phone"
           />
           <Spacer size={12} />
           <OutlinedTextField
+            key="signin-secret"
             label={mode === 'pin' ? 'PIN' : 'Password'}
             value={secret}
             onChangeText={setSecret}
             secureTextEntry
             keyboardType={mode === 'pin' ? 'number-pad' : 'default'}
             textContentType={mode === 'pin' ? 'oneTimeCode' : 'password'}
-            autoComplete={mode === 'pin' ? 'sms-otp' : 'current-password'}
+            autoComplete="off"
             testID="signin_secret"
           />
           {error ? (
