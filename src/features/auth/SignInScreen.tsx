@@ -148,7 +148,11 @@ export function SignInScreen() {
 
   return (
     <View style={styles.root}>
-      <FormScroll contentContainerStyle={styles.scroll}>
+      <FormScroll
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="none"
+      >
         <View style={styles.brand}>
           <View style={styles.mark}><Txt size={22} weight="700" color={Colors.textInverse}>P</Txt></View>
           <Spacer size={12} />
