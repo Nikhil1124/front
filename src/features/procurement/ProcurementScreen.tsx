@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, Modal, Pressable, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
+import { Platform, View, StyleSheet, Modal, Pressable, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';

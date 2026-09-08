@@ -3,6 +3,7 @@ import {
   View,
   StyleSheet,
   Modal,
+  Platform,
   ScrollView,
   KeyboardAvoidingView,
   RefreshControl,
