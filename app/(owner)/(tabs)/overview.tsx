@@ -25,9 +25,7 @@ import {
   Platform,
   UIManager } from 'react-native';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// UIManager.setLayoutAnimationEnabledExperimental is a no-op in New Architecture
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -558,12 +556,10 @@ export default function OwnerOverviewTab() {
               )}
             </Card>
 
-            <Spacer size={24} />
-
             {/* ── 8. Important Notices ────────────────────────────────────────── */}
             <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
               <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Important Notices</Text>
-              <AnimatedPress accessibilityRole="button" onPress={() => router.push('/notices')}>
+              <AnimatedPress accessibilityRole="button" onPress={() => router.push('/notifications')}>
                 <Text maxFontSizeMultiplier={1.3} style={styles.viewAllText}>View all →</Text>
               </AnimatedPress>
             </Row>

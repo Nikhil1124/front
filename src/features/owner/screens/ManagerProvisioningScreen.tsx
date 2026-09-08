@@ -45,6 +45,7 @@ export function ManagerProvisioningScreen() {
       title="Manager Provisioning"
       subtitle={`${managers.length} active manager${managers.length === 1 ? '' : 's'}`}
       icon="people-outline"
+      scrollable={false}
     >
       {/* Manager summary — at-a-glance list of who has manager access */}
       <Card

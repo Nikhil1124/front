@@ -73,6 +73,7 @@ import {
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
   useDismissNotificationMutation,
+  useDismissAllNotificationsMutation,
   useBroadcastNotificationMutation,
   BROADCAST_AUDIENCE_MAP } from '@/features/notifications/useNotifications';
 import { useGuestsQuery } from '@/features/guests/useGuests';
@@ -261,6 +262,7 @@ export function OwnerAnnouncementsTab() {
   const markReadMutation = useMarkNotificationReadMutation(activePgId ?? undefined);
   const markAllReadMutation = useMarkAllNotificationsReadMutation(activePgId ?? undefined);
   const dismissMutation = useDismissNotificationMutation(activePgId ?? undefined);
+  const dismissAllMutation = useDismissAllNotificationsMutation(activePgId ?? undefined);
   const broadcastMutation = useBroadcastNotificationMutation(activePgId ?? undefined);
   const verifyPaymentMutation = useVerifyPaymentMutation(activePgId ?? undefined);
   const rejectPaymentMutation = useRejectPaymentMutation(activePgId ?? undefined);
@@ -385,19 +387,53 @@ export function OwnerAnnouncementsTab() {
 
   const handleVerifyPayment = async (item: InboxItem) => {
     if (!item.notif?.actionId) return;
-    await verifyPaymentMutation.mutateAsync(item.notif.actionId);
-    toast('success', 'Payment Verified', 'The resident has been notified.');
-    setSelectedInboxItem(null);
+    try {
+      await verifyPaymentMutation.mutateAsync(item.notif.actionId);
+      toast('success', 'Payment Verified', 'The resident has been notified.');
+      setSelectedInboxItem(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Please try again.';
+      const isDuplicateError = msg.toLowerCase().includes('already been verified') || msg.toLowerCase().includes('duplicate');
+      
+      if (isDuplicateError) {
+        Alert.alert(
+          'Could not verify',
+          msg,
+          [
+            { text: 'Dismiss', style: 'cancel' },
+            { 
+              text: 'Reject Duplicate', 
+              style: 'destructive',
+              onPress: () => {
+                rejectPaymentMutation.mutate({ paymentId: item.notif!.actionId!, reason: 'Duplicate payment request' }, {
+                  onSuccess: () => {
+                    toast('success', 'Duplicate Rejected', 'The duplicate request was removed.');
+                    setSelectedInboxItem(null);
+                  },
+                  onError: (rejectErr) => Alert.alert('Could not reject', rejectErr instanceof Error ? rejectErr.message : 'Please try again.')
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Could not verify', msg);
+      }
+    }
   };
 
   const openRejectPayment = (item: InboxItem) => setRejectingPayment(item);
 
   const submitRejectPayment = async (reason: string) => {
     if (!rejectingPayment?.notif?.actionId) return;
-    await rejectPaymentMutation.mutateAsync({ paymentId: rejectingPayment.notif.actionId, reason });
-    toast('warning', 'Payment Rejected', 'The resident has been notified.');
-    setRejectingPayment(null);
-    setSelectedInboxItem(null);
+    try {
+      await rejectPaymentMutation.mutateAsync({ paymentId: rejectingPayment.notif.actionId, reason });
+      toast('warning', 'Payment Rejected', 'The resident has been notified.');
+      setRejectingPayment(null);
+      setSelectedInboxItem(null);
+    } catch (err) {
+      Alert.alert('Could not reject', err instanceof Error ? err.message : 'Please try again.');
+    }
   };
 
   const handleReviewProcurement = (item: InboxItem) => {
@@ -504,15 +540,37 @@ export function OwnerAnnouncementsTab() {
           </ScrollView>
         </View>
 
-        {activeSubTab !== 'REVIEWS' && unreadInformationalCount > 0 && (
+        {activeSubTab !== 'REVIEWS' && (unreadInformationalCount > 0 || totalCount > decisionItems.length) && (
           <>
             <Spacer size={10} />
-            <AnimatedPress accessibilityRole="button" onPress={() => markAllReadMutation.mutate()} disabled={markAllReadMutation.isPending} style={styles.markAllReadBtn}>
-              <Ionicons name="checkmark-done" size={15} color={PRIMARY} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.markAllReadText}>
-                {markAllReadMutation.isPending ? 'Marking…' : `Mark all ${unreadInformationalCount} as read`}
-              </Txt>
-            </AnimatedPress>
+            <Row gap={16} align="center" justify="flex-end">
+              {unreadInformationalCount > 0 && (
+                <AnimatedPress accessibilityRole="button" onPress={() => markAllReadMutation.mutate()} disabled={markAllReadMutation.isPending} style={[styles.markAllReadBtn, { alignSelf: 'auto' }]}>
+                  <Ionicons name="checkmark-done" size={15} color={PRIMARY} />
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.markAllReadText}>
+                    {markAllReadMutation.isPending ? 'Marking…' : `Mark all ${unreadInformationalCount} as read`}
+                  </Txt>
+                </AnimatedPress>
+              )}
+              {totalCount > decisionItems.length && (
+                <AnimatedPress 
+                  accessibilityRole="button" 
+                  onPress={() => {
+                    Alert.alert('Clear all?', 'Remove all notifications from your inbox?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Clear', style: 'destructive', onPress: () => dismissAllMutation.mutate() }
+                    ]);
+                  }} 
+                  disabled={dismissAllMutation.isPending} 
+                  style={[styles.markAllReadBtn, { alignSelf: 'auto', opacity: dismissAllMutation.isPending ? 0.5 : 1 }]}
+                >
+                  <Ionicons name="trash-outline" size={15} color={Colors.danger} />
+                  <Txt maxFontSizeMultiplier={1.3} style={[styles.markAllReadText, { color: Colors.danger }]}>
+                    {dismissAllMutation.isPending ? 'Clearing…' : 'Clear all'}
+                  </Txt>
+                </AnimatedPress>
+              )}
+            </Row>
           </>
         )}
         <Spacer size={16} />

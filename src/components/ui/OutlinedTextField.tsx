@@ -26,7 +26,7 @@
 import React, { useState } from 'react';
 import {
   View, TextInput, type ViewStyle, type TextStyle,
-  type KeyboardTypeOptions, type TextInputProps,
+  type KeyboardTypeOptions, type TextInputProps, Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -117,15 +117,10 @@ export function OutlinedTextField({
         flexDirection: 'row',
         alignItems: multiline ? 'flex-start' : 'center',
         gap: 8,
-        // The ring only exists on focus, and only as a soft brand wash — enough to say "this
-        // one" on a screen of quiet filled boxes without becoming a second border.
-        ...(focused && !invalid ? {
-          shadowColor: Colors.primary,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.16,
-          shadowRadius: 4,
-          elevation: 2,
-        } : null),
+        shadowColor: Colors.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: (focused && !invalid) ? 0.16 : 0,
+        shadowRadius: 4,
       }}>
         {leadingIcon && (
           <Ionicons

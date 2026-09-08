@@ -20,7 +20,7 @@
  * which leaves someone tapping a dead control with no idea why.
  */
 import { useEffect, useState } from 'react';
-import { Modal, View, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, KeyboardAvoidingView, Pressable, Platform } from 'react-native';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Txt } from '@/components/ui/Txt';
 import { Radii, Colors } from '@/theme';
@@ -71,7 +71,7 @@ export function TextPromptDialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.backdrop}>
           <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onCancel} />
           <View style={styles.card}>

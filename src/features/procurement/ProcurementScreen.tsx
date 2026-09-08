@@ -294,7 +294,7 @@ function OrderSuppliesSection() {
           </Row>
 
           <View style={{ paddingHorizontal: 20 }}>
-            <KeyboardAvoidingView behavior="padding">
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
               <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 <View style={{ gap: 8 }}>
                   {Object.entries(cart).map(([id, qty]) => {

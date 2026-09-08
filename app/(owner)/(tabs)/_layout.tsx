@@ -115,7 +115,7 @@ export default function OwnerTabsLayout() {
             actions={
               <Row gap={8} align="center">
                 {addChip}
-                <HeaderChip icon="notifications-outline" label="Notifications" badge={unreadCount > 0} onPress={() => { router.push('/notices'); }} />
+                <HeaderChip icon="notifications-outline" label="Notifications" badge={unreadCount > 0} onPress={() => { router.push('/notifications'); }} />
                 <HeaderChip icon="settings-outline" label="Settings" onPress={() => router.push('/settings')} />
               </Row>
             }
@@ -129,7 +129,6 @@ export default function OwnerTabsLayout() {
               pathname === '/payments' ? 'Payments & Revenue' :
               pathname === '/staff' ? 'Staff Management' :
               pathname === '/complaints' ? 'Complaints & Requests' :
-              pathname === '/notices' ? 'Notifications' :
               pathname === '/reviews' ? 'Reviews & Feedback' : 'Details'
             }
           />
@@ -166,8 +165,7 @@ export default function OwnerTabsLayout() {
         ))}
 
         {/* Hidden triggers: routes that exist but lost the five-slot cut. Both stay reachable —
-            notices from the header bell, reviews from Overview. */}
-        <TabTrigger name="notices" href="/notices" style={{ display: 'none' }} />
+            reviews from Overview. */}
         <TabTrigger name="reviews" href="/reviews" style={{ display: 'none' }} />
       </Dock>
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { formatINR, formatDateTime } from '@/utils/format';
@@ -65,7 +65,17 @@ function getPast12Months() {
 export function OwnerPaymentsTab() {
   const dockScroll = useDockScroll();
   const { activeEntity: owner } = useActiveProperty();
-  const [subTab, setSubTab] = useState(0); // 0: Balance Sheet, 1: Expenses, 2: Collections
+  const params = useLocalSearchParams<{ tab?: string }>();
+  
+  // Default to Collections (2) if the URL asks for it, otherwise Balance Sheet (0).
+  const [subTab, setSubTab] = useState(params.tab === 'COLLECTIONS' ? 2 : params.tab === 'EXPENSES' ? 1 : 0);
+  
+  useEffect(() => {
+    if (params.tab === 'COLLECTIONS') setSubTab(2);
+    else if (params.tab === 'EXPENSES') setSubTab(1);
+    else if (params.tab === 'BALANCESHEET') setSubTab(0);
+  }, [params.tab]);
+
   const [period, setPeriod] = useState<'month' | '3m' | '6m' | '1y' | 'custom'>('month');
   
   // Custom Date Range Picker states
@@ -99,8 +109,30 @@ export function OwnerPaymentsTab() {
   const handleVerifyPayment = async (p: PaymentEntity) => {
     try {
       await verifyPayment.mutateAsync(p.id);
-      } catch (err) {
-      Alert.alert('Could not verify', err instanceof Error ? err.message : 'Please try again.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Please try again.';
+      const isDuplicateError = msg.toLowerCase().includes('already been verified') || msg.toLowerCase().includes('duplicate');
+      
+      if (isDuplicateError) {
+        Alert.alert(
+          'Could not verify',
+          msg,
+          [
+            { text: 'Dismiss', style: 'cancel' },
+            { 
+              text: 'Reject Duplicate', 
+              style: 'destructive',
+              onPress: () => {
+                rejectPayment.mutate({ paymentId: p.id, reason: 'Duplicate payment request' }, {
+                  onError: (rejectErr) => Alert.alert('Could not reject', rejectErr instanceof Error ? rejectErr.message : 'Please try again.')
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Could not verify', msg);
+      }
     }
   };
 
@@ -401,8 +433,8 @@ export function OwnerPaymentsTab() {
               setSubTab(0);
             }}
           >
-            <Ionicons name="bar-chart-outline" size={16} color={subTab === 0 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Txt variant="button" color={subTab === 0 ? WHITE : CHARCOAL}>
+            <Ionicons name="bar-chart-outline" size={14} color={subTab === 0 ? WHITE : MUTED} style={{ marginRight: 4 }} />
+            <Txt maxFontSizeMultiplier={1.2} style={[styles.segBtnText, subTab === 0 && styles.segBtnTextActive]}>
               Balance Sheet
             </Txt>
           </AnimatedPress>
@@ -413,8 +445,8 @@ export function OwnerPaymentsTab() {
               setSubTab(1);
             }}
           >
-            <Ionicons name="cash-outline" size={16} color={subTab === 1 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Txt variant="button" color={subTab === 1 ? WHITE : CHARCOAL}>
+            <Ionicons name="cash-outline" size={14} color={subTab === 1 ? WHITE : MUTED} style={{ marginRight: 4 }} />
+            <Txt maxFontSizeMultiplier={1.2} style={[styles.segBtnText, subTab === 1 && styles.segBtnTextActive]}>
               Expenses
             </Txt>
           </AnimatedPress>
@@ -425,8 +457,8 @@ export function OwnerPaymentsTab() {
               setSubTab(2);
             }}
           >
-            <Ionicons name="receipt-outline" size={16} color={subTab === 2 ? WHITE : MUTED} style={{ marginRight: 6 }} />
-            <Txt variant="button" color={subTab === 2 ? WHITE : CHARCOAL}>
+            <Ionicons name="receipt-outline" size={14} color={subTab === 2 ? WHITE : MUTED} style={{ marginRight: 4 }} />
+            <Txt maxFontSizeMultiplier={1.2} style={[styles.segBtnText, subTab === 2 && styles.segBtnTextActive]}>
               Collections
             </Txt>
           </AnimatedPress>
@@ -442,7 +474,7 @@ export function OwnerPaymentsTab() {
               setPeriod('month');
             }}
           >
-            <Txt variant="meta" weight={period === 'month' ? '700' : '600'} color={period === 'month' ? WHITE : CHARCOAL}>
+            <Txt maxFontSizeMultiplier={1.2} style={[styles.periodBtnText, period === 'month' && styles.periodBtnTextActive]}>
               This Month
             </Txt>
           </AnimatedPress>
@@ -452,7 +484,7 @@ export function OwnerPaymentsTab() {
               setPeriod('3m');
             }}
           >
-            <Txt variant="meta" weight={period === '3m' ? '700' : '600'} color={period === '3m' ? WHITE : CHARCOAL} tabular>
+            <Txt maxFontSizeMultiplier={1.2} style={[styles.periodBtnText, period === '3m' && styles.periodBtnTextActive]}>
               3 Months
             </Txt>
           </AnimatedPress>
@@ -462,7 +494,7 @@ export function OwnerPaymentsTab() {
               setPeriod('6m');
             }}
           >
-            <Txt variant="meta" weight={period === '6m' ? '700' : '600'} color={period === '6m' ? WHITE : CHARCOAL} tabular>
+            <Txt maxFontSizeMultiplier={1.2} style={[styles.periodBtnText, period === '6m' && styles.periodBtnTextActive]}>
               6 Months
             </Txt>
           </AnimatedPress>
@@ -472,7 +504,7 @@ export function OwnerPaymentsTab() {
               setPeriod('1y');
             }}
           >
-            <Txt variant="meta" weight={period === '1y' ? '700' : '600'} color={period === '1y' ? WHITE : CHARCOAL} tabular>
+            <Txt maxFontSizeMultiplier={1.2} style={[styles.periodBtnText, period === '1y' && styles.periodBtnTextActive]}>
               1 Year
             </Txt>
           </AnimatedPress>
@@ -521,7 +553,7 @@ export function OwnerPaymentsTab() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} colors={[GREEN]} />
           }
         >
-          {verifiedRevenue === 0 && totalOutflows === 0 ? (
+          {filteredPayments.length === 0 && filteredExpenses.length === 0 ? (
             /* Empty State */
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconBg}>
@@ -536,13 +568,13 @@ export function OwnerPaymentsTab() {
                 style={styles.emptyActionBtn}
                 onPress={() => setSubTab(2)}
               >
-                <Txt variant="button" color={WHITE}>View Collections</Txt>
+                <Txt maxFontSizeMultiplier={1.2} style={styles.emptyActionText}>View Collections</Txt>
               </AnimatedPress>
               <AnimatedPress accessibilityRole="button"
                 style={styles.emptySecBtn}
                 onPress={() => setSubTab(1)}
               >
-                <Txt variant="button" color={GREEN}>Add Expense</Txt>
+                <Txt maxFontSizeMultiplier={1.2} style={styles.emptySecText}>Add Expense</Txt>
               </AnimatedPress>
             </View>
           ) : (

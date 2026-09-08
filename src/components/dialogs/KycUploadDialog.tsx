@@ -196,7 +196,7 @@ export function KycUploadDialog({
         </Row>
       }
     >
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Card
           containerColor={Colors.surface}
           borderRadius={Radii.sheet}

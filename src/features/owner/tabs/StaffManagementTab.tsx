@@ -552,8 +552,9 @@ export function StaffManagementTab() {
           renderItem={({ item: staff, index }) => (
             <ListRow
               title={staff.name}
-              meta={`${ROLE_DISPLAY_NAMES[staff.role] || staff.role} · ${staff.shiftTime || 'Day Shift'}`}
+              meta={staff.shiftTime || 'Day Shift'}
               leading={<Ionicons name={roleIconName(staff.role)} size={18} color={Colors.primary} />}
+              status={{ label: ROLE_DISPLAY_NAMES[staff.role] || staff.role, tone: roleTone(staff.role) }}
               // The row opens the action menu the "..." button used to. One target instead of
               // two, and the menu already holds every action that button led to.
               onPress={() => { setSelectedStaff(staff); setShowActionMenu(true); }}
@@ -785,6 +786,14 @@ function roleIconName(role: string): keyof typeof Ionicons.glyphMap {
   if (r.includes('maintenance')) return 'build-outline';
   if (r === 'delivery_agent') return 'bicycle-outline';
   return 'person-outline';
+}
+
+function roleTone(role: string): any {
+  const r = role.toLowerCase();
+  if (r === 'manager') return 'info';
+  if (r === 'chef' || r === 'kitchen_staff') return 'ok';
+  if (r.includes('maintenance')) return 'warn';
+  return 'neutral';
 }
 
 const styles = StyleSheet.create({

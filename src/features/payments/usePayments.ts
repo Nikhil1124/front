@@ -232,6 +232,7 @@ export function useSubmitPaymentMutation(pgId?: string) {
         qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
       }
     },
+    onError: () => {},
   });
 }
 
@@ -248,6 +249,9 @@ export function useVerifyPaymentMutation(pgId?: string) {
         qc.invalidateQueries({ queryKey: qk.expenses.all(pgId) });
       }
     },
+    onError: () => {
+      // Handled by the caller via mutateAsync catch block
+    },
   });
 }
 
@@ -263,6 +267,7 @@ export function useRejectPaymentMutation(pgId?: string) {
         qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
       }
     },
+    onError: () => {},
   });
 }
 

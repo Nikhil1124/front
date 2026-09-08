@@ -997,7 +997,7 @@ export function BedVisualizerScreen() {
                       subtitle="Add a resident from the Guests tab first, then assign them here."
                     />
                   ) : (
-                    <KeyboardAvoidingView behavior="padding">
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                       <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
                         <View style={{ gap: 8 }}>
                           {unassignedGuests.map((g) => (

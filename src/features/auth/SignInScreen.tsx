@@ -20,10 +20,10 @@
  * once-in-a-lifetime actions and sit in the footer, not in prime screen space.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
-import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors, Radii } from '@/theme';
 import { useToast } from '@/hooks/useToast';
@@ -56,6 +56,7 @@ function TextLink({
 }
 
 export function SignInScreen() {
+  const insets = useSafeAreaInsets();
   const loginMutation = useLogin();
   const pinLoginMutation = usePinLogin();
   const changePasswordMutation = useChangePassword();
@@ -147,77 +148,87 @@ export function SignInScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <FormScroll
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="always"
-        keyboardDismissMode="none"
+    <View style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.brand}>
-          <View style={styles.mark}><Txt size={22} weight="700" color={Colors.textInverse}>P</Txt></View>
-          <Spacer size={12} />
-          <Txt size={29} weight="700" color={Colors.textPrimary} align="center">PGow</Txt>
-          <Txt size={12} color={Colors.textMuted} align="center" style={{ marginTop: 3 }}>Co-living, managed</Txt>
-        </View>
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 48 }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'on-drag' : 'none'}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.brand}>
+            <View style={styles.mark}><Txt size={22} weight="700" color={Colors.textInverse}>P</Txt></View>
+            <Spacer size={12} />
+            <Txt size={29} weight="700" color={Colors.textPrimary} align="center">PGow</Txt>
+            <Txt size={12} color={Colors.textMuted} align="center" style={{ marginTop: 3 }}>Co-living, managed</Txt>
+          </View>
 
-        <View style={styles.card}>
-          <OutlinedTextField
-            key="signin-phone"
-            label="Phone number"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            textContentType="telephoneNumber"
-            autoComplete="off"
-            testID="signin_phone"
+          <View style={styles.card}>
+            <Txt variant="meta" weight="600" color={Colors.textMuted} style={{ marginBottom: 5 }}>Phone number</Txt>
+            <TextInput
+              key="signin-phone"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
+              autoComplete="off"
+              testID="signin_phone"
+              style={styles.rawInput}
+              placeholderTextColor={Colors.textMuted}
+            />
+            <Spacer size={12} />
+            <Txt variant="meta" weight="600" color={Colors.textMuted} style={{ marginBottom: 5 }}>
+              {mode === 'pin' ? 'PIN' : 'Password'}
+            </Txt>
+            <TextInput
+              key="signin-secret"
+              value={secret}
+              onChangeText={setSecret}
+              secureTextEntry
+              keyboardType={mode === 'pin' ? 'number-pad' : 'default'}
+              textContentType={mode === 'pin' ? 'oneTimeCode' : 'password'}
+              autoComplete="off"
+              testID="signin_secret"
+              style={styles.rawInput}
+              placeholderTextColor={Colors.textMuted}
+            />
+            {error ? (
+              <Txt size={12} color={Colors.danger} style={{ marginTop: 10 }}>{error}</Txt>
+            ) : null}
+          </View>
+
+          <Spacer size={14} />
+          <Btn onPress={handleSubmit} loading={busy} height={52} borderRadius={Radii.card} testID="signin_submit">
+            <Txt size={15} weight="700" color={Colors.textInverse}>Sign in</Txt>
+          </Btn>
+
+          <Spacer size={10} />
+          <TextLink
+            label={mode === 'pin' ? 'Sign in with a password instead' : 'Staff? Sign in with a PIN'}
+            onPress={() => { setMode(mode === 'pin' ? 'password' : 'pin'); setSecret(''); setError(''); }}
+            testID="signin_toggle_mode"
           />
-          <Spacer size={12} />
-          <OutlinedTextField
-            key="signin-secret"
-            label={mode === 'pin' ? 'PIN' : 'Password'}
-            value={secret}
-            onChangeText={setSecret}
-            secureTextEntry
-            keyboardType={mode === 'pin' ? 'number-pad' : 'default'}
-            textContentType={mode === 'pin' ? 'oneTimeCode' : 'password'}
-            autoComplete="off"
-            testID="signin_secret"
-          />
-          {error ? (
-            <Txt size={12} color={Colors.danger} style={{ marginTop: 10 }}>{error}</Txt>
-          ) : null}
-        </View>
 
-        <Spacer size={14} />
-        <Btn onPress={handleSubmit} loading={busy} height={52} borderRadius={Radii.card} testID="signin_submit">
-          <Txt size={15} weight="700" color={Colors.textInverse}>Sign in</Txt>
-        </Btn>
+          {mode === 'password' && (
+            <>
+              <Spacer size={4} />
+              <TextLink label="Forgot password?" onPress={() => router.push('/(auth)/reset-password')} />
+            </>
+          )}
 
-        <Spacer size={10} />
-        <TextLink
-          label={mode === 'pin' ? 'Sign in with a password instead' : 'Staff? Sign in with a PIN'}
-          onPress={() => { setMode(mode === 'pin' ? 'password' : 'pin'); setSecret(''); setError(''); }}
-          testID="signin_toggle_mode"
-        />
+          <View style={styles.spacer} />
 
-        {mode === 'password' && (
-          <>
-            <Spacer size={4} />
-            <TextLink label="Forgot password?" onPress={() => router.push('/(auth)/reset-password')} />
-          </>
-        )}
-
-        {/* Pushes the footer to the bottom on a tall screen and collapses to nothing on a
-            short one, so the links never float in the middle of a dead zone. */}
-        <View style={{ flex: 1, minHeight: 24 }} />
-
-        <Row justify="center" align="center" gap={6}>
-          <Txt size={12.5} color={Colors.textMuted}>New here?</Txt>
-          <TextLink label="Join a PG" onPress={() => router.push('/(auth)/guest-join')} testID="signin_join" inline />
-          <Txt size={12.5} color={Colors.textMuted}>·</Txt>
-          <TextLink label="Register a PG" onPress={() => router.push('/(auth)/owner-register')} inline />
-        </Row>
-      </FormScroll>
+          <Row justify="center" align="center" gap={6} style={styles.footer}>
+            <Txt size={12.5} color={Colors.textMuted}>New here?</Txt>
+            <TextLink label="Join a PG" onPress={() => router.push('/(auth)/guest-join')} testID="signin_join" inline />
+            <Txt size={12.5} color={Colors.textMuted}>·</Txt>
+            <TextLink label="Register a PG" onPress={() => router.push('/(auth)/owner-register')} inline />
+          </Row>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* ── First-time password ─────────────────────────────────────────────── */}
       <Sheet
@@ -233,22 +244,24 @@ export function SignInScreen() {
         }
       >
         <KeyboardAvoidingView style={{}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <OutlinedTextField
+          <Txt variant="meta" weight="600" color={Colors.textMuted} style={{ marginBottom: 5 }}>New password</Txt>
+          <TextInput
             key="signin-ftp-new-password"
-            label="New password"
             value={ftpNew}
             onChangeText={setFtpNew}
             secureTextEntry
             autoComplete="off"
+            style={styles.rawInput}
           />
           <Spacer size={12} />
-          <OutlinedTextField
+          <Txt variant="meta" weight="600" color={Colors.textMuted} style={{ marginBottom: 5 }}>Confirm password</Txt>
+          <TextInput
             key="signin-ftp-confirm-password"
-            label="Confirm password"
             value={ftpConfirm}
             onChangeText={setFtpConfirm}
             secureTextEntry
             autoComplete="off"
+            style={styles.rawInput}
           />
         </KeyboardAvoidingView>
       </Sheet>
@@ -257,8 +270,9 @@ export function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.canvas },
-  scroll: { flexGrow: 1, paddingHorizontal: 22, paddingTop: 48, paddingBottom: 28 },
+  safeArea: { flex: 1, backgroundColor: Colors.canvas },
+  container: { flex: 1 },
+  scrollContent: { paddingHorizontal: 22, paddingBottom: 24 },
   brand: { alignItems: 'center', marginBottom: 30 },
   mark: {
     width: 52, height: 52, borderRadius: Radii.card,
@@ -275,6 +289,18 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 3,
   },
+  rawInput: {
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    borderRadius: Radii.control,
+    backgroundColor: Colors.surfaceMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  spacer: { height: 40 },
+  footer: {},
   link: { paddingVertical: 11, alignItems: 'center' },
   backdrop: {
     flex: 1,

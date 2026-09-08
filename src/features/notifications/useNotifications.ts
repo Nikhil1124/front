@@ -209,6 +209,25 @@ export function useDismissNotificationMutation(pgId?: string) {
   });
 }
 
+export function useDismissAllNotificationsMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await listNotifications({ pgId, limit: 100 });
+      // Execute sequentially in small chunks or all at once via Promise.all
+      // If there are many, we might want to do batches, but 100 at most should be fine.
+      await Promise.all(res.items.map(n => dismissNotification(n.id)));
+    },
+    onSuccess: () => {
+      hapticSuccess();
+      if (pgId) {
+        qc.invalidateQueries({ queryKey: qk.notifications.list(pgId) });
+        qc.invalidateQueries({ queryKey: qk.notifications.unreadCount(pgId) });
+      }
+    },
+  });
+}
+
 export function useNotifications() {
   return {
     listNotifications,

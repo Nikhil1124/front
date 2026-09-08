@@ -37,7 +37,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
 import { Txt } from './Txt';
-import { Row } from './index';
 import { Radii, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 
@@ -71,12 +70,12 @@ export function Sheet({
       <Animated.View entering={FadeIn.duration(150)} style={styles.backdrop}>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Animated.View entering={SlideInDown.springify(220).dampingRatio(0.85)} style={styles.sheetWrapper}>
-          <Pressable style={{ flex: 1 }} onPress={(e) => e.stopPropagation()}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
             <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
               <View style={styles.handleBar} />
 
               <View style={[styles.headerStrip, { backgroundColor: `${accent}22` }]}>
-                <Row align="center" gap={10} style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                   {icon && (
                     <View style={[styles.iconChip, { backgroundColor: `${accent}30` }]}>
                       <Ionicons name={icon} size={20} color={accent} />
@@ -88,7 +87,7 @@ export function Sheet({
                       <Txt variant="caption" color={Colors.textMuted} numberOfLines={2}>{subtitle}</Txt>
                     ) : null}
                   </View>
-                </Row>
+                </View>
                 <AnimatedPress
                   accessibilityLabel="Close"
                   accessibilityRole="button"
@@ -120,7 +119,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end' },
   sheetWrapper: {
     maxHeight: '88%',
-    minHeight: '40%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden' },
@@ -163,7 +161,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 24 },
+    paddingBottom: 8 },
   footer: {
     paddingHorizontal: 16,
     paddingVertical: 12,

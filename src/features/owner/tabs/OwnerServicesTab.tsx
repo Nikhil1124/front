@@ -293,18 +293,20 @@ export function OwnerServicesTab() {
         subtitle="Get your PG problems fixed quickly"
         onBack={() => router.back()}
         actions={
-          <HeaderChip icon="notifications" label="Notifications" badge onPress={() => { router.push('/notices'); }} />
+          <HeaderChip icon="notifications" label="Notifications" badge onPress={() => { router.push('/notifications'); }} />
         }
       />
 
-      {/* ── Main Content Sheet (White Background with Rounded Top) ── */}
+      {/* ── Main Content Area ── */}
       <View style={styles.mainSheet}>
         {/* Search */}
-        <SearchField
-          placeholder="Search for a service"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
+          <SearchField
+            placeholder="Search for a service"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
 
         {activeSubTab === 'SERVICES' && renderServices()}
         {activeSubTab === 'BOOKINGS' && renderBookings()}
@@ -440,9 +442,9 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: PRIMARY },
+  root: { flex: 1, backgroundColor: BG },
   
-  mainSheet: { flex: 1, backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: -20 },
+  mainSheet: { flex: 1, backgroundColor: BG },
   
 
   scroll: { paddingBottom: 100 },

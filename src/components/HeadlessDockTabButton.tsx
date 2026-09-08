@@ -201,7 +201,13 @@ export function useDock(profile?: NavProfile) {
     const picked = pickAlert(profile, counts);
     if (!picked) return null;
     const dest = NAV_PROFILES[profile].find((d) => d.signal === picked.key);
-    return dest ? { text: picked.text, href: dest.href } : null;
+    
+    let href = dest?.href;
+    if (href && picked.key === 'paymentsPending') {
+      href = `${href}?tab=COLLECTIONS`;
+    }
+    
+    return dest && href ? { text: picked.text, href } : null;
   }, [profile, counts]);
 
   const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
@@ -282,11 +288,7 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
     // noise. The tint order below is the whole of C3.
     const boxStyle = isFocused
       ? { backgroundColor: activeBg ?? DeckTints.brand.fill }
-      : waiting
-        ? { backgroundColor: DeckTints.amber.fill }
-        : pending === 0
-          ? { backgroundColor: DeckTints.green.fill }
-          : { backgroundColor: 'transparent' };
+      : { backgroundColor: 'transparent' };
 
     const iconColor = isFocused
       ? activeColor
@@ -371,8 +373,8 @@ const styles = StyleSheet.create({
     height: ICON_BOX,
     alignItems: 'center',
     justifyContent: 'center',
-    // Squared-off, not a pill.
-    borderRadius: Radii.control,
+    // Rounded square outline when active
+    borderRadius: 14,
   },
   count: {
     position: 'absolute',

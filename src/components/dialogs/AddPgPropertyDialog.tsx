@@ -12,6 +12,7 @@ import type { PickedLocation } from '@/features/places/pendingLocation';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { FormScroll } from '@/components/ui/FormScroll';
 import { Btn, Card, Col, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -107,99 +108,72 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
         </Row>
       }
     >
-      <Card
-        containerColor={Colors.surface}
-        borderRadius={Radii.sheet}
-        borderWidth={1}
-        borderColor={Colors.borderSubtle}
-        padding={[20, 20]}
-        style={{ width: '100%' }}
-      >
-        <Row align="center" gap={8} style={{ marginBottom: 12 }}>
-          <View style={styles.headerIconBox}>
-            <Ionicons name="business" size={20} color={Colors.primary} />
-          </View>
-          <Col>
-            <Txt variant="screenTitle" color={Colors.textPrimary}>Register New Property</Txt>
-            <Txt variant="caption" color={Colors.textMuted}>Set up branches, floors, rooms & capacity</Txt>
-          </Col>
-        </Row>
+      <View style={{ gap: 10 }}>
+        <OutlinedTextField
+          label="Property / PG Name *"
+          placeholder="Koramangala Executive Hub"
+          value={name}
+          onChangeText={(v) => { setName(v); if (nameError) setNameError(undefined); }}
+          error={nameError}
+          containerColor={Colors.surfaceMuted}
+          focusedBorderColor={Colors.primary}
+          unfocusedBorderColor={Colors.borderSubtle}
+        />
+        <AddressAutocompleteField
+          label="Property Address *"
+          value={address}
+          onChangeText={(v) => { setAddress(v); if (addressError) setAddressError(undefined); }}
+          error={addressError}
+          onLocationResolved={(loc) => {
+            if (!location) setLocation(loc);
+          }}
+        />
+        <LocationField value={location} onPress={() => setPicking(true)} />
 
-        <KeyboardAvoidingView behavior="padding">
-          <ScrollView
-            style={{ maxHeight: SCREEN_H * 0.45 }}
-            contentContainerStyle={{ gap: 10 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            automaticallyAdjustKeyboardInsets
-          >
-            <OutlinedTextField
-              label="Property / PG Name *"
-              placeholder="Koramangala Executive Hub"
-              value={name}
-              onChangeText={(v) => { setName(v); if (nameError) setNameError(undefined); }}
-              error={nameError}
-              containerColor={Colors.surfaceMuted}
-              focusedBorderColor={Colors.primary}
-              unfocusedBorderColor={Colors.borderSubtle}
-            />
-            <AddressAutocompleteField
-              label="Property Address *"
-              value={address}
-              onChangeText={(v) => { setAddress(v); if (addressError) setAddressError(undefined); }}
-              error={addressError}
-              onLocationResolved={(loc) => {
-                if (!location) setLocation(loc);
-              }}
-            />
-            <LocationField value={location} onPress={() => setPicking(true)} />
+        <OutlinedTextField
+          label="Total Bed Capacity *"
+          value={totalBeds}
+          onChangeText={setTotalBeds}
+          keyboardType="number-pad"
+          containerColor={Colors.surfaceMuted}
+        />
 
+        <View style={styles.sectionCard}>
+          <Row align="center" gap={6} style={{ marginBottom: 6 }}>
+            <Ionicons name="people" size={16} color={Colors.primary} />
+            <Txt variant="cardTitle" color={Colors.textPrimary}>Assigned Primary Manager</Txt>
+          </Row>
+          <OutlinedTextField
+            label="Manager Name"
+            placeholder="Ramesh Kumar"
+            value={mgrName}
+            onChangeText={setMgrName}
+            containerColor={Colors.surface}
+            style={{ marginBottom: 8 }}
+          />
+          <Row gap={8}>
             <OutlinedTextField
-              label="Total Bed Capacity *"
-              value={totalBeds}
-              onChangeText={setTotalBeds}
+              label="Manager Phone"
+              value={mgrPhone}
+              onChangeText={setMgrPhone}
+              keyboardType="phone-pad"
+              containerColor={Colors.surface}
+              style={{ flex: 2 }}
+            />
+            <OutlinedTextField
+              label="Login PIN"
+              value={mgrPin}
+              onChangeText={setMgrPin}
               keyboardType="number-pad"
-              containerColor={Colors.surfaceMuted}
+              containerColor={Colors.surface}
+              style={{ flex: 1 }}
             />
-
-            <View style={styles.sectionCard}>
-              <Row align="center" gap={6} style={{ marginBottom: 6 }}>
-                <Ionicons name="people" size={16} color={Colors.primary} />
-                <Txt variant="cardTitle" color={Colors.textPrimary}>Assigned Primary Manager</Txt>
-              </Row>
-              <OutlinedTextField
-                label="Manager Name"
-                placeholder="Ramesh Kumar"
-                value={mgrName}
-                onChangeText={setMgrName}
-                containerColor={Colors.surface}
-                style={{ marginBottom: 8 }}
-              />
-              <Row gap={8}>
-                <OutlinedTextField
-                  label="Manager Phone"
-                  value={mgrPhone}
-                  onChangeText={setMgrPhone}
-                  keyboardType="phone-pad"
-                  containerColor={Colors.surface}
-                  style={{ flex: 2 }}
-                />
-                <OutlinedTextField
-                  label="Login PIN"
-                  value={mgrPin}
-                  onChangeText={setMgrPin}
-                  keyboardType="number-pad"
-                  containerColor={Colors.surface}
-                  style={{ flex: 1 }}
-                />
-              </Row>
-              <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 4 }}>
-                ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
-              </Txt>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Card>
+          </Row>
+          <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 4 }}>
+            ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
+          </Txt>
+        </View>
+      </View>
     </Sheet>
   );
 }

@@ -107,20 +107,25 @@ export function TrendChart({
     };
   });
 
-  const indexFromX = (x: number) => Math.max(0, Math.min(data.length - 1, Math.floor(x / Math.max(1, groupWidth))));
+  const dataLength = data.length;
 
   const pan = Gesture.Pan()
     .enabled(data.length > 1)
     .activeOffsetX([-8, 8])
     .failOffsetY([-12, 12])
     .onBegin((e) => {
+      'worklet';
       visible.value = withSpring(1, SNAP_SPRING);
-      runOnJS(setActiveIndex)(indexFromX(e.x));
+      const idx = Math.max(0, Math.min(dataLength - 1, Math.floor(e.x / Math.max(1, groupWidth))));
+      runOnJS(setActiveIndex)(idx);
     })
     .onUpdate((e) => {
-      runOnJS(setActiveIndex)(indexFromX(e.x));
+      'worklet';
+      const idx = Math.max(0, Math.min(dataLength - 1, Math.floor(e.x / Math.max(1, groupWidth))));
+      runOnJS(setActiveIndex)(idx);
     })
     .onFinalize(() => {
+      'worklet';
       visible.value = withTiming(0, { duration: 150 });
       runOnJS(setActiveIndex)(null);
     });
