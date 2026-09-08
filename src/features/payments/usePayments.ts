@@ -240,13 +240,18 @@ export function useVerifyPaymentMutation(pgId?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (paymentId: string) => verifyPayment(paymentId),
-    onSuccess: () => {
+    onSuccess: (updatedPayment) => {
       hapticSuccess();
-      if (pgId) {
-        qc.invalidateQueries({ queryKey: qk.payments.list(pgId) });
-        qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
-        qc.invalidateQueries({ queryKey: qk.guests.list(pgId) });
-        qc.invalidateQueries({ queryKey: qk.expenses.all(pgId) });
+      // Fall back to the API response's pg_id when pgId was not available at
+      // mutation construction time (e.g. activePgId was still null on mount).
+      // Without this, the cache is never invalidated and the payment stays
+      // PENDING in the UI even though the backend already verified it.
+      const effectivePgId = pgId ?? updatedPayment.pg_id;
+      if (effectivePgId) {
+        qc.invalidateQueries({ queryKey: qk.payments.list(effectivePgId) });
+        qc.invalidateQueries({ queryKey: qk.payments.all(effectivePgId) });
+        qc.invalidateQueries({ queryKey: qk.guests.list(effectivePgId) });
+        qc.invalidateQueries({ queryKey: qk.expenses.all(effectivePgId) });
       }
     },
     onError: () => {
@@ -260,11 +265,14 @@ export function useRejectPaymentMutation(pgId?: string) {
   return useMutation({
     mutationFn: ({ paymentId, reason }: { paymentId: string; reason?: string }) =>
       rejectPayment(paymentId, reason),
-    onSuccess: () => {
+    onSuccess: (updatedPayment) => {
       hapticCaution();
-      if (pgId) {
-        qc.invalidateQueries({ queryKey: qk.payments.list(pgId) });
-        qc.invalidateQueries({ queryKey: qk.payments.all(pgId) });
+      // Same fallback as verify: use the response's pg_id if the hook was
+      // constructed before activePgId was available.
+      const effectivePgId = pgId ?? updatedPayment.pg_id;
+      if (effectivePgId) {
+        qc.invalidateQueries({ queryKey: qk.payments.list(effectivePgId) });
+        qc.invalidateQueries({ queryKey: qk.payments.all(effectivePgId) });
       }
     },
     onError: () => {},
