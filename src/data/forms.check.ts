@@ -37,6 +37,10 @@ const PRIMITIVES = new Set([
 const BESPOKE_SEARCH = new Set([
   'src/features/groceries/components/grocery/SearchBar.tsx',
   'src/features/groceries/screens/GroceryCategoryScreen.tsx',
+  // Auth sign-in screen: each input is isolated to prevent Android keyboard auto-scroll
+  // bugs (see the comment above the inputs); OutlinedTextField's wrapper layout breaks
+  // that isolation. The Kushal redesign deliberately restructured these as raw inputs.
+  'src/features/auth/SignInScreen.tsx',
 ]);
 
 function walk(dir: string, out: string[] = []): string[] {

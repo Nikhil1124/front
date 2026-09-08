@@ -373,8 +373,8 @@ const styles = StyleSheet.create({
     height: ICON_BOX,
     alignItems: 'center',
     justifyContent: 'center',
-    // Rounded square outline when active
-    borderRadius: 14,
+    // Rounded square outline when active — Radii.card matches the surrounding bar surface
+    borderRadius: Radii.card,
   },
   count: {
     position: 'absolute',
