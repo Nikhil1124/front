@@ -5,14 +5,34 @@ import { SupplyOrderDetail, SupplyOrderSummary, SupplyPaymentMethod } from '@/ty
 export interface CreateOrderPayload {
   pg_id: string;
   payment_method: SupplyPaymentMethod;
-  /** Singular, matching the server. `CreateOrderRequest` sets `extra="forbid"`, so any
-   *  field not on this interface is a 422 for the whole request — not a silent drop. */
+  delivery_slot_id?: string;
   delivery_note?: string;
   items: {
     item_id: string;
     quantity: number;
   }[];
   idempotency_key?: string;
+}
+
+export interface ApplicableDeliverySlot {
+  id: string;
+  scope_type: 'global' | 'area';
+  area_id: string | null;
+  label: string;
+  start_time: string;
+  end_time: string;
+  display_order: number;
+}
+
+export function useApplicableDeliverySlotsQuery(pgId?: string) {
+  return useQuery<ApplicableDeliverySlot[]>({
+    queryKey: ['applicable_delivery_slots', pgId],
+    queryFn: () => {
+      const params = new URLSearchParams({ pg_id: pgId! });
+      return apiFetch(`/v1/supply/delivery-slots/applicable?${params.toString()}`);
+    },
+    enabled: !!pgId,
+  });
 }
 
 export function useSupplyOrdersQuery(pgId?: string, status?: string) {
@@ -46,7 +66,14 @@ export function useSupplyOrderDetailQuery(orderId?: string) {
 }
 
 export interface OrderTrackingInfo {
+  order_id?: string;
+  order_no?: string;
   status: string;
+  driver_name?: string | null;
+  driver_phone?: string | null;
+  vehicle_label?: string | null;
+  eta_window_start?: string | null;
+  eta_window_end?: string | null;
   trip?: {
     id: string;
     vehicle_label: string;

@@ -55,7 +55,11 @@ const GUEST_BILLED_METHODS = [
 
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { useAuthStore } from '@/store/authStore';
-import { useCreateSupplyOrderMutation, useCreditAccountQuery } from '../useSupplyOrders';
+import {
+  useCreateSupplyOrderMutation,
+  useCreditAccountQuery,
+  useApplicableDeliverySlotsQuery,
+} from '../useSupplyOrders';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, OutlinedTextField, Txt } from '@/components/ui';
@@ -92,10 +96,34 @@ export function GroceryCheckoutScreen() {
   );
   const [deliveryAddress, setDeliveryAddress] = useState((owner ?? ownerForGuest)?.address ?? 'Your PG address');
 
-  // Fetch active configurations
+  const targetPgId = activePgId || owner?.id;
+  const { data: realSlots } = useApplicableDeliverySlotsQuery(targetPgId);
+
+  // Real backend delivery slots when available, with graceful fallback
+  const slotsList = useMemo(() => {
+    if (realSlots && realSlots.length > 0) {
+      return realSlots.map((s) => ({
+        id: s.id,
+        isReal: true,
+        day: 'Delivery Window',
+        badge: s.scope_type === 'global' ? 'STANDARD' : 'AREA',
+        window: `${s.label} (${s.start_time.slice(0, 5)} – ${s.end_time.slice(0, 5)})`,
+        fee: 0,
+        feeText: 'FREE',
+      }));
+    }
+    return CHECKOUT_SLOTS.map((s) => ({ ...s, isReal: false }));
+  }, [realSlots]);
+
+  useEffect(() => {
+    if (slotsList.length > 0 && !slotsList.some((s) => s.id === selectedSlotId)) {
+      setSelectedSlotId(slotsList[0].id);
+    }
+  }, [slotsList, selectedSlotId]);
+
   const selectedSlot = useMemo(() => {
-    return CHECKOUT_SLOTS.find(s => s.id === selectedSlotId) || CHECKOUT_SLOTS[0];
-  }, [selectedSlotId]);
+    return slotsList.find((s) => s.id === selectedSlotId) || slotsList[0];
+  }, [slotsList, selectedSlotId]);
 
   const subtotal = getCartTotal();
   const deliveryFee = fulfillmentMode === 'pickup' ? 0 : selectedSlot.fee;
@@ -132,24 +160,16 @@ export function GroceryCheckoutScreen() {
     }
 
     try {
-      // The server has no delivery-slot column, and `CreateOrderRequest` forbids unknown
-      // fields — so the chosen slot rides along in `delivery_note` (which ops actually read)
-      // rather than being dropped on the floor.
-      const slotLine = `Slot: ${selectedSlot.day}, ${selectedSlot.window}`;
+      const isRealSlot = selectedSlot && (selectedSlot as any).isReal;
+      const slotLine = `Slot: ${selectedSlot.window}`;
       const order = await createOrderMutation.mutateAsync({
         pg_id: targetPgId,
-        // `payment_method` is passed as-is — the backend accepts 'card' | 'upi' | 'credit' | 'cod'.
-        // The previous mapping (cod ? 'cod' : 'upi') silently dropped 'card' and sent 'upi' instead.
         payment_method: paymentMethod as 'card' | 'upi' | 'credit' | 'cod',
+        delivery_slot_id: isRealSlot ? selectedSlot.id : undefined,
         delivery_note: driverNote ? `${slotLine} — ${driverNote}` : slotLine,
         items: items.map((i) => ({
-          // `i.id` is the cart's compound key (productId + '-' + unit) — not a UUID.
-          // The backend's CreateOrderRequest requires a valid UUID for item_id.
           item_id: i.productId,
           quantity: i.quantity })),
-        // Stable for the life of this screen, deliberately: a key regenerated per attempt
-        // would make every retry look like a brand-new order, which is the opposite of what
-        // idempotency is for. Reset only after a confirmed success, below.
         idempotency_key: idempotencyKey.current });
 
       // Fresh key for any subsequent order placed without remounting this screen.
@@ -223,7 +243,7 @@ export function GroceryCheckoutScreen() {
 
               {/* Slots list */}
               <View style={styles.slotList}>
-                {CHECKOUT_SLOTS.map((slot) => {
+                {slotsList.map((slot) => {
                   const isSelected = selectedSlotId === slot.id;
                   const isFastest = slot.badge === 'FASTEST';
 

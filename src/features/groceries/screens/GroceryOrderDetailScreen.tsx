@@ -147,13 +147,16 @@ export function GroceryOrderDetailScreen() {
             </View>
           )}
 
-          {tracking?.trip && (
+          {(tracking?.driver_name || tracking?.trip) && (
             <View style={styles.tripInfoBox}>
               <Ionicons name="car-outline" size={18} color={Colors.primary} />
               <View style={{ flex: 1 }}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.tripTitle}>Delivery Vehicle: {tracking.trip.vehicle_label}</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.tripTitle}>
+                  Delivery Vehicle: {tracking.vehicle_label || tracking.trip?.vehicle_label || 'Assigned'}
+                </Txt>
                 <Txt maxFontSizeMultiplier={1.3} style={styles.tripSub}>
-                  Driver: {tracking.trip.driver_name} ({tracking.trip.driver_phone})
+                  Driver: {tracking.driver_name || tracking.trip?.driver_name} (
+                  {tracking.driver_phone || tracking.trip?.driver_phone})
                 </Txt>
               </View>
             </View>
