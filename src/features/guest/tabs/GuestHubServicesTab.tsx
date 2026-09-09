@@ -3,14 +3,13 @@
  * Visual System: Unified Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
  */
 import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, RefreshControl } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, RefreshControl, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
-import { GuestLaundryBookingDialog } from '@/components/dialogs/HubDialogs';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, Card, Col, Row, Spacer, Txt } from '@/components/ui';
 export function GuestHubServicesTab() {
@@ -20,7 +19,6 @@ export function GuestHubServicesTab() {
     data: laundryRequests = [],
     refetch: refetchLaundry,
     isRefetching: laundryRefetching } = useLaundryRequestsQuery(activePgId ?? undefined);
-  const [showLaundryDialog, setShowLaundryDialog] = useState(false);
 
   const myLaundry = laundryRequests.filter((r) => r.guestId === guest?.id);
 
@@ -67,7 +65,7 @@ export function GuestHubServicesTab() {
             </Row>
 
             <AnimatedPress accessibilityRole="button"
-              onPress={() => { setShowLaundryDialog(true); }}
+              onPress={() => { router.push('/laundry'); }}
               style={styles.bookBtn}
             >
               <Txt size={11} weight="700" color={Colors.textInverse}>Book Pickup</Txt>
@@ -110,7 +108,7 @@ export function GuestHubServicesTab() {
           <HubServiceCard
             title="GROCERIES"
             desc="Essentials delivered to room"
-            icon="cart-outline"
+            imageUrl="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop"
             statusText="Ready"
             buttonText="Order Now"
             onPress={() => router.push('/groceries')}
@@ -118,7 +116,7 @@ export function GuestHubServicesTab() {
           <HubServiceCard
             title="MAINTENANCE"
             desc="Book a technician"
-            icon="build-outline"
+            imageUrl="https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=200&auto=format&fit=crop"
             statusText="Repairs Due"
             buttonText="Log Issue"
             onPress={() => router.push('/book-technician')}
@@ -126,7 +124,7 @@ export function GuestHubServicesTab() {
           <HubServiceCard
             title="DEEP CLEANING"
             desc="Room sanitation"
-            icon="sparkles-outline"
+            imageUrl="https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=200&auto=format&fit=crop"
             statusText="Available"
             buttonText="Notify Me"
             onPress={() => Alert.alert('Not Available Yet', 'Deep cleaning bookings are coming soon.')}
@@ -134,7 +132,7 @@ export function GuestHubServicesTab() {
           <HubServiceCard
             title="WI-FI & INTERNET"
             desc="Bandwidth & plans"
-            icon="wifi-outline"
+            imageUrl="https://images.unsplash.com/photo-1614064641913-6b5860dce39c?q=80&w=200&auto=format&fit=crop"
             statusText="Active"
             buttonText="Manage"
             onPress={() => Alert.alert('Not Available Yet', 'Wi-Fi plan management is coming soon.')}
@@ -157,21 +155,14 @@ export function GuestHubServicesTab() {
         <Spacer size={32} />
       </ScrollView>
 
-      {showLaundryDialog && (
-        <GuestLaundryBookingDialog
-          guestId={guest?.id ?? ''}
-          guestName={guest?.name ?? 'Resident'}
-          roomNo={guest?.roomNo ?? '101'}
-          onDismiss={() => setShowLaundryDialog(false)}
-        />
-      )}
+
     </View>
   );
 }
 
 function HubServiceCard({
-  title, desc, icon, statusText, buttonText, onPress }: {
-  title: string; desc: string; icon: keyof typeof Ionicons.glyphMap; statusText: string; buttonText: string; onPress: () => void;
+  title, desc, imageUrl, statusText, buttonText, onPress }: {
+  title: string; desc: string; imageUrl: string; statusText: string; buttonText: string; onPress: () => void;
 }) {
   return (
     <AnimatedPress accessibilityRole="button"
@@ -179,8 +170,8 @@ function HubServiceCard({
       style={styles.gridCard}
     >
       <Row justify="space-between" align="center">
-        <View style={styles.gridIconWrap}>
-          <Ionicons name={icon} size={20} color={Colors.primary} />
+        <View style={[styles.gridIconWrap, { overflow: 'hidden' }]}>
+          <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         </View>
         <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
       </Row>

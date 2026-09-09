@@ -39,6 +39,7 @@ import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { useLaundryStore } from '@/features/laundry/store/useLaundryStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CUTOFF_HOURS: Record<string, number> = { BREAKFAST: 10, LUNCH: 14, DINNER: 21 };
@@ -111,6 +112,8 @@ export default function GuestHomeTab() {
   const rentDue = guest?.rentAmount ?? 0;
   const currentMonth = periodToMonthYear(currentPeriod());
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
+  
+  const activeLaundryOrder = useLaundryStore((s) => s.activeOrder);
 
   // ── Upcoming meal ──────────────────────────────────────────────────────────
   const upcomingMeal: MealNotificationEntity | null = (() => {
@@ -515,9 +518,10 @@ export default function GuestHomeTab() {
           />
           <SvcCard
             title="Laundry"
-            desc="Pickup, wash & return"
+            desc={activeLaundryOrder ? '1 Active Laundry Order' : 'Pickup, wash & return'}
+            descColor={activeLaundryOrder ? Colors.primary : undefined}
             image={require('../../../assets/pg_service_laundry_1785343445318.jpg')}
-            onPress={() => router.push('/support')}
+            onPress={() => router.push('/laundry')}
           />
           <SvcCard
             title="Repairs"
@@ -588,8 +592,8 @@ export default function GuestHomeTab() {
 
 // ─── Service Card ─────────────────────────────────────────────────────────────
 function SvcCard({
-  title, desc, image, icon, onPress, badge }: {
-  title: string; desc: string; image?: any; icon?: string;
+  title, desc, descColor, image, icon, onPress, badge }: {
+  title: string; desc: string; descColor?: string; image?: any; icon?: string;
   onPress: () => void; badge?: number;
 }) {
   return (
@@ -620,7 +624,7 @@ function SvcCard({
             </View>
           ) : null}
         </Row>
-        <Txt size={11} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2, lineHeight: 14 }}>
+        <Txt size={11} color={descColor || Colors.textSecondary} weight={descColor ? '700' : '400'} numberOfLines={2} style={{ marginTop: 2, lineHeight: 14 }}>
           {desc}
         </Txt>
       </View>

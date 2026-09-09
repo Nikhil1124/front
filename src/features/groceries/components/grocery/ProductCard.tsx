@@ -20,6 +20,11 @@ interface ProductCardProps {
   onPress?: (product: SupplyItem) => void;
   layout?: 'deal' | 'simple';
   style?: StyleProp<ViewStyle>;
+  customQuantity?: number;
+  onCustomAdd?: () => void;
+  onCustomIncrease?: () => void;
+  onCustomDecrease?: () => void;
+  hideWishlist?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -27,6 +32,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onPress,
   layout = 'deal',
   style,
+  customQuantity,
+  onCustomAdd,
+  onCustomIncrease,
+  onCustomDecrease,
+  hideWishlist,
 }) => {
   const { width } = useWindowDimensions();
   // Deal card: 2-column grid. Simple card: horizontal rail.
@@ -38,10 +48,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const isWishlisted = useWishlistStore((s) => s.isWishlisted(product.id));
-  const toggleItem = useWishlistStore((s) => s.toggleItem);
+  const isWishlistedStore = useWishlistStore((s) => s.isWishlisted(product.id));
+  const toggleItemStore = useWishlistStore((s) => s.toggleItem);
 
-  const options = [{ price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined }];
+  const isWishlisted = hideWishlist ? false : isWishlistedStore;
+  const toggleItem = hideWishlist ? () => {} : toggleItemStore;
+
+  const options = [{ price: product.price, unit: product.unit_label || 'piece', originalPrice: product.mrp ?? undefined }];
 
   const [selectedIdx, setSelectedIdx] = useState(0);
 
@@ -54,7 +67,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const selectedOption = options[selectedIdx] || options[0];
   const compoundId = `${product.id}-${selectedOption.unit}`;
   const cartItem = cartItems.find((item) => item.id === compoundId);
-  const quantity = cartItem ? cartItem.quantity : 0;
+  const quantity = customQuantity !== undefined ? customQuantity : (cartItem ? cartItem.quantity : 0);
 
   const price = selectedOption.price;
   const originalPrice = selectedOption.originalPrice;
@@ -62,9 +75,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
 
-  const handleAdd = () => addItem(product, selectedOption, 1);
-  const handleIncrease = () => updateQuantity(compoundId, quantity + 1);
-  const handleDecrease = () => updateQuantity(compoundId, quantity - 1);
+  const handleAdd = onCustomAdd || (() => addItem(product, selectedOption, 1));
+  const handleIncrease = onCustomIncrease || (() => updateQuantity(compoundId, quantity + 1));
+  const handleDecrease = onCustomDecrease || (() => updateQuantity(compoundId, quantity - 1));
 
   // ── Compact "simple" layout for horizontal rails ──────────────────────────
   if (layout === 'simple') {
@@ -250,8 +263,8 @@ const styles = StyleSheet.create({
   // ── Deal Card ──
   card: {
     backgroundColor: GroceryColors.white,
-    borderRadius: 16,
-    padding: 10,
+    borderRadius: 12,
+    padding: 8,
     borderWidth: 1,
     borderColor: GroceryColors.border,
     marginRight: 10,
@@ -287,36 +300,36 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   imageContainer: {
-    height: 110,
+    height: 85,
     width: '100%',
     backgroundColor: 'transparent',
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
     overflow: 'hidden',
   },
   image: {
-    width: '80%',
-    height: '80%',
+    width: '90%',
+    height: '90%',
     resizeMode: 'contain',
   },
   details: {
     flex: 1,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   name: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: GroceryColors.textPrimary,
-    lineHeight: 18,
-    minHeight: 36,
+    lineHeight: 16,
+    minHeight: 32,
   },
   unit: {
-    fontSize: 11,
+    fontSize: 10,
     color: GroceryColors.textSecondary,
     marginTop: 2,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   priceRow: {
     flexDirection: 'row',
