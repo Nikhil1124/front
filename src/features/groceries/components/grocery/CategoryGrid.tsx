@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Image, useWindowDimensions } from 'react-native';
 
 import { SupplyCategory } from '@/types';
-import { Radii, Palette, Colors } from '@/theme';
+import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 const gap = 10;
@@ -14,72 +14,96 @@ interface SupplyCategoryGridProps {
   onSeeAllPress: () => void;
 }
 
-// Map each category to the precise background color requested by the user
-const getSupplyCategoryBgColor = (name: string) => {
+// Map category name → actual grocery image asset
+// Falls back gracefully if name doesn't match any known pattern
+const getCategoryImage = (name: string) => {
   const n = name.toLowerCase();
-  if (n.includes('rice') || n.includes('grain') || n.includes('atta') || n.includes('flour')) {
-    return Colors.surfaceElevated; // Rice & Grains
+  
+  if (n.includes('fruit') || n.includes('veg')) {
+    return require('../../../../../assets/productimages/cat_fruits_veg_nobg.png');
   }
-  if (n.includes('pulse') || n.includes('dal') || n.includes('cereal') || n.includes('dry fruits')) {
-    return Palette.TintAmber; // Pulses & Dal
+  if (n.includes('dairy') || n.includes('milk') || n.includes('bread') || n.includes('egg')) {
+    return require('../../../../../assets/productimages/cat_dairy_nobg.png');
   }
-  if (n.includes('oil') || n.includes('masala') || n.includes('ghee') || n.includes('spice')) {
-    return Palette.TintAmber; // Oil & Masala
+  if (n.includes('chicken') || n.includes('meat') || n.includes('fish')) {
+    return require('../../../../../assets/productimages/cat_chicken_eggs_nobg.png');
   }
-  if (n.includes('veg') || n.includes('fruit')) {
-    return Colors.surfaceElevated; // Vegetables
+  if (n.includes('oil') || n.includes('masala') || n.includes('ghee') || n.includes('spice') || n.includes('atta') || n.includes('rice') || n.includes('dal') || n.includes('grain')) {
+    return require('../../../../../assets/productimages/cat_masala_nobg.png');
   }
-  if (n.includes('dairy') || n.includes('bread') || n.includes('bakery') || n.includes('biscuit')) {
-    return Palette.TintBlue; // Dairy & Bread
+  if (n.includes('snack') || n.includes('beverage') || n.includes('drink') || n.includes('juice') || n.includes('biscuit') || n.includes('chocolate') || n.includes('sweet')) {
+    return require('../../../../../assets/productimages/cat_addons_nobg.png');
   }
-  if (n.includes('egg') || n.includes('chicken') || n.includes('fish') || n.includes('meat')) {
-    return Palette.TintAmber; // Eggs
+  if (n.includes('bakery') || n.includes('breakfast') || n.includes('cereal')) {
+    return require('../../../../../assets/productimages/cat_dairy_nobg.png');
   }
-  if (n.includes('beverage') || n.includes('drink') || n.includes('juice') || n.includes('tea') || n.includes('coffee')) {
-    return Palette.TintBlue; // Beverages
-  }
-  if (n.includes('clean') || n.includes('hygiene') || n.includes('essential')) {
-    return Colors.surfaceElevated; // Cleaning
-  }
-  return Colors.surfaceElevated; // Fallback very light green
+  return require('../../../../../assets/productimages/cat_addons_nobg.png');
 };
 
-export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categories, onSupplyCategoryPress, onSeeAllPress }) => {
+
+// Soft pastel background per category type
+const getCategoryBg = (name: string): string => {
+  const n = name.toLowerCase();
+  if (n.includes('fruit') || n.includes('veg')) return '#EDF7ED';
+  if (n.includes('dairy') || n.includes('milk') || n.includes('bread')) return '#FFF8ED';
+  if (n.includes('chicken') || n.includes('meat') || n.includes('egg')) return '#FFF0ED';
+  if (n.includes('oil') || n.includes('masala') || n.includes('ghee')) return '#FFF8ED';
+  if (n.includes('snack') || n.includes('beverage') || n.includes('drink')) return '#F0F4FF';
+  if (n.includes('clean') || n.includes('household')) return '#F0F9FF';
+  return GroceryColors.lightGreen;
+};
+
+export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({
+  categories,
+  onSupplyCategoryPress,
+  onSeeAllPress,
+}) => {
   const { width } = useWindowDimensions();
-  // 4 items per row layout math
-  const cardWidth = (width - totalPadding - (gap * 3)) / 4;
+  const cardWidth = (width - totalPadding - gap * 3) / 4;
 
-  // Show exactly maximum 8 categories initially on the Home screen
+  // Show max 8 categories on home screen
   const visibleCategories = categories.slice(0, 8);
-
-  const handleSupplyCategoryPress = (cat: SupplyCategory) => onSupplyCategoryPress(cat);
-  const handleSeeAllPress = () => onSeeAllPress();
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Shop by Category</Txt>
-        <AnimatedPress accessibilityRole="button" onPress={handleSeeAllPress}>
-          <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Txt>
+        <Txt maxFontSizeMultiplier={1.2} style={styles.sectionTitle}>
+          Popular Categories
+        </Txt>
+        <AnimatedPress accessibilityRole="button" onPress={onSeeAllPress}>
+          <Txt maxFontSizeMultiplier={1.2} style={styles.seeAllText}>
+            View All →
+          </Txt>
         </AnimatedPress>
       </View>
+
       <View style={styles.grid}>
         {visibleCategories.map((cat) => {
-          const bgColor = getSupplyCategoryBgColor(cat.name);
+          const bg = getCategoryBg(cat.name);
           return (
-            <AnimatedPress accessibilityRole="button"
+            <AnimatedPress
               key={cat.id}
+              accessibilityRole="button"
               style={[styles.cardItem, { width: cardWidth }]}
-
-              onPress={() => handleSupplyCategoryPress(cat)}
+              onPress={() => onSupplyCategoryPress(cat)}
             >
-              <View style={[styles.imageWrapper, { backgroundColor: bgColor, width: cardWidth, height: cardWidth }]}>
+              <View
+                style={[
+                  styles.imageWrapper,
+                  { backgroundColor: bg, width: cardWidth, height: cardWidth },
+                ]}
+              >
                 <Image
-                  source={require('../../../../../assets/img_app_icon.jpg')}
+                  source={getCategoryImage(cat.name)}
                   style={styles.image}
+                  resizeMode="contain"
                 />
               </View>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.cardText} numberOfLines={2}>
+              <Txt
+                maxFontSizeMultiplier={1.2}
+                style={styles.cardText}
+                numberOfLines={2}
+              >
                 {cat.name}
               </Txt>
             </AnimatedPress>
@@ -93,7 +117,8 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({ categori
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    marginVertical: 12,
+    marginTop: 20,
+    marginBottom: 8,
   },
   headerRow: {
     flexDirection: 'row',
@@ -103,11 +128,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    color: Colors.textPrimary,
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
   },
   seeAllText: {
     fontSize: 13,
-    color: Colors.primary,
+    fontWeight: '600',
+    color: GroceryColors.primary,
   },
   grid: {
     flexDirection: 'row',
@@ -126,13 +153,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   image: {
-    width: '75%',
-    height: '75%',
-    resizeMode: 'contain',
+    width: '78%',
+    height: '78%',
   },
   cardText: {
     fontSize: 11,
-    color: Colors.textPrimary,
+    fontWeight: '500',
+    color: GroceryColors.textPrimary,
     textAlign: 'center',
     lineHeight: 14,
     minHeight: 28,

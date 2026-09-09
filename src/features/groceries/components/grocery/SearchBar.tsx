@@ -1,29 +1,27 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
   Animated,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
-  View } from 'react-native';
+  View,
+} from 'react-native';
 
-import { Radii, Colors, Layout } from '@/theme';
+import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress } from '@/components/ui';
 
-const EXAMPLE_ITEMS = [
-  "Search  'Tomato Puree'",
-  "Search  'Fresh Milk'",
-  "Search  'Onion 1kg'",
-  "Search  'Amul Butter'",
-  "Search  'Cold Drink'",
-  "Search  'KitKat'",
+const DEFAULT_PLACEHOLDERS = [
+  'Search groceries, fruits, snacks...',
+  "Search 'Amul Milk, Eggs, Bread'",
+  "Search 'Bananas, Tomatoes...'",
+  "Search 'Maggi, Noodles, Snacks'",
 ];
 
 interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   onFilterPress?: () => void;
-  onCartPress: () => void;
+  onCartPress?: () => void;
   hasActiveFilters?: boolean;
   placeholderItems?: string[];
 }
@@ -34,48 +32,40 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onFilterPress,
   onCartPress,
   hasActiveFilters,
-  placeholderItems
+  placeholderItems,
 }) => {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [fadeAnim] = useState(() => new Animated.Value(1));
 
-  const itemsToUse = placeholderItems || EXAMPLE_ITEMS;
+  const items = placeholderItems || DEFAULT_PLACEHOLDERS;
 
-  // Rotate through placeholder examples every 2.5s
   useEffect(() => {
     if (value.length > 0) return;
     const interval = setInterval(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true }).start(() => {
-        setPlaceholderIndex((prev) => (prev + 1) % itemsToUse.length);
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true }).start();
+      Animated.timing(fadeAnim, { toValue: 0, duration: 280, useNativeDriver: true }).start(() => {
+        setPlaceholderIndex((prev) => (prev + 1) % items.length);
+        Animated.timing(fadeAnim, { toValue: 1, duration: 280, useNativeDriver: true }).start();
       });
-    }, 2500);
+    }, 2800);
     return () => clearInterval(interval);
-  }, [value, itemsToUse, fadeAnim]);
+  }, [value, items, fadeAnim]);
 
   return (
-    <View style={styles.wrapper}>
-      {/* Main pill search bar */}
+    <View style={styles.container}>
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color={Colors.primary} />
+        {/* Search icon */}
+        <Ionicons name="search" size={18} color={GroceryColors.textMuted} style={styles.searchIcon} />
 
+        {/* Input / animated placeholder */}
         <View style={styles.inputWrapper}>
           {value.length === 0 && (
-            <Animated.Text
-              style={[styles.animatedPlaceholder, { opacity: fadeAnim }]}
-              numberOfLines={1}
-            >
-              {itemsToUse[placeholderIndex]}
+            <Animated.Text style={[styles.placeholder, { opacity: fadeAnim }]} numberOfLines={1}>
+              {items[placeholderIndex]}
             </Animated.Text>
           )}
-          <TextInput maxFontSizeMultiplier={1.3}
-            style={[styles.searchInput, value.length > 0 && styles.inputActive]}
+          <TextInput
+            maxFontSizeMultiplier={1.3}
+            style={styles.input}
             placeholder=""
             value={value}
             onChangeText={onChangeText}
@@ -84,90 +74,101 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           />
         </View>
 
-        <View style={styles.divider} />
-
-        {onFilterPress ? (
-          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="More options" accessibilityRole="button" style={styles.scanBtn} onPress={onFilterPress}>
-            <Ionicons name="options-outline" size={22} color={hasActiveFilters ? Colors.primary : Colors.textSecondary} />
+        {/* Right icons: sort + filter */}
+        <View style={styles.rightIcons}>
+          <AnimatedPress
+            hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+            accessibilityRole="button"
+            accessibilityLabel="Sort"
+            onPress={onFilterPress}
+            style={styles.iconButton}
+          >
+            <Ionicons name="swap-vertical" size={18} color={GroceryColors.textMuted} />
+          </AnimatedPress>
+          <View style={styles.iconDivider} />
+          <AnimatedPress
+            hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+            accessibilityRole="button"
+            accessibilityLabel="Filter"
+            onPress={onFilterPress}
+            style={styles.iconButton}
+          >
+            <Ionicons
+              name={hasActiveFilters ? 'options' : 'options-outline'}
+              size={18}
+              color={hasActiveFilters ? GroceryColors.primary : GroceryColors.textMuted}
+            />
             {hasActiveFilters && <View style={styles.filterDot} />}
           </AnimatedPress>
-        ) : (
-          <AnimatedPress accessibilityRole="button" style={styles.scanBtn}>
-            <MaterialCommunityIcons name="line-scan" size={22} color={Colors.primary} />
-          </AnimatedPress>
-        )}
+        </View>
       </View>
-
-      {/* Separate cart circle button */}
-      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Cart" accessibilityRole="button"
-        style={styles.cartBtn}
-
-        onPress={onCartPress}
-      >
-        <Ionicons name="cart-outline" size={22} color={Colors.textPrimary} />
-      </AnimatedPress>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: {
     paddingHorizontal: 16,
-    marginBottom: 8,
-    gap: 10 },
+    paddingVertical: 10,
+    backgroundColor: GroceryColors.primaryDark,
+  },
   searchBar: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.sheet,
-    paddingHorizontal: 16,
-    height: 50,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    ...Layout.shadowCard },
+    backgroundColor: GroceryColors.white,
+    borderRadius: Radii.pill,
+    height: 48,
+    paddingHorizontal: 14,
+    shadowColor: GroceryColors.shadowColor,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
   inputWrapper: {
     flex: 1,
-    marginLeft: 10,
     justifyContent: 'center',
-    height: 50 },
-  animatedPlaceholder: {
+    height: 48,
+  },
+  placeholder: {
     position: 'absolute',
     fontSize: 13,
-    color: Colors.textMuted },
-  searchInput: {
+    color: GroceryColors.textMuted,
+  },
+  input: {
     fontSize: 13,
-    color: Colors.textPrimary,
-    height: 50,
-    padding: 0 },
-  inputActive: {
-    color: Colors.textPrimary },
-  divider: {
-    width: 1,
-    height: 22,
-    backgroundColor: Colors.borderSubtle,
-    marginHorizontal: 10 },
-  scanBtn: {
+    color: GroceryColors.textPrimary,
+    height: 48,
+    padding: 0,
+  },
+  rightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  iconButton: {
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative' },
+    position: 'relative',
+  },
+  iconDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: GroceryColors.borderSubtle,
+    marginHorizontal: 2,
+  },
   filterDot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
+    top: 6,
+    right: 6,
+    width: 6,
+    height: 6,
     borderRadius: Radii.pill,
-    backgroundColor: Colors.primary },
-  cartBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
-    ...Layout.shadowCard } });
+    backgroundColor: GroceryColors.discountRed,
+  },
+});

@@ -1,66 +1,100 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
-
-;
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Radii, Colors } from '@/theme';
-import { BlurView } from 'expo-blur';
-import { useAuthStore } from '@/store/authStore';
+import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 interface HeaderProps {
-  /** Static "delivering to" line — groceries always ship to the PG's own
-   *  address, so there is no map picker here (unlike the source app). */
+  /** "PG Name • Address" or just "Your PG" when not loaded yet */
   deliveryLabel: string;
-  onProfilePress: () => void;
-  /** Leaves the groceries mini-app back to whatever screen pushed it. */
-  onBack: () => void;
+  /** Cart item count for badge */
+  cartItemCount?: number;
+  onCartPress?: () => void;
+  onNotificationPress?: () => void;
+  /** Back button — shown only on sub-screens, not on the home tab */
+  showBack?: boolean;
+  onBack?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ deliveryLabel, onProfilePress, onBack }) => {
-  // Every other screen's header (TabHeader, HubScreenWrapper) pads by insets.top + 14 — this
-  // one used a fixed 4/8pt instead, so it sat under the status bar / notch. Same fix, same
-  // value, so the grocery mini-app's header lines up with the rest of the app.
+export const Header: React.FC<HeaderProps> = ({
+  deliveryLabel,
+  cartItemCount = 0,
+  onCartPress,
+  onNotificationPress,
+  showBack = false,
+  onBack,
+}) => {
   const insets = useSafeAreaInsets();
-  // Same derivation GroceryProfileScreen.tsx uses — this avatar used to be hardcoded "S"
-  // regardless of who was signed in.
-  const userName = useAuthStore((s) => s.user?.name);
-  const avatarLetter = (userName?.trim().charAt(0).toUpperCase()) || 'P';
+
+  // Split "PG Name • Address" into name + address for two-line layout
+  const parts = deliveryLabel.split(' • ');
+  const pgName = parts[0] ?? deliveryLabel;
+
   return (
-    <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 14 }]}>
-      <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button" style={styles.backBtn} onPress={onBack}>
-        <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-      </AnimatedPress>
-      <View style={styles.headerLeft}>
-        <View style={styles.deliveryContainer}>
-          <View style={styles.deliveryBadge}>
-            <Ionicons name="time" size={13} color={Colors.textInverse} />
-            {/* Matches checkout's actual fastest slot ("Express • 15–25 min") — this used
-                to promise a flat "10 MINS", a number nothing in the order flow can meet. */}
-            <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryBadgeText}>EXPRESS</Txt>
+    <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+      <View style={styles.leftSection}>
+        {showBack ? (
+          <AnimatedPress
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            style={styles.backBtn}
+            onPress={onBack}
+          >
+            <Ionicons name="arrow-back" size={20} color={GroceryColors.white} />
+          </AnimatedPress>
+        ) : (
+          <View style={styles.locationIconWrapper}>
+            <Ionicons name="location-sharp" size={16} color="#7DFFCB" />
           </View>
-          <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryText}>Delivery to</Txt>
-        </View>
-        <View style={styles.locationRow}>
-          <Txt maxFontSizeMultiplier={1.3} style={styles.locationTitle} numberOfLines={1}>
-            {deliveryLabel}
+        )}
+
+        <AnimatedPress
+          accessibilityRole="button"
+          style={styles.deliveryInfo}
+          onPress={() => {}}
+        >
+          <Txt maxFontSizeMultiplier={1.2} style={styles.deliverInLabel}>
+            8 minutes
           </Txt>
-        </View>
+          <View style={styles.pgNameRow}>
+            <Txt
+              maxFontSizeMultiplier={1.2}
+              style={styles.pgName}
+              numberOfLines={1}
+            >
+              HOME - {pgName}
+            </Txt>
+            <Ionicons name="chevron-down" size={12} color={'rgba(255,255,255,0.7)'} style={{ marginLeft: 4 }} />
+          </View>
+        </AnimatedPress>
       </View>
 
-      <AnimatedPress accessibilityRole="button"
-        style={styles.profileIconBtn}
-        onPress={onProfilePress}
+      <View style={styles.rightSection}>
+        {/* Support/Orders icons */}
+        <AnimatedPress
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          style={styles.iconBtn}
+          onPress={onCartPress} // Map to cart for now if needed, or leave blank
+        >
+          <Ionicons name="cube-outline" size={24} color={GroceryColors.white} />
+        </AnimatedPress>
 
-      >
-        <View style={styles.profileAvatar}>
-          <Txt maxFontSizeMultiplier={1.3} style={styles.profileAvatarText}>{avatarLetter}</Txt>
-        </View>
-      </AnimatedPress>
-    </BlurView>
+        <AnimatedPress
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          style={styles.iconBtn}
+          onPress={onNotificationPress}
+        >
+          <Ionicons name="person-circle-outline" size={26} color={GroceryColors.white} />
+        </AnimatedPress>
+      </View>
+    </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   header: {
@@ -68,80 +102,83 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(229, 231, 235, 0.5)',
+    paddingBottom: 12,
+    backgroundColor: GroceryColors.primaryDark,
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
+  locationIconWrapper: {
+    marginRight: 2,
   },
   backBtn: {
-    padding: 4,
-    marginRight: 10,
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: 16,
-  },
-  deliveryContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 3,
-  },
-  deliveryBadge: {
-    backgroundColor: Colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: Radii.badge,
-    gap: 3,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  deliveryBadgeText: {
-    color: Colors.textInverse,
-    fontSize: 10,
-    letterSpacing: 0.3,
-  },
-  deliveryText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationTitle: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    marginRight: 2,
-    maxWidth: '85%',
-  },
-  profileIconBtn: {
+    marginRight: 4,
     padding: 2,
   },
-  profileAvatar: {
+  deliveryInfo: {
+    justifyContent: 'center',
+    paddingLeft: 4,
+  },
+  deliverInLabel: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: GroceryColors.white,
+    letterSpacing: -0.5,
+  },
+  pgNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  pgName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.8)',
+    maxWidth: 200, // Leave room for right icons
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  iconBtn: {
     width: 38,
     height: 38,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.surfaceElevated,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
+    position: 'relative',
   },
-  profileAvatarText: {
-    color: Colors.textInverse,
-    fontSize: 16,
+  notifBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: Radii.pill,
+    backgroundColor: GroceryColors.discountRed,
+    borderWidth: 1.5,
+    borderColor: GroceryColors.primaryDark,
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: Radii.pill,
+    backgroundColor: GroceryColors.discountRed,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: GroceryColors.primaryDark,
+  },
+  cartBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: GroceryColors.white,
   },
 });

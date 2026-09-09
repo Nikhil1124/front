@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { StyleSheet, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, Image, Alert } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,7 +10,7 @@ import { useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Radii, Palette, Colors } from '@/theme';
+import { GroceryColors, Radii } from '@/theme';
 import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -21,6 +21,10 @@ import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, Txt } from '@/components/ui';
+
+const FREE_DELIVERY_THRESHOLD = 500;
+const DELIVERY_FEE = 30;
+const PLATFORM_FEE = 5;
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();
@@ -37,37 +41,31 @@ export function GroceryCartScreen() {
     (owner ?? ownerForGuest)?.address ?? 'Your PG address',
   );
 
-  // Calculations
   const subtotal = getCartTotal();
   const { subtotal: billSubtotal, tax: billTax, taxable: billTaxable } = getBillEstimate();
   const cartItemCount = getItemCount();
   const totalSavings = getTotalSavings();
 
-  // Alert confirmations
+  // Delivery progress
+  const amountToFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
+  const deliveryFreeUnlocked = subtotal >= FREE_DELIVERY_THRESHOLD;
+  const progressPercent = Math.min(1, subtotal / FREE_DELIVERY_THRESHOLD);
+
   const handleClearCart = () => {
-    Alert.alert(
-      "Clear Cart",
-      "Are you sure you want to remove all items from your cart?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Clear All", style: "destructive", onPress: () => clearCart() }
-      ]
-    );
+    Alert.alert('Clear Cart', 'Are you sure you want to remove all items from your cart?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear All', style: 'destructive', onPress: () => clearCart() },
+    ]);
   };
 
   const handleRemoveItem = (itemId: string, itemName: string) => {
-    Alert.alert(
-      "Remove Item",
-      `Are you sure you want to remove ${itemName} from the cart?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Remove", style: "destructive", onPress: () => removeItem(itemId) }
-      ]
-    );
+    Alert.alert('Remove Item', `Remove ${itemName} from the cart?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removeItem(itemId) },
+    ]);
   };
 
   const [showAddressPrompt, setShowAddressPrompt] = useState(false);
-  const handleUpdateAddress = () => setShowAddressPrompt(true);
 
   const isChef = usePGowStore((s) => s.activeRole) === 'CHEF';
   const submitProcurementOrder = useSubmitProcurementOrder();
@@ -75,21 +73,14 @@ export function GroceryCartScreen() {
 
   const handleCheckoutOrRequest = async () => {
     if (isChef) {
-      // Was `submitChefGroceryRequest` — a Zustand-only array nobody ever displayed, so a
-      // chef's request vanished on the next app restart and no manager could act on it
-      // despite the "sent to the Manager for purchase" confirmation. The real endpoint for
-      // exactly this — pg-backend's own words: procurement's catalog IS "the real Supply
-      // catalog... what a chef may pick from" (procurement/service.py:list_catalog) — reads
-      // the same `supply_items` table this cart's items already come from, so the cart's
-      // own ids are valid `item_id`s for a real requisition. Owner/manager then see and
-      // approve it on the Approvals tab of this same screen (/procurement).
       if (!activePgId) return;
       setSubmittingRequisition(true);
       try {
         await submitProcurementOrder.mutateAsync({
           pg_id: activePgId,
           order_type: 'supplies',
-          items: items.map((i) => ({ item_id: i.productId, quantity: i.quantity })) });
+          items: items.map((i) => ({ item_id: i.productId, quantity: i.quantity })),
+        });
         clearCart();
         Alert.alert('Requisition Sent', 'Your grocery list has been sent to the owner/manager for approval.');
         router.back();
@@ -103,29 +94,28 @@ export function GroceryCartScreen() {
     router.push('/groceries/checkout');
   };
 
-  // Recommendations list
   const recommendations = useMemo(() => supplyItems.slice(0, 6), [supplyItems]);
 
   return (
     <View style={styles.container}>
-
-      {/* 2. Cart Header */}
+      {/* ── Header ── */}
       <AppHeader
-        title={`Your Cart (${cartItemCount})`}
+        title="Your Cart"
         onBack={() => router.back()}
-        actions={items.length > 0 ? (
-          <AnimatedPress accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn}>
-            <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-            <Txt maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear</Txt>
-          </AnimatedPress>
-        ) : undefined}
+        actions={
+          items.length > 0 ? (
+            <AnimatedPress accessibilityRole="button" onPress={handleClearCart} style={styles.clearBtn}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.clearText}>Clear All</Txt>
+            </AnimatedPress>
+          ) : undefined
+        }
       />
 
       {items.length === 0 ? (
-        /* 18. Empty Cart State */
+        /* ── Empty state ── */
         <View style={styles.emptyCart}>
           <View style={styles.emptyIconWrapper}>
-            <Ionicons name="cart-outline" size={64} color={Colors.primary} />
+            <Ionicons name="cart-outline" size={56} color={GroceryColors.primary} />
           </View>
           <Txt maxFontSizeMultiplier={1.3} style={styles.emptyTitle}>Your cart is empty</Txt>
           <Txt maxFontSizeMultiplier={1.3} style={styles.emptySubtitle}>
@@ -138,113 +128,128 @@ export function GroceryCartScreen() {
       ) : (
         <>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            {/* 3. Delivery Information */}
-            <AnimatedPress accessibilityRole="button" style={styles.deliveryCard} onPress={handleUpdateAddress}>
-              <View style={styles.deliveryLeft}>
-                <View style={styles.deliveryHeaderRow}>
-                  <Ionicons name="location-outline" size={16} color={Colors.info} style={styles.locationIcon} />
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryTitle}>Deliver to</Txt>
-                </View>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryAddress} numberOfLines={1}>
-                  {deliveryAddress} <Ionicons name="chevron-down" size={11} color={Colors.textSecondary} />
+
+            {/* ── Delivery progress bar ── */}
+            <View style={styles.deliveryProgressCard}>
+              <View style={styles.deliveryProgressRow}>
+                <Ionicons name="bicycle" size={18} color={GroceryColors.primary} />
+                {deliveryFreeUnlocked ? (
+                  <Txt maxFontSizeMultiplier={1.2} style={styles.deliveryProgressText}>
+                    🎉 You've unlocked{' '}
+                    <Txt style={styles.deliveryProgressBold}>FREE delivery!</Txt>
+                  </Txt>
+                ) : (
+                  <Txt maxFontSizeMultiplier={1.2} style={styles.deliveryProgressText}>
+                    You are just{' '}
+                    <Txt style={styles.deliveryProgressBold}>₹{amountToFreeDelivery}</Txt>
+                    {' '}away from FREE delivery!
+                  </Txt>
+                )}
+                <Txt maxFontSizeMultiplier={1.1} style={styles.deliveryThreshold}>
+                  ₹{FREE_DELIVERY_THRESHOLD}
                 </Txt>
               </View>
-              <View style={styles.deliveryRight}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryRightLabel}>Estimated Delivery</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.deliveryTimeText}>Today • 6:00 PM – 8:00 PM</Txt>
+              <View style={styles.progressBarTrack}>
+                <View style={[styles.progressBarFill, { width: `${progressPercent * 100}%` }]} />
               </View>
-            </AnimatedPress>
-
-            {/* 4. Free Delivery Progress Box */}
-            <View style={styles.freeDeliveryCard}>
-              <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.freeDeliveryText}>✓ FREE DELIVERY unlocked</Txt>
             </View>
 
-            {/* 5. Cart Item Cards */}
-            <Txt maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Items in Cart</Txt>
+            {/* ── Cart items ── */}
             {items.map((item) => {
               const isEditingReplacement = editingReplacementId === item.id;
               const hasDiscount = item.originalPrice && item.originalPrice > item.price;
-              const itemSavings = hasDiscount ? (item.originalPrice! - item.price) * item.quantity : 0;
-              
-              // Calculate unit price if in owner mode (e.g. 10 kg -> ₹48/kg)
               const perUnitRateText = mode === 'owner' ? getPerUnitRateLabel(item.unit, item.price) : '';
 
               return (
                 <View key={item.id} style={styles.cartCard}>
-                  <View style={styles.cartItemHeader}>
-                    {/* Left: Product Image */}
-                    <View style={styles.imageContainer}>
+                  <View style={styles.cartItemRow}>
+                    {/* Thumbnail */}
+                    <View style={styles.thumbnailContainer}>
                       <Image
-                        source={item.image ? { uri: item.image } : require('../../../../assets/img_app_icon.jpg')}
-                        style={styles.itemImage}
+                        source={
+                          item.image
+                            ? { uri: item.image }
+                            : require('../../../../assets/productimages/d1_nobg.png')
+                        }
+                        style={styles.thumbnail}
                       />
                     </View>
 
-                    {/* Middle: Product Info */}
+                    {/* Info */}
                     <View style={styles.itemInfo}>
-                      <Txt maxFontSizeMultiplier={1.3} style={styles.itemName} numberOfLines={2}>{item.name}</Txt>
-                      <Txt maxFontSizeMultiplier={1.3} style={styles.itemUnit}>{item.unit}</Txt>
-                      
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.itemName} numberOfLines={2}>
+                        {item.name}
+                      </Txt>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.itemUnit}>
+                        {item.unit}
+                      </Txt>
                       {perUnitRateText ? (
-                        <Txt maxFontSizeMultiplier={1.3} style={styles.unitRateText}>{perUnitRateText}</Txt>
+                        <Txt maxFontSizeMultiplier={1.2} style={styles.unitRateText}>
+                          {perUnitRateText}
+                        </Txt>
                       ) : null}
-
                       <View style={styles.priceRow}>
-                        <Txt maxFontSizeMultiplier={1.3} style={styles.itemPrice}>₹{item.price * item.quantity}</Txt>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.itemPrice}>
+                          ₹{item.price * item.quantity}
+                        </Txt>
                         {item.originalPrice ? (
-                          <Txt maxFontSizeMultiplier={1.3} style={styles.strikePrice}>₹{item.originalPrice * item.quantity}</Txt>
+                          <Txt maxFontSizeMultiplier={1.3} style={styles.itemStrikePrice}>
+                            ₹{item.originalPrice * item.quantity}
+                          </Txt>
                         ) : null}
                       </View>
-
-                      {itemSavings > 0 ? (
-                        <Txt maxFontSizeMultiplier={1.3} style={styles.itemSavingsText}>Save ₹{itemSavings}</Txt>
-                      ) : null}
                     </View>
 
-                    {/* Right: Quantity Adjuster & Delete Action */}
-                    <View style={styles.actionsContainer}>
-                      <View style={styles.quantityControl}>
-                        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Decrease quantity" accessibilityRole="button"
-                          style={styles.qtyBtn}
-                          onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : handleRemoveItem(item.id, item.name)}
+                    {/* Right: delete + qty */}
+                    <View style={styles.cartItemActions}>
+                      <AnimatedPress
+                        accessibilityRole="button"
+                        style={styles.deleteBtn}
+                        onPress={() => handleRemoveItem(item.id, item.name)}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={GroceryColors.textMuted} />
+                      </AnimatedPress>
 
+                      <View style={styles.qtyControl}>
+                        <AnimatedPress
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          accessibilityRole="button"
+                          style={styles.qtyBtn}
+                          onPress={() =>
+                            item.quantity > 1
+                              ? updateQuantity(item.id, item.quantity - 1)
+                              : handleRemoveItem(item.id, item.name)
+                          }
                         >
-                          <Ionicons name="remove" size={14} color={Colors.primary} />
+                          <Ionicons name="remove" size={14} color={GroceryColors.primary} />
                         </AnimatedPress>
-                        <Txt maxFontSizeMultiplier={1.3} style={styles.qtyText}>{item.quantity}</Txt>
-                        <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
+                        <Txt maxFontSizeMultiplier={1.2} style={styles.qtyText}>
+                          {item.quantity}
+                        </Txt>
+                        <AnimatedPress
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          accessibilityRole="button"
                           style={styles.qtyBtn}
                           onPress={() => updateQuantity(item.id, item.quantity + 1)}
-
                         >
-                          <Ionicons name="add" size={14} color={Colors.primary} />
+                          <Ionicons name="add" size={14} color={GroceryColors.primary} />
                         </AnimatedPress>
                       </View>
-
-                      <AnimatedPress accessibilityRole="button"
-                        style={styles.removeAction}
-                        onPress={() => handleRemoveItem(item.id, item.name)}
-
-                      >
-                        <Ionicons name="trash-outline" size={12} color={Colors.danger} />
-                        <Txt maxFontSizeMultiplier={1.3} style={styles.removeActionText}>Remove</Txt>
-                      </AnimatedPress>
                     </View>
                   </View>
 
-                  {/* Replacement Picker option */}
-                  <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
+                  {/* Replacement picker */}
+                  <AnimatedPress
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    accessibilityRole="button"
                     style={styles.replacementToggle}
                     onPress={() => setEditingReplacementId(isEditingReplacement ? null : item.id)}
-
                   >
                     <ReplacementPicker value={item.replacement || 'best-match'} onChange={() => {}} compact />
                     <Ionicons
                       name={isEditingReplacement ? 'chevron-up' : 'chevron-down'}
                       size={14}
-                      color={Colors.primary}
+                      color={GroceryColors.primary}
                     />
                   </AnimatedPress>
 
@@ -263,24 +268,31 @@ export function GroceryCartScreen() {
               );
             })}
 
-            {/* 13. Savings Summary banner card */}
+            {/* ── Add more items ── */}
+            <AnimatedPress
+              accessibilityRole="button"
+              style={styles.addMoreRow}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="add-circle-outline" size={18} color={GroceryColors.primary} />
+              <Txt maxFontSizeMultiplier={1.2} style={styles.addMoreText}>Add more items</Txt>
+              <Ionicons name="chevron-forward" size={14} color={GroceryColors.primary} />
+            </AnimatedPress>
+
+            {/* ── Savings banner ── */}
             {totalSavings > 0 && (
-              <View style={styles.savingsCard}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.savingsTagIcon}>🏷️</Txt>
-                <View style={styles.savingsTextWrapper}>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.savingsCardTitle}>You save ₹{totalSavings} today!</Txt>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.savingsCardSubtitle}>Great deal for your PG kitchen</Txt>
-                </View>
-                <View style={styles.savingsBadge}>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.savingsBadgeText}>-₹{totalSavings}</Txt>
-                </View>
+              <View style={styles.savingsBanner}>
+                <Txt maxFontSizeMultiplier={1.2} style={styles.savingsIcon}>🏷️</Txt>
+                <Txt maxFontSizeMultiplier={1.2} style={styles.savingsText}>
+                  You save <Txt style={styles.savingsBold}>₹{totalSavings}</Txt> on this order!
+                </Txt>
               </View>
             )}
 
-            {/* 12. Bill Details Box */}
+            {/* ── Bill Details ── */}
             <View style={styles.billCard}>
               <Txt maxFontSizeMultiplier={1.3} style={styles.billTitle}>Bill Details</Txt>
-              
+
               <View style={styles.billRow}>
                 <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Item Total</Txt>
                 <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal}</Txt>
@@ -289,33 +301,41 @@ export function GroceryCartScreen() {
               {totalSavings > 0 && (
                 <View style={styles.billRow}>
                   <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Discount</Txt>
-                  <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.danger }]}>-₹{totalSavings}</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: GroceryColors.discountRed }]}>
+                    -₹{totalSavings}
+                  </Txt>
                 </View>
               )}
 
               <View style={styles.billRow}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Taxable Value</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTaxable, 2)}</Txt>
-              </View>
-
-              <View style={styles.billRow}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>GST</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>{formatINR(billTax, 2)}</Txt>
-              </View>
-
-              <View style={styles.billRow}>
                 <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: Colors.primary }]}>FREE</Txt>
+                {deliveryFreeUnlocked ? (
+                  <View style={styles.freeBadgeRow}>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.billStrike}>₹{DELIVERY_FEE}</Txt>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.freeLabel}>FREE</Txt>
+                  </View>
+                ) : (
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{DELIVERY_FEE}</Txt>
+                )}
+              </View>
+
+              <View style={styles.billRow}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Platform Fee</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{PLATFORM_FEE}</Txt>
               </View>
 
               <View style={[styles.billRow, styles.totalRow]}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Subtotal</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{billSubtotal}</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.totalValue}>
+                  ₹{billSubtotal + (deliveryFreeUnlocked ? 0 : DELIVERY_FEE) + PLATFORM_FEE}
+                </Txt>
               </View>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.billFootnote}>Item prices are GST-inclusive.</Txt>
+              <Txt maxFontSizeMultiplier={1.2} style={styles.billFootnote}>
+                Item prices are GST-inclusive.
+              </Txt>
             </View>
 
-            {/* 14. You May Also Need — shared MiniProductCard */}
+            {/* ── You May Also Need ── */}
             <View style={styles.recSection}>
               <SectionHeader
                 title="You May Also Need"
@@ -331,52 +351,44 @@ export function GroceryCartScreen() {
                   <MiniProductCard
                     key={p.id}
                     product={p}
-                    onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })}
+                    onPress={() =>
+                      router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })
+                    }
                   />
                 ))}
               </ScrollView>
             </View>
-
-            {/* 15. Trust / Quality Reassurance strip */}
-            <View style={styles.reassuranceStrip}>
-              <View style={styles.reassuranceItem}>
-                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Txt maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Quality Checked</Txt>
-              </View>
-              <View style={styles.reassuranceItem}>
-                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Txt maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Hygienically Packed</Txt>
-              </View>
-              <View style={styles.reassuranceItem}>
-                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                <Txt maxFontSizeMultiplier={1.3} style={styles.reassuranceText}>Easy Replacement</Txt>
-              </View>
-            </View>
           </ScrollView>
 
-          {/* 16 & 17. Sticky Checkout Bar */}
-          <View style={[styles.stickyCheckoutBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            <View style={styles.checkoutBarLeft}>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutPrice}>₹{billSubtotal}</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutInfoText}>
-                {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}
+          {/* ── Sticky checkout bar ── */}
+          <View style={[styles.checkoutBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <View>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutPrice}>
+                ₹{billSubtotal + (deliveryFreeUnlocked ? 0 : DELIVERY_FEE) + PLATFORM_FEE}
+              </Txt>
+              <Txt maxFontSizeMultiplier={1.2} style={styles.checkoutPriceSub}>
+                View Details
               </Txt>
             </View>
 
-            <AnimatedPress accessibilityRole="button"
+            <AnimatedPress
+              accessibilityRole="button"
               style={[styles.checkoutBtn, submittingRequisition && { opacity: 0.6 }]}
               onPress={handleCheckoutOrRequest}
-
               disabled={submittingRequisition}
             >
               <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutBtnText}>
-                {isChef ? (submittingRequisition ? 'Sending…' : 'Request via Manager') : 'Proceed to Checkout'}
+                {isChef
+                  ? submittingRequisition
+                    ? 'Sending…'
+                    : 'Request via Manager'
+                  : 'Proceed to Checkout →'}
               </Txt>
-              <Ionicons name={isChef ? 'send' : 'arrow-forward'} size={16} color={Colors.surface} style={{ marginLeft: 4 }} />
             </AnimatedPress>
           </View>
         </>
       )}
+
       <TextPromptDialog
         visible={showAddressPrompt}
         title="Change Address"
@@ -384,182 +396,170 @@ export function GroceryCartScreen() {
         label="Delivery address"
         initialValue={deliveryAddress}
         onCancel={() => setShowAddressPrompt(false)}
-        onSave={(text) => { setDeliveryAddress(text); setShowAddressPrompt(false); }}
+        onSave={(text) => {
+          setDeliveryAddress(text);
+          setShowAddressPrompt(false);
+        }}
       />
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.canvas },
-  clearBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4 },
-  clearText: {
-    fontSize: 13,
-    color: Colors.danger },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 110, // Avoid overlapping sticky bar
+    backgroundColor: GroceryColors.background,
   },
-  // Delivery layout (Split Row)
-  deliveryCard: {
-    flexDirection: 'row',
-    backgroundColor: Palette.TintBlue,
-    borderRadius: Radii.card,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    marginBottom: 16 },
-  deliveryLeft: {
-    flex: 1.2,
-    justifyContent: 'center' },
-  deliveryHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2 },
-  locationIcon: {
-    marginTop: -1 },
-  deliveryTitle: {
-    fontSize: 10,
-    color: Colors.textSecondary },
-  deliveryAddress: {
-    fontSize: 12,
-    color: Colors.textPrimary },
-  deliveryRight: {
-    flex: 1,
-    paddingLeft: 12,
-    borderLeftWidth: 1,
-    borderLeftColor: Colors.borderSubtle,
-    justifyContent: 'center' },
-  deliveryRightLabel: {
-    fontSize: 10,
-    color: Colors.textSecondary,
-    marginBottom: 2 },
-  deliveryTimeText: {
-    color: Colors.info,
-    fontSize: 12 },
-  // Free delivery tag
-  freeDeliveryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: Radii.card,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-    gap: 6 },
-  freeDeliveryText: {
-    color: Colors.primaryDark,
-    fontSize: 12 },
-  sectionHeading: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    marginBottom: 12 },
-  // Cart Card Layout
-  cartCard: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: Radii.card,
-    padding: 14,
+
+  // ── Header actions ──
+  clearBtn: { paddingHorizontal: 8, paddingVertical: 4 },
+  clearText: { fontSize: 13, color: GroceryColors.discountRed, fontWeight: '600' },
+
+  // ── Scroll ──
+  scrollContent: {
+    paddingTop: 12,
+    paddingBottom: 110,
+  },
+
+  // ── Delivery progress ──
+  deliveryProgressCard: {
+    marginHorizontal: 16,
     marginBottom: 12,
-    shadowColor: Colors.textPrimary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 2,
-    elevation: 1 },
-  cartItemHeader: {
-    flexDirection: 'row' },
-  imageContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: Radii.control,
+    backgroundColor: GroceryColors.white,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    backgroundColor: Colors.surface,
+    borderColor: GroceryColors.border,
+  },
+  deliveryProgressRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  deliveryProgressText: {
+    flex: 1,
+    fontSize: 12,
+    color: GroceryColors.textSecondary,
+  },
+  deliveryProgressBold: {
+    fontWeight: '700',
+    color: GroceryColors.primary,
+  },
+  deliveryThreshold: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: GroceryColors.textMuted,
+  },
+  progressBarTrack: {
+    height: 5,
+    backgroundColor: GroceryColors.lightGreen,
+    borderRadius: Radii.pill,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: GroceryColors.primary,
+    borderRadius: Radii.pill,
+  },
+
+  // ── Cart card ──
+  cartCard: {
+    backgroundColor: GroceryColors.white,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: GroceryColors.border,
+  },
+  cartItemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  thumbnailContainer: {
+    width: 72,
+    height: 72,
+    backgroundColor: GroceryColors.lightGreen,
+    borderRadius: 10,
     justifyContent: 'center',
-    marginRight: 12 },
-  itemImage: {
-    width: '85%',
-    height: '85%',
-    resizeMode: 'contain' },
+    alignItems: 'center',
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  thumbnail: {
+    width: '80%',
+    height: '80%',
+    resizeMode: 'contain',
+  },
   itemInfo: {
     flex: 1,
-    justifyContent: 'center' },
+  },
   itemName: {
     fontSize: 14,
-    color: Colors.textPrimary,
-    lineHeight: 18,
-    marginBottom: 2 },
+    fontWeight: '600',
+    color: GroceryColors.textPrimary,
+    lineHeight: 19,
+    marginBottom: 2,
+  },
   itemUnit: {
     fontSize: 12,
-    color: Colors.textSecondary },
+    color: GroceryColors.textSecondary,
+    marginBottom: 2,
+  },
   unitRateText: {
     fontSize: 10,
-    color: Colors.textMuted,
-    marginTop: 2 },
+    color: GroceryColors.textMuted,
+    marginBottom: 4,
+  },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 6,
-    marginTop: 4 },
+  },
   itemPrice: {
     fontSize: 15,
-    color: Colors.primary },
-  strikePrice: {
+    fontWeight: '700',
+    color: GroceryColors.primary,
+  },
+  itemStrikePrice: {
     fontSize: 11,
-    color: Colors.textMuted,
-    textDecorationLine: 'line-through' },
-  itemSavingsText: {
-    fontSize: 10,
-    color: Colors.primary,
-    marginTop: 2 },
-  actionsContainer: {
-    width: 90,
+    color: GroceryColors.textMuted,
+    textDecorationLine: 'line-through',
+  },
+  cartItemActions: {
     alignItems: 'flex-end',
-    justifyContent: 'space-between' },
-  quantityControl: {
+    justifyContent: 'space-between',
+    paddingLeft: 8,
+    gap: 12,
+  },
+  deleteBtn: {
+    padding: 4,
+  },
+  qtyControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: Radii.control,
-    height: 32,
-    paddingHorizontal: 2,
-    gap: 8 },
-  qtyBtn: {
-    width: 24,
-    height: 24,
+    borderColor: GroceryColors.border,
     borderRadius: Radii.badge,
-    backgroundColor: Colors.surfaceElevated,
+    overflow: 'hidden',
+  },
+  qtyBtn: {
+    width: 28,
+    height: 28,
     justifyContent: 'center',
-    alignItems: 'center' },
+    alignItems: 'center',
+    backgroundColor: GroceryColors.softGreen,
+  },
   qtyText: {
     fontSize: 13,
-    color: Colors.textPrimary,
-    minWidth: 14,
-    textAlign: 'center' },
-  removeAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingVertical: 4 },
-  removeActionText: {
-    fontSize: 11,
-    color: Colors.danger },
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
+    minWidth: 22,
+    textAlign: 'center',
+  },
+
+  // ── Replacement picker ──
   replacementToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -567,251 +567,197 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle },
-  replacementPickerWrapper: {
-    marginTop: 8 },
-  // Savings banner summary card
-  savingsCard: {
+    borderTopColor: GroceryColors.borderSubtle,
+  },
+  replacementPickerWrapper: { marginTop: 8 },
+
+  // ── Add more ──
+  addMoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 8,
+    backgroundColor: GroceryColors.white,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: Radii.card,
-    padding: 12,
-    marginBottom: 16 },
-  savingsTagIcon: {
-    fontSize: 16,
-    marginRight: 8 },
-  savingsTextWrapper: {
-    flex: 1 },
-  savingsCardTitle: {
+    borderColor: GroceryColors.border,
+    borderStyle: 'dashed',
+  },
+  addMoreText: {
+    flex: 1,
     fontSize: 13,
-    color: Colors.primary },
-  savingsCardSubtitle: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 1 },
-  savingsBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radii.badge,
-    paddingHorizontal: 6,
-    paddingVertical: 3 },
-  savingsBadgeText: {
-    color: Colors.surface,
-    fontSize: 10 },
-  // Bill Details card
+    fontWeight: '600',
+    color: GroceryColors.primary,
+  },
+
+  // ── Savings banner ──
+  savingsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GroceryColors.lightGreen,
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: GroceryColors.border,
+  },
+  savingsIcon: { fontSize: 16 },
+  savingsText: {
+    fontSize: 13,
+    color: GroceryColors.textSecondary,
+  },
+  savingsBold: {
+    fontWeight: '700',
+    color: GroceryColors.primary,
+  },
+
+  // ── Bill details ──
   billCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.card,
+    backgroundColor: GroceryColors.white,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    marginBottom: 16 },
+    borderColor: GroceryColors.border,
+  },
   billTitle: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    marginBottom: 12 },
+    fontSize: 15,
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
+    marginBottom: 12,
+  },
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8 },
-  billLabel: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  billLabel: { fontSize: 13, color: GroceryColors.textSecondary },
+  billValue: { fontSize: 13, color: GroceryColors.textPrimary, fontWeight: '500' },
+  billStrike: {
     fontSize: 12,
-    color: Colors.textSecondary },
-  billValue: {
+    color: GroceryColors.textMuted,
+    textDecorationLine: 'line-through',
+    marginRight: 6,
+  },
+  freeBadgeRow: { flexDirection: 'row', alignItems: 'center' },
+  freeLabel: {
     fontSize: 12,
-    color: Colors.textPrimary },
+    fontWeight: '700',
+    color: GroceryColors.primary,
+  },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-    paddingTop: 10,
-    marginTop: 6,
-    marginBottom: 0 },
-  totalLabel: {
-    fontSize: 14,
-    color: Colors.textPrimary },
-  totalValue: {
-    fontSize: 16,
-    color: Colors.primary },
+    borderTopColor: GroceryColors.borderSubtle,
+    paddingTop: 12,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  totalLabel: { fontSize: 15, fontWeight: '700', color: GroceryColors.textPrimary },
+  totalValue: { fontSize: 18, fontWeight: '800', color: GroceryColors.primary },
   billFootnote: {
-    fontSize: 10.5,
-    color: Colors.textSecondary,
-    marginTop: 6 },
-  // You May Also Need Section
-  recSection: {
-    marginBottom: 16 },
-  recHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12 },
-  recTitle: {
-    fontSize: 14,
-    color: Colors.textPrimary },
-  recSeeAllText: {
     fontSize: 11,
-    color: Colors.primary },
-  recScrollContent: {
-    gap: 8 },
-  recCard: {
-    width: 125,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    borderRadius: Radii.card,
-    padding: 10,
-    position: 'relative',
-    marginRight: 6 },
-  recDiscountBadge: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: Colors.danger,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: Radii.badge,
-    zIndex: 2 },
-  recDiscountText: {
-    color: Colors.surface,
-    fontSize: 8 },
-  recImageContainer: {
-    height: 70,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 4,
-    backgroundColor: Colors.surface },
-  recImage: {
-    width: '80%',
-    height: '80%',
-    resizeMode: 'contain' },
-  recName: {
-    fontSize: 11,
-    color: Colors.textPrimary,
-    marginTop: 4 },
-  recUnit: {
-    fontSize: 9,
-    color: Colors.textSecondary,
-    marginBottom: 4 },
-  recPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 3,
-    marginBottom: 8 },
-  recPrice: {
-    fontSize: 12,
-    color: Colors.primary },
-  recStrikePrice: {
-    fontSize: 9,
-    color: Colors.textMuted,
-    textDecorationLine: 'line-through' },
-  recAddBtn: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    borderRadius: Radii.badge,
-    paddingVertical: 4,
-    alignItems: 'center',
-    justifyContent: 'center' },
-  recAddBtnText: {
-    color: Colors.primary,
-    fontSize: 11 },
-  // Reassurance strip
-  reassuranceStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.card,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    marginBottom: 10 },
-  reassuranceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4 },
-  reassuranceText: {
-    fontSize: 9,
-    color: Colors.textPrimary },
-  // Sticky Bottom Checkout
-  stickyCheckoutBar: {
+    color: GroceryColors.textMuted,
+    marginTop: 4,
+  },
+
+  // ── Recommendations ──
+  recSection: { marginHorizontal: 16, marginBottom: 14 },
+  recScrollContent: { gap: 8 },
+
+  // ── Checkout bar ──
+  checkoutBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-    paddingHorizontal: 16,
-    paddingTop: 10,
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: Colors.textPrimary,
+    backgroundColor: GroceryColors.white,
+    borderTopWidth: 1,
+    borderTopColor: GroceryColors.border,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 8 },
-  checkoutBarLeft: {
-    justifyContent: 'center' },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 10,
+  },
   checkoutPrice: {
-    fontSize: 18,
-    color: Colors.primary },
-  checkoutInfoText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: GroceryColors.primary,
+  },
+  checkoutPriceSub: {
     fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 1 },
+    color: GroceryColors.textMuted,
+    textDecorationLine: 'underline',
+  },
   checkoutBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radii.card,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    minWidth: 150,
+    backgroundColor: GroceryColors.primary,
+    borderRadius: Radii.control,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    minWidth: 170,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row' },
+  },
   checkoutBtnText: {
-    color: Colors.surface,
-    fontSize: 13 },
-  // Empty state stylings
+    color: GroceryColors.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  // ── Empty state ──
   emptyCart: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    backgroundColor: Colors.canvas },
+  },
   emptyIconWrapper: {
     width: 100,
     height: 100,
     borderRadius: Radii.pill,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: GroceryColors.lightGreen,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-    borderWidth: 1.5,
-    borderColor: Colors.borderSubtle },
+    borderWidth: 2,
+    borderColor: GroceryColors.border,
+  },
   emptyTitle: {
-    fontSize: 18,
-    color: Colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
     marginBottom: 8,
-    textAlign: 'center' },
-  emptySubtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 24 },
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: GroceryColors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 28,
+  },
   shopBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radii.card,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3 },
+    backgroundColor: GroceryColors.primary,
+    borderRadius: Radii.control,
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+  },
   shopBtnText: {
-    color: Colors.surface,
-    fontSize: 14 } });
+    color: GroceryColors.white,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+});

@@ -78,15 +78,7 @@ export function FilterSheet({ visible, onClose, value, onApply }: FilterSheetPro
     >
       <View style={[styles.sheetContainer, { paddingBottom: 24 + insets.bottom }]}>
 
-              {/* Header */}
-              <View style={styles.header}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.headerTitle}>Sort & Filter</Txt>
-                <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose} style={styles.closeBtn}>
-                  <Ionicons name="close" size={22} color={Colors.textPrimary} />
-                </AnimatedPress>
-              </View>
-
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.body} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Sort Section */}
                 <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Sort by</Txt>
                 <View style={styles.sortList}>
@@ -172,13 +164,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'flex-end' },
   sheetContainer: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radii.sheet,
-    borderTopRightRadius: Radii.sheet,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 24,
-    maxHeight: '80%' },
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

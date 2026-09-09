@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
-import { Colors } from '@/theme';
+import { GroceryColors } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 export interface SectionHeaderProps {
@@ -12,13 +12,8 @@ export interface SectionHeaderProps {
 
 /**
  * Shared section header: left bold title + optional right-side "See All →" action.
- * Replaces duplicated recHeaderRow / relatedHeaderRow patterns in Cart, ProductDetail, Home.
  */
-export const SectionHeader: React.FC<SectionHeaderProps> = ({
-  title,
-  actionLabel,
-  onAction,
-}) => {
+export const SectionHeader: React.FC<SectionHeaderProps> = ({ title, actionLabel, onAction }) => {
   return (
     <View style={styles.row}>
       <Txt maxFontSizeMultiplier={1.3} style={styles.title}>{title}</Txt>
@@ -37,13 +32,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    paddingHorizontal: 16,
   },
   title: {
-    fontSize: 15,
-    color: Colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
   },
   action: {
-    fontSize: 12,
-    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    color: GroceryColors.primary,
   },
 });

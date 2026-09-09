@@ -84,7 +84,8 @@ export function GroceryWishlistScreen() {
                 onPress={() => router.push({ pathname: '/groceries/product/[id]', params: { id: item.id } })}
               >
                 <Image
-                  source={item.image_url ? { uri: item.image_url } : require('../../../../assets/img_app_icon.jpg')}
+                  source={item.image_url ? { uri: item.image_url } : require('../../../../assets/productimages/d1_nobg.png')}
+
                   style={styles.cardImage}
                 />
                 <View style={styles.cardInfo}>

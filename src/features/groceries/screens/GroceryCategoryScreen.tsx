@@ -1,12 +1,20 @@
 import { SupplyCategory } from '@/types';
 import { toAmount } from '@/data/mappers';
 import { useMemo, useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDimensions, TextInput, RefreshControl } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Image,
+  useWindowDimensions,
+  TextInput,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ProductCard } from '../components/grocery/ProductCard';
@@ -14,66 +22,87 @@ import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
-import { Colors, Layout, Radii } from '@/theme';
+import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
-
-
 
 // Map section filter keys → display info
 const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNames: string[] }> = {
-  deals: {
-    label: "Today's Deals",
-    icon: '🔥',
-    categoryNames: [] },
+  deals: { label: "Today's Deals", icon: '🔥', categoryNames: [] },
   essentials: {
     label: 'Daily Essentials',
     icon: '🛒',
-    categoryNames: ['Dairy, Bread & Eggs', 'Atta, Rice & Dal', 'Oil, Ghee & Masala'] },
+    categoryNames: ['Dairy, Bread & Eggs', 'Atta, Rice & Dal', 'Oil, Ghee & Masala'],
+  },
   kitchen: {
     label: "Today's Kitchen Needs",
     icon: '🍳',
-    categoryNames: ['Vegetables & Fruits', 'Oil, Ghee & Masala', 'Chicken, Meat & Fish', 'PG Kitchen Needs'] } };
+    categoryNames: ['Vegetables & Fruits', 'Oil, Ghee & Masala', 'Chicken, Meat & Fish', 'PG Kitchen Needs'],
+  },
+};
+
+// Category name → grocery image asset
+const getCategoryImage = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('fruit') || n.includes('veg'))
+    return require('../../../../assets/productimages/cat_fruits_veg_nobg.png');
+  if (n.includes('dairy') || n.includes('milk') || n.includes('bread') || n.includes('egg'))
+    return require('../../../../assets/productimages/cat_dairy_nobg.png');
+  if (n.includes('chicken') || n.includes('meat') || n.includes('fish'))
+    return require('../../../../assets/productimages/cat_chicken_eggs_nobg.png');
+  if (n.includes('oil') || n.includes('masala') || n.includes('ghee') || n.includes('spice') || n.includes('atta') || n.includes('rice') || n.includes('dal'))
+    return require('../../../../assets/productimages/cat_masala_nobg.png');
+  return require('../../../../assets/productimages/cat_addons_nobg.png');
+};
+
+const getCategoryBg = (name: string): string => {
+  const n = name.toLowerCase();
+  if (n.includes('fruit') || n.includes('veg')) return '#EDF7ED';
+  if (n.includes('dairy') || n.includes('milk') || n.includes('bread')) return '#FFF8ED';
+  if (n.includes('chicken') || n.includes('meat') || n.includes('egg')) return '#FFF0ED';
+  if (n.includes('oil') || n.includes('masala') || n.includes('ghee')) return '#FFF8ED';
+  if (n.includes('snack') || n.includes('beverage')) return '#F0F4FF';
+  return GroceryColors.lightGreen;
+};
 
 export function GroceryCategoryScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  // `filter` used to be a hardcoded `undefined` here rather than read from the route —
-  // SECTION_FILTERS.deals and the "Active Filter Chip" UI below were fully built but
-  // unreachable from any real navigation, so "Today's Deals → See All" landed on the
-  // generic browse-all view instead of an actual deals filter.
-  const { name: initialSupplyCategory, filter } = useLocalSearchParams<{ name?: string; filter?: string }>();
+  const { name: initialSupplyCategory, filter } = useLocalSearchParams<{
+    name?: string;
+    filter?: string;
+  }>();
 
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
-  const { data: supplyItems = [], refetch: refetchItems, isRefetching: isRefetchingItems } = useSupplyItems(activePgId);
-  const { data: categories = [], refetch: refetchCats, isRefetching: isRefetchingCats } = useSupplyCategories(activePgId);
+  const { data: supplyItems = [], refetch: refetchItems, isRefetching: isRefetchingItems } =
+    useSupplyItems(activePgId);
+  const { data: categories = [], refetch: refetchCats, isRefetching: isRefetchingCats } =
+    useSupplyCategories(activePgId);
 
   const isRefreshing = isRefetchingItems || isRefetchingCats;
   const handleRefresh = async () => {
     await Promise.all([refetchItems(), refetchCats()]);
   };
 
-  const mode = useShoppingModeStore((s) => s.mode);
   const getCartTotal = useCartStore((s) => s.getCartTotal);
   const cartItemCount = useCartStore((s) => s.getItemCount());
 
-  // Active category state (null = show category section groups; string = show products of that category)
-  const [activeSupplyCategory, setActiveSupplyCategory] = useState<string | null>(initialSupplyCategory ?? null);
+  const [activeSupplyCategory, setActiveSupplyCategory] = useState<string | null>(
+    initialSupplyCategory ?? null
+  );
   const [search, setSearch] = useState('');
 
-  // Determine if a section filter param exists
   const sectionFilter = filter ? SECTION_FILTERS[filter] : null;
 
-  // Products for the active category (or deals)
   const products = useMemo(() => {
     let list = activeSupplyCategory
       ? supplyItems.filter(
           (p) =>
             p.category_id === activeSupplyCategory ||
-            categories.find((c) => c.name === activeSupplyCategory && c.id === p.category_id) !== undefined
+            categories.find(
+              (c) => c.name === activeSupplyCategory && c.id === p.category_id
+            ) !== undefined
         )
       : filter === 'deals'
-      // Numeric compare — see the note in useSupply.ts's useDeals: these are Decimal
-      // strings on the wire, so a bare `>` compares them lexicographically.
       ? supplyItems.filter((p) => p.mrp != null && toAmount(p.mrp) > toAmount(p.price))
       : supplyItems;
 
@@ -88,29 +117,33 @@ export function GroceryCategoryScreen() {
 
   const showProductList = activeSupplyCategory !== null || filter === 'deals' || search.trim().length > 0;
 
-  // 4 items per row grid math matching the photo
-  const cardGap = 10;
-  const paddingHorizontal = 16;
-  const itemWidth = (width - (paddingHorizontal * 2) - (cardGap * 3)) / 4;
+  // 3-column grid math for categories screen
+  const catGap = 10;
+  const catPadding = 32;
+  const catCardWidth = (width - catPadding - catGap * 2) / 3;
 
-  const productCardWidth = (width - 36) / 2;
+  const productCardWidth = (width - 44) / 2;
 
-  // Render a single category item card in the 4-column layout
   const renderSupplyCategoryItem = (cat: SupplyCategory) => (
-    <AnimatedPress accessibilityRole="button"
+    <AnimatedPress
       key={cat.id}
-      style={[styles.catItem, { width: itemWidth }]}
-
+      accessibilityRole="button"
+      style={[styles.catItem, { width: catCardWidth }]}
       onPress={() => setActiveSupplyCategory(cat.name)}
     >
-      <View style={[styles.imageContainer, { width: itemWidth, height: itemWidth, backgroundColor: Colors.surfaceElevated }]}>
+      <View
+        style={[
+          styles.catImageContainer,
+          { width: catCardWidth, height: catCardWidth, backgroundColor: getCategoryBg(cat.name) },
+        ]}
+      >
         <Image
-          source={require('../../../../assets/img_app_icon.jpg')}
+          source={getCategoryImage(cat.name)}
           style={styles.catImage}
           resizeMode="contain"
         />
       </View>
-      <Txt maxFontSizeMultiplier={1.3} style={styles.catTitle} numberOfLines={2}>
+      <Txt maxFontSizeMultiplier={1.2} style={styles.catTitle} numberOfLines={2}>
         {cat.name}
       </Txt>
     </AnimatedPress>
@@ -118,148 +151,230 @@ export function GroceryCategoryScreen() {
 
   return (
     <View style={styles.container}>
+      {/* ── Header ── */}
+      <View style={[styles.topHeader, { paddingTop: insets.top + 10 }]}>
+        <AnimatedPress
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          style={styles.backBtn}
+          onPress={() => {
+            if (activeSupplyCategory) {
+              setActiveSupplyCategory(null);
+              setSearch('');
+            } else {
+              router.back();
+            }
+          }}
+        >
+          <Ionicons name="arrow-back" size={22} color={GroceryColors.textPrimary} />
+        </AnimatedPress>
 
-      <View style={{ flex: 1 }}>
-        {/* Top Header Search Bar */}
-        <View style={[styles.topHeader, { paddingTop: insets.top + 14 }]}>
-          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button"
-            style={styles.backBtn}
-            onPress={() => {
-              if (activeSupplyCategory) {
-                setActiveSupplyCategory(null);
-                setSearch('');
-              } else {
-                router.back();
-              }
-            }}
+        {showProductList ? (
+          <Txt maxFontSizeMultiplier={1.2} style={styles.headerTitle} numberOfLines={1}>
+            {activeSupplyCategory || sectionFilter?.label || 'Products'}
+          </Txt>
+        ) : (
+          <Txt maxFontSizeMultiplier={1.2} style={styles.headerTitle}>
+            Categories
+          </Txt>
+        )}
 
-          >
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </AnimatedPress>
+        <AnimatedPress
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          style={styles.searchIconBtn}
+          onPress={() => {}}
+        >
+          <Ionicons name="search" size={20} color={GroceryColors.textPrimary} />
+        </AnimatedPress>
+      </View>
 
-          <View style={styles.searchBarContainer}>
-            <Ionicons name="search" size={20} color={Colors.primary} />
-            <TextInput maxFontSizeMultiplier={1.3}
-              style={styles.headerSearchInput}
-              placeholder={showProductList ? "Search products in category..." : 'Search "eggs", "milk", "rice"...'}
-              placeholderTextColor={Colors.textMuted}
-              value={search}
-              onChangeText={setSearch}
-            />
-            {!showProductList && (
-              <Ionicons name="mic-outline" size={20} color={Colors.textSecondary} />
-            )}
-            {search.length > 0 && showProductList && (
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setSearch('')}>
-                <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-              </AnimatedPress>
-            )}
-          </View>
+      {/* ── Search Field ── */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={16} color={GroceryColors.textMuted} />
+          <TextInput
+            maxFontSizeMultiplier={1.3}
+            style={styles.searchInput}
+            placeholder={
+              showProductList
+                ? 'Search products in category...'
+                : 'Search in categories...'
+            }
+            placeholderTextColor={GroceryColors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+          />
+          {search.length > 0 && (
+            <AnimatedPress
+              hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+              accessibilityRole="button"
+              onPress={() => setSearch('')}
+            >
+              <Ionicons name="close-circle" size={16} color={GroceryColors.textMuted} />
+            </AnimatedPress>
+          )}
         </View>
+      </View>
 
-        {/* Active Filter Chip indicator */}
-        {!showProductList && sectionFilter && (
-          <View style={styles.chipRow}>
-            <View style={styles.activeChip}>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.activeChipText}>{sectionFilter.icon} {sectionFilter.label}</Txt>
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setActiveSupplyCategory(null)}>
-                <Ionicons name="close" size={14} color={Colors.textMuted} />
-              </AnimatedPress>
-            </View>
-          </View>
-        )}
+      {/* ── Product count banner when viewing category ── */}
+      {showProductList && (
+        <View style={styles.categoryBanner}>
+          <Txt maxFontSizeMultiplier={1.2} style={styles.categoryBannerSub}>
+            {products.length} item{products.length !== 1 ? 's' : ''} available
+          </Txt>
+        </View>
+      )}
 
-        {/* Title Banner when viewing an active category product grid */}
-        {showProductList && (
-          <View style={styles.activeSupplyCategoryHeader}>
-            <Txt maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategoryTitle}>{activeSupplyCategory || sectionFilter?.label || 'Products'}</Txt>
-            <Txt maxFontSizeMultiplier={1.3} style={styles.activeSupplyCategorySub}>{products.length} items available</Txt>
-          </View>
-        )}
+      {/* ── Main Content ── */}
+      {!showProductList ? (
+        <FormScroll
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.sectionsScrollContent}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+        >
+          {(() => {
+            const NAMED_GROUPS: { title: string; names: string[] }[] = [
+              {
+                title: 'Grocery & Kitchen',
+                names: [
+                  'Vegetables & Fruits', 'Fruits & Vegetables',
+                  'Atta, Rice & Dal', 'Dal, Atta & Rice',
+                  'Dairy, Bread & Eggs', 'Eggs, Bread & Dairy',
+                  'Oil, Ghee & Masala', 'Oils & Masala',
+                  'Chicken, Meat & Fish', 'Meat & Fish',
+                  'PG Kitchen Needs', 'Kitchen Essentials',
+                ],
+              },
+              {
+                title: 'Snacks & Drinks',
+                names: [
+                  'Snacks', 'Beverages', 'Drinks',
+                  'Frozen Foods', 'Sauces & Spreads', 'Sweets & Chocolates',
+                  'Canned & Ready-to-eat',
+                ],
+              },
+              {
+                title: 'Household & Essentials',
+                names: ['Cleaning Supplies', 'Household', 'Cleaning', 'Packaging', 'Custom Supplies'],
+              },
+            ];
 
-        {/* MAIN CONTENT AREA */}
-        {!showProductList ? (
-          /* ── CATEGORY SECTION GROUPS (Dynamic — all categories from API) ── */
-          <FormScroll
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.sectionsScrollContent}
-            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
-          >
-            {(() => {
-              // Group categories dynamically: first try to match the curated groups by name
-              // (not by hardcoded IDs — new admin-created categories have UUIDs that would
-              // never match the old 'cat-fruitsveg' style IDs). Fall back: any category not
-              // claimed by a named group goes into "More Categories".
-              const NAMED_GROUPS: { title: string; names: string[] }[] = [
-                {
-                  title: 'Grocery & Kitchen',
-                  names: [
-                    'Vegetables & Fruits', 'Fruits & Vegetables',
-                    'Atta, Rice & Dal', 'Dal, Atta & Rice',
-                    'Dairy, Bread & Eggs', 'Eggs, Bread & Dairy',
-                    'Oil, Ghee & Masala', 'Oils & Masala',
-                    'Chicken, Meat & Fish', 'Meat & Fish',
-                    'PG Kitchen Needs', 'Kitchen Essentials',
-                  ] },
-                {
-                  title: 'Snacks & Drinks',
-                  names: [
-                    'Snacks', 'Beverages', 'Drinks',
-                    'Frozen Foods', 'Sauces & Spreads', 'Sweets & Chocolates',
-                    'Canned & Ready-to-eat',
-                  ] },
-                {
-                  title: 'Household & Essentials',
-                  names: [
-                    'Cleaning Supplies', 'Household', 'Cleaning',
-                    'Packaging', 'Custom Supplies',
-                  ] },
-              ];
+            const claimedIds = new Set<string>();
+            const grouped: { title: string; cats: SupplyCategory[] }[] = [];
 
-              const claimedIds = new Set<string>();
-              const grouped: { title: string; cats: SupplyCategory[] }[] = [];
-
-              for (const g of NAMED_GROUPS) {
-                const matched = categories.filter((c) =>
-                  g.names.some((n) => c.name.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(c.name.toLowerCase()))
-                );
-                if (matched.length > 0) {
-                  matched.forEach((c) => claimedIds.add(c.id));
-                  const filtered = sectionFilter && sectionFilter.categoryNames.length > 0
+            for (const g of NAMED_GROUPS) {
+              const matched = categories.filter((c) =>
+                g.names.some(
+                  (n) =>
+                    c.name.toLowerCase().includes(n.toLowerCase()) ||
+                    n.toLowerCase().includes(c.name.toLowerCase())
+                )
+              );
+              if (matched.length > 0) {
+                matched.forEach((c) => claimedIds.add(c.id));
+                const filtered =
+                  sectionFilter && sectionFilter.categoryNames.length > 0
                     ? matched.filter((c) => sectionFilter.categoryNames.includes(c.name))
                     : matched;
-                  if (filtered.length > 0) {
-                    grouped.push({ title: g.title, cats: filtered });
-                  }
-                }
+                if (filtered.length > 0) grouped.push({ title: g.title, cats: filtered });
               }
+            }
 
-              // Any category not matched above — admin-added categories land here
-              const unclaimed = categories.filter((c) => !claimedIds.has(c.id));
-              const unclaimedFiltered = sectionFilter && sectionFilter.categoryNames.length > 0
+            const unclaimed = categories.filter((c) => !claimedIds.has(c.id));
+            const unclaimedFiltered =
+              sectionFilter && sectionFilter.categoryNames.length > 0
                 ? unclaimed.filter((c) => sectionFilter.categoryNames.includes(c.name))
                 : unclaimed;
-              if (unclaimedFiltered.length > 0) {
-                grouped.push({ title: 'More Categories', cats: unclaimedFiltered });
-              }
+            if (unclaimedFiltered.length > 0) {
+              grouped.push({ title: 'More Categories', cats: unclaimedFiltered });
+            }
 
-              // If no groups matched at all (rare edge case), show all flat
-              if (grouped.length === 0 && categories.length > 0) {
-                grouped.push({ title: 'All Categories', cats: categories });
-              }
+            if (grouped.length === 0 && categories.length > 0) {
+              grouped.push({ title: 'All Categories', cats: categories });
+            }
 
-              return grouped.map((g) => (
-                <View key={g.title} style={styles.sectionBlock}>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>{g.title}</Txt>
-                  <View style={styles.gridRow}>
-                    {g.cats.map(renderSupplyCategoryItem)}
-                  </View>
+            return grouped.map((g) => (
+              <View key={g.title} style={styles.sectionBlock}>
+                <Txt maxFontSizeMultiplier={1.2} style={styles.sectionHeading}>
+                  {g.title}
+                </Txt>
+                <View style={styles.gridRow}>
+                  {g.cats.map(renderSupplyCategoryItem)}
                 </View>
-              ));
-            })()}
-          </FormScroll>
-        ) : (
-          /* ── PRODUCT GRID (When a Category is Tapped) ── */
+              </View>
+            ));
+          })()}
+
+          {/* ── Promo banner at bottom of categories ── */}
+          <View style={styles.promoBanner}>
+            <View style={styles.promoBannerLeft}>
+              <Txt maxFontSizeMultiplier={1.1} style={styles.promoBannerTitle}>
+                {'Healthy Choices\nHappier You'}
+              </Txt>
+              <AnimatedPress
+                accessibilityRole="button"
+                style={styles.promoBannerBtn}
+                onPress={() => setSearch('organic')}
+              >
+                <Txt maxFontSizeMultiplier={1.1} style={styles.promoBannerBtnText}>
+                  Explore Organic Products
+                </Txt>
+              </AnimatedPress>
+            </View>
+            <Image
+              source={require('../../../../assets/pg_grocery_eggs_1785343431667.jpg')}
+              style={styles.promoBannerImage}
+              resizeMode="cover"
+            />
+          </View>
+        </FormScroll>
+      ) : (
+        /* ── Product Grid ── */
+        <>
+          {/* Deals hero banner */}
+          {filter === 'deals' && (
+            <View style={styles.dealsBanner}>
+              <View style={styles.dealsBannerLeft}>
+                <Txt maxFontSizeMultiplier={1.1} style={styles.dealsMegaLabel}>MEGA</Txt>
+                <Txt maxFontSizeMultiplier={1.1} style={styles.dealsMegaSale}>SALE</Txt>
+                <Txt maxFontSizeMultiplier={1.1} style={styles.dealsSubLabel}>UP TO 80% OFF</Txt>
+                <AnimatedPress
+                  accessibilityRole="button"
+                  style={styles.dealsShopNowBtn}
+                >
+                  <Txt maxFontSizeMultiplier={1.1} style={styles.dealsShopNowText}>Shop Now →</Txt>
+                </AnimatedPress>
+              </View>
+              <Image
+                source={require('../../../../assets/food_savings_banner.png')}
+                style={styles.dealsBannerImage}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+
+          {/* Filter tabs for deals */}
+          {filter === 'deals' && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterTabsScroll}
+            >
+              {['All Deals', 'Fresh Picks', 'Pantry', 'Snacks'].map((tab) => (
+                <View key={tab} style={[styles.filterTab, tab === 'All Deals' && styles.filterTabActive]}>
+                  <Txt
+                    maxFontSizeMultiplier={1.2}
+                    style={[styles.filterTabText, tab === 'All Deals' && styles.filterTabTextActive]}
+                  >
+                    {tab}
+                  </Txt>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
           <FlatList
             data={products}
             keyExtractor={(item) => item.id}
@@ -276,42 +391,44 @@ export function GroceryCategoryScreen() {
             }
             renderItem={({ item }) => (
               <View style={{ width: productCardWidth }}>
-
                 <ProductCard
                   product={item}
-                  onPress={(p) => router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })}
+                  onPress={(p) =>
+                    router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })
+                  }
                   style={{ width: '100%', marginRight: 0 }}
                 />
               </View>
             )}
           />
-        )}
-      </View>
+        </>
+      )}
 
-      {/* Floating Cart Bar */}
+      {/* ── Floating cart bar ── */}
       {cartItemCount > 0 && (
-        <View style={[styles.floatingCartContainer, { bottom: Math.max(insets.bottom + 85, 105) }]}>
-          <AnimatedPress accessibilityRole="button"
+        <View style={styles.floatingCartBar}>
+          <AnimatedPress
+            accessibilityRole="button"
             style={styles.floatingCart}
             onPress={() => router.push('/groceries/cart')}
-
           >
-            <BlurView
-              intensity={80}
-              tint="light"
-              style={[StyleSheet.absoluteFill, { borderRadius: Radii.sheet }]}
-            />
-            <View style={styles.cartInfo}>
-              <View style={styles.cartIconWrapper}>
-                <Ionicons name="cart" size={18} color={Colors.textInverse} />
+            <View style={styles.cartLeft}>
+              <View style={styles.cartIconCircle}>
+                <Ionicons name="cart" size={16} color={GroceryColors.white} />
               </View>
               <View>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.cartTotal}>₹{getCartTotal()}</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.cartSub}>{cartItemCount} item{cartItemCount > 1 ? 's' : ''}</Txt>
+                <Txt maxFontSizeMultiplier={1.2} style={styles.cartTotal}>
+                  ₹{getCartTotal()}
+                </Txt>
+                <Txt maxFontSizeMultiplier={1.2} style={styles.cartSub}>
+                  {cartItemCount} item{cartItemCount > 1 ? 's' : ''}
+                </Txt>
               </View>
             </View>
             <View style={styles.viewCartBtn}>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.viewCartText}>View Cart →</Txt>
+              <Txt maxFontSizeMultiplier={1.2} style={styles.viewCartText}>
+                View Cart →
+              </Txt>
             </View>
           </AnimatedPress>
         </View>
@@ -323,153 +440,305 @@ export function GroceryCategoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.canvas },
+    backgroundColor: GroceryColors.background,
+  },
+
+  // ── Header ──
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 10 },
+    paddingBottom: 10,
+    backgroundColor: GroceryColors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: GroceryColors.border,
+  },
   backBtn: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: Radii.pill,
-    backgroundColor: Colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Layout.shadowCard },
-  searchBarContainer: {
+    marginRight: 8,
+  },
+  headerTitle: {
     flex: 1,
+    fontSize: 17,
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
+    textAlign: 'center',
+  },
+  searchIconBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ── Search ──
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: GroceryColors.white,
+  },
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: GroceryColors.background,
     borderRadius: Radii.pill,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    height: 44,
     gap: 8,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    ...Layout.shadowCard },
-  headerSearchInput: {
+    borderColor: GroceryColors.border,
+  },
+  searchInput: {
     flex: 1,
-    fontSize: 14,
-    color: Colors.textPrimary,
-    padding: 0 },
-  chipRow: {
-    paddingHorizontal: 16,
-    paddingBottom: 8 },
-  activeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radii.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    gap: 6 },
-  activeChipText: {
-    fontSize: 12,
-    color: Colors.primary },
-  activeSupplyCategoryHeader: {
+    fontSize: 13,
+    color: GroceryColors.textPrimary,
+    padding: 0,
+  },
+
+  // ── Category banner ──
+  categoryBanner: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginBottom: 4 },
-  activeSupplyCategoryTitle: {
-    fontSize: 20,
-    color: Colors.textPrimary },
-  activeSupplyCategorySub: {
+    backgroundColor: GroceryColors.background,
+  },
+  categoryBannerSub: {
     fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2 },
+    color: GroceryColors.textSecondary,
+  },
+
+  // ── Category sections ──
   sectionsScrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 150 },
+    paddingTop: 8,
+    paddingBottom: 120,
+  },
   sectionBlock: {
-    marginTop: 18,
-    marginBottom: 8 },
+    marginTop: 20,
+    marginBottom: 8,
+  },
   sectionHeading: {
-    fontSize: 18,
-    color: Colors.textPrimary,
-    marginBottom: 14 },
+    fontSize: 16,
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
+    marginBottom: 12,
+  },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10 },
+    gap: 10,
+  },
   catItem: {
     alignItems: 'center',
-    marginBottom: 16 },
-  imageContainer: {
-    borderRadius: Radii.sheet,
+    marginBottom: 14,
+  },
+  catImageContainer: {
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    shadowColor: Colors.textPrimary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1 },
+    marginBottom: 6,
+  },
   catImage: {
-    width: '82%',
-    height: '82%' },
+    width: '80%',
+    height: '80%',
+  },
   catTitle: {
-    fontSize: 11,
-    color: Colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '500',
+    color: GroceryColors.textPrimary,
     textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 14,
-    paddingHorizontal: 2 },
+    lineHeight: 15,
+    paddingHorizontal: 2,
+  },
+
+  // ── Promo banner ──
+  promoBanner: {
+    marginTop: 20,
+    marginBottom: 8,
+    borderRadius: 20,
+    backgroundColor: GroceryColors.primaryDark,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    minHeight: 120,
+  },
+  promoBannerLeft: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+  },
+  promoBannerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: GroceryColors.white,
+    lineHeight: 24,
+    marginBottom: 12,
+  },
+  promoBannerBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: GroceryColors.white,
+    borderRadius: Radii.control,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  promoBannerBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: GroceryColors.primaryDark,
+  },
+  promoBannerImage: {
+    width: '40%',
+  },
+
+  // ── Deals hero banner ──
+  dealsBanner: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    backgroundColor: GroceryColors.primaryDark,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    height: 120,
+  },
+  dealsBannerLeft: {
+    flex: 1,
+    padding: 14,
+    justifyContent: 'center',
+  },
+  dealsMegaLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFD700',
+    letterSpacing: 2,
+  },
+  dealsMegaSale: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: GroceryColors.white,
+    lineHeight: 30,
+  },
+  dealsSubLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  dealsShopNowBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: GroceryColors.white,
+    borderRadius: Radii.control,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  dealsShopNowText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: GroceryColors.primaryDark,
+  },
+  dealsBannerImage: {
+    width: '42%',
+  },
+
+  // ── Filter tabs ──
+  filterTabsScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+    marginBottom: 10,
+  },
+  filterTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+    borderColor: GroceryColors.border,
+    backgroundColor: GroceryColors.white,
+  },
+  filterTabActive: {
+    backgroundColor: GroceryColors.primary,
+    borderColor: GroceryColors.primary,
+  },
+  filterTabText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: GroceryColors.textSecondary,
+  },
+  filterTabTextActive: {
+    color: GroceryColors.white,
+    fontWeight: '700',
+  },
+
+  // ── Product grid ──
   gridContent: {
     paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 160 },
+    paddingTop: 4,
+    paddingBottom: 120,
+  },
   columnWrapper: {
     justifyContent: 'space-between',
-    marginBottom: 12 },
+    marginBottom: 0,
+  },
   emptyBox: {
     alignItems: 'center',
     paddingTop: 80,
-    gap: 8 },
+    gap: 8,
+  },
   emptyIcon: { fontSize: 40 },
   emptyText: {
     fontSize: 15,
-    color: Colors.textMuted },
-  floatingCartContainer: {
+    color: GroceryColors.textMuted,
+  },
+
+  // ── Floating cart ──
+  floatingCartBar: {
     position: 'absolute',
-    alignSelf: 'center',
-    width: '85%',
-    ...Layout.shadowFloatingBar },
+    bottom: 100,
+    left: 16,
+    right: 16,
+    shadowColor: GroceryColors.shadowColor,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   floatingCart: {
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: GroceryColors.primaryDark,
     borderRadius: Radii.sheet,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.85)',
-    overflow: 'hidden' },
-  cartInfo: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cartIconWrapper: {
-    width: 36,
-    height: 36,
+  },
+  cartLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cartIconCircle: {
+    width: 34,
+    height: 34,
     borderRadius: Radii.pill,
-    backgroundColor: Colors.primary,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
-    alignItems: 'center' },
+    alignItems: 'center',
+  },
   cartTotal: {
     fontSize: 14,
-    color: Colors.textPrimary },
+    fontWeight: '700',
+    color: GroceryColors.white,
+  },
   cartSub: {
     fontSize: 11,
-    color: Colors.textSecondary },
+    color: 'rgba(255,255,255,0.7)',
+  },
   viewCartBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radii.sheet,
+    backgroundColor: GroceryColors.white,
+    borderRadius: Radii.control,
     paddingVertical: 8,
-    paddingHorizontal: 14 },
+    paddingHorizontal: 14,
+  },
   viewCartText: {
-    color: Colors.textInverse,
-    fontSize: 12 } });
+    color: GroceryColors.primaryDark,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+});

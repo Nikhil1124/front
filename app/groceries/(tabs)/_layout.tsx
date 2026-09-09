@@ -22,19 +22,20 @@ export default function GroceriesTabsLayout() {
         <TabTrigger name="index" href="/groceries" asChild>
           <HeadlessDockTabButton icon="home" label="Home" />
         </TabTrigger>
-        <TabTrigger name="orders" href="/groceries/orders" asChild>
-          <HeadlessDockTabButton icon="receipt" label="Orders" />
-        </TabTrigger>
         <TabTrigger name="categories" href="/groceries/categories" asChild>
           <HeadlessDockTabButton icon="grid" label="Categories" />
         </TabTrigger>
         <TabTrigger name="wishlist" href="/groceries/wishlist" asChild>
-          <HeadlessDockTabButton icon="heart" label="Wishlist" />
+          <HeadlessDockTabButton icon="heart" label="Loyalty" />
+        </TabTrigger>
+        <TabTrigger name="orders" href="/groceries/orders" asChild>
+          <HeadlessDockTabButton icon="pricetag" label="Offers" />
         </TabTrigger>
         <TabTrigger name="profile" href="/groceries/profile" asChild>
-          <HeadlessDockTabButton icon="person" label="Profile" />
+          <HeadlessDockTabButton icon="document-text" label="Flyers" />
         </TabTrigger>
       </Dock>
+
     </Tabs>
   );
 }

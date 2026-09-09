@@ -1,10 +1,10 @@
 import React from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { SupplyItem } from '@/types';
 import { ProductCard } from './ProductCard';
 
-import { Colors } from '@/theme';
+import { GroceryColors } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 interface ProductRowProps {
@@ -22,10 +22,8 @@ export const ProductRow: React.FC<ProductRowProps> = ({
   title,
   products,
   onProductPress,
-  onSeeAllPress }) => {
-  const { width } = useWindowDimensions();
-  const cardWidth = width > 600 ? 165 : width * 0.43;
-
+  onSeeAllPress,
+}) => {
   if (products.length === 0) return null;
 
   return (
@@ -42,14 +40,9 @@ export const ProductRow: React.FC<ProductRowProps> = ({
         data={products}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => {
-          return (
-            <ProductCard
-              product={item}
-              onPress={onProductPress}
-            />
-          );
-        }}
+        renderItem={({ item }) => (
+          <ProductCard product={item} layout="simple" onPress={onProductPress} />
+        )}
       />
     </View>
   );
@@ -57,18 +50,27 @@ export const ProductRow: React.FC<ProductRowProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 12 },
+    marginTop: 20,
+    marginBottom: 4,
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 12 },
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
-    color: Colors.textPrimary },
+    fontWeight: '700',
+    color: GroceryColors.textPrimary,
+  },
   seeAllText: {
     fontSize: 13,
-    color: Colors.primary },
+    fontWeight: '600',
+    color: GroceryColors.primary,
+  },
   listContent: {
-    paddingHorizontal: 16 } });
+    paddingHorizontal: 16,
+  },
+});

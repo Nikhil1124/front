@@ -71,6 +71,45 @@ export const Colors = {
 export type ColorToken = keyof typeof Colors;
 
 /**
+ * GroceryColors — emerald/teal palette used exclusively by the grocery mini-app.
+ * Isolated from the main Colors object so all non-grocery screens are unaffected.
+ * Values match the reference design specification exactly.
+ */
+export const GroceryColors = {
+  // ── Brand Greens ───────────────────────────────────────────────────────────
+  primaryDark:   '#006B57',   // Header, active nav
+  primary:       '#008A5B',   // Buttons, prices, selected
+  primaryMid:    '#008F68',   // Gradients
+  primaryLight:  '#00A86B',   // Lighter accents
+
+  // ── Surfaces ──────────────────────────────────────────────────────────────
+  background:    '#F8FAF8',   // Page background
+  softGreen:     '#F3FAF5',   // Card backgrounds
+  lightGreen:    '#EAF7EF',   // Category tiles, highlights
+  white:         '#FFFFFF',   // Content surfaces
+  surface:       '#FFFFFF',
+
+  // ── Typography ────────────────────────────────────────────────────────────
+  textPrimary:   '#10201B',   // Headings, product names
+  textSecondary: '#6B7772',   // Subtitles, units
+  textMuted:     '#9AA49F',   // Placeholders, meta
+
+  // ── Status ────────────────────────────────────────────────────────────────
+  discountRed:   '#F04438',   // Discount badges
+  successGreen:  '#16A05D',   // Success states
+
+  // ── Borders ───────────────────────────────────────────────────────────────
+  border:        '#E2EDE8',   // Card borders
+  borderSubtle:  '#EAF0EC',   // Subtle separators
+
+  // ── Shadows ───────────────────────────────────────────────────────────────
+  shadowColor:   '#006B57',   // Drop shadow tint
+} as const;
+
+export type GroceryColorToken = keyof typeof GroceryColors;
+
+
+/**
  * Palette — a minimal set of values that have no direct Colors.* semantic equivalent.
  *
  * Only add to this object if the value genuinely has no semantic home in Colors:

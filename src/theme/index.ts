@@ -2,7 +2,8 @@ export * from './colors';
 export * from './typography';
 export * from './motion';
 
-import { Colors, Palette, DeckTints, Layout } from './colors';
+import { Colors, GroceryColors, Palette, DeckTints, Layout } from './colors';
+
 
 /** Common spacing scale in dp (mirrors Compose dp units). */
 export const Spacing = {
@@ -45,4 +46,5 @@ export const Radii = {
   pill: 999,
 } as const;
 
-export { Colors, Palette, DeckTints, Layout };
+export { Colors, GroceryColors, Palette, DeckTints, Layout };
+

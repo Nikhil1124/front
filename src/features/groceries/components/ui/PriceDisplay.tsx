@@ -54,9 +54,10 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 5,
+    columnGap: 5,
+    rowGap: 4,
   },
   price: {
     color: Colors.primary,

@@ -388,7 +388,8 @@ export function GroceryCheckoutScreen() {
             {items.map((item) => (
               <View key={item.id} style={styles.summaryItemRow}>
                 <Image
-                  source={item.image ? { uri: item.image } : require('../../../../assets/img_app_icon.jpg')}
+                  source={item.image ? { uri: item.image } : require('../../../../assets/productimages/d1_nobg.png')}
+
                   style={styles.summaryItemImg}
                 />
                 <View style={styles.summaryItemDetails}>
