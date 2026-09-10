@@ -246,6 +246,10 @@ export function useVerifyPaymentMutation(pgId?: string) {
       // mutation construction time (e.g. activePgId was still null on mount).
       // Without this, the cache is never invalidated and the payment stays
       // PENDING in the UI even though the backend already verified it.
+      //
+      // Restored during the kushal-apk-dev merge: that branch replaced this with a bare
+      // `if (pgId)`, which brings the bug back. Almost certainly a conflict resolved the
+      // wrong way rather than an intentional change.
       const effectivePgId = pgId ?? updatedPayment.pg_id;
       if (effectivePgId) {
         qc.invalidateQueries({ queryKey: qk.payments.list(effectivePgId) });
@@ -267,8 +271,7 @@ export function useRejectPaymentMutation(pgId?: string) {
       rejectPayment(paymentId, reason),
     onSuccess: (updatedPayment) => {
       hapticCaution();
-      // Same fallback as verify: use the response's pg_id if the hook was
-      // constructed before activePgId was available.
+      // Same fallback as verify — see the note there. Also restored from the merge.
       const effectivePgId = pgId ?? updatedPayment.pg_id;
       if (effectivePgId) {
         qc.invalidateQueries({ queryKey: qk.payments.list(effectivePgId) });
