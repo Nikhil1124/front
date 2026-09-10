@@ -135,7 +135,7 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
                 >
                   <View style={styles.relatedImageWrapper}>
                     <Image
-                      source={prod.image_url ? { uri: prod.image_url } : require('../../../../../assets/img_app_icon.jpg')}
+                      source={prod.image_url ? { uri: prod.image_url } : require('../../../../../assets/img_app_icon.webp')}
                       style={styles.relatedImage}
                       resizeMode="contain"
                     />

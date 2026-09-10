@@ -11,7 +11,8 @@
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "check": "node src/data/mappers.check.ts && node src/data/logic.check.ts && node src/data/headers.check.ts && node src/data/tokens.check.ts && node src/data/colors.check.ts && node src/data/forms.check.ts && node src/data/sheets.check.ts && node src/data/press.check.ts",
-    "check:api": "node scripts/check-api-compatibility.mjs"
+    "check:api": "node scripts/check-api-compatibility.mjs",
+    "lint": "tsc --noEmit && npm run check"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",

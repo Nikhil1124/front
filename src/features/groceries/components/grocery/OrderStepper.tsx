@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';

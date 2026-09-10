@@ -18,9 +18,11 @@ import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { useComplaintsQuery, useComplaintQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
 import { isRequestOpen } from '@/data/mappers';
+import { formatTimeAgo } from '@/utils/format';
 import { Colors, Palette, Radii } from '@/theme';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
-import { AnimatedPress, Col, ErrorState, ListRow, LoadingState, OutlinedTextField, Row, Sheet, Spacer, Txt, toneFor } from '@/components/ui';
+import { useResponsivePadding } from '@/utils/responsive';
+import { AnimatedPress, Col, ErrorState, ListRow, LoadingState, OutlinedTextField, Row, Sheet, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -32,6 +34,7 @@ const LIGHT_GREEN = Palette.TintGreen;
 
 export function OwnerComplaintsTab() {
   const dockScroll = useDockScroll();
+  const responsivePadding = useResponsivePadding();
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: submissions = [], isLoading, error, refetch } = useComplaintsQuery(activePgId ?? undefined);
   const respond = usePGowStore((s) => s.respondToFeedbackComplaint);
@@ -139,7 +142,7 @@ export function OwnerComplaintsTab() {
         data={closedIssues}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={listHeader}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: responsivePadding }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} colors={[GREEN]} />}
         renderItem={({ item, index }) => (
@@ -162,6 +165,9 @@ export function OwnerComplaintsTab() {
           title="Review response"
           subtitle={`${activeItem.guestName} · Room ${activeItem.roomNo}`}
           icon="construct-outline"
+          // One shape for every complaint, however long its description — see `Sheet`'s
+          // `size` prop. Kushal's fix for OWN-01/OWN-05.
+          size="3/4"
           onDismiss={() => setActiveItem(null)}
           footer={
             <Row gap={10}>
@@ -174,6 +180,48 @@ export function OwnerComplaintsTab() {
             </Row>
           }
         >
+
+                {/* What the complaint actually says.
+                    This sheet opened straight onto the evidence photo and then the reply box
+                    — so the one thing an owner needs in order to write that reply, the
+                    resident's own description of the problem, was the one thing missing.
+                    Every field here was already on the row that opened this sheet; none of
+                    it needed fetching. Title, category and when it was raised come with it,
+                    because "Tap dripping" and "Tap dripping, reported 9 days ago" are
+                    different situations. */}
+                <Col gap={6}>
+                  <Row justify="space-between" align="center" gap={8}>
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.detailTitle} numberOfLines={2}>
+                      {activeItem.title}
+                    </Txt>
+                    <StatusChip label={activeItem.status} tone={toneFor(activeItem.status)} />
+                  </Row>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.detailMeta}>
+                    {[
+                      activeItem.type === 'COMPLAINT' ? 'Complaint' : 'Feedback',
+                      activeItem.category,
+                      formatTimeAgo(activeItem.timestamp),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Txt>
+                  {activeItem.description?.trim() ? (
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.detailBody}>
+                      {activeItem.description}
+                    </Txt>
+                  ) : (
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.detailBodyMuted}>
+                      The resident did not add a description.
+                    </Txt>
+                  )}
+                  {activeItem.adminResponse?.trim() ? (
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.detailMeta}>
+                      Previous reply: {activeItem.adminResponse}
+                    </Txt>
+                  ) : null}
+                </Col>
+
+                <Spacer size={12} />
 
                 {/* The list row this modal opens from never carries an attachment — the list
                     endpoint's response shape omits attachments entirely; only the per-ticket
@@ -252,7 +300,15 @@ function ActiveItemEvidence({ id, pgId }: { id: string; pgId: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, backgroundColor: BG },
+  detailTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: CHARCOAL },
+  detailMeta: { fontSize: 11, color: MUTED },
+  detailBody: { fontSize: 13, color: CHARCOAL, lineHeight: 19 },
+  detailBodyMuted: { fontSize: 13, color: MUTED, fontStyle: 'italic' },
+  // Side padding comes from `useResponsivePadding` (16 / 20 / 24 by screen width), same as
+  // the overview — this was a fixed 20 while every guest tab used a fixed 16, so the content
+  // edge visibly jumped when moving between an owner tab and a resident one, and neither
+  // adapted to a narrow or a large phone.
+  scrollContent: { paddingTop: 16, paddingBottom: 110, backgroundColor: BG },
   bodyTitle: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
   bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
 

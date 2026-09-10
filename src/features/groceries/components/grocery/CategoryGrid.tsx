@@ -20,24 +20,24 @@ const getCategoryImage = (name: string) => {
   const n = name.toLowerCase();
   
   if (n.includes('fruit') || n.includes('veg')) {
-    return require('../../../../../assets/productimages/cat_fruits_veg_nobg.png');
+    return require('../../../../../assets/productimages/cat_fruits_veg_nobg.webp');
   }
   if (n.includes('dairy') || n.includes('milk') || n.includes('bread') || n.includes('egg')) {
-    return require('../../../../../assets/productimages/cat_dairy_nobg.png');
+    return require('../../../../../assets/productimages/cat_dairy_nobg.webp');
   }
   if (n.includes('chicken') || n.includes('meat') || n.includes('fish')) {
-    return require('../../../../../assets/productimages/cat_chicken_eggs_nobg.png');
+    return require('../../../../../assets/productimages/cat_chicken_eggs_nobg.webp');
   }
   if (n.includes('oil') || n.includes('masala') || n.includes('ghee') || n.includes('spice') || n.includes('atta') || n.includes('rice') || n.includes('dal') || n.includes('grain')) {
-    return require('../../../../../assets/productimages/cat_masala_nobg.png');
+    return require('../../../../../assets/productimages/cat_masala_nobg.webp');
   }
   if (n.includes('snack') || n.includes('beverage') || n.includes('drink') || n.includes('juice') || n.includes('biscuit') || n.includes('chocolate') || n.includes('sweet')) {
-    return require('../../../../../assets/productimages/cat_addons_nobg.png');
+    return require('../../../../../assets/productimages/cat_addons_nobg.webp');
   }
   if (n.includes('bakery') || n.includes('breakfast') || n.includes('cereal')) {
-    return require('../../../../../assets/productimages/cat_dairy_nobg.png');
+    return require('../../../../../assets/productimages/cat_dairy_nobg.webp');
   }
-  return require('../../../../../assets/productimages/cat_addons_nobg.png');
+  return require('../../../../../assets/productimages/cat_addons_nobg.webp');
 };
 
 

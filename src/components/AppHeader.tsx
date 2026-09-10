@@ -82,13 +82,28 @@ export function AppHeader({
         <Txt variant="meta" color={Colors.textMuted} numberOfLines={2}>{eyebrow}</Txt>
       ) : null}
       <View style={styles.titleRow}>
-        <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={2} style={{ flexShrink: 1 }}>
+        {/* One line, for the same reason as the subtitle below: a second line here does not
+            make the band taller, it draws through the band's bottom border. A manager whose
+            switcher reads "Select PG" had the "PG" sliced in half by it. A screen title
+            ellipsising is the ordinary behaviour anyway; the eyebrow above keeps its two
+            lines because a greeting is the one line here that is worth wrapping. */}
+        <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1} style={{ flexShrink: 1 }}>
           {title}
         </Txt>
         {titleAdornment}
       </View>
+      {/* One line, unlike the eyebrow and title above.
+          A wrapped second line here does not extend the header band — it draws straight
+          through the band's bottom border and over the content beneath, which is the "text
+          is cut off" report. The measured height of this column comes back as one line even
+          when two are painted (uiautomator reports the subtitle node at 35px on a 42px line
+          box), so the band has no way to know it needs the room. Ellipsis is the honest
+          affordance for a metadata line anyway; the eyebrow and title keep their two lines,
+          and callers keep this short — see `shortLocation`. */}
       {subtitle ? (
-        <Txt variant="meta" color={Colors.textMuted} numberOfLines={2}>{subtitle}</Txt>
+        <Txt variant="meta" color={Colors.textMuted} numberOfLines={1} ellipsizeMode="tail">
+          {subtitle}
+        </Txt>
       ) : null}
     </View>
   );

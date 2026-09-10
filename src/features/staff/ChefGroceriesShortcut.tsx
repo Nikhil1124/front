@@ -17,12 +17,15 @@ export function ChefGroceriesShortcut() {
   return (
     <AnimatedPress scale={0.98} onPress={() => router.push('/groceries')}>
       <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.card} borderWidth={0} padding={[14, 14]} style={styles.shadow}>
-        <Row justify="space-between" align="center">
-          <Row gap={12} align="center">
-            <Image source={require('../../../assets/img_meal_service_ad_1784642265436.jpg')} style={styles.image} />
-            <Col>
-              <Txt variant="cardTitle" weight="700" color={Colors.primaryDark}>Groceries</Txt>
-              <Txt size={11} color={Colors.textSecondary}>Request kitchen supplies from the Manager</Txt>
+        {/* `flex: 1` on the text side, and the subtitle clamped. Without it this row sized
+            itself to its content, so at a larger font scale the subtitle pushed the chevron
+            clean off the right edge of the card instead of wrapping. */}
+        <Row justify="space-between" align="center" gap={8}>
+          <Row gap={12} align="center" style={{ flex: 1, minWidth: 0 }}>
+            <Image source={require('../../../assets/img_meal_service_ad_1784642265436.webp')} style={styles.image} />
+            <Col style={{ flex: 1, minWidth: 0 }}>
+              <Txt variant="cardTitle" weight="700" color={Colors.primaryDark} numberOfLines={1}>Groceries</Txt>
+              <Txt size={11} color={Colors.textSecondary} numberOfLines={2}>Request kitchen supplies from the Manager</Txt>
             </Col>
           </Row>
           <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />

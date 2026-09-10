@@ -87,13 +87,20 @@ export function OutlinedTextField({
   const [focused, setFocused] = useState(false);
   const invalid = !!error;
 
-  // Rest is fill-only. `unfocusedBorderColor` is still honoured when a caller passes one, so
-  // the handful of screens that deliberately draw an edge keep it.
+  // A visible edge at rest, not a bare fill.
+  //
+  // This defaulted to `'transparent'` — "rest is fill-only" — so every field in the app was a
+  // grey rectangle until you touched it, and on the paler surfaces it did not read as a field
+  // at all. It is the reason some inputs looked like they had no border while the few screens
+  // passing `unfocusedBorderColor` looked different again, which is the inconsistency this
+  // component exists to prevent. A resting outline is what the component is named for and
+  // what both Material and HIG draw; focus still strengthens it to the brand colour, and an
+  // error still overrides both. Callers passing their own edge are unaffected.
   const borderColor = invalid
     ? Colors.danger
     : focused
       ? focusedBorderColor
-      : unfocusedBorderColor ?? 'transparent';
+      : unfocusedBorderColor ?? Colors.borderSubtle;
 
   const fill = containerColor ?? (invalid ? Palette.TintRed : focused ? Colors.surface : Colors.surfaceMuted);
   const labelColor = invalid ? Colors.danger : focused ? Colors.primary : Colors.textMuted;

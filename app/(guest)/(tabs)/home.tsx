@@ -39,11 +39,14 @@ import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
-import { useLaundryStore } from '@/features/laundry/store/useLaundryStore';
 
 const CUTOFF_HOURS: Record<string, number> = { BREAKFAST: 10, LUNCH: 14, DINNER: 21 };
 
 function getMealCutoffMs(m: MealNotificationEntity): number {
+  // The server's deadline is what the backend enforces, so it is what the countdown shows.
+  // Deriving one locally is what made this screen and the Meals tab disagree by ~2 hours on
+  // the same meal — they used different base dates for the same hardcoded hour.
+  if (m.responseClosesAt) return m.responseClosesAt;
   const d = new Date(m.timestamp);
   d.setHours(CUTOFF_HOURS[m.mealType.toUpperCase()] ?? 12, 0, 0, 0);
   return d.getTime();
@@ -107,12 +110,17 @@ export default function GuestHomeTab() {
   };
 
   const kycStatus = useKycStatus();
+  // `guest` is undefined until the profile loads, and `?? false` made that indistinguishable
+  // from "not paid" — so every single login flashed "Rent Status: Pending" and a "₹X due"
+  // banner before the real (often Paid) status arrived. A wrong financial status, however
+  // briefly, is the one thing this card must never show: a resident who glances at it and
+  // sees Pending pays twice. `rentKnown` separates "we do not know yet" from "unpaid".
+  const rentKnown = guest != null;
   const isBillPaid = guest?.isBillPaid ?? false;
   const rentDue = guest?.rentAmount ?? 0;
   const currentMonth = periodToMonthYear(currentPeriod());
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
   
-  const activeLaundryOrder = useLaundryStore((s) => s.activeOrder);
 
   // ── Upcoming meal ──────────────────────────────────────────────────────────
   const upcomingMeal: MealNotificationEntity | null = (() => {
@@ -148,8 +156,11 @@ export default function GuestHomeTab() {
   // ── Today's timeline items ─────────────────────────────────────────────────
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const todayMeals = meals.filter((m) => new Date(m.timestamp) >= todayStart);
+  // These are the labels `mappers.HUB_STATUS.laundry` produces. The filter used to look for
+  // 'Open' / 'In Progress' / 'Scheduled', which that table never emits for laundry, so this
+  // list was always empty and no laundry pickup ever appeared on the home timeline.
   const myLaundry = laundryRequests.filter(
-    (r) => r.guestId === guest?.id && ['Open', 'In Progress', 'Scheduled'].includes(r.status)
+    (r) => r.guestId === guest?.id && r.status !== 'Delivered' && r.status !== 'Cancelled'
   );
 
   const notices = roleNotifs.slice(0, 5);
@@ -211,7 +222,7 @@ export default function GuestHomeTab() {
                 <Txt size={15} weight="700" color={Colors.textPrimary} numberOfLines={1}>
                   {property?.name ?? 'PGow Residence'}
                 </Txt>
-                <Txt size={12} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
+                <Txt size={12} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2 }}>
                   Your Home. Your Community.
                 </Txt>
               </Col>
@@ -224,13 +235,18 @@ export default function GuestHomeTab() {
                 <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ marginLeft: 2 }} />
               </View>
               <View style={{ marginTop: 7 }}>
-                <StatusChip label={isBillPaid ? 'Paid' : 'Pending'} tone={isBillPaid ? 'ok' : 'warn'} />
+                {rentKnown ? (
+                  <StatusChip label={isBillPaid ? 'Paid' : 'Pending'} tone={isBillPaid ? 'ok' : 'warn'} />
+                ) : (
+                  // A neutral placeholder while the real status is in flight — no claim either way.
+                  <View style={styles.rentStatusSkeleton} />
+                )}
               </View>
             </Col>
           </Row>
 
-          {/* Rent due amber banner */}
-          {!isBillPaid && (
+          {/* Rent due amber banner — only once the status is actually known. */}
+          {rentKnown && !isBillPaid && (
             <View style={styles.rentBanner}>
               <Txt size={13} weight="700" color="#92400E">
                 {rentDue ? `₹${Math.round(rentDue).toLocaleString('en-IN')} due for ${currentMonth}` : 'Tap to see your rent due'}
@@ -314,7 +330,7 @@ export default function GuestHomeTab() {
           {/* Right-side food image with gradient fade */}
           <View style={styles.mealImageContainer}>
             <Image
-              source={require('../../../assets/img_guest_dashboard_hero.jpg')}
+              source={require('../../../assets/img_guest_dashboard_hero.webp')}
               style={styles.mealImage}
               resizeMode="cover"
             />
@@ -512,20 +528,24 @@ export default function GuestHomeTab() {
           <SvcCard
             title="Groceries"
             desc="Essentials delivered to your room"
-            image={require('../../../assets/pg_grocery_eggs_1785343431667.jpg')}
+            image={require('../../../assets/pg_grocery_eggs_1785343431667.webp')}
             onPress={() => router.push('/groceries')}
           />
           <SvcCard
             title="Laundry"
-            desc={activeLaundryOrder ? '1 Active Laundry Order' : 'Pickup, wash & return'}
-            descColor={activeLaundryOrder ? Colors.primary : undefined}
-            image={require('../../../assets/pg_service_laundry_1785343445318.jpg')}
+            desc={
+              myLaundry.length > 0
+                ? `${myLaundry.length} active laundry order${myLaundry.length === 1 ? '' : 's'}`
+                : 'Pickup, wash & return'
+            }
+            descColor={myLaundry.length > 0 ? Colors.primary : undefined}
+            image={require('../../../assets/pg_service_laundry_1785343445318.webp')}
             onPress={() => router.push('/laundry')}
           />
           <SvcCard
             title="Repairs"
             desc="Book a technician or handyman"
-            image={require('../../../assets/pg_service_repair_1785343458042.jpg')}
+            image={require('../../../assets/pg_service_repair_1785343458042.webp')}
             onPress={() => router.push('/book-technician')}
           />
           <SvcCard
@@ -701,6 +721,8 @@ const styles = StyleSheet.create({
     width: 46, height: 46, borderRadius: Radii.card,
     backgroundColor: Colors.primaryDark,
     alignItems: 'center', justifyContent: 'center' },
+  rentStatusSkeleton: {
+    width: 58, height: 20, borderRadius: Radii.badge, backgroundColor: Colors.surfaceElevated },
   // 'Rent Status >' bordered chip
   rentStatusChip: {
     flexDirection: 'row', alignItems: 'center',

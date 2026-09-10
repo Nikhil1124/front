@@ -21,7 +21,7 @@ const PROMO_CARDS: PromoCard[] = [
     badge: 'UP TO 40% OFF',
     bgColor: '#FFF3E0', // Light warm beige/yellow
     badgeColor: GroceryColors.discountRed,
-    image: require('../../../../../assets/productimages/promo_fresh_picks_nobg.png'),
+    image: require('../../../../../assets/productimages/promo_fresh_picks_nobg.webp'),
   },
   {
     id: 'pantry-restock',
@@ -30,7 +30,7 @@ const PROMO_CARDS: PromoCard[] = [
     badge: 'UP TO 35% OFF',
     bgColor: '#FFF8E1', // Lighter yellow
     badgeColor: Colors.warning, // Amber
-    image: require('../../../../../assets/productimages/cat_masala_nobg.png'),
+    image: require('../../../../../assets/productimages/cat_masala_nobg.webp'),
   },
   {
     id: 'breakfast-time',
@@ -39,7 +39,7 @@ const PROMO_CARDS: PromoCard[] = [
     badge: 'FROM ₹49',
     bgColor: '#E0F2FE', // Light sky blue
     badgeColor: '#38BDF8', // Light blue
-    image: require('../../../../../assets/productimages/d1_nobg.png'),
+    image: require('../../../../../assets/productimages/d1_nobg.webp'),
   },
 ];
 

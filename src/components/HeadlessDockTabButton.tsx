@@ -48,7 +48,7 @@
  */
 import { forwardRef, useEffect, useMemo, useRef } from 'react';
 import {
-  View, Pressable, StyleSheet, type PressableProps, type NativeSyntheticEvent, type NativeScrollEvent,
+  View, Pressable, PixelRatio, StyleSheet, type PressableProps, type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabList } from 'expo-router/ui';
@@ -76,7 +76,31 @@ export { TabList as Dock };
  *  the same 18px, so highlighting the icon alone is what makes the box identical on every
  *  tab. This is also how Play Store's own bottom bar does it. */
 const ICON_BOX = 38;
-const LABEL_HEIGHT = 14;
+/** The active-tab highlight's corner.
+ *
+ *  `Radii.control` — the token whose documented role is "buttons, inputs, chips, tiles:
+ *  anything you tap or type into", which is exactly what this is. It used to be `Radii.card`
+ *  (18), swapped in by a CI commit whose only goal was to get a hardcoded `14` past
+ *  `tokens.check.ts`. On a 38px box an 18px radius is 95% of the way to a perfect circle, so
+ *  that swap silently turned the highlight into a circle and the comment it added — "rounded
+ *  square outline" — described a shape the value could not produce. The box has been
+ *  "squared-off, not a pill" since it was first written; 10 keeps it that way and still
+ *  satisfies the guard. */
+const ICON_BOX_RADIUS = Radii.control;
+/** The label row's height, scaled with the reader's font setting.
+ *
+ *  It was a flat 14. `labelBox` sets `overflow: 'hidden'` so the collapse animation can clip
+ *  the label as it folds — which also means a label taller than this box is silently cut off,
+ *  and at Android's larger font sizes every tab name in the bar lost its descenders. The
+ *  `Txt` below caps growth at `maxFontSizeMultiplier={1.3}`, so matching that cap here is
+ *  exactly enough room and no more.
+ *
+ *  Read once at module scope: Android recreates the activity when the font scale changes, so
+ *  there is no in-session value to react to. */
+const LABEL_HEIGHT = Math.ceil(14 * Math.min(PixelRatio.getFontScale(), 1.3));
+/** The count badge, scaled the same way — its `Txt` caps at `maxFontSizeMultiplier={1.1}`,
+ *  and a flat 16px circle clipped the numeral at Android's larger font sizes. */
+const BADGE_SIZE = Math.ceil(16 * Math.min(PixelRatio.getFontScale(), 1.1));
 const LABEL_GAP = 3;
 /** Icon box + label + the bar's own vertical padding. Excludes the safe-area inset, which
  *  `useDock` adds on top — together they are exactly how much room the bar occupies.
@@ -86,7 +110,11 @@ const LABEL_GAP = 3;
 const BAR_CONTENT_HEIGHT = ICON_BOX + LABEL_GAP + LABEL_HEIGHT + 6;
 /** Breathing room under the labels on a device with no gesture inset at all. */
 const MIN_BOTTOM_PAD = 6;
-const ALERT_HEIGHT = 38;
+/** Scaled with the font, like `LABEL_HEIGHT` and `BADGE_SIZE`. This value is used twice —
+ *  as the strip's own height AND as the room `contentPaddingBottom` reserves for it — so a
+ *  flat 38 would both crop the strip's text and under-reserve the space beneath it, letting
+ *  the last row of a list sit under the strip at larger font sizes. */
+const ALERT_HEIGHT = Math.ceil(38 * Math.min(PixelRatio.getFontScale(), 1.2));
 const ALERT_GAP = 8;
 
 // ── Scroll-collapse state (C2) ──────────────────────────────────────────────────────────────
@@ -286,9 +314,27 @@ export const HeadlessDockTabButton = forwardRef<View, Props>(
 
     // Focus wins over queue state: you are looking at the queue, so telling you it is full is
     // noise. The tint order below is the whole of C3.
-    const boxStyle = isFocused
-      ? { backgroundColor: activeBg ?? DeckTints.brand.fill }
-      : { backgroundColor: 'transparent' };
+    //
+    // The unfocused state is the BAR'S OWN COLOUR, never `'transparent'`. That is the fix
+    // for the "circle at first, square afterwards" report, and it is not cosmetic:
+    //
+    // a View whose `backgroundColor` is transparent gets no background drawable on Android at
+    // all. The corner radius lives on that drawable, so when focus later moves here, RN
+    // attaches a fresh plain background for the new colour and the rounded drawable it never
+    // built is not there to reuse — the highlight paints with hard corners. On the very first
+    // mount the View is created with its colour already set, which is why login looked right
+    // and every tab tap afterwards did not. Same tab, same style, different corners.
+    //
+    // `Colors.surface` is exactly what `styles.bar` paints behind these tabs, so an unfocused
+    // box is pixel-identical to the transparent one it replaces while keeping a real rounded
+    // drawable alive for the colour to swap into.
+    //
+    // Measured on an Android 15 emulator, icon box at 100x99px: before, the corner inset went
+    // 43px on mount -> 0px after a tab tap. After, it stays put.
+    const boxStyle = {
+      backgroundColor: isFocused ? (activeBg ?? DeckTints.brand.fill) : Colors.surface,
+      borderRadius: ICON_BOX_RADIUS,
+    };
 
     const iconColor = isFocused
       ? activeColor
@@ -373,15 +419,14 @@ const styles = StyleSheet.create({
     height: ICON_BOX,
     alignItems: 'center',
     justifyContent: 'center',
-    // Rounded square outline when active — Radii.card matches the surrounding bar surface
-    borderRadius: Radii.card,
+    borderRadius: ICON_BOX_RADIUS,
   },
   count: {
     position: 'absolute',
     top: -3,
     right: -5,
-    minWidth: 16,
-    height: 16,
+    minWidth: BADGE_SIZE,
+    height: BADGE_SIZE,
     paddingHorizontal: 4,
     borderRadius: Radii.pill,
     backgroundColor: DeckTints.amber.ink,

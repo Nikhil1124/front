@@ -17,7 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
 import { EmptyState } from '@/components/EmptyState';
-import type { PaymentEntity, ExpenseEntity, GuestEntity } from '@/types';
+import type { PaymentEntity, ExpenseEntity } from '@/types';
 import { useAllPaymentsQuery, useVerifyPaymentMutation, useRejectPaymentMutation } from '@/features/payments/usePayments';
 import { useAllExpensesQuery, useLogExpenseMutation, useReverseExpenseMutation, type ExpenseCategory, type ExpenseMethod } from '@/features/expenses/useExpenses';
 import { useGuestsQuery } from '@/features/guests/useGuests';

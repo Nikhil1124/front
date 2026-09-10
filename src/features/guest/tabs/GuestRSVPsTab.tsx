@@ -3,7 +3,7 @@
  * retaining 100% of existing functionality, persistent meal preferences, ad cards,
  * allergen breakdowns, and state management.
  */
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View, ScrollView, StyleSheet, Image,
   RefreshControl } from 'react-native';
@@ -110,6 +110,21 @@ export function GuestRSVPsTab() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [detailMeal, setDetailMeal] = useState<MealNotificationEntity | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
+  // The preferences panel renders well below the fold, while the button that opens it lives
+  // in the header. Toggling a boolean therefore looked like nothing happening — the panel had
+  // appeared, several screens down, with no reason for the reader to scroll and find out.
+  // Opening it from the header now takes you to it.
+  const scrollRef = useRef<ScrollView>(null);
+  const prefsY = useRef(0);
+  const openPreferences = () => {
+    const next = !showPreferences;
+    setShowPreferences(next);
+    if (next) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ y: Math.max(0, prefsY.current - 12), animated: true });
+      });
+    }
+  };
 
   // Persistent B/L/D Opt-In preferences (local-only — see setMealPreference below)
   const [mealPrefs, setMealPrefs] = useState<{ breakfast: boolean; lunch: boolean; dinner: boolean }>({
@@ -220,7 +235,14 @@ export function GuestRSVPsTab() {
   const activeMealNotif = notifications.find(
     (n) => n.mealType.toUpperCase() === activeMealTab
   ) ?? null;
-  const cutoffMs = activeMealNotif ? getCutoffMs(activeMealNotif.mealType) : null;
+  // The server's own deadline first. `getCutoffMs` derives one from the meal TYPE against
+  // today's date, while home.tsx derived it from the MEAL's date — two different answers for
+  // the same meal, roughly two hours apart, and neither was the number the backend enforces.
+  // `response_closes_at` is that number. The heuristic remains only for a meal with no
+  // deadline set.
+  const cutoffMs = activeMealNotif
+    ? activeMealNotif.responseClosesAt ?? getCutoffMs(activeMealNotif.mealType)
+    : null;
   const cutoffPassed = cutoffMs ? cutoffMs <= Date.now() : false;
 
   const currentChoice = activeMealNotif ? effectiveChoices[activeMealNotif.id] : undefined;
@@ -239,6 +261,13 @@ export function GuestRSVPsTab() {
         if (result.ok) {
           setRsvpChoices((prev) => ({ ...prev, [id]: choice }));
           toast('success', choice === 'REQUIRED' ? "You're attending!" : 'Marked as not attending', 'Your portion status updated.');
+        } else {
+          // A rejected RSVP used to end here in silence: no toast, no button state, and the
+          // "N of 3 Decided" counter unmoved — while the request had genuinely reached the
+          // server and been refused (a passed cut-off returns an error, and every meal on a
+          // test property had one in the past). The resident could not tell the difference
+          // between "saved" and "refused", so they tapped again and again.
+          toast('error', 'Could not save your answer', result.error ?? 'Please try again.');
         }
       } finally { setSubmittingId(null); }
     },
@@ -254,13 +283,14 @@ export function GuestRSVPsTab() {
         subtitle="Eat well. Stay healthy."
         actions={
           <Row gap={8}>
-            <HeaderChip icon="options-outline" label="Meal preferences" onPress={() => { setShowPreferences(!showPreferences); }} />
+            <HeaderChip icon="options-outline" label="Meal preferences" onPress={openPreferences} />
             <HeaderChip icon="calendar-outline" label="Choose a date" onPress={() => { toast('info', 'Not Available Yet', 'A weekly meal calendar is coming soon.'); }} />
           </Row>
         }
       />
 
       <ScrollView
+        ref={scrollRef}
         {...dockScroll}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -312,7 +342,7 @@ export function GuestRSVPsTab() {
 
         {/* Optional: Persistent Preferences Widget when toggled or top section */}
         {showPreferences && (
-          <View style={styles.prefsWrapper}>
+          <View style={styles.prefsWrapper} onLayout={(e) => { prefsY.current = e.nativeEvent.layout.y; }}>
             <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
               <Row gap={6} align="center">
                 <Ionicons name="restaurant" size={16} color={Colors.primary} />
@@ -433,7 +463,7 @@ export function GuestRSVPsTab() {
           {/* Food image - right */}
           <View style={styles.heroImageWrap}>
             <Image
-              source={require('../../../../assets/img_guest_dashboard_hero.jpg')}
+              source={require('../../../../assets/img_guest_dashboard_hero.webp')}
               style={styles.heroImage}
               resizeMode="cover"
             />
@@ -561,7 +591,7 @@ export function GuestRSVPsTab() {
 
         {/* ── 6. WEEKLY MENU ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 24, marginBottom: 16 }}>
-          <Txt size={17} weight="700" color={Colors.textPrimary}>Weekly Menu</Txt>
+          <Txt size={17} weight="700" numberOfLines={1} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>Weekly Menu</Txt>
           <Row align="center" gap={4}>
             <Txt size={12} color={Colors.textSecondary}>
               {weekRangeLabel(weekDays[0].full, weekDays[6].full)}
@@ -685,7 +715,7 @@ export function GuestRSVPsTab() {
             </Txt>
           </Col>
           <Image
-            source={require('../../../../assets/img_guest_dashboard_hero.jpg')}
+            source={require('../../../../assets/img_guest_dashboard_hero.webp')}
             style={styles.feedbackImage}
             resizeMode="cover"
           />

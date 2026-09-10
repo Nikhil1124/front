@@ -42,25 +42,25 @@ const FOLLOWUP_REMINDER_TITLE = '🚨 15-Min RSVP Check';
 const FOLLOWUP_REMINDER_BODY = "Check who hasn't responded to the active meal, and tap Send Follow-up Now if it's worth another nudge.";
 
 const PRESET_DISHES: VisualDishItem[] = [
-  { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/poori.png') },
-  { name: 'Idli', icon: '⚪', category: 'Breakfast', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/idli.png') },
-  { name: 'Dosa', icon: '🥞', category: 'Breakfast', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/dosa.png') },
-  { name: 'Uttapam', icon: '🍕', category: 'Breakfast', isVeg: true, rating: '4.4', image_url: require('../../../assets/food/uttapam.png') },
-  { name: 'Upma', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.4', image_url: require('../../../assets/food/upma.png') },
-  { name: 'Poha', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.3', image_url: require('../../../assets/food/poha.png') },
-  { name: 'Pasta', icon: '🍝', category: 'Breakfast', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/pasta.png') },
-  { name: 'White Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/whiterice.png') },
-  { name: 'Dal', icon: '🥣', category: 'Rice & Dal', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/dal.png') },
-  { name: 'Jeera Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/whiterice.png') },
-  { name: 'Lemon Rice', icon: '🍋', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/whiterice.png') },
-  { name: 'Biryani', icon: '🍛', category: 'Rice & Dal', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/biryani.png') },
-  { name: 'Paneer Rice', icon: '🧀', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/biryani.png') },
-  { name: 'Paneer Curry', icon: '🧀', category: 'Curry & Fry', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/paneer.png') },
-  { name: 'Egg Curry', icon: '🥚', category: 'Curry & Fry', isVeg: false, rating: '4.6', image_url: require('../../../assets/food/chicken.png') },
-  { name: 'Egg Rice', icon: '🍳', category: 'Curry & Fry', isVeg: false, rating: '4.4', image_url: require('../../../assets/food/biryani.png') },
-  { name: 'Chicken', icon: '🍗', category: 'Curry & Fry', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/chicken.png') },
-  { name: 'Fry', icon: '🍟', category: 'Curry & Fry', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/paneer.png') },
-  { name: 'Sweet', icon: '🍬', category: 'Sweets', isVeg: true, rating: '4.8', image_url: require('../../../assets/food/sweet.png') },
+  { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/poori.webp') },
+  { name: 'Idli', icon: '⚪', category: 'Breakfast', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/idli.webp') },
+  { name: 'Dosa', icon: '🥞', category: 'Breakfast', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/dosa.webp') },
+  { name: 'Uttapam', icon: '🍕', category: 'Breakfast', isVeg: true, rating: '4.4', image_url: require('../../../assets/food/uttapam.webp') },
+  { name: 'Upma', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.4', image_url: require('../../../assets/food/upma.webp') },
+  { name: 'Poha', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.3', image_url: require('../../../assets/food/poha.webp') },
+  { name: 'Pasta', icon: '🍝', category: 'Breakfast', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/pasta.webp') },
+  { name: 'White Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/whiterice.webp') },
+  { name: 'Dal', icon: '🥣', category: 'Rice & Dal', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/dal.webp') },
+  { name: 'Jeera Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/whiterice.webp') },
+  { name: 'Lemon Rice', icon: '🍋', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/whiterice.webp') },
+  { name: 'Biryani', icon: '🍛', category: 'Rice & Dal', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/biryani.webp') },
+  { name: 'Paneer Rice', icon: '🧀', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/biryani.webp') },
+  { name: 'Paneer Curry', icon: '🧀', category: 'Curry & Fry', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/paneer.webp') },
+  { name: 'Egg Curry', icon: '🥚', category: 'Curry & Fry', isVeg: false, rating: '4.6', image_url: require('../../../assets/food/chicken.webp') },
+  { name: 'Egg Rice', icon: '🍳', category: 'Curry & Fry', isVeg: false, rating: '4.4', image_url: require('../../../assets/food/biryani.webp') },
+  { name: 'Chicken', icon: '🍗', category: 'Curry & Fry', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/chicken.webp') },
+  { name: 'Fry', icon: '🍟', category: 'Curry & Fry', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/paneer.webp') },
+  { name: 'Sweet', icon: '🍬', category: 'Sweets', isVeg: true, rating: '4.8', image_url: require('../../../assets/food/sweet.webp') },
 ];
 
 export default function ChefBroadcastTab() {
@@ -160,7 +160,7 @@ function ChefBroadcastView() {
     clearMenuError(); setSelectedDishes((cur) => {
       const next = cur.includes(dish) ? cur.filter((d) => d !== dish) : [...cur, dish];
       // Suggests veg/non-veg from what's actually on the plate — the chef can still
-      // override with the chips below, e.g. to mark a veg-only selection "Pure Veg".
+      // override with the chips below.
       if (next.length > 0) {
         const hasNonVeg = next.some((name) => PRESET_DISHES.find((d) => d.name === name)?.isVeg === false);
         set('mealDietaryTypeSelected', hasNonVeg ? 'non_veg' : 'veg');
@@ -179,7 +179,8 @@ function ChefBroadcastView() {
     // empty dish grid for a menu that already has words in it.
     setShowManualInput(true);
     set('mealTypeSelected', meal.mealType);
-    set('mealDietaryTypeSelected', meal.dietaryType ?? 'veg');
+    // `pure_veg` is no longer offered — an older meal carrying it edits as plain veg.
+    set('mealDietaryTypeSelected', meal.dietaryType === 'non_veg' ? 'non_veg' : 'veg');
     set('menuItemsInput', meal.menuItems);
     set('chefNoteInput', meal.chefNote ?? '');
     set('serviceTimeInput', meal.serviceTime);
@@ -364,10 +365,14 @@ function ChefBroadcastView() {
           <InfoTip text="Shown to residents on the meal card. Suggested from the dishes you pick below — tap to override." />
         </Row>
         <Row gap={8} style={{ marginTop: 6 }}>
+          {/* No "Pure Veg". It is still a value the server accepts and still renders on
+              meals that already carry it (see DIETARY_TAG), so history is intact — it is
+              simply no longer offered for new meals. `pure_veg` on an existing meal is
+              coerced to `veg` when that meal is loaded for editing, below, so the picker
+              always has a selection rather than showing none. */}
           {[
             { id: 'veg' as const, label: 'Veg', icon: '🥦' },
             { id: 'non_veg' as const, label: 'Non-Veg', icon: '🍗' },
-            { id: 'pure_veg' as const, label: 'Pure Veg', icon: '🥗' },
           ].map((d) => {
             const isSel = mealDietaryTypeSelected === d.id;
             return (
@@ -533,12 +538,12 @@ function ChefBroadcastView() {
       {/* Automation settings */}
       <AnimatedPress accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)}>
         <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 16]}>
-          <Row justify="space-between" align="center">
-            <Row gap={12} align="center">
+          <Row justify="space-between" align="center" gap={8}>
+            <Row gap={12} align="center" style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.automationIconBadge}>
                 <Ionicons name="settings" size={20} color={Colors.primaryDark} />
               </View>
-              <View>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Txt size={14} weight="700" color={Colors.textPrimary}>Automation Settings</Txt>
                 <Spacer size={2} />
                 <Txt variant="labelSmall" weight="600" color={Colors.textMuted}>3 daily alarms • Follow-up {autoFollowup ? 'ON' : 'OFF'}</Txt>
@@ -667,9 +672,9 @@ function DeliveryHistoryRoute() {
                     <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
                   )}
                 </View>
-                <View>
-                  <Txt size={14} weight="700" color={Colors.textPrimary}>{item.pgName}</Txt>
-                  <Txt size={12} color={Colors.textMuted}>{item.date} · {item.orders} Orders</Txt>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1}>{item.pgName}</Txt>
+                  <Txt size={12} color={Colors.textMuted} numberOfLines={1}>{item.date} · {item.orders} Orders</Txt>
                 </View>
               </Row>
               <View style={[styles.statusPill, { backgroundColor: item.status === 'Delivered' ? '#F0FDF4' : Palette.TintRed }]}>

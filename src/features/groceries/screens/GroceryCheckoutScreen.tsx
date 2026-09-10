@@ -73,7 +73,13 @@ export function GroceryCheckoutScreen() {
   // unique per device per pending order, not cryptographically strong.
   const idempotencyKey = useRef(`ord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
 
-  const [fulfillmentMode, setFulfillmentMode] = useState<'delivery' | 'pickup'>('delivery');
+  // There is no "Store Pickup". `CreateOrderRequest` has no fulfillment field, the supply
+  // order state machine has no pickup state, and no warehouse in this product runs a counter
+  // a resident can collect from. The toggle that used to sit here changed nothing on the
+  // server — the order dispatched as a normal delivery either way — while zeroing the
+  // delivery fee on this screen, so a resident who chose it was quoted a total the server
+  // would not honour. Removed rather than faked. Add it back with a `fulfillment_mode` on the
+  // order and a pickup state server-side if the warehouses ever offer collection.
   // No default: '1' used to point at the first invented fallback slot. The effect below
   // selects the first REAL slot once they load, and leaves this empty if there are none.
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
@@ -125,7 +131,7 @@ export function GroceryCheckoutScreen() {
   );
 
   const subtotal = getCartTotal();
-  const deliveryFee = fulfillmentMode === 'pickup' ? 0 : (selectedSlot?.fee ?? 0);
+  const deliveryFee = selectedSlot?.fee ?? 0;
   // GST is inside `subtotal`, not added to it — supply_items.price is tax-inclusive and the
   // server splits it the same way (see getBillEstimate). Delivery fee is the only addition —
   // there used to be a flat ₹10 "platform fee" and a delivery-partner tip selector here too,
@@ -200,142 +206,95 @@ export function GroceryCheckoutScreen() {
             <Txt maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery</Txt>
           </View>
 
-          {/* Mode Switch row */}
-          <View style={styles.fulfillmentContainer}>
-            <AnimatedPress accessibilityRole="button"
-              style={[
-                styles.fulfillmentBtn,
-                fulfillmentMode === 'delivery' && styles.selectedFulfillmentBtn
-              ]}
-              onPress={() => setFulfillmentMode('delivery')}
+          <Txt maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Select delivery time</Txt>
 
-            >
-              <Ionicons
-                name="bicycle"
-                size={16}
-                color={fulfillmentMode === 'delivery' ? Colors.primary : Colors.textSecondary}
-              />
-              <Txt maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'delivery' && styles.selectedFulfillmentText]}>
-                Delivery
-              </Txt>
-            </AnimatedPress>
+          {slotsList.length === 0 && (
+            <Txt maxFontSizeMultiplier={1.3} style={styles.slotEmptyText}>
+              No delivery windows are set up for your area yet. You can still place this
+              order — the warehouse will schedule it and confirm the time with you.
+            </Txt>
+          )}
 
-            <AnimatedPress accessibilityRole="button"
-              style={[
-                styles.fulfillmentBtn,
-                fulfillmentMode === 'pickup' && styles.selectedFulfillmentBtn
-              ]}
-              onPress={() => setFulfillmentMode('pickup')}
+          {/* Slots list */}
+          <View style={styles.slotList}>
+            {slotsList.map((slot) => {
+              const isSelected = selectedSlotId === slot.id;
+              const isFastest = slot.badge === 'FASTEST';
 
-            >
-              <Ionicons
-                name="basket-outline"
-                size={16}
-                color={fulfillmentMode === 'pickup' ? Colors.primary : Colors.textSecondary}
-              />
-              <Txt maxFontSizeMultiplier={1.3} style={[styles.fulfillmentText, fulfillmentMode === 'pickup' && styles.selectedFulfillmentText]}>
-                Store Pickup
-              </Txt>
-            </AnimatedPress>
-          </View>
+              return (
+                <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                  key={slot.id}
+                  style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
+                  onPress={() => setSelectedSlotId(slot.id)}
 
-          {fulfillmentMode === 'delivery' ? (
-            <>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Select delivery time</Txt>
-
-              {slotsList.length === 0 && (
-                <Txt maxFontSizeMultiplier={1.3} style={styles.slotEmptyText}>
-                  No delivery windows are set up for your area yet. You can still place this
-                  order — the warehouse will schedule it and confirm the time with you.
-                </Txt>
-              )}
-
-              {/* Slots list */}
-              <View style={styles.slotList}>
-                {slotsList.map((slot) => {
-                  const isSelected = selectedSlotId === slot.id;
-                  const isFastest = slot.badge === 'FASTEST';
-
-                  return (
-                    <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
-                      key={slot.id}
-                      style={[styles.slotRow, isSelected && styles.selectedSlotRow]}
-                      onPress={() => setSelectedSlotId(slot.id)}
-
-                    >
-                      <View style={styles.slotRowLeft}>
-                        <Ionicons
-                          name={isSelected ? "radio-button-on" : "radio-button-off"}
-                          size={18}
-                          color={isSelected ? Colors.primary : Colors.textMuted}
-                          style={styles.radioIcon}
-                        />
-                        <View style={styles.slotDetails}>
-                          <View style={styles.slotDayBadgeRow}>
-                            <Txt maxFontSizeMultiplier={1.3} style={styles.slotDay}>{slot.day}</Txt>
-                            <View style={[styles.slotBadge, isFastest ? styles.fastestBadge : styles.freeBadge]}>
-                              <Txt maxFontSizeMultiplier={1.3} style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
-                                {slot.badge}
-                              </Txt>
-                            </View>
-                          </View>
-                          <Txt maxFontSizeMultiplier={1.3} style={styles.slotWindow}>{slot.window}</Txt>
+                >
+                  <View style={styles.slotRowLeft}>
+                    <Ionicons
+                      name={isSelected ? "radio-button-on" : "radio-button-off"}
+                      size={18}
+                      color={isSelected ? Colors.primary : Colors.textMuted}
+                      style={styles.radioIcon}
+                    />
+                    <View style={styles.slotDetails}>
+                      <View style={styles.slotDayBadgeRow}>
+                        <Txt maxFontSizeMultiplier={1.3} style={styles.slotDay}>{slot.day}</Txt>
+                        <View style={[styles.slotBadge, isFastest ? styles.fastestBadge : styles.freeBadge]}>
+                          <Txt maxFontSizeMultiplier={1.3} style={[styles.slotBadgeText, isFastest ? styles.fastestText : styles.freeText]}>
+                            {slot.badge}
+                          </Txt>
                         </View>
                       </View>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.slotWindow}>{slot.window}</Txt>
+                    </View>
+                  </View>
 
-                      <Txt maxFontSizeMultiplier={1.3} style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
-                        {slot.feeText}
-                      </Txt>
-                    </AnimatedPress>
-                  );
-                })}
-              </View>
-            </>
-          ) : (
-            <Txt maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Pickup is free — collect your order from the store counter, no delivery fee.</Txt>
-          )}
+                  <Txt maxFontSizeMultiplier={1.3} style={[styles.slotFeeText, slot.fee === 0 && styles.greenFeeText]}>
+                    {slot.feeText}
+                  </Txt>
+                </AnimatedPress>
+              );
+            })}
+          </View>
         </View>
 
         {/* Section 2: Address & Instructions */}
-        {fulfillmentMode === 'delivery' && (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={styles.stepBadge}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>2</Txt>
-              </View>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery Address</Txt>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.stepBadge}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>2</Txt>
             </View>
-
-            {/* Location card */}
-            <View style={styles.locationCard}>
-              <Ionicons name="location" size={18} color={Colors.primary} style={styles.locationCardIcon} />
-              <View style={styles.locationTextWrapper}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Txt>
-              </View>
-              <AnimatedPress accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Txt>
-                <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} />
-              </AnimatedPress>
-            </View>
-
-            {/* Instruction input */}
-            <OutlinedTextField
-              label="Delivery instructions (optional)"
-              placeholder="Leave at door, call when arrived"
-              value={driverNote}
-              onChangeText={(text: string) => text.length <= 120 && setDriverNote(text)}
-              multiline
-              helper={`${driverNote.length}/120`}
-            />
+            <Txt maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Delivery Address</Txt>
           </View>
-        )}
+
+          {/* Location card */}
+          <View style={styles.locationCard}>
+            <Ionicons name="location" size={18} color={Colors.primary} style={styles.locationCardIcon} />
+            <View style={styles.locationTextWrapper}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.locationCardTitle}>Deliver to</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.locationCardSub} numberOfLines={1}>{deliveryAddress}</Txt>
+            </View>
+            <AnimatedPress accessibilityRole="button" onPress={handleUpdateAddress} style={styles.changeBtn}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.changeBtnText}>Change</Txt>
+              <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} />
+            </AnimatedPress>
+          </View>
+
+          {/* Instruction input */}
+          <OutlinedTextField
+            label="Delivery instructions (optional)"
+            placeholder="Leave at door, call when arrived"
+            value={driverNote}
+            onChangeText={(text: string) => text.length <= 120 && setDriverNote(text)}
+            multiline
+            helper={`${driverNote.length}/120`}
+          />
+        </View>
 
         {/* Section 3: Payment Method */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.stepBadge}>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>{fulfillmentMode === 'delivery' ? 3 : 2}</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.stepBadgeText}>3</Txt>
             </View>
             <Txt maxFontSizeMultiplier={1.3} style={styles.cardTitle}>Payment Method</Txt>
           </View>
@@ -417,7 +376,7 @@ export function GroceryCheckoutScreen() {
             {items.map((item) => (
               <View key={item.id} style={styles.summaryItemRow}>
                 <Image
-                  source={item.image ? { uri: item.image } : require('../../../../assets/productimages/d1_nobg.png')}
+                  source={item.image ? { uri: item.image } : require('../../../../assets/productimages/d1_nobg.webp')}
 
                   style={styles.summaryItemImg}
                 />
@@ -557,40 +516,15 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     color: Colors.textPrimary },
-  fulfillmentContainer: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surfaceMuted,
-    borderRadius: Radii.card,
-    padding: 4,
-    marginBottom: 12 },
-  fulfillmentBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: Radii.control,
-    gap: 6 },
-  selectedFulfillmentBtn: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.primary },
-  fulfillmentText: {
-    fontSize: 12,
-    color: Colors.textSecondary },
-  selectedFulfillmentText: {
-    color: Colors.primary },
   slotListLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.textSecondary,
     marginBottom: 8 },
   slotEmptyText: {
     fontSize: 12,
-    lineHeight: 18,
     color: Colors.textSecondary,
-    paddingHorizontal: 4,
-    paddingBottom: 8,
-  },
+    lineHeight: 17,
+    marginBottom: 8 },
   slotList: {
     gap: 8 },
   slotRow: {

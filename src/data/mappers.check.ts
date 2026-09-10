@@ -112,6 +112,24 @@ assert.equal(meal.isClosed, true, "is_open inverts into isClosed");
 assert.equal(meal.isAlertSent, true);
 assert.equal(meal.dietaryType, "veg");
 assert.match(meal.serviceTime, /^\d{2}:\d{2}$/, "HH:mm, zero-padded");
+// No deadline set by the chef: null, not a guessed one. Both meal screens fall back to their
+// own heuristic only in this case — when the server DOES give a deadline it is the single
+// source of truth, which is what stopped the dashboard and the Meals tab disagreeing by ~2h.
+assert.equal(meal.responseClosesAt, null);
+{
+  const withDeadline = toMeal({
+    id: "meal-2", pg_id: "pg-1", meal_type: "dinner",
+    menu_items: "Roti, Dal", dietary_type: "veg", chef_note: "",
+    service_at: "2026-08-06T20:30:00+05:30",
+    response_closes_at: "2026-08-06T18:30:00+05:30",
+    is_open: true, is_broadcast: true, created_by: "u-2",
+  });
+  assert.equal(
+    withDeadline.responseClosesAt,
+    Date.parse("2026-08-06T18:30:00+05:30"),
+    "the server's own cut-off is carried through unchanged"
+  );
+}
 
 // ─── Payments ───────────────────────────────────────────────────────────────
 const verified = toPayment({
@@ -235,6 +253,29 @@ const bare = toLaundryRequest({ ...hubBase, kind: "laundry", status: "open" });
 assert.equal(bare.serviceType, "");
 assert.equal(bare.totalCost, 0);
 assert.equal(bare.status, "Pickup Scheduled");
+assert.deepEqual(bare.items, []);
+
+// `details.items` is free-form JSON written by a client, so the parser has to be the thing
+// that decides what a line is. A malformed line is dropped, never rendered as "undefined ×
+// NaN"; a line missing only its price is kept at 0 rather than losing the item entirely.
+const lines = toLaundryRequest({
+  ...hubBase, kind: "laundry", status: "open",
+  details: { items: [
+    { name: "Shirt", qty: 3, price: 15, unit: "piece" },
+    { name: "Towels", qty: 2 },                    // no price/unit — kept, defaulted
+    { qty: 4, price: 10 },                          // no name — dropped
+    { name: "Jeans", qty: "two" },                  // qty not a number — dropped
+    "Blazer",                                       // not an object — dropped
+  ] },
+});
+assert.equal(lines.items.length, 2);
+assert.deepEqual(lines.items[0], { name: "Shirt", qty: 3, price: 15, unit: "piece" });
+assert.deepEqual(lines.items[1], { name: "Towels", qty: 2, price: 0, unit: "piece" });
+// A non-array `items` must not throw on a request written before this field existed.
+assert.deepEqual(
+  toLaundryRequest({ ...hubBase, kind: "laundry", status: "open", details: { items: "5 kg" } }).items,
+  []
+);
 
 // And the labels map back, so a tap becomes a real status transition.
 assert.equal(hubStatusToServer("laundry", "Delivered"), "resolved");

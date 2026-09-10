@@ -82,6 +82,10 @@ export interface MealNotificationEntity {
   /** Chef-confirmed, never inferred from `menuItems` text. Null for a meal posted before
    *  this field existed — render nothing for those rather than guess. */
   dietaryType: 'veg' | 'non_veg' | 'pure_veg' | null;
+  /** When the server stops accepting an RSVP for this meal, in ms. This is the value the
+   *  backend actually enforces, so it is the only honest thing to count down to. Null when
+   *  the chef set no deadline. */
+  responseClosesAt: number | null;
 }
 
 export interface GuestRSVPEntity {
@@ -232,11 +236,24 @@ export interface GuestLaundryRequest {
   weightOrCount: string;
   pickupPreference: string;
   preferredSlot: string;
+  /** The day the pickup was booked for. Free text ("Today", "Sep 13") as the picker offers it. */
+  pickupDate: string;
   specialNotes: string;
+  /** What was actually booked, line by line — the whole point of a laundry order. */
+  items: LaundryOrderLine[];
   totalCost: number;
   paymentStatus: string;
   status: string;
   timestamp: number;
+}
+
+/** One line of a laundry booking, as stored in the request's `details.items`. */
+export interface LaundryOrderLine {
+  name: string;
+  qty: number;
+  /** Unit price at the time of booking, so a later rate-card change cannot rewrite history. */
+  price: number;
+  unit: string;
 }
 
 // ---- App-level helpers ----

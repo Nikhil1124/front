@@ -1,16 +1,29 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Radii, Palette } from '@/theme';
+import { Colors, Radii } from '@/theme';
 import { AnimatedPress, Btn, Col, OutlinedTextField, Row, Txt } from '@/components/ui';
-import { useLaundryStore } from '@/features/laundry/store/useLaundryStore';
+import { useLaundryStore, LAUNDRY_PICKUP_TIMES } from '@/features/laundry/store/useLaundryStore';
 import { usePGowStore } from '@/store/usePGowStore';
 
-const DATES = ['Today', 'Tomorrow', 'Sep 12', 'Sep 13'];
-const TIMES = ['8:00 AM – 10:00 AM', '12:00 PM – 2:00 PM', '5:00 PM – 7:00 PM'];
+/**
+ * The next four days, computed. This was `['Today', 'Tomorrow', 'Sep 12', 'Sep 13']` — two
+ * fixed dates from whenever the screen was written, which a resident would have been offered
+ * as a pickup slot months after they had passed.
+ */
+function nextFourDays(): string[] {
+  const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+  return [0, 1, 2, 3].map((offset) => {
+    if (offset === 0) return 'Today';
+    if (offset === 1) return 'Tomorrow';
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return fmt.format(d);
+  });
+}
 
 export default function LaundryPickupScreen() {
   const insets = useSafeAreaInsets();
@@ -20,6 +33,8 @@ export default function LaundryPickupScreen() {
   const setPickupDetails = useLaundryStore((s) => s.setPickupDetails);
 
   const [instructions, setInstructions] = useState(pickupDetails.instructions);
+  // Recomputed once per mount, not per render — the list must not shift mid-selection.
+  const dates = useMemo(nextFourDays, []);
 
   return (
     <View style={[styles.root, { paddingBottom: insets.bottom }]}>
@@ -53,7 +68,6 @@ export default function LaundryPickupScreen() {
                   <Txt style={styles.locationRoom}>Room {guest?.roomNo || '...'}</Txt>
                 </Col>
               </Row>
-              <Txt style={styles.changeText}>Change Room</Txt>
             </Row>
             <View style={styles.locationBanner}>
               <Txt style={styles.locationBannerText}>Pickup will be collected from your PG room.</Txt>
@@ -65,7 +79,7 @@ export default function LaundryPickupScreen() {
         <View style={styles.section}>
           <Txt style={styles.sectionTitle}>Choose pickup date</Txt>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingVertical: 8 }}>
-            {DATES.map(date => (
+            {dates.map(date => (
               <AnimatedPress 
                 key={date} 
                 onPress={() => setPickupDetails({ date })}
@@ -81,7 +95,7 @@ export default function LaundryPickupScreen() {
         <View style={styles.section}>
           <Txt style={styles.sectionTitle}>Choose a convenient time</Txt>
           <View style={{ paddingHorizontal: 20, marginTop: 8, gap: 10 }}>
-            {TIMES.map(time => (
+            {LAUNDRY_PICKUP_TIMES.map(time => (
               <AnimatedPress 
                 key={time}
                 onPress={() => setPickupDetails({ time })}
@@ -118,21 +132,6 @@ export default function LaundryPickupScreen() {
           </View>
         </View>
 
-        {/* ESTIMATED RETURN */}
-        <View style={styles.section}>
-          <View style={styles.returnCard}>
-            <Row align="center" gap={12}>
-              <View style={styles.iconWrapReturn}>
-                <Ionicons name="time" size={20} color={Colors.success} />
-              </View>
-              <Col>
-                <Txt style={styles.returnLabel}>Estimated return</Txt>
-                <Txt style={styles.returnValue}>Tomorrow • 6:00 PM – 8:00 PM</Txt>
-              </Col>
-            </Row>
-          </View>
-        </View>
-
       </ScrollView>
 
       {/* STICKY BOTTOM BAR */}
@@ -165,7 +164,6 @@ const styles = StyleSheet.create({
   iconWrap: { width: 40, height: 40, borderRadius: Radii.card, backgroundColor: '#EBF4EC', alignItems: 'center', justifyContent: 'center' },
   locationTitle: { fontSize: 14, color: Colors.textSecondary },
   locationRoom: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  changeText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
   locationBanner: { backgroundColor: '#F1F5F9', padding: 10, borderRadius: Radii.control, marginTop: 16 },
   locationBannerText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
   
@@ -183,10 +181,6 @@ const styles = StyleSheet.create({
   radioInner: { width: 10, height: 10, borderRadius: Radii.badge, backgroundColor: Colors.primary },
   
   
-  returnCard: { backgroundColor: Palette.TintGreen, marginHorizontal: 20, borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: Palette.TintGreen },
-  iconWrapReturn: { width: 40, height: 40, borderRadius: Radii.card, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
-  returnLabel: { fontSize: 12, color: '#064E3B', fontWeight: '600' },
-  returnValue: { fontSize: 15, fontWeight: '800', color: '#064E3B', marginTop: 2 },
   
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
 });

@@ -27,6 +27,7 @@ import type {
   FeedbackComplaintEntity,
   GuestEntity,
   GuestLaundryRequest,
+  LaundryOrderLine,
   MealNotificationEntity,
   PGGroceryOrder,
   PGOwnerEntity,
@@ -254,6 +255,7 @@ export function toMeal(m: MealOut): MealNotificationEntity {
     serviceTime: `${String(serviceAt.getHours()).padStart(2, "0")}:${String(
       serviceAt.getMinutes()
     ).padStart(2, "0")}`,
+    responseClosesAt: m.response_closes_at ? toMillis(m.response_closes_at) : null,
     isAlertSent: !!m.is_broadcast,
   };
 }
@@ -480,6 +482,23 @@ export function toRepairRequest(r: RequestRecord): PGRepairServiceRequest {
   };
 }
 
+/** `details.items` is written by the booking flow; anything else in there is not a line. */
+const detailLines = (r: RequestRecord): LaundryOrderLine[] => {
+  const raw = (r.details ?? {}).items;
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((line): LaundryOrderLine[] => {
+    if (typeof line !== "object" || line === null) return [];
+    const { name, qty, price, unit } = line as Record<string, unknown>;
+    if (typeof name !== "string" || typeof qty !== "number") return [];
+    return [{
+      name,
+      qty,
+      price: typeof price === "number" ? price : 0,
+      unit: typeof unit === "string" ? unit : "piece",
+    }];
+  });
+};
+
 export function toLaundryRequest(r: RequestRecord): GuestLaundryRequest {
   return {
     id: r.id,
@@ -490,7 +509,9 @@ export function toLaundryRequest(r: RequestRecord): GuestLaundryRequest {
     weightOrCount: detailStr(r, "weight_or_count"),
     pickupPreference: detailStr(r, "pickup_preference"),
     preferredSlot: detailStr(r, "preferred_slot"),
+    pickupDate: detailStr(r, "pickup_date"),
     specialNotes: r.description,
+    items: detailLines(r),
     totalCost: toAmount(r.amount),
     paymentStatus: detailStr(r, "payment_status"),
     status: HUB_STATUS.laundry[r.status] ?? "Pickup Scheduled",

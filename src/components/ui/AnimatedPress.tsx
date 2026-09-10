@@ -111,6 +111,16 @@ export function AnimatedPress({
     <AnimatedPressable
       accessibilityRole={accessibilityRole}
       unstable_pressDelay={unstable_pressDelay}
+      // No platform ripple. This component already expresses a press — the spring scale
+      // above — and Android drawing its own on top means two feedback mechanisms fighting on
+      // the same tap. One is enough, and it is identical on every button and every version.
+      //
+      // This is NOT the fix for the nav bar's "circle at first, square later" report, though
+      // an earlier comment here claimed it was. The dock's tabs are raw `Pressable`s in
+      // HeadlessDockTabButton and never pass through this component, so nothing set here
+      // could have affected them. That bug was the active-tab highlight losing its corner
+      // radius on re-render; see `boxStyle` in HeadlessDockTabButton.tsx.
+      android_ripple={null}
       onPressIn={(e: GestureResponderEvent) => {
         pressProgress.value = withSpring(1, PRESS_SPRING);
         onPressIn?.(e);

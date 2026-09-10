@@ -77,6 +77,8 @@ export function PaymentReceiptDialog({
     }
   }, [onDismiss]);
 
+  const canDownload = Boolean(onDownload || downloadUrl);
+
   const handleDownload = () => {
     if (onDownload) {
       onDownload();
@@ -104,7 +106,14 @@ export function PaymentReceiptDialog({
             </>
           ) : null}
           <Row gap={10}>
-            {isVerified && (
+            {/* `canDownload`, not `isVerified`. The button was shown for every verified
+                payment whether or not anything could actually be downloaded — and with
+                neither `onDownload` nor `downloadUrl` supplied, `handleDownload` returns
+                without doing anything at all. That is a dead button on the one screen a
+                resident opens to get proof they paid. It appears only when there is
+                somewhere for it to go; the doc comment on these props always said the row
+                should fall back to Close-only, the render just never honoured it. */}
+            {isVerified && canDownload && (
               <Btn
                 onPress={handleDownload}
                 containerColor={Colors.primary}
@@ -126,7 +135,7 @@ export function PaymentReceiptDialog({
               textColor={Colors.textSecondary}
               borderRadius={Radii.control}
               height={42}
-              style={isVerified ? undefined : { flex: 1 }}
+              style={isVerified && canDownload ? undefined : { flex: 1 }}
               testID="receipt_done_btn"
             >
               <Txt size={12} weight="700" color={Colors.textSecondary}>Done</Txt>

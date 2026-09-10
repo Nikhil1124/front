@@ -19,8 +19,10 @@ import { useStaffQuery } from '@/features/staff/useStaff';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';
 import { AnimatedPress, Col, ErrorState, ListRow, LoadingState, Row, SearchField, Sheet, Spacer, Txt } from '@/components/ui';
+import { useResponsivePadding } from '@/utils/responsive';
 
 export function OwnerReviewsTab() {
+  const responsivePadding = useResponsivePadding();
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
     data: staffList = [],
@@ -161,7 +163,7 @@ export function OwnerReviewsTab() {
 
   return (
     <ScrollView
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, { paddingHorizontal: responsivePadding }]}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} colors={[GREEN]} />
@@ -346,7 +348,8 @@ export function OwnerReviewsTab() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, backgroundColor: BG },
+  // Responsive side padding, matching the overview and complaints tabs — see the note there.
+  scrollContent: { paddingTop: 16, paddingBottom: 110, backgroundColor: BG },
   bodyTitle: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
   bodySub: { fontSize: 13, color: MUTED, marginTop: 2 },
 

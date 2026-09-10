@@ -50,11 +50,10 @@ export const Header: React.FC<HeaderProps> = ({
           </View>
         )}
 
-        <AnimatedPress
-          accessibilityRole="button"
-          style={styles.deliveryInfo}
-          onPress={() => {}}
-        >
+        {/* Not a button: this is a label showing where the order is going, and its
+            `onPress` was an empty function. As an `AnimatedPress` it sprang under a finger
+            and TalkBack offered it as something to activate. */}
+        <View style={styles.deliveryInfo}>
           {/* Read "8 minutes" here, hardcoded, on every render for every property — a
               delivery promise the app has no way to make. Orders are fulfilled on scheduled
               delivery-slot windows, and the slot the resident picks is the only timing
@@ -70,9 +69,8 @@ export const Header: React.FC<HeaderProps> = ({
             >
               HOME - {pgName}
             </Txt>
-            <Ionicons name="chevron-down" size={12} color={'rgba(255,255,255,0.7)'} style={{ marginLeft: 4 }} />
           </View>
-        </AnimatedPress>
+        </View>
       </View>
 
       <View style={styles.rightSection}>

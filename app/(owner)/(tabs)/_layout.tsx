@@ -16,6 +16,7 @@
  * thing entirely; it is `"Add"` now.
  */
 import { useState } from 'react';
+import { BookRepairDialog } from '@/components/dialogs/HubDialogs';
 import { View, StyleSheet } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
@@ -25,6 +26,7 @@ import { Dock, DockAlert, HeadlessDockTabButton, useDock } from '@/components/He
 import { centreOut, NAV_PROFILES } from '@/data/navTabs';
 import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { Colors, Palette, Radii } from '@/theme';
+import { shortLocation } from '@/utils/format';
 
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
@@ -66,6 +68,12 @@ export default function OwnerTabsLayout() {
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
   const pathname = usePathname();
+  // The (+) offered Resident / Staff / Property on every tab, including Complaints — where
+  // the one thing an owner standing there wants to add is a complaint. Context matters more
+  // than consistency for a create button: the generic three stay, and Complaints gains the
+  // action its own screen is about.
+  const isComplaintsTab = pathname === '/complaints';
+  const [showBookRepair, setShowBookRepair] = useState(false);
   const { dockStyle, contentPaddingBottom, counts, alert } = useDock('owner');
 
   // Dynamic names
@@ -74,8 +82,12 @@ export default function OwnerTabsLayout() {
   // Initials rather than the 🤵 emoji that used to sit here: an emoji renders differently on
   // every Android version and told you nothing about whose dashboard you were looking at.
   const ownerInitials = ownerName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-  const location = owner?.address ? owner.address.split(',').slice(0, 2).join(',') : 'Bengaluru';
-  const subLabel = `${allPGs.length} PG${allPGs.length === 1 ? '' : 's'} • ${location}`;
+  // `'Bengaluru'` used to be the fallback here — a city nobody had entered, shown as this
+  // property's location. With no address there is simply nothing to append.
+  const location = shortLocation(owner?.address);
+  const subLabel = location
+    ? `${allPGs.length} PG${allPGs.length === 1 ? '' : 's'} • ${location}`
+    : `${allPGs.length} PG${allPGs.length === 1 ? '' : 's'}`;
 
   // Paths. A tab route gets the root header — a back arrow on one is a lie, since there is no
   // stack behind it to pop. `notices` and `reviews` are reached by pushing, so they keep theirs.
@@ -94,10 +106,14 @@ export default function OwnerTabsLayout() {
             eyebrow={greeting}
             title={owner?.pgName ?? 'Select PG'}
             subtitle={subLabel}
-            onTitlePress={() => { setShowProfileMenu(true); }}
+            // Owner only. A manager holds exactly one membership, so the switcher has
+            // nothing to switch to — it opened a sheet listing a single property, and the
+            // chevron promised a choice that did not exist. Without `onTitlePress` the title
+            // renders as plain text, which is what it is for a manager.
+            onTitlePress={isManager ? undefined : () => { setShowProfileMenu(true); }}
             titleAdornment={
               <>
-                <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
+                {!isManager && <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />}
                 {isManager && (
                   <View style={styles.managerBadge}>
                     <Txt size={8} weight="700" color={Colors.primary}>MANAGER</Txt>
@@ -240,6 +256,26 @@ export default function OwnerTabsLayout() {
           onDismiss={() => setShowAddOptions(false)}
         >
               <Row justify="space-evenly" align="center" style={{ marginVertical: 10 }}>
+                {/* Labelled "Repair", because that is what it files. It said "Complaint"
+                    while opening `BookRepairDialog`, which submits `kind: 'repair'` — a
+                    different ticket type, on a different queue, with a different workflow.
+                    An owner has no "raise a complaint" action by design: a complaint is a
+                    resident reporting something to the property, so the owner is its
+                    recipient, not its author. Booking a repair is the thing an owner
+                    actually starts from this screen. */}
+                {isComplaintsTab && (
+                  <AnimatedPress accessibilityRole="button"
+                    style={styles.addOptionItem}
+                    onPress={() => {
+                      setShowAddOptions(false);
+                      setTimeout(() => setShowBookRepair(true), 150);
+                    }}
+                  >
+                    <View style={[styles.moreIconBox, { backgroundColor: Palette.TintRed }]}><Ionicons name="construct-outline" size={22} color={Colors.danger} /></View>
+                    <Txt size={12} weight="700" color={CHARCOAL} style={{ marginTop: 8 }}>Repair</Txt>
+                  </AnimatedPress>
+                )}
+
                 {/* Add Resident */}
                 <AnimatedPress accessibilityRole="button"
                   style={styles.addOptionItem}
@@ -279,6 +315,8 @@ export default function OwnerTabsLayout() {
 
         </Sheet>
       )}
+
+      {showBookRepair && <BookRepairDialog onDismiss={() => setShowBookRepair(false)} />}
     </Tabs>
   );
 }

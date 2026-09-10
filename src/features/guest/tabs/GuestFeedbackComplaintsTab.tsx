@@ -16,7 +16,7 @@
  *   3. Submissions Filter:
  *      - Filter tabs: All Submissions • Complaints 🚨 • Feedback 🌟.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View, ScrollView, StyleSheet, Alert, Modal, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,7 +60,13 @@ export function GuestFeedbackComplaintsTab() {
   const [listFilter, setListFilter] = useState<'ALL' | 'COMPLAINT' | 'FEEDBACK'>('ALL');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Food Quality');
+  // No pre-selection. Defaulting to the first chip meant every complaint filed without
+  // touching it was filed as "Food Quality" — on this property that is all three of them,
+  // including one titled "AC_not_cooling_in_Room_101". A default that nobody chose becomes
+  // wrong data the moment someone is in a hurry, and it is the owner who then sorts a
+  // plumbing complaint out of the food queue. The technician form already asks rather than
+  // assumes; this now matches it.
+  const [category, setCategory] = useState('');
 
   // Category ratings (1-5)
   const [mealRating, setMealRating] = useState(5);
@@ -74,7 +80,7 @@ export function GuestFeedbackComplaintsTab() {
   const [mediaName, setMediaName] = useState<string | null>(null);
   const [preview, setPreview] = useState<FeedbackComplaintEntity | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ title?: string; description?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ category?: string; title?: string; description?: string }>({});
 
   const attach = async (kind: 'photo' | 'video') => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -96,14 +102,23 @@ export function GuestFeedbackComplaintsTab() {
 
   const calculatedOverall = (mealRating + cleanRating + mgrRating + staffRating + otherRating) / 5;
 
+  // A ref, not the `isSubmitting` state, is what actually blocks a second submission.
+  // `setIsSubmitting(true)` does not take effect until React re-renders, so two taps a few
+  // milliseconds apart both read `isSubmitting === false` and both post — which is how one
+  // complaint became two tickets, and four on four taps. The state stays for the disabled
+  // styling; the ref is the guard, because it flips synchronously.
+  const submitLock = useRef(false);
+
   const handleSubmit = async () => {
-    if (isSubmitting) return;
+    if (submitLock.current) return;
     const nextErrors = {
+      category: category ? undefined : 'Pick a category',
       title: title.trim() ? undefined : 'Give it a short title',
       description: description.trim() ? undefined : 'Describe what happened',
     };
     setFormErrors(nextErrors);
-    if (nextErrors.title || nextErrors.description) return;
+    if (nextErrors.category || nextErrors.title || nextErrors.description) return;
+    submitLock.current = true;
     setIsSubmitting(true);
     try {
       const r = await submit(
@@ -118,6 +133,7 @@ export function GuestFeedbackComplaintsTab() {
         Alert.alert('Submission Failed', r.error ?? 'Unknown error occurred.');
       }
     } finally {
+      submitLock.current = false;
       setIsSubmitting(false);
     }
   };
@@ -219,7 +235,7 @@ export function GuestFeedbackComplaintsTab() {
                 return (
                   <AnimatedPress accessibilityState={{ selected: !!active }} accessibilityRole="button"
                     key={c.label}
-                    onPress={() => { setCategory(c.label); }}
+                    onPress={() => { setCategory(c.label); if (formErrors.category) setFormErrors((e) => ({ ...e, category: undefined })); }}
                     style={[styles.catPill, active && styles.catPillActive]}
                   >
                     <Ionicons name={c.icon as any} size={16} color={active ? Colors.textInverse : Colors.textSecondary} />
@@ -230,6 +246,11 @@ export function GuestFeedbackComplaintsTab() {
                 );
               })}
             </ScrollView>
+            {formErrors.category ? (
+              <Txt size={11} weight="600" color={Colors.danger} style={{ marginTop: 6 }}>
+                {formErrors.category}
+              </Txt>
+            ) : null}
 
             {/* COMPLAINT FORM INPUTS */}
             <Spacer size={18} />
@@ -405,7 +426,7 @@ export function GuestFeedbackComplaintsTab() {
 
         {/* ── 4. MY RECENT SUBMISSIONS WITH DYNAMIC FILTERING ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 12 }}>
-          <Txt size={17} weight="700" color={Colors.textPrimary}>My Recent Submissions</Txt>
+          <Txt size={17} weight="700" numberOfLines={2} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>My Recent Submissions</Txt>
           <AnimatedPress accessibilityRole="button" onPress={() => toast('info', 'Submissions', 'Showing your grievance & review tickets.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
@@ -529,7 +550,7 @@ export function GuestFeedbackComplaintsTab() {
                 <Spacer size={12} />
                 <View style={styles.previewBox}>
                   <Ionicons name={preview.isVideo ? "videocam" : "image"} size={48} color={Colors.primary} />
-                  <Txt size={12} color={Colors.textPrimary} style={{ marginTop: 8 }}>{preview.title}</Txt>
+                  <Txt size={12} color={Colors.textPrimary} numberOfLines={2} align="center" style={{ marginTop: 8 }}>{preview.title}</Txt>
                 </View>
               </>
             )}

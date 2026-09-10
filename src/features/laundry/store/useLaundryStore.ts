@@ -1,3 +1,18 @@
+/**
+ * The laundry cart and the pickup slot the resident is choosing — nothing else.
+ *
+ * This store used to own the ORDERS too: `activeOrder`, `completedOrders`, an 11-stage
+ * `OrderStatus`, and a `placeOrder` that wrote the booking to React state and stopped there.
+ * No request was ever created, so the "ACTIVE LAUNDRY ORDERS" list on the Hub Services tab
+ * directly above the Book Pickup button — which reads real `kind: "laundry"` requests from
+ * the server — stayed empty after a booking, and the order itself vanished on app restart.
+ * Nobody in ops ever saw it.
+ *
+ * Orders now go through `submitLaundryBooking` and are read back with
+ * `useLaundryRequestsQuery`, which is the split this app draws everywhere else: React Query
+ * owns anything the server knows about, Zustand owns what only this device is doing right
+ * now. A half-built cart is the second kind. See docs/adr/state-management.
+ */
 import { create } from 'zustand';
 
 export type LaundryItem = {
@@ -9,7 +24,17 @@ export type LaundryItem = {
   imageSrc?: any;
 };
 
-// Hardcoded menu
+/**
+ * The rate card.
+ *
+ * ponytail: hardcoded on purpose — there is no laundry catalogue server-side (laundry is one
+ * `kind` on the shared `requests` table, not a priced catalogue like supply), and inventing a
+ * whole module to hold seventeen numbers that change maybe twice a year is not worth it. What
+ * matters is that the price is not only here: every booking writes its own lines and unit
+ * prices into `details.items`, so an order is billed at what was quoted, and editing this list
+ * cannot rewrite an order that already exists. Move it server-side when rates need to differ
+ * per area or change without an app release.
+ */
 export const LAUNDRY_SERVICES: LaundryItem[] = [
   // Wash & Fold
   { id: 'wf1', category: 'Wash & Fold', name: 'Regular Clothes', price: 80, unit: 'kg' },
@@ -34,53 +59,44 @@ export const LAUNDRY_SERVICES: LaundryItem[] = [
   { id: 'sb3', category: 'Shoes & Bags', name: 'Handbag', price: 180, unit: 'piece' },
 ];
 
-export type OrderStatus = 
-  | 'BOOKING_CONFIRMED'
-  | 'PICKUP_SCHEDULED'
-  | 'PICKED_UP'
-  | 'WEIGHED'
-  | 'WASHING'
-  | 'DRYING'
-  | 'IRONING'
-  | 'QUALITY_CHECK'
-  | 'PACKED'
-  | 'OUT_FOR_DELIVERY'
-  | 'DELIVERED';
+/** Pickup slots and pay modes, shared by the booking flow so both screens offer the same set. */
+export const LAUNDRY_PICKUP_DATES = ['Today', 'Tomorrow'];
+export const LAUNDRY_PICKUP_TIMES = [
+  '8:00 AM – 10:00 AM',
+  '12:00 PM – 2:00 PM',
+  '5:00 PM – 7:00 PM',
+];
+export const LAUNDRY_PAY_MODES = ['Added to Room Bill', 'UPI', 'Cash on Pickup'];
 
-export type LaundryOrder = {
-  id: string;
-  status: OrderStatus;
-  items: Record<string, number>; // id -> quantity
-  pickupDate: string;
-  pickupTime: string;
-  pickupLocation: string;
-  instructions: string;
-  estimatedReturn: string;
-  estimatedTotal: number;
-  finalTotal?: number; // if weighed
-  createdAt: string;
-};
+/** What the cart adds up to, at the rates it was built at. */
+export function laundryCartTotal(cart: Record<string, number>): number {
+  return Object.entries(cart).reduce((sum, [id, qty]) => {
+    const product = LAUNDRY_SERVICES.find((p) => p.id === id);
+    return sum + (product ? product.price * qty : 0);
+  }, 0);
+}
 
 interface LaundryStore {
-  // Cart
   cart: Record<string, number>;
   updateCart: (id: string, delta: number) => void;
   clearCart: () => void;
 
-  // Checkout flow state
   pickupDetails: {
     date: string;
     time: string;
     instructions: string;
+    payMode: string;
   };
   setPickupDetails: (details: Partial<LaundryStore['pickupDetails']>) => void;
-
-  // Orders
-  activeOrder: LaundryOrder | null;
-  completedOrders: LaundryOrder[];
-  placeOrder: (order: LaundryOrder) => void;
-  updateOrderStatus: (status: OrderStatus) => void;
+  resetPickupDetails: () => void;
 }
+
+const INITIAL_PICKUP = {
+  date: LAUNDRY_PICKUP_DATES[0],
+  time: LAUNDRY_PICKUP_TIMES[2],
+  instructions: '',
+  payMode: LAUNDRY_PAY_MODES[0],
+};
 
 export const useLaundryStore = create<LaundryStore>((set) => ({
   cart: {},
@@ -96,33 +112,9 @@ export const useLaundryStore = create<LaundryStore>((set) => ({
   }),
   clearCart: () => set({ cart: {} }),
 
-  pickupDetails: {
-    date: 'Today',
-    time: '5:00 PM – 7:00 PM',
-    instructions: '',
-  },
-  setPickupDetails: (details) => set((state) => ({ 
-    pickupDetails: { ...state.pickupDetails, ...details } 
+  pickupDetails: { ...INITIAL_PICKUP },
+  setPickupDetails: (details) => set((state) => ({
+    pickupDetails: { ...state.pickupDetails, ...details },
   })),
-
-  activeOrder: null,
-  // Was seeded with an invented delivered order (#LW10261, ₹340, "Sep 7"). It was not a
-  // demo fixture behind a flag — every resident who opened laundry history saw it as their
-  // own past order. Starts empty now.
-  completedOrders: [],
-  placeOrder: (order) => set({ activeOrder: order }),
-  updateOrderStatus: (status) => set((state) => {
-    if (!state.activeOrder) return state;
-    
-    // If delivered, move to completed
-    if (status === 'DELIVERED') {
-      const finishedOrder = { ...state.activeOrder, status };
-      return { 
-        activeOrder: null, 
-        completedOrders: [finishedOrder, ...state.completedOrders] 
-      };
-    }
-    
-    return { activeOrder: { ...state.activeOrder, status } };
-  }),
+  resetPickupDetails: () => set({ pickupDetails: { ...INITIAL_PICKUP } }),
 }));

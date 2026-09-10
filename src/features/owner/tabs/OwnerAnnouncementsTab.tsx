@@ -46,11 +46,12 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 
 import { EmptyState } from '@/components/EmptyState';
 import { Colors, Radii, DeckTints } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useSubmitResponseMutation } from '@/features/meals/useMeals';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { formatTimeAgo, formatDateTime } from '@/utils/format';
@@ -80,12 +81,15 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAllPaymentsQuery, useVerifyPaymentMutation, useRejectPaymentMutation } from '@/features/payments/usePayments';
 import { useAuthStore } from '@/store/authStore';
 import { AppHeader } from '@/components/AppHeader';
-import { AnimatedPress, Card, Col, OutlinedTextField, Row, Sheet, Spacer, StatusChip, Txt } from '@/components/ui';
+import { AnimatedPress, Btn, Card, Col, OutlinedTextField, Row, Sheet, Spacer, StatusChip, Txt } from '@/components/ui';
 
 // ── Classification ───────────────────────────────────────────────────────────────────────────
 
-type InboxKind = 'KYC' | 'PAYMENT' | 'ANNOUNCEMENT' | 'REQUEST' | 'PROCUREMENT' | 'OTHER';
+type InboxKind = 'KYC' | 'PAYMENT' | 'ANNOUNCEMENT' | 'REQUEST' | 'PROCUREMENT' | 'MEAL' | 'OTHER';
 type InboxWeight = 'decision' | 'unread' | 'read';
+
+/** The kinds that have their own filter chip. Anything else falls into "Other". */
+const CHIPPED_KINDS = new Set<InboxKind>(['PAYMENT', 'REQUEST', 'ANNOUNCEMENT']);
 
 interface InboxItem {
   id: string;
@@ -120,6 +124,9 @@ function kindOf(n: AppRoleNotificationEntity): InboxKind {
   if (n.category === 'RENT' || n.actionType === 'payment') return 'PAYMENT';
   if (n.category === 'ANNOUNCEMENT') return 'ANNOUNCEMENT';
   if (n.category === 'COMPLAINT') return 'REQUEST';
+  // `action_type="meal"` is what `meal/service.py` stamps on both the roster push and the
+  // timed reminder, and `actionId` is the meal — everything the Eat/Skip buttons need.
+  if (n.actionType === 'meal') return 'MEAL';
   if (n.title.toLowerCase().includes('procurement request awaiting approval')) return 'PROCUREMENT';
   // FINANCE (an expense logged — recorded, not awaiting anything), SHIFT (a delivery trip
   // assignment) and SERVICE (a supply-order status change) are all real, all informational,
@@ -134,6 +141,7 @@ function iconFor(kind: InboxKind, notif?: AppRoleNotificationEntity): keyof type
     case 'ANNOUNCEMENT': return 'pin-outline';
     case 'REQUEST': return 'construct-outline';
     case 'PROCUREMENT': return 'cart-outline';
+    case 'MEAL': return 'restaurant-outline';
     default:
       if (notif?.category === 'FINANCE') return 'cash-outline';
       if (notif?.category === 'SHIFT') return 'bicycle-outline';
@@ -149,6 +157,92 @@ const weightRank: Record<InboxWeight, number> = { decision: 0, unread: 1, read: 
 /** Not `ListRow`: that component deliberately carries no status/snippet-plus-time combination
  *  and no dense variant — it is the roster/payment-list shape, not the inbox shape. Same
  *  reasoning as `MetricRow` existing beside it. */
+/**
+ * The actions that belong ON a notification rather than one tap inside it.
+ *
+ * A meal notification is a question ("are you eating?") and a maintenance request has one
+ * obvious next step, so making the reader open a detail sheet to answer is a tap they should
+ * not have to spend — the OS push already offers Eat/Skip inline, and the in-app inbox
+ * offering less than the push notification is backwards.
+ *
+ * Deliberately narrow: only kinds with a single unambiguous next action get a button here.
+ * Payments and KYC are decisions with a reject path and a reason to read the detail first,
+ * so those stay inside the sheet where the evidence is.
+ */
+function InboxRowActions({ item }: { item: InboxItem }) {
+  // React Query, not the store's `submitRSVP`: this is server data, which is the ADR's split,
+  // and the mutation invalidates the three meal keys precisely instead of the store action's
+  // blanket `refreshAll()`.
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const submitResponse = useSubmitResponseMutation(activePgId ?? undefined);
+  const [answered, setAnswered] = useState<'eating' | 'skipping' | null>(null);
+  const busy = submitResponse.isPending ? submitResponse.variables?.choice ?? null : null;
+
+  if (item.kind === 'MEAL' && item.notif?.actionId) {
+    // `actionId` on a meal notification is the MEAL id — `PUT /v1/meals/{id}/response` is
+    // what answers it. (The store's `submitRSVP` names this parameter `notificationId`,
+    // which it has never been.)
+    const mealId = item.notif.actionId;
+    const answer = async (choice: 'eating' | 'skipping') => {
+      if (submitResponse.isPending) return;
+      try {
+        await submitResponse.mutateAsync({ mealId, choice });
+        setAnswered(choice);
+      } catch {
+        // The mutation holds the error; the buttons stay live so it can be retried.
+      }
+    };
+    return (
+      <Row gap={8} style={styles.rowActions}>
+        {(['eating', 'skipping'] as const).map((choice) => {
+          const isEat = choice === 'eating';
+          const picked = answered === choice;
+          return (
+            <Btn
+              key={choice}
+              onPress={() => answer(choice)}
+              disabled={busy !== null}
+              containerColor={picked ? Colors.primary : Colors.surfaceMuted}
+              textColor={picked ? Colors.textInverse : Colors.textPrimary}
+              borderRadius={Radii.control}
+              height={36}
+              style={{ flex: 1 }}
+            >
+              <Txt variant="button" color={picked ? Colors.textInverse : Colors.textPrimary}>
+                {busy === choice ? 'Saving…' : isEat ? "I'll eat" : 'Skip'}
+              </Txt>
+            </Btn>
+          );
+        })}
+      </Row>
+    );
+  }
+
+  if (item.kind === 'REQUEST' && item.isMaintenanceFlavoured) {
+    return (
+      <Row style={styles.rowActions}>
+        <Btn
+          onPress={() =>
+            router.push({
+              pathname: '/book-technician',
+              params: item.notif?.actionId ? { id: item.notif.actionId } : {},
+            })
+          }
+          containerColor={Colors.surfaceMuted}
+          textColor={Colors.textPrimary}
+          borderRadius={Radii.control}
+          height={36}
+          style={{ flex: 1 }}
+        >
+          <Txt variant="button" color={Colors.textPrimary}>Book a technician</Txt>
+        </Btn>
+      </Row>
+    );
+  }
+
+  return null;
+}
+
 function InboxRow({ item, onPress, onDismiss }: { item: InboxItem; onPress: () => void; onDismiss?: () => void }) {
   const dense = item.weight === 'read';
   const tileTone = item.kind === 'PAYMENT' ? DeckTints.brand : item.kind === 'ANNOUNCEMENT' ? DeckTints.amber : undefined;
@@ -185,6 +279,7 @@ function InboxRow({ item, onPress, onDismiss }: { item: InboxItem; onPress: () =
           </AnimatedPress>
         ) : null}
       </Row>
+      {!dense ? <InboxRowActions item={item} /> : null}
     </AnimatedPress>
   );
 }
@@ -272,7 +367,7 @@ export function OwnerAnnouncementsTab() {
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
 
-  const [activeSubTab, setActiveSubTab] = useState<'ALL' | 'DECISIONS' | 'PAYMENTS' | 'REQUESTS' | 'ANNOUNCEMENTS' | 'REVIEWS'>('ALL');
+  const [activeSubTab, setActiveSubTab] = useState<'ALL' | 'DECISIONS' | 'PAYMENTS' | 'REQUESTS' | 'ANNOUNCEMENTS' | 'OTHER' | 'REVIEWS'>('ALL');
 
   // Notifications is always reached by pushing from a role's own header bell, so there is
   // always somewhere real to return to — `router.back()` is the same convention every other
@@ -350,6 +445,17 @@ export function OwnerAnnouncementsTab() {
   const paymentCount = useMemo(() => inboxItems.filter((i) => i.kind === 'PAYMENT').length, [inboxItems]);
   const requestCount = useMemo(() => inboxItems.filter((i) => i.kind === 'REQUEST').length, [inboxItems]);
   const announcementCount = useMemo(() => inboxItems.filter((i) => i.kind === 'ANNOUNCEMENT').length, [inboxItems]);
+  /**
+   * Everything no other chip claims — KYC, meals, procurement, and whatever kind is added
+   * next. The filters were Payments / Requests / Announcements only, so a KYC notification
+   * sat in All and in nothing else: its counts did not add up to the total and there was no
+   * way to reach it by filtering. A catch-all beats a chip per kind, because the next `kind`
+   * added to `InboxKind` lands here on its own instead of quietly disappearing again.
+   */
+  const otherItems = useMemo(
+    () => inboxItems.filter((i) => !CHIPPED_KINDS.has(i.kind)),
+    [inboxItems],
+  );
   const unreadInformationalCount = useMemo(() => inboxItems.filter((i) => i.weight === 'unread').length, [inboxItems]);
 
   const displayedItems = useMemo(() => {
@@ -357,8 +463,9 @@ export function OwnerAnnouncementsTab() {
     if (activeSubTab === 'PAYMENTS') return inboxItems.filter((i) => i.kind === 'PAYMENT');
     if (activeSubTab === 'REQUESTS') return inboxItems.filter((i) => i.kind === 'REQUEST');
     if (activeSubTab === 'ANNOUNCEMENTS') return inboxItems.filter((i) => i.kind === 'ANNOUNCEMENT');
+    if (activeSubTab === 'OTHER') return otherItems;
     return inboxItems;
-  }, [inboxItems, activeSubTab, decisionItems]);
+  }, [inboxItems, activeSubTab, decisionItems, otherItems]);
 
   const handleApproveKyc = async (item: InboxItem) => {
     if (!item.guest) return;
@@ -449,7 +556,9 @@ export function OwnerAnnouncementsTab() {
 
   const handleBookService = (item: InboxItem) => {
     const serviceName = item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() || 'General Repair';
-    bookRepair(serviceName, `Direct booking from notification: ${item.desc}`, 'ASAP', 149);
+    // No amount: a flat ₹149 used to go on the ticket here, invented at this call site and
+    // shown to nobody before or after the tap.
+    bookRepair(serviceName, `Direct booking from notification: ${item.desc}`, 'ASAP');
     toast('success', 'Service Booked!', `Technician assigned for ${serviceName}.`);
     setSelectedInboxItem(null);
   };
@@ -510,6 +619,8 @@ export function OwnerAnnouncementsTab() {
     { id: 'PAYMENTS', label: 'Payments', count: paymentCount },
     { id: 'REQUESTS', label: 'Requests', count: requestCount },
     { id: 'ANNOUNCEMENTS', label: 'Announcements', count: announcementCount },
+    // Hidden when empty: an "Other 0" chip on a tidy inbox is noise.
+    ...(otherItems.length > 0 ? [{ id: 'OTHER', label: 'Other', count: otherItems.length }] : []),
     ...(canManage ? [{ id: 'REVIEWS', label: 'Reviews' }] : []),
   ];
 
@@ -969,6 +1080,8 @@ const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
 };
 
 const styles = StyleSheet.create({
+  // Indented to clear the icon tile, so the buttons read as belonging to this row's text.
+  rowActions: { marginTop: 10, marginLeft: 50 },
   root: { flex: 1, backgroundColor: BG },
   mainScroll: { paddingHorizontal: 20, paddingTop: 12 },
 

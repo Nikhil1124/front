@@ -19,9 +19,11 @@ export default function LaundrySummaryScreen() {
   }).filter(item => item.product !== undefined) as { id: string, qty: number, product: typeof LAUNDRY_SERVICES[0] }[];
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.qty), 0);
-  const pickupFee = 30;
-  const discount = 20;
-  const estimatedTotal = subtotal + pickupFee - discount;
+  // Was `subtotal + 30 - 20` — a flat "pickup / service fee" and a discount that no
+  // promotion, coupon or setting in this product produces, both invented on this screen and
+  // shown to the resident as part of their bill. The order is charged at what the lines add
+  // up to, which is what the booking actually stores.
+  const estimatedTotal = subtotal;
 
   if (cartItems.length === 0) {
     return (
@@ -86,17 +88,7 @@ export default function LaundrySummaryScreen() {
             <Txt style={styles.billLabel}>Subtotal</Txt>
             <Txt style={styles.billValue}>₹{subtotal}</Txt>
           </Row>
-          <Spacer size={12} />
-          <Row justify="space-between" style={styles.billRow}>
-            <Txt style={styles.billLabel}>Pickup / Service Fee</Txt>
-            <Txt style={styles.billValue}>₹{pickupFee}</Txt>
-          </Row>
-          <Spacer size={12} />
-          <Row justify="space-between" style={styles.billRow}>
-            <Txt style={styles.billLabel}>Discount</Txt>
-            <Txt style={styles.billDiscount}>−₹{discount}</Txt>
-          </Row>
-          
+
           <Spacer size={16} />
           <View style={styles.dividerDashed} />
           <Spacer size={16} />
@@ -160,7 +152,6 @@ const styles = StyleSheet.create({
   billRow: { flexDirection: 'row', alignItems: 'center' },
   billLabel: { fontSize: 14, color: Colors.textSecondary },
   billValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '500' },
-  billDiscount: { fontSize: 14, color: Colors.primaryDark, fontWeight: '700' },
   dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: Radii.badge },
   billTotalLabel: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
   billTotalValue: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },

@@ -22,7 +22,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Radii, Colors } from '@/theme';
 import { formatDateTime } from '@/utils/format';
-import { usePGowStore } from '@/store/usePGowStore';
+import { useAuthStore } from '@/store/authStore';
+import { useCancelComplaintMutation } from '@/features/requests/useComplaints';
 import type { FeedbackComplaintEntity } from '@/types';
 import { Card, Col, OutlinedBtn, Pill, Row, Spacer, Txt } from '@/components/ui';
 
@@ -57,7 +58,11 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
   // or the ticket's own raiser (cancel_request, pg-backend request/service/workflow.py).
   // There was no button anywhere that called it: a resident who filed something by mistake,
   // or whose problem resolved itself before anyone picked it up, had no way to withdraw it.
-  const deleteFeedbackComplaint = usePGowStore((s) => s.deleteFeedbackComplaint);
+  // React Query, not the store action: see `useCancelComplaintMutation`. The store's
+  // `refreshAll()` only invalidated, so the ticket kept reading "Submitted" with an active
+  // Withdraw button until the refetch came back.
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const cancelTicket = useCancelComplaintMutation(activePgId ?? undefined);
   const [cancelling, setCancelling] = useState(false);
   // Mirrors the server: RESOLVED and CANCELLED are both terminal (cancel_request:
   // "This ticket is already closed."), and REQUEST_STATUS collapses both into the single
@@ -76,7 +81,7 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
           onPress: async () => {
             setCancelling(true);
             try {
-              await deleteFeedbackComplaint(ticket.id);
+              await cancelTicket.mutateAsync({ id: ticket.id });
               router.back();
             } catch (err) {
               Alert.alert('Could not withdraw', err instanceof Error ? err.message : 'Please try again.');

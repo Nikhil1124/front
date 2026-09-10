@@ -378,116 +378,105 @@ export function StaffManagementTab() {
 
           <Spacer size={8} />
 
-          {/* Row 1: Name & Phone */}
-          <Row gap={10}>
+          {/* One field per row, grouped into three sections.
+              This form used to pack two controls into every row — name beside phone, a shift
+              chip-picker beside a salary field, the PIN beside a static hint that read as a
+              fourth input. On a phone that halves the width you type into, puts labels like
+              "Login PIN (4 digits) *" in half a row so they truncate, and misaligns the
+              baseline of a chip row against a text field. Full-width fields in named groups
+              is the ordinary shape of a mobile form, and it is shorter to scan even though it
+              is taller.
+
+              The chip rows wrap now instead of scrolling sideways: "Maintenance" was cut off
+              at the right edge with nothing to say it could be scrolled to. */}
+
+          <Txt maxFontSizeMultiplier={1.3} style={styles.formSectionLabel}>WHO THEY ARE</Txt>
+          <OutlinedTextField
+            label="Full Name *"
+            placeholder="e.g. Ramesh Kumar"
+            value={staffNameInput}
+            onChangeText={(v) => { set('staffNameInput', v); if (errors.name) setErrors((e) => ({ ...e, name: undefined })); }}
+            error={errors.name}
+          />
+          <Spacer size={12} />
+          <OutlinedTextField
+            label="Phone Number *"
+            placeholder="10-digit mobile"
+            value={staffPhoneInput}
+            onChangeText={(v) => { set('staffPhoneInput', v); if (errors.phone) setErrors((e) => ({ ...e, phone: undefined })); }}
+            keyboardType="phone-pad"
+            error={errors.phone}
+          />
+
+          <Spacer size={20} />
+          <Txt maxFontSizeMultiplier={1.3} style={styles.formSectionLabel}>THEIR ROLE</Txt>
+          <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Staff Role *</Txt>
+          <View style={styles.chipWrap}>
+            {selectableRoles.map((role) => {
+              const isSelected = staffRoleInput === role;
+              return (
+                <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                  key={role}
+                  style={[styles.roleChip, isSelected && styles.roleChipActive]}
+                  onPress={() => set('staffRoleInput', role)}
+                >
+                  <Txt maxFontSizeMultiplier={1.3} numberOfLines={1} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+                    {role}
+                  </Txt>
+                </AnimatedPress>
+              );
+            })}
+          </View>
+
+          <Spacer size={14} />
+          <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift *</Txt>
+          <View style={styles.chipWrap}>
+            {SHIFT_OPTIONS.map((opt) => {
+              const isSelected = staffShiftInput === opt;
+              return (
+                <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
+                  key={opt}
+                  style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
+                  onPress={() => set('staffShiftInput', opt)}
+                >
+                  <Txt maxFontSizeMultiplier={1.3} numberOfLines={1} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
+                    {opt.replace(' Shift', '').split(' ')[0]}
+                  </Txt>
+                </AnimatedPress>
+              );
+            })}
+          </View>
+
+          <Spacer size={20} />
+          <Txt maxFontSizeMultiplier={1.3} style={styles.formSectionLabel}>PAY &amp; ACCESS</Txt>
+          <OutlinedTextField
+            label="Monthly Salary (₹)"
+            placeholder="e.g. 15000"
+            value={staffSalaryInput}
+            onChangeText={(v) => set('staffSalaryInput', v.replace(/\D/g, ''))}
+            keyboardType="number-pad"
+            containerColor={WHITE}
+          />
+          <Spacer size={12} />
+          <View style={{ position: 'relative' }}>
             <OutlinedTextField
-              label="Full Name *"
-              placeholder="Full Name"
-              value={staffNameInput}
-              onChangeText={(v) => { set('staffNameInput', v); if (errors.name) setErrors((e) => ({ ...e, name: undefined })); }}
-              error={errors.name}
-              style={{ flex: 1.2 }}
-            />
-            <OutlinedTextField
-              label="Phone Number *"
-              placeholder="10-Digit Mobile"
-              value={staffPhoneInput}
-              onChangeText={(v) => { set('staffPhoneInput', v); if (errors.phone) setErrors((e) => ({ ...e, phone: undefined })); }}
-              keyboardType="phone-pad"
-              error={errors.phone}
-              style={{ flex: 1 }}
-            />
-          </Row>
-
-          <Spacer size={10} />
-
-          {/* Staff Role Chips */}
-          <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Staff Role</Txt>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 42 }}>
-            <Row gap={6} align="center">
-              {selectableRoles.map((role) => {
-                const isSelected = staffRoleInput === role;
-                return (
-                  <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
-                    key={role}
-                    style={[styles.roleChip, isSelected && styles.roleChipActive]}
-                    onPress={() => set('staffRoleInput', role)}
-                  >
-                    <Txt maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
-                      {role}
-                    </Txt>
-                  </AnimatedPress>
-                );
-              })}
-            </Row>
-          </ScrollView>
-
-          <Spacer size={10} />
-
-          {/* Row 2: Shift & Salary */}
-          <Row gap={10}>
-            <Col style={{ flex: 1.2 }}>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift *</Txt>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 46 }}>
-                <Row gap={6} align="center">
-                  {SHIFT_OPTIONS.map((opt) => {
-                    const isSelected = staffShiftInput === opt;
-                    return (
-                      <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
-                        key={opt}
-                        style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
-                        onPress={() => set('staffShiftInput', opt)}
-                      >
-                        <Txt maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
-                          {opt.replace(' Shift', '').split(' ')[0]}
-                        </Txt>
-                      </AnimatedPress>
-                    );
-                  })}
-                </Row>
-              </ScrollView>
-            </Col>
-
-            <OutlinedTextField
-              label="Monthly Salary (₹)"
-              placeholder="15000"
-              value={staffSalaryInput}
-              onChangeText={(v) => set('staffSalaryInput', v.replace(/\D/g, ''))}
+              label="Login PIN (4 digits) *"
+              placeholder="4-digit PIN"
+              value={staffPinInput}
+              onChangeText={(v) => { set('staffPinInput', v.replace(/\D/g, '').slice(0, 4)); if (errors.pin) setErrors((e) => ({ ...e, pin: undefined })); }}
               keyboardType="number-pad"
-              containerColor={WHITE}
-              style={{ flex: 1 }}
+              secureTextEntry={!showPin}
+              error={errors.pin}
+              // The hint that used to sit in its own column, where it read as another field.
+              helper="Access is limited according to the role you picked above."
             />
-          </Row>
-
-          <Spacer size={10} />
-
-          {/* Row 3: Account Access PIN & Security Info */}
-          <Row gap={10} align="center">
-            <View style={{ flex: 1, position: 'relative' }}>
-              <OutlinedTextField
-                label="Login PIN (4 digits) *"
-                placeholder="PIN"
-                value={staffPinInput}
-                onChangeText={(v) => { set('staffPinInput', v.replace(/\D/g, '').slice(0, 4)); if (errors.pin) setErrors((e) => ({ ...e, pin: undefined })); }}
-                keyboardType="number-pad"
-                secureTextEntry={!showPin}
-                error={errors.pin}
-              />
-              <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
-                style={[styles.eyeBtn, { top: 32 }]}
-                onPress={() => setShowPin(!showPin)}
-              >
-                <Ionicons name={showPin ? 'eye-off-outline' : 'eye-outline'} size={18} color={MUTED} />
-              </AnimatedPress>
-            </View>
-
-            <Row gap={6} align="center" style={[styles.securityStrip, { flex: 1.2, height: 48, marginTop: 16 }]}>
-              <Ionicons name="shield-checkmark-outline" size={14} color={GREEN} />
-              <Txt maxFontSizeMultiplier={1.3} style={[styles.securityText, { fontSize: 9.5 }]} numberOfLines={2}>
-                Access is limited according to the role.
-              </Txt>
-            </Row>
-          </Row>
+            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button"
+              style={[styles.eyeBtn, { top: 32 }]}
+              onPress={() => setShowPin(!showPin)}
+            >
+              <Ionicons name={showPin ? 'eye-off-outline' : 'eye-outline'} size={18} color={MUTED} />
+            </AnimatedPress>
+          </View>
 
           <Spacer size={16} />
 
@@ -857,6 +846,10 @@ const styles = StyleSheet.create({
   roleChipTextActive: { color: WHITE, fontWeight: '700' },
 
   // Work Details fields
+  // A group heading inside a form — quieter than a screen title, louder than a field label.
+  formSectionLabel: { fontSize: 11, fontWeight: '800', color: MUTED, letterSpacing: 0.6, marginBottom: 10 },
+  // Chip rows wrap rather than scroll sideways, so the last option is never half off-screen.
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   inputLabelStyle: { fontSize: 12, fontWeight: '600', color: MUTED, marginBottom: 4 },
   shiftChip: {
     paddingHorizontal: 10,

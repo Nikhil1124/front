@@ -140,7 +140,9 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 13,
     color: GroceryColors.textPrimary,
-    height: 48,
+    // `minHeight`: the field is single-line so it never wraps, but a hard 48 still crops the
+    // glyphs top and bottom once the font scale grows past the box.
+    minHeight: 48,
     padding: 0,
   },
   rightIcons: {

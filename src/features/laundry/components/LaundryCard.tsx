@@ -13,15 +13,15 @@ type LaundryCardProps = {
 export function LaundryCard({ item, qty, onUpdateQty }: LaundryCardProps) {
   // Determine the source for the image
   let imageSource: any;
-  if (item.name === 'Bedsheet' || item.name === 'Blanket') imageSource = require('../../../../assets/laundry/bedsheet.png');
-  else if (item.name === 'Saree') imageSource = require('../../../../assets/laundry/saree.png');
-  else if (item.name === 'Suit' || item.name === 'Blazer' || item.name === 'Jacket') imageSource = require('../../../../assets/laundry/suit.png');
-  else if (item.name.includes('Sneakers') || item.name.includes('Shoes')) imageSource = require('../../../../assets/laundry/sneakers.png');
-  else if (item.name === 'Handbag') imageSource = require('../../../../assets/laundry/handbag.png');
-  else if (item.category === 'Wash & Fold') imageSource = require('../../../../assets/laundry/clothes_stack.png');
-  else if (item.category === 'Wash & Iron') imageSource = require('../../../../assets/laundry/iron.png');
-  else if (item.category === 'Dry Cleaning' || item.category === 'Home Linen') imageSource = require('../../../../assets/laundry/washing_machine.png');
-  else if (item.category === 'Shoes & Bags') imageSource = require('../../../../assets/laundry/laundry_basket.png');
+  if (item.name === 'Bedsheet' || item.name === 'Blanket') imageSource = require('../../../../assets/laundry/bedsheet.webp');
+  else if (item.name === 'Saree') imageSource = require('../../../../assets/laundry/saree.webp');
+  else if (item.name === 'Suit' || item.name === 'Blazer' || item.name === 'Jacket') imageSource = require('../../../../assets/laundry/suit.webp');
+  else if (item.name.includes('Sneakers') || item.name.includes('Shoes')) imageSource = require('../../../../assets/laundry/sneakers.webp');
+  else if (item.name === 'Handbag') imageSource = require('../../../../assets/laundry/handbag.webp');
+  else if (item.category === 'Wash & Fold') imageSource = require('../../../../assets/laundry/clothes_stack.webp');
+  else if (item.category === 'Wash & Iron') imageSource = require('../../../../assets/laundry/iron.webp');
+  else if (item.category === 'Dry Cleaning' || item.category === 'Home Linen') imageSource = require('../../../../assets/laundry/washing_machine.webp');
+  else if (item.category === 'Shoes & Bags') imageSource = require('../../../../assets/laundry/laundry_basket.webp');
 
   return (
     <AnimatedPress style={styles.cardContainer} accessibilityRole="button">

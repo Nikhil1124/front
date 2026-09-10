@@ -289,7 +289,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   rawInput: {
-    borderWidth: 1,
+    // 1.5, matching `OutlinedTextField`. These stay raw `TextInput`s on purpose — see
+    // forms.check.ts's exemption for the Android keyboard-isolation reason — but there is no
+    // reason for them to be visibly a different weight from every other field in the app.
+    borderWidth: 1.5,
     borderColor: Colors.borderSubtle,
     borderRadius: Radii.control,
     backgroundColor: Colors.surfaceMuted,

@@ -264,16 +264,34 @@ export function useComplaintQuery(id?: string, pgId?: string) {
   });
 }
 
+/**
+ * Every request mutation below invalidates ONE key: `qk.requests.all(pgId)` = `["requests",
+ * pgId]`, which React Query matches by PREFIX — so it already covers `…, "list"`, `…,
+ * "detail", id` and the kind-suffixed grocery/repair/laundry lists hanging off it. They used
+ * to invalidate `list` as well, which is the same set a second time: two refetches of a
+ * 200-row list per reply, for one row that changed.
+ *
+ * And each one writes the server's own response straight into the detail cache before
+ * invalidating. `POST /v1/requests/{id}/events` returns the whole updated request, events
+ * included, so the reply is already in hand — throwing it away and waiting for a refetch to
+ * fetch it back is exactly the pause between pressing Send and seeing the reply appear. The
+ * background refetch still runs; it just is not what the screen is waiting on.
+ */
+function onRequestChanged(
+  qc: ReturnType<typeof useQueryClient>,
+  pgId: string | undefined,
+  updated: RequestRecord
+) {
+  if (!pgId) return;
+  qc.setQueryData(qk.requests.detail(pgId, updated.id), map.toComplaint(updated));
+  qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
+}
+
 export function useEscalateComplaintMutation(pgId?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, note }: { id: string; note?: string }) => escalateComplaint(id, note),
-    onSuccess: (_, vars) => {
-      if (pgId) {
-        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
-        qc.invalidateQueries({ queryKey: qk.requests.detail(pgId, vars.id) });
-      }
-    },
+    onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
   });
 }
 
@@ -315,9 +333,12 @@ export function useRepairRequestsQuery(pgId?: string) {
   });
 }
 
+/** Exported so the booking mutation can seed this exact list — see `useLaundryBooking`. */
+export const laundryListKey = (pgId: string) => [...qk.requests.list(pgId), "laundry"] as const;
+
 export function useLaundryRequestsQuery(pgId?: string) {
   return useQuery<GuestLaundryRequest[]>({
-    queryKey: [...qk.requests.list(pgId ?? ""), "laundry"],
+    queryKey: laundryListKey(pgId ?? ""),
     queryFn: async () => {
       if (!pgId) return [];
       const res = await listComplaints(pgId, { kind: "laundry", limit: 100 });
@@ -331,12 +352,7 @@ export function useSubmitComplaintMutation(pgId?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: submitComplaint,
-    onSuccess: () => {
-      if (pgId) {
-        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
-        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
-      }
-    },
+    onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
   });
 }
 
@@ -345,12 +361,24 @@ export function useAddCommentMutation(pgId?: string) {
   return useMutation({
     mutationFn: ({ id, body, toStatus }: { id: string; body: string; toStatus?: RequestStatus }) =>
       addComment(id, body, toStatus),
-    onSuccess: () => {
-      if (pgId) {
-        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
-        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
-      }
-    },
+    onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
+  });
+}
+
+/**
+ * Withdrawing a ticket, through the same cache write as every other request mutation.
+ *
+ * The resident's withdraw used to call `requestsApi.cancelComplaint` bare and lean on the
+ * store's `refreshAll()` — a blanket invalidation that has to round-trip before anything on
+ * screen changes. So the ticket sat there reading "Submitted", with its Withdraw button still
+ * live, after it had already been cancelled server-side. `onRequestChanged` writes the
+ * server's own updated record into the detail cache first, so the status flips at once.
+ */
+export function useCancelComplaintMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) => cancelComplaint(id, reason),
+    onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
   });
 }
 
@@ -359,12 +387,7 @@ export function useResolveComplaintMutation(pgId?: string) {
   return useMutation({
     mutationFn: ({ id, resolutionNote }: { id: string; resolutionNote?: string }) =>
       resolveComplaint(id, resolutionNote),
-    onSuccess: () => {
-      if (pgId) {
-        qc.invalidateQueries({ queryKey: qk.requests.list(pgId) });
-        qc.invalidateQueries({ queryKey: qk.requests.all(pgId) });
-      }
-    },
+    onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
   });
 }
 

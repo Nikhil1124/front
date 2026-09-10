@@ -162,25 +162,26 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             containerColor={Colors.surface}
             style={{ marginBottom: 8 }}
           />
-          <Row gap={8}>
-            <OutlinedTextField
-              label="Manager Phone"
-              value={mgrPhone}
-              onChangeText={setMgrPhone}
-              keyboardType="phone-pad"
-              containerColor={Colors.surface}
-              style={{ flex: 2 }}
-            />
-            <OutlinedTextField
-              label="Login PIN"
-              placeholder="4 digits"
-              value={mgrPin}
-              onChangeText={(v) => setMgrPin(v.replace(/\D/g, '').slice(0, 4))}
-              keyboardType="number-pad"
-              containerColor={Colors.surface}
-              style={{ flex: 1 }}
-            />
-          </Row>
+          {/* One field per row, as in the staff form. Two inputs sharing a row halves the
+              width you type a phone number into and squeezes "Login PIN" into a third of the
+              sheet. */}
+          <OutlinedTextField
+            label="Manager Phone"
+            placeholder="10-digit mobile"
+            value={mgrPhone}
+            onChangeText={setMgrPhone}
+            keyboardType="phone-pad"
+            containerColor={Colors.surface}
+            style={{ marginBottom: 8 }}
+          />
+          <OutlinedTextField
+            label="Login PIN"
+            placeholder="4 digits"
+            value={mgrPin}
+            onChangeText={(v) => setMgrPin(v.replace(/\D/g, '').slice(0, 4))}
+            keyboardType="number-pad"
+            containerColor={Colors.surface}
+          />
           <Txt variant="labelSmall" weight="400" color={Colors.textMuted} style={{ marginTop: 4 }}>
             ℹ️ Up to 3 managers can be appointed to manage and allocate rooms.
           </Txt>

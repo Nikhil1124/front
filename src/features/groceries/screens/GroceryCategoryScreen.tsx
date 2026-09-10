@@ -43,14 +43,14 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNam
 const getCategoryImage = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('fruit') || n.includes('veg'))
-    return require('../../../../assets/productimages/cat_fruits_veg_nobg.png');
+    return require('../../../../assets/productimages/cat_fruits_veg_nobg.webp');
   if (n.includes('dairy') || n.includes('milk') || n.includes('bread') || n.includes('egg'))
-    return require('../../../../assets/productimages/cat_dairy_nobg.png');
+    return require('../../../../assets/productimages/cat_dairy_nobg.webp');
   if (n.includes('chicken') || n.includes('meat') || n.includes('fish'))
-    return require('../../../../assets/productimages/cat_chicken_eggs_nobg.png');
+    return require('../../../../assets/productimages/cat_chicken_eggs_nobg.webp');
   if (n.includes('oil') || n.includes('masala') || n.includes('ghee') || n.includes('spice') || n.includes('atta') || n.includes('rice') || n.includes('dal'))
-    return require('../../../../assets/productimages/cat_masala_nobg.png');
-  return require('../../../../assets/productimages/cat_addons_nobg.png');
+    return require('../../../../assets/productimages/cat_masala_nobg.webp');
+  return require('../../../../assets/productimages/cat_addons_nobg.webp');
 };
 
 const getCategoryBg = (name: string): string => {
@@ -179,14 +179,9 @@ export function GroceryCategoryScreen() {
           </Txt>
         )}
 
-        <AnimatedPress
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityRole="button"
-          style={styles.searchIconBtn}
-          onPress={() => {}}
-        >
-          <Ionicons name="search" size={20} color={GroceryColors.textPrimary} />
-        </AnimatedPress>
+        {/* A search icon button with `onPress={() => {}}` used to sit here, directly above
+            the real search field a few lines below. It announced itself to TalkBack as a
+            button, sprang under a finger, and did nothing. */}
       </View>
 
       {/* ── Search Field ── */}
@@ -323,7 +318,7 @@ export function GroceryCategoryScreen() {
               </AnimatedPress>
             </View>
             <Image
-              source={require('../../../../assets/pg_grocery_eggs_1785343431667.jpg')}
+              source={require('../../../../assets/pg_grocery_eggs_1785343431667.webp')}
               style={styles.promoBannerImage}
               resizeMode="cover"
             />
@@ -347,7 +342,7 @@ export function GroceryCategoryScreen() {
                 </AnimatedPress>
               </View>
               <Image
-                source={require('../../../../assets/food_savings_banner.png')}
+                source={require('../../../../assets/food_savings_banner.webp')}
                 style={styles.dealsBannerImage}
                 resizeMode="cover"
               />
@@ -466,12 +461,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: GroceryColors.textPrimary,
     textAlign: 'center',
-  },
-  searchIconBtn: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // ── Search ──

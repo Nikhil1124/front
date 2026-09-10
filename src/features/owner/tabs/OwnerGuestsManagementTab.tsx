@@ -543,10 +543,10 @@ export function OwnerGuestsManagementTab() {
               style={styles.helpLinkRow}
               onPress={() => Alert.alert('Need help?', 'A residents management guide is not available yet. Contact PGow support if you have questions.')}
             >
-              <Row justify="space-between" align="center" style={{ width: '100%' }}>
-                <Row gap={10} align="center">
+              <Row justify="space-between" align="center" gap={8} style={{ width: '100%' }}>
+                <Row gap={10} align="center" style={{ flex: 1, minWidth: 0 }}>
                   <Ionicons name="help-circle-outline" size={18} color={MUTED} />
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.helpLinkText}>
+                  <Txt maxFontSizeMultiplier={1.3} numberOfLines={2} style={[styles.helpLinkText, { flex: 1 }]}>
                     Need help? Learn more about managing residents
                   </Txt>
                 </Row>
@@ -1300,7 +1300,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10 },
   choiceTitle: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
-  choiceDesc: { fontSize: 11, color: MUTED, marginTop: 4, lineHeight: 15, height: 46 },
+  // `minHeight`, not `height`. The fixed 46 was there to keep the two side-by-side cards'
+  // buttons on the same line, but it is a hard clip: at a larger font scale the description
+  // needs a fourth line and simply lost it mid-sentence. A floor keeps the alignment at
+  // normal scale and lets the card grow when the reader's text does.
+  choiceDesc: { fontSize: 11, color: MUTED, marginTop: 4, lineHeight: 15, minHeight: 46 },
   choiceBtnSolid: {
     height: 36,
     width: '100%',

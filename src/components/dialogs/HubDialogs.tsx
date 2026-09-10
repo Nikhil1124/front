@@ -1,5 +1,5 @@
 /**
- * HubDialogs — AddPgDailySubscriptionDialog + BookRepairDialog + GuestLaundryBookingDialog
+ * HubDialogs — AddPgDailySubscriptionDialog + BookRepairDialog
  * Ported to the Cyber Indigo theme.
  */
 import { useMemo, useState } from 'react';
@@ -206,14 +206,17 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   const [schedDate, setSchedDate] = useState(() => getNext7Days()[0]);
   const [schedTime, setSchedTime] = useState('11:30 AM - 12:00 PM');
 
-  const costMap: Record<string, number> = { Plumbing: 399, Electrical: 449, 'AC Repair': 799 };
-  
   const handleDispatch = () => {
-    const cost = costMap[category] ?? 499;
+    // No price is quoted here any more. This used to send a flat rate off a hardcoded map
+    // (Plumbing 399, Electrical 449, AC 799, everything else 499) that nothing in the product
+    // configures and no screen ever displays — it went straight onto the ticket's `amount`,
+    // so the owner's repair tickets carried an invented figure while the resident's identical
+    // ones (book-technician.tsx) correctly carried none. What a repair costs is known when
+    // someone has looked at it, and that is when the amount should be set.
     const finalIssue = issue.trim() || `Request for ${category} service`;
     // Pass custom schedule details inside the request summary if scheduled
     const urgencyLabel = urgency === '15-Min Express' ? '15-Min Express' : `Scheduled for ${schedDate} at ${schedTime}`;
-    bookRepair(category, finalIssue, urgencyLabel, cost);
+    bookRepair(category, finalIssue, urgencyLabel);
     Alert.alert('Success', 'Technician Dispatched!');
     onDismiss();
   };
@@ -361,137 +364,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-// ===== GuestLaundryBookingDialog =====
-const LAUNDRY_SLOTS = ['Morning (8–10 AM)', 'Afternoon (1–3 PM)', 'Evening (6–8 PM)'];
-const LAUNDRY_PAY_MODES = ['Added to Room Bill', 'UPI', 'Cash on Pickup'];
-
-const LAUNDRY_RATES: Record<string, number> = {
-  'Wash & Fold': 39, 'Wash & Iron': 59, 'Dry Cleaning': 149, 'Shoe Care': 199 };
-
-export function GuestLaundryBookingDialog({ guestId, guestName, roomNo, onDismiss }: { guestId: string; guestName: string; roomNo: string; onDismiss: () => void }) {
-  const bookLaundry = usePGowStore((s) => s.bookGuestLaundryService);
-  const [service, setService] = useState('Wash & Fold');
-  const [weight, setWeight] = useState('5 kg');
-  const [pickupPref] = useState('Room Doorstep Pickup');
-  const [slot, setSlot] = useState(LAUNDRY_SLOTS[0]);
-  const [notes, setNotes] = useState('');
-  const [payMode, setPayMode] = useState(LAUNDRY_PAY_MODES[0]);
-
-  const multiplier = weight.includes('10') ? 2 : weight.includes('15') ? 3 : 1;
-  const est = (LAUNDRY_RATES[service] ?? 40) * multiplier;
-
-  const handleBook = () => {
-    bookLaundry(guestId, guestName, roomNo, service, weight, pickupPref, slot, notes, est, payMode);
-    Alert.alert('Success', 'Laundry Pickup Scheduled Successfully!');
-    onDismiss();
-  };
-
-  return (
-    <Sheet
-      visible
-      title="Doorstep laundry"
-      subtitle={`Room ${roomNo} · ${guestName}`}
-      icon="shirt-outline"
-      onDismiss={onDismiss}
-      footer={
-        <Row justify="space-between" align="center">
-          <Col>
-            <Txt variant="labelSmall" weight="400" color={Colors.textMuted}>Estimated total</Txt>
-            <Txt variant="metric" color={Colors.primaryDark} tabular>{formatINR(est)}</Txt>
-          </Col>
-          <Btn
-            onPress={handleBook}
-            containerColor={Colors.primary}
-            textColor={Colors.textInverse}
-            borderRadius={Radii.card}
-            height={44}
-          >
-            <Txt variant="button" color={Colors.textInverse}>Confirm pickup</Txt>
-          </Btn>
-        </Row>
-      }
-    >
-
-          <Txt variant="meta" weight="600" color={Colors.textMuted}>Select Service Type</Txt>
-          <Spacer size={6} />
-          <View style={{ gap: 6 }}>
-            {Object.entries(LAUNDRY_RATES).map(([srv, rate]) => (
-              <AnimatedPress accessibilityRole="button"
-                key={srv}
-                onPress={() => setService(srv)}
-                style={[
-                  styles.laundryOpt,
-                  {
-                    borderColor: service === srv ? Colors.primary : Colors.borderSubtle,
-                    backgroundColor: service === srv ? DIALOG_LIGHT_GREEN : Colors.surfaceMuted },
-                ]}
-              >
-                <Row justify="space-between" align="center">
-                  <Txt variant="cardTitle" color={Colors.textPrimary}>{srv}</Txt>
-                  <Txt variant="meta" weight="600" color={Colors.primaryDark} tabular>
-                    {formatINR(rate)}{srv.includes('Shoe') ? '/pair' : srv.includes('Dry') ? '/pc' : '/kg'}
-                  </Txt>
-                </Row>
-              </AnimatedPress>
-            ))}
-          </View>
-          <Spacer size={12} />
-
-          <Txt variant="meta" weight="600" color={Colors.textMuted}>Quantity / Weight</Txt>
-          <Row gap={8} style={{ marginTop: 6 }}>
-            {['5 kg', '10 kg', '15 kg'].map((w) => (
-              <Btn
-                key={w}
-                onPress={() => setWeight(w)}
-                containerColor={weight === w ? Colors.primary : Colors.surfaceMuted}
-                textColor={weight === w ? Colors.textInverse : Colors.textPrimary}
-                borderRadius={Radii.control}
-                height={34}
-                style={{ flex: 1 }}
-              >
-                <Txt variant="button" color={weight === w ? Colors.textInverse : Colors.textPrimary}>{w}</Txt>
-              </Btn>
-            ))}
-          </Row>
-          <Spacer size={12} />
-
-          {/* Both of these were fixed values in state with no control attached: every booking
-              went out as a morning pickup billed to the room, whatever the resident wanted. */}
-          <ChoiceChips
-            label="Pickup slot"
-            options={LAUNDRY_SLOTS}
-            value={slot}
-            onChange={setSlot}
-            testID="laundry_slot"
-          />
-          <Spacer size={12} />
-          <ChoiceChips
-            label="Pay by"
-            options={LAUNDRY_PAY_MODES}
-            value={payMode}
-            onChange={setPayMode}
-            testID="laundry_pay_mode"
-          />
-          <Spacer size={12} />
-
-          <OutlinedTextField
-            label="Special Instructions (Optional)"
-            placeholder="Wash shirts separately"
-            value={notes}
-            onChangeText={setNotes}
-            containerColor={Colors.surfaceMuted}
-            style={{ marginBottom: 12 }}
-          />
-
-    </Sheet>
-  );
-}
-
 const styles = StyleSheet.create({
-  laundryOpt: {
-    borderRadius: Radii.card,
-    borderWidth: 1,
-    padding: 10 },
   catalogRow: {
     borderRadius: Radii.control,
     borderWidth: 1,

@@ -76,3 +76,30 @@ export function formatINR(amount: number, decimals: 0 | 2 = 0): string {
 
 /** Toast callback type expected by ViewModel-style actions. */
 export type ToastFn = (msg: string) => void;
+
+/**
+ * The short place label for a property, out of its full postal address.
+ *
+ * Indian addresses run most-specific to most-general — building, door number, landmark,
+ * locality, town, state, PIN, country — so the first segments are the ones a reader already
+ * knows (they are looking at that property's own screen) and the useful ones are at the end.
+ * The owner header used to take `split(',').slice(0, 2)`, which on a real address rendered
+ * "5 PGs • SS Geosynthetic Lining Company, Do.No:15-109": a company name and a door number,
+ * labelled as a location, long enough to wrap and be clipped by the header band.
+ *
+ * Country and a bare PIN are dropped because they identify nothing at a glance, then the last
+ * two remaining segments are the town and state. Returns '' for an unusable address rather
+ * than inventing a city — the caller decides what to show when there is nothing to show.
+ */
+export function shortLocation(address?: string | null): string {
+  if (!address) return '';
+  const parts = address
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .filter((p) => !/^\d[\d\s-]*$/.test(p))      // a postcode on its own
+    .filter((p) => p.toLowerCase() !== 'india');
+  // The town, not the state: this sits behind a "5 PGs • " prefix in a header meta line, and
+  // the state adds length without telling a reader anything they do not already know.
+  return parts.length >= 2 ? parts[parts.length - 2] : (parts[parts.length - 1] ?? '');
+}

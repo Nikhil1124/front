@@ -166,7 +166,7 @@ export function ManagePropertiesScreen() {
                   {/* Property Image Header */}
                   <View style={styles.imageContainer}>
                     <Image
-                      source={require('../../../../assets/bangalore_pg_building.png')}
+                      source={require('../../../../assets/bangalore_pg_building.webp')}
                       style={styles.propertyImage}
                       resizeMode="cover"
                     />

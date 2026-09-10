@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/useToast';
 import type { BedResponse, RoomResponse } from '@/types';
 import { Btn, Card, Chip, ChoiceChips, Col, MetricDeck, OutlinedBtn, Row, Sheet, Spacer, Txt, type DeckCardData } from '@/components/ui';
 
-const FLOORPLAN_IMG = require('../../../../assets/room_floorplan_preview.png');
+const FLOORPLAN_IMG = require('../../../../assets/room_floorplan_preview.webp');
 
 /** The room sizes a PG is actually built at. Beyond 6 it is a dormitory, not a room. */
 const SHARING_OPTIONS = [1, 2, 3, 4, 5, 6];
@@ -111,13 +111,17 @@ export function BedVisualizerScreen() {
     { key: 'occupancy', tint: 'slate', label: 'Occupancy', value: `${occupancyPercent}%` },
   ];
 
-  // Derived available room types with counts
+  /**
+   * The sharing types this property actually has, counted from its own rooms.
+   *
+   * This map used to be pre-seeded with '1' | '2' | '3' | '4' and the cards below were
+   * written out as four literal calls. A property with 5-, 6- or 8-sharing rooms therefore
+   * got no card for them and no way to filter to them — the rooms existed in the list but the
+   * type was unreachable — while four cards it did not have sat there reading "0 Rooms • 0
+   * Vacant". Mixed configurations are the normal case, not the edge one.
+   */
   const roomTypeSummary = useMemo(() => {
-    const typesMap: Record<string, { roomsCount: number; vacantCount: number; totalBedsCount: number }> = {
-      '1': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 },
-      '2': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 },
-      '3': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 },
-      '4': { roomsCount: 0, vacantCount: 0, totalBedsCount: 0 } };
+    const typesMap: Record<string, { roomsCount: number; vacantCount: number; totalBedsCount: number }> = {};
 
     targetRooms.forEach((r) => {
       const typeKey = String(r.sharingType);
@@ -269,6 +273,7 @@ export function BedVisualizerScreen() {
             <View style={[styles.roomTypeIconBox, isSelected ? styles.roomTypeIconSelected : null]}>
               <Ionicons
                 name={typeKey === '1' ? 'bed' : typeKey === '2' ? 'people' : typeKey === '3' ? 'grid' : 'apps'}
+                // 'apps' covers everything from 4-sharing up — a dormitory has no distinct glyph.
                 size={18}
                 color={isSelected ? Colors.textInverse : Colors.primary}
               />
@@ -277,10 +282,10 @@ export function BedVisualizerScreen() {
           </Row>
 
           <Spacer size={10} />
-          <Txt size={14} weight="700" color={isSelected ? Colors.primary : Colors.textPrimary}>
+          <Txt size={14} weight="700" numberOfLines={1} color={isSelected ? Colors.primary : Colors.textPrimary}>
             {title}
           </Txt>
-          <Txt size={11} color={Colors.textMuted} style={{ marginTop: 2 }}>
+          <Txt size={11} color={Colors.textMuted} numberOfLines={2} style={{ marginTop: 2 }}>
             {info.roomsCount} Room{info.roomsCount === 1 ? '' : 's'} • {info.vacantCount} Vacant
           </Txt>
         </View>
@@ -291,7 +296,9 @@ export function BedVisualizerScreen() {
   return (
     <HubScreenWrapper
       title="Bed Layout"
-      subtitle={layout?.propertyName ?? 'Chaitanya’s Residency'}
+      // Was `?? 'Chaitanya’s Residency'` — a real, live property owned by someone else, shown
+      // as the reader's own PG name for as long as the layout query was in flight.
+      subtitle={layout?.propertyName ?? 'Loading…'}
       icon="bed-outline"
       refreshControl={
         <RefreshControl
@@ -364,12 +371,14 @@ export function BedVisualizerScreen() {
 
             <Spacer size={10} />
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, alignItems: 'stretch' }}>
               {renderRoomTypeCard('ALL', 'All Rooms', totalBeds)}
-              {renderRoomTypeCard('1', 'Single', 1)}
-              {renderRoomTypeCard('2', '2 Sharing', 2)}
-              {renderRoomTypeCard('3', '3 Sharing', 3)}
-              {renderRoomTypeCard('4', '4 Sharing', 4)}
+              {Object.keys(roomTypeSummary)
+                .map(Number)
+                .sort((a, b) => a - b)
+                .map((n) =>
+                  renderRoomTypeCard(String(n), n === 1 ? 'Single' : `${n} Sharing`, n)
+                )}
             </ScrollView>
           </Col>
 
@@ -596,8 +605,10 @@ export function BedVisualizerScreen() {
                       <Txt size={18} weight="700" color={Colors.textInverse}>
                         Room {activeRoomDetailObject.roomNumber}
                       </Txt>
-                      <Txt size={11} color="#A7EBF2">
-                        {layout?.propertyName ?? "Chaitanya's Residency"}
+                      <Txt size={11} color="#A7EBF2" numberOfLines={2}>
+                        {/* Same stranger's-property fallback as the header had. If the name is
+                            not loaded, show nothing rather than someone else's. */}
+                        {layout?.propertyName ?? ''}
                       </Txt>
                     </Col>
                   </Row>
@@ -1123,6 +1134,12 @@ export function BedVisualizerScreen() {
 const styles = StyleSheet.create({
   roomTypeCard: {
     width: 140,
+    // Height was content-driven, and the content is not the same length on every card:
+    // "1 Room • 0 Vacant" sits on one line where "12 Rooms • 34 Vacant" wraps to two, so the
+    // row rendered as blocks of different heights — one small, one large, never in series.
+    // A floor plus clamped text lines makes every card the same box regardless of the
+    // numbers inside it.
+    minHeight: 116,
     padding: 14,
     borderRadius: Radii.card,
     borderWidth: 1.5 },

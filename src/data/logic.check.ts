@@ -215,4 +215,28 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
   assert.equal(pickAlert("chef", { paymentsPending: 3 }), null, "a profile with no alerts stays silent");
 }
 
+
+// ── shortLocation ───────────────────────────────────────────────────────────
+// The owner header's place label. The bug this replaced took the FIRST two segments, which
+// on a real address is the building name and the door number.
+{
+  const { shortLocation } = await import("../utils/format.ts");
+  assert.equal(
+    shortLocation(
+      "SS Geosynthetic Lining Company, Do.No:15-109, Near Mahalakshmitemple, Kothapet, " +
+      "Ibrahimpatnam, Andhra Pradesh, 521456, India"
+    ),
+    "Ibrahimpatnam"
+  );
+  // Already short, no country or PIN to drop.
+  assert.equal(shortLocation("Electronic City, Bangalore"), "Electronic City");
+  assert.equal(shortLocation("Bangalore"), "Bangalore");
+  // A PIN alone is not a place; a door number that contains letters is kept.
+  assert.equal(shortLocation("Flat 4B, Whitefield, Bangalore, 560066"), "Whitefield");
+  // Nothing usable must not become "undefined" or an invented city.
+  assert.equal(shortLocation(""), "");
+  assert.equal(shortLocation(null), "");
+  assert.equal(shortLocation("560066, India"), "");
+}
+
 console.log("logic.check.ts — all assertions passed");

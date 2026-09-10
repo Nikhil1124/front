@@ -11,11 +11,11 @@ import { LaundryCard } from '@/features/laundry/components/LaundryCard';
 
 
 const CATEGORIES = [
-  { id: 'c1', title: 'Wash & Fold', desc: 'Clean, dry & neatly folded', img: require('../../../assets/laundry/clothes_stack.png') },
-  { id: 'c2', title: 'Wash & Iron', desc: 'Washed, dried & professionally ironed', img: require('../../../assets/laundry/iron.png') },
-  { id: 'c3', title: 'Dry Cleaning', desc: 'For delicate & premium clothing', img: require('../../../assets/laundry/suit.png') },
-  { id: 'c4', title: 'Home Linen', desc: 'Bedsheets, blankets & towels', img: require('../../../assets/laundry/bedsheet.png') },
-  { id: 'c5', title: 'Shoes & Bags', desc: 'Cleaning & care for footwear and bags', img: require('../../../assets/laundry/sneakers.png') },
+  { id: 'c1', title: 'Wash & Fold', desc: 'Clean, dry & neatly folded', img: require('../../../assets/laundry/clothes_stack.webp') },
+  { id: 'c2', title: 'Wash & Iron', desc: 'Washed, dried & professionally ironed', img: require('../../../assets/laundry/iron.webp') },
+  { id: 'c3', title: 'Dry Cleaning', desc: 'For delicate & premium clothing', img: require('../../../assets/laundry/suit.webp') },
+  { id: 'c4', title: 'Home Linen', desc: 'Bedsheets, blankets & towels', img: require('../../../assets/laundry/bedsheet.webp') },
+  { id: 'c5', title: 'Shoes & Bags', desc: 'Cleaning & care for footwear and bags', img: require('../../../assets/laundry/sneakers.webp') },
 ];
 
 export default function LaundryHomeScreen() {

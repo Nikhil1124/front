@@ -42,11 +42,6 @@ import type {
   GuestEntity,
   StaffMemberEntity,
   MealNotificationEntity,
-  GuestRSVPEntity,
-  PaymentEntity,
-  FeedbackComplaintEntity,
-  ExpenseEntity,
-  AppRoleNotificationEntity,
   SimulatedAlert } from '@/types';
 
 
@@ -162,11 +157,10 @@ export interface PGowState {
 
   // ===== Hub services =====
   placePgGroceryOrder: (itemsSummary: string, totalPrice: number, isExpress10Min?: boolean) => void;
-  bookPgRepairService: (category: string, issueTitle: string, urgency: string, estimatedCost: number) => void;
-  bookGuestLaundryService: (
-    guestId: string, guestName: string, roomNo: string, serviceType: string, weightOrCount: string,
-    pickupPreference: string, preferredSlot: string, specialNotes: string, totalCost: number, paymentStatus: string,
-  ) => void;
+  /** `estimatedCost` only when a price was actually SHOWN to whoever booked — the Services
+   *  catalogue quotes a visit charge, the repair sheet quotes nothing. Omitted means the
+   *  ticket carries no amount until someone prices the work, which is the honest default. */
+  bookPgRepairService: (category: string, issueTitle: string, urgency: string, estimatedCost?: number) => void;
   updateLaundryStatus: (laundryId: string, newStatus: string) => void;
 
   // ===== Meal / time helpers =====
@@ -443,37 +437,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         set({
           activeAlert: {
             title: '❌ REPAIR NOT BOOKED',
-            description: err instanceof Error ? err.message : 'The booking was not saved.',
-            type: 'ANNOUNCEMENT', timestamp: Date.now() } });
-      });
-  },
-
-  bookGuestLaundryService: (
-    _guestId, _guestName, _roomNo, serviceType, weightOrCount,
-    pickupPreference, preferredSlot, specialNotes, totalCost, paymentStatus,
-  ) => {
-    const pgId = useAuthStore.getState().activePgId;
-    if (!pgId) return;
-    // The resident's name, id and room are not sent: the server takes them from whoever is
-    // authenticated, which is the only version that cannot be spoofed by a client.
-    requestsApi
-      .submitComplaint({
-        pg_id: pgId,
-        kind: 'laundry',
-        title: `${serviceType} — ${weightOrCount}`,
-        description: specialNotes || 'No special instructions.',
-        amount: totalCost,
-        details: {
-          service_type: serviceType,
-          weight_or_count: weightOrCount,
-          pickup_preference: pickupPreference,
-          preferred_slot: preferredSlot,
-          payment_status: paymentStatus } })
-      .then(() => get().refreshAll())
-      .catch((err) => {
-        set({
-          activeAlert: {
-            title: '❌ PICKUP NOT SCHEDULED',
             description: err instanceof Error ? err.message : 'The booking was not saved.',
             type: 'ANNOUNCEMENT', timestamp: Date.now() } });
       });

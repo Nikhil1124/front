@@ -6,6 +6,7 @@
  * shape; it just hands back the same functions rather than owning a second copy of them.
  */
 
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
@@ -122,13 +123,38 @@ export function usePropertiesQuery() {
   });
 }
 
+/**
+ * The properties this person actually holds a membership at — "my portfolio", not "every
+ * property on the platform".
+ *
+ * The membership filter is the point. `GET /v1/pgs` scopes to `principal.pg_ids` for an
+ * ordinary owner, so for them this changes nothing. For a SUPER_ADMIN it returns the entire
+ * platform, and every consumer of this hook is an owner-role screen — the dashboard header,
+ * the PG swapper, Portfolio, Manage Properties, Staff, Residents, Manager Provisioning. So a
+ * super-admin who also owns properties saw "14 PGs" on their owner dashboard when they own
+ * five, and the swapper offered to switch them into strangers' properties.
+ *
+ * Worse than the label: five of those screens fall back to `allPGs[0]` when `activePgId` is
+ * unset, and with the platform-wide list that first entry is whichever property sorts first
+ * by name — someone else's. The owner dashboard would silently adopt it as "your PG".
+ *
+ * Scoping here rather than at each call site because the fix has to hold for all eight of
+ * them, including any added later. A platform-wide list is a legitimate need for admin
+ * screens — it just is not this hook.
+ */
 export function usePropertiesEntitiesQuery() {
   const user = useAuthStore((s) => s.user);
+  const myPgIds = useMemo(
+    () => new Set((user?.memberships ?? []).map((m) => m.pg_id)),
+    [user?.memberships]
+  );
   return useQuery<PGOwnerEntity[]>({
     queryKey: [...qk.properties.list(), "entities", user?.id ?? ""],
     queryFn: async () => {
       const res = await listProperties({ limit: 100 });
-      return res.items.map((pg) => map.toPgOwner(pg, user, null));
+      return res.items
+        .filter((pg) => myPgIds.has(pg.id))
+        .map((pg) => map.toPgOwner(pg, user, null));
     },
   });
 }

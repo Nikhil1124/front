@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { View, StyleSheet, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import {
-  Card, Txt, Spacer, Col, Row, Btn, IconBtn, ListRow, OutlinedBtn, StatusChip, MetricDeck,
-  type DeckCardData, AnimatedPress } from '@/components/ui';
-import { Colors, Palette, Radii } from '@/theme';
+  Card, Txt, Spacer, Col, Row, Btn, IconBtn, ListRow, OutlinedBtn, StatusChip,
+  AnimatedPress } from '@/components/ui';
+import { Colors, DeckTints, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { EmptyState } from '@/components/EmptyState';
@@ -24,7 +24,6 @@ export default function ChefEatersTab() {
 }
 
 import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
-import { useGuestsQuery } from '@/features/guests/useGuests';
 
 /** A real Google Maps deep link — was `Alert.alert('Navigation', 'Opening Google Maps to
  *  navigate to X...')` on both call sites below, which opened nothing. `Linking.openURL`
@@ -42,7 +41,6 @@ function ChefEatersView() {
   const dockScroll = useDockScroll();
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
-  const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { activeMeal, setActiveMeal } = useActiveMeal();
   const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
 
@@ -52,26 +50,39 @@ function ChefEatersView() {
   // "no reply" so a chef reading the roster isn't left guessing which unanswered rows are
   // actually just unanswered.
   const awayCount = mealResponses.filter((r) => r.choice === null && r.is_away).length;
-  const noResponse = Math.max(0, guests.length - reqCount - notReqCount - awayCount);
-  // Straight from the roster rows rather than the subtraction above: `noResponse` is a count
-  // derived from the guest list, which cannot name anybody. Away residents sort last — they
-  // are the ones the chef least needs to chase.
+  // Counted from the roster, like every other figure on this card.
+  //
+  // This was `guests.length - reqCount - notReqCount - awayCount`, off `useGuestsQuery` —
+  // and `GET /v1/guests` answers a chef with 403 FORBIDDEN ("Only the owner or a manager may
+  // do this"). So `guests` was permanently `[]` for the one role this screen belongs to:
+  // `noResponse` was always 0 and `totalGuests` always 0, which made every percentage on the
+  // chef's dashboard read 0% no matter what the residents had actually answered. The
+  // giveaway was this card claiming "No reply 0" directly above a list captioned "1 of 1".
+  //
+  // `GET /v1/meals/{id}/roster` is the endpoint a chef IS allowed to read, it already returns
+  // one row per resident, and this screen was already fetching it — so the numbers cost
+  // nothing extra and cannot disagree with the names listed underneath them.
+  const noResponse = mealResponses.filter((r) => r.choice === null && !r.is_away).length;
+  // Away residents sort last — they are the ones the chef least needs to chase.
   const pendingReplies = mealResponses
     .filter((r) => r.choice === null)
     .sort((a, b) => Number(a.is_away) - Number(b.is_away) || a.name.localeCompare(b.name));
-  const totalGuests = guests.length;
+  const totalGuests = mealResponses.length;
   const pct = (n: number) => (totalGuests > 0 ? Math.round((n / totalGuests) * 1000) / 10 : 0);
 
   // The progress ring and the three tinted boxes beneath it used to show the same three
   // counts twice — once as a ring fraction, once as cards with their own hand-picked hex
   // (`#F0F9FF`/`#0EA5E9`/…, none of them a token). One deck, the app's four verified tints.
-  const deckCards: DeckCardData[] = [
-    { key: 'total', tint: 'brand', label: 'Portions to cook', value: String(reqCount), delta: activeMeal?.menuItems },
-    { key: 'eating', tint: 'green', label: 'Eating', value: `${reqCount} · ${pct(reqCount)}%` },
-    { key: 'skipping', tint: 'amber', label: 'Skipping', value: `${notReqCount} · ${pct(notReqCount)}%` },
+  // The three mutually exclusive answers to "are you eating?", shown together on one card.
+  const breakdown = [
+    { key: 'eating', label: 'Eating', count: reqCount, ink: DeckTints.green.ink },
+    { key: 'skipping', label: 'Skipping', count: notReqCount, ink: DeckTints.amber.ink },
     {
-      key: 'noreply', tint: 'slate', label: 'No reply', value: `${noResponse} · ${pct(noResponse)}%`,
-      ...(awayCount > 0 ? { delta: `${awayCount} away` } : {}) },
+      key: 'noreply',
+      label: awayCount > 0 ? `No reply · ${awayCount} away` : 'No reply',
+      count: noResponse,
+      ink: DeckTints.slate.ink,
+    },
   ];
 
   return (
@@ -86,27 +97,80 @@ function ChefEatersView() {
         <>
           <Txt size={12} weight="700" color={Colors.textPrimary}>Select Active Meal to View RSVP Data</Txt>
           <Spacer size={8} />
-          <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {/* Wraps instead of scrolling sideways. There are at most three meals in a day, and
+              a horizontal strip put the third one half off the right edge with no hint it was
+              there. `.slice(0, 20)` also cut the menu mid-word — the meal type is what
+              identifies the button, so it leads, and the menu is a second line that
+              ellipsises properly. */}
+          <View style={styles.mealPickerRow}>
             {notifications.map((n) => {
               const isSel = activeMeal?.id === n.id;
               return (
-                <AnimatedPress accessibilityRole="button" 
-                  key={n.id} 
+                <AnimatedPress
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSel }}
+                  key={n.id}
                   onPress={() => setActiveMeal(n)}
-                  style={{
-                    backgroundColor: isSel ? Colors.primary : Colors.surfaceMuted,
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
-                    borderRadius: Radii.sheet }}
+                  style={[styles.mealPill, isSel ? styles.mealPillOn : styles.mealPillOff]}
                 >
-                  <Txt size={12} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{`${n.mealType} - ${n.menuItems.slice(0, 20)}`}</Txt>
+                  <Txt size={12} weight="700" numberOfLines={1} color={isSel ? Colors.textInverse : Colors.textPrimary}>
+                    {n.mealType}
+                  </Txt>
+                  {!!n.menuItems && (
+                    <Txt size={10.5} numberOfLines={1} color={isSel ? Colors.textInverse : Colors.textMuted}>
+                      {n.menuItems}
+                    </Txt>
+                  )}
                 </AnimatedPress>
               );
             })}
-          </FormScroll>
+          </View>
           <Spacer size={16} />
 
-          <MetricDeck cards={deckCards} sidePadding={18} testID="eaters_deck" />
+          {/* One card, not a swipeable deck.
+              `MetricDeck` pages horizontally with a dot row, so three of these four numbers
+              were always off-screen — and they are not independent metrics, they are one
+              breakdown that only means anything read together ("40 portions: 40 eating, 3
+              skipping, 5 who never answered"). A chef checking how much to cook should not
+              have to swipe three times to see whether the numbers add up. The deck is still
+              the right shape elsewhere, where the cards genuinely are separate figures. */}
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={Radii.card}
+            borderWidth={1}
+            borderColor={Colors.borderSubtle}
+            padding={[16, 16]}
+          >
+            <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.4 }}>
+              PORTIONS TO COOK
+            </Txt>
+            <Row align="flex-end" gap={8} style={{ marginTop: 2 }}>
+              <Txt size={34} weight="800" color={Colors.primaryDark} tabular>{reqCount}</Txt>
+              {totalGuests > 0 && (
+                <Txt size={12} color={Colors.textMuted} style={{ marginBottom: 7 }}>of {totalGuests}</Txt>
+              )}
+            </Row>
+            {!!activeMeal?.menuItems && (
+              <Txt size={12} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2 }}>
+                {activeMeal.menuItems}
+              </Txt>
+            )}
+
+            <View style={styles.breakdownRule} />
+
+            <Row gap={10}>
+              {breakdown.map((b) => (
+                <Col key={b.key} style={{ flex: 1 }}>
+                  <View style={[styles.breakdownDot, { backgroundColor: b.ink }]} />
+                  <Txt size={16} weight="800" color={Colors.textPrimary} tabular style={{ marginTop: 5 }}>
+                    {b.count}
+                  </Txt>
+                  <Txt size={10.5} color={Colors.textMuted} numberOfLines={2}>{b.label}</Txt>
+                  <Txt size={10} color={Colors.textMuted} tabular>{pct(b.count)}%</Txt>
+                </Col>
+              ))}
+            </Row>
+          </Card>
 
           {/* Who is still to answer.
               The deck's "No reply" card gives the chef a number; this gives them the names,
@@ -148,9 +212,9 @@ function ChefEatersView() {
 
           <Spacer size={28} />
           <AnimatedPress accessibilityRole="button" onPress={() => router.push('/rsvp-trends')}>
-            <Row justify="space-between" align="center">
-              <Row align="center" gap={6}>
-                <Txt size={15} weight="700" color={Colors.textPrimary}>RSVP Trend</Txt>
+            <Row justify="space-between" align="center" gap={8}>
+              <Row align="center" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                <Txt size={15} weight="700" numberOfLines={1} color={Colors.textPrimary}>RSVP Trend</Txt>
                 <Txt size={13} weight="600" color={Colors.textSecondary}>(Last 7 Days)</Txt>
               </Row>
               <Row align="center" gap={4}>
@@ -288,8 +352,8 @@ function DeliveryDashboardRoute() {
           </Row>
           
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-            <Txt variant="cardTitle" weight="700" color={Colors.textPrimary}>{activeDelivery.pgName}</Txt>
-            <Txt variant="caption" color={Colors.textMuted}>{activeDelivery.location}</Txt>
+            <Txt variant="cardTitle" weight="700" color={Colors.textPrimary} numberOfLines={2}>{activeDelivery.pgName}</Txt>
+            <Txt variant="caption" color={Colors.textMuted} numberOfLines={2}>{activeDelivery.location}</Txt>
             <Spacer size={12} />
             <Btn onPress={() => openInMaps(activeDelivery.location || activeDelivery.pgName)} containerColor={Colors.surfaceElevated} textColor={Colors.primary} borderRadius={Radii.control} height={40}>
               <Ionicons name="navigate" size={16} color={Colors.primary} />
@@ -545,6 +609,14 @@ const Divider = ({ color }: { color: string }) => <View style={{ height: 1, back
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
+  mealPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  // `flexGrow` with a floor, so two meals share the row and three still fit without any of
+  // them being pushed off the edge.
+  mealPill: { flexGrow: 1, flexBasis: 96, minWidth: 96, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control, borderWidth: 1 },
+  mealPillOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  mealPillOff: { backgroundColor: Colors.surfaceMuted, borderColor: Colors.borderSubtle },
+  breakdownRule: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 14 },
+  breakdownDot: { width: 8, height: 8, borderRadius: Radii.pill },
   emptyMealBox: { height: 160, backgroundColor: Colors.surfaceMuted, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center', padding: 16 },
   progressTrack: { height: 8, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.badge, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: Colors.primary },

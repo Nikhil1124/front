@@ -1,8 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-
-;
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../../store/useCartStore';
 import { toAmount } from '@/data/mappers';

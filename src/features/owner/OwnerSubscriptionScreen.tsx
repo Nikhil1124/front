@@ -190,7 +190,7 @@ export function OwnerSubscriptionScreen() {
       }
     >
       <Card containerColor="transparent" borderRadius={Radii.feature} style={{ height: 130, marginBottom: 20, overflow: 'hidden' }}>
-        <Image source={require('../../../assets/img_premium_subscription.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        <Image source={require('../../../assets/img_premium_subscription.webp')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
       </Card>
 
       {active ? (

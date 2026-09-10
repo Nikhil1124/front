@@ -232,10 +232,10 @@ export function OwnerServicesTab() {
       <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Procurement & Supplies</Txt>
       <Spacer size={12} />
       <AnimatedPress accessibilityRole="button" style={styles.legacyCard} onPress={() => { router.push('/procurement'); }}>
-        <Row justify="space-between" align="center">
-          <Row gap={12} align="center">
+        <Row justify="space-between" align="center" gap={8}>
+          <Row gap={12} align="center" style={{ flex: 1, minWidth: 0 }}>
             <Ionicons name="cube-outline" size={24} color={MUTED} />
-            <Col>
+            <Col style={{ flex: 1, minWidth: 0 }}>
               <Txt maxFontSizeMultiplier={1.3} style={styles.legacyId}>View All Orders</Txt>
               <Txt maxFontSizeMultiplier={1.3} style={styles.legacyCategory}>{pendingCount} pending approvals</Txt>
             </Col>
@@ -482,7 +482,9 @@ const styles = StyleSheet.create({
   addButton: { position: 'absolute', bottom: -12, right: 12, width: 28, height: 28, borderRadius: Radii.badge, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, borderWidth: 1, borderColor: BORDER },
 
   serviceName: { fontSize: 12, fontWeight: '700', color: CHARCOAL, marginBottom: 2 },
-  serviceDesc: { fontSize: 11, color: MUTED, lineHeight: 14, marginTop: 2, height: 28 },
+  // Two lines at normal scale, more when the reader's font is larger — a hard 28 clipped the
+  // second line's descenders and cut a third line off entirely.
+  serviceDesc: { fontSize: 11, color: MUTED, lineHeight: 14, marginTop: 2, minHeight: 28 },
   visitFeeText: { fontSize: 11, fontWeight: '600', color: MUTED, marginTop: 2 },
   
   fallbackBanner: { flexDirection: 'row', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 16, marginHorizontal: 20, marginTop: 24, borderWidth: 1, borderColor: '#D1EAE0' },

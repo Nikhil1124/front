@@ -137,6 +137,26 @@ export function routeFromPushData(data: Record<string, unknown> | undefined): vo
     }
   }
 
+  // A payment notification is a DECISION, so it has to land where the decision can be made.
+  //
+  // "2 payments waiting to be verified" used to open the payments tab — the collection view,
+  // which reports what has already been settled and offers no verify/reject. The owner then
+  // had to work out for themselves that the actions live in the notifications inbox. That
+  // inbox (`/notifications` → `OwnerAnnouncementsTab`) renders each pending payment as a
+  // decision card with Verify and Reject on it, which is exactly what the notification is
+  // asking them to do, so that is where the tap goes now.
+  //
+  // A resident tapping their own payment notification is not making a decision — they are
+  // checking whether theirs went through — so they keep going to their payments tab.
+  if (category === "rent" || category === "finance" || actionType === "payment") {
+    const { useAuthStore } = require("../../store/authStore");
+    const activeRole = useAuthStore.getState().activeRole;
+    screen =
+      activeRole === "owner" || activeRole === "manager"
+        ? "/notifications"
+        : "/(guest)/(tabs)/guest-payments";
+  }
+
   // Prevent duplicate navigation by using router.navigate instead of push
   if (screen) {
     router.navigate(screen as never);

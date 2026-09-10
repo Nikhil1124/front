@@ -166,7 +166,7 @@ export function GroceryCartScreen() {
                         source={
                           item.image
                             ? { uri: item.image }
-                            : require('../../../../assets/productimages/d1_nobg.png')
+                            : require('../../../../assets/productimages/d1_nobg.webp')
                         }
                         style={styles.thumbnail}
                       />

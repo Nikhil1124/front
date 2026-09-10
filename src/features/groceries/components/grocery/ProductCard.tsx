@@ -109,7 +109,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             source={
               product.image_url
                 ? { uri: product.image_url }
-                : require('../../../../../assets/productimages/d1_nobg.png')
+                : require('../../../../../assets/productimages/d1_nobg.webp')
             }
             style={styles.simpleImage}
           />
@@ -204,7 +204,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
           source={
             product.image_url
               ? { uri: product.image_url }
-              : require('../../../../../assets/productimages/d1_nobg.png')
+              : require('../../../../../assets/productimages/d1_nobg.webp')
           }
           style={styles.image}
         />

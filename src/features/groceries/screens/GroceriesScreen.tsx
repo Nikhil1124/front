@@ -21,7 +21,9 @@ import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery
 import { HeroBanner } from '../components/grocery/HeroBanner';
 import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
+import { TodaysKitchenNeeds } from '../components/kitchen/TodaysKitchenNeeds';
 import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
+import { PGowApiError } from '@/data/apiClient';
 
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
@@ -136,6 +138,25 @@ export function GroceriesScreen() {
 
   const isSearching = searchQuery.trim().length > 0 || hasActiveFilters || activeQuickCategory !== null;
 
+  /**
+   * AREA_NOT_SERVICED is not a failure — it is an answer. The server is saying this property
+   * has no warehouse within range (`area_id IS NULL`, or an area with no hub), which no
+   * amount of retrying changes. Offering "Tap to retry" on it invites someone to sit there
+   * pulling a lever that is wired to nothing.
+   *
+   * The browse branch below already said this; the search branch did not, so tapping a quick
+   * category on an unserved property swapped the honest message for "Could not load the
+   * catalog" and a retry. One helper now, so the two cannot drift apart again.
+   */
+  const catalogError = useMemo(() => {
+    if (!itemsError) return null;
+    const unserved = itemsError instanceof PGowApiError && itemsError.code === 'AREA_NOT_SERVICED';
+    return {
+      title: unserved ? "Groceries aren't available here yet" : 'Could not load the catalog',
+      onRetry: unserved ? undefined : refetchItems,
+    };
+  }, [itemsError, refetchItems]);
+
   const openProduct = (productId: string) => {
     router.push({ pathname: '/groceries/product/[id]', params: { id: productId } });
   };
@@ -209,11 +230,11 @@ export function GroceriesScreen() {
             </Txt>
             {itemsLoading ? (
               <LoadingState label="Loading catalog…" fill={false} />
-            ) : itemsError ? (
+            ) : catalogError ? (
               <ErrorState
                 error={itemsError}
-                title="Could not load the catalog"
-                onRetry={refetchItems}
+                title={catalogError.title}
+                onRetry={catalogError.onRetry}
                 fill={false}
               />
             ) : searchResults.length === 0 ? (
@@ -252,8 +273,8 @@ export function GroceriesScreen() {
           <View style={styles.errorWrapper}>
             <ErrorState
               error={itemsError}
-              title="Groceries aren't available here yet"
-              onRetry={refetchItems}
+              title={catalogError?.title ?? "Groceries aren't available here yet"}
+              onRetry={catalogError?.onRetry}
               fill={false}
             />
           </View>
@@ -271,14 +292,20 @@ export function GroceriesScreen() {
 
             <View style={styles.bottomWhiteSection}>
               {/* ── Kitchen needs (owner/chef only) ── */}
-              {/* {mode === 'owner' && (
+              {/* Was commented out. The weekly menu planner behind it is finished on both
+                  sides — `GET/PUT /v1/supply/kitchen-menu` are live, `useKitchenMenu.ts`
+                  wires them, and the editor, banner and add-all-to-cart button are all
+                  built — so the only thing between an owner and the feature was these
+                  braces. Owner mode only: it plans the mess kitchen's week and turns the
+                  ingredients into a bulk basket, which is not a resident's screen. */}
+              {mode === 'owner' && (
                 <TodaysKitchenNeeds
                   onProductPress={openProduct}
                   onSeeAllCategoriesPress={() => openSupplyCategory(null)}
                   products={supplyItems}
                   pgId={activePgId ?? undefined}
                 />
-              )} */}
+              )}
 
 
               {/* ── Popular Categories ── */}

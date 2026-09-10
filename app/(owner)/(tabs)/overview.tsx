@@ -191,10 +191,10 @@ export default function OwnerOverviewTab() {
   // Quick Action Grid Items — Cool LUNA Design System Icons
   const quickActions = useMemo(() => {
     const top4: QuickActionItem[] = [
-      { label: 'Groceries', icon: 'basket', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/groceries'); } },
       { label: 'Procurement', icon: 'cube', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/procurement'); } },
       { label: 'Services', icon: 'sparkles', color: Colors.textSecondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/services'); } },
       { label: 'Residents', icon: 'people', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/guests'); } },
+      { label: 'Groceries', icon: 'basket', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/groceries'); } },
     ];
 
     const rest: QuickActionItem[] = [
@@ -420,7 +420,10 @@ export default function OwnerOverviewTab() {
                       <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor, borderColor: Colors.borderSubtle, borderWidth: 1 }]}>
                         <Ionicons name={act.icon} size={22} color={act.color} />
                       </View>
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionLabel} numberOfLines={1}>{act.label}</Text>
+                      {/* Two lines: these are four tiles across, so at a larger font scale
+                          one line turned "Procurement" into "Procureme…" — a truncated word
+                          in a tile that has room to wrap. */}
+                      <Text maxFontSizeMultiplier={1.3} style={styles.actionLabel} numberOfLines={2}>{act.label}</Text>
                     </View>
                   </AnimatedPress>
                 ))}
@@ -646,8 +649,6 @@ export default function OwnerOverviewTab() {
               </Row>
             </Card>
 
-            {/* Pad bottom for floating bar safety */}
-            <View style={{ height: 110 }} />
           </>
         )}
       </ScrollView>
@@ -745,7 +746,11 @@ export default function OwnerOverviewTab() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-  scroll: { paddingTop: 16, paddingBottom: 40 },
+  // 110, and nothing else. This screen used to carry `paddingBottom: 40` here AND a
+  // `<View style={{ height: 110 }} />` spacer at the end of the content — 150px of empty
+  // white below the last notices card, against the 100-120 every other tab screen uses for
+  // the same floating-dock clearance. One source of bottom spacing, matching the convention.
+  scroll: { paddingTop: 16, paddingBottom: 110 },
   splitBar: { flexDirection: 'row', height: 9, borderRadius: Radii.badge, overflow: 'hidden' },
   // `MetricRow` has no boundary of its own the way `ListRow` does (see the comment beside its
   // one other use) — this is what bounds a run of them.

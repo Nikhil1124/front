@@ -35,12 +35,7 @@ import { useToast } from '@/hooks/useToast';
 import { formatINR } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { buildUpiUri, launchUpiPayment, usePaymentsQuery, useRentDueQuery, useSubmitPaymentMutation } from '@/features/payments/usePayments';
-import {
-  useTenantInvoices,
-  usePayTenantInvoice,
-  fetchTenantInvoicePdfUrl } from '@/features/billing/useTenantInvoices';
-import { fetchWithTimeout } from '@/hooks/useApi';
-import { BASE_URL } from '@/config';
+import { useTenantInvoices, usePayTenantInvoice } from '@/features/billing/useTenantInvoices';
 import { useMyRewardsQuery } from '@/features/rewards/useRewards';
 import type { PaymentEntity, TenantInvoice } from '@/types';
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -72,6 +67,11 @@ function getDueStatus(isPaid: boolean, dueDateStr?: string): { label: string; to
   return { label: 'Due soon', tone: 'info' };
 }
 
+/** Which Quick Pay tile is selected. Not the same thing as the payment MODE: "Pay Online"
+ *  and "Phone UPI" are both `ONLINE_PHONEPE`, they differ only in whether the UPI app is
+ *  launched for you or you type the reference yourself. */
+type QuickPayTile = 'ONLINE' | 'QR' | 'UPI_REF' | 'CASH';
+
 export function GuestPaymentsTab() {
   const dockScroll = useDockScroll();
   const guest = usePGowStore((s) => s.loggedInGuest);
@@ -88,7 +88,6 @@ export function GuestPaymentsTab() {
   // Invoices (server-side monthly invoices)
   const { data: invoices = [], isLoading: invoicesLoading } = useTenantInvoices(activePgId, activeMembership ?? undefined);
   const payInvoice = usePayTenantInvoice(activePgId);
-  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
 
   const [payMode, setPayMode] = useState<'ONLINE_PHONEPE' | 'SCAN_QR' | 'CASH_HANDOVER'>('ONLINE_PHONEPE');
@@ -98,6 +97,9 @@ export function GuestPaymentsTab() {
   const [showResidentCard, setShowResidentCard] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showPayForm, setShowPayForm] = useState(false);
+  // Which of the four tiles is lit. Derived from `payMode` before, and "Pay Online" and
+  // "Phone UPI" are the same mode — so picking one highlighted both.
+  const [activeTile, setActiveTile] = useState<QuickPayTile | null>(null);
 
   const ownerUpi = ownerForGuest?.upiId?.trim() ?? '';
   const hasUpi = ownerUpi.length > 0;
@@ -209,31 +211,6 @@ export function GuestPaymentsTab() {
     }
   };
 
-  const handleDownloadPdf = async (inv: TenantInvoice) => {
-    setDownloadingInvoiceId(inv.id);
-    try {
-      const pdfUrl = await fetchTenantInvoicePdfUrl(inv.id);
-      if (!pdfUrl) {
-        toast('error', 'PDF unavailable', 'The invoice PDF could not be generated.');
-        return;
-      }
-      const res = await fetchWithTimeout(pdfUrl.startsWith('http') ? pdfUrl : `${BASE_URL}${pdfUrl}`);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      try {
-        await Clipboard.setStringAsync(pdfUrl);
-        toast('success', 'PDF link copied', 'The invoice PDF URL has been copied. Open it in a browser to download.');
-      } catch {
-        toast('success', 'PDF ready', 'The invoice PDF is available; check your downloads.');
-      }
-    } catch (err: any) {
-      toast('error', 'PDF failed', err?.message ?? 'Please try again later.');
-    } finally {
-      setDownloadingInvoiceId(null);
-    }
-  };
-
   const handlePrimaryPayPress = () => {
     if (isBillPaid) return;
     // Stop at the entry point too, not just at submit — opening the form and filling in a
@@ -257,12 +234,64 @@ export function GuestPaymentsTab() {
     }
   };
 
-  const handleQuickPaySelect = (mode: 'ONLINE_PHONEPE' | 'SCAN_QR' | 'CASH_HANDOVER') => {
+  /**
+   * The four Quick Pay tiles.
+   *
+   * These looked completely dead once rent was paid, and the reason is two lines apart: this
+   * set `showPayForm` to true, and the form below renders under `showPayForm && !isBillPaid`.
+   * So on a settled account every tap set a flag that nothing read — no form, no message, no
+   * request. A resident tapping "Pay Online" and getting silence concludes the app is broken,
+   * or pays outside it where nothing is recorded.
+   *
+   * `autoLaunch` is what separates "Pay Online" from "Phone UPI". Both used to call this with
+   * the same mode and the same behaviour, so two of the four tiles were the same button drawn
+   * twice: Pay Online hands off to the UPI app, Phone UPI opens the form to enter a reference
+   * by hand, which is the only path when no UPI app is installed.
+   */
+  const handleQuickPaySelect = (
+    mode: 'ONLINE_PHONEPE' | 'SCAN_QR' | 'CASH_HANDOVER',
+    { autoLaunch = false, tile }: { autoLaunch?: boolean; tile?: QuickPayTile } = {},
+  ) => {
+    if (isBillPaid) {
+      toast('info', "You're all paid up", 'There is nothing due for this cycle right now.');
+      return;
+    }
     setPayMode(mode);
+    setActiveTile(tile ?? null);
     setShowPayForm(true);
-    if (mode === 'ONLINE_PHONEPE' && hasUpi) {
+    if (mode === 'ONLINE_PHONEPE' && autoLaunch && hasUpi) {
       handleUpiLaunch();
     }
+  };
+
+  /**
+   * RSN-03: the invoice "Receipt" button called `handleDownloadPdf`, and
+   * `GET /v1/billing/tenant-invoices/{id}/pdf` answers `{"url": null}` on purpose — the
+   * backend has no PDF rendering, and says so. So the button's only possible outcome was a
+   * "PDF unavailable" error.
+   *
+   * The app already has a real receipt: `PaymentReceiptDialog`, which the transactions list
+   * below opens. An invoice is one rent cycle, so its receipt is the verified payment for
+   * that cycle — shown in full, screenshot-able and shareable, without inventing a PDF
+   * pipeline. If nothing has been verified for that cycle there is genuinely no receipt yet,
+   * and saying so is better than an error about a file format.
+   */
+  const handleInvoiceReceipt = (inv: TenantInvoice) => {
+    // `monthYear` on a payment is the DISPLAY string ("September 2026"), not the `2026-09`
+    // period — `toPayment` runs it through `periodToMonthYear`. Comparing against the raw
+    // period matched nothing, so a paid invoice still reported "no receipt yet". Build the
+    // same display string from the invoice and compare like with like.
+    const invoiceMonth = periodToMonthYear(
+      `${inv.year}-${String(inv.month).padStart(2, '0')}-01`,
+    );
+    const paid = guestPayments.find(
+      (pay) => pay.monthYear === invoiceMonth && pay.status === 'VERIFIED',
+    );
+    if (paid) {
+      setSelectedReceipt(paid);
+      return;
+    }
+    toast('info', 'No receipt yet', 'A receipt appears here once a payment for this cycle is verified.');
   };
 
   return (
@@ -570,11 +599,11 @@ export function GuestPaymentsTab() {
 
         <Row gap={8} style={{ marginBottom: 14 }}>
           <AnimatedPress accessibilityRole="button"
-            onPress={() => handleQuickPaySelect('ONLINE_PHONEPE')}
-            style={[styles.qpCard, payMode === 'ONLINE_PHONEPE' && showPayForm && styles.qpCardActive]}
+            onPress={() => handleQuickPaySelect('ONLINE_PHONEPE', { autoLaunch: true, tile: 'ONLINE' })}
+            style={[styles.qpCard, activeTile === 'ONLINE' && showPayForm && styles.qpCardActive]}
           >
-            <View style={[styles.qpIconWrap, payMode === 'ONLINE_PHONEPE' && showPayForm && styles.qpIconWrapActive]}>
-              <Ionicons name="card-outline" size={18} color={payMode === 'ONLINE_PHONEPE' && showPayForm ? Colors.primary : Colors.primaryDark} />
+            <View style={[styles.qpIconWrap, activeTile === 'ONLINE' && showPayForm && styles.qpIconWrapActive]}>
+              <Ionicons name="card-outline" size={18} color={activeTile === 'ONLINE' && showPayForm ? Colors.primary : Colors.primaryDark} />
             </View>
             <Txt variant="meta" weight="600" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
               Pay Online
@@ -585,11 +614,11 @@ export function GuestPaymentsTab() {
           </AnimatedPress>
 
           <AnimatedPress accessibilityRole="button"
-            onPress={() => handleQuickPaySelect('SCAN_QR')}
-            style={[styles.qpCard, payMode === 'SCAN_QR' && showPayForm && styles.qpCardActive]}
+            onPress={() => handleQuickPaySelect('SCAN_QR', { tile: 'QR' })}
+            style={[styles.qpCard, activeTile === 'QR' && showPayForm && styles.qpCardActive]}
           >
-            <View style={[styles.qpIconWrap, payMode === 'SCAN_QR' && showPayForm && styles.qpIconWrapActive]}>
-              <Ionicons name="qr-code-outline" size={18} color={payMode === 'SCAN_QR' && showPayForm ? Colors.primary : Colors.primaryDark} />
+            <View style={[styles.qpIconWrap, activeTile === 'QR' && showPayForm && styles.qpIconWrapActive]}>
+              <Ionicons name="qr-code-outline" size={18} color={activeTile === 'QR' && showPayForm ? Colors.primary : Colors.primaryDark} />
             </View>
             <Txt variant="meta" weight="600" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
               Scan QR
@@ -600,11 +629,11 @@ export function GuestPaymentsTab() {
           </AnimatedPress>
 
           <AnimatedPress accessibilityRole="button"
-            onPress={() => handleQuickPaySelect('ONLINE_PHONEPE')}
-            style={[styles.qpCard, payMode === 'ONLINE_PHONEPE' && showPayForm && styles.qpCardActive]}
+            onPress={() => handleQuickPaySelect('ONLINE_PHONEPE', { tile: 'UPI_REF' })}
+            style={[styles.qpCard, activeTile === 'UPI_REF' && showPayForm && styles.qpCardActive]}
           >
-            <View style={[styles.qpIconWrap, payMode === 'ONLINE_PHONEPE' && showPayForm && styles.qpIconWrapActive]}>
-              <Ionicons name="phone-portrait-outline" size={18} color={payMode === 'ONLINE_PHONEPE' && showPayForm ? Colors.primary : Colors.primaryDark} />
+            <View style={[styles.qpIconWrap, activeTile === 'UPI_REF' && showPayForm && styles.qpIconWrapActive]}>
+              <Ionicons name="phone-portrait-outline" size={18} color={activeTile === 'UPI_REF' && showPayForm ? Colors.primary : Colors.primaryDark} />
             </View>
             <Txt variant="meta" weight="600" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
               Phone UPI
@@ -615,13 +644,13 @@ export function GuestPaymentsTab() {
           </AnimatedPress>
 
           <AnimatedPress accessibilityRole="button"
-            onPress={() => handleQuickPaySelect('CASH_HANDOVER')}
-            style={[styles.qpCard, payMode === 'CASH_HANDOVER' && showPayForm && styles.qpCardActive]}
+            onPress={() => handleQuickPaySelect('CASH_HANDOVER', { tile: 'CASH' })}
+            style={[styles.qpCard, activeTile === 'CASH' && showPayForm && styles.qpCardActive]}
           >
-            <View style={[styles.qpIconWrap, payMode === 'CASH_HANDOVER' && showPayForm && styles.qpIconWrapActive]}>
-              <Ionicons name="cash-outline" size={18} color={payMode === 'CASH_HANDOVER' && showPayForm ? Colors.primary : Colors.primaryDark} />
+            <View style={[styles.qpIconWrap, activeTile === 'CASH' && showPayForm && styles.qpIconWrapActive]}>
+              <Ionicons name="cash-outline" size={18} color={activeTile === 'CASH' && showPayForm ? Colors.primary : Colors.primaryDark} />
             </View>
-            <Txt variant="meta" weight="600" color={Colors.textPrimary} align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+            <Txt variant="meta" weight="600" color={Colors.textPrimary} align="center" numberOfLines={2} style={{ marginTop: 8 }}>
               Cash Handover
             </Txt>
             <Txt size={9} color={Colors.textSecondary} align="center" numberOfLines={1} style={{ marginTop: 2 }}>
@@ -632,7 +661,7 @@ export function GuestPaymentsTab() {
 
         {/* ── 4. INVOICES SECTION ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
-          <Txt variant="sectionTitle" color={Colors.textPrimary}>Invoices</Txt>
+          <Txt variant="sectionTitle" numberOfLines={1} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>Invoices</Txt>
           <AnimatedPress accessibilityRole="button" onPress={() => toast('info', 'Not Available Yet', 'A full invoice list is coming soon — every invoice you have is already shown above.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
@@ -698,8 +727,7 @@ export function GuestPaymentsTab() {
                     )}
                     <AnimatedPress accessibilityRole="button"
                       style={styles.invReceiptBtn}
-                      onPress={() => handleDownloadPdf(inv)}
-                      disabled={downloadingInvoiceId === inv.id}
+                      onPress={() => handleInvoiceReceipt(inv)}
                     >
                       <Ionicons name="document-text-outline" size={13} color={Colors.primary} />
                       <Txt variant="meta" weight="600" color={Colors.primary} style={{ marginLeft: 4 }}>Receipt</Txt>
@@ -713,7 +741,7 @@ export function GuestPaymentsTab() {
 
         {/* ── 5. RECENT TRANSACTIONS SECTION ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
-          <Txt variant="sectionTitle" color={Colors.textPrimary}>Recent Transactions</Txt>
+          <Txt variant="sectionTitle" numberOfLines={1} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>Recent Transactions</Txt>
           <AnimatedPress accessibilityRole="button" onPress={() => toast('info', 'Not Available Yet', 'A full transaction history is coming soon — only the 6 most recent are shown below.')}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
