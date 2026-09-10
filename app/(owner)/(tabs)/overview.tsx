@@ -18,12 +18,9 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Pressable,
   Linking,
   Text,
-  LayoutAnimation,
-  Platform,
-  UIManager } from 'react-native';
+  LayoutAnimation } from 'react-native';
 
 // UIManager.setLayoutAnimationEnabledExperimental is a no-op in New Architecture
 import { router } from 'expo-router';
@@ -136,9 +133,13 @@ export default function OwnerOverviewTab() {
 
   // Dynamic calculations
   const occupiedCount = guests.length;
-  const capacity = owner?.totalBeds ?? 60;
+  // `?? 60` and a `: 85` occupancy fallback used to sit here. Both printed a confident,
+  // specific, invented number on the dashboard whenever the property's real bed count
+  // hadn't loaded — 85% occupancy for a PG nobody had measured. Unknown capacity now
+  // reads as 0/— rather than as a plausible-looking figure.
+  const capacity = owner?.totalBeds ?? 0;
   const availableCount = Math.max(0, capacity - occupiedCount);
-  const occupancyPercent = capacity > 0 ? Math.round((occupiedCount / capacity) * 100) : 85;
+  const occupancyPercent = capacity > 0 ? Math.round((occupiedCount / capacity) * 100) : 0;
 
   const overdueCount = guests.filter(g => !g.isBillPaid).length;
   const overdueAmount = guests

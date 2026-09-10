@@ -6,7 +6,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, ScrollView, StyleSheet, Image,
-  RefreshControl, Dimensions } from 'react-native';
+  RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -30,7 +30,6 @@ import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 import { AnimatedPress, Card, Col, Row, Sheet, Spacer, StatusChip, Txt, type StatusTone } from '@/components/ui';
 
-const { width: SW } = Dimensions.get('window');
 
 const MEAL_PREF_KEY = '@pgow/meal_preferences';
 const CUTOFF_HOURS: Record<'breakfast' | 'lunch' | 'dinner', number> = {

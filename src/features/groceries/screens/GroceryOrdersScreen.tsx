@@ -1,9 +1,8 @@
 import { SupplyOrderSummary } from '@/types';
-import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, FlatList, ActivityIndicator } from 'react-native';
 
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSupplyOrdersQuery } from '../useSupplyOrders';
 import { useAuthStore } from '@/store/authStore';
@@ -14,7 +13,6 @@ import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, ErrorState, ListRow, Txt, toneFor } from '@/components/ui';
 
 export function GroceryOrdersScreen() {
-  const insets = useSafeAreaInsets();
   const logout = usePGowStore((s) => s.logout);
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: ordersData, isLoading, error, refetch } = useSupplyOrdersQuery(activePgId);

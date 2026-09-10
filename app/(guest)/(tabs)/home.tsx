@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   View, StyleSheet, Alert, ScrollView, RefreshControl,
-  Image, Dimensions } from 'react-native';
+  Image, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -41,7 +41,6 @@ import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 import { useLaundryStore } from '@/features/laundry/store/useLaundryStore';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CUTOFF_HOURS: Record<string, number> = { BREAKFAST: 10, LUNCH: 14, DINNER: 21 };
 
 function getMealCutoffMs(m: MealNotificationEntity): number {
@@ -596,8 +595,16 @@ function SvcCard({
   title: string; desc: string; descColor?: string; image?: any; icon?: string;
   onPress: () => void; badge?: number;
 }) {
+  // `Dimensions.get('window')` used to be read once at module scope and baked into
+  // `styles.svcCard`. A value captured at import never updates, so on a fold, a rotation or
+  // a split-screen resize these two-column cards kept the width of whatever the screen was
+  // when the JS bundle first loaded — overflowing or leaving a gap. `useWindowDimensions`
+  // re-renders on every one of those.
+  const { width } = useWindowDimensions();
+  const cardWidth = (width - 32 - 10) / 2;
+
   return (
-    <AnimatedPress accessibilityRole="button" onPress={onPress} style={styles.svcCard}>
+    <AnimatedPress accessibilityRole="button" onPress={onPress} style={[styles.svcCard, { width: cardWidth }]}>
       {/* Image or icon */}
       {image ? (
         <Image source={image} style={styles.svcImage} resizeMode="cover" />
@@ -785,7 +792,6 @@ const styles = StyleSheet.create({
   // ── Quick services grid
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   svcCard: {
-    width: (SCREEN_WIDTH - 32 - 10) / 2,
     backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderWidth: 1, borderColor: '#D9EDED',

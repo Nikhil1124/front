@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +22,7 @@ export default function LaundryConfirmationScreen() {
         <Spacer size={insets.top + 20} />
 
         <View style={styles.successCircle}>
-          <Ionicons name="checkmark" size={60} color="#FFF" />
+          <Ionicons name="checkmark" size={60} color={Colors.textInverse} />
         </View>
 
         <Spacer size={24} />
@@ -101,16 +100,16 @@ export default function LaundryConfirmationScreen() {
         <Btn 
           onPress={() => router.replace('/laundry/tracking')}
           containerColor={Colors.primary}
-          textColor="#FFF"
+          textColor={Colors.surface}
           borderRadius={Radii.control}
           height={50}
         >
-          <Txt variant="button" color="#FFF">Track Laundry</Txt>
+          <Txt variant="button" color={Colors.textInverse}>Track Laundry</Txt>
         </Btn>
         <Spacer size={12} />
         <Btn 
           onPress={() => router.replace('/laundry/order-details')}
-          containerColor="#FFF"
+          containerColor={Colors.surface}
           textColor={Colors.textPrimary}
           borderRadius={Radii.control}
           height={50}
@@ -126,23 +125,23 @@ export default function LaundryConfirmationScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
   
-  successCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', shadowColor: Colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 },
+  successCircle: { width: 100, height: 100, borderRadius: Radii.pill, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', shadowColor: Colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 },
   title: { fontSize: 26, fontWeight: '800', color: Colors.primaryDark, textAlign: 'center' },
   subtitle: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginTop: 8 },
   
-  detailsCard: { backgroundColor: '#FFF', borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle },
+  detailsCard: { backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle },
   detailRow: { padding: 16 },
-  iconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EBF4EC', alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 36, height: 36, borderRadius: Radii.card, backgroundColor: '#EBF4EC', alignItems: 'center', justifyContent: 'center' },
   detailLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
   detailValue: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginTop: 2 },
   divider: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 64 },
   
-  summaryCard: { backgroundColor: '#FFF', borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
+  summaryCard: { backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
   summaryTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   summaryItem: { fontSize: 14, color: Colors.textSecondary },
-  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: 1 },
+  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: Radii.badge },
   summaryTotalLabel: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   summaryTotalValue: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle },
 });

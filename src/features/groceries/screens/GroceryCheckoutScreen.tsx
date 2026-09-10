@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { StyleSheet, View, TouchableOpacity, Image, Alert } from 'react-native';
+import { StyleSheet, View, Image, Alert } from 'react-native';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,16 +18,13 @@ interface CheckoutSlot {
   feeText: string;
 }
 
-// Delivery is free across every slot for now — see GroceryCartScreen's matching notice.
-// When real pricing comes from the area-manager/warehouse portal, this table (and the
-// per-slot fee it carries) is what should start reading from that instead of a constant.
-const CHECKOUT_SLOTS: CheckoutSlot[] = [
-  { id: '1', day: 'Today', badge: 'FASTEST', window: 'Express • 15–25 min', fee: 0, feeText: 'FREE' },
-  { id: '2', day: 'Today', badge: 'FREE', window: '4:00 PM – 5:00 PM', fee: 0, feeText: 'FREE' },
-  { id: '3', day: 'Today', badge: 'FREE', window: '6:00 PM – 7:00 PM', fee: 0, feeText: 'FREE' },
-  { id: '4', day: 'Tomorrow', badge: 'FREE', window: '9:00 AM – 10:00 AM', fee: 0, feeText: 'FREE' },
-  { id: '5', day: 'Tomorrow', badge: 'FREE', window: '2:00 PM – 3:00 PM', fee: 0, feeText: 'FREE' },
-];
+// There used to be a `CHECKOUT_SLOTS` constant here: five invented delivery windows,
+// including an "Express • 15–25 min" option that corresponds to nothing the delivery-slot
+// system can actually promise. It rendered whenever the real slot list was empty or still
+// loading — indistinguishable from live slots — and its ids were never sent to the server,
+// so picking one silently dropped the choice. Slots now come only from
+// `GET /v1/supply/delivery-slots/applicable`; when ops has configured none for this area,
+// the section says so instead of making some up.
 
 /**
  * Who may pay how, mirroring the server's own matrix (`ordering._METHODS_BY_BILLED_TO`).
@@ -77,7 +74,9 @@ export function GroceryCheckoutScreen() {
   const idempotencyKey = useRef(`ord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
 
   const [fulfillmentMode, setFulfillmentMode] = useState<'delivery' | 'pickup'>('delivery');
-  const [selectedSlotId, setSelectedSlotId] = useState<string>('1');
+  // No default: '1' used to point at the first invented fallback slot. The effect below
+  // selects the first REAL slot once they load, and leaves this empty if there are none.
+  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
   const [driverNote, setDriverNote] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cod');
 
@@ -99,21 +98,18 @@ export function GroceryCheckoutScreen() {
   const targetPgId = activePgId || owner?.id;
   const { data: realSlots } = useApplicableDeliverySlotsQuery(targetPgId);
 
-  // Real backend delivery slots when available, with graceful fallback
-  const slotsList = useMemo(() => {
-    if (realSlots && realSlots.length > 0) {
-      return realSlots.map((s) => ({
+  const slotsList = useMemo<CheckoutSlot[]>(
+    () =>
+      (realSlots ?? []).map((s) => ({
         id: s.id,
-        isReal: true,
         day: 'Delivery Window',
         badge: s.scope_type === 'global' ? 'STANDARD' : 'AREA',
         window: `${s.label} (${s.start_time.slice(0, 5)} – ${s.end_time.slice(0, 5)})`,
         fee: 0,
         feeText: 'FREE',
-      }));
-    }
-    return CHECKOUT_SLOTS.map((s) => ({ ...s, isReal: false }));
-  }, [realSlots]);
+      })),
+    [realSlots]
+  );
 
   useEffect(() => {
     if (slotsList.length > 0 && !slotsList.some((s) => s.id === selectedSlotId)) {
@@ -121,12 +117,15 @@ export function GroceryCheckoutScreen() {
     }
   }, [slotsList, selectedSlotId]);
 
-  const selectedSlot = useMemo(() => {
-    return slotsList.find((s) => s.id === selectedSlotId) || slotsList[0];
-  }, [slotsList, selectedSlotId]);
+  // May be undefined: ops can have zero slots configured for this area. Everything below
+  // has to tolerate that rather than assuming a fallback row exists to read `.fee` off.
+  const selectedSlot = useMemo(
+    () => slotsList.find((s) => s.id === selectedSlotId) ?? slotsList[0],
+    [slotsList, selectedSlotId]
+  );
 
   const subtotal = getCartTotal();
-  const deliveryFee = fulfillmentMode === 'pickup' ? 0 : selectedSlot.fee;
+  const deliveryFee = fulfillmentMode === 'pickup' ? 0 : (selectedSlot?.fee ?? 0);
   // GST is inside `subtotal`, not added to it — supply_items.price is tax-inclusive and the
   // server splits it the same way (see getBillEstimate). Delivery fee is the only addition —
   // there used to be a flat ₹10 "platform fee" and a delivery-partner tip selector here too,
@@ -160,13 +159,16 @@ export function GroceryCheckoutScreen() {
     }
 
     try {
-      const isRealSlot = selectedSlot && (selectedSlot as any).isReal;
-      const slotLine = `Slot: ${selectedSlot.window}`;
+      // Every slot in the list is now a real one from the server, so its id always goes
+      // with the order — the server re-validates it (active, and belonging to this PG's
+      // area) and snapshots the window onto the order.
+      const slotLine = selectedSlot ? `Slot: ${selectedSlot.window}` : '';
+      const note = [slotLine, driverNote].filter(Boolean).join(' — ');
       const order = await createOrderMutation.mutateAsync({
         pg_id: targetPgId,
         payment_method: paymentMethod as 'card' | 'upi' | 'credit' | 'cod',
-        delivery_slot_id: isRealSlot ? selectedSlot.id : undefined,
-        delivery_note: driverNote ? `${slotLine} — ${driverNote}` : slotLine,
+        delivery_slot_id: selectedSlot?.id,
+        delivery_note: note || undefined,
         items: items.map((i) => ({
           item_id: i.productId,
           quantity: i.quantity })),
@@ -240,6 +242,13 @@ export function GroceryCheckoutScreen() {
           {fulfillmentMode === 'delivery' ? (
             <>
               <Txt maxFontSizeMultiplier={1.3} style={styles.slotListLabel}>Select delivery time</Txt>
+
+              {slotsList.length === 0 && (
+                <Txt maxFontSizeMultiplier={1.3} style={styles.slotEmptyText}>
+                  No delivery windows are set up for your area yet. You can still place this
+                  order — the warehouse will schedule it and confirm the time with you.
+                </Txt>
+              )}
 
               {/* Slots list */}
               <View style={styles.slotList}>
@@ -575,6 +584,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textSecondary,
     marginBottom: 8 },
+  slotEmptyText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: Colors.textSecondary,
+    paddingHorizontal: 4,
+    paddingBottom: 8,
+  },
   slotList: {
     gap: 8 },
   slotRow: {

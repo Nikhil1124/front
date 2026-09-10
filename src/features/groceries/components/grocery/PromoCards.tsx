@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
-import { GroceryColors, Radii } from '@/theme';
+import { GroceryColors, Radii, Colors } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 interface PromoCard {
@@ -29,7 +29,7 @@ const PROMO_CARDS: PromoCard[] = [
     subtitle: 'Stock up & save',
     badge: 'UP TO 35% OFF',
     bgColor: '#FFF8E1', // Lighter yellow
-    badgeColor: '#F59E0B', // Amber
+    badgeColor: Colors.warning, // Amber
     image: require('../../../../../assets/productimages/cat_masala_nobg.png'),
   },
   {
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   card: {
     width: 140, // slightly wider
     height: 160,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     paddingTop: 14,
     paddingHorizontal: 12,
     position: 'relative',

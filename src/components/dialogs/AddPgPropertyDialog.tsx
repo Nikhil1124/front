@@ -2,7 +2,7 @@
  * AddPgPropertyDialog — port of Kotlin `AddPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable, ScrollView, KeyboardAvoidingView, Dimensions } from 'react-native';
+import { Modal, View, StyleSheet, Alert } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -12,10 +12,8 @@ import type { PickedLocation } from '@/features/places/pendingLocation';
 import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { FormScroll } from '@/components/ui/FormScroll';
-import { Btn, Card, Col, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
+import { Btn, OutlinedBtn, Row, Sheet, Txt } from '@/components/ui';
 
-const SCREEN_H = Dimensions.get('window').height;
 
 
 interface Props {
@@ -26,19 +24,26 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
   const createPG = usePGowStore((s) => s.createPGProperty);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const [totalBeds, setTotalBeds] = useState('36');
+  // Both of these used to ship a prefilled value — '36' beds and a '1234' manager PIN.
+  // Neither is a safe thing to accept by default: the bed count drives the property's
+  // credit limit and billing, and a PIN nobody chose is a PIN everybody can guess.
+  const [totalBeds, setTotalBeds] = useState('');
   const [mgrName, setMgrName] = useState('');
   const [mgrPhone, setMgrPhone] = useState('');
-  const [mgrPin, setMgrPin] = useState('1234');
+  const [mgrPin, setMgrPin] = useState('');
   const [location, setLocation] = useState<PickedLocation | null>(null);
   const [picking, setPicking] = useState(false);
   const [nameError, setNameError] = useState<string | undefined>();
   const [addressError, setAddressError] = useState<string | undefined>();
+  const [bedsError, setBedsError] = useState<string | undefined>();
 
   const handleSave = async () => {
-    if (!name.trim() || !address.trim()) {
+    const beds = parseInt(totalBeds, 10);
+    const bedsInvalid = !Number.isFinite(beds) || beds <= 0;
+    if (!name.trim() || !address.trim() || bedsInvalid) {
       setNameError(name.trim() ? undefined : 'Name the property');
       setAddressError(address.trim() ? undefined : 'Enter the property address');
+      setBedsError(bedsInvalid ? 'Enter how many beds this PG has' : undefined);
       return;
     }
     if (!location) {
@@ -48,7 +53,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
     // No UPI field on this form — leave it unset rather than fabricating a handle that would
     // get persisted as this property's real payment account. Configure it via UPI Settings.
     const result = await createPG(
-      name, address, parseInt(totalBeds, 10) || 30,
+      name, address, beds,
       mgrName, mgrPhone, mgrPin, '', location,
     );
     if (result.ok) {
@@ -63,6 +68,7 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
     return (
       <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
         <LocationPicker
+          onCancel={() => setPicking(false)}
           initial={location}
           onConfirm={(picked) => {
             setLocation(picked);
@@ -132,8 +138,13 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
 
         <OutlinedTextField
           label="Total Bed Capacity *"
+          placeholder="e.g. 24"
           value={totalBeds}
-          onChangeText={setTotalBeds}
+          onChangeText={(v) => {
+            setTotalBeds(v.replace(/\D/g, ''));
+            if (bedsError) setBedsError(undefined);
+          }}
+          error={bedsError}
           keyboardType="number-pad"
           containerColor={Colors.surfaceMuted}
         />
@@ -162,8 +173,9 @@ export function AddPgPropertyDialog({ onDismiss }: Props) {
             />
             <OutlinedTextField
               label="Login PIN"
+              placeholder="4 digits"
               value={mgrPin}
-              onChangeText={setMgrPin}
+              onChangeText={(v) => setMgrPin(v.replace(/\D/g, '').slice(0, 4))}
               keyboardType="number-pad"
               containerColor={Colors.surface}
               style={{ flex: 1 }}

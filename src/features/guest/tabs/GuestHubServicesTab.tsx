@@ -2,8 +2,7 @@
  * GuestHubServicesTab — Redesigned Services & Marketplace tab.
  * Visual System: Unified Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
  */
-import { useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, RefreshControl, Image } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Palette, Radii } from '@/theme';
@@ -108,32 +107,30 @@ export function GuestHubServicesTab() {
           <HubServiceCard
             title="GROCERIES"
             desc="Essentials delivered to room"
-            imageUrl="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop"
-            statusText="Ready"
+            icon="basket"
             buttonText="Order Now"
             onPress={() => router.push('/groceries')}
           />
           <HubServiceCard
             title="MAINTENANCE"
             desc="Book a technician"
-            imageUrl="https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=200&auto=format&fit=crop"
-            statusText="Repairs Due"
+            icon="construct"
             buttonText="Log Issue"
             onPress={() => router.push('/book-technician')}
           />
           <HubServiceCard
             title="DEEP CLEANING"
             desc="Room sanitation"
-            imageUrl="https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=200&auto=format&fit=crop"
-            statusText="Available"
+            icon="sparkles"
+            available={false}
             buttonText="Notify Me"
             onPress={() => Alert.alert('Not Available Yet', 'Deep cleaning bookings are coming soon.')}
           />
           <HubServiceCard
             title="WI-FI & INTERNET"
             desc="Bandwidth & plans"
-            imageUrl="https://images.unsplash.com/photo-1614064641913-6b5860dce39c?q=80&w=200&auto=format&fit=crop"
-            statusText="Active"
+            icon="wifi"
+            available={false}
             buttonText="Manage"
             onPress={() => Alert.alert('Not Available Yet', 'Wi-Fi plan management is coming soon.')}
           />
@@ -160,29 +157,49 @@ export function GuestHubServicesTab() {
   );
 }
 
+/**
+ * One marketplace tile.
+ *
+ * `imageUrl` used to be an Unsplash stock photo per card, fetched from an unrelated CDN on
+ * every render — four network round trips for decoration, four broken tiles offline, and
+ * generic imagery that showed a stranger's kitchen rather than anything of this PG's. The
+ * card takes an `icon` now: on-brand, instant, and it cannot 404.
+ *
+ * `available` exists because two of these tiles are not built yet. They used to read "Notify
+ * Me" and "Manage" — labels that promise an action — and then answer a tap with "coming
+ * soon". Saying so on the button is the smaller disappointment, and it stops someone tapping
+ * twice to check whether the first one registered.
+ */
 function HubServiceCard({
-  title, desc, imageUrl, statusText, buttonText, onPress }: {
-  title: string; desc: string; imageUrl: string; statusText: string; buttonText: string; onPress: () => void;
+  title, desc, icon, buttonText, onPress, available = true }: {
+  title: string; desc: string; icon: keyof typeof Ionicons.glyphMap;
+  buttonText: string; onPress: () => void; available?: boolean;
 }) {
   return (
     <AnimatedPress accessibilityRole="button"
+      accessibilityLabel={available ? `${title}. ${buttonText}` : `${title}. Coming soon`}
+      accessibilityState={{ disabled: !available }}
       onPress={() => { onPress(); }}
       style={styles.gridCard}
     >
       <Row justify="space-between" align="center">
-        <View style={[styles.gridIconWrap, { overflow: 'hidden' }]}>
-          <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        <View style={styles.gridIconWrap}>
+          <Ionicons name={icon} size={22} color={Colors.primary} />
         </View>
-        <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
+        {available ? (
+          <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
+        ) : null}
       </Row>
       <Spacer size={10} />
-      <Txt size={13} weight="700" color={Colors.textPrimary}>{title}</Txt>
-      <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2, height: 28 }} numberOfLines={2}>
+      <Txt size={13} weight="700" color={Colors.textPrimary} numberOfLines={2}>{title}</Txt>
+      <Txt size={10} color={Colors.textSecondary} style={{ marginTop: 2, minHeight: 28 }} numberOfLines={2}>
         {desc}
       </Txt>
       <Spacer size={8} />
-      <View style={styles.gridCardBtn}>
-        <Txt size={10} weight="700" color={Colors.textInverse}>{buttonText}</Txt>
+      <View style={[styles.gridCardBtn, !available && styles.gridCardBtnMuted]}>
+        <Txt size={10} weight="700" color={available ? Colors.textInverse : Colors.textMuted}>
+          {available ? buttonText : 'Coming soon'}
+        </Txt>
       </View>
     </AnimatedPress>
   );
@@ -211,4 +228,5 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borderSubtle, padding: 12,
     shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
   gridIconWrap: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: '#F6F1E9', alignItems: 'center', justifyContent: 'center' },
+  gridCardBtnMuted: { backgroundColor: Colors.surfaceMuted },
   gridCardBtn: { backgroundColor: Colors.primary, borderRadius: Radii.control, paddingVertical: 6, alignItems: 'center', justifyContent: 'center' } });

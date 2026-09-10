@@ -115,7 +115,7 @@ export function StaffManagementTab() {
   const [editPhone, setEditPhone] = useState('');
   const [editRole, setEditRole] = useState('Kitchen Staff');
   const [editShift, setEditShift] = useState('Day Shift (8 AM - 5 PM)');
-  const [editSalary, setEditSalary] = useState('15000');
+  const [editSalary, setEditSalary] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Override back navigation — this screen lives inside the tab navigator, not a stack,
@@ -168,12 +168,22 @@ export function StaffManagementTab() {
       return;
     }
 
+    // `?? 'kitchen_staff'` used to close this expression. A role label that isn't in the map
+    // — a renamed chip, a typo, a new option someone adds to the picker and forgets to map —
+    // silently created the person as kitchen staff instead. Role IS the permission set here,
+    // so that is a privilege decision made by a missing dictionary key. Refuse instead.
+    const mappedRole = REGISTER_ROLE_MAP[staffRoleInput];
+    if (!mappedRole) {
+      Alert.alert('Pick a role', `"${staffRoleInput}" isn't a role this property can assign.`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await addStaffMutation.mutateAsync({
         name: staffNameInput.trim(),
         phone: map.toE164(staffPhoneInput),
-        role: REGISTER_ROLE_MAP[staffRoleInput] ?? 'kitchen_staff',
+        role: mappedRole,
         pin: staffPinInput,
         monthly_salary: parseFloat(staffSalaryInput) || undefined });
       Alert.alert('Success', 'Staff member account registered successfully!');
@@ -181,7 +191,7 @@ export function StaffManagementTab() {
       set('staffPhoneInput', '');
       set('staffPinInput', '');
       set('staffShiftInput', 'Day Shift (8 AM - 5 PM)');
-      set('staffSalaryInput', '15000');
+      set('staffSalaryInput', '');
       setSubTab(1); // Go to directory
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred.';

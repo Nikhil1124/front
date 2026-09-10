@@ -1,18 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, StyleSheet, View } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
-import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { SupplyItem } from '@/types';
 import { Palette, Colors, Layout, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 export function GroceryWishlistScreen() {
-  const mode = useShoppingModeStore((s) => s.mode);
   const { items, toggleItem } = useWishlistStore();
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);

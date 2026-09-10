@@ -13,7 +13,7 @@
  * billing history, because "what am I on and what do I owe" is the question an owner returns
  * here to ask.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, Alert, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,7 +85,23 @@ export function OwnerSubscriptionScreen() {
   const reportPayment = useReportInvoicePayment(pgId);
 
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const [bedsCount, setBedsCount] = useState<number>(owner?.totalBeds ?? 30);
+  // Seeded from the property's real bed count — never from a placeholder. This is not just
+  // a display number: submitting a one-time plan writes it back with
+  // `updateProperty({ total_beds })` below. It used to default to 30 whenever `owner` had
+  // not loaded yet, so activating a plan on a cold screen could overwrite a 12-bed PG's
+  // stored capacity with 30 and bill for it. Hydrates once the property arrives, unless
+  // the owner has already adjusted it by hand.
+  const [bedsCount, setBedsCount] = useState<number>(owner?.totalBeds ?? 0);
+  const bedsTouched = useRef(false);
+
+  useEffect(() => {
+    if (!bedsTouched.current && owner?.totalBeds) setBedsCount(owner.totalBeds);
+  }, [owner?.totalBeds]);
+
+  const adjustBeds = (next: (c: number) => number) => {
+    bedsTouched.current = true;
+    setBedsCount(next);
+  };
 
   // Default to the first plan once they arrive, so the preview is never blank.
   useEffect(() => {
@@ -309,16 +325,16 @@ export function OwnerSubscriptionScreen() {
                     <>
                       <Spacer size={18} />
                       <Row gap={8}>
-                        <Btn onPress={() => setBedsCount((c) => (c > 10 ? c - 10 : c > 1 ? 1 : c))} containerColor={Colors.surfaceElevated} textColor={Colors.textPrimary} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                        <Btn onPress={() => adjustBeds((c) => (c > 10 ? c - 10 : c > 1 ? 1 : c))} containerColor={Colors.surfaceElevated} textColor={Colors.textPrimary} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
                           <Txt size={13} weight="700" color={Colors.textPrimary}>-10</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => (c > 1 ? c - 1 : c))} containerColor={Colors.surfaceElevated} textColor={Colors.textPrimary} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                        <Btn onPress={() => adjustBeds((c) => (c > 1 ? c - 1 : c))} containerColor={Colors.surfaceElevated} textColor={Colors.textPrimary} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
                           <Txt size={13} weight="700" color={Colors.textPrimary}>-1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 1)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                        <Btn onPress={() => adjustBeds((c) => c + 1)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
                           <Txt size={13} weight="700" color={Colors.textInverse}>+1</Txt>
                         </Btn>
-                        <Btn onPress={() => setBedsCount((c) => c + 10)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
+                        <Btn onPress={() => adjustBeds((c) => c + 10)} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={40} style={{ flex: 1 }}>
                           <Txt size={13} weight="700" color={Colors.textInverse}>+10</Txt>
                         </Btn>
                       </Row>

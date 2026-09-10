@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View, StyleSheet, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import {
-  Card, Txt, Spacer, Col, Row, Btn, IconBtn, OutlinedBtn, StatusChip, MetricDeck,
+  Card, Txt, Spacer, Col, Row, Btn, IconBtn, ListRow, OutlinedBtn, StatusChip, MetricDeck,
   type DeckCardData, AnimatedPress } from '@/components/ui';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -53,6 +53,12 @@ function ChefEatersView() {
   // actually just unanswered.
   const awayCount = mealResponses.filter((r) => r.choice === null && r.is_away).length;
   const noResponse = Math.max(0, guests.length - reqCount - notReqCount - awayCount);
+  // Straight from the roster rows rather than the subtraction above: `noResponse` is a count
+  // derived from the guest list, which cannot name anybody. Away residents sort last — they
+  // are the ones the chef least needs to chase.
+  const pendingReplies = mealResponses
+    .filter((r) => r.choice === null)
+    .sort((a, b) => Number(a.is_away) - Number(b.is_away) || a.name.localeCompare(b.name));
   const totalGuests = guests.length;
   const pct = (n: number) => (totalGuests > 0 ? Math.round((n / totalGuests) * 1000) / 10 : 0);
 
@@ -101,6 +107,44 @@ function ChefEatersView() {
           <Spacer size={16} />
 
           <MetricDeck cards={deckCards} sidePadding={18} testID="eaters_deck" />
+
+          {/* Who is still to answer.
+              The deck's "No reply" card gives the chef a number; this gives them the names,
+              which is the part they can act on — one message to four people beats guessing a
+              headcount. `GET /v1/meals/{id}/roster` already returns a row per resident with
+              `choice: null` for anyone who has not answered (its own docstring calls those
+              rows "the point of this endpoint"), and this screen was already fetching it for
+              the counts — so nothing new is requested, the rows were simply never shown.
+              `is_away` is kept visible: a chef reading an unanswered row needs to tell
+              "away, don't wait on them" apart from "hasn't answered yet". */}
+          {pendingReplies.length > 0 && (
+            <>
+              <Spacer size={24} />
+              <Row justify="space-between" align="center">
+                <Txt size={15} weight="700" color={Colors.textPrimary}>Yet to reply</Txt>
+                <Txt size={13} weight="700" color={Colors.textMuted}>
+                  {pendingReplies.length} of {mealResponses.length}
+                </Txt>
+              </Row>
+              <Spacer size={10} />
+              <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[0, 0]}>
+                {pendingReplies.map((r, i) => (
+                  <ListRow
+                    key={r.membership_id}
+                    title={r.name}
+                    meta={[r.room_no ? `Room ${r.room_no}` : null, r.is_away ? 'Away' : null]
+                      .filter(Boolean)
+                      .join(' · ') || 'No room assigned'}
+                    status={r.is_away
+                      ? { label: 'Away', tone: 'info' as const }
+                      : { label: 'No reply', tone: 'warn' as const }}
+                    first={i === 0}
+                    last={i === pendingReplies.length - 1}
+                  />
+                ))}
+              </Card>
+            </>
+          )}
 
           <Spacer size={28} />
           <AnimatedPress accessibilityRole="button" onPress={() => router.push('/rsvp-trends')}>
@@ -156,7 +200,7 @@ function DeliveryDashboardRoute() {
     realTrips.find((t) => t.status === 'active' || t.status === 'planned') ?? realTrips[0] ?? null;
 
   const route = activeTrip
-    ? activeTrip.stops.map((stop, i) => {
+    ? activeTrip.stops.map((stop, _i) => {
         // Map stop statuses: first pending stop in an active trip is 'Current'
         let mappedStatus = 'Pending';
         if (stop.status === 'completed' || stop.status === 'delivered') {

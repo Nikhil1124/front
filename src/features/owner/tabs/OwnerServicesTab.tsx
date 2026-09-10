@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Image } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -22,7 +22,6 @@ const SURFACE = Colors.surface;      // Pure White
 const CHARCOAL = Colors.textPrimary; // Obsidian Navy
 const MUTED = Colors.textMuted;      // Ocean Muted
 const BORDER = Colors.borderSubtle;  // Ice Subtle Border
-const LIGHT_INDIGO = Colors.surfaceElevated; // Soft Ice Cyan Tint 
 
 type ServiceItem = {
   id: string;
@@ -30,42 +29,41 @@ type ServiceItem = {
   desc: string;
   icon: any;
   type: 'POPULAR' | 'REPAIR' | 'ESSENTIAL' | 'CLEANING';
+  /** Indicative visit/inspection fee. Not a quote for the job — see `renderServiceCard`. */
   cost: number;
-  originalCost: number;
   problems: string[];
   includes: string[];
-  imageUrl: string;
 };
 
 const SERVICES: ServiceItem[] = [
   // Popular
-  { id: 'plumbing', name: 'Plumbing', desc: 'Tap, pipe, sink & bathroom issues', icon: 'water', type: 'POPULAR', cost: 30, originalCost: 125, problems: ['Leaking tap', 'Blocked sink', 'Flush not working'], includes: ['Technician inspection', 'Basic repair'], imageUrl: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?q=80&w=200&auto=format&fit=crop' },
-  { id: 'wifi', name: 'Wi-Fi Repairs', desc: 'Internet, router & connectivity issues', icon: 'wifi', type: 'POPULAR', cost: 30, originalCost: 125, problems: ['No internet', 'Router not turning on', 'Slow speed'], includes: ['Technician inspection', 'Configuration fixing'], imageUrl: 'https://images.unsplash.com/photo-1614064641913-6b5860dce39c?q=80&w=200&auto=format&fit=crop' },
-  { id: 'electrical', name: 'Electrical', desc: 'Lights, switches, sockets & more', icon: 'flash', type: 'POPULAR', cost: 30, originalCost: 125, problems: ['Socket not working', 'Light flickering', 'MCB tripping'], includes: ['Technician inspection', 'Basic repair'], imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=200&auto=format&fit=crop' },
-  { id: 'atoz', name: 'A to Z Repairs', desc: "Anything broken? We'll fix it.", icon: 'construct', type: 'POPULAR', cost: 30, originalCost: 125, problems: ['General breakage', 'Unidentified issue'], includes: ['Expert diagnosis', 'Custom repair quote'], imageUrl: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=200&auto=format&fit=crop' },
+  { id: 'plumbing', name: 'Plumbing', desc: 'Tap, pipe, sink & bathroom issues', icon: 'water', type: 'POPULAR', cost: 30, problems: ['Leaking tap', 'Blocked sink', 'Flush not working'], includes: ['Technician inspection', 'Basic repair'] },
+  { id: 'wifi', name: 'Wi-Fi Repairs', desc: 'Internet, router & connectivity issues', icon: 'wifi', type: 'POPULAR', cost: 30, problems: ['No internet', 'Router not turning on', 'Slow speed'], includes: ['Technician inspection', 'Configuration fixing'] },
+  { id: 'electrical', name: 'Electrical', desc: 'Lights, switches, sockets & more', icon: 'flash', type: 'POPULAR', cost: 30, problems: ['Socket not working', 'Light flickering', 'MCB tripping'], includes: ['Technician inspection', 'Basic repair'] },
+  { id: 'atoz', name: 'A to Z Repairs', desc: "Anything broken? We'll fix it.", icon: 'construct', type: 'POPULAR', cost: 30, problems: ['General breakage', 'Unidentified issue'], includes: ['Expert diagnosis', 'Custom repair quote'] },
   
   // Repairs & Maintenance
-  { id: 'welding', name: 'Welding', desc: 'Gates, grills & metal work', icon: 'sparkles', type: 'REPAIR', cost: 30, originalCost: 125, problems: ['Grill broken', 'Gate hinge off'], includes: ['Inspection', 'Welding equipment'], imageUrl: 'https://images.unsplash.com/photo-1504913659239-6abcbf7db972?q=80&w=200&auto=format&fit=crop' },
-  { id: 'civil', name: 'Civil Repairs', desc: 'Walls, tiles, cracks & minor work', icon: 'business', type: 'REPAIR', cost: 30, originalCost: 125, problems: ['Tile broken', 'Wall crack'], includes: ['Inspection', 'Minor plastering'], imageUrl: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=200&auto=format&fit=crop' },
-  { id: 'painting', name: 'Painting', desc: 'Touch-ups & minor painting', icon: 'color-palette', type: 'REPAIR', cost: 30, originalCost: 125, problems: ['Wall peeling', 'Stains on wall'], includes: ['Inspection', 'Painting labor'], imageUrl: 'https://images.unsplash.com/photo-1562259929-b7e181d8d007?q=80&w=200&auto=format&fit=crop' },
-  { id: 'lock', name: 'Lock & Door', desc: 'Lock repair & door fixes', icon: 'lock-closed', type: 'REPAIR', cost: 30, originalCost: 125, problems: ['Key stuck', 'Lock jammed'], includes: ['Inspection', 'Lock adjustment'], imageUrl: 'https://images.unsplash.com/photo-1558025137-0b406e9cb1df?q=80&w=200&auto=format&fit=crop' },
-  { id: 'window', name: 'Window & Grill', desc: 'Windows, grills & sliding fixes', icon: 'grid', type: 'REPAIR', cost: 30, originalCost: 125, problems: ['Glass broken', 'Sliding jammed'], includes: ['Inspection', 'Track oiling'], imageUrl: 'https://images.unsplash.com/photo-1509644851169-2acc08aa25b5?q=80&w=200&auto=format&fit=crop' },
+  { id: 'welding', name: 'Welding', desc: 'Gates, grills & metal work', icon: 'sparkles', type: 'REPAIR', cost: 30, problems: ['Grill broken', 'Gate hinge off'], includes: ['Inspection', 'Welding equipment'] },
+  { id: 'civil', name: 'Civil Repairs', desc: 'Walls, tiles, cracks & minor work', icon: 'business', type: 'REPAIR', cost: 30, problems: ['Tile broken', 'Wall crack'], includes: ['Inspection', 'Minor plastering'] },
+  { id: 'painting', name: 'Painting', desc: 'Touch-ups & minor painting', icon: 'color-palette', type: 'REPAIR', cost: 30, problems: ['Wall peeling', 'Stains on wall'], includes: ['Inspection', 'Painting labor'] },
+  { id: 'lock', name: 'Lock & Door', desc: 'Lock repair & door fixes', icon: 'lock-closed', type: 'REPAIR', cost: 30, problems: ['Key stuck', 'Lock jammed'], includes: ['Inspection', 'Lock adjustment'] },
+  { id: 'window', name: 'Window & Grill', desc: 'Windows, grills & sliding fixes', icon: 'grid', type: 'REPAIR', cost: 30, problems: ['Glass broken', 'Sliding jammed'], includes: ['Inspection', 'Track oiling'] },
 
   // Essentials
-  { id: 'ac', name: 'AC Service', desc: 'AC repair & maintenance', icon: 'snow', type: 'ESSENTIAL', cost: 149, originalCost: 250, problems: ['Not cooling', 'Water leaking'], includes: ['Filter cleaning', 'Gas check'], imageUrl: 'https://images.unsplash.com/photo-1622116037803-f368ccba0cf6?q=80&w=200&auto=format&fit=crop' },
-  { id: 'geyser', name: 'Geyser Repair', desc: 'Geyser & water heater issues', icon: 'thermometer', type: 'ESSENTIAL', cost: 149, originalCost: 250, problems: ['Not heating', 'Water leaking'], includes: ['Inspection', 'Element check'], imageUrl: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?q=80&w=200&auto=format&fit=crop' },
-  { id: 'ro', name: 'RO / Purifier', desc: 'RO repair & maintenance', icon: 'water', type: 'ESSENTIAL', cost: 149, originalCost: 250, problems: ['Water flow slow', 'Bad taste'], includes: ['Inspection', 'Filter wash'], imageUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=200&auto=format&fit=crop' },
-  { id: 'washing', name: 'Washing Machine', desc: 'Machine repair & cleaning', icon: 'shirt', type: 'ESSENTIAL', cost: 149, originalCost: 250, problems: ['Not spinning', 'Water not draining'], includes: ['Inspection', 'Motor check'], imageUrl: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?q=80&w=200&auto=format&fit=crop' },
-  { id: 'bathroom', name: 'Bathroom', desc: 'Bathroom maintenance', icon: 'cut', type: 'ESSENTIAL', cost: 149, originalCost: 250, problems: ['Drain block', 'Shower head leak'], includes: ['Inspection', 'Unclogging'], imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=200&auto=format&fit=crop' },
-  { id: 'furniture', name: 'Furniture Repair', desc: 'Bed, chair & furniture fixes', icon: 'hammer', type: 'ESSENTIAL', cost: 149, originalCost: 250, problems: ['Bed squeaking', 'Chair wobble'], includes: ['Inspection', 'Glue/nail fixing'], imageUrl: 'https://images.unsplash.com/photo-1581539250439-c96689b516dd?q=80&w=200&auto=format&fit=crop' },
+  { id: 'ac', name: 'AC Service', desc: 'AC repair & maintenance', icon: 'snow', type: 'ESSENTIAL', cost: 149, problems: ['Not cooling', 'Water leaking'], includes: ['Filter cleaning', 'Gas check'] },
+  { id: 'geyser', name: 'Geyser Repair', desc: 'Geyser & water heater issues', icon: 'thermometer', type: 'ESSENTIAL', cost: 149, problems: ['Not heating', 'Water leaking'], includes: ['Inspection', 'Element check'] },
+  { id: 'ro', name: 'RO / Purifier', desc: 'RO repair & maintenance', icon: 'water', type: 'ESSENTIAL', cost: 149, problems: ['Water flow slow', 'Bad taste'], includes: ['Inspection', 'Filter wash'] },
+  { id: 'washing', name: 'Washing Machine', desc: 'Machine repair & cleaning', icon: 'shirt', type: 'ESSENTIAL', cost: 149, problems: ['Not spinning', 'Water not draining'], includes: ['Inspection', 'Motor check'] },
+  { id: 'bathroom', name: 'Bathroom', desc: 'Bathroom maintenance', icon: 'cut', type: 'ESSENTIAL', cost: 149, problems: ['Drain block', 'Shower head leak'], includes: ['Inspection', 'Unclogging'] },
+  { id: 'furniture', name: 'Furniture Repair', desc: 'Bed, chair & furniture fixes', icon: 'hammer', type: 'ESSENTIAL', cost: 149, problems: ['Bed squeaking', 'Chair wobble'], includes: ['Inspection', 'Glue/nail fixing'] },
   
   // Cleaning
-  { id: 'room_clean', name: 'Room Cleaning', desc: 'Basic room cleaning', icon: 'bed', type: 'CLEANING', cost: 30, originalCost: 125, problems: ['Dusty floor', 'Messy room'], includes: ['Sweeping', 'Mopping'], imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=200&auto=format&fit=crop' },
-  { id: 'bath_clean', name: 'Bathroom Cleaning', desc: 'Bathroom deep cleaning', icon: 'sparkles', type: 'CLEANING', cost: 30, originalCost: 125, problems: ['Dirty tiles', 'Hard water stains'], includes: ['Acid wash', 'Tile scrubbing'], imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=200&auto=format&fit=crop' },
-  { id: 'common_clean', name: 'Common Area', desc: 'Common areas cleaning', icon: 'home', type: 'CLEANING', cost: 30, originalCost: 125, problems: ['Dirty hallway', 'Staircase dust'], includes: ['Sweeping', 'Mopping'], imageUrl: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?q=80&w=200&auto=format&fit=crop' },
-  { id: 'waste', name: 'Waste Cleaning', desc: 'Garbage & waste management', icon: 'trash', type: 'CLEANING', cost: 30, originalCost: 125, problems: ['Trash full', 'Bad odor'], includes: ['Waste removal', 'Bin washing'], imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=200&auto=format&fit=crop' },
-  { id: 'deep_clean', name: 'Deep Cleaning', desc: 'Deep cleaning service', icon: 'star', type: 'CLEANING', cost: 30, originalCost: 125, problems: ['Moving in', 'Post-party'], includes: ['Full room wash', 'Bathroom descale'], imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=200&auto=format&fit=crop' },
-  { id: 'pest', name: 'Pest Control', desc: 'Pest & insect control', icon: 'bug', type: 'CLEANING', cost: 30, originalCost: 125, problems: ['Bed bugs', 'Cockroaches'], includes: ['Chemical spray', 'Gel baiting'], imageUrl: 'https://images.unsplash.com/photo-1616422285623-145749f1a04b?q=80&w=200&auto=format&fit=crop' },
+  { id: 'room_clean', name: 'Room Cleaning', desc: 'Basic room cleaning', icon: 'bed', type: 'CLEANING', cost: 30, problems: ['Dusty floor', 'Messy room'], includes: ['Sweeping', 'Mopping'] },
+  { id: 'bath_clean', name: 'Bathroom Cleaning', desc: 'Bathroom deep cleaning', icon: 'sparkles', type: 'CLEANING', cost: 30, problems: ['Dirty tiles', 'Hard water stains'], includes: ['Acid wash', 'Tile scrubbing'] },
+  { id: 'common_clean', name: 'Common Area', desc: 'Common areas cleaning', icon: 'home', type: 'CLEANING', cost: 30, problems: ['Dirty hallway', 'Staircase dust'], includes: ['Sweeping', 'Mopping'] },
+  { id: 'waste', name: 'Waste Cleaning', desc: 'Garbage & waste management', icon: 'trash', type: 'CLEANING', cost: 30, problems: ['Trash full', 'Bad odor'], includes: ['Waste removal', 'Bin washing'] },
+  { id: 'deep_clean', name: 'Deep Cleaning', desc: 'Deep cleaning service', icon: 'star', type: 'CLEANING', cost: 30, problems: ['Moving in', 'Post-party'], includes: ['Full room wash', 'Bathroom descale'] },
+  { id: 'pest', name: 'Pest Control', desc: 'Pest & insect control', icon: 'bug', type: 'CLEANING', cost: 30, problems: ['Bed bugs', 'Cockroaches'], includes: ['Chemical spray', 'Gel baiting'] },
 ];
 
 export function OwnerServicesTab() {
@@ -99,27 +97,42 @@ export function OwnerServicesTab() {
   const { data: subscriptions = [] } = useSubscriptionsQuery(activePgId ?? undefined);
   const setSubscriptionActive = useSetSubscriptionActiveMutation(activePgId ?? undefined);
 
+  /**
+   * One service tile.
+   *
+   * Three things changed here, and all three were the same underlying problem — the card was
+   * dressed as a storefront for a catalogue that does not exist:
+   *
+   *  1. The struck-through "original price" is gone. Fifteen unrelated services (plumbing,
+   *     Wi-Fi, welding, painting, room cleaning) all read "₹30, was ₹125" and six more all
+   *     read "₹149, was ₹250" — one invented discount, copied across the list. Worse than
+   *     decoration: `bookRepair(..., service.cost)` writes that number to the request as its
+   *     real `amount`, so a made-up price was being recorded against real work.
+   *  2. The remaining number is labelled "Visit fee" rather than shown as a bare price. Each
+   *     service's own `includes` says "Technician inspection" — these trades quote after
+   *     seeing the job, so presenting a total is the wrong promise to make.
+   *  3. The Unsplash stock photo is replaced by the service's own `icon`, which every entry
+   *     already carried and nothing used. That removes 21 external image fetches from an
+   *     unrelated CDN — each one a network round trip on render, and a broken tile whenever
+   *     it 404s or the resident is offline — for something on-brand that cannot fail.
+   */
   const renderServiceCard = (item: ServiceItem) => (
     <AnimatedPress accessibilityRole="button"
+      accessibilityLabel={`${item.name}. Visit fee ₹${item.cost}`}
       key={item.id}
       onPress={() => { setSelectedService(item); }}
       style={styles.serviceCard}
     >
       <View style={styles.serviceIconFrame}>
-        <Image source={{ uri: item.imageUrl }} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
-        <View style={styles.ratingBadge}>
-          <Ionicons name="star" size={9} color="#FFD700" />
-          <Txt maxFontSizeMultiplier={1.3} style={styles.ratingText}>4.9 (3.1k)</Txt>
-        </View>
+        <Ionicons name={item.icon} size={30} color={PRIMARY} />
         <View style={styles.addButton}>
           <Ionicons name="add" size={18} color={PRIMARY} />
         </View>
       </View>
-      <Txt maxFontSizeMultiplier={1.3} style={styles.serviceName} numberOfLines={1}>{item.name}</Txt>
-      <Row align="center" style={styles.priceRow}>
-        <Txt maxFontSizeMultiplier={1.3} style={styles.priceText}>₹{item.cost}</Txt>
-        <Txt maxFontSizeMultiplier={1.3} style={styles.originalPriceText}>₹{item.originalCost}</Txt>
-      </Row>
+      {/* Two lines, not one: "Washing Machine" and "Bathroom Cleaning" both truncated at the
+          card's 31% width, and at a large font scale most of them did. */}
+      <Txt maxFontSizeMultiplier={1.3} style={styles.serviceName} numberOfLines={2}>{item.name}</Txt>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.visitFeeText}>₹{item.cost} visit fee</Txt>
     </AnimatedPress>
   );
 
@@ -464,17 +477,13 @@ const styles = StyleSheet.create({
   gridContainer: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', rowGap: 24, columnGap: '3%' },
   
   serviceCard: { width: '31%', backgroundColor: 'transparent' },
-  serviceIconFrame: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, marginBottom: 12, zIndex: 1 },
+  serviceIconFrame: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceMuted, borderRadius: Radii.control, marginBottom: 12, zIndex: 1 },
   
-  ratingBadge: { position: 'absolute', top: 6, right: 6, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4, gap: 2 },
-  ratingText: { fontSize: 8, color: MUTED, fontWeight: '700' },
-  addButton: { position: 'absolute', bottom: -12, right: 12, width: 28, height: 28, borderRadius: 8, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, borderWidth: 1, borderColor: BORDER },
+  addButton: { position: 'absolute', bottom: -12, right: 12, width: 28, height: 28, borderRadius: Radii.badge, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, borderWidth: 1, borderColor: BORDER },
 
   serviceName: { fontSize: 12, fontWeight: '700', color: CHARCOAL, marginBottom: 2 },
   serviceDesc: { fontSize: 11, color: MUTED, lineHeight: 14, marginTop: 2, height: 28 },
-  priceRow: { gap: 6 },
-  priceText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
-  originalPriceText: { fontSize: 11, color: MUTED, textDecorationLine: 'line-through' },
+  visitFeeText: { fontSize: 11, fontWeight: '600', color: MUTED, marginTop: 2 },
   
   fallbackBanner: { flexDirection: 'row', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 16, marginHorizontal: 20, marginTop: 24, borderWidth: 1, borderColor: '#D1EAE0' },
   fallbackIconWrap: { position: 'relative' },

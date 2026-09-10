@@ -53,6 +53,26 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
  *  closer to "considered" than "playful", and a bouncy button reads as the latter. */
 const PRESS_SPRING = { duration: 220, dampingRatio: 0.9 } as const;
 
+/**
+ * How long a finger must stay down before this counts as a press rather than the start of a
+ * scroll.
+ *
+ * `Pressable` calls `onPressIn` on touch-DOWN with no delay of its own — unlike the
+ * `TouchableOpacity` this component replaced, which shipped `delayPressIn={130}` precisely
+ * because a list is mostly made of tappable rows and almost every scroll begins with a
+ * finger landing on one. Without a delay the sequence on every single scroll gesture is:
+ * press-in fires, a 220ms spring starts shrinking the card, the ScrollView then steals the
+ * touch responder back, the press cancels and the card springs out again. That is the
+ * stutter-then-catch-up that makes scrolling feel like it "sometimes lags" — the list is
+ * fine, the touch was briefly owned by the wrong view.
+ *
+ * This delays only the visual press-in. `onPress` still fires on release exactly as before,
+ * so a real tap is not slowed down; 90ms is below the ~100ms threshold where a response
+ * starts to read as delayed, and comfortably longer than the few milliseconds it takes a
+ * scroll to begin moving.
+ */
+const PRESS_IN_DELAY_MS = 90;
+
 export interface AnimatedPressProps extends Omit<PressableProps, 'style'> {
   /** Scale to compress to when pressed. 0.97 ≈ gentle (spec), 0.90 ≈ emphatic. */
   scale?: number;
@@ -76,6 +96,7 @@ export function AnimatedPress({
   accessibilityRole = 'button',
   onPressIn,
   onPressOut,
+  unstable_pressDelay = PRESS_IN_DELAY_MS,
   ...rest
 }: AnimatedPressProps) {
   // 0 = at rest, 1 = fully pressed. A single shared value driving a linear blend between 1.0
@@ -89,6 +110,7 @@ export function AnimatedPress({
   return (
     <AnimatedPressable
       accessibilityRole={accessibilityRole}
+      unstable_pressDelay={unstable_pressDelay}
       onPressIn={(e: GestureResponderEvent) => {
         pressProgress.value = withSpring(1, PRESS_SPRING);
         onPressIn?.(e);

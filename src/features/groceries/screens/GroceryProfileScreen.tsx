@@ -1,4 +1,4 @@
-import { StyleSheet, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, Alert } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -6,7 +6,7 @@ import { Palette, Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
-import { AnimatedPress, Col, Row, Txt } from '@/components/ui';
+import { AnimatedPress, Txt } from '@/components/ui';
 
 const MENU_ITEMS = [
   { id: '1', title: 'Manage Addresses', icon: 'location-outline' as const },

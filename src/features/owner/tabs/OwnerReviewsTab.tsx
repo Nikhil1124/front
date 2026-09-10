@@ -11,16 +11,10 @@ const CHARCOAL = Colors.textPrimary; // Obsidian Navy
 const MUTED = Colors.textMuted;      // Ocean Muted
 const BORDER = Colors.borderSubtle;  // Ice Subtle Border
 const WHITE = Colors.surface;
-const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan Tint
 const RADIUS = 20;
 
 /** Real staff members with any of these roles, joined into a display name — or a generic
  *  role label when nobody with that role is registered yet. Never a fabricated person name. */
-function staffNameFor(staffList: { name: string; role: string }[], roles: string[], fallback: string): string {
-  const names = staffList.filter((s) => roles.includes(s.role)).map((s) => s.name);
-  return names.length > 0 ? names.join(' & ') : fallback;
-}
-
 import { useStaffQuery } from '@/features/staff/useStaff';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { useAuthStore } from '@/store/authStore';

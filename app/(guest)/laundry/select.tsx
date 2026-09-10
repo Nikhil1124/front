@@ -1,11 +1,10 @@
-import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Radii } from '@/theme';
-import { AnimatedPress, Btn, Col, Row, Spacer, Txt } from '@/components/ui';
+import { Colors, Radii, Palette } from '@/theme';
+import { AnimatedPress, Btn, Col, Row, Txt } from '@/components/ui';
 import { useLaundryStore, LAUNDRY_SERVICES } from '@/features/laundry/store/useLaundryStore';
 import { LaundryCard } from '@/features/laundry/components/LaundryCard';
 
@@ -82,12 +81,12 @@ export default function LaundrySelectScreen() {
             <Btn 
               onPress={() => router.push('/laundry/summary')}
               containerColor={Colors.primary}
-              textColor="#FFF"
+              textColor={Colors.surface}
               borderRadius={Radii.control}
               height={44}
               style={{ paddingHorizontal: 24 }}
             >
-              <Txt variant="button" color="#FFF">Continue</Txt>
+              <Txt variant="button" color={Colors.textInverse}>Continue</Txt>
             </Btn>
           </Row>
         </View>
@@ -103,7 +102,7 @@ const styles = StyleSheet.create({
   
   pageTitle: { fontSize: 28, fontWeight: '800', color: Colors.primaryDark, lineHeight: 34 },
   
-  categoryBlock: { marginBottom: 24, backgroundColor: '#FFF', borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.borderSubtle },
+  categoryBlock: { marginBottom: 24, backgroundColor: Colors.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.borderSubtle },
   categoryHeader: { backgroundColor: '#F1F5F9', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   categoryTitle: { fontSize: 13, fontWeight: '800', color: Colors.textSecondary, letterSpacing: 1 },
   
@@ -116,11 +115,11 @@ const styles = StyleSheet.create({
   addButton: { borderWidth: 1, borderColor: Colors.primaryDark, borderRadius: Radii.control, paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, width: 90 },
   addButtonText: { color: Colors.primaryDark, fontSize: 14, fontWeight: '700' },
   
-  qtyContainer: { borderWidth: 1, borderColor: Colors.primaryDark, borderRadius: Radii.control, paddingVertical: 6, paddingHorizontal: 8, backgroundColor: '#ECFDF5', width: 100 },
+  qtyContainer: { borderWidth: 1, borderColor: Colors.primaryDark, borderRadius: Radii.control, paddingVertical: 6, paddingHorizontal: 8, backgroundColor: Palette.TintGreen, width: 100 },
   qtyBtn: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   qtyText: { color: Colors.primaryDark, fontSize: 15, fontWeight: '800' },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
   cartItemsCount: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
   cartTotalHint: { fontSize: 14, color: Colors.primaryDark, marginTop: 2, fontWeight: '700' },
 });

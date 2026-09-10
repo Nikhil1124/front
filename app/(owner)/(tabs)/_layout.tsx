@@ -38,7 +38,6 @@ const BG = Colors.canvas;
 const CHARCOAL = Colors.textPrimary;
 const MUTED = Colors.textMuted;
 const BORDER = Colors.borderSubtle;
-const WHITE = Colors.surface;
 
 /**
  * The bar no longer lists overview first — the frequency ranking puts the least-used destination
@@ -63,7 +62,6 @@ export default function OwnerTabsLayout() {
   // Derived from the role at the CURRENTLY active property, not a snapshot taken at login —
   // see useIsManagerMode's own doc for the property-switch bug the snapshot caused.
   const isManager = useIsManagerMode();
-  const logout = usePGowStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;

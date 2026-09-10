@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, TouchableOpacity, ScrollView, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -26,7 +26,7 @@
 import React, { useState } from 'react';
 import {
   View, TextInput, type ViewStyle, type TextStyle,
-  type KeyboardTypeOptions, type TextInputProps, Platform
+  type KeyboardTypeOptions, type TextInputProps
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 

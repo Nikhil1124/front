@@ -20,11 +20,10 @@
  * once-in-a-lifetime actions and sit in the footer, not in prime screen space.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
+import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
-import { FormScroll } from '@/components/ui/FormScroll';
 import { Colors, Radii } from '@/theme';
 import { useToast } from '@/hooks/useToast';
 import { useLogin, usePinLogin, useChangePassword } from '@/features/auth/useAuth';

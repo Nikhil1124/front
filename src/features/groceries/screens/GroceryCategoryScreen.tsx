@@ -19,7 +19,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { ProductCard } from '../components/grocery/ProductCard';
 import { useCartStore } from '../store/useCartStore';
-import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
 import { GroceryColors, Radii } from '@/theme';
@@ -536,7 +535,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   catImageContainer: {
-    borderRadius: 16,
+    borderRadius: Radii.card,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -559,7 +558,7 @@ const styles = StyleSheet.create({
   promoBanner: {
     marginTop: 20,
     marginBottom: 8,
-    borderRadius: 20,
+    borderRadius: Radii.card,
     backgroundColor: GroceryColors.primaryDark,
     flexDirection: 'row',
     overflow: 'hidden',
@@ -597,7 +596,7 @@ const styles = StyleSheet.create({
   dealsBanner: {
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 16,
+    borderRadius: Radii.card,
     backgroundColor: GroceryColors.primaryDark,
     flexDirection: 'row',
     overflow: 'hidden',

@@ -2,13 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  FlatList,
   RefreshControl,
   ScrollView,
   StyleSheet,
   View,
-  useWindowDimensions,
-} from 'react-native';
+  useWindowDimensions } from 'react-native';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 import { router } from 'expo-router';
@@ -23,12 +21,11 @@ import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery
 import { HeroBanner } from '../components/grocery/HeroBanner';
 import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
-import { TodaysKitchenNeeds } from '../components/kitchen/TodaysKitchenNeeds';
 import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
 
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
-import { GroceryColors, Radii } from '@/theme';
+import { GroceryColors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 
 /**
@@ -49,7 +46,6 @@ export function GroceriesScreen() {
   const setPgDetails = useShoppingModeStore((s) => s.setPgDetails);
 
   const cartItemCount = useCartStore((s) => s.getItemCount());
-  const getCartTotal = useCartStore((s) => s.getCartTotal);
 
   const {
     data: supplyItems = [],
@@ -228,27 +224,42 @@ export function GroceriesScreen() {
                 </Txt>
               </View>
             ) : (
-              <FlatList
-                data={searchResults}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                numColumns={2}
-                contentContainerStyle={styles.searchResultsList}
-                columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 10 }}
-                renderItem={({ item }) => {
-                  const cardWidth = (width - 44) / 2;
-                  return (
-                    <View style={{ width: cardWidth }}>
-                      <ProductCard
-                        product={item}
-                        onPress={(p) => openProduct(p.id)}
-                        style={{ width: '100%', marginRight: 0 }}
-                      />
-                    </View>
-                  );
-                }}
-              />
+              /* A `FlatList scrollEnabled={false}` used to render this grid. Nested inside
+                 the screen's ScrollView a VirtualizedList cannot virtualise — it renders
+                 every row eagerly regardless — so it was paying for windowing machinery it
+                 could never use, plus RN's "VirtualizedLists should never be nested"
+                 warning on every render. A wrapped map does the identical work without it. */
+              <View style={styles.searchResultsGrid}>
+                {searchResults.map((item) => (
+                  <View key={item.id} style={{ width: (width - 44) / 2 }}>
+                    <ProductCard
+                      product={item}
+                      onPress={(p) => openProduct(p.id)}
+                      style={{ width: '100%', marginRight: 0 }}
+                    />
+                  </View>
+                ))}
+              </View>
             )}
+          </View>
+        ) : itemsError ? (
+          /* The catalog is the screen. A failure here — most often AREA_NOT_SERVICED, a
+             403 for a PG whose `area_id` is null or whose area has no warehouse yet — used
+             to fall through to the browse layout below and render banners, category tiles
+             and a dozen empty product rows: a shop that looks open and stocks nothing.
+             `categories` still answers 200 in that state, which is what made it convincing.
+             Say what actually happened instead. */
+          <View style={styles.errorWrapper}>
+            <ErrorState
+              error={itemsError}
+              title="Groceries aren't available here yet"
+              onRetry={refetchItems}
+              fill={false}
+            />
+          </View>
+        ) : itemsLoading ? (
+          <View style={styles.errorWrapper}>
+            <LoadingState label="Loading catalog…" fill={false} />
           </View>
         ) : (
           <>
@@ -256,7 +267,7 @@ export function GroceriesScreen() {
             <HeroBanner onPress={() => openSupplyCategory(null)} />
 
             {/* ── Promo Cards ── */}
-            <PromoCards onCardPress={(id) => openDeals()} />
+            <PromoCards onCardPress={(_id) => openDeals()} />
 
             <View style={styles.bottomWhiteSection}>
               {/* ── Kitchen needs (owner/chef only) ── */}
@@ -298,27 +309,20 @@ export function GroceriesScreen() {
 
               {/* 2-column grid for deals */}
               {deals.length > 0 ? (
-                <FlatList
-                  data={deals.slice(0, 6)}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled={false}
-                  numColumns={2}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                  columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 0 }}
-                  renderItem={({ item }) => {
-                    const cardWidth = (width - 44) / 2;
-                    return (
-                      <View style={{ width: cardWidth }}>
-                        <ProductCard
-                          product={item}
-                          layout="deal"
-                          onPress={(p) => openProduct(p.id)}
-                          style={{ width: '100%', marginRight: 0 }}
-                        />
-                      </View>
-                    );
-                  }}
-                />
+                /* Same reasoning as the search grid above: six cards, nested in a
+                   ScrollView, so a FlatList bought nothing here. */
+                <View style={styles.dealsGrid}>
+                  {deals.slice(0, 6).map((item) => (
+                    <View key={item.id} style={{ width: (width - 44) / 2 }}>
+                      <ProductCard
+                        product={item}
+                        layout="deal"
+                        onPress={(p) => openProduct(p.id)}
+                        style={{ width: '100%', marginRight: 0 }}
+                      />
+                    </View>
+                  ))}
+                </View>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
                   {supplyItems.slice(0, 4).map((prod) => (
@@ -435,6 +439,15 @@ const styles = StyleSheet.create({
     paddingBottom: 120, // Moved from scrollContent
   },
 
+  errorWrapper: {
+    backgroundColor: GroceryColors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 16,
+    paddingTop: 32,
+    paddingBottom: 120,
+    minHeight: '100%',
+  },
   searchResultsWrapper: {
     backgroundColor: GroceryColors.background,
     borderTopLeftRadius: 24,
@@ -445,8 +458,17 @@ const styles = StyleSheet.create({
     minHeight: '100%',
   },
 
-  searchResultsList: {
-    gap: 10,
+  searchResultsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  dealsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
   },
   noResultsBox: {
     alignItems: 'center',

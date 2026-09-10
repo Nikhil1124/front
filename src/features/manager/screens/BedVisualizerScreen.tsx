@@ -245,7 +245,7 @@ export function BedVisualizerScreen() {
     }
   };
 
-  const renderRoomTypeCard = (typeKey: string, title: string, bedCount: number) => {
+  const renderRoomTypeCard = (typeKey: string, title: string, _bedCount: number) => {
     const isSelected = selectedRoomType === typeKey;
     const info = typeKey === 'ALL'
       ? { roomsCount: targetRooms.length, vacantCount: vacantBeds, totalBedsCount: totalBeds }

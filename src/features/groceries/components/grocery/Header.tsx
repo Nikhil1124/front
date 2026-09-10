@@ -55,8 +55,12 @@ export const Header: React.FC<HeaderProps> = ({
           style={styles.deliveryInfo}
           onPress={() => {}}
         >
+          {/* Read "8 minutes" here, hardcoded, on every render for every property — a
+              delivery promise the app has no way to make. Orders are fulfilled on scheduled
+              delivery-slot windows, and the slot the resident picks is the only timing
+              commitment that exists. Replaced with the label for what this row actually is. */}
           <Txt maxFontSizeMultiplier={1.2} style={styles.deliverInLabel}>
-            8 minutes
+            Delivering to
           </Txt>
           <View style={styles.pgNameRow}>
             <Txt
@@ -77,9 +81,19 @@ export const Header: React.FC<HeaderProps> = ({
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           style={styles.iconBtn}
-          onPress={onCartPress} // Map to cart for now if needed, or leave blank
+          accessibilityLabel={cartItemCount > 0 ? `Cart, ${cartItemCount} items` : 'Cart'}
+          onPress={onCartPress}
         >
           <Ionicons name="cube-outline" size={24} color={GroceryColors.white} />
+          {/* `cartItemCount` was accepted as a prop, defaulted, and then never read — so the
+              badge simply did not exist and the header could never show what was in the cart. */}
+          {cartItemCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Txt maxFontSizeMultiplier={1} style={styles.cartBadgeText}>
+                {cartItemCount > 99 ? '99+' : cartItemCount}
+              </Txt>
+            </View>
+          )}
         </AnimatedPress>
 
         <AnimatedPress

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,7 +48,7 @@ export default function LaundryTrackingScreen() {
         <Spacer size={40} />
         <Txt style={styles.emptyTitle}>No active laundry orders.</Txt>
         <Btn style={{ marginTop: 20 }} onPress={() => router.replace('/laundry/orders')}>
-          <Txt variant="button" color="#FFF">View History</Txt>
+          <Txt variant="button" color={Colors.textInverse}>View History</Txt>
         </Btn>
       </View>
     );
@@ -152,8 +152,8 @@ export default function LaundryTrackingScreen() {
           <Btn onPress={() => updateOrderStatus('OUT_FOR_DELIVERY')} height={30} style={{ paddingHorizontal: 12 }} containerColor="#F1F5F9" textColor="#333">
             <Txt style={{fontSize:11}}>Delivery</Txt>
           </Btn>
-          <Btn onPress={() => updateOrderStatus('DELIVERED')} height={30} style={{ paddingHorizontal: 12 }} containerColor="#059669" textColor="#FFF">
-            <Txt style={{fontSize:11}} color="#FFF">Done</Txt>
+          <Btn onPress={() => updateOrderStatus('DELIVERED')} height={30} style={{ paddingHorizontal: 12 }} containerColor={Colors.success} textColor={Colors.surface}>
+            <Txt style={{fontSize:11}} color={Colors.textInverse}>Done</Txt>
           </Btn>
         </Row>
       </View>
@@ -173,13 +173,13 @@ const styles = StyleSheet.create({
   statusPill: { fontSize: 13, fontWeight: '800', color: Colors.primaryDark, letterSpacing: 0.5 },
   estReturnText: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
   
-  statusCard: { backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  statusIconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#EBF4EC', alignItems: 'center', justifyContent: 'center' },
+  statusCard: { backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  statusIconWrap: { width: 48, height: 48, borderRadius: Radii.feature, backgroundColor: '#EBF4EC', alignItems: 'center', justifyContent: 'center' },
   statusCardTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   statusCardDesc: { fontSize: 13, color: Colors.textSecondary, marginTop: 4, lineHeight: 18 },
   
-  timelineCard: { backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 20, paddingBottom: 4 },
+  timelineCard: { backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 20, paddingBottom: 4 },
   timelineTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   
-  demoControls: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 10 },
+  demoControls: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 10 },
 });

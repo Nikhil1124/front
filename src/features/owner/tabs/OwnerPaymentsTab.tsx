@@ -5,9 +5,7 @@ import {
   RefreshControl,
   FlatList,
   ScrollView,
-  Pressable,
-  Alert,
-  KeyboardAvoidingView } from 'react-native';
+  Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 

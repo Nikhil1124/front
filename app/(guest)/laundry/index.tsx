@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet, Image, Dimensions } from 'react-native';
+import { View, ScrollView, StyleSheet, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +9,6 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useLaundryStore, LAUNDRY_SERVICES } from '@/features/laundry/store/useLaundryStore';
 import { LaundryCard } from '@/features/laundry/components/LaundryCard';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const CATEGORIES = [
   { id: 'c1', title: 'Wash & Fold', desc: 'Clean, dry & neatly folded', img: require('../../../assets/laundry/clothes_stack.png') },
@@ -68,11 +66,11 @@ export default function LaundryHomeScreen() {
           <Btn 
             onPress={() => router.push('/laundry/select')}
             containerColor={Colors.primary}
-            textColor="#FFF"
+            textColor={Colors.surface}
             borderRadius={Radii.pill}
             style={{ marginTop: 24, alignSelf: 'flex-start', paddingHorizontal: 24 }}
           >
-            <Txt variant="button" color="#FFF">Start a Laundry Booking</Txt>
+            <Txt variant="button" color={Colors.textInverse}>Start a Laundry Booking</Txt>
           </Btn>
         </View>
 
@@ -130,12 +128,12 @@ export default function LaundryHomeScreen() {
             <Btn 
               onPress={() => router.push('/laundry/select')}
               containerColor={Colors.primary}
-              textColor="#FFF"
+              textColor={Colors.surface}
               borderRadius={Radii.control}
               height={44}
               style={{ paddingHorizontal: 24 }}
             >
-              <Txt variant="button" color="#FFF">Continue</Txt>
+              <Txt variant="button" color={Colors.textInverse}>Continue</Txt>
             </Btn>
           </Row>
         </View>
@@ -149,7 +147,7 @@ const styles = StyleSheet.create({
   header: { backgroundColor: '#F8FAFB' },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   
-  locationBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
+  locationBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   locationText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginLeft: 6 },
   
   heroSection: { paddingHorizontal: 20, paddingTop: 32 },
@@ -160,13 +158,13 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, paddingHorizontal: 16 },
   
   categoriesGrid: { paddingHorizontal: 16, marginTop: 16, gap: 12 },
-  categoryCard: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden', alignItems: 'center' },
+  categoryCard: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden', alignItems: 'center' },
   categoryImageWrap: { width: 80, height: 80, backgroundColor: '#EBF4EC' },
   categoryImage: { width: '100%', height: '100%', resizeMode: 'contain' },
   categoryTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   categoryDesc: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
   cartItemsCount: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
   cartTotalHint: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 });

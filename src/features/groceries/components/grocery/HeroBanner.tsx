@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#E6D35E', // Yellowish dash
     borderStyle: 'dashed',
-    borderRadius: 12,
+    borderRadius: Radii.control,
     paddingVertical: 12,
     paddingHorizontal: 48,
     alignItems: 'center',

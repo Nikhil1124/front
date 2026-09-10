@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Radii } from '@/theme';
-import { AnimatedPress, Btn, Col, Row, Spacer, Txt } from '@/components/ui';
+import { AnimatedPress, Btn, Col, Row, Txt } from '@/components/ui';
 import { useLaundryStore, LaundryOrder, LAUNDRY_SERVICES } from '@/features/laundry/store/useLaundryStore';
 
 export default function LaundryOrdersScreen() {
@@ -43,12 +43,12 @@ export default function LaundryOrdersScreen() {
             <Btn 
               onPress={() => router.push('/laundry/tracking')}
               containerColor={Colors.primary}
-              textColor="#FFF"
+              textColor={Colors.surface}
               borderRadius={Radii.control}
               height={36}
               style={{ paddingHorizontal: 16 }}
             >
-              <Txt style={{fontSize: 12, fontWeight: '700'}} color="#FFF">Track</Txt>
+              <Txt style={{fontSize: 12, fontWeight: '700'}} color={Colors.textInverse}>Track</Txt>
             </Btn>
           </Row>
         ) : (
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   tabTextActive: { color: Colors.primary, fontWeight: '700' },
   
-  orderCard: { backgroundColor: '#FFF', borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16, marginBottom: 16 },
+  orderCard: { backgroundColor: Colors.surface, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16, marginBottom: 16 },
   orderId: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   orderDesc: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
   orderAmount: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },

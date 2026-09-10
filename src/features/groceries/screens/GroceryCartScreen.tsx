@@ -18,7 +18,6 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { getPerUnitRateLabel } from '../utils/pricing';
 import { useSubmitProcurementOrder } from '@/features/procurement/useProcurement';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
-import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, Txt } from '@/components/ui';
 
@@ -27,7 +26,7 @@ const DELIVERY_FEE = 30;
 const PLATFORM_FEE = 5;
 
 export function GroceryCartScreen() {
-  const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getItemCount, getTotalSavings } = useCartStore();
+  const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getTotalSavings } = useCartStore();
   const mode = useShoppingModeStore((s) => s.mode);
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: supplyItems = [] } = useSupplyItems(activePgId);
@@ -42,8 +41,7 @@ export function GroceryCartScreen() {
   );
 
   const subtotal = getCartTotal();
-  const { subtotal: billSubtotal, tax: billTax, taxable: billTaxable } = getBillEstimate();
-  const cartItemCount = getItemCount();
+  const { subtotal: billSubtotal } = getBillEstimate();
   const totalSavings = getTotalSavings();
 
   // Delivery progress
@@ -157,7 +155,6 @@ export function GroceryCartScreen() {
             {/* ── Cart items ── */}
             {items.map((item) => {
               const isEditingReplacement = editingReplacementId === item.id;
-              const hasDiscount = item.originalPrice && item.originalPrice > item.price;
               const perUnitRateText = mode === 'owner' ? getPerUnitRateLabel(item.unit, item.price) : '';
 
               return (
@@ -426,7 +423,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     backgroundColor: GroceryColors.white,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 14,
     borderWidth: 1,
     borderColor: GroceryColors.border,
@@ -468,7 +465,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     marginHorizontal: 16,
     marginBottom: 10,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 14,
     borderWidth: 1,
     borderColor: GroceryColors.border,
@@ -481,7 +478,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     backgroundColor: GroceryColors.lightGreen,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -581,7 +578,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: GroceryColors.border,
     borderStyle: 'dashed',
@@ -598,7 +595,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: GroceryColors.lightGreen,
-    borderRadius: 10,
+    borderRadius: Radii.control,
     marginHorizontal: 16,
     marginBottom: 12,
     paddingHorizontal: 14,
@@ -622,7 +619,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     marginHorizontal: 16,
     marginBottom: 14,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 14,
     borderWidth: 1,
     borderColor: GroceryColors.border,

@@ -18,7 +18,7 @@
 import { useState } from 'react';
 import {
   View, StyleSheet, Alert, RefreshControl,
-  Modal, Pressable, ScrollView } from 'react-native';
+  ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { router } from 'expo-router';
@@ -131,6 +131,11 @@ export function GuestPaymentsTab() {
   // `allPayments` is every payment across the whole PG, not this resident's own — the "total
   // paid" balance and "you have made N payments" were computed against every resident's
   // payments combined and shown as if they were this guest's own history.
+  /** A submission for THIS cycle that the owner has not acted on yet. Rejected ones do not
+   *  count — a rejected payment is exactly the case where resubmitting is the right move. */
+  const hasPendingPayment = guestPayments.some(
+    (p) => p.status === 'PENDING' && p.monthYear === currentMonthYear
+  );
   const totalPaid = guestPayments.filter((p) => p.status === 'VERIFIED').reduce((s, p) => s + p.amount, 0);
   const verifiedCount = guestPayments.filter((p) => p.status === 'VERIFIED').length;
   // What this actually measures: the share of this guest's own payment submissions PGow has
@@ -154,6 +159,20 @@ export function GuestPaymentsTab() {
 
   const handleSubmit = async (mode: string) => {
     if (isSubmitting) return;
+    // One pending submission per cycle. `isSubmitting` only guards a double-TAP; it does
+    // nothing about coming back an hour later and submitting again, which is how residents
+    // ended up filing the same rent payment three or four times. The database does not stop
+    // this either — `payments_one_verified_per_period` is a unique index over VERIFIED rows
+    // only, so any number of PENDING ones are legal. Every duplicate lands in the owner's
+    // verification queue as a separate payment to reconcile against one real transfer.
+    if (hasPendingPayment) {
+      Alert.alert(
+        'Already submitted',
+        `You have a payment for ${currentMonthYear} awaiting your owner's verification. `
+          + 'They will confirm it shortly — no need to submit it again.'
+      );
+      return;
+    }
     if (!rentKnown && !unpaidInvoice) {
       Alert.alert('Amount unavailable', 'We could not load what you owe this month. Pull down to refresh and try again.');
       return;
@@ -217,6 +236,15 @@ export function GuestPaymentsTab() {
 
   const handlePrimaryPayPress = () => {
     if (isBillPaid) return;
+    // Stop at the entry point too, not just at submit — opening the form and filling in a
+    // UTR only to be told it was already sent is a worse way to find out.
+    if (hasPendingPayment) {
+      Alert.alert(
+        'Already submitted',
+        `Your ${currentMonthYear} payment is awaiting verification from your owner.`
+      );
+      return;
+    }
     setShowPayForm(true);
     if (payMode === 'CASH_HANDOVER') {
       handleSubmit('CASH_HANDOVER');

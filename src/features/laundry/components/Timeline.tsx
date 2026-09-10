@@ -1,8 +1,7 @@
-import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Col, Row, Txt } from '@/components/ui';
-import { Colors } from '@/theme';
+import { Col, Txt } from '@/components/ui';
+import { Colors, Radii } from '@/theme';
 
 export type TimelineStep = {
   id: string;
@@ -34,7 +33,7 @@ export function Timeline({ steps }: { steps: TimelineStep[] }) {
               step.status === 'current' && styles.nodeCurrent,
               step.status === 'upcoming' && styles.nodeUpcoming
             ]}>
-              {step.status === 'completed' && <Ionicons name="checkmark" size={10} color="#FFF" />}
+              {step.status === 'completed' && <Ionicons name="checkmark" size={10} color={Colors.textInverse} />}
               {step.status === 'current' && <View style={styles.dotCurrent} />}
             </View>
 
@@ -65,11 +64,11 @@ const styles = StyleSheet.create({
   lineCompleted: { backgroundColor: Colors.primary },
   lineUpcoming: { backgroundColor: Colors.borderSubtle },
   
-  node: { width: 20, height: 20, borderRadius: 10, marginTop: 2, zIndex: 2, alignItems: 'center', justifyContent: 'center' },
+  node: { width: 20, height: 20, borderRadius: Radii.control, marginTop: 2, zIndex: 2, alignItems: 'center', justifyContent: 'center' },
   nodeCompleted: { backgroundColor: Colors.primary },
-  nodeCurrent: { backgroundColor: '#FFF', borderWidth: 2, borderColor: Colors.primary },
-  nodeUpcoming: { backgroundColor: '#FFF', borderWidth: 2, borderColor: Colors.borderSubtle },
-  dotCurrent: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary },
+  nodeCurrent: { backgroundColor: Colors.surface, borderWidth: 2, borderColor: Colors.primary },
+  nodeUpcoming: { backgroundColor: Colors.surface, borderWidth: 2, borderColor: Colors.borderSubtle },
+  dotCurrent: { width: 8, height: 8, borderRadius: Radii.badge, backgroundColor: Colors.primary },
   
   content: { marginLeft: 16, paddingBottom: 24, flex: 1, justifyContent: 'flex-start' },
   label: { fontSize: 14, fontWeight: '700' },

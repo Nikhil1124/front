@@ -141,7 +141,6 @@ export interface OutlinedButtonProps {
 
 export function OutlinedBtn({
   children, onPress, borderColor = Colors.primary,
-  textColor = Colors.primary,
   borderRadius = Radii.control, height = 44, width, borderWidth = 1.5,
   containerColor = 'transparent', disabled, style, testID }: OutlinedButtonProps & { textColor?: string }) {
   return (

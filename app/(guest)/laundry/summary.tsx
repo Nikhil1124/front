@@ -1,10 +1,9 @@
-import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Radii } from '@/theme';
+import { Colors, Radii, Palette } from '@/theme';
 import { AnimatedPress, Btn, Col, Row, Spacer, Txt } from '@/components/ui';
 import { useLaundryStore, LAUNDRY_SERVICES } from '@/features/laundry/store/useLaundryStore';
 
@@ -125,12 +124,12 @@ export default function LaundrySummaryScreen() {
           <Btn 
             onPress={() => router.push('/laundry/pickup')}
             containerColor={Colors.primary}
-            textColor="#FFF"
+            textColor={Colors.surface}
             borderRadius={Radii.control}
             height={44}
             style={{ paddingHorizontal: 24 }}
           >
-            <Txt variant="button" color="#FFF">Schedule Pickup</Txt>
+            <Txt variant="button" color={Colors.textInverse}>Schedule Pickup</Txt>
           </Btn>
         </Row>
       </View>
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
   
   pageTitle: { fontSize: 28, fontWeight: '800', color: Colors.primaryDark, lineHeight: 34 },
   
-  itemsCard: { backgroundColor: '#FFF', marginHorizontal: 16, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden' },
+  itemsCard: { backgroundColor: Colors.surface, marginHorizontal: 16, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden' },
   itemRow: { padding: 16 },
   itemCategory: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600', marginBottom: 2 },
   itemName: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
@@ -156,20 +155,20 @@ const styles = StyleSheet.create({
   addMoreBtn: { flexDirection: 'row', alignItems: 'center', padding: 16, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, backgroundColor: '#F1F5F9' },
   addMoreText: { fontSize: 14, fontWeight: '700', color: Colors.primary, marginLeft: 6 },
   
-  billCard: { backgroundColor: '#FFF', marginHorizontal: 16, marginTop: 16, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
+  billCard: { backgroundColor: Colors.surface, marginHorizontal: 16, marginTop: 16, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
   billTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   billRow: { flexDirection: 'row', alignItems: 'center' },
   billLabel: { fontSize: 14, color: Colors.textSecondary },
   billValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '500' },
   billDiscount: { fontSize: 14, color: Colors.primaryDark, fontWeight: '700' },
-  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: 1 },
+  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: Radii.badge },
   billTotalLabel: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
   billTotalValue: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
   
-  warningCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', marginHorizontal: 16, marginTop: 16, padding: 12, borderRadius: Radii.card, borderWidth: 1, borderColor: '#FDE68A' },
+  warningCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Palette.TintAmber, marginHorizontal: 16, marginTop: 16, padding: 12, borderRadius: Radii.card, borderWidth: 1, borderColor: Palette.TintAmber },
   warningText: { fontSize: 12, color: '#92400E', marginLeft: 10, flex: 1, lineHeight: 18 },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
   cartItemsCount: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
   cartTotalHint: { fontSize: 12, color: Colors.textSecondary, fontWeight: '600' },
 });

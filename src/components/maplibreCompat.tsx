@@ -27,7 +27,7 @@ if (isExpoGo) {
       </View>
     );
   };
-  Camera = React.forwardRef(({ ...props }: any, ref: any) => {
+  Camera = React.forwardRef((_: any, ref: any) => {
     useImperativeHandle(ref, () => ({
       flyTo: () => {},
       zoomTo: () => {},

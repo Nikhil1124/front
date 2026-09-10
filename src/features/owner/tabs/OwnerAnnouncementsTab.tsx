@@ -436,7 +436,7 @@ export function OwnerAnnouncementsTab() {
     }
   };
 
-  const handleReviewProcurement = (item: InboxItem) => {
+  const handleReviewProcurement = (_item: InboxItem) => {
     setSelectedInboxItem(null);
     router.push('/procurement');
   };
@@ -468,11 +468,21 @@ export function OwnerAnnouncementsTab() {
       Alert.alert('Failed', 'No active property.');
       return;
     }
+    // `?? 'all'` used to close this expression. An audience label that isn't in the map —
+    // a renamed chip, a new option added to the picker without a mapping — silently
+    // widened the notice from one role to EVERYONE at the property. The failure direction
+    // matters: over-broadcasting a notice is not recoverable once phones have buzzed.
+    const targetRole = BROADCAST_AUDIENCE_MAP[noticeAudience.toUpperCase()];
+    if (!targetRole) {
+      Alert.alert('Pick an audience', `"${noticeAudience}" isn't an audience this notice can target.`);
+      return;
+    }
+
     setIsPublishing(true);
     try {
       await broadcastMutation.mutateAsync({
         pg_id: activePgId,
-        target_role: BROADCAST_AUDIENCE_MAP[noticeAudience.toUpperCase()] ?? 'all',
+        target_role: targetRole,
         title: noticeTitle.trim(),
         body: noticeMessage.trim(),
         category: 'announcement',

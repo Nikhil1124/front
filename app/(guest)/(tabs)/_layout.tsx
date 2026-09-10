@@ -15,13 +15,10 @@
  * expo-image-picker pattern to build that against when a real entry point is added.
  */
 import { View, StyleSheet } from 'react-native';
-import { usePathname } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Dock, DockAlert, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
 import { centreOut, NAV_PROFILES } from '@/data/navTabs';
 import { Colors } from '@/theme';
-import Animated from 'react-native-reanimated';
-import { tabEntering, tabExiting } from '@/theme';
 
 /**
  * The bar no longer lists home first — the frequency ranking puts the least-used destination
@@ -33,21 +30,21 @@ import { tabEntering, tabExiting } from '@/theme';
 export const unstable_settings = { anchor: 'home' };
 
 export default function GuestTabsLayout() {
-  const pathname = usePathname();
   const { dockStyle, contentPaddingBottom, counts, alert } = useDock('resident');
 
   return (
     <Tabs style={styles.root}>
       <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
         {/* ── Active tab content ─────────────────────────────────────────── */}
-        <Animated.View
-          key={pathname}
-          entering={tabEntering}
-          exiting={tabExiting}
-          style={{ flex: 1 }}
-        >
+        {/* Tab-switch motion removed. Two reasons, and the second is the bigger one:
+            the fade/rise read as lag on a tab tap (the new screen's first frame was
+            deliberately withheld for 200ms), and `key={pathname}` forced React to unmount
+            and rebuild the ENTIRE tab content tree on every switch just to retrigger the
+            animation — throwing away each screen's mounted state and re-running its whole
+            first render. Without the key, `TabSlot` swaps content without a remount. */}
+        <View style={{ flex: 1 }}>
           <TabSlot />
-        </Animated.View>
+        </View>
       </View>
 
       {/* Context strip — a sibling of Dock, never a child: TabList is a row and its children

@@ -472,7 +472,7 @@ export default function BookTechnicianScreen() {
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
             <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5, marginBottom: 12 }}>STATUS TIMELINE</Txt>
             <View style={{ gap: 16 }}>
-              {timelineSteps.map((step, idx) => (
+              {timelineSteps.map((step, _idx) => (
                 <Row key={step.label} gap={12} align="flex-start">
                   <View style={[styles.timelineNode, { backgroundColor: step.done ? Colors.primary : Colors.borderMuted }]}>
                     {step.done ? <Ionicons name="checkmark" size={10} color={Colors.textInverse} /> : null}
@@ -638,7 +638,7 @@ export default function BookTechnicianScreen() {
               <>
                 <Spacer size={8} />
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                  {photos.map((uri, idx) => (
+                  {photos.map((_uri, idx) => (
                     <View key={idx} style={styles.thumbnailContainer}>
                       <View style={styles.thumbnailPlaceholder}>
                         <Ionicons name="image" size={24} color={Colors.primary} />

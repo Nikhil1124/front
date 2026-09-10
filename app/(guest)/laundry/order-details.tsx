@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Radii } from '@/theme';
 import { AnimatedPress, Btn, Col, Row, Spacer, Txt } from '@/components/ui';
-import { useLaundryStore, LAUNDRY_SERVICES, LaundryOrder } from '@/features/laundry/store/useLaundryStore';
+import { useLaundryStore, LAUNDRY_SERVICES } from '@/features/laundry/store/useLaundryStore';
 
 export default function LaundryOrderDetailsScreen() {
   const insets = useSafeAreaInsets();
@@ -141,7 +140,7 @@ export default function LaundryOrderDetailsScreen() {
         <Row gap={12}>
           <Btn 
             onPress={() => {}}
-            containerColor="#FFF"
+            containerColor={Colors.surface}
             textColor={Colors.textPrimary}
             borderRadius={Radii.control}
             height={44}
@@ -152,12 +151,12 @@ export default function LaundryOrderDetailsScreen() {
           <Btn 
             onPress={() => router.push('/laundry')}
             containerColor={Colors.primary}
-            textColor="#FFF"
+            textColor={Colors.surface}
             borderRadius={Radii.control}
             height={44}
             style={{ flex: 1 }}
           >
-            <Txt variant="button" color="#FFF">Book Again</Txt>
+            <Txt variant="button" color={Colors.textInverse}>Book Again</Txt>
           </Btn>
         </Row>
       </View>
@@ -167,36 +166,36 @@ export default function LaundryOrderDetailsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
-  header: { backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
+  header: { backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   headerSubtitle: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   
-  infoCard: { backgroundColor: '#FFF', padding: 20, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
+  infoCard: { backgroundColor: Colors.surface, padding: 20, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   infoRow: { alignItems: 'center' },
   infoLabel: { fontSize: 14, color: Colors.textSecondary },
   infoValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '600' },
   
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginHorizontal: 20, marginTop: 24, marginBottom: 12 },
   
-  servicesCard: { backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle },
+  servicesCard: { backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle },
   serviceRow: { padding: 16 },
   serviceCat: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600', marginBottom: 2 },
   serviceName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   servicePrice: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   divider: { height: 1, backgroundColor: Colors.borderSubtle, marginHorizontal: 16 },
   
-  pricingCard: { backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
+  pricingCard: { backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
   pricingRow: { alignItems: 'center' },
   pricingLabel: { fontSize: 14, color: Colors.textSecondary },
   pricingValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '500' },
   pricingDiscount: { fontSize: 14, color: Colors.primaryDark, fontWeight: '700' },
-  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: 1 },
+  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: Radii.badge },
   pricingTotalLabel: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
   pricingTotalValue: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
   
-  paymentCard: { backgroundColor: '#FFF', marginHorizontal: 20, marginTop: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
+  paymentCard: { backgroundColor: Colors.surface, marginHorizontal: 20, marginTop: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
   paymentLabel: { fontSize: 12, color: Colors.textSecondary },
   paymentMethod: { fontSize: 14, fontWeight: '700', color: Colors.primaryDark },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
 });

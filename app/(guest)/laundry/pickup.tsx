@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { useState } from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Radii } from '@/theme';
-import { AnimatedPress, Btn, Col, Row, Spacer, Txt } from '@/components/ui';
+import { Colors, Radii, Palette } from '@/theme';
+import { AnimatedPress, Btn, Col, OutlinedTextField, Row, Txt } from '@/components/ui';
 import { useLaundryStore } from '@/features/laundry/store/useLaundryStore';
 import { usePGowStore } from '@/store/usePGowStore';
 
@@ -102,16 +102,18 @@ export default function LaundryPickupScreen() {
         <View style={styles.section}>
           <Txt style={styles.sectionTitle}>Anything we should know?</Txt>
           <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-            <TextInput
-              style={styles.input}
+            {/* `OutlinedTextField`, not a raw `TextInput`: it is the app's one field
+                primitive and carries the label, error and helper slots, which is what keeps
+                validation out of blocking Alert popups. `forms.check.ts` enforces this. */}
+            <OutlinedTextField
               placeholder="Example: Keep white clothes separate"
-              placeholderTextColor={Colors.textMuted}
               value={instructions}
               onChangeText={(text) => {
                 setInstructions(text);
                 setPickupDetails({ instructions: text });
               }}
               multiline
+              numberOfLines={3}
             />
           </View>
         </View>
@@ -121,7 +123,7 @@ export default function LaundryPickupScreen() {
           <View style={styles.returnCard}>
             <Row align="center" gap={12}>
               <View style={styles.iconWrapReturn}>
-                <Ionicons name="time" size={20} color="#059669" />
+                <Ionicons name="time" size={20} color={Colors.success} />
               </View>
               <Col>
                 <Txt style={styles.returnLabel}>Estimated return</Txt>
@@ -138,11 +140,11 @@ export default function LaundryPickupScreen() {
         <Btn 
           onPress={() => router.push('/laundry/payment')}
           containerColor={Colors.primary}
-          textColor="#FFF"
+          textColor={Colors.surface}
           borderRadius={Radii.control}
           height={50}
         >
-          <Txt variant="button" color="#FFF">Continue to Payment</Txt>
+          <Txt variant="button" color={Colors.textInverse}>Continue to Payment</Txt>
         </Btn>
       </View>
     </View>
@@ -159,33 +161,32 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, paddingHorizontal: 20, marginBottom: 8 },
   
-  card: { backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
-  iconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EBF4EC', alignItems: 'center', justifyContent: 'center' },
+  card: { backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16 },
+  iconWrap: { width: 40, height: 40, borderRadius: Radii.card, backgroundColor: '#EBF4EC', alignItems: 'center', justifyContent: 'center' },
   locationTitle: { fontSize: 14, color: Colors.textSecondary },
   locationRoom: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   changeText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
   locationBanner: { backgroundColor: '#F1F5F9', padding: 10, borderRadius: Radii.control, marginTop: 16 },
   locationBannerText: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
   
-  dateCard: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#FFF', borderRadius: Radii.pill, borderWidth: 1, borderColor: Colors.borderSubtle },
+  dateCard: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: Colors.surface, borderRadius: Radii.pill, borderWidth: 1, borderColor: Colors.borderSubtle },
   dateCardActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   dateText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
-  dateTextActive: { color: '#FFF' },
+  dateTextActive: { color: Colors.textInverse },
   
-  timeCard: { backgroundColor: '#FFF', padding: 16, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle },
+  timeCard: { backgroundColor: Colors.surface, padding: 16, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle },
   timeCardActive: { borderColor: Colors.primary, backgroundColor: '#F8FAFB' },
   timeText: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
   timeTextActive: { color: Colors.primaryDark },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
+  radio: { width: 20, height: 20, borderRadius: Radii.control, borderWidth: 2, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   radioActive: { borderColor: Colors.primary },
-  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.primary },
+  radioInner: { width: 10, height: 10, borderRadius: Radii.badge, backgroundColor: Colors.primary },
   
-  input: { backgroundColor: '#FFF', borderWidth: 1, borderColor: Colors.borderSubtle, borderRadius: Radii.card, padding: 16, fontSize: 14, color: Colors.textPrimary, minHeight: 80, textAlignVertical: 'top' },
   
-  returnCard: { backgroundColor: '#ECFDF5', marginHorizontal: 20, borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: '#A7F3D0' },
-  iconWrapReturn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#D1FAE5', alignItems: 'center', justifyContent: 'center' },
+  returnCard: { backgroundColor: Palette.TintGreen, marginHorizontal: 20, borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: Palette.TintGreen },
+  iconWrapReturn: { width: 40, height: 40, borderRadius: Radii.card, backgroundColor: Palette.TintGreen, alignItems: 'center', justifyContent: 'center' },
   returnLabel: { fontSize: 12, color: '#064E3B', fontWeight: '600' },
   returnValue: { fontSize: 15, fontWeight: '800', color: '#064E3B', marginTop: 2 },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
 });

@@ -14,7 +14,7 @@
  * Ported from the `main` branch; only the theme tokens changed.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, BackHandler, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
@@ -37,18 +37,36 @@ interface Props {
     longitude: number;
     formatted_address: string;
   }) => void;
+  /** Leave without picking. Without this the map was a one-way door: `onConfirm` was the
+   *  only prop, so the sole way out of a full-screen Modal was to confirm SOME location —
+   *  Android's own back gesture did nothing, because a Modal's `onRequestClose` was never
+   *  wired either. Someone who opened the picker to look had to drop a pin they did not
+   *  mean, then correct it afterwards. */
+  onCancel?: () => void;
 }
 
 /** Hyderabad. Only used when there is no search result and no GPS fix to open on. */
 const FALLBACK = { latitude: 17.4401, longitude: 78.3489 };
 
-export default function LocationPicker({ initial, onConfirm }: Props) {
+export default function LocationPicker({ initial, onConfirm, onCancel }: Props) {
   // This renders inside a full-screen `<Modal>` (OwnerRegisterScreen, Add/EditPgPropertyDialog).
   // A Modal is its own native window drawn over everything — the root layout's safe-area
   // wrapper does not apply to it — and `androidStatusBar.translucent` puts its top edge behind
   // the status bar. Without these insets the zoom buttons sat 12px from the physical top,
   // under the clock and battery, and the Confirm button sat in the Android gesture-bar strip.
   const insets = useSafeAreaInsets();
+
+  // Android's back gesture reached straight past this Modal before — the picker stayed open
+  // and the screen underneath navigated instead. Claim it while the picker is mounted.
+  useEffect(() => {
+    if (!onCancel) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      onCancel();
+      return true;
+    });
+    return () => sub.remove();
+  }, [onCancel]);
+
   const { locating, requestPermission, getCurrentCoordinates } = useDeviceLocation();
   const cameraRef = useRef<CameraRef>(null);
   const [centre, setCentre] = useState(initial ?? FALLBACK);
@@ -189,6 +207,18 @@ export default function LocationPicker({ initial, onConfirm }: Props) {
           </View>
         )}
 
+        {onCancel ? (
+          <AnimatedPress
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Go back without picking a location"
+            accessibilityRole="button"
+            style={[styles.backBtn, { top: insets.top + Spacing.md }]}
+            onPress={onCancel}
+          >
+            <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+          </AnimatedPress>
+        ) : null}
+
         <View style={[styles.zoomStack, { top: insets.top + Spacing.md }]}>
           <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom in" accessibilityRole="button"
             style={styles.zoomBtn}
@@ -267,6 +297,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     // Half the icon height, so the pin's tip marks the centre rather than its middle.
     marginBottom: 40,
+  },
+  backBtn: {
+    position: 'absolute',
+    left: Spacing.md,
+    top: Spacing.md,
+    width: 40,
+    height: 40,
+    borderRadius: Radii.badge,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   zoomStack: { position: 'absolute', right: Spacing.md, top: Spacing.md, gap: Spacing.xs },
   zoomBtn: {

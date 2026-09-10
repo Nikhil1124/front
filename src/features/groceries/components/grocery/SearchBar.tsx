@@ -30,7 +30,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
   onFilterPress,
-  onCartPress,
   hasActiveFilters,
   placeholderItems,
 }) => {

@@ -106,21 +106,10 @@ export const useLaundryStore = create<LaundryStore>((set) => ({
   })),
 
   activeOrder: null,
-  completedOrders: [
-    {
-      id: '#LW10261',
-      status: 'DELIVERED',
-      items: { 'wf1': 2, 'wi1': 5 },
-      pickupDate: 'Sep 7',
-      pickupTime: '10:00 AM – 12:00 PM',
-      pickupLocation: 'PGow • Room 204',
-      instructions: '',
-      estimatedReturn: 'Sep 8 • 6:00 PM',
-      estimatedTotal: 340,
-      finalTotal: 340,
-      createdAt: '2026-09-07T10:00:00Z',
-    }
-  ],
+  // Was seeded with an invented delivered order (#LW10261, ₹340, "Sep 7"). It was not a
+  // demo fixture behind a flag — every resident who opened laundry history saw it as their
+  // own past order. Starts empty now.
+  completedOrders: [],
   placeOrder: (order) => set({ activeOrder: order }),
   updateOrderStatus: (status) => set((state) => {
     if (!state.activeOrder) return state;

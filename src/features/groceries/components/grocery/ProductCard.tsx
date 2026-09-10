@@ -27,7 +27,14 @@ interface ProductCardProps {
   hideWishlist?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({
+/**
+ * Memoised: the catalog screen renders this dozens of times across six sections, and every
+ * one of them re-rendered whenever anything on that screen changed state — a search
+ * keystroke, a filter toggle, the cart badge incrementing. Each card carries several
+ * `AnimatedPress` instances, and each of those owns a Reanimated shared value, so the cost
+ * of a needless re-render here is not the View tree alone.
+ */
+const ProductCardBase: React.FC<ProductCardProps> = ({
   product,
   onPress,
   layout = 'deal',
@@ -263,7 +270,7 @@ const styles = StyleSheet.create({
   // ── Deal Card ──
   card: {
     backgroundColor: GroceryColors.white,
-    borderRadius: 12,
+    borderRadius: Radii.control,
     padding: 8,
     borderWidth: 1,
     borderColor: GroceryColors.border,
@@ -286,7 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.discountRed,
     paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: Radii.badge,
   },
   discountText: {
     color: GroceryColors.white,
@@ -303,7 +310,7 @@ const styles = StyleSheet.create({
     height: 85,
     width: '100%',
     backgroundColor: 'transparent',
-    borderRadius: 8,
+    borderRadius: Radii.badge,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -385,7 +392,7 @@ const styles = StyleSheet.create({
   // ── Simple Card (horizontal rails) ──
   simpleCard: {
     backgroundColor: GroceryColors.white,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 10,
     borderWidth: 1,
     borderColor: GroceryColors.border,
@@ -402,7 +409,7 @@ const styles = StyleSheet.create({
     top: 8,
     left: 8,
     backgroundColor: GroceryColors.discountRed,
-    borderRadius: 5,
+    borderRadius: Radii.badge,
     paddingHorizontal: 5,
     paddingVertical: 2,
     zIndex: 2,
@@ -416,7 +423,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 70,
     backgroundColor: 'transparent',
-    borderRadius: 10,
+    borderRadius: Radii.control,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -493,3 +500,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export const ProductCard = React.memo(ProductCardBase);

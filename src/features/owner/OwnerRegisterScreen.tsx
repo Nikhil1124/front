@@ -37,17 +37,23 @@ export function OwnerRegisterScreen() {
   const pgTotalBedsInput = usePGowStore((s) => s.pgTotalBedsInput);
   const set = usePGowStore((s) => s.set);
 
-  const [regErrors, setRegErrors] = useState<{ pgName?: string; ownerName?: string; phone?: string; password?: string }>({});
+  const [regErrors, setRegErrors] = useState<{ pgName?: string; ownerName?: string; phone?: string; password?: string; totalBeds?: string }>({});
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
     // Checked before the account is created, not after: registering and then failing on the
     // property would leave a signed-in owner with no PG and no obvious way back.
+    // `total_beds` is not cosmetic: it drives the credit limit (₹500/bed), subscription
+    // pricing and plan eligibility, room capacity and the guest-admission cap. It used to
+    // fall back to 30 when left blank, so a 12-bed PG silently got a 30-bed credit line and
+    // was billed for 30 beds. Ask for it rather than guessing.
+    const beds = parseInt(pgTotalBedsInput, 10);
     const nextErrors = {
       pgName: pgNameInput.trim() ? undefined : 'Name your property',
       ownerName: ownerNameInput.trim() ? undefined : 'Enter your name',
       phone: ownerPhoneInput.trim() ? undefined : 'Enter your phone number',
       password: ownerPasswordInput.length < 8 ? 'At least 8 characters' : undefined,
+      totalBeds: Number.isFinite(beds) && beds > 0 ? undefined : 'Enter how many beds this PG has',
     };
     setRegErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
@@ -66,7 +72,7 @@ export function OwnerRegisterScreen() {
       // The account exists now; the property is what makes them an owner.
       const pg = await createPropertyMutation.mutateAsync({
         name: pgNameInput.trim(),
-        total_beds: parseInt(pgTotalBedsInput, 10) || 30,
+        total_beds: beds,
         address: ownerAddressInput.trim() || undefined,
         latitude: ownerLocationInput.latitude,
         longitude: ownerLocationInput.longitude,
@@ -96,6 +102,7 @@ export function OwnerRegisterScreen() {
     return (
       <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
         <LocationPicker
+          onCancel={() => setPicking(false)}
           initial={ownerLocationInput}
           onConfirm={(picked) => {
             set('ownerLocationInput', picked);
@@ -177,8 +184,13 @@ export function OwnerRegisterScreen() {
       />
       <OutlinedTextField
         label="Total Bed Capacity *"
+        placeholder="e.g. 24"
         value={pgTotalBedsInput}
-        onChangeText={(v) => set('pgTotalBedsInput', v.replace(/\D/g, ''))}
+        onChangeText={(v) => {
+          set('pgTotalBedsInput', v.replace(/\D/g, ''));
+          if (regErrors.totalBeds) setRegErrors((e) => ({ ...e, totalBeds: undefined }));
+        }}
+        error={regErrors.totalBeds}
         leadingIcon="bed"
         keyboardType="number-pad"
         testID="pg_total_beds_input"

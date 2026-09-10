@@ -77,7 +77,7 @@ export function UpiConfigSection() {
     }
   };
 
-  const handleDeleteUpi = (upiId: string, handleStr: string) => {
+  const handleDeleteUpi = (upiId: string, _handleStr: string) => {
     if (upiList.length <= 1) {
       Alert.alert('Action Restricted', 'You must maintain at least one active UPI handle for rent collections.');
       return;

@@ -18,8 +18,6 @@ import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { router, usePathname } from 'expo-router';
-import Animated, {  } from 'react-native-reanimated';
-import { tabEntering, tabExiting } from '@/theme';
 
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 
@@ -76,14 +74,15 @@ export default function StaffTabsLayout() {
       )}
 
       <View style={{ flex: 1, paddingBottom: contentPaddingBottom }}>
-        <Animated.View
-          key={pathname}
-          entering={tabEntering}
-          exiting={tabExiting}
-          style={{ flex: 1 }}
-        >
+        {/* Tab-switch motion removed. Two reasons, and the second is the bigger one:
+            the fade/rise read as lag on a tab tap (the new screen's first frame was
+            deliberately withheld for 200ms), and `key={pathname}` forced React to unmount
+            and rebuild the ENTIRE tab content tree on every switch just to retrigger the
+            animation — throwing away each screen's mounted state and re-running its whole
+            first render. Without the key, `TabSlot` swaps content without a remount. */}
+        <View style={{ flex: 1 }}>
           <TabSlot />
-        </Animated.View>
+        </View>
       </View>
 
       {/* TabList must be a direct child of Tabs, and everything between it and the TabTriggers

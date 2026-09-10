@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, ScrollView, StyleSheet, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -107,12 +107,12 @@ export function GuestLaundryScreen() {
           
           {/* Heart Icon */}
           <View style={styles.heartCircle}>
-            <Ionicons name="heart-outline" size={18} color="#6B7280" />
+            <Ionicons name="heart-outline" size={18} color={Colors.textMuted} />
           </View>
           
           {/* Fresh & Clean Badge */}
           <View style={styles.leafBadge}>
-            <Ionicons name="leaf" size={12} color="#059669" />
+            <Ionicons name="leaf" size={12} color={Colors.success} />
             <Txt style={styles.leafText}>Fresh & Clean</Txt>
           </View>
         </View>
@@ -131,16 +131,16 @@ export function GuestLaundryScreen() {
           {qty > 0 ? (
             <Row align="center" justify="space-between" style={styles.qtyContainer}>
               <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} onPress={() => updateQty(item.id, -1)} style={styles.qtyBtn}>
-                <Ionicons name="remove" size={16} color="#059669" />
+                <Ionicons name="remove" size={16} color={Colors.success} />
               </AnimatedPress>
               <Txt maxFontSizeMultiplier={1.3} style={styles.qtyText}>{qty} {item.unit}</Txt>
               <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} onPress={() => updateQty(item.id, 1)} style={styles.qtyBtn}>
-                <Ionicons name="add" size={16} color="#059669" />
+                <Ionicons name="add" size={16} color={Colors.success} />
               </AnimatedPress>
             </Row>
           ) : (
             <AnimatedPress accessibilityRole="button" style={styles.addButton} onPress={() => updateQty(item.id, 1)}>
-              <Ionicons name="add" size={16} color="#059669" />
+              <Ionicons name="add" size={16} color={Colors.success} />
               <Txt maxFontSizeMultiplier={1.3} style={styles.addButtonText}>Add</Txt>
             </AnimatedPress>
           )}
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   header: { backgroundColor: BRAND_BLUE },
   headerTitle: { fontSize: 18, fontWeight: '800', color: BG_WHITE },
   headerSubtitle: { fontSize: 11, color: BRAND_LIGHT_BLUE, marginTop: 2 },
-  helpBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: BRAND_LIGHT_BLUE, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 16 },
+  helpBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: BRAND_LIGHT_BLUE, paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radii.card },
   helpText: { color: BG_WHITE, fontSize: 12, fontWeight: '600' },
   
   // Value Props
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   
   // Tabs
   tabsRow: { paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
-  tabBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6 },
+  tabBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.card, gap: 6 },
   tabBtnActive: { backgroundColor: BRAND_BLUE },
   tabText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
   tabTextActive: { color: BG_WHITE },
@@ -343,27 +343,27 @@ const styles = StyleSheet.create({
   productGrid: { gap: 12 },
   
   // Custom Laundry Card
-  cardContainer: { width: 160, marginRight: 12, backgroundColor: '#FFFFFF', borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: '#F3F4F6' },
+  cardContainer: { width: 160, marginRight: 12, backgroundColor: Colors.surface, borderRadius: Radii.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: Colors.surfaceMuted },
   imageSection: { height: 120, backgroundColor: '#EBF4EC', borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden' },
   cardImage: { width: '100%', height: '100%', resizeMode: 'contain' },
   discountBadge: { position: 'absolute', top: 0, left: 0, backgroundColor: '#FF5252', borderBottomRightRadius: 12, borderTopLeftRadius: 16, paddingHorizontal: 8, paddingVertical: 4 },
-  discountText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
-  heartCircle: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, backgroundColor: '#FFFFFF', borderRadius: 14, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  leafBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: '#ECFDF5', borderRadius: 12, paddingHorizontal: 6, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#A7F3D0' },
+  discountText: { color: Colors.textInverse, fontSize: 10, fontWeight: '800' },
+  heartCircle: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, backgroundColor: Colors.surface, borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  leafBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: Palette.TintGreen, borderRadius: Radii.control, paddingHorizontal: 6, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: Palette.TintGreen },
   leafText: { color: '#064E3B', fontSize: 9, fontWeight: '700' },
   
   detailsSection: { padding: 10 },
   cardTitle: { fontSize: 14, fontWeight: '800', color: '#111827' },
-  cardSubtitle: { fontSize: 11, color: '#6B7280', marginTop: 2 },
-  cardPrice: { fontSize: 15, fontWeight: '800', color: '#059669' },
-  cardStrike: { fontSize: 11, color: '#9CA3AF', textDecorationLine: 'line-through', fontWeight: '500' },
+  cardSubtitle: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  cardPrice: { fontSize: 15, fontWeight: '800', color: Colors.success },
+  cardStrike: { fontSize: 11, color: Colors.textMuted, textDecorationLine: 'line-through', fontWeight: '500' },
   
-  addButton: { marginTop: 10, borderWidth: 1, borderColor: '#059669', borderRadius: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  addButtonText: { color: '#059669', fontSize: 13, fontWeight: '700' },
+  addButton: { marginTop: 10, borderWidth: 1, borderColor: Colors.success, borderRadius: Radii.badge, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  addButtonText: { color: Colors.success, fontSize: 13, fontWeight: '700' },
   
-  qtyContainer: { marginTop: 10, borderWidth: 1, borderColor: '#059669', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 6, backgroundColor: '#ECFDF5' },
+  qtyContainer: { marginTop: 10, borderWidth: 1, borderColor: Colors.success, borderRadius: Radii.badge, paddingVertical: 4, paddingHorizontal: 6, backgroundColor: Palette.TintGreen },
   qtyBtn: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  qtyText: { color: '#059669', fontSize: 13, fontWeight: '800' },
+  qtyText: { color: Colors.success, fontSize: 13, fontWeight: '800' },
   
   // Bottom Bar
   bottomFixedContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: BG_WHITE, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, paddingBottom: 16 },
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   timeFieldValue: { fontSize: 9, color: Colors.textPrimary, fontWeight: '700', marginTop: 1 },
   
   cartBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16 },
-  cartBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: 'red', borderRadius: 10, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
+  cartBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: 'red', borderRadius: Radii.control, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
   cartBadgeText: { color: BG_WHITE, fontSize: 9, fontWeight: '700' },
   cartTotalText: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
   viewCartText: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 }

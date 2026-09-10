@@ -3,7 +3,6 @@ import { View, Image, StyleSheet } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { SupplyItem } from '@/types';
-import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { useCartStore } from '../../store/useCartStore';
 import { GroceryColors, Radii } from '@/theme';
@@ -121,7 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     borderWidth: 1,
     borderColor: GroceryColors.border,
-    borderRadius: 14,
+    borderRadius: Radii.card,
     padding: 10,
     marginRight: 8,
     position: 'relative',
@@ -138,7 +137,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.discountRed,
     paddingHorizontal: 5,
     paddingVertical: 2,
-    borderRadius: 5,
+    borderRadius: Radii.badge,
     zIndex: 2,
   },
   discountText: { color: GroceryColors.white, fontSize: 8, fontWeight: '700' },
@@ -153,7 +152,7 @@ const styles = StyleSheet.create({
     height: 72,
     width: '100%',
     backgroundColor: 'transparent',
-    borderRadius: 10,
+    borderRadius: Radii.control,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,

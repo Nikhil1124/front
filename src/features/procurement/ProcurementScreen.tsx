@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Platform, View, StyleSheet, Modal, Pressable, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
+import { Platform, View, StyleSheet, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
@@ -100,11 +100,11 @@ function usePgId(): string | null {
 // ─── Manager View: catalog + requisition cart, submitted to the owner ────────
 
 function OrderSuppliesSection() {
-  const { activeEntity: owner } = useActiveProperty();
   const pgId = usePgId();
   const toast = useToast();
 
-  const { data: catalog = [], isLoading, isError, refetch, isRefetching } = useProcurementCatalog();
+  const { activeEntity: owner } = useActiveProperty();
+  const { data: catalog = [], isLoading, isError, refetch } = useProcurementCatalog();
   const { data: myOrders = [] } = useProcurementOrders({ pgId: pgId ?? undefined });
   const submitOrder = useSubmitProcurementOrder();
 
@@ -405,11 +405,10 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Owner View: real requisitions approval queue ─────────────────────────────
 
 function ApprovalsSection() {
-  const { activeEntity: owner } = useActiveProperty();
   const pgId = usePgId();
   const toast = useToast();
 
-  const { data: orders = [], isLoading, isError, refetch, isRefetching } = useProcurementOrders({ pgId: pgId ?? undefined });
+  const { data: orders = [], isLoading, isError, refetch } = useProcurementOrders({ pgId: pgId ?? undefined });
   const approveOrder = useApproveProcurementOrder();
   const rejectOrder = useRejectProcurementOrder();
 

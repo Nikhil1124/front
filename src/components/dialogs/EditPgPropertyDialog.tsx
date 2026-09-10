@@ -2,7 +2,7 @@
  * EditPgPropertyDialog — port of Kotlin `EditPgPropertyDialog`.
  */
 import { useState } from 'react';
-import { Modal, View, StyleSheet, Alert, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { LocationField } from '@/components/LocationField';
@@ -13,7 +13,7 @@ import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PGOwnerEntity } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
-import { Btn, Card, Col, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
+import { Btn, Card, Col, OutlinedBtn, Row, Sheet, Txt } from '@/components/ui';
 
 interface Props {
   pg: PGOwnerEntity;
@@ -26,7 +26,10 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
   const [address, setAddress] = useState(pg.address);
   const [nameError, setNameError] = useState<string | undefined>();
   const [addressError, setAddressError] = useState<string | undefined>();
-  const [totalBeds, setTotalBeds] = useState(String(pg.totalBeds || 36));
+  // `|| 36` used to sit here: a property whose stored bed count was 0/unknown opened this
+  // form prefilled with 36, and saving — even with nothing else changed — wrote 36 back as
+  // if the owner had stated it. Empty stays empty.
+  const [totalBeds, setTotalBeds] = useState(pg.totalBeds ? String(pg.totalBeds) : '');
   const [mgrName, setMgrName] = useState(pg.managerName);
   const [mgrPhone, setMgrPhone] = useState(pg.managerPhone);
   const [mgrPin, setMgrPin] = useState(pg.managerPin);
@@ -55,6 +58,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
     return (
       <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
         <LocationPicker
+          onCancel={() => setPicking(false)}
           initial={
             location ??
             (pg.latitude && pg.longitude

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Radii } from '@/theme';
-import { AnimatedPress, Btn, Col, Row, Spacer, Txt } from '@/components/ui';
+import { Colors, Radii, Palette } from '@/theme';
+import { AnimatedPress, Btn, Row, Spacer, Txt } from '@/components/ui';
 import { useLaundryStore, LAUNDRY_SERVICES, LaundryOrder } from '@/features/laundry/store/useLaundryStore';
 import { usePGowStore } from '@/store/usePGowStore';
 
@@ -138,11 +138,11 @@ export default function LaundryPaymentScreen() {
         <Btn 
           onPress={handlePay}
           containerColor={Colors.primary}
-          textColor="#FFF"
+          textColor={Colors.surface}
           borderRadius={Radii.control}
           height={50}
         >
-          <Txt variant="button" color="#FFF">Pay ₹{estimatedTotal}</Txt>
+          <Txt variant="button" color={Colors.textInverse}>Pay ₹{estimatedTotal}</Txt>
         </Btn>
       </View>
     </View>
@@ -156,29 +156,29 @@ const styles = StyleSheet.create({
   
   pageTitle: { fontSize: 28, fontWeight: '800', color: Colors.primaryDark, lineHeight: 34 },
   
-  billCard: { backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 20 },
+  billCard: { backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, padding: 20 },
   billRow: { flexDirection: 'row', alignItems: 'center' },
   billLabel: { fontSize: 15, color: Colors.textSecondary },
   billValue: { fontSize: 15, color: Colors.textPrimary, fontWeight: '600' },
   billDiscount: { fontSize: 15, color: Colors.primaryDark, fontWeight: '700' },
-  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: 1 },
+  dividerDashed: { height: 1, borderWidth: 1, borderColor: Colors.borderSubtle, borderStyle: 'dashed', borderRadius: Radii.badge },
   billTotalLabel: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
   billTotalValue: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
   
-  warningCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', marginHorizontal: 20, marginTop: 16, padding: 12, borderRadius: Radii.card, borderWidth: 1, borderColor: '#FDE68A' },
+  warningCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Palette.TintAmber, marginHorizontal: 20, marginTop: 16, padding: 12, borderRadius: Radii.card, borderWidth: 1, borderColor: Palette.TintAmber },
   warningText: { fontSize: 13, color: '#92400E', marginLeft: 10, flex: 1, lineHeight: 18, fontWeight: '500' },
   
   section: { marginTop: 32 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, paddingHorizontal: 20, marginBottom: 12 },
-  methodsContainer: { backgroundColor: '#FFF', borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.borderSubtle },
+  methodsContainer: { backgroundColor: Colors.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.borderSubtle },
   methodRow: { padding: 16, paddingHorizontal: 20 },
-  methodIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  methodIconWrap: { width: 40, height: 40, borderRadius: Radii.card, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
   methodName: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
   divider: { height: 1, backgroundColor: Colors.borderSubtle, marginLeft: 72 },
   
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
+  radio: { width: 22, height: 22, borderRadius: Radii.control, borderWidth: 2, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   radioActive: { borderColor: Colors.primary },
-  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.primary },
+  radioInner: { width: 12, height: 12, borderRadius: Radii.badge, backgroundColor: Colors.primary },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, borderTopColor: Colors.borderSubtle, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 10 },
 });

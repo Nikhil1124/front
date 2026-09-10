@@ -49,41 +49,10 @@ import type {
   AppRoleNotificationEntity,
   SimulatedAlert } from '@/types';
 
-/** Ids for the rows that never reach a server — hub services, local expenses. Prefixed so a
- *  locally-invented id can never be mistaken for one the backend issued. */
-const localId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 // ─── Reads ───────────────────────────────────────────────────────────────────
 
-/**
- * One read, through the React Query cache.
- *
- * `staleTime: 0` because every caller is an explicit refresh — after a mutation, on init, on
- * a property switch — and each of those exists precisely because the previous answer is now
- * wrong. Screens that later call `useQuery` on the same key still get the cached response.
- */
-function cachedFetch<T>(queryKey: readonly unknown[], queryFn: () => Promise<T>): Promise<T> {
-  return queryClient.fetchQuery({ queryKey: [...queryKey], queryFn, staleTime: 0 });
-}
 
-/**
- * A list the signed-in role may simply not be allowed to read.
- *
- * A guest calling the staff roster gets a 403, and that is the correct answer to their
- * question, not a failure — so it yields an empty list silently. Anything else is a genuine
- * problem and gets logged; it still yields empty, because `refreshAll` populates a dashboard
- * and one unavailable section must not blank out the other eight.
- */
-async function safeList<T>(label: string, run: () => Promise<T[]>): Promise<T[]> {
-  try {
-    return await run();
-  } catch (err) {
-    if (!(err instanceof PGowApiError && (err.httpStatus === 403 || err.httpStatus === 404))) {
-      console.warn(`[PGow] could not load ${label}:`, err);
-    }
-    return [];
-  }
-}
 
 /**
  * Side-notify someone other than the person whose action triggered this — a repair booking
@@ -102,10 +71,19 @@ function notifyRole(
 ): void {
   const pgId = useAuthStore.getState().activePgId;
   if (!pgId) return;
+  // `?? 'all'` used to close this expression. Every caller passes a role constant, so an
+  // unmapped value means a bug — and the old fallback turned that bug into a property-wide
+  // push. A courtesy heads-up that cannot be addressed correctly is not worth sending to
+  // everyone instead.
+  const audience = notificationsApi.BROADCAST_AUDIENCE_MAP[targetRole.toUpperCase()];
+  if (!audience) {
+    console.warn(`[PGow] no broadcast audience mapped for role "${targetRole}" — not sending.`);
+    return;
+  }
   notificationsApi
     .broadcastNotification({
       pg_id: pgId,
-      target_role: notificationsApi.BROADCAST_AUDIENCE_MAP[targetRole.toUpperCase()] ?? 'all',
+      target_role: audience,
       title,
       body,
       category,
@@ -113,14 +91,6 @@ function notifyRole(
     .catch((err) => console.warn('[PGow] side notification failed:', err));
 }
 
-/** ADR-004's gate is the resident's own KYC state, which is the one piece of KYC a guest can
- *  read about themselves — `/v1/kyc/pending` is owner-only. */
-function kycStatusFromGate(gate: string | null): string {
-  if (gate === 'KYC_REQUIRED') return 'NOT_SUBMITTED';
-  if (gate === 'KYC_PENDING') return 'PENDING';
-  if (gate === 'KYC_REJECTED') return 'REJECTED';
-  return 'VERIFIED';
-}
 
 export interface PGowState {
   activeRole: UserRole | null;
@@ -292,7 +262,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   ownerPhoneInput: '',
   ownerPasswordInput: '',
   ownerAddressInput: '',
-  pgTotalBedsInput: '30',
+  // Empty, not '30'. A prefilled bed count is one the owner accepts without reading, and it
+  // drives credit limit, billing, room capacity and the admission cap downstream.
+  pgTotalBedsInput: '',
   ownerLocationInput: null,
 
   staffNameInput: '',
@@ -300,7 +272,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   staffPinInput: '',
   staffPhoneInput: '',
   staffShiftInput: 'Day Shift (8 AM - 5 PM)',
-  staffSalaryInput: '15000',
+  // Empty, not '15000'. This is written to the staff member's real `monthly_salary` and
+  // then drives salary expenses — a prefilled figure is one nobody consciously stated.
+  staffSalaryInput: '',
 
   mealTypeSelected: 'Breakfast',
   menuItemsInput: '',

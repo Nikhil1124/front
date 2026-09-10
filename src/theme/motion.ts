@@ -18,29 +18,8 @@ export const Motion = {
   },
 } as const;
 
-// Bottom Tab Swapping transitions:
-// Incoming fades in and rises up by 4dp. Outgoing fades out and shifts up by 4dp.
-export const tabEntering = new Keyframe({
-  0: {
-    opacity: 0,
-    transform: [{ translateY: 4 }],
-  },
-  100: {
-    opacity: 1,
-    transform: [{ translateY: 0 }],
-  },
-}).duration(Motion.timing.tab);
-
-export const tabExiting = new Keyframe({
-  0: {
-    opacity: 1,
-    transform: [{ translateY: 0 }],
-  },
-  100: {
-    opacity: 0,
-    transform: [{ translateY: -4 }],
-  },
-}).duration(Motion.timing.tab);
+// Tab-swap keyframes used to live here. Removed with the tab transition itself —
+// see the tab `_layout.tsx` files for why (perceived lag, plus a forced remount).
 
 // Center Dialog scale-fade transitions:
 // Incoming scales gently from 0.96 -> 1.0 with a fade. Outgoing scales down to 0.96 with a fade.

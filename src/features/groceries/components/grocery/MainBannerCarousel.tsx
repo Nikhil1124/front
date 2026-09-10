@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, FlatList, Image, TouchableOpacity, useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent, ImageSourcePropType,  } from 'react-native';
+import { StyleSheet, View, FlatList, Image, useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent, ImageSourcePropType } from 'react-native';
 
 import { Radii, Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { GroceryColors } from '@/theme';
+import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     right: -4,
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: Radii.badge,
     backgroundColor: GroceryColors.discountRed,
   },
   chipLabel: {

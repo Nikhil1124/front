@@ -1,6 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 
 ;
 import { Ionicons } from '@expo/vector-icons';

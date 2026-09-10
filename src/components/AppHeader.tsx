@@ -34,8 +34,14 @@ const TOP_GAP = 8;
 const ROW_MIN_HEIGHT = 38;
 const PAD_BOTTOM = 13;
 
-/** Height below the safe-area inset. Pinned by `ROW_MIN_HEIGHT` so it is exact, and read by
- *  anything that floats over a screen — today `AlertOverlay`. */
+/** Height below the safe-area inset, for anything that floats over a screen — today only
+ *  `AlertOverlay`, which uses it as clearance.
+ *
+ *  This is the ONE-line height, and since the title/eyebrow may now wrap to two lines on a
+ *  narrow screen or at a large font scale, it is a floor rather than an exact measure. The
+ *  consequence is bounded and cosmetic: on those screens a toast can sit a few dp higher
+ *  against the header than intended. Worth it — the alternative was the header truncating
+ *  its own text on every phone narrow enough to need the second line. */
 export const HEADER_BAND_HEIGHT = TOP_GAP + ROW_MIN_HEIGHT + PAD_BOTTOM + 1;
 
 interface AppHeaderProps {
@@ -63,19 +69,26 @@ export function AppHeader({
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
 
+  // All three of these were clamped to `numberOfLines={1}`, which on a narrow phone — or at
+  // the 1.3x font scale `Txt` allows — cut the line off mid-word with an ellipsis: "Good
+  // morning, Nikh…". The width available here is whatever the `actions` on the right do not
+  // take, so the smaller the screen the sooner it bites, which is why it showed up on some
+  // test phones and not others. Two lines instead of one: the text wraps and stays readable
+  // where it used to truncate, and nothing changes at all on a screen wide enough for one
+  // line, because a second line is only ever used when the first overflows.
   const titleBlock = (
     <View style={styles.titleCol}>
       {eyebrow && !onBack ? (
-        <Txt variant="meta" color={Colors.textMuted} numberOfLines={1}>{eyebrow}</Txt>
+        <Txt variant="meta" color={Colors.textMuted} numberOfLines={2}>{eyebrow}</Txt>
       ) : null}
       <View style={styles.titleRow}>
-        <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1} style={{ flexShrink: 1 }}>
+        <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={2} style={{ flexShrink: 1 }}>
           {title}
         </Txt>
         {titleAdornment}
       </View>
       {subtitle ? (
-        <Txt variant="meta" color={Colors.textMuted} numberOfLines={1}>{subtitle}</Txt>
+        <Txt variant="meta" color={Colors.textMuted} numberOfLines={2}>{subtitle}</Txt>
       ) : null}
     </View>
   );

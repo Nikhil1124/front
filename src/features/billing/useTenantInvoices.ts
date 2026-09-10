@@ -68,7 +68,7 @@ export function useTenantInvoices(pgId: string | null, tenantMembershipId?: stri
   });
 }
 
-export function usePayTenantInvoice(pgId: string | null) {
+export function usePayTenantInvoice(_pgId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (params: {
