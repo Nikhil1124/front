@@ -31,7 +31,7 @@
  * sheet in the app now uses.
  */
 import { type ReactNode } from 'react';
-import { Modal, View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { Modal, View, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
@@ -47,6 +47,7 @@ export interface SheetProps {
   /** Tint for the header strip and its icon chip. Defaults to the brand. */
   accent?: string;
   icon?: keyof typeof Ionicons.glyphMap;
+  size?: 'auto' | '3/4';
   onDismiss: () => void;
   /** Pinned below the scrolling content — action buttons, a total, a submit bar. Stays put
    *  while the content scrolls, so the primary action never scrolls out of reach. */
@@ -56,7 +57,7 @@ export interface SheetProps {
 }
 
 export function Sheet({
-  visible, title, subtitle, accent = Colors.primary, icon, onDismiss, footer, children, testID,
+  visible, title, subtitle, accent = Colors.primary, icon, size = 'auto', onDismiss, footer, children, testID,
 }: SheetProps) {
   // `paddingBottom` used to be `Platform.OS === 'ios' ? 28 : 16` — a hardcoded guess at the
   // safe area, which is wrong in three directions at once: too much on an iPhone with no home
@@ -67,11 +68,12 @@ export function Sheet({
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} testID={testID}>
-      <Animated.View entering={FadeIn.duration(150)} style={styles.backdrop}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Animated.View entering={SlideInDown.springify(220).dampingRatio(0.85)} style={styles.sheetWrapper}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <Animated.View entering={FadeIn.duration(150)} style={styles.backdrop}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onDismiss} />
+          <Animated.View entering={SlideInDown.springify(220).dampingRatio(0.85)} style={[styles.sheetWrapper, size === '3/4' && { height: '75%' }]}>
+            <Pressable onPress={(e) => e.stopPropagation()} style={{ flexShrink: 1 }}>
+              <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16), flexShrink: 1 }]}>
               <View style={styles.handleBar} />
 
               <View style={[styles.headerStrip, { backgroundColor: `${accent}22` }]}>
@@ -108,6 +110,7 @@ export function Sheet({
           </Pressable>
         </Animated.View>
       </Animated.View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

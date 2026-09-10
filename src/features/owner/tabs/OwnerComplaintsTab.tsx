@@ -162,6 +162,7 @@ export function OwnerComplaintsTab() {
           title="Review response"
           subtitle={`${activeItem.guestName} · Room ${activeItem.roomNo}`}
           icon="construct-outline"
+          size="3/4"
           onDismiss={() => setActiveItem(null)}
           footer={
             <Row gap={10}>
