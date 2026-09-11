@@ -21,7 +21,6 @@ import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery
 import { HeroBanner } from '../components/grocery/HeroBanner';
 import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
-import { TodaysKitchenNeeds } from '../components/kitchen/TodaysKitchenNeeds';
 import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
 import { PGowApiError } from '@/data/apiClient';
 
@@ -93,10 +92,41 @@ export function GroceriesScreen() {
   const recommendedProducts = useMemo(() => supplyItems.slice(0, 6), [supplyItems]);
   const popularProducts = useMemo(() => supplyItems.slice(6, 12), [supplyItems]);
 
-  const vegetablesList = useMemo(() => supplyItems.filter(p => p.category_id.toLowerCase().includes('vegetable')), [supplyItems]);
-  const leafyItemsList = useMemo(() => supplyItems.filter(p => p.category_id.toLowerCase().includes('leafy')), [supplyItems]);
-  const dairyAndEggsList = useMemo(() => supplyItems.filter(p => p.category_id.toLowerCase().includes('dairy') || p.category_id.toLowerCase().includes('egg')), [supplyItems]);
-  const meatsList = useMemo(() => supplyItems.filter(p => p.category_id.toLowerCase().includes('meat') || p.category_id.toLowerCase().includes('chicken') || p.category_id.toLowerCase().includes('fish')), [supplyItems]);
+  /**
+   * Items in whichever categories match a predicate on the category NAME.
+   *
+   * All four lists below used to test `p.category_id.toLowerCase().includes('vegetable')`.
+   * `category_id` is a UUID (`schemas.py` types it `uuid.UUID`), and a UUID never contains
+   * the word "vegetable" — so every one of these lists was permanently empty, which is why
+   * the quick-category chips reported "No products in Vegetables" and the home screen's
+   * category sections never rendered. The name lives on the category, so the name is what
+   * has to be matched, and the ids it resolves to are what the items carry.
+   */
+  const itemsInCategories = useMemo(
+    () => (matches: (name: string) => boolean) => {
+      const ids = new Set(categories.filter((c) => matches(c.name.toLowerCase())).map((c) => c.id));
+      return supplyItems.filter((p) => ids.has(p.category_id));
+    },
+    [supplyItems, categories],
+  );
+
+  // "Leafy Vegetables" contains "vegetable", so plain Vegetables has to exclude it or the two
+  // chips would show the same list.
+  const vegetablesList = useMemo(
+    () => itemsInCategories((n) => n.includes('vegetable') && !n.includes('leafy')),
+    [itemsInCategories],
+  );
+  const leafyItemsList = useMemo(() => itemsInCategories((n) => n.includes('leafy')), [itemsInCategories]);
+  const dairyAndEggsList = useMemo(
+    () => itemsInCategories((n) => n.includes('dairy') || n.includes('egg')),
+    [itemsInCategories],
+  );
+  // The catalogue's meat category is named "Chicken"; keep the other two so a later "Mutton"
+  // or "Fish" category lands here without another edit.
+  const meatsList = useMemo(
+    () => itemsInCategories((n) => n.includes('meat') || n.includes('chicken') || n.includes('fish')),
+    [itemsInCategories],
+  );
 
   const hasActiveFilters =
     filters.sort !== 'popular' || filters.maxPrice !== undefined || filters.onDealOnly === true;
@@ -134,7 +164,17 @@ export function GroceriesScreen() {
       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
-  }, [searchQuery, filters, hasActiveFilters, supplyItems]);
+  }, [
+    searchQuery,
+    filters,
+    hasActiveFilters,
+    supplyItems,
+    activeQuickCategory,
+    vegetablesList,
+    leafyItemsList,
+    dairyAndEggsList,
+    meatsList,
+  ]);
 
   const isSearching = searchQuery.trim().length > 0 || hasActiveFilters || activeQuickCategory !== null;
 
@@ -291,22 +331,11 @@ export function GroceriesScreen() {
             <PromoCards onCardPress={(_id) => openDeals()} />
 
             <View style={styles.bottomWhiteSection}>
-              {/* ── Kitchen needs (owner/chef only) ── */}
-              {/* Was commented out. The weekly menu planner behind it is finished on both
-                  sides — `GET/PUT /v1/supply/kitchen-menu` are live, `useKitchenMenu.ts`
-                  wires them, and the editor, banner and add-all-to-cart button are all
-                  built — so the only thing between an owner and the feature was these
-                  braces. Owner mode only: it plans the mess kitchen's week and turns the
-                  ingredients into a bulk basket, which is not a resident's screen. */}
-              {mode === 'owner' && (
-                <TodaysKitchenNeeds
-                  onProductPress={openProduct}
-                  onSeeAllCategoriesPress={() => openSupplyCategory(null)}
-                  products={supplyItems}
-                  pgId={activePgId ?? undefined}
-                />
-              )}
-
+              {/* "Today's Kitchen Needs" sat here (owner/chef only, the weekly menu planner
+                  over `GET/PUT /v1/supply/kitchen-menu`). Removed from the shop home on
+                  request. The planner's own components are still in
+                  `components/kitchen/` and its endpoints are still live, so it can be
+                  reinstated — or given its own screen — without rebuilding anything. */}
 
               {/* ── Popular Categories ── */}
               <SupplyCategoryGrid

@@ -23,7 +23,7 @@
  */
 import { useEffect, useState } from 'react';
 import {
-  View, StyleSheet, Alert, Platform, BackHandler,
+  View, StyleSheet, Platform, BackHandler,
   KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 
@@ -32,6 +32,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
+import { useToast } from '@/hooks/useToast';
 import { Btn, Card, ChoiceChips, Col, OutlinedBtn, PGowActionSheet, Row, Sheet, Spacer, Txt, type PGowAction } from '@/components/ui';
 const ID_TYPES = ['Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID'];
 
@@ -54,6 +55,7 @@ export function KycUploadDialog({
 }: Props) {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const submitKyc = usePGowStore((s) => s.submitGuestKyc);
+  const toast = useToast();
 
   const [selectedIdType, setSelectedIdType] = useState(initialIdType || guest?.idProofType || 'Aadhaar Card');
   const [idNumber, setIdNumber] = useState(initialIdNumber);
@@ -74,7 +76,8 @@ export function KycUploadDialog({
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (perm.status !== 'granted') {
-      Alert.alert(
+      toast(
+        'warning',
         from === 'camera' ? 'Camera permission required' : 'Photo permission required',
         `Allow ${from === 'camera' ? 'camera' : 'photo library'} access in your device settings to continue.`,
       );
@@ -128,27 +131,34 @@ export function KycUploadDialog({
   const aadhaarDigits = idNumber.replace(/\D/g, '');
 
   const [idError, setIdError] = useState<string | undefined>();
+  // A missing photo is a fact about the photo row, so it is said there rather than in a popup
+  // that names both rows at once and covers the thing it is describing.
+  const [photoErrors, setPhotoErrors] = useState<{ selfie?: string; idPhoto?: string }>({});
 
   const handleSubmit = async () => {
-    if (isAadhaar && aadhaarDigits.length < 4) {
-      setIdError('Enter your Aadhaar number — only the last four digits are stored');
-      return;
-    }
-    if (!idPhotoUri || !profilePhotoUri) {
-      Alert.alert('Validation', 'Please attach both a selfie and a clear photo of your ID document.');
-      return;
-    }
+    const nextIdError = isAadhaar && aadhaarDigits.length < 4
+      ? 'Enter your Aadhaar number — only the last four digits are stored'
+      : undefined;
+    const nextPhotoErrors = {
+      selfie: profilePhotoUri ? undefined : 'Add a selfie so your manager can match you to the ID',
+      idPhoto: idPhotoUri ? undefined : 'Add a clear photo of the document itself',
+    };
+    setIdError(nextIdError);
+    setPhotoErrors(nextPhotoErrors);
+    if (nextIdError || nextPhotoErrors.selfie || nextPhotoErrors.idPhoto) return;
+
     setSubmitting(true);
     const r = await submitKyc(selectedIdType, idNumber, idPhotoUri, profilePhotoUri);
     setSubmitting(false);
     if (r.ok) {
-      Alert.alert(
-        'Submitted',
-        'Your KYC documents have been sent to your property manager for verification. You will receive a notification once reviewed.'
+      toast(
+        'success',
+        'Documents submitted',
+        'Your manager reviews them next — you get a notification either way.'
       );
       onDismiss();
     } else {
-      Alert.alert('Submission Failed', r.error ?? 'Please try again.');
+      toast('error', 'Could not submit', r.error ?? 'Please try again.');
     }
   };
 
@@ -239,7 +249,7 @@ export function KycUploadDialog({
               </View>
               <Col style={{ flex: 1 }}>
                 <Btn
-                  onPress={() => choosePhoto(setProfilePhotoUri, 'Selfie')}
+                  onPress={() => choosePhoto((uri) => { setProfilePhotoUri(uri); setPhotoErrors((e) => ({ ...e, selfie: undefined })); }, 'Selfie')}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
                   borderRadius={Radii.control}
@@ -251,6 +261,9 @@ export function KycUploadDialog({
                 </Btn>
               </Col>
             </Row>
+            {photoErrors.selfie ? (
+              <Txt size={11} color={Colors.danger} style={{ marginTop: 6 }}>{photoErrors.selfie}</Txt>
+            ) : null}
 
             <Spacer size={16} />
 
@@ -300,7 +313,7 @@ export function KycUploadDialog({
               </View>
               <Col style={{ flex: 1 }}>
                 <Btn
-                  onPress={() => choosePhoto(setIdPhotoUri, 'ID Document Photo')}
+                  onPress={() => choosePhoto((uri) => { setIdPhotoUri(uri); setPhotoErrors((e) => ({ ...e, idPhoto: undefined })); }, 'ID Document Photo')}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
                   borderRadius={Radii.control}
@@ -312,6 +325,9 @@ export function KycUploadDialog({
                 </Btn>
               </Col>
             </Row>
+            {photoErrors.idPhoto ? (
+              <Txt size={11} color={Colors.danger} style={{ marginTop: 6 }}>{photoErrors.idPhoto}</Txt>
+            ) : null}
 
           </ScrollView>
 

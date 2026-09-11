@@ -6,7 +6,7 @@
  * Quick Action destination.
  */
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Image } from 'react-native';
+import { View, ScrollView, StyleSheet, Linking, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RefreshControl } from 'react-native';
@@ -17,11 +17,9 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 import { usePaymentsQuery } from '@/features/payments/usePayments';
 import { useComplaintsQuery } from '@/features/requests/useComplaints';
 import { usePortfolioDetail } from '@/features/properties/usePortfolio';
-import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
-import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
-import type { PGOwnerEntity } from '@/types';
 import { Colors, Palette, Radii } from '@/theme';
 import { Btn, Card, Col, ErrorState, IconBtn, LoadingState, OutlinedBtn, Row, SearchField, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 // ── Color System (Official LUNA Palette) ───────────────────────────────────
 const PRIMARY = Colors.primary;       // Deep Ocean Blue
@@ -35,6 +33,7 @@ const WARNING = Colors.warning;
 const ERROR = Colors.danger;
 
 export function ManagePropertiesScreen() {
+  const toast = useToast();
   const {
     data: allPGs = [],
     isLoading: pgsLoading,
@@ -65,8 +64,6 @@ export function ManagePropertiesScreen() {
   const { data: portfolio } = usePortfolioDetail(allPGs);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddPgModal, setShowAddPgModal] = useState(false);
-  const [editingPg, setEditingPg] = useState<PGOwnerEntity | null>(null);
 
   const totalBeds = allPGs.reduce((sum, pg) => sum + pg.totalBeds, 0);
   const totalGuests = isMultiPg ? (portfolio?.totals.occupiedBeds ?? 0) : allGuests.length;
@@ -93,7 +90,7 @@ export function ManagePropertiesScreen() {
         subtitle={`${allPGs.length} Active PG Propert${allPGs.length === 1 ? 'y' : 'ies'}`}
         rightAction={
           <IconBtn
-            onPress={() => { setShowAddPgModal(true); }}
+            onPress={() => router.push('/(owner)/property/new' as never)}
             icon="add"
             size={20}
             tint={WHITE}
@@ -193,7 +190,7 @@ export function ManagePropertiesScreen() {
                         </Row>
                       </View>
                       <IconBtn
-                        onPress={() => { setEditingPg(pg); }}
+                        onPress={() => router.push(`/(owner)/property/${pg.id}/edit` as never)}
                         icon="create-outline"
                         size={18}
                         tint={PRIMARY}
@@ -224,7 +221,7 @@ export function ManagePropertiesScreen() {
                         {pg.managerPhone ? (
                           <IconBtn
                             onPress={() => {
-                              Linking.openURL(`tel:${pg.managerPhone.replace(/\s+/g, '')}`).catch(() => Alert.alert('Call Manager', pg.managerPhone));
+                              Linking.openURL(`tel:${pg.managerPhone.replace(/\s+/g, '')}`).catch(() => toast('error', 'Could not start the call', `Dial ${pg.managerPhone} yourself.`));
                             }}
                             icon="call"
                             size={14}
@@ -293,13 +290,11 @@ export function ManagePropertiesScreen() {
         <Spacer size={20} />
 
         {/* ── Add Property Empty-Space CTA ── */}
-        <AddPropertyCTA onPress={() => { setShowAddPgModal(true); }} />
+        <AddPropertyCTA onPress={() => router.push('/(owner)/property/new' as never)} />
 
         <Spacer size={30} />
       </HubScreenWrapper>
 
-      {showAddPgModal && <AddPgPropertyDialog onDismiss={() => setShowAddPgModal(false)} />}
-      {editingPg && <EditPgPropertyDialog pg={editingPg} onDismiss={() => setEditingPg(null)} />}
     </>
   );
 }

@@ -149,8 +149,15 @@ export async function logoutEverywhere(): Promise<void> {
   // server until it expired on its own.
   const pending: Promise<unknown>[] = [];
   if (deviceId) {
-    // A missed device cleanup self-corrects: the server reassigns a token when a different
-    // account registers it.
+    // Belt and braces. `deviceId` is held in memory only and is set asynchronously after
+    // registration resolves, so it is null on any sign-out that beats that round trip, on a
+    // phone that refused push permission, and on any session that ended by expiry rather
+    // than by this function. The real cleanup is the logout call below: `revoke_all_for_user`
+    // tears down every device this account has registered, because ending every session has
+    // to end every push registration with it — a `devices` row is not tied to a session and
+    // keeps its subscription to the property's topic, which is what property-wide
+    // announcements are published to. This line just gets there a few milliseconds sooner;
+    // if logout lands first it 404s and `allSettled` below absorbs it.
     pending.push(unregisterDevice(deviceId));
   }
   // Revokes the refresh token server-side. This is the half that makes signing out mean

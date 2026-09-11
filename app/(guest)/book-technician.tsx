@@ -7,7 +7,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Image } from 'react-native';
 import { router } from 'expo-router';
@@ -15,9 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
-import { Card, Txt, Btn, OutlinedBtn, Row, Col, Spacer, ChoiceChips, OutlinedTextField } from '@/components/ui';
+import { Card, Txt, Btn, OutlinedBtn, PGowDialog, Row, Col, Spacer, ChoiceChips, OutlinedTextField } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
+import { useToast } from '@/hooks/useToast';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
@@ -75,6 +75,8 @@ export default function BookTechnicianScreen() {
   const [createdId, setCreatedId] = useState<string>('');
   const [createdAt, setCreatedAt] = useState<string>('');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const toast = useToast();
 
   // History / Detail States
   const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'>('ALL');
@@ -175,38 +177,34 @@ export default function BookTechnicianScreen() {
       refetchRequests();
       qc.invalidateQueries({ queryKey: qk.requests.list(pgId ?? '') });
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to submit request. Please try again.');
+      toast('error', 'Could not send the request', err?.message ?? 'Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleCancelRequest = async (requestId: string) => {
-    Alert.alert('Cancel Request', 'Are you sure you want to cancel this technician request?', [
-      { text: 'No', style: 'cancel' },
-      {
-        text: 'Yes, Cancel',
-        style: 'destructive',
-        onPress: async () => {
-          setIsCancelling(true);
-          try {
-            await requestsApi.cancelComplaint(requestId);
-            Alert.alert('Success', 'Request has been cancelled.');
-            setViewMode('HISTORY');
-            refetchRequests();
-            qc.invalidateQueries({ queryKey: qk.requests.list(pgId ?? '') });
-          } catch (err: any) {
-            Alert.alert('Error', err?.message ?? 'Failed to cancel request.');
-          } finally {
-            setIsCancelling(false);
-          }
-        } },
-    ]);
+  const handleCancelRequest = (requestId: string) => setCancellingId(requestId);
+
+  const confirmCancelRequest = async () => {
+    if (!cancellingId) return;
+    setIsCancelling(true);
+    try {
+      await requestsApi.cancelComplaint(cancellingId);
+      setCancellingId(null);
+      toast('success', 'Request cancelled', 'Nobody will be sent out for this one.');
+      setViewMode('HISTORY');
+      refetchRequests();
+      qc.invalidateQueries({ queryKey: qk.requests.list(pgId ?? '') });
+    } catch (err: any) {
+      toast('error', 'Could not cancel', err?.message ?? 'Please try again.');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const copyToClipboard = async (text: string) => {
     await Clipboard.setStringAsync(text);
-    Alert.alert('Copied', 'Request ID copied to clipboard.');
+    toast('success', 'Copied', 'Request ID is on your clipboard.');
   };
 
   const getDisplayId = (id: string, createdAtIso: string) => {
@@ -706,6 +704,17 @@ export default function BookTechnicianScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      <PGowDialog
+        visible={cancellingId != null}
+        title="Cancel this request?"
+        message="The technician booking is withdrawn. You can always raise a new one."
+        confirmLabel="Cancel request"
+        cancelLabel="Keep it"
+        tone="destructive"
+        busy={isCancelling}
+        onConfirm={confirmCancelRequest}
+        onCancel={() => setCancellingId(null)}
+      />
     </HubScreenWrapper>
   );
 }

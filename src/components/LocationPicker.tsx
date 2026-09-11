@@ -27,7 +27,7 @@ import { fetchMapStyle } from '@/features/places/mapStyle';
 import { useMapReady } from '@/features/places/useMapReady';
 import { useDeviceLocation } from '@/features/places/useDeviceLocation';
 import { Colors, Radii, Spacing } from '@/theme';
-import { AnimatedPress, Txt } from '@/components/ui';
+import { AnimatedPress, PGowDialog, Txt } from '@/components/ui';
 
 interface Props {
   /** Where to open. Falls back to the city centre when the owner hasn't searched yet. */
@@ -67,7 +67,7 @@ export default function LocationPicker({ initial, onConfirm, onCancel }: Props) 
     return () => sub.remove();
   }, [onCancel]);
 
-  const { locating, requestPermission, getCurrentCoordinates } = useDeviceLocation();
+  const { locating, requestPermission, getCurrentCoordinates, settingsPromptVisible, dismissSettingsPrompt, openAppSettings } = useDeviceLocation();
   const cameraRef = useRef<CameraRef>(null);
   const [centre, setCentre] = useState(initial ?? FALLBACK);
   const [zoom, setZoom] = useState(17);
@@ -281,6 +281,16 @@ export default function LocationPicker({ initial, onConfirm, onCancel }: Props) 
           </Txt>
         </AnimatedPress>
       </View>
+
+      <PGowDialog
+        visible={settingsPromptVisible}
+        title="Location is turned off for PGow"
+        message="Your device will not ask again, so it has to be switched back on in Settings. You can still search for the address or drag the pin instead."
+        confirmLabel="Open settings"
+        cancelLabel="Not now"
+        onConfirm={openAppSettings}
+        onCancel={dismissSettingsPrompt}
+      />
     </View>
   );
 }

@@ -42,13 +42,13 @@
  * on the same payment elsewhere, so trusting its static shape alone would show a Verify button
  * on money someone already verified from the Payments tab.
  */
-import { useMemo, useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, RefreshControl, ScrollView, useWindowDimensions, BackHandler } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { View, StyleSheet, RefreshControl, ScrollView, useWindowDimensions, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useRouter } from 'expo-router';
+import { router, useRouter, useFocusEffect } from 'expo-router';
 
 import { EmptyState } from '@/components/EmptyState';
 import { Colors, Radii, DeckTints } from '@/theme';
@@ -83,7 +83,7 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAllPaymentsQuery, useVerifyPaymentMutation, useRejectPaymentMutation } from '@/features/payments/usePayments';
 import { useAuthStore } from '@/store/authStore';
 import { AppHeader } from '@/components/AppHeader';
-import { AnimatedPress, Btn, Card, Col, OutlinedTextField, Row, Sheet, Spacer, StatusChip, Txt } from '@/components/ui';
+import { AnimatedPress, Btn, Card, Col, OutlinedTextField, PGowDialog, Row, Sheet, Spacer, StatusChip, Txt } from '@/components/ui';
 
 // ── Classification ───────────────────────────────────────────────────────────────────────────
 
@@ -408,16 +408,22 @@ export function OwnerAnnouncementsTab() {
   // screen's `onBack` already uses. The previous handler hardcoded '/overview', which is an
   // owner-only route: a resident or staff member pressing the hardware back button here was
   // sent to a screen their role cannot even see.
-  useEffect(() => {
-    const onBack = () => { router.back(); return true; };
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
-    return () => sub.remove();
-  }, []);
+  // Scoped to focus — see the staff tab for why an unscoped global listener swallows the
+  // back press of any screen pushed on top of this one.
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => { router.back(); return true; };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, []),
+  );
 
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [selectedInboxItem, setSelectedInboxItem] = useState<InboxItem | null>(null);
   const [rejectingPayment, setRejectingPayment] = useState<InboxItem | null>(null);
   const [rejectingKyc, setRejectingKyc] = useState<InboxItem | null>(null);
+  const [duplicatePayment, setDuplicatePayment] = useState<{ paymentId: string; message: string } | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
   const [noticeTitle, setNoticeTitle] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
@@ -537,30 +543,25 @@ export function OwnerAnnouncementsTab() {
       const isDuplicateError = msg.toLowerCase().includes('already been verified') || msg.toLowerCase().includes('duplicate');
       
       if (isDuplicateError) {
-        Alert.alert(
-          'Could not verify',
-          msg,
-          [
-            { text: 'Dismiss', style: 'cancel' },
-            { 
-              text: 'Reject Duplicate', 
-              style: 'destructive',
-              onPress: () => {
-                rejectPaymentMutation.mutate({ paymentId: item.notif!.actionId!, reason: 'Duplicate payment request' }, {
-                  onSuccess: () => {
-                    toast('success', 'Duplicate Rejected', 'The duplicate request was removed.');
-                    setSelectedInboxItem(null);
-                  },
-                  onError: (rejectErr) => Alert.alert('Could not reject', rejectErr instanceof Error ? rejectErr.message : 'Please try again.')
-                });
-              }
-            }
-          ]
-        );
+        setDuplicatePayment({ paymentId: item.notif.actionId, message: msg });
       } else {
-        Alert.alert('Could not verify', msg);
+        toast('error', 'Could not verify', msg);
       }
     }
+  };
+
+  const rejectDuplicatePayment = () => {
+    if (!duplicatePayment) return;
+    rejectPaymentMutation.mutate({ paymentId: duplicatePayment.paymentId, reason: 'Duplicate payment request' }, {
+      onSuccess: () => {
+        toast('success', 'Duplicate Rejected', 'The duplicate request was removed.');
+        setDuplicatePayment(null);
+        setSelectedInboxItem(null);
+      },
+      onError: (rejectErr) => {
+        setDuplicatePayment(null);
+        toast('error', 'Could not reject', rejectErr instanceof Error ? rejectErr.message : 'Please try again.');
+      } });
   };
 
   const openRejectPayment = (item: InboxItem) => setRejectingPayment(item);
@@ -573,7 +574,7 @@ export function OwnerAnnouncementsTab() {
       setRejectingPayment(null);
       setSelectedInboxItem(null);
     } catch (err) {
-      Alert.alert('Could not reject', err instanceof Error ? err.message : 'Please try again.');
+      toast('error', 'Could not reject', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -610,7 +611,7 @@ export function OwnerAnnouncementsTab() {
     setNoticeErrors(nextErrors);
     if (nextErrors.title || nextErrors.message) return;
     if (!activePgId) {
-      Alert.alert('Failed', 'No active property.');
+      toast('error', 'No active property', 'Pick a property before publishing a notice.');
       return;
     }
     // `?? 'all'` used to close this expression. An audience label that isn't in the map —
@@ -619,7 +620,7 @@ export function OwnerAnnouncementsTab() {
     // matters: over-broadcasting a notice is not recoverable once phones have buzzed.
     const targetRole = BROADCAST_AUDIENCE_MAP[noticeAudience.toUpperCase()];
     if (!targetRole) {
-      Alert.alert('Pick an audience', `"${noticeAudience}" isn't an audience this notice can target.`);
+      toast('error', 'Pick an audience', `"${noticeAudience}" isn't an audience this notice can target.`);
       return;
     }
 
@@ -638,7 +639,7 @@ export function OwnerAnnouncementsTab() {
       setNoticeErrors({});
       setShowBroadcastModal(false);
     } catch (err) {
-      Alert.alert('Failed', err instanceof Error ? err.message : 'Could not publish the announcement.');
+      toast('error', 'Could not publish', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setIsPublishing(false);
     }
@@ -713,10 +714,7 @@ export function OwnerAnnouncementsTab() {
                 <AnimatedPress 
                   accessibilityRole="button" 
                   onPress={() => {
-                    Alert.alert('Clear all?', 'Remove all notifications from your inbox?', [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Clear', style: 'destructive', onPress: () => dismissAllMutation.mutate() }
-                    ]);
+                    setConfirmClearAll(true);
                   }} 
                   disabled={dismissAllMutation.isPending} 
                   style={[styles.markAllReadBtn, { alignSelf: 'auto', opacity: dismissAllMutation.isPending ? 0.5 : 1 }]}
@@ -923,6 +921,29 @@ export function OwnerAnnouncementsTab() {
         busy={rejectPaymentMutation.isPending}
         onCancel={() => setRejectingPayment(null)}
         onSave={submitRejectPayment}
+      />
+
+      <PGowDialog
+        visible={!!duplicatePayment}
+        title="Could not verify"
+        message={duplicatePayment?.message}
+        confirmLabel="Reject duplicate"
+        cancelLabel="Dismiss"
+        tone="destructive"
+        busy={rejectPaymentMutation.isPending}
+        onConfirm={rejectDuplicatePayment}
+        onCancel={() => setDuplicatePayment(null)}
+      />
+
+      <PGowDialog
+        visible={confirmClearAll}
+        title="Clear all notifications?"
+        message="Every notification leaves your inbox. Open decisions stay open — they just stop being listed here."
+        confirmLabel="Clear all"
+        tone="destructive"
+        busy={dismissAllMutation.isPending}
+        onConfirm={() => { setConfirmClearAll(false); dismissAllMutation.mutate(); }}
+        onCancel={() => setConfirmClearAll(false)}
       />
 
       {/* ── Publish New Notice Dialog ── */}

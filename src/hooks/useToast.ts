@@ -21,22 +21,22 @@ const TONE_TO_TYPE: Record<ToastTone, 'MEAL' | 'PAYMENT' | 'SUCCESS' | 'ERROR' |
   payment: 'PAYMENT',
 };
 
+/**
+ * The same toast, callable from module scope — a helper defined outside any component, or a
+ * `.catch` in a plain function, where a hook cannot be called. Zustand's `getState()` reads
+ * the same store the hook writes to, so both land in the one `AlertOverlay`.
+ */
+export function toastNow(tone: ToastTone, title: string, description?: string) {
+  usePGowStore.getState().set('activeAlert', {
+    title,
+    description: description ?? '',
+    type: TONE_TO_TYPE[tone],
+    timestamp: Date.now(),
+  });
+}
+
 export function useToast() {
-  const set = usePGowStore((s) => s.set);
-
-  const toast = useCallback(
-    (tone: ToastTone, title: string, description?: string) => {
-      set('activeAlert', {
-        title,
-        description: description ?? '',
-        type: TONE_TO_TYPE[tone],
-        timestamp: Date.now(),
-      });
-    },
-    [set],
-  );
-
-  return toast;
+  return useCallback(toastNow, []);
 }
 
 export default useToast;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, Alert, FlatList, BackHandler } from 'react-native';
+import { View, StyleSheet, FlatList, BackHandler } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
 
@@ -15,6 +15,7 @@ import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties'
 import { useStaffQuery, useAddStaffMutation } from '@/features/staff/useStaff';
 import * as map from '@/data/mappers';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { useToast } from '@/hooks/useToast';
 import { AnimatedPress, ListRow, Row, SearchField, Spacer, Txt } from '@/components/ui';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
@@ -71,6 +72,7 @@ export function StaffManagementTab() {
   const staffShiftInput = usePGowStore((s) => s.staffShiftInput);
   const staffSalaryInput = usePGowStore((s) => s.staffSalaryInput);
   const set = usePGowStore((s) => s.set);
+  const toast = useToast();
 
   const addStaffMutation = useAddStaffMutation(activePgId ?? undefined);
 
@@ -130,14 +132,14 @@ export function StaffManagementTab() {
     if (fieldErrors.name || fieldErrors.phone || fieldErrors.pin) return;
 
     // Neither of these is about a field someone can fix by typing — one is an authorisation
-    // rule, the other is app state — so they stay as alerts rather than being bolted onto an
-    // input that isn't the problem.
+    // rule, the other is app state — so they surface as a toast rather than being bolted onto
+    // an input that isn't the problem.
     if (isManager && staffRoleInput === 'Manager') {
-      Alert.alert('Not allowed', 'Managers cannot register other managers.');
+      toast('warning', 'Not allowed', 'Managers cannot register other managers.');
       return;
     }
     if (!activePgId) {
-      Alert.alert('No active property', 'Pick a property before adding staff.');
+      toast('error', 'No active property', 'Pick a property before adding staff.');
       return;
     }
 
@@ -147,7 +149,7 @@ export function StaffManagementTab() {
     // so that is a privilege decision made by a missing dictionary key. Refuse instead.
     const mappedRole = REGISTER_ROLE_MAP[staffRoleInput];
     if (!mappedRole) {
-      Alert.alert('Pick a role', `"${staffRoleInput}" isn't a role this property can assign.`);
+      toast('error', 'Pick a role', `"${staffRoleInput}" isn't a role this property can assign.`);
       return;
     }
 
@@ -161,7 +163,7 @@ export function StaffManagementTab() {
         monthly_salary: parseFloat(staffSalaryInput) || undefined,
         // Both halves, as real `time` values — see SHIFT_TIMES.
         ...(SHIFT_TIMES[staffShiftInput] ?? {}) });
-      Alert.alert('Success', 'Staff member account registered successfully!');
+      toast('success', 'Staff registered', `${staffNameInput.trim()} can now sign in.`);
       set('staffNameInput', '');
       set('staffPhoneInput', '');
       set('staffPinInput', '');
@@ -180,7 +182,7 @@ export function StaffManagementTab() {
       } else if (lowerError.includes('already exists')) {
         setErrors((e) => ({ ...e, phone: 'An account with these details already exists' }));
       } else {
-        Alert.alert('Failed', errorMsg);
+        toast('error', 'Could not register staff', errorMsg);
       }
     } finally {
       setIsSubmitting(false);

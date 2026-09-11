@@ -133,7 +133,20 @@ export function Sheet({
   const dragStyle = useAnimatedStyle(() => ({ transform: [{ translateY: dragY.value }] }));
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} testID={testID}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      // The sheet has to cover the system bars, not stop at them: without these the modal is a
+      // window inset from both, so the backdrop leaves an undimmed strip under the status bar
+      // and the sheet sits above the navigation bar instead of running to the screen edge.
+      // `insets.bottom` below is then the only thing padding for the gesture strip, which is
+      // what it was always written to do.
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onDismiss}
+      testID={testID}
+    >
       <Animated.View entering={FadeIn.duration(150)} style={styles.backdrop}>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onDismiss} />
         <Animated.View

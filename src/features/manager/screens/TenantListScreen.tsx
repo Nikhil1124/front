@@ -25,7 +25,7 @@
  *     chasing compliance actually needs and this screen never showed.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Pressable, FlatList } from 'react-native';
+import { View, StyleSheet, Pressable, FlatList } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
@@ -47,7 +47,8 @@ import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useAuthStore } from '@/store/authStore';
 
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
-import { Btn, Card, Col, ErrorState, LoadingState, MetricDeck, Row, Spacer, StatusChip, Txt, initialsOf, toneFor, type DeckCardData } from '@/components/ui';
+import { Btn, Card, Col, ErrorState, LoadingState, MetricDeck, PGowDialog, Row, Spacer, StatusChip, Txt, initialsOf, toneFor, type DeckCardData } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 export function TenantListScreen() {
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -59,22 +60,20 @@ export function TenantListScreen() {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const handleVerify = (guest: GuestEntity) => {
-    Alert.alert(
-      'Verify KYC',
-      `Approve ${guest.name}'s KYC submission? They will be notified immediately.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Verify',
-          onPress: async () => {
-            setSubmittingId(guest.id);
-            const r = await verifyKyc(guest.id, true);
-            setSubmittingId(null);
-            if (!r.ok) Alert.alert('Failed', r.error ?? 'Could not verify.');
-          } },
-      ],
-    );
+  const [verifyingGuest, setVerifyingGuest] = useState<GuestEntity | null>(null);
+  const toast = useToast();
+
+  const handleVerify = (guest: GuestEntity) => setVerifyingGuest(guest);
+
+  const confirmVerify = async () => {
+    if (!verifyingGuest) return;
+    const guest = verifyingGuest;
+    setVerifyingGuest(null);
+    setSubmittingId(guest.id);
+    const r = await verifyKyc(guest.id, true);
+    setSubmittingId(null);
+    if (r.ok) toast('success', 'KYC approved', `${guest.name} has been notified.`);
+    else toast('error', 'Could not verify', r.error ?? 'Please try again.');
   };
 
   const handleRejectSubmit = async (reason: string) => {
@@ -83,7 +82,7 @@ export function TenantListScreen() {
     const r = await verifyKyc(rejectGuestId, false, reason);
     setSubmittingId(null);
     if (r.ok) setRejectGuestId(null);
-    else Alert.alert('Failed', r.error ?? 'Could not reject.');
+    else toast('error', 'Could not reject', r.error ?? 'Please try again.');
   };
 
   const pending = guests.filter((g) => g.kycStatus === 'PENDING');
@@ -237,6 +236,16 @@ export function TenantListScreen() {
         busy={!!submittingId}
         onCancel={() => setRejectGuestId(null)}
         onSave={handleRejectSubmit}
+      />
+
+      <PGowDialog
+        visible={verifyingGuest != null}
+        title={`Approve ${verifyingGuest?.name ?? 'this resident'}'s KYC?`}
+        message="They are notified straight away and count as verified from then on."
+        confirmLabel="Approve"
+        busy={submittingId === verifyingGuest?.id}
+        onConfirm={confirmVerify}
+        onCancel={() => setVerifyingGuest(null)}
       />
 </HubScreenWrapper>
   );

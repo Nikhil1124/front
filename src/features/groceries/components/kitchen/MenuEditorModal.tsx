@@ -70,16 +70,6 @@ export const MenuEditorModal: React.FC<MenuEditorModalProps> = ({
       }
     >
       <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Txt size={18} weight="700" style={styles.title}>🍳 Edit PG Menu</Txt>
-            <Txt size={11} color={Colors.textSecondary} style={styles.subtitle}>Customize recipe schedule details</Txt>
-          </View>
-          <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={onClose}>
-            <Ionicons name="close" size={24} color={Colors.textPrimary} />
-          </AnimatedPress>
-        </View>
 
         <FormScroll style={styles.scroll} showsVerticalScrollIndicator={false}>
           {/* Current dishes */}

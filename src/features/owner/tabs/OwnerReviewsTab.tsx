@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { View, StyleSheet, RefreshControl, ScrollView, BackHandler } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Radii } from '@/theme';
@@ -39,11 +39,13 @@ export function OwnerReviewsTab() {
 
   // Override back navigation — reviews is a hidden tab, not a stack screen,
   // so native back would leave ghost tab state. Force-replace with overview.
-  useEffect(() => {
-    const onBack = () => { router.replace('/overview'); return true; };
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
-    return () => sub.remove();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => { router.replace('/overview'); return true; };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, []),
+  );
 
   // Calculations
   const totalReviews = submissions.length;

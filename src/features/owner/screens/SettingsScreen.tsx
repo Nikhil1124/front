@@ -30,7 +30,7 @@ export function SettingsScreen() {
         <Row gap={10} align="center">
           <Ionicons name="person-circle" size={22} color={Colors.primary} />
           <Col style={{ flex: 1 }}>
-            <Txt variant="body" weight="700" color={Colors.textPrimary}>{isManager ? owner?.managerName ?? 'Manager' : owner?.ownerName ?? 'Owner'}</Txt>
+            <Txt variant="body" weight="700" color={Colors.textPrimary}>{isManager ? owner?.managerName || 'Manager' : owner?.ownerName || 'Owner'}</Txt>
             <Txt variant="caption" color={Colors.textMuted}>{isManager ? 'Manager' : 'Owner'} • {owner?.pgName ?? 'Property'}</Txt>
           </Col>
         </Row>

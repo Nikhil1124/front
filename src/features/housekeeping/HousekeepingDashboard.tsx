@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Image, RefreshControl } from 'react-native';
+import { View, StyleSheet, Image, RefreshControl } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -552,7 +552,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
       try {
         const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
         if (!permissionResult.granted) {
-          Alert.alert('Permission Denied', 'Camera permissions are required to capture a photo.');
+          toast('warning', 'Camera permission required', 'Allow camera access in your device settings to attach a photo.');
           return;
         }
 
@@ -567,7 +567,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           setHasPhoto(true);
         }
       } catch (e) {
-        Alert.alert('Error', 'Could not open the camera.');
+        toast('error', 'Could not open the camera', 'Try again, or report the issue without a photo.');
       }
     };
 
@@ -899,15 +899,10 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
 }
 
 function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues }: any) {
-  // Same reasoning as every other plain confirmation in the app — see Sheet's header.
-  const confirmSignOut = () => {
-    Alert.alert('Sign out?', 'You will need your PIN to get back in.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: logout },
-    ]);
-  };
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
 
   return (
+    <>
     <FormScroll bottomPadding={120} contentContainerStyle={{ padding: 18, gap: 16 }}>
       {/* Was a navy gradient card with white text and an emoji avatar — the last of the
           pre-redesign heroes. Now the same tinted deck surface every other role's identity
@@ -956,13 +951,24 @@ function MaintenanceProfileView({ staff, logout, hideLogout, inspections, issues
 
       <Spacer size={16} />
       {!hideLogout && (
-        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
+        <Btn onPress={() => setConfirmingSignOut(true)} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
           <Ionicons name="exit" size={20} color={Colors.textInverse} />
           <Txt size={14} weight="700" style={{ marginLeft: 8 }}>Sign Out</Txt>
         </Btn>
       )}
 
 </FormScroll>
+
+    <PGowDialog
+      visible={confirmingSignOut}
+      title="Sign out?"
+      message="You will need your PIN to get back in."
+      confirmLabel="Sign out"
+      tone="destructive"
+      onConfirm={() => { setConfirmingSignOut(false); logout(); }}
+      onCancel={() => setConfirmingSignOut(false)}
+    />
+    </>
   );
 }
 

@@ -16,7 +16,7 @@
  *     than a wall of text.
  */
 import { useState } from 'react';
-import { Alert, Image, View, StyleSheet, RefreshControl } from 'react-native';
+import { Image, View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
@@ -25,7 +25,8 @@ import { formatDateTime } from '@/utils/format';
 import { useAuthStore } from '@/store/authStore';
 import { useCancelComplaintMutation } from '@/features/requests/useComplaints';
 import type { FeedbackComplaintEntity } from '@/types';
-import { Card, Col, OutlinedBtn, Pill, Row, Spacer, Txt } from '@/components/ui';
+import { Card, Col, OutlinedBtn, PGowDialog, Pill, Row, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 interface Props {
   ticket: FeedbackComplaintEntity;
@@ -64,34 +65,26 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
   const activePgId = useAuthStore((s) => s.activePgId);
   const cancelTicket = useCancelComplaintMutation(activePgId ?? undefined);
   const [cancelling, setCancelling] = useState(false);
+  const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
+  const toast = useToast();
   // Mirrors the server: RESOLVED and CANCELLED are both terminal (cancel_request:
   // "This ticket is already closed."), and REQUEST_STATUS collapses both into the single
   // UI label "Resolved" (mappers.ts) — so that's the one check needed here too.
   const canCancel = ticket.status !== 'Resolved';
 
-  const handleCancel = () => {
-    Alert.alert(
-      'Withdraw this ticket?',
-      'This closes it — your manager will no longer act on it. You can always file a new one if the issue comes back.',
-      [
-        { text: 'Keep it open', style: 'cancel' },
-        {
-          text: 'Withdraw',
-          style: 'destructive',
-          onPress: async () => {
-            setCancelling(true);
-            try {
-              await cancelTicket.mutateAsync({ id: ticket.id });
-              router.back();
-            } catch (err) {
-              Alert.alert('Could not withdraw', err instanceof Error ? err.message : 'Please try again.');
-            } finally {
-              setCancelling(false);
-            }
-          },
-        },
-      ]
-    );
+  const handleCancel = () => setConfirmingWithdraw(true);
+
+  const confirmWithdraw = async () => {
+    setConfirmingWithdraw(false);
+    setCancelling(true);
+    try {
+      await cancelTicket.mutateAsync({ id: ticket.id });
+      router.back();
+    } catch (err) {
+      toast('error', 'Could not withdraw', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -245,6 +238,18 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
           </OutlinedBtn>
         </>
       ) : null}
+
+      <PGowDialog
+        visible={confirmingWithdraw}
+        title="Withdraw this ticket?"
+        message="This closes it — your manager will no longer act on it. You can always file a new one if the issue comes back."
+        confirmLabel="Withdraw"
+        cancelLabel="Keep it open"
+        tone="destructive"
+        busy={cancelling}
+        onConfirm={confirmWithdraw}
+        onCancel={() => setConfirmingWithdraw(false)}
+      />
     </HubScreenWrapper>
   );
 }

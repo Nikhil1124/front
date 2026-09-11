@@ -5,7 +5,6 @@
  */
 import { useState } from 'react';
 import {
-  Alert,
   View,
   StyleSheet,
   ActivityIndicator } from 'react-native';
@@ -16,7 +15,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/hooks/useToast';
 import { qk } from '@/data/queryKeys';
 import { listUpiIds, addUpiId, activateUpiId, removeUpiId } from '@/features/properties/useProperties';
-import { AnimatedPress, Col, OutlinedTextField, Row, Txt } from '@/components/ui';
+import { AnimatedPress, Col, OutlinedTextField, PGowDialog, Row, Txt } from '@/components/ui';
 
 // ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
@@ -54,7 +53,11 @@ export function UpiConfigSection() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleAddUpi = async () => {
-    const trimmed = newUpi.trim();
+    // A VPA is not case-sensitive, and the field's keyboard capitalises the first letter, so
+    // "Owner@okaxis" and "owner@okaxis" are the same handle typed twice. Lowercase before
+    // both the duplicate check and the write, or the check misses and the QR shows a
+    // capitalised handle back to the resident paying rent.
+    const trimmed = newUpi.trim().toLowerCase();
     if (!trimmed) {
       setErrorMsg('UPI ID is required.');
       return;
@@ -63,7 +66,7 @@ export function UpiConfigSection() {
       setErrorMsg('Please enter a valid UPI ID (e.g. name@upi).');
       return;
     }
-    if (upiList.some((u) => u.vpa_address === trimmed)) {
+    if (upiList.some((u) => u.vpa_address.trim().toLowerCase() === trimmed)) {
       setErrorMsg('This UPI handle is already in your account list.');
       return;
     }
@@ -77,29 +80,26 @@ export function UpiConfigSection() {
     }
   };
 
-  const handleDeleteUpi = (upiId: string, _handleStr: string) => {
+  const [deletingUpi, setDeletingUpi] = useState<{ id: string; handle: string } | null>(null);
+
+  const handleDeleteUpi = (upiId: string, handleStr: string) => {
     if (upiList.length <= 1) {
-      Alert.alert('Action Restricted', 'You must maintain at least one active UPI handle for rent collections.');
+      toast('warning', 'Keep one handle', 'Rent collection needs at least one active UPI handle.');
       return;
     }
-    Alert.alert(
-      'Delete UPI handle?',
-      'This handle will no longer be available for rent collection.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await removeMutation.mutateAsync(upiId);
-              toast('info', 'UPI Deleted', 'Removed UPI handle successfully.');
-            } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Could not delete UPI handle.');
-            }
-          } },
-      ]
-    );
+    setDeletingUpi({ id: upiId, handle: handleStr });
+  };
+
+  const confirmDeleteUpi = async () => {
+    if (!deletingUpi) return;
+    const { id } = deletingUpi;
+    setDeletingUpi(null);
+    try {
+      await removeMutation.mutateAsync(id);
+      toast('info', 'UPI Deleted', 'Removed UPI handle successfully.');
+    } catch (err: any) {
+      toast('error', 'Could not delete', err?.message || 'Please try again.');
+    }
   };
 
   const handleSetPrimary = async (upiId: string, handleStr: string) => {
@@ -107,7 +107,7 @@ export function UpiConfigSection() {
       await activateMutation.mutateAsync(upiId);
       toast('success', 'Primary UPI Updated', `Rent collection handle set to "${handleStr}"`);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Could not update primary handle.');
+      toast('error', 'Could not update primary handle', err?.message || 'Please try again.');
     }
   };
 
@@ -217,6 +217,7 @@ export function UpiConfigSection() {
             if (errorMsg) setErrorMsg('');
           }}
           placeholder="propertyowner@okaxis"
+          autoCapitalize="none"
           error={errorMsg || undefined}
           helper="This is where residents' rent lands"
           inputStyle={{ fontSize: 14 }}
@@ -234,6 +235,17 @@ export function UpiConfigSection() {
           )}
         </AnimatedPress>
       </Col>
+
+      <PGowDialog
+        visible={deletingUpi != null}
+        title="Delete this UPI handle?"
+        message={`${deletingUpi?.handle ?? 'It'} will no longer be available for rent collection.`}
+        confirmLabel="Delete"
+        tone="destructive"
+        busy={removeMutation.isPending}
+        onConfirm={confirmDeleteUpi}
+        onCancel={() => setDeletingUpi(null)}
+      />
     </Col>
   );
 }

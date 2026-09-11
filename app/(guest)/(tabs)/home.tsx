@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import {
-  View, StyleSheet, Alert, ScrollView, RefreshControl,
+  View, StyleSheet, ScrollView, RefreshControl,
   Image, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -149,7 +149,7 @@ export default function GuestHomeTab() {
 
   const toggleAttending = async (attending: boolean) => {
     if (!upcomingMeal) return;
-    if (cutoffPassed) { Alert.alert('Cut-off passed', 'RSVP window has closed.'); return; }
+    if (cutoffPassed) { toast('warning', 'Cut-off passed', 'The RSVP window for this meal has closed.'); return; }
     await submitRSVP(upcomingMeal.id, attending ? 'REQUIRED' : 'NOT_REQUIRED');
   };
 

@@ -1,8 +1,9 @@
 /** Chef dashboard "Kitchen" tab or Delivery Agent Profile */
 import { useEffect, useState } from 'react';
-import { Alert, View, StyleSheet, RefreshControl } from 'react-native';
+import { View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
-import { Card, Txt, Btn, Row, Spacer, Col, AnimatedPress } from '@/components/ui';
+import { Card, Txt, Btn, PGowDialog, Row, Spacer, Col, AnimatedPress } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -35,6 +36,7 @@ function ChefKitchenView() {
   const activePgId = useAuthStore((s) => s.activePgId);
   const broadcastMutation = useBroadcastNotificationMutation(activePgId ?? undefined);
   const { activeMeal } = useActiveMeal();
+  const toast = useToast();
 
   useEffect(() => {
     setPrepState('PREPPING');
@@ -42,7 +44,7 @@ function ChefKitchenView() {
 
   const broadcastToResidents = async (title: string, body: string) => {
     if (!activePgId) {
-      Alert.alert('Not sent', 'No active property.');
+      toast('error', 'Not sent', 'No active property.');
       return false;
     }
     try {
@@ -56,7 +58,7 @@ function ChefKitchenView() {
       });
       return true;
     } catch (err) {
-      Alert.alert('Not sent', err instanceof Error ? err.message : 'The broadcast did not go out. Check your connection and try again.');
+      toast('error', 'Not sent', err instanceof Error ? err.message : 'The broadcast did not go out. Check your connection and try again.');
       return false;
     }
   };
@@ -69,7 +71,7 @@ function ChefKitchenView() {
     const ok = await broadcastToResidents('🍳 Kitchen Update', chefBroadcast.trim());
     if (!ok) return;
     setChefBroadcast('');
-    Alert.alert('Success', '🔔 Announcement sent to all residents!');
+    toast('success', 'Announcement sent', 'Every resident has it on their phone.');
   };
 
   return (
@@ -102,7 +104,7 @@ function ChefKitchenView() {
         {prepState === 'READY' && (
           <>
             <Spacer size={14} />
-            <Btn onPress={async () => { if (await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!')) Alert.alert('Success', '🔔 Alert dispatched to all residents!'); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={44}>
+            <Btn onPress={async () => { if (await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!')) toast('success', 'Residents alerted', 'They have been told the meal is ready.'); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={44}>
               <Txt size={12} weight="700" color={Colors.textInverse}>Broadcast 'Meal is Served' to Residents 📢</Txt>
             </Btn>
           </>
@@ -144,14 +146,7 @@ function DeliveryProfileRoute() {
   const dockScroll = useDockScroll();
   const staff = usePGowStore((s) => s.loggedInStaff);
   const logout = usePGowStore((s) => s.logout);
-  // A plain yes/no confirmation, so the OS one — it is familiar, accessible, cannot drift
-  // out of style, and is what the other thirty confirms in this app already use.
-  const confirmSignOut = () => {
-    Alert.alert('Sign out?', 'You will need your PIN to get back in.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => { logout(); router.replace('/'); } },
-    ]);
-  };
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const { data: realTrips = [], error: tripsError, refetch: refetchTrips, isRefetching: tripsRefetching } = useMyTripsQuery();
   
   const activeTrip = realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0];
@@ -211,12 +206,21 @@ function DeliveryProfileRoute() {
         </Card>
 
         <Spacer size={16} />
-        <Btn onPress={confirmSignOut} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
+        <Btn onPress={() => setConfirmingSignOut(true)} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
           <Ionicons name="exit" size={20} color={Colors.textInverse} />
           <Txt size={14} weight="700" style={{ marginLeft: 8 }}>Sign Out</Txt>
         </Btn>
       </FormScroll>
 
+      <PGowDialog
+        visible={confirmingSignOut}
+        title="Sign out?"
+        message="You will need your PIN to get back in."
+        confirmLabel="Sign out"
+        tone="destructive"
+        onConfirm={() => { setConfirmingSignOut(false); logout(); router.replace('/'); }}
+        onCancel={() => setConfirmingSignOut(false)}
+      />
 </View>
   );
 }

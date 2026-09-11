@@ -7,7 +7,7 @@
  * `(auth)` group) it skips straight to the new-password step with `token` already filled in.
  */
 import { useState } from 'react';
-import { StyleSheet, Alert } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Txt, Btn, Row, Spacer, IconBtn } from '@/components/ui';
@@ -63,11 +63,12 @@ export default function ResetPasswordScreen() {
       toast('success', 'Password updated', 'You are signed in.');
       router.replace('/');
     } catch (err) {
-      Alert.alert(
-        'Reset Failed',
+      toast(
+        'error',
+        'Reset failed',
         err instanceof PGowApiError && err.httpStatus === 401
           ? 'This reset link is invalid or has expired. Request a new one.'
-          : err instanceof Error ? err.message : 'Unknown error',
+          : err instanceof Error ? err.message : 'Please try again.',
       );
     }
   };
@@ -122,6 +123,7 @@ export default function ResetPasswordScreen() {
             onChangeText={(v) => { setToken(v); if (resetErrors.token) setResetErrors((e) => ({ ...e, token: undefined })); }}
             error={resetErrors.token}
             leadingIcon="key"
+            autoCapitalize="none"
             editable={!tokenParam}
             textContentType="oneTimeCode"
             autoComplete="sms-otp"

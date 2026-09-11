@@ -18,7 +18,7 @@
  */
 import { useRef, useState } from 'react';
 import {
-  View, ScrollView, StyleSheet, Alert, Modal, RefreshControl } from 'react-native';
+  View, ScrollView, StyleSheet, Modal, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -86,7 +86,7 @@ export function GuestFeedbackComplaintsTab() {
   const attach = async (kind: 'photo' | 'video') => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (perm.status !== 'granted') {
-      Alert.alert('Permission required', 'Allow media library access to attach photo or video evidence.');
+      toast('warning', 'Permission required', 'Allow media library access to attach photo or video evidence.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -131,7 +131,7 @@ export function GuestFeedbackComplaintsTab() {
         setTitle(''); setDescription(''); setMediaUri(null); setMediaName(null);
         refetchSubmissions();
       } else {
-        Alert.alert('Submission Failed', r.error ?? 'Unknown error occurred.');
+        toast('error', 'Could not submit', r.error ?? 'Please try again.');
       }
     } finally {
       submitLock.current = false;

@@ -1,7 +1,6 @@
 import { SupplyItem } from '@/types';
 import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../../store/useCartStore';
 import { toAmount } from '@/data/mappers';
 
@@ -409,16 +408,6 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
         testID="todays_kitchen_needs_sheet"
       >
         <View style={styles.bottomSheetContainer}>
-          <View style={styles.grabHandle} />
-          <View style={styles.bottomSheetHeader}>
-            <View style={{ flex: 1 }}>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.bottomSheetTitle}>Today's Kitchen Needs</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.bottomSheetSubtitle}>All recipe ingredients categorized</Txt>
-            </View>
-            <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button" onPress={() => setIsSeeAllOpen(false)} style={{ padding: 4 }}>
-              <Ionicons name="close" size={24} color={Colors.textPrimary} />
-            </AnimatedPress>
-          </View>
           <ScrollView style={styles.bottomSheetScroll} showsVerticalScrollIndicator={false}>
             {[
               { label: '🍗 Non-Vegetarian Recipe Supplies', items: categorizedIngredients.nonVeg },
@@ -468,8 +457,6 @@ const styles = StyleSheet.create({
 
   bottomSheetBackdrop: { flex: 1, backgroundColor: 'rgba(12,46,78,0.55)', justifyContent: 'flex-end' },
   bottomSheetContainer: { height: '65%', backgroundColor: Colors.surfaceMuted, borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 10, overflow: 'hidden' },
-  grabHandle: { width: 40, height: 5, backgroundColor: Colors.borderMuted, borderRadius: Radii.pill, alignSelf: 'center', marginTop: 8, marginBottom: 4 },
-  bottomSheetHeader: { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle },
   bottomSheetScroll: { flex: 1, padding: 16 },
   categorySection: { marginBottom: 20 },
   categoryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, paddingBottom: 6 },
@@ -479,8 +466,6 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' as const, marginTop: 2 },
   seeAllText: { fontSize: 13, fontWeight: '700' as const, color: Colors.primary },
   tabButtonText: { fontSize: 12, fontWeight: '700' as const, color: Colors.textSecondary },
-  bottomSheetTitle: { color: Colors.textPrimary, fontSize: 18, fontWeight: '700' as const },
-  bottomSheetSubtitle: { color: Colors.textSecondary, fontSize: 11, marginTop: 2, fontWeight: '500' as const },
   categoryName: { fontSize: 14, fontWeight: '700' as const, color: Colors.textPrimary },
 });
 

@@ -6,11 +6,12 @@
  * "reduce motion" without any work here. The only thing worth owning is the colour, which
  * defaults to the brand green so a spinner never shows up in iOS grey on a mint canvas.
  */
-import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
 import { PGowApiError } from '@/data/apiClient';
 import { Txt } from './Txt';
+import { AnimatedPress } from './AnimatedPress';
 
 export interface SpinnerProps {
   /** 'small' ≈ 20dp, 'large' ≈ 36dp — the two sizes RN actually supports on both platforms. */
@@ -97,11 +98,11 @@ export function ErrorState({ error, title, onRetry, fill = true }: ErrorStatePro
         {message}
       </Txt>
       {onRetry && canRetry ? (
-        <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Retry loading" style={styles.retry}>
+        <AnimatedPress onPress={onRetry} accessibilityLabel="Retry loading" style={styles.retry}>
           <Txt variant="button" color={Colors.primary}>
             Tap to retry
           </Txt>
-        </Pressable>
+        </AnimatedPress>
       ) : null}
     </View>
   );

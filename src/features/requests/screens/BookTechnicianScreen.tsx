@@ -11,7 +11,7 @@
  * something the form does not.
  */
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -24,6 +24,8 @@ import { useAuthStore } from '@/store/authStore';
 import { PGowApiError } from '@/data/apiClient';
 import { Radii, Colors } from '@/theme';
 import { Btn, Card, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 export function BookTechnicianScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,6 +39,8 @@ export function BookTechnicianScreen() {
   );
 
   const [note, setNote] = useState<string | null>(null);
+  const [noteError, setNoteError] = useState<string | undefined>();
+  const toast = useToast();
   // Draft on first render that has a ticket, then leave whatever the user typed alone.
   const value = note ?? (ticket ? draftNoteFor(spec, ticket) : '');
 
@@ -45,16 +49,17 @@ export function BookTechnicianScreen() {
   const submit = async () => {
     if (!id) return;
     if (!value.trim()) {
-      Alert.alert('Add a brief', 'Describe the job so the area manager can dispatch the right person.');
+      setNoteError('Describe the job so the area manager can dispatch the right person');
       return;
     }
     try {
       await escalate.mutateAsync({ id, note: value });
-      Alert.alert(
+      toast(
+        'success',
         'Sent to PGow support',
-        'The area manager covering this property now has the ticket and will arrange a technician. The resident has been told.',
-        [{ text: 'Done', onPress: () => router.back() }]
+        'The area manager has the ticket and will arrange a technician. The resident has been told.'
       );
+      router.back();
     } catch (err) {
       // The server has three distinct refusals here and they mean different things to the
       // person pressing the button — a generic "could not book" would send them round again.
@@ -64,7 +69,7 @@ export function BookTechnicianScreen() {
             ? 'No PGow support team covers this property yet. Assign it to your own staff, or contact PGow to get an area manager allocated.'
             : err.message
           : 'Could not send this to PGow support. Check your connection and try again.';
-      Alert.alert('Not booked', message);
+      toast('error', 'Not booked', message);
     }
   };
 
@@ -75,7 +80,7 @@ export function BookTechnicianScreen() {
       ) : error || !ticket ? (
         <ErrorState error={error} title="Could not load this ticket" onRetry={refetch} />
       ) : (
-        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <FormScroll contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {/* What is being booked, and for whom */}
           <Card
             containerColor={Colors.surface}
@@ -141,7 +146,8 @@ export function BookTechnicianScreen() {
             <OutlinedTextField
               label="Job description"
               value={value}
-              onChangeText={setNote}
+              onChangeText={(v) => { setNote(v); if (noteError) setNoteError(undefined); }}
+              error={noteError}
               multiline
               numberOfLines={7}
               testID="book_technician_note"
@@ -166,7 +172,7 @@ export function BookTechnicianScreen() {
           <Txt size={11} color={Colors.textMuted} style={{ textAlign: 'center' }}>
             This hands the ticket to PGow support for your area. Your own staff will be unassigned from it.
           </Txt>
-        </ScrollView>
+        </FormScroll>
       )}
     </HubScreenWrapper>
   );

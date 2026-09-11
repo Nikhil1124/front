@@ -6,7 +6,6 @@ import { useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
-  Alert,
   ScrollView } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { useProcurementCatalog } from '@/features/procurement/useProcurement';
 import { useCreateSubscriptionMutation } from '@/features/subscriptions/useSubscriptions';
 import { formatINR } from '@/utils/format';
 import { AnimatedPress, Btn, Chip, ChoiceChips, Col, Row, Sheet, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 // ===== AddPgDailySubscriptionDialog =====
 const DELIVERY_SLOTS: Array<[string, string]> = [
@@ -29,6 +29,7 @@ const DELIVERY_SLOTS: Array<[string, string]> = [
 ];
 
 export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => void }) {
+  const toast = useToast();
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: catalog = [], isLoading: catalogLoading } = useProcurementCatalog();
   const createSubscription = useCreateSubscriptionMutation();
@@ -66,10 +67,10 @@ export function AddPgDailySubscriptionDialog({ onDismiss }: { onDismiss: () => v
         payment_method: 'credit',
         delivery_note: note.trim(),
         items: Object.entries(cart).map(([item_id, quantity]) => ({ item_id, quantity })) });
-      Alert.alert('Success', 'Daily Auto-Subscription Activated!');
+      toast('success', 'Auto-order on', 'Your daily grocery order now repeats by itself.');
       onDismiss();
     } catch (err: any) {
-      Alert.alert('Could not activate', err?.message ?? 'Please try again.');
+      toast('error', 'Could not activate', err?.message ?? 'Please try again.');
     }
   };
 
@@ -193,6 +194,7 @@ const DIALOG_MUTED = Colors.textMuted;
 const DIALOG_LIGHT_GREEN = Colors.surfaceElevated;
 
 export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
+  const toast = useToast();
   // Bottom sheet inside a Modal: nothing above it pads the gesture bar, and the hardcoded
   // 34px it used to carry was a guess at the home indicator that under-clears gesture nav.
   const bookRepair = usePGowStore((s) => s.bookPgRepairService);
@@ -217,7 +219,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
     // Pass custom schedule details inside the request summary if scheduled
     const urgencyLabel = urgency === '15-Min Express' ? '15-Min Express' : `Scheduled for ${schedDate} at ${schedTime}`;
     bookRepair(category, finalIssue, urgencyLabel);
-    Alert.alert('Success', 'Technician Dispatched!');
+    toast('success', 'Technician requested', 'You will hear back once someone is assigned.');
     onDismiss();
   };
 

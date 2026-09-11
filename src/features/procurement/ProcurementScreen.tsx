@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Alert } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
@@ -16,7 +16,7 @@ import {
   useRejectProcurementOrder } from './useProcurement';
 
 
-import { Btn, Card, Col, OutlinedBtn, Row, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
+import { Btn, Card, Col, OutlinedBtn, PGowDialog, Row, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
 
 /**
  * Approve requisitions.
@@ -85,6 +85,7 @@ function ApprovalsSection() {
   const rejectOrder = useRejectProcurementOrder();
 
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   // Approving buys the goods for real — the server turns the requisition into a supply
   // order charged on this method — so it is asked for, never assumed. (It also has to be
@@ -93,17 +94,7 @@ function ApprovalsSection() {
   // neither has a real payment gateway behind it yet, so only 'credit' is offered here for
   // now — see the matching note in GroceryCheckoutScreen. Bring them back once a processor
   // is wired up.
-  const handleApprove = (orderId: string) => {
-    Alert.alert(
-      'Approve and buy',
-      'This places the order now, charged to the property credit account.',
-      [
-        { text: 'Approve on credit', onPress: () => submitApproval(orderId, 'credit') },
-        { text: 'Cancel', style: 'cancel' },
-      ],
-      { cancelable: true },
-    );
-  };
+  const handleApprove = (orderId: string) => setApprovingId(orderId);
 
   const submitApproval = async (orderId: string, paymentMethod: ProcurementPaymentMethod) => {
     try {
@@ -233,6 +224,20 @@ function ApprovalsSection() {
         busy={rejectOrder.isPending}
         onCancel={() => setRejectingId(null)}
         onSave={handleReject}
+      />
+
+      <PGowDialog
+        visible={approvingId != null}
+        title="Approve and buy?"
+        message="This places the order now, charged to the property credit account."
+        confirmLabel="Approve on credit"
+        busy={approveOrder.isPending}
+        onConfirm={() => {
+          const id = approvingId;
+          setApprovingId(null);
+          if (id) submitApproval(id, 'credit');
+        }}
+        onCancel={() => setApprovingId(null)}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import { StyleSheet, View, ScrollView, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { AnimatedPress, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 const MENU_ITEMS = [
   { id: '1', title: 'Manage Addresses', icon: 'location-outline' as const },
@@ -17,6 +18,7 @@ const MENU_ITEMS = [
 
 /** The groceries mini-app's profile screen — styled with the official LUNA palette */
 export function GroceryProfileScreen() {
+  const toast = useToast();
   const user = useAuthStore((s) => s.user);
   const logout = usePGowStore((s) => s.logout);
 
@@ -49,7 +51,7 @@ export function GroceryProfileScreen() {
                   wrong and send someone to a route their role doesn't have, this says so. */}
               <AnimatedPress accessibilityRole="button"
                 style={styles.menuItem}
-                onPress={() => Alert.alert(item.title, 'Not available yet — coming soon.')}
+                onPress={() => toast('info', item.title, 'Not available yet — coming soon.')}
               >
                 <View style={styles.menuLeft}>
                   <View style={styles.menuIconContainer}>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -13,7 +13,7 @@ import { AddPgDailySubscriptionDialog } from '@/components/dialogs/HubDialogs';
 import { Colors, Palette, Radii } from '@/theme';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { formatINR } from '@/utils/format';
-import { AnimatedPress, Btn, ChoiceChips, Col, ErrorState, ListRow, LoadingState, Row, SearchField, Sheet, Spacer, Txt, toneFor } from '@/components/ui';
+import { AnimatedPress, Btn, ChoiceChips, Col, ErrorState, ListRow, LoadingState, PGowDialog, Row, SearchField, Sheet, Spacer, Txt, toneFor } from '@/components/ui';
 
 // ── Design Tokens (Official LUNA Palette) ───────────────────────────────────
 const PRIMARY = Colors.primary;       // Deep Ocean Blue
@@ -80,6 +80,7 @@ export function OwnerServicesTab() {
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [showCustomRequest, setShowCustomRequest] = useState(false);
   const [showAddSubscription, setShowAddSubscription] = useState(false);
+  const [togglingSub, setTogglingSub] = useState<{ id: string; label: string; active: boolean } | null>(null);
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
@@ -287,16 +288,7 @@ export function OwnerServicesTab() {
               status={{ label: sub.is_active ? 'Active' : 'Paused', tone: sub.is_active ? 'ok' : 'neutral' }}
               // The status pill used to be the pause button: nothing distinguished "this is
               // active" from "tap here to deactivate", so reading the list risked changing it.
-              onPress={() => Alert.alert(
-                sub.delivery_note || 'Standing order',
-                sub.is_active ? 'Pause this delivery?' : 'Resume this delivery?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: sub.is_active ? 'Pause' : 'Resume',
-                    onPress: () => setSubscriptionActive.mutate({ id: sub.id, active: !sub.is_active }) },
-                ],
-              )}
+              onPress={() => setTogglingSub({ id: sub.id, label: sub.delivery_note || 'Standing order', active: sub.is_active })}
               first={i === 0}
               last={i === subscriptions.length - 1}
             />
@@ -353,6 +345,22 @@ export function OwnerServicesTab() {
       {selectedService && <ServiceDetailModal service={selectedService} onDismiss={() => setSelectedService(null)} />}
       {showCustomRequest && <ServiceDetailModal service={SERVICES.find(s => s.id === 'atoz')!} onDismiss={() => setShowCustomRequest(false)} />}
       {showAddSubscription && <AddPgDailySubscriptionDialog onDismiss={() => setShowAddSubscription(false)} />}
+
+      <PGowDialog
+        visible={togglingSub != null}
+        title={togglingSub?.active ? `Pause ${togglingSub.label}?` : `Resume ${togglingSub?.label ?? 'this order'}?`}
+        message={togglingSub?.active
+          ? 'It stops delivering until you turn it back on. Nothing already ordered is affected.'
+          : 'It starts delivering again on its usual schedule.'}
+        confirmLabel={togglingSub?.active ? 'Pause' : 'Resume'}
+        busy={setSubscriptionActive.isPending}
+        onConfirm={() => {
+          const sub = togglingSub;
+          setTogglingSub(null);
+          if (sub) setSubscriptionActive.mutate({ id: sub.id, active: !sub.active });
+        }}
+        onCancel={() => setTogglingSub(null)}
+      />
     </View>
   );
 }
