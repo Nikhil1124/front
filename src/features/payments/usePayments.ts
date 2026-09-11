@@ -6,6 +6,7 @@ import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import { useAuthStore } from "../../store/authStore";
 import * as map from "../../data/mappers";
 import { hapticCaution, hapticSuccess } from "../../utils/haptics";
 import type { PaymentEntity } from "../../types";
@@ -211,6 +212,23 @@ export function useAllPaymentsQuery(pgId?: string, status?: PaymentStatus) {
     },
     enabled: !!pgId,
   });
+}
+
+/**
+ * One payment, by id, out of whichever list this role already has cached.
+ *
+ * `useAllPaymentsQuery` is the owner/manager view (every payer); a resident's own list is the
+ * same hook scoped by the server. Selecting rather than fetching per id keeps the receipt
+ * route openable from a push without a second round trip — and `isLoading` is the list's, so
+ * a cold deep-link shows a spinner instead of "not found".
+ */
+export function usePayment(paymentId?: string) {
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const query = useAllPaymentsQuery(activePgId ?? undefined);
+  return {
+    ...query,
+    payment: paymentId ? (query.data ?? []).find((p) => p.id === paymentId) : undefined,
+  };
 }
 
 export function useRentDueQuery(pgId?: string) {

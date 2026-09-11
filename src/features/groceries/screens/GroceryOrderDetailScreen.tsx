@@ -12,7 +12,8 @@ import {
 import { Radii, Colors, Layout } from '@/theme';
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
-import { AnimatedPress, Btn, ErrorState, OutlinedTextField, Sheet, Txt } from '@/components/ui';
+import { AnimatedPress, ErrorState, OutlinedTextField, PGowDialog, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 const STATUS_HERO: Record<string, string> = {
   placed: 'Order Placed',
@@ -27,26 +28,22 @@ export function GroceryOrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: order, isLoading, error, refetch, isRefetching } = useSupplyOrderDetailQuery(id as string);
   const { data: tracking, refetch: refetchTracking } = useSupplyTrackingQuery(id as string);
+  const toast = useToast();
   const cancelOrder = useCancelSupplyOrderMutation();
   const submitUpiPayment = useSubmitUpiPaymentMutation();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelReason, setCancelReason] = useState('');
-  const [cancelError, setCancelError] = useState<string | undefined>();
   const [upiError, setUpiError] = useState<string | undefined>();
   const [upiRef, setUpiRef] = useState('');
 
-  const handleCancel = async () => {
+  // The dialog enforces "required" on the reason and hands it over, so the empty check and
+  // the local reason state both moved out of here.
+  const handleCancel = async (reason: string) => {
     if (!order) return;
-    if (!cancelReason.trim()) {
-      setCancelError("Tell us why — the shop sees this");
-      return;
-    }
     try {
-      await cancelOrder.mutateAsync({ orderId: order.id, reason: cancelReason.trim() });
+      await cancelOrder.mutateAsync({ orderId: order.id, reason });
       setShowCancelModal(false);
-      setCancelReason('');
     } catch (err) {
-      Alert.alert('Could not cancel', err instanceof Error ? err.message : 'Please try again.');
+      toast('error', 'Could not cancel', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -237,32 +234,27 @@ export function GroceryOrderDetailScreen() {
         )}
       </ScrollView>
 
-      <Sheet
+      {/* A dialog, not a sheet: the copy already says "This can't be undone", and a
+          destructive commitment is an interruption rather than a panel you slid up to look
+          at. The reason field rides along — `Alert.prompt` is iOS-only, which is why a
+          confirm-with-a-reason has to be a real component here. */}
+      <PGowDialog
         visible={showCancelModal}
         title="Cancel this order?"
-        subtitle="This can't be undone. Let us know why."
-        onDismiss={() => setShowCancelModal(false)}
-        testID="grocery_cancel_order_sheet"
-        footer={
-          <View style={{ flexDirection: 'row', gap: 10, width: '100%' }}>
-            <Btn onPress={() => setShowCancelModal(false)} containerColor={Colors.surfaceMuted} textColor={Colors.textPrimary} borderRadius={Radii.control} style={{ flex: 1 }}>
-              <Txt>Keep Order</Txt>
-            </Btn>
-            <Btn onPress={handleCancel} containerColor={Colors.danger} textColor={Colors.textInverse} borderRadius={Radii.control} style={{ flex: 1 }} loading={cancelOrder.isPending}>
-              <Txt>{cancelOrder.isPending ? 'Cancelling…' : 'Cancel Order'}</Txt>
-            </Btn>
-          </View>
-        }
-      >
-        <OutlinedTextField
-          label="Reason for cancelling"
-          placeholder="Tell us what changed"
-          value={cancelReason}
-          onChangeText={(v) => { setCancelReason(v); if (cancelError) setCancelError(undefined); }}
-          error={cancelError}
-          multiline
-        />
-      </Sheet>
+        message="This can't be undone. The shop sees your reason."
+        confirmLabel={cancelOrder.isPending ? 'Cancelling…' : 'Cancel order'}
+        cancelLabel="Keep order"
+        tone="destructive"
+        busy={cancelOrder.isPending}
+        prompt={{
+          label: 'Reason for cancelling',
+          placeholder: 'Tell us what changed',
+          required: true,
+          requiredMessage: 'Tell us why — the shop sees this' }}
+        onConfirm={handleCancel}
+        onCancel={() => setShowCancelModal(false)}
+        testID="grocery_cancel_order"
+      />
     </View>
   );
 }

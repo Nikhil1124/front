@@ -1,12 +1,11 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { SectionList, View, StyleSheet, Alert, RefreshControl, ScrollView, Share, BackHandler } from 'react-native';
 
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 
 import { EmptyState } from '@/components/EmptyState';
-import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import { Colors, Palette, Radii } from '@/theme';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
@@ -14,7 +13,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { formatINR, formatDateTime } from '@/utils/format';
+import { formatINR } from '@/utils/format';
 import type { GuestEntity } from '@/types';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
@@ -26,7 +25,7 @@ const WHITE = Colors.surface;        // Pure White surface
 const LIGHT_GREEN = Colors.surfaceElevated; // Soft Ice Cyan active tint
 const RADIUS = 22;            // Premium corner radius
 
-import { useGuestsQuery, useAddGuestMutation, useUpdateGuestMutation, useRemoveGuestMutation } from '@/features/guests/useGuests';
+import { useGuestsQuery, useAddGuestMutation } from '@/features/guests/useGuests';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
 import QRCode from 'react-native-qrcode-svg';
@@ -44,8 +43,6 @@ export function OwnerGuestsManagementTab() {
   const { data: guests = [], isLoading: guestsLoading, error: guestsError } = useGuestsQuery(activePgId ?? undefined);
   const owner = allPGs.find((p) => p.id === activePgId) ?? allPGs[0] ?? null;
   const addGuestMutation = useAddGuestMutation(activePgId ?? undefined);
-  const updateGuestMutation = useUpdateGuestMutation(activePgId ?? undefined);
-  const removeGuestMutation = useRemoveGuestMutation(activePgId ?? undefined);
   const verifyGuestKycByOwner = usePGowStore((s) => s.verifyGuestKycByOwner);
   const rotateJoinCode = usePGowStore((s) => s.rotateJoinCode);
   const disableJoinCode = usePGowStore((s) => s.disableJoinCode);
@@ -59,20 +56,11 @@ export function OwnerGuestsManagementTab() {
   const [guestPassword, setGuestPassword] = useState('');
   const [guestRent, setGuestRent] = useState('6500');
   const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [errorField, setErrorField] = useState<'email' | 'phone' | 'rent' | null>(null);
 
   // Edit states
-  const [editing, setEditing] = useState<GuestEntity | null>(null);
-  const [isDeletingGuest, setIsDeletingGuest] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editRoom, setEditRoom] = useState('');
-  const [editRent, setEditRent] = useState('');
 
   // KYC review states
-  const [reviewing, setReviewing] = useState<GuestEntity | null>(null);
   const [rejecting, setRejecting] = useState<GuestEntity | null>(null);
 
   // Join code states
@@ -80,7 +68,6 @@ export function OwnerGuestsManagementTab() {
   const [busyJoinCode, setBusyJoinCode] = useState(false);
 
   // Detail sheets
-  const [detailGuest, setDetailGuest] = useState<GuestEntity | null>(null);
   const [showEditProperty, setShowEditProperty] = useState(false);
 
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -108,32 +95,20 @@ export function OwnerGuestsManagementTab() {
 
   // Override back navigation — this screen lives inside the tab navigator, not a stack,
   // so native back would leave ghost tab state. We force-replace with overview instead.
-  useEffect(() => {
-    const onBack = () => {
-      router.replace('/overview');
-      return true;
-    };
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
-    return () => sub.remove();
-  }, []);
-
-  const confirmDeleteGuest = (g: GuestEntity) => {
-    if (isDeletingGuest) return;
-    Alert.alert('Remove Resident', `Remove ${g.name} from this property?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: async () => {
-          setIsDeletingGuest(g.id);
-          try {
-            await removeGuestMutation.mutateAsync(g.id);
-            toast('success', 'Resident Removed', `${g.name} has been removed.`);
-          } catch (err) {
-            Alert.alert('Failed', err instanceof Error ? err.message : 'Could not remove resident.');
-          } finally {
-            setIsDeletingGuest(null);
-          }
-      } },
-    ]);
-  };
+  //
+  // Scoped to focus: `BackHandler` listeners are global and fire most-recently-added first,
+  // so an unscoped one here answered back on top of any screen pushed FROM this tab and sent
+  // the user to /overview instead of popping. Same fix as the staff tab.
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => {
+        router.replace('/overview');
+        return true;
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, []),
+  );
 
   const handleCreate = async () => {
     if (isCreating) return;
@@ -197,38 +172,9 @@ export function OwnerGuestsManagementTab() {
     }
   };
 
-  const handleUpdate = async () => {
-    if (!editing || isUpdating) return;
-    const parsedEditRent = parseFloat(editRent);
-    if (!Number.isFinite(parsedEditRent) || parsedEditRent <= 0) {
-      toast('error', 'Monthly rent required', 'Enter the agreed monthly rent for this resident.');
-      return;
-    }
-    setIsUpdating(true);
-    try {
-      // Phone is the login identity and is not editable here — the API's update payload has
-      // no field for it. Neither is the password: an owner who could set one could sign in
-      // as the resident and read their payment history.
-      await updateGuestMutation.mutateAsync({
-        membershipId: editing.id,
-        params: {
-          name: editName.trim() || editing.name,
-          email: editEmail.trim().toLowerCase() || undefined,
-          room_no: editRoom.trim() || editing.roomNo,
-          rent_amount: parsedEditRent > 0 ? parsedEditRent : undefined } });
-      toast('success', 'Profile Updated', 'Resident profile & monthly fee updated.');
-      setEditing(null);
-    } catch (err) {
-      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
   const handleApprove = async (g: GuestEntity) => {
     await verifyGuestKycByOwner(g.id, true);
     toast('success', 'KYC Approved', `Notification sent to ${g.name}.`);
-    setReviewing(null);
   };
 
   // The reason used to fall back to the canned string "Document or photo unreadable." when
@@ -241,17 +187,11 @@ export function OwnerGuestsManagementTab() {
     setRejecting(null);
   };
 
-  const openEdit = (g: GuestEntity) => {
-    setEditing(g);
-    setEditName(g.name);
-    setEditEmail(g.email);
-    setEditPhone(g.phone);
-    setEditRoom(g.roomNo);
-    setEditRent(String(g.rentAmount));
-  };
-
+  // Straight to the record. Detail, edit and KYC review are routes now — the three sheets
+  // this tab used to stack were a persistent record, an 11-field form and a document viewer,
+  // none of which is a temporary contextual panel.
   const openDetail = (g: GuestEntity) => {
-    setDetailGuest(g);
+    router.push(`/(owner)/resident/${g.id}` as never);
   };
 
   // Join Code actions
@@ -646,7 +586,7 @@ export function OwnerGuestsManagementTab() {
                           ) : null}
                         </Col>
                         <Btn
-                          onPress={() => setReviewing(g)}
+                          onPress={() => router.push(`/(owner)/resident/${g.id}/kyc` as never)}
                           containerColor={LIGHT_GREEN}
                           textColor={GREEN}
                           borderRadius={Radii.control}
@@ -742,331 +682,6 @@ export function OwnerGuestsManagementTab() {
       )}
 
       {/* Resident Detail Bottom Sheet */}
-      <Sheet
-        visible={detailGuest != null}
-        title={detailGuest?.name ?? 'Resident'}
-        subtitle={`Room ${detailGuest?.roomNo ?? ''} • ${detailGuest?.email ?? ''}`}
-        icon="person-circle"
-        accent={GREEN}
-        onDismiss={() => setDetailGuest(null)}
-        footer={
-          detailGuest ? (
-            <Row gap={8}>
-              <Btn
-                onPress={() => {
-                  openEdit(detailGuest);
-                  setDetailGuest(null);
-                }}
-                containerColor={GREEN}
-                textColor={WHITE}
-                borderRadius={Radii.control}
-                height={42}
-                style={{ flex: 1 }}
-              >
-                <Ionicons name="create" size={16} color={WHITE} />
-                <Txt variant="caption" weight="700" color={WHITE} style={{ marginLeft: 6 }}>
-                  Edit
-                </Txt>
-              </Btn>
-              {detailGuest.kycStatus === 'PENDING' && (
-                <Btn
-                  onPress={() => {
-                    setReviewing(detailGuest);
-                    setDetailGuest(null);
-                  }}
-                  containerColor={Colors.warning}
-                  textColor={WHITE}
-                  borderRadius={Radii.control}
-                  height={42}
-                  style={{ flex: 1 }}
-                >
-                  <Ionicons name="shield-checkmark" size={16} color={WHITE} />
-                  <Txt variant="caption" weight="700" color={WHITE} style={{ marginLeft: 6 }}>
-                    Review KYC
-                  </Txt>
-                </Btn>
-              )}
-              <Btn
-                onPress={() => {
-                  confirmDeleteGuest(detailGuest);
-                  setDetailGuest(null);
-                }}
-                containerColor={Colors.danger}
-                textColor={WHITE}
-                borderRadius={Radii.control}
-                height={42}
-                style={{ flex: 1 }}
-              >
-                <Ionicons name="trash" size={16} color={WHITE} />
-                <Txt variant="caption" weight="700" color={WHITE} style={{ marginLeft: 6 }}>
-                  Delete
-                </Txt>
-              </Btn>
-            </Row>
-          ) : null
-        }
-      >
-        {detailGuest && (
-          <View>
-            <Card
-              containerColor={LIGHT_GREEN}
-              borderRadius={Radii.card}
-              borderWidth={1}
-              borderColor={BORDER}
-              padding={[14, 14]}
-            >
-              <Row align="center" gap={12}>
-                <View style={[styles.avatar, { width: 56, height: 56, borderRadius: Radii.pill }]}>
-                  <Txt variant="statValue" weight="700" color={GREEN}>
-                    {detailGuest.name.charAt(0).toUpperCase()}
-                  </Txt>
-                </View>
-                <Col style={{ flex: 1 }}>
-                  <Txt variant="sectionTitle" weight="700" color={CHARCOAL}>
-                    {detailGuest.name}
-                  </Txt>
-                  <Txt variant="caption" color={MUTED}>
-                    Resident ID: {detailGuest.id}
-                  </Txt>
-                  <Txt variant="caption" color={MUTED}>
-                    Joined {formatDateTime(detailGuest.registrationDate)}
-                  </Txt>
-                </Col>
-              </Row>
-            </Card>
-
-            <Spacer size={14} />
-            <Txt size={11} weight="700" color={GREEN} style={{ letterSpacing: 1 }}>
-              ROOM & CONTACT
-            </Txt>
-            <Spacer size={6} />
-            <View style={styles.detailRow}>
-              <Ionicons name="home" size={14} color={MUTED} />
-              <Txt variant="caption" color={CHARCOAL}>
-                Room {detailGuest.roomNo}
-              </Txt>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="call" size={14} color={MUTED} />
-              <Txt variant="caption" color={CHARCOAL}>
-                {detailGuest.phone || '—'}
-              </Txt>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="mail" size={14} color={MUTED} />
-              <Txt variant="caption" color={CHARCOAL}>
-                {detailGuest.email}
-              </Txt>
-            </View>
-
-            <Spacer size={14} />
-            <Txt size={11} weight="700" color={GREEN} style={{ letterSpacing: 1 }}>
-              PAYMENT STATUS
-            </Txt>
-            <Spacer size={6} />
-            <View style={styles.detailRow}>
-              <Ionicons name="cash" size={14} color={Colors.success} />
-              <Txt variant="caption" color={CHARCOAL}>
-                Monthly Rent: ₹{Math.round(detailGuest.rentAmount)}
-              </Txt>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons
-                name={detailGuest.isBillPaid ? 'checkmark-circle' : 'alert-circle'}
-                size={14}
-                color={detailGuest.isBillPaid ? Colors.success : Colors.warning}
-              />
-              <Txt variant="caption" color={detailGuest.isBillPaid ? Colors.success : Colors.warning}>
-                {detailGuest.isBillPaid ? 'Rent paid this cycle' : 'Rent pending for this cycle'}
-              </Txt>
-            </View>
-
-            <Spacer size={14} />
-            <Txt size={11} weight="700" color={GREEN} style={{ letterSpacing: 1 }}>
-              KYC VERIFICATION
-            </Txt>
-            <Spacer size={6} />
-            <View style={styles.detailRow}>
-              <Ionicons
-                name="shield-checkmark"
-                size={14}
-                color={
-                  detailGuest.kycStatus === 'VERIFIED' ? Colors.success :
-                  detailGuest.kycStatus === 'PENDING' ? Colors.warning :
-                  detailGuest.kycStatus === 'REJECTED' ? Colors.danger : MUTED
-                }
-              />
-              <Txt variant="caption" color={CHARCOAL}>
-                Status: {detailGuest.kycStatus}
-              </Txt>
-            </View>
-            {detailGuest.kycSubmissionDate ? (
-              <View style={styles.detailRow}>
-                <Ionicons name="calendar" size={14} color={MUTED} />
-                <Txt variant="caption" color={CHARCOAL}>
-                  Submitted {new Date(detailGuest.kycSubmissionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  {detailGuest.kycVerificationDate
-                    ? ` • decided ${new Date(detailGuest.kycVerificationDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                    : ''}
-                </Txt>
-              </View>
-            ) : null}
-            <Spacer size={8} />
-            {/* The photos themselves, not the words "photo on file". These are readable at
-                any KYC status, so an approved resident's documents stay reachable for a
-                lease check or a police verification instead of vanishing at approval. */}
-            <KycDocumentsCard
-              idPhotoUri={detailGuest.idProofPhotoUri}
-              selfieUri={detailGuest.profilePhotoUri}
-              emptyHint={
-                detailGuest.kycStatus === 'NOT_SUBMITTED'
-                  ? 'This resident has not submitted KYC documents yet.'
-                  : 'Documents are not available for this submission.'
-              }
-            />
-            {detailGuest.kycRejectReason ? (
-              <View style={styles.rejectReasonBox}>
-                <Ionicons name="warning" size={14} color={Colors.danger} />
-                <Txt variant="caption" color={Colors.danger} style={{ flex: 1 }}>
-                  Rejection reason: {detailGuest.kycRejectReason}
-                </Txt>
-              </View>
-            ) : null}
-          </View>
-        )}
-      </Sheet>
-
-      {/* Edit Dialog */}
-      <Sheet
-        visible={editing != null}
-        title="Edit resident profile"
-        subtitle={editing?.name}
-        icon="create-outline"
-        onDismiss={() => setEditing(null)}
-        footer={
-          <Row gap={8}>
-            <Btn
-              onPress={handleUpdate}
-              disabled={isUpdating}
-              loading={isUpdating}
-              containerColor={GREEN}
-              textColor={WHITE}
-              borderRadius={Radii.control}
-              height={42}
-              style={{ flex: 1 }}
-            >
-              <Txt variant="body" weight="700" color={WHITE}>Save changes</Txt>
-            </Btn>
-            <OutlinedBtn
-              onPress={() => setEditing(null)}
-              borderColor={BORDER}
-              textColor={CHARCOAL}
-              borderRadius={Radii.control}
-              height={42}
-              style={{ flex: 1 }}
-            >
-              <Txt variant="body" weight="700" color={CHARCOAL}>Cancel</Txt>
-            </OutlinedBtn>
-          </Row>
-        }
-      >
-                <OutlinedTextField
-                  label="Resident Full Name *"
-                  value={editName}
-                  onChangeText={setEditName}
-                  containerColor={BG}
-                  style={{ marginBottom: 8 }}
-                />
-                <View style={{ marginBottom: 10 }}>
-                  <RoomPicker pgId={activePgId} value={editRoom} onChange={setEditRoom} label="Room *" />
-                </View>
-                <OutlinedTextField
-                  label="Monthly Rent Fee (₹) *"
-                  value={editRent}
-                  onChangeText={setEditRent}
-                  keyboardType="number-pad"
-                  containerColor={BG}
-                  style={{ marginBottom: 8 }}
-                />
-                <OutlinedTextField
-                  label="Phone Number"
-                  value={editPhone}
-                  onChangeText={setEditPhone}
-                  containerColor={BG}
-                  style={{ marginBottom: 8 }}
-                />
-                <OutlinedTextField
-                  label="Email Address *"
-                  value={editEmail}
-                  onChangeText={setEditEmail}
-                  containerColor={BG}
-                  style={{ marginBottom: 4 }}
-                />
-      </Sheet>
-
-
-      {/* Review KYC Dialog */}
-      <Sheet
-        visible={reviewing != null}
-        title="KYC document review"
-        subtitle={reviewing ? `${reviewing.name} · Room ${reviewing.roomNo}` : undefined}
-        icon="shield-checkmark-outline"
-        onDismiss={() => setReviewing(null)}
-      >
-            {reviewing && (
-              <Col>
-                <Txt variant="cardTitle" weight="700" color={CHARCOAL}>
-                  {reviewing.name} (Room {reviewing.roomNo})
-                </Txt>
-                <Txt variant="caption" color={MUTED}>
-                  Email: {reviewing.email} • Phone: {reviewing.phone}
-                </Txt>
-                <Spacer size={16} />
-                <Txt variant="caption" weight="700" color={MUTED}>
-                  Submitted documents
-                </Txt>
-                <Spacer size={8} />
-                {/* The actual photos. This modal asks the owner to APPROVE somebody's
-                    identity and used to show them the words "📷 Photo on file" — a decision
-                    on a document nobody could look at. */}
-                <KycDocumentsCard
-                  idPhotoUri={reviewing.idProofPhotoUri}
-                  selfieUri={reviewing.profilePhotoUri}
-                  emptyHint="This submission has no readable images. Reject it and ask the resident to upload again."
-                />
-                <Spacer size={20} />
-                <Row gap={8}>
-                  <Btn
-                    onPress={() => handleApprove(reviewing)}
-                    containerColor={Colors.success}
-                    textColor={WHITE}
-                    borderRadius={Radii.control}
-                    height={42}
-                    style={{ flex: 1 }}
-                  >
-                    <Txt variant="caption" weight="700" color={WHITE}>
-                      Approve KYC
-                    </Txt>
-                  </Btn>
-                  <Btn
-                    onPress={() => {
-                      setRejecting(reviewing);
-                      setReviewing(null);
-                    }}
-                    containerColor={Colors.danger}
-                    textColor={WHITE}
-                    borderRadius={Radii.control}
-                    height={42}
-                    style={{ flex: 1 }}
-                  >
-                    <Txt variant="caption" weight="700" color={WHITE}>
-                      Reject KYC
-                    </Txt>
-                  </Btn>
-                </Row>
-              </Col>
-            )}
-      </Sheet>
 
       <TextPromptDialog
         visible={rejecting != null}

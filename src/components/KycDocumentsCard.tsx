@@ -105,7 +105,7 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
 
       {/* Full-Screen Document Inspection Viewer */}
       <Modal visible={zoomed != null} transparent animationType="fade" onRequestClose={() => setZoomed(null)}>
-        <View style={styles.zoomBackdrop}>
+        <View style={styles.zoomBackdrop} accessibilityViewIsModal>
           <View style={styles.zoomHeader}>
             <View>
               <Txt variant="sectionTitle" color={Colors.textInverse}>{zoomed?.label}</Txt>

@@ -8,7 +8,7 @@
  * an owner turns it off, matching the backend's own "absence is the off state" model.
  */
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -16,6 +16,7 @@ import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useAdConfigQuery, useUpsertAdConfigMutation, useDeleteAdConfigMutation, type AdConfig } from '@/features/ads/useAds';
 import { Btn, Card, Col, ErrorState, LoadingState, OutlinedBtn, Row, Spacer, Txt } from '@/components/ui';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const BLANK: Omit<AdConfig, 'pg_id'> = {
   brand_name: '',
@@ -144,7 +145,7 @@ export function ManageAdScreen() {
           </Col>
         </Card>
       ) : (
-        <ScrollView keyboardShouldPersistTaps="handled">
+        <FormScroll keyboardShouldPersistTaps="handled">
           <OutlinedTextField label="Brand / business name" required value={form.brand_name} onChangeText={(v) => { set('brand_name', v); if (brandError) setBrandError(undefined); }} error={brandError} placeholder="NutriFit Cloud Kitchen" style={{ marginBottom: 12 }} />
           <OutlinedTextField label="Tagline" value={form.tagline} onChangeText={(v) => set('tagline', v)} placeholder="Chef-crafted healthy meal boxes" style={{ marginBottom: 12 }} />
           <OutlinedTextField label="Description" value={form.description} onChangeText={(v) => set('description', v)} multiline numberOfLines={3} style={{ marginBottom: 12, minHeight: 80 }} />
@@ -174,7 +175,7 @@ export function ManageAdScreen() {
               <Txt variant="body" weight="700" color={Colors.textInverse}>Save Ad</Txt>
             </Btn>
           </Row>
-        </ScrollView>
+        </FormScroll>
       )}
     </HubScreenWrapper>
   );

@@ -3,8 +3,9 @@
  * Account summary + payment/UPI configuration + sign out — the basics every
  * owner or manager needs; more sections land here as they come up.
  */
-import { Alert, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Radii, Colors } from '@/theme';
@@ -12,19 +13,14 @@ import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
 import { UpiConfigSection } from '@/features/owner/tabs/UpiConfigSection';
 import { useIsManagerMode } from '@/store/authStore';
-import { AnimatedPress, Btn, Card, Col, Row, Spacer, Txt } from '@/components/ui';
+import { AnimatedPress, Btn, Card, Col, PGowDialog, Row, Spacer, Txt } from '@/components/ui';
 
 export function SettingsScreen() {
   const { activeEntity: owner } = useActiveProperty();
   const isManager = useIsManagerMode();
   const logout = usePGowStore((s) => s.logout);
 
-  const confirmLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: logout },
-    ]);
-  };
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
 
   return (
     <HubScreenWrapper title="Settings" subtitle={owner?.pgName ?? 'Account'}>
@@ -153,10 +149,21 @@ export function SettingsScreen() {
       </Card>
 
       <Spacer size={20} />
-      <Btn onPress={confirmLogout} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={Radii.card} height={48} borderWidth={1} borderColor="#FECACA">
+      <Btn onPress={() => setConfirmLogoutOpen(true)} containerColor={Colors.surface} textColor={Colors.danger} borderRadius={Radii.card} height={48} borderWidth={1} borderColor="#FECACA">
         <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
         <Txt variant="body" weight="700" color={Colors.danger} style={{ marginLeft: 8 }}>Log Out</Txt>
       </Btn>
+
+      <PGowDialog
+        visible={confirmLogoutOpen}
+        title="Log out?"
+        message="You will need your credentials to sign back in."
+        confirmLabel="Log out"
+        tone="destructive"
+        onConfirm={() => { setConfirmLogoutOpen(false); logout(); }}
+        onCancel={() => setConfirmLogoutOpen(false)}
+        testID="owner_logout"
+      />
     </HubScreenWrapper>
   );
 }

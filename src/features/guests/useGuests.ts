@@ -7,6 +7,7 @@ import * as map from "../../data/mappers";
 import type { GuestEntity } from "../../types";
 import { listPayments } from "../payments/usePayments";
 import { useTokenLanding } from "../auth/useAuth";
+import { useAuthStore } from "@/store/authStore";
 
 export interface GuestMember {
   membership_id: string;
@@ -201,6 +202,20 @@ export function useGuestsQuery(pgId?: string) {
     },
     enabled: !!pgId,
   });
+}
+
+/**
+ * One resident, by id, out of the roster the list screen already has cached. Same reasoning
+ * as `useStaffMember` / `useLaundryOrder`: no per-id endpoint call, and `isLoading` is the
+ * list's so a cold deep-link shows a spinner rather than "not found".
+ */
+export function useGuest(guestId?: string) {
+  const activePgId = useAuthStore((s) => s.activePgId);
+  const query = useGuestsQuery(activePgId ?? undefined);
+  return {
+    ...query,
+    guest: guestId ? (query.data ?? []).find((g) => g.id === guestId) : undefined,
+  };
 }
 
 export function useAddGuestMutation(pgId?: string) {

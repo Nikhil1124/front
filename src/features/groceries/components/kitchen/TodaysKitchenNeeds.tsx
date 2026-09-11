@@ -15,11 +15,11 @@ import {
 } from '../../useKitchenMenu';
 import { KitchenMenuDay, KitchenMenuMealType, KitchenMenuWeekday } from '@/types';
 import { Radii, Colors } from '@/theme';
+import { useToast } from '@/hooks/useToast';
 
 // Extracted modal components
-import { CustomAlertModal, CustomAlertState } from './CustomAlertModal';
 import { MenuEditorModal } from './MenuEditorModal';
-import { AnimatedPress, Sheet, Txt } from '@/components/ui';
+import { AnimatedPress, ErrorState, LoadingState, Sheet, Txt } from '@/components/ui';
 
 // ─── Weekday / meal-type conversion ────────────────────────────────────────────
 // The server speaks lowercase weekdays ('monday') and 'veg' | 'non_veg' | 'pure_veg'; this
@@ -134,13 +134,20 @@ interface TodaysKitchenNeedsProps {
 export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
   onProductPress, onSeeAllCategoriesPress, products = [], pgId,
 }) => {
+  const toast = useToast();
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
 
   const bannerScrollRef = useRef<ScrollView>(null);
   const findProduct = (id: string) => products.find((p) => p.id === id);
 
-  const { data: kitchenMenuDays } = useKitchenMenuQuery(pgId);
+  // `DEFAULT_MENU_CONFIG` fills in before the fetch resolves so `menuConfig[day]` is never
+  // undefined — which is right for a first render and wrong for a failure. Every day in that
+  // fallback has an empty menu and empty ingredients, so a failed fetch told the chef there
+  // was nothing to cook and nothing to buy. The error has to be visible or it reads as an
+  // answer.
+  const { data: kitchenMenuDays, isLoading: menuLoading, error: menuError, refetch: refetchMenu } =
+    useKitchenMenuQuery(pgId);
   const setKitchenMenuDay = useSetKitchenMenuDayMutation(pgId);
   const menuConfig = useMemo(() => toMenuConfig(kitchenMenuDays), [kitchenMenuDays]);
 
@@ -165,11 +172,12 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
   const activeConfig = activeTab === 'veg' ? vegConfig : nonVegConfig;
 
   // ── Alert state ──
-  const [customAlert, setCustomAlert] = useState<CustomAlertState>({
-    visible: false, title: '', message: '', type: 'info',
-  });
-  const showAlert = (title: string, message: string, type: CustomAlertState['type'] = 'info') => {
-    setCustomAlert({ visible: true, title, message, type });
+  // Was a full-screen `CustomAlertModal` — a Sheet with one OK button. Every one of its six
+  // call sites reports success, an error, or a fact; none asks the reader to decide anything,
+  // so none of them earns a surface that has to be dismissed. The toast already exists and is
+  // the app's feedback channel.
+  const showAlert = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    toast(type, title, message);
   };
 
   // ── Menu editor state ──
@@ -323,6 +331,12 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
         </AnimatedPress>
       </View>
 
+      {menuError ? (
+        <ErrorState error={menuError} title="Could not load today's menu" onRetry={refetchMenu} fill={false} />
+      ) : menuLoading ? (
+        <LoadingState label="Loading today's menu…" size="small" fill={false} />
+      ) : null}
+
       {/* Veg / Non-Veg toggle */}
       <View style={styles.tabContainer}>
         {(['veg', 'nonVeg'] as const).map((type) => (
@@ -435,11 +449,6 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
         </View>
       </Sheet>
 
-      {/* ── Custom Alert ── */}
-      <CustomAlertModal
-        state={customAlert}
-        onClose={() => setCustomAlert({ ...customAlert, visible: false })}
-      />
     </View>
   );
 };

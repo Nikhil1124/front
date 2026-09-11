@@ -804,6 +804,7 @@ export function OwnerPaymentsTab() {
                   <ChoiceChips
                     label="Category"
                     options={EXPENSE_CATEGORIES}
+                    columns={2}
                     value={expenseCategory}
                     onChange={setExpenseCategory}
                     testID="expense_category"

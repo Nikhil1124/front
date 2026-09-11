@@ -23,6 +23,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
+import { FormScroll } from '@/components/ui/FormScroll';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Radii } from '@/theme';
 import { useToast } from '@/hooks/useToast';
@@ -149,7 +150,12 @@ export function JoinPgScreen({ initialCode }: { initialCode?: string } = {}) {
         </Txt>
       </View>
 
-      <View style={styles.body}>
+      {/* Was a plain `<View>`: five fields, a QR scanner and a password field with no scroll
+          container at all. On an edge-to-edge Android window the IME does not resize the
+          window, so focusing the password field covered the submit button with nothing to
+          scroll — on the resident's first-run join flow. FormScroll reserves the covered
+          space as content padding. */}
+      <FormScroll contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           {/* ── 1. The code ────────────────────────────────────────────────── */}
           {step === 'code' ? (
@@ -273,7 +279,7 @@ export function JoinPgScreen({ initialCode }: { initialCode?: string } = {}) {
             <Txt size={15} weight="700" color={Colors.textInverse}>Join {preview?.name ?? 'this PG'}</Txt>
           </Btn>
         ) : null}
-      </View>
+      </FormScroll>
     </View>
   );
 }
@@ -295,7 +301,9 @@ function StepDone({ label, value, onChange }: { label: string; value: string; on
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
   header: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 14 },
-  body: { paddingHorizontal: 20, flex: 1 },
+  // `flex: 1` here would pin the content to the viewport and defeat scrolling now that
+  // this is a contentContainerStyle rather than a View's own style.
+  body: { paddingHorizontal: 20, paddingBottom: 32 },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.card,

@@ -74,7 +74,9 @@ export function TextPromptDialog({
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.backdrop}>
           <Pressable accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={onCancel} />
-          <View style={styles.card}>
+          {/* The screen behind a modal stays mounted, so without this a screen reader
+              walks straight out of the decision into content it cannot act on. */}
+          <View style={styles.card} accessibilityViewIsModal>
             <Txt variant="sectionTitle" color={Colors.textPrimary}>{title}</Txt>
             {message ? <Txt variant="body" color={Colors.textSecondary} style={styles.message}>{message}</Txt> : null}
             <OutlinedTextField

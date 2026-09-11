@@ -2,7 +2,7 @@
  * OwnerRegisterScreen — port of Kotlin `OwnerRegisterScreen(viewModel)`.
  */
 import { useState } from 'react';
-import { Modal, StyleSheet, Alert } from 'react-native';
+import { Modal, StyleSheet, Alert, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -101,6 +101,9 @@ export function OwnerRegisterScreen() {
     // status bar, so they are set together.
     return (
       <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
+        {/* `LocationPicker` is a component, so the trap goes on a wrapper. Without it a
+            screen reader leaves the full-screen map and lands on the form behind it. */}
+        <View style={{ flex: 1 }} accessibilityViewIsModal>
         <LocationPicker
           onCancel={() => setPicking(false)}
           initial={ownerLocationInput}
@@ -114,6 +117,7 @@ export function OwnerRegisterScreen() {
             setPicking(false);
           }}
         />
+        </View>
       </Modal>
     );
   }

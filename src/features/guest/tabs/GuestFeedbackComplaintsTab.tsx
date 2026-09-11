@@ -34,6 +34,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 import { AnimatedPress, Card, Col, ErrorState, IconBtn, LoadingState, Row, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const COMPLAINT_CATEGORIES = [
   { label: 'Food Quality', icon: 'restaurant-outline' },
@@ -222,7 +223,7 @@ export function GuestFeedbackComplaintsTab() {
             <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 22, marginBottom: 10 }}>
               Select Complaint Category
             </Txt>
-            <ScrollView
+            <FormScroll
               horizontal
               showsHorizontalScrollIndicator={false}
               bounces={false}
@@ -245,7 +246,7 @@ export function GuestFeedbackComplaintsTab() {
                   </AnimatedPress>
                 );
               })}
-            </ScrollView>
+            </FormScroll>
             {formErrors.category ? (
               <Txt size={11} weight="600" color={Colors.danger} style={{ marginTop: 6 }}>
                 {formErrors.category}
@@ -354,7 +355,7 @@ export function GuestFeedbackComplaintsTab() {
               </View>
             </Row>
 
-            <ScrollView
+            <FormScroll
               horizontal
               showsHorizontalScrollIndicator={false}
               bounces={false}
@@ -367,7 +368,7 @@ export function GuestFeedbackComplaintsTab() {
               <RatingCard title="Manager Responses" icon="person-outline" rating={mgrRating} onChange={setMgrRating} />
               <RatingCard title="Staff Behaviour" icon="people-outline" rating={staffRating} onChange={setStaffRating} />
               <RatingCard title="Others & Facilities" icon="business-outline" rating={otherRating} onChange={setOtherRating} />
-            </ScrollView>
+            </FormScroll>
 
             {/* FEEDBACK FORM INPUTS */}
             <Spacer size={16} />
@@ -539,7 +540,7 @@ export function GuestFeedbackComplaintsTab() {
 
       {/* Preview Modal */}
       <Modal visible={preview != null} transparent animationType="fade">
-        <View style={styles.backdrop}>
+        <View style={styles.backdrop} accessibilityViewIsModal>
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor="#DCE9EA" padding={[16, 16]} style={{ width: '92%' }}>
             {preview && (
               <>
