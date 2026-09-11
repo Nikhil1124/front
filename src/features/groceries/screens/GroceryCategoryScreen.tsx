@@ -35,8 +35,11 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string }> = {
 // Category name → grocery image asset
 const getCategoryImage = (name: string) => {
   const n = name.toLowerCase();
+  // `promo_fresh_picks_nobg`, not `cat_fruits_veg_nobg`: the latter is a cabbage, an apple and
+  // some chard on a white block, which reads as a pale square sitting on the tile's tint. This
+  // one is a cut-out spread of real vegetables — and this catalogue sells no fruit.
   if (n.includes('fruit') || n.includes('veg'))
-    return require('../../../../assets/productimages/cat_fruits_veg_nobg.webp');
+    return require('../../../../assets/productimages/promo_fresh_picks_nobg.webp');
   if (n.includes('dairy') || n.includes('milk') || n.includes('bread') || n.includes('egg'))
     return require('../../../../assets/productimages/cat_dairy_nobg.webp');
   if (n.includes('chicken') || n.includes('meat') || n.includes('fish'))

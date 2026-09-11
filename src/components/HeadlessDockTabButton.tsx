@@ -122,10 +122,45 @@ const ALERT_GAP = 8;
 // UI state, so Zustand rather than React Query — the ADR's split. Global rather than context
 // because the scroller and the bar are in different subtrees (a screen inside TabSlot, and
 // TabList outside it) with no shared provider between them short of the root.
-const useDockCollapse = create<{ collapsed: boolean; setCollapsed: (v: boolean) => void }>((set) => ({
+const useDockCollapse = create<{
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
+  /** How many bottom sheets are currently open. A count, not a boolean: sheets can replace one
+   *  another, and the closing one's cleanup must not un-hide the dock under the opening one. */
+  overlays: number;
+  pushOverlay: () => void;
+  popOverlay: () => void;
+}>((set) => ({
   collapsed: false,
   setCollapsed: (collapsed) => set({ collapsed }),
+  overlays: 0,
+  pushOverlay: () => set((s) => ({ overlays: s.overlays + 1 })),
+  popOverlay: () => set((s) => ({ overlays: Math.max(0, s.overlays - 1) })),
 }));
+
+/**
+ * Hides the tab dock for as long as `active` is true. Call it from a bottom sheet.
+ *
+ * A sheet is a React Native Modal, which on Android is a separate dialog window, and that
+ * window does not reliably reach the bottom of the screen: below the sheet the dialog is
+ * transparent, so
+ * the dock underneath shows through at full brightness — not dimmed by the sheet's own scrim,
+ * because the scrim is inside the window that stops short. `statusBarTranslucent` and
+ * `navigationBarTranslucent` do not help; RN already forces both on for an edge-to-edge app
+ * (`ReactModalHostView.kt` — `get() = field || isEdgeToEdgeFeatureFlagOn`), so passing them
+ * changes nothing.
+ *
+ * Rather than keep guessing at the dialog's geometry, take away the thing that shows through.
+ * The dock is in the activity's window, entirely under this app's control, and a sheet is
+ * modal — the tabs are not usable while one is open anyway.
+ */
+export function useHideDockWhileOpen(active: boolean): void {
+  useEffect(() => {
+    if (!active) return;
+    useDockCollapse.getState().pushOverlay();
+    return () => useDockCollapse.getState().popOverlay();
+  }, [active]);
+}
 
 /** Below this the bar is always full: near the top of a page there is nothing to make room for. */
 const COLLAPSE_FLOOR = 40;
@@ -239,9 +274,12 @@ export function useDock(profile?: NavProfile) {
   }, [profile, counts]);
 
   const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
+  // `display: 'none'` rather than not rendering `<Dock>`: it is `TabList` from expo-router/ui
+  // and the navigator wants it in the tree. Hidden, it lays out as nothing.
+  const hiddenByOverlay = useDockCollapse((s) => s.overlays > 0);
   return {
     /** Spread onto `<Dock style={...}>`. */
-    dockStyle: [styles.bar, { paddingBottom: bottomPad }],
+    dockStyle: [styles.bar, { paddingBottom: bottomPad }, hiddenByOverlay && { display: 'none' as const }],
     /** Bottom padding the scrolling content needs so neither the bar nor the strip covers its
      *  last row. */
     contentPaddingBottom: BAR_CONTENT_HEIGHT + bottomPad + (alert ? ALERT_HEIGHT + ALERT_GAP : 0),

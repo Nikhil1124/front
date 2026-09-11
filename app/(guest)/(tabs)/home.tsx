@@ -542,12 +542,9 @@ export default function GuestHomeTab() {
             image={require('../../../assets/pg_service_laundry_1785343445318.webp')}
             onPress={() => router.push('/laundry')}
           />
-          <SvcCard
-            title="Repairs"
-            desc="Book a technician or handyman"
-            image={require('../../../assets/pg_service_repair_1785343458042.webp')}
-            onPress={() => router.push('/book-technician')}
-          />
+          {/* "Repairs — Book a technician" was here. Removed with the resident-side booking
+              screen: reporting is "Support & Requests" below, and dispatching a technician is
+              the owner's to do. */}
           <SvcCard
             title="Support & Requests"
             desc="Complaints & maintenance"

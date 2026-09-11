@@ -25,10 +25,9 @@ export const ProductRow: React.FC<ProductRowProps> = ({
   onProductPress,
   onSeeAllPress,
 }) => {
-  // One card per product, not per pack. The rail's cards are too narrow for a size picker,
-  // so each shows its smallest pack — tapping through to the product screen is where a size
-  // gets chosen.
-  const families = groupByVariant(products).map((family) => family[0]);
+  // One card per product, not per pack — and each card carries its whole family, so a rail
+  // gets the same size picker the grid does.
+  const families = groupByVariant(products);
 
   if (families.length === 0) return null;
 
@@ -44,10 +43,10 @@ export const ProductRow: React.FC<ProductRowProps> = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         data={families}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(family) => family[0].id}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <ProductCard product={item} layout="simple" onPress={onProductPress} />
+        renderItem={({ item: family }) => (
+          <ProductCard product={family[0]} variants={family} layout="simple" onPress={onProductPress} />
         )}
       />
     </View>
