@@ -205,8 +205,14 @@ export interface PGowState {
   verifyGuestKycByOwner: (guestId: string, approve: boolean, rejectReason?: string) => Promise<{ ok: boolean; error?: string }>;
 
   // ===== Meal notifications & RSVPs =====
-  submitRSVP: (notificationId: string, choice: string) => Promise<{ ok: boolean; error?: string }>;
-  submitRSVPFromNotification: (notificationId: string, choice: string) => Promise<{ ok: boolean; error?: string }>;
+  submitRSVP: (
+    notificationId: string,
+    choice: string
+  ) => Promise<{ ok: boolean; error?: string; points_awarded?: number; points_balance?: number }>;
+  submitRSVPFromNotification: (
+    notificationId: string,
+    choice: string
+  ) => Promise<{ ok: boolean; error?: string; points_awarded?: number; points_balance?: number }>;
 
   // ===== Misc =====
   logout: () => void;
@@ -1000,8 +1006,19 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   // useBroadcastMealMutation in useMeals.ts, composed directly in broadcast.tsx.
 
   submitRSVP: async (notificationId, choice) => {
+    let awarded = 0;
+    let balance = 0;
     try {
-      await mealsApi.submitResponse(notificationId, choice === 'REQUIRED' ? 'eating' : 'skipping');
+      // The reply carries the points. Discarding it was why a foreground tap said only
+      // "Your RSVP was recorded" while the same tap with the app closed reported "+15
+      // points" — one endpoint, one set of facts, two different answers depending on
+      // whether the app happened to be open.
+      const res = await mealsApi.submitResponse(
+        notificationId,
+        choice === 'REQUIRED' ? 'eating' : 'skipping'
+      );
+      awarded = res.points_awarded ?? 0;
+      balance = res.points_balance ?? 0;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Your answer was not saved. Try again.';
       set({
@@ -1012,7 +1029,7 @@ export const usePGowStore = create<PGowState>((set, get) => ({
       return { ok: false, error: message };
     }
     await get().refreshAll();
-    return { ok: true };
+    return { ok: true, points_awarded: awarded, points_balance: balance };
   },
 
   submitRSVPFromNotification: async (notificationId, choice) => {

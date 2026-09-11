@@ -2,7 +2,7 @@ import Notifications from "../../data/notificationsCompat";
 import { Platform } from "react-native";
 import { router } from "expo-router";
 import { Colors } from "../../theme";
-import { MEAL_RSVP_CATEGORY } from "../../tasks/backgroundNotificationTask";
+import { MEAL_DONE_CATEGORY, MEAL_RSVP_CATEGORY } from "../../tasks/backgroundNotificationTask";
 
 /**
  * Without this, expo-notifications' default handler shows nothing while the app is in the
@@ -96,6 +96,14 @@ export async function registerMealRsvpCategory(): Promise<void> {
   await Notifications.setNotificationCategoryAsync(MEAL_RSVP_CATEGORY, [
     { identifier: "EAT", buttonTitle: "I'll eat ✅", options: { opensAppToForeground: false } },
     { identifier: "SKIP", buttonTitle: "Skip ❌", options: { opensAppToForeground: false } },
+  ]);
+
+  // The second state. Once the RSVP is in, "I'll eat" and "Skip" are no longer the available
+  // moves — offering them again would invite a tap that earns nothing and says nothing new.
+  // The confirmation is worth leaving in the shade, because it carries the points; `Close`
+  // is how a resident is done with it, and like the other two it never opens the app.
+  await Notifications.setNotificationCategoryAsync(MEAL_DONE_CATEGORY, [
+    { identifier: "CLOSE", buttonTitle: "Close", options: { opensAppToForeground: false } },
   ]);
 }
 

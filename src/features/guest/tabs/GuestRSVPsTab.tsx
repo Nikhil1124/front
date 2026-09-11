@@ -26,6 +26,8 @@ import { useAuthStore } from '@/store/authStore';
 import { qk } from '@/data/queryKeys';
 import { useSetAwayMutation } from '@/features/auth/useAuth';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
+import { router } from 'expo-router';
+
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 import { AnimatedPress, Card, Col, Row, Sheet, Spacer, StatusChip, Txt, type StatusTone } from '@/components/ui';
@@ -283,6 +285,10 @@ export function GuestRSVPsTab() {
         subtitle="Eat well. Stay healthy."
         actions={
           <Row gap={8}>
+            {/* Points are earned by answering here — 15 a meal — so this is where a resident
+                looks for them. Until now the balance lived only inside a sheet on the
+                payments tab, which is where they are spent, not where they come from. */}
+            <HeaderChip icon="star-outline" label="Points" onPress={() => router.push('/rewards')} />
             <HeaderChip icon="options-outline" label="Meal preferences" onPress={openPreferences} />
             <HeaderChip icon="calendar-outline" label="Choose a date" onPress={() => { toast('info', 'Not Available Yet', 'A weekly meal calendar is coming soon.'); }} />
           </Row>

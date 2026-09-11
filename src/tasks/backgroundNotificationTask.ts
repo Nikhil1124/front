@@ -22,6 +22,8 @@ import { useAuthStore } from "../store/authStore";
 
 export const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND-NOTIFICATION-TASK";
 export const MEAL_RSVP_CATEGORY = "MEAL_RSVP";
+/** The confirmation state's category — one action, `CLOSE`. Registered in `channels.ts`. */
+export const MEAL_DONE_CATEGORY = "MEAL_DONE";
 
 const KEYS = {
   ACCESS: "pgowAccessToken",
@@ -59,7 +61,16 @@ async function refreshedAccessToken(): Promise<string | null> {
 /** Submits the RSVP, refreshing the access token once on a 401 — the same 15-minute expiry
  *  that guards every other request applies here, and a killed app is exactly the case most
  *  likely to have an already-stale one sitting in SecureStore. */
-async function submitMealResponse(mealId: string, choice: "eating" | "skipping"): Promise<void> {
+export interface MealRsvpResult {
+  /** What this answer paid. Zero when the resident is changing an answer already awarded. */
+  points_awarded: number;
+  points_balance: number;
+}
+
+async function submitMealResponse(
+  mealId: string,
+  choice: "eating" | "skipping"
+): Promise<MealRsvpResult> {
   let token = await SecureStore.getItemAsync(KEYS.ACCESS);
   if (!token) throw new Error("Not logged in");
 
@@ -80,6 +91,13 @@ async function submitMealResponse(mealId: string, choice: "eating" | "skipping")
     res = await post(fresh);
   }
   if (!res.ok) throw new Error(`RSVP submit failed: ${res.status}`);
+  // Tolerant of an older server that has not shipped the points fields yet: the confirmation
+  // then reads as a plain "response recorded", which is still true.
+  const body = (await res.json().catch(() => ({}))) as Partial<MealRsvpResult>;
+  return {
+    points_awarded: Number(body.points_awarded ?? 0),
+    points_balance: Number(body.points_balance ?? 0),
+  };
 }
 
 async function dismissOriginal(payload: { notification?: Notification } | undefined) {
@@ -99,6 +117,14 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
     | { actionIdentifier?: string; notification?: Notification }
     | undefined;
   const actionIdentifier = payload?.actionIdentifier;
+
+  // The confirmation's only button. Dismissing is all it does — no network, no app launch,
+  // which is the whole reason it is a notification action and not a deep link.
+  if (actionIdentifier === "CLOSE") {
+    await dismissOriginal(payload);
+    return;
+  }
+
   if (actionIdentifier !== "EAT" && actionIdentifier !== "SKIP") {
     // Plain delivery (no button tap) while backgrounded/killed — the OS already displayed
     // the notification itself; nothing to do here.
@@ -112,18 +138,35 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
 
   const choice = actionIdentifier === "EAT" ? "eating" : "skipping";
 
+  // The meal's name is already the push's title — the server sends `meal.meal_type.title()`,
+  // so "Breakfast". Reading it back off the notification beats adding a `mealName` data field
+  // the server would have to start sending and old builds would not have.
+  const mealName = payload?.notification?.request?.content?.title?.trim() || "this meal";
+
   try {
-    await submitMealResponse(content.actionId, choice);
+    const { points_awarded, points_balance } = await submitMealResponse(
+      content.actionId,
+      choice
+    );
     // Android leaves an action-button notification in the tray after the tap — nothing
     // auto-dismisses it, so without this the meal card just sits there unchanged.
     await dismissOriginal(payload);
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "RSVP submitted",
-        body:
-          choice === "eating"
-            ? "You're marked as eating this meal."
-            : "You're marked as skipping this meal.",
+        title: "RSVP confirmed ✅",
+        // "+15 points" only on the answer that actually paid. A resident changing their mind
+        // hits the same ledger row and earns nothing further (`reward_entries_source_key`),
+        // so repeating it would promise points the balance never moves by — and both numbers
+        // are in the same sentence, where the contradiction is obvious.
+        body: [
+          `Response recorded: ${choice === "eating" ? "Eating ✅" : "Skipping ❌"} for ${mealName}.`,
+          points_awarded > 0 ? `+${points_awarded} points awarded!` : null,
+          points_balance > 0 ? `You now have ${points_balance} points.` : null,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        categoryIdentifier: MEAL_DONE_CATEGORY,
+        data: { categoryId: MEAL_DONE_CATEGORY },
       },
       trigger: null,
     });

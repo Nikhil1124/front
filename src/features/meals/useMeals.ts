@@ -26,6 +26,10 @@ export interface MealResponse {
   meal_id: string;
   guest_id: string;
   choice: "eating" | "skipping";
+  /** What this answer paid. Zero when changing an answer already awarded — the ledger pays
+   *  once per response row, so a second tap earns nothing and must not claim otherwise. */
+  points_awarded?: number;
+  points_balance?: number;
 }
 
 // GET /v1/meals?pg_id= — gated for guests

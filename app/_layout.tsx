@@ -160,14 +160,32 @@ function RootLayoutNav() {
         | { actionType?: string; actionId?: string; screen?: string }
         | undefined;
 
+      // The confirmation notification's only button. Nothing to submit — it exists so the
+      // resident can clear a card they have already answered, without opening the app.
+      if (actionIdentifier === 'CLOSE') {
+        await Notifications.dismissNotificationAsync(notification.request.identifier).catch(() => {});
+        return;
+      }
+
       if (actionIdentifier === 'EAT' || actionIdentifier === 'SKIP') {
         if (data?.actionType !== 'meal' || !data.actionId) return;
         const result = await submitRSVP(data.actionId, actionIdentifier === 'EAT' ? 'REQUIRED' : 'NOT_REQUIRED');
         if (result.ok) {
+          // Same sentence the background task writes into its confirmation notification, for
+          // the same reason: "+15" only on the answer that actually paid, because a resident
+          // changing their mind hits the same ledger row and earns nothing further.
+          const awarded = result.points_awarded ?? 0;
+          const balance = result.points_balance ?? 0;
           usePGowStore.getState().patch({
             activeAlert: {
               title: actionIdentifier === 'EAT' ? '✅ Marked as eating' : '❌ Marked as skipping',
-              description: 'Your RSVP was recorded.',
+              description: [
+                'Your RSVP was recorded.',
+                awarded > 0 ? `+${awarded} points awarded!` : null,
+                balance > 0 ? `You now have ${balance} points.` : null,
+              ]
+                .filter(Boolean)
+                .join(' '),
               type: 'SUCCESS',
               timestamp: Date.now(),
             },
