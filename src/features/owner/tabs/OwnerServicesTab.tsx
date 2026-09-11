@@ -41,7 +41,7 @@ const SERVICES: ServiceItem[] = [
   { id: 'wifi', name: 'Wi-Fi Repairs', desc: 'Internet, router & connectivity issues', icon: 'wifi', type: 'POPULAR', cost: 30, problems: ['No internet', 'Router not turning on', 'Slow speed'], includes: ['Technician inspection', 'Configuration fixing'] },
   { id: 'electrical', name: 'Electrical', desc: 'Lights, switches, sockets & more', icon: 'flash', type: 'POPULAR', cost: 30, problems: ['Socket not working', 'Light flickering', 'MCB tripping'], includes: ['Technician inspection', 'Basic repair'] },
   { id: 'atoz', name: 'A to Z Repairs', desc: "Anything broken? We'll fix it.", icon: 'construct', type: 'POPULAR', cost: 30, problems: ['General breakage', 'Unidentified issue'], includes: ['Expert diagnosis', 'Custom repair quote'] },
-  
+
   // Repairs & Maintenance
   { id: 'welding', name: 'Welding', desc: 'Gates, grills & metal work', icon: 'sparkles', type: 'REPAIR', cost: 30, problems: ['Grill broken', 'Gate hinge off'], includes: ['Inspection', 'Welding equipment'] },
   { id: 'civil', name: 'Civil Repairs', desc: 'Walls, tiles, cracks & minor work', icon: 'business', type: 'REPAIR', cost: 30, problems: ['Tile broken', 'Wall crack'], includes: ['Inspection', 'Minor plastering'] },
@@ -56,7 +56,7 @@ const SERVICES: ServiceItem[] = [
   { id: 'washing', name: 'Washing Machine', desc: 'Machine repair & cleaning', icon: 'shirt', type: 'ESSENTIAL', cost: 149, problems: ['Not spinning', 'Water not draining'], includes: ['Inspection', 'Motor check'] },
   { id: 'bathroom', name: 'Bathroom', desc: 'Bathroom maintenance', icon: 'cut', type: 'ESSENTIAL', cost: 149, problems: ['Drain block', 'Shower head leak'], includes: ['Inspection', 'Unclogging'] },
   { id: 'furniture', name: 'Furniture Repair', desc: 'Bed, chair & furniture fixes', icon: 'hammer', type: 'ESSENTIAL', cost: 149, problems: ['Bed squeaking', 'Chair wobble'], includes: ['Inspection', 'Glue/nail fixing'] },
-  
+
   // Cleaning
   { id: 'room_clean', name: 'Room Cleaning', desc: 'Basic room cleaning', icon: 'bed', type: 'CLEANING', cost: 30, problems: ['Dusty floor', 'Messy room'], includes: ['Sweeping', 'Mopping'] },
   { id: 'bath_clean', name: 'Bathroom Cleaning', desc: 'Bathroom deep cleaning', icon: 'sparkles', type: 'CLEANING', cost: 30, problems: ['Dirty tiles', 'Hard water stains'], includes: ['Acid wash', 'Tile scrubbing'] },
@@ -91,7 +91,8 @@ export function OwnerServicesTab() {
 
   const { data: pendingOrders = [] } = useProcurementOrders({
     pgId: activePgId ?? undefined,
-    status: isManagerMode ? undefined : 'pending_owner_approval' });
+    status: isManagerMode ? undefined : 'pending_owner_approval'
+  });
   const pendingCount = pendingOrders.length;
 
   const { data: subscriptions = [] } = useSubscriptionsQuery(activePgId ?? undefined);
@@ -176,7 +177,7 @@ export function OwnerServicesTab() {
         <Row align="center" style={{ flex: 1 }}>
           <View style={styles.fallbackIconWrap}>
             <Ionicons name="construct" size={28} color={CHARCOAL} />
-            <View style={styles.speechBubble}><Txt maxFontSizeMultiplier={1.3} style={{fontSize: 8, fontWeight: '700', color: PRIMARY}}>...</Txt></View>
+            <View style={styles.speechBubble}><Txt maxFontSizeMultiplier={1.3} style={{ fontSize: 8, fontWeight: '700', color: PRIMARY }}>...</Txt></View>
           </View>
           <Col style={{ flex: 1, paddingLeft: 12, paddingRight: 8 }}>
             <Txt maxFontSizeMultiplier={1.3} style={styles.fallbackTitle}>Can't find what you need?</Txt>
@@ -243,7 +244,7 @@ export function OwnerServicesTab() {
           <Ionicons name="chevron-forward" size={16} color={MUTED} />
         </Row>
       </AnimatedPress>
-      
+
       {pendingOrders.length > 0 && (
         <>
           <Spacer size={24} />
@@ -294,7 +295,8 @@ export function OwnerServicesTab() {
                   { text: 'Cancel', style: 'cancel' },
                   {
                     text: sub.is_active ? 'Pause' : 'Resume',
-                    onPress: () => setSubscriptionActive.mutate({ id: sub.id, active: !sub.is_active }) },
+                    onPress: () => setSubscriptionActive.mutate({ id: sub.id, active: !sub.is_active })
+                  },
                 ],
               )}
               first={i === 0}
@@ -384,7 +386,7 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
       subtitle={success ? 'Technician assignment is in progress.' : service.desc}
       accent={success ? Colors.success : PRIMARY}
       icon={success ? 'checkmark-circle' : service.icon}
-      onDismiss={success ? () => {} : onDismiss}
+      onDismiss={success ? () => { } : onDismiss}
       footer={!success ? (
         <Btn
           onPress={handleBook}
@@ -463,22 +465,22 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-  
+
   mainSheet: { flex: 1, backgroundColor: BG },
-  
+
 
   scroll: { paddingBottom: 100 },
-  
+
   sectionContainer: { marginTop: 24 },
   sectionHeaderRow: { paddingHorizontal: 20, marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: CHARCOAL },
-  
+
   horizontalScroll: { paddingHorizontal: 20, gap: 12 },
   gridContainer: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', rowGap: 24, columnGap: '3%' },
-  
+
   serviceCard: { width: '31%', backgroundColor: 'transparent' },
   serviceIconFrame: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceMuted, borderRadius: Radii.control, marginBottom: 12, zIndex: 1 },
-  
+
   addButton: { position: 'absolute', bottom: -12, right: 12, width: 28, height: 28, borderRadius: Radii.badge, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, borderWidth: 1, borderColor: BORDER },
 
   serviceName: { fontSize: 12, fontWeight: '700', color: CHARCOAL, marginBottom: 2 },
@@ -486,7 +488,7 @@ const styles = StyleSheet.create({
   // second line's descenders and cut a third line off entirely.
   serviceDesc: { fontSize: 11, color: MUTED, lineHeight: 14, marginTop: 2, minHeight: 28 },
   visitFeeText: { fontSize: 11, fontWeight: '600', color: MUTED, marginTop: 2 },
-  
+
   fallbackBanner: { flexDirection: 'row', backgroundColor: Palette.TintGreen, borderRadius: Radii.card, padding: 16, marginHorizontal: 20, marginTop: 24, borderWidth: 1, borderColor: '#D1EAE0' },
   fallbackIconWrap: { position: 'relative' },
   speechBubble: { position: 'absolute', top: -4, right: -12, backgroundColor: SURFACE, paddingHorizontal: 4, paddingVertical: 2, borderRadius: Radii.control, borderWidth: 1, borderColor: '#D1EAE0' },
@@ -494,7 +496,7 @@ const styles = StyleSheet.create({
   fallbackSub: { fontSize: 11, color: MUTED, marginTop: 2 },
   requestBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control },
   requestBtnText: { fontSize: 12, fontWeight: '700', color: SURFACE, marginLeft: 4 },
-  
+
   legacyCard: { backgroundColor: SURFACE, borderRadius: Radii.card, padding: 16, borderWidth: 1, borderColor: BORDER, marginBottom: 8 },
   legacyId: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   legacyCategory: { fontSize: 13, color: MUTED, marginTop: 2 },
@@ -507,4 +509,5 @@ const styles = StyleSheet.create({
   bottomNavBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: SURFACE, borderTopWidth: 1, borderTopColor: BORDER, paddingTop: 12 },
   navTab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   navTabText: { fontSize: 10, fontWeight: '600', color: MUTED, marginTop: 4 },
-  navTabTextActive: { color: PRIMARY, fontWeight: '700' } });
+  navTabTextActive: { color: PRIMARY, fontWeight: '700' }
+});
