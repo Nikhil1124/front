@@ -12,8 +12,10 @@
  *             with its typed body and its own buttons, always at the top, regardless of read
  *             state — a decision does not stop needing you because you have seen it.
  *   unread    Everything else not yet opened: a normal row, one snippet line, a time.
- *   read      Opened already: a dense single line — icon, title, time, nothing else — so a
- *             long history takes less scroll than a long list of duplicated real estate.
+ *   read      Opened already: a dense single line — icon, title, time — so a long history
+ *             takes less scroll than a long list of duplicated real estate. Its ACTIONS still
+ *             render: reading a notification does not answer the meal it is asking about or
+ *             dispatch the ticket it is reporting.
  *
  * ── The pinned strip (X4) ───────────────────────────────────────────────────────────────────
  * When one or more decisions are open, an amber strip sits above the filter chips and stays
@@ -109,10 +111,16 @@ interface InboxItem {
   /** Payment decisions only — the live record, looked up by `notif.actionId` in the owner's
    *  own pending list, which is what makes the amount on the card real rather than guessed. */
   payment?: PaymentEntity;
-  /** Supplementary "book a technician" shortcut on a maintenance-flavoured request — a
-   *  convenience the old title-keyword heuristic already offered; kept, but demoted to a
-   *  bonus button rather than the whole basis for classifying the row (see `REQUEST` below). */
-  isMaintenanceFlavoured?: boolean;
+  /**
+   * The row points at a real ticket, so it can be opened and escalated.
+   *
+   * This used to be `isMaintenanceFlavoured`, gated on `/repair|maintenance/i.test(title)`.
+   * A resident's complaint is titled in their own words — "Leaking tap", "Water not coming"
+   * — so the test never passed on the exact rows the button existed for, and the owner never
+   * saw it. `kind === 'REQUEST'` already means `category === 'COMPLAINT'`; the only extra
+   * thing needed to act on one is the id of the ticket to act on.
+   */
+  isTicket?: boolean;
 }
 
 /** Categorises off the server's own `category`/`actionType`, not text-sniffed guesses.
@@ -158,6 +166,28 @@ const weightRank: Record<InboxWeight, number> = { decision: 0, unread: 1, read: 
  *  and no dense variant — it is the roster/payment-list shape, not the inbox shape. Same
  *  reasoning as `MetricRow` existing beside it. */
 /**
+ * Escalate one complaint to a technician.
+ *
+ * The owner group's `book-technician/[id]` fetches THIS ticket and posts
+ * `/v1/requests/{id}/escalate`, handing it to the area manager. Two things used to happen
+ * instead, neither of them that:
+ *
+ *   - the row button pushed `{ pathname: '/book-technician', params: { id } }`. That pathname
+ *     has no `[id]` segment, so the id degraded to a query param and the route resolved to
+ *     the RESIDENT's create-a-new-request screen, which ignores it.
+ *   - the sheet button never navigated at all: it called `bookPgRepairService`, which POSTs a
+ *     brand-new `kind: 'repair'` ticket. The complaint it was raised from stayed open, a
+ *     duplicate appeared beside it, and the toast said "Technician assigned" for an assignment
+ *     the store explicitly does not make.
+ *
+ * Group-qualified for the same reason `routeFromPushData` qualifies its paths: `ticket/[id]`
+ * and `book-technician` both exist in more than one group.
+ */
+function bookTechnicianFor(ticketId: string) {
+  router.push(`/(owner)/book-technician/${ticketId}` as never);
+}
+
+/**
  * The actions that belong ON a notification rather than one tap inside it.
  *
  * A meal notification is a question ("are you eating?") and a maintenance request has one
@@ -169,7 +199,7 @@ const weightRank: Record<InboxWeight, number> = { decision: 0, unread: 1, read: 
  * Payments and KYC are decisions with a reject path and a reason to read the detail first,
  * so those stay inside the sheet where the evidence is.
  */
-function InboxRowActions({ item }: { item: InboxItem }) {
+function InboxRowActions({ item, dense = false }: { item: InboxItem; dense?: boolean }) {
   // React Query, not the store's `submitRSVP`: this is server data, which is the ADR's split,
   // and the mutation invalidates the three meal keys precisely instead of the store action's
   // blanket `refreshAll()`.
@@ -193,7 +223,7 @@ function InboxRowActions({ item }: { item: InboxItem }) {
       }
     };
     return (
-      <Row gap={8} style={styles.rowActions}>
+      <Row gap={8} style={dense ? styles.rowActionsDense : styles.rowActions}>
         {(['eating', 'skipping'] as const).map((choice) => {
           const isEat = choice === 'eating';
           const picked = answered === choice;
@@ -218,16 +248,11 @@ function InboxRowActions({ item }: { item: InboxItem }) {
     );
   }
 
-  if (item.kind === 'REQUEST' && item.isMaintenanceFlavoured) {
+  if (item.kind === 'REQUEST' && item.isTicket) {
     return (
-      <Row style={styles.rowActions}>
+      <Row style={dense ? styles.rowActionsDense : styles.rowActions}>
         <Btn
-          onPress={() =>
-            router.push({
-              pathname: '/book-technician',
-              params: item.notif?.actionId ? { id: item.notif.actionId } : {},
-            })
-          }
+          onPress={() => bookTechnicianFor(item.notif!.actionId!)}
           containerColor={Colors.surfaceMuted}
           textColor={Colors.textPrimary}
           borderRadius={Radii.control}
@@ -279,7 +304,17 @@ function InboxRow({ item, onPress, onDismiss }: { item: InboxItem; onPress: () =
           </AnimatedPress>
         ) : null}
       </Row>
-      {!dense ? <InboxRowActions item={item} /> : null}
+      {/* NOT gated on `dense`. It used to be, and that made every action on this screen
+          disappear the moment you tapped the row — `handleOpenItem` marks a notification read,
+          read rows render dense, and dense rows dropped their buttons. Opening a notification
+          to look at it is the ordinary thing to do, so in practice Eat/Skip and Book-a-
+          technician were only ever visible until first glance.
+
+          Read state is about how much room a row deserves, not about whether its action still
+          applies: an unanswered meal still needs answering and an open ticket still needs
+          dispatching after you have read about them. `InboxRowActions` returns null for the
+          kinds that have no action, so this stays empty on everything else. */}
+      <InboxRowActions item={item} dense={dense} />
     </AnimatedPress>
   );
 }
@@ -362,7 +397,6 @@ export function OwnerAnnouncementsTab() {
   const verifyPaymentMutation = useVerifyPaymentMutation(activePgId ?? undefined);
   const rejectPaymentMutation = useRejectPaymentMutation(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
-  const bookRepair = usePGowStore((s) => s.bookPgRepairService);
 
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
@@ -433,7 +467,7 @@ export function OwnerAnnouncementsTab() {
         icon: iconFor(kind, n),
         notif: n,
         payment: isPaymentDecision ? pendingPaymentById.get(n.actionId!) : undefined,
-        isMaintenanceFlavoured: kind === 'REQUEST' && /repair|maintenance/i.test(n.title),
+        isTicket: kind === 'REQUEST' && !!n.actionId,
       });
     });
 
@@ -551,16 +585,18 @@ export function OwnerAnnouncementsTab() {
   const handleViewTicket = (item: InboxItem) => {
     if (!item.notif?.actionId) return;
     setSelectedInboxItem(null);
-    router.push({ pathname: '/ticket/[id]', params: { id: item.notif.actionId } });
+    // `ticket/[id]` exists in BOTH `(owner)` and `(guest)`, and they are different screens.
+    // `routeFromPushData` already resolves that ambiguity by writing the group into the path;
+    // this call site was relying on whichever group happened to be current. `canOpenTicket`
+    // has already restricted us to owner/manager/guest by the time this runs.
+    const group = canManage ? '(owner)' : '(guest)';
+    router.push(`/${group}/ticket/${item.notif.actionId}` as never);
   };
 
   const handleBookService = (item: InboxItem) => {
-    const serviceName = item.title.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() || 'General Repair';
-    // No amount: a flat ₹149 used to go on the ticket here, invented at this call site and
-    // shown to nobody before or after the tap.
-    bookRepair(serviceName, `Direct booking from notification: ${item.desc}`, 'ASAP');
-    toast('success', 'Service Booked!', `Technician assigned for ${serviceName}.`);
+    if (!item.notif?.actionId) return;
     setSelectedInboxItem(null);
+    bookTechnicianFor(item.notif.actionId);
   };
 
   const handlePublishNotice = async () => {
@@ -833,7 +869,7 @@ export function OwnerAnnouncementsTab() {
 
               {selectedInboxItem.kind === 'REQUEST' && (
                 <View style={styles.actionBlockBox}>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>{selectedInboxItem.isMaintenanceFlavoured ? 'Resolve this issue' : 'Follow up'}</Txt>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockLabel}>{selectedInboxItem.isTicket ? 'Resolve this issue' : 'Follow up'}</Txt>
                   <Txt maxFontSizeMultiplier={1.3} style={styles.actionBlockDesc}>
                     {canOpenTicket ? 'Open the full ticket for history and photos.' : 'A resolution here needs someone with access to the ticket.'}
                   </Txt>
@@ -847,7 +883,7 @@ export function OwnerAnnouncementsTab() {
                         </Row>
                       </AnimatedPress>
                     )}
-                    {canManage && selectedInboxItem.isMaintenanceFlavoured && (
+                    {canManage && selectedInboxItem.isTicket && (
                       <AnimatedPress accessibilityRole="button" style={styles.actionRejectBtn} onPress={() => handleBookService(selectedInboxItem)}>
                         <Txt maxFontSizeMultiplier={1.3} style={styles.actionRejectText}>Book Service</Txt>
                       </AnimatedPress>
@@ -1081,7 +1117,8 @@ const NotificationFAB = ({ onPress }: { onPress: () => void }) => {
 
 const styles = StyleSheet.create({
   // Indented to clear the icon tile, so the buttons read as belonging to this row's text.
-  rowActions: { marginTop: 10, marginLeft: 50 },
+  rowActions: { marginTop: 10, marginLeft: 48 },
+  rowActionsDense: { marginTop: 8, marginLeft: 34 },
   root: { flex: 1, backgroundColor: BG },
   mainScroll: { paddingHorizontal: 20, paddingTop: 12 },
 

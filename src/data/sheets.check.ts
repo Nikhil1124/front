@@ -42,6 +42,8 @@ const ROOT = new URL('../..', import.meta.url).pathname;
 const EXEMPT = new Set([
   // the surfaces themselves
   'src/components/ui/Sheet.tsx',
+  'src/components/ui/PGowDialog.tsx',
+  'src/components/ui/PGowActionSheet.tsx',
   'src/components/dialogs/TextPromptDialog.tsx',
   'src/components/ui/InfoTip.tsx',
   // full-screen viewers

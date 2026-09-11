@@ -19,7 +19,7 @@ import { Radii, Colors } from '@/theme';
 // Extracted modal components
 import { CustomAlertModal, CustomAlertState } from './CustomAlertModal';
 import { MenuEditorModal } from './MenuEditorModal';
-import { AnimatedPress, Sheet, Txt } from '@/components/ui';
+import { AnimatedPress, ErrorState, LoadingState, Sheet, Txt } from '@/components/ui';
 
 // ─── Weekday / meal-type conversion ────────────────────────────────────────────
 // The server speaks lowercase weekdays ('monday') and 'veg' | 'non_veg' | 'pure_veg'; this
@@ -140,7 +140,13 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
   const bannerScrollRef = useRef<ScrollView>(null);
   const findProduct = (id: string) => products.find((p) => p.id === id);
 
-  const { data: kitchenMenuDays } = useKitchenMenuQuery(pgId);
+  // `DEFAULT_MENU_CONFIG` fills in before the fetch resolves so `menuConfig[day]` is never
+  // undefined — which is right for a first render and wrong for a failure. Every day in that
+  // fallback has an empty menu and empty ingredients, so a failed fetch told the chef there
+  // was nothing to cook and nothing to buy. The error has to be visible or it reads as an
+  // answer.
+  const { data: kitchenMenuDays, isLoading: menuLoading, error: menuError, refetch: refetchMenu } =
+    useKitchenMenuQuery(pgId);
   const setKitchenMenuDay = useSetKitchenMenuDayMutation(pgId);
   const menuConfig = useMemo(() => toMenuConfig(kitchenMenuDays), [kitchenMenuDays]);
 
@@ -322,6 +328,12 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
           <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Txt>
         </AnimatedPress>
       </View>
+
+      {menuError ? (
+        <ErrorState error={menuError} title="Could not load today's menu" onRetry={refetchMenu} fill={false} />
+      ) : menuLoading ? (
+        <LoadingState label="Loading today's menu…" size="small" fill={false} />
+      ) : null}
 
       {/* Veg / Non-Veg toggle */}
       <View style={styles.tabContainer}>

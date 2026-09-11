@@ -444,6 +444,7 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
             options={TIME_SLOT_OPTIONS}
             value={time}
             onChange={setTime}
+            columns={2}
             testID="service_time"
           />
 

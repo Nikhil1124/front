@@ -589,6 +589,7 @@ export default function BookTechnicianScreen() {
                 a context switch to answer a question whose options could simply be shown. */}
             <ChoiceChips
               options={REPAIR_CATEGORIES}
+              columns={2}
               value={category || null}
               onChange={(v) => { setCategory(v); if (reqErrors.category) setReqErrors((e) => ({ ...e, category: undefined })); }}
               error={reqErrors.category}
@@ -660,6 +661,7 @@ export default function BookTechnicianScreen() {
             <Spacer size={8} />
             <ChoiceChips
               options={next7Days}
+              columns={3}
               value={preferredDate || null}
               onChange={setPreferredDate}
               testID="technician_date"
@@ -667,6 +669,7 @@ export default function BookTechnicianScreen() {
             <Spacer size={12} />
             <ChoiceChips
               options={TIME_SLOTS}
+              columns={2}
               value={preferredTime || null}
               onChange={setPreferredTime}
               render={(t) => t.replace(/:00 /g, '').replace(' - ', '–')}

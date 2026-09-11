@@ -29,12 +29,25 @@ interface ChoiceChipsProps<T extends string | number> {
    *  this component had nowhere to put it. */
   error?: string;
   required?: boolean;
+  /** Lay the chips out as an even grid instead of letting each one take its own width.
+   *  Content-width chips only look like a row when the labels are short. Once they are
+   *  phrases — "Tomorrow, 10:00 AM" — two fit on the first line and the rest fall to one
+   *  per line at three different widths, which reads as a broken list rather than a
+   *  choice. Set this when the options are phrases; leave it off for one-word chips. */
+  columns?: 2 | 3;
   testID?: string;
 }
 
 export function ChoiceChips<T extends string | number>({
-  label, options, value, onChange, render, error, required = false, testID,
+  label, options, value, onChange, render, error, required = false, columns, testID,
 }: ChoiceChipsProps<T>) {
+  // 2 cols → 48% (two per line, 7px gap, ~4% left over); 3 → 31%. The 14px side padding
+  // that gives a content-width chip its shape is width the label needs back once the width
+  // is fixed — at 31% of a 360dp screen, 28px of padding is the difference between "11 Sep
+  // 2026" fitting and being ellipsised.
+  const gridStyle = columns
+    ? { flexBasis: columns === 2 ? ('48%' as const) : ('31%' as const), paddingHorizontal: 6 }
+    : null;
   return (
     <View>
       {label ? (
@@ -53,9 +66,9 @@ export function ChoiceChips<T extends string | number>({
               accessibilityState={{ selected }}
               accessibilityLabel={text}
               testID={testID ? `${testID}_${option}` : undefined}
-              style={[styles.chip, selected && styles.chipOn]}
+              style={[styles.chip, gridStyle, selected && styles.chipOn]}
             >
-              <Txt variant="button" color={selected ? Colors.textInverse : Colors.textPrimary}>
+              <Txt variant="button" numberOfLines={1} color={selected ? Colors.textInverse : Colors.textPrimary}>
                 {text}
               </Txt>
             </AnimatedPress>

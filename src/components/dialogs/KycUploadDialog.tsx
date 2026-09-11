@@ -32,7 +32,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { AnimatedPress, Btn, Card, Col, OutlinedBtn, Row, Sheet, Spacer, Txt } from '@/components/ui';
+import { Btn, Card, ChoiceChips, Col, OutlinedBtn, PGowActionSheet, Row, Sheet, Spacer, Txt, type PGowAction } from '@/components/ui';
 const ID_TYPES = ['Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID'];
 
 interface Props {
@@ -59,7 +59,6 @@ export function KycUploadDialog({
   const [idNumber, setIdNumber] = useState(initialIdNumber);
   const [profilePhotoUri, setProfilePhotoUri] = useState('');
   const [idPhotoUri, setIdPhotoUri] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   /**
@@ -88,13 +87,11 @@ export function KycUploadDialog({
     return result.assets?.[0]?.uri ?? null;
   };
 
-  const choosePhoto = (onPicked: (uri: string) => void, label: string) => {
-    Alert.alert(label, 'Choose a source', [
-      { text: 'Take Photo', onPress: async () => { const u = await pickImage('camera'); if (u) onPicked(u); } },
-      { text: 'Choose from Library', onPress: async () => { const u = await pickImage('library'); if (u) onPicked(u); } },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
+  // Take Photo / Choose from Library / Cancel is a menu of verbs, not a decision — an action
+  // sheet, not a dialog. It was an `Alert.alert` with a buttons array, which on Android draws
+  // a centred alert for what is a source picker everywhere else in the platform.
+  const [photoPicker, setPhotoPicker] = useState<{ label: string; onPicked: (uri: string) => void } | null>(null);
+  const choosePhoto = (onPicked: (uri: string) => void, label: string) => setPhotoPicker({ label, onPicked });
 
   // Android hardware back: dismiss the modal rather than letting the OS
   // navigate away. Same pattern as PaymentReceiptDialog — see that file for
@@ -119,7 +116,6 @@ export function KycUploadDialog({
       setProfilePhotoUri('');
       setIdPhotoUri('');
       setSubmitting(false);
-      setShowDropdown(false);
     }
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -157,6 +153,7 @@ export function KycUploadDialog({
   };
 
   return (
+    <>
     <Sheet
       visible={visible}
       title={reupload ? 'Re-upload Documents' : 'Verify Your Identity'}
@@ -257,38 +254,20 @@ export function KycUploadDialog({
 
             <Spacer size={16} />
 
-            {/* 2. ID type dropdown */}
+            {/* 2. ID type — five fixed options, shown rather than hidden.
+                This was a `Sheet` rendered INSIDE this sheet: the only true nested sheet in
+                the app. Two drag handles, two scrims, and a swipe-down whose target was
+                ambiguous — on the onboarding path a resident cannot skip. There is room for
+                all five here, so the surface is not needed at all. */}
             <Txt variant="body" weight="700" color={Colors.primary}>2. ID Document Type</Txt>
             <Spacer size={8} />
-            <AnimatedPress accessibilityRole="button"
-              onPress={() => setShowDropdown(true)}
-              style={styles.dropdownBox}
-              testID="kyc_id_type_dropdown"
-            >
-              <Txt variant="body" color={Colors.textPrimary}>{selectedIdType}</Txt>
-              <Ionicons name="chevron-down" size={18} color={Colors.textMuted} />
-            </AnimatedPress>
-            {/* Dropdown sheet — replaces the old anchored Modal so backdrop tap-to-close still works. */}
-            <Sheet
-              visible={showDropdown}
-              title="Choose ID type"
-              onDismiss={() => setShowDropdown(false)}
-              testID="kyc_id_type_dropdown_sheet"
-            >
-              <View style={styles.dropdownMenu}>
-                {ID_TYPES.map((t) => (
-                  <AnimatedPress
-                    accessibilityRole="button"
-                    key={t}
-                    onPress={() => { setSelectedIdType(t); setShowDropdown(false); }}
-                    style={styles.dropdownItem}
-                  >
-                    <Txt variant="body" color={Colors.textPrimary}>{t}</Txt>
-                    {selectedIdType === t && <Ionicons name="checkmark" size={16} color={Colors.primary} />}
-                  </AnimatedPress>
-                ))}
-              </View>
-            </Sheet>
+            <ChoiceChips
+              options={ID_TYPES}
+              value={selectedIdType}
+              onChange={setSelectedIdType}
+              columns={2}
+              testID="kyc_id_type"
+            />
 
             <Spacer size={12} />
 
@@ -339,7 +318,38 @@ export function KycUploadDialog({
         </Card>
       </KeyboardAvoidingView>
     </Sheet>
+
+    {/* Sibling of the Sheet, not a child. It is still a surface over a surface while this
+        whole screen remains a Sheet — transitional: once KYC becomes the four-route workflow
+        this picker sits over a screen and the depth rule is satisfied. Not a regression
+        meanwhile; the Alert.alert it replaces was also a modal over this sheet.
+
+        `picked` is captured here rather than read inside onPress, because the action sheet
+        closes before it runs its handler — by then `photoPicker` is already null. */}
+    <PGowActionSheet
+      visible={photoPicker != null}
+      title={photoPicker?.label}
+      onDismiss={() => setPhotoPicker(null)}
+      actions={photoSourceActions(photoPicker?.onPicked, pickImage)}
+      testID="kyc_photo_source"
+    />
+    </>
   );
+}
+
+/** Take Photo / Choose from Library, bound to whichever slot opened the picker. */
+function photoSourceActions(
+  onPicked: ((uri: string) => void) | undefined,
+  pickImage: (from: 'camera' | 'library') => Promise<string | null>,
+): PGowAction[] {
+  const pick = (from: 'camera' | 'library') => async () => {
+    const uri = await pickImage(from);
+    if (uri) onPicked?.(uri);
+  };
+  return [
+    { label: 'Take Photo', icon: 'camera-outline', onPress: pick('camera') },
+    { label: 'Choose from Library', icon: 'images-outline', onPress: pick('library') },
+  ];
 }
 
 const styles = StyleSheet.create({
@@ -380,23 +390,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceMuted,
     borderWidth: 1.5, borderColor: Colors.borderMuted, borderStyle: 'dashed',
     alignItems: 'center', justifyContent: 'center',
-  },
-  dropdownBox: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1, borderColor: Colors.borderMuted,
-    borderRadius: Radii.control, paddingHorizontal: 12, paddingVertical: 14,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  dropdownBackdrop: {
-    flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    justifyContent: 'center', paddingHorizontal: 24,
-  },
-  dropdownMenu: {
-    backgroundColor: Colors.surface, borderRadius: Radii.card,
-    borderWidth: 1, borderColor: Colors.borderSubtle, overflow: 'hidden',
-  },
-  dropdownItem: {
-    padding: 14, borderBottomWidth: 1, borderBottomColor: Colors.borderMuted,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
 });

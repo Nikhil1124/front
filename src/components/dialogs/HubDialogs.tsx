@@ -325,6 +325,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   <ChoiceChips
                     label="Date"
                     options={next7Days}
+                    columns={3}
                     value={schedDate}
                     onChange={setSchedDate}
                     testID="repair_date"
@@ -333,6 +334,7 @@ export function BookRepairDialog({ onDismiss }: { onDismiss: () => void }) {
                   <ChoiceChips
                     label="Time"
                     options={TIME_SLOTS}
+                    columns={2}
                     value={schedTime}
                     onChange={setSchedTime}
                     render={(t) => t.replace(/:00 /g, '').replace(' - ', '–')}

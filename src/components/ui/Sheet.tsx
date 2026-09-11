@@ -149,8 +149,15 @@ export function Sheet({
           {/* A plain View, not a `Pressable` wrapping the whole sheet. That wrapper existed
               only to stop a tap falling through to the backdrop — which it did not need to
               do, since the backdrop is a sibling behind it, not an ancestor — and it made a
-              screen reader announce the entire sheet as one button. */}
-          <View>
+              screen reader announce the entire sheet as one button.
+
+              `accessibilityViewIsModal` sits here rather than on the backdrop: the screen
+              behind stays mounted while a sheet is open, so without it a screen reader walks
+              straight out of the sheet and into content the sighted user cannot see or reach.
+              Scoping it to the sheet body is deliberate — the header's labelled ✕ is inside
+              this subtree, so dismissal stays reachable, while the full-screen backdrop
+              Pressable (a redundant second "Close") drops out of the traversal order. */}
+          <View accessibilityViewIsModal>
             <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
               <GestureDetector gesture={drag}>
                 <View style={styles.handleZone} accessible={false}>

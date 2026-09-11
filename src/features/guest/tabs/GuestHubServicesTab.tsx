@@ -10,16 +10,21 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { AppHeader } from '@/components/AppHeader';
-import { AnimatedPress, Card, Col, Row, Spacer, Txt } from '@/components/ui';
+import { AnimatedPress, Card, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
 export function GuestHubServicesTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
     data: laundryRequests = [],
     refetch: refetchLaundry,
-    isRefetching: laundryRefetching } = useLaundryRequestsQuery(activePgId ?? undefined);
+    isRefetching: laundryRefetching,
+    isLoading: laundryLoading,
+    error: laundryError } = useLaundryRequestsQuery(activePgId ?? undefined);
 
   const myLaundry = laundryRequests.filter((r) => r.guestId === guest?.id);
+  // `data = []` on a failed fetch is indistinguishable from "you have no orders", and this
+  // card silently rendered nothing in both cases. First load and failure now say so.
+  const showLaundryState = laundryLoading || !!laundryError;
 
   return (
     <View style={styles.root}>
@@ -71,7 +76,20 @@ export function GuestHubServicesTab() {
             </AnimatedPress>
           </Row>
 
-          {myLaundry.length > 0 && (
+          {showLaundryState && (
+            <>
+              <Spacer size={14} />
+              <View style={{ height: 1, backgroundColor: '#F6F1E9' }} />
+              <Spacer size={12} />
+              {laundryError ? (
+                <ErrorState error={laundryError} title="Could not load your orders" onRetry={refetchLaundry} fill={false} />
+              ) : (
+                <LoadingState label="Loading your orders…" size="small" fill={false} />
+              )}
+            </>
+          )}
+
+          {!showLaundryState && myLaundry.length > 0 && (
             <>
               <Spacer size={14} />
               <View style={{ height: 1, backgroundColor: '#F6F1E9' }} />

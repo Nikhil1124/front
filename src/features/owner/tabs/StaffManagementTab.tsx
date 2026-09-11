@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, Alert, FlatList, ScrollView, BackHandler } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 
 import { Ionicons } from '@expo/vector-icons';
@@ -10,16 +10,11 @@ import { EmptyState } from '@/components/EmptyState';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
-import * as staffApi from '@/features/staff/useStaff';
 import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties';
-import {
-  useStaffQuery,
-  useAddStaffMutation,
-  useUpdateStaffMutation,
-  useRemoveStaffMutation } from '@/features/staff/useStaff';
+import { useStaffQuery, useAddStaffMutation } from '@/features/staff/useStaff';
 import * as map from '@/data/mappers';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
-import { AnimatedPress, Col, ListRow, Row, SearchField, Sheet, Spacer, Txt } from '@/components/ui';
+import { AnimatedPress, ListRow, Row, SearchField, Spacer, Txt } from '@/components/ui';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG
@@ -49,18 +44,6 @@ const SHIFT_TIMES: Record<string, { shift_start: string; shift_end: string }> = 
   'Night Shift (8 PM - 5 AM)': { shift_start: '20:00:00', shift_end: '05:00:00' },
   'Part Time (9 AM - 1 PM)': { shift_start: '09:00:00', shift_end: '13:00:00' } };
 
-/**
- * The other half of the round-trip. `mappers.toStaff` renders a saved shift as "08:00 - 17:00",
- * which is not one of the picker's labels — so seeding the picker with it directly left
- * `SHIFT_TIMES[editShift]` undefined and quietly dropped the shift from every edit of a staff
- * member who already had one.
- */
-function shiftLabelFor(shiftTime: string): string {
-  const match = Object.entries(SHIFT_TIMES).find(
-    ([, t]) => `${t.shift_start.slice(0, 5)} - ${t.shift_end.slice(0, 5)}` === shiftTime
-  );
-  return match?.[0] ?? SHIFT_OPTIONS[0];
-}
 
 export function StaffManagementTab() {
   const dockScroll = useDockScroll();
@@ -89,45 +72,34 @@ export function StaffManagementTab() {
   const set = usePGowStore((s) => s.set);
 
   const addStaffMutation = useAddStaffMutation(activePgId ?? undefined);
-  const updateStaffMutation = useUpdateStaffMutation(activePgId ?? undefined);
-  const removeStaffMutation = useRemoveStaffMutation(activePgId ?? undefined);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPin, setShowPin] = useState(false);
 
-  const [isDeletingStaff, setIsDeletingStaff] = useState<string | null>(null);
   // Was `errorField: 'phone' | null`, which only tinted one field's border and said nothing.
   // `OutlinedTextField.error` carries the sentence now, so this holds one per field.
   const [errors, setErrors] = useState<{ name?: string; phone?: string; pin?: string; editName?: string; newPin?: string }>({});
 
-  // Action Menu States
-  const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  
-  // Details Modal
-  const [showDetails, setShowDetails] = useState(false);
-  const [newPin, setNewPin] = useState('');
-  const [isResettingPin, setIsResettingPin] = useState(false);
 
-  // Edit Modal
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editRole, setEditRole] = useState('Kitchen Staff');
-  const [editShift, setEditShift] = useState('Day Shift (8 AM - 5 PM)');
-  const [editSalary, setEditSalary] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
 
   // Override back navigation — this screen lives inside the tab navigator, not a stack,
   // so native back would leave ghost tab state. We force-replace with overview instead.
-  useEffect(() => {
-    const onBack = () => {
-      router.replace('/overview');
-      return true; // prevent default
-    };
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
-    return () => sub.remove();
-  }, []);
+  //
+  // Scoped to focus. `BackHandler` listeners are GLOBAL and fire most-recently-added first,
+  // so while this tab stayed mounted underneath a pushed route (the staff detail screen, for
+  // one) its handler still ran and answered back by replacing the whole stack with /overview
+  // — the pushed screen could never pop. `useFocusEffect` registers only while this tab is
+  // the focused route, which is the only time the behaviour above is the right one.
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => {
+        router.replace('/overview');
+        return true; // prevent default
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, []),
+  );
 
   // Sync default role input based on manager vs owner role
   useEffect(() => {
@@ -185,7 +157,9 @@ export function StaffManagementTab() {
         phone: map.toE164(staffPhoneInput),
         role: mappedRole,
         pin: staffPinInput,
-        monthly_salary: parseFloat(staffSalaryInput) || undefined });
+        monthly_salary: parseFloat(staffSalaryInput) || undefined,
+        // Both halves, as real `time` values — see SHIFT_TIMES.
+        ...(SHIFT_TIMES[staffShiftInput] ?? {}) });
       Alert.alert('Success', 'Staff member account registered successfully!');
       set('staffNameInput', '');
       set('staffPhoneInput', '');
@@ -209,101 +183,6 @@ export function StaffManagementTab() {
       }
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const confirmDeleteStaff = (staff: any) => {
-    setShowActionMenu(false);
-    if (isDeletingStaff) return;
-    setTimeout(() => {
-      Alert.alert('Delete staff member?', `Are you sure you want to delete ${staff.name} from this PG?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeletingStaff(staff.id);
-            try {
-              await removeStaffMutation.mutateAsync(staff.id);
-              Alert.alert('Success', `${staff.name} has been deleted.`);
-            } catch (err) {
-              Alert.alert('Failed', err instanceof Error ? err.message : 'Could not delete staff member.');
-            } finally {
-              setIsDeletingStaff(null);
-            }
-          } },
-      ]);
-    }, 100);
-  };
-
-  const handleOpenEdit = (staff: any) => {
-    setSelectedStaff(staff);
-    setEditName(staff.name);
-    setEditPhone(staff.phone);
-    setEditRole(ROLE_DISPLAY_NAMES[staff.role] || 'Kitchen Staff');
-    setEditShift(shiftLabelFor(staff.shiftTime));
-    setEditSalary(String(Math.round(staff.monthlySalary)));
-    setShowActionMenu(false);
-    setShowEditModal(true);
-  };
-
-  const handleUpdateStaff = async () => {
-    if (!selectedStaff || isUpdating) return;
-    if (!editName.trim()) {
-      setErrors((e) => ({ ...e, editName: 'Enter their name' }));
-      return;
-    }
-    
-    setIsUpdating(true);
-    try {
-      const roleMap: Record<string, any> = {
-        Manager: 'manager',
-        Chef: 'chef',
-        'Kitchen Staff': 'kitchen_staff',
-        'Maintenance Staff': 'maintenance',
-        // Its own role, not 'maintenance': a delivery agent gets the trips dashboard
-        // (app/(staff)/(tabs)/eaters.tsx), and mapping it onto maintenance would put them
-        // on the chef screens instead.
-        'Delivery Agent': 'delivery_agent' };
-      
-      // No `|| 'kitchen_staff'` fallback: silently registering someone with the wrong role
-      // is worse than refusing the edit. Omitting the field leaves the role unchanged.
-      const mappedRole = roleMap[editRole];
-      const shift = SHIFT_TIMES[editShift];
-
-      const payload = {
-        name: editName.trim(),
-        ...(mappedRole ? { role: mappedRole } : {}),
-        monthly_salary: parseFloat(editSalary) || undefined,
-        // Both halves, as real `time` values — see SHIFT_TIMES.
-        ...(shift ?? {}) };
-
-      await updateStaffMutation.mutateAsync({ membershipId: selectedStaff.id, params: payload });
-      Alert.alert('Success', 'Staff member details updated.');
-      setShowEditModal(false);
-    } catch (err) {
-      Alert.alert('Error', 'Could not update staff member.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleResetPin = async () => {
-    if (!selectedStaff || isResettingPin) return;
-    // Mirrors the server's own `^[0-9]{4}$` — a length check alone let "12a4" through to a 422.
-    if (!/^[0-9]{4}$/.test(newPin)) {
-      setErrors((e) => ({ ...e, newPin: 'Exactly 4 digits, numbers only' }));
-      return;
-    }
-    setIsResettingPin(true);
-    try {
-      await staffApi.resetStaffCredentials(selectedStaff.id, { pin: newPin });
-      Alert.alert('Success', 'Login PIN reset successfully.');
-      setNewPin('');
-    } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Could not reset PIN.');
-    } finally {
-      setIsResettingPin(false);
     }
   };
 
@@ -520,22 +399,21 @@ export function StaffManagementTab() {
                 onChangeText={setSearchQuery}
               />
 
-              {/* Filter chips */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Row gap={6}>
-                  {['All', 'Managers', 'Kitchen', 'Maintenance'].map((filter) => (
-                    <AnimatedPress accessibilityRole="button"
-                      key={filter}
-                      style={[styles.filterChip, roleFilter === filter && styles.filterChipActive]}
-                      onPress={() => setRoleFilter(filter)}
-                    >
-                      <Txt maxFontSizeMultiplier={1.3} style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
-                        {filter}
-                      </Txt>
-                    </AnimatedPress>
-                  ))}
-                </Row>
-              </ScrollView>
+              {/* Four fixed filters — they wrap onto a second line on a narrow phone
+                  rather than the fourth one hanging half off the right edge. */}
+              <View style={styles.chipWrap}>
+                {['All', 'Managers', 'Kitchen', 'Maintenance'].map((filter) => (
+                  <AnimatedPress accessibilityState={{ selected: roleFilter === filter }} accessibilityRole="button"
+                    key={filter}
+                    style={[styles.filterChip, roleFilter === filter && styles.filterChipActive]}
+                    onPress={() => setRoleFilter(filter)}
+                  >
+                    <Txt maxFontSizeMultiplier={1.3} numberOfLines={1} style={[styles.filterChipText, roleFilter === filter && styles.filterChipTextActive]}>
+                      {filter}
+                    </Txt>
+                  </AnimatedPress>
+                ))}
+              </View>
             </View>
           }
           ListEmptyComponent={
@@ -554,9 +432,10 @@ export function StaffManagementTab() {
               meta={staff.shiftTime || 'Day Shift'}
               leading={<Ionicons name={roleIconName(staff.role)} size={18} color={Colors.primary} />}
               status={{ label: ROLE_DISPLAY_NAMES[staff.role] || staff.role, tone: roleTone(staff.role) }}
-              // The row opens the action menu the "..." button used to. One target instead of
-              // two, and the menu already holds every action that button led to.
-              onPress={() => { setSelectedStaff(staff); setShowActionMenu(true); }}
+              // Straight to the record. This used to open an action-menu sheet whose three
+              // items were View / Edit / Delete — a layer that existed only to choose between
+              // a screen and a form, both of which are now routes. View IS the row tap.
+              onPress={() => router.push(`/(owner)/staff/${staff.id}` as never)}
               first={index === 0}
               last={index === filteredStaffList.length - 1}
               testID={`owner_staff_${staff.id}`}
@@ -565,213 +444,6 @@ export function StaffManagementTab() {
         />
       )}
 
-      {/* ── Action Menu Popup ── */}
-      {showActionMenu && selectedStaff && (
-        <Sheet
-          visible
-          title={selectedStaff.name}
-          subtitle={ROLE_DISPLAY_NAMES[selectedStaff.role] || selectedStaff.role}
-          icon="person-outline"
-          onDismiss={() => setShowActionMenu(false)}
-        >
-
-              <AnimatedPress accessibilityRole="button"
-                style={styles.sheetOptionRow}
-                onPress={() => {
-                  setShowActionMenu(false);
-                  setShowDetails(true);
-                }}
-              >
-                <Ionicons name="information-circle-outline" size={20} color={CHARCOAL} />
-                <Txt maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>View Details</Txt>
-              </AnimatedPress>
-
-              <AnimatedPress accessibilityRole="button"
-                style={styles.sheetOptionRow}
-                onPress={() => handleOpenEdit(selectedStaff)}
-              >
-                <Ionicons name="create-outline" size={20} color={CHARCOAL} />
-                <Txt maxFontSizeMultiplier={1.3} style={styles.sheetOptionText}>Edit Staff</Txt>
-              </AnimatedPress>
-
-              <AnimatedPress accessibilityRole="button"
-                style={[styles.sheetOptionRow, { borderBottomWidth: 0 }]}
-                onPress={() => confirmDeleteStaff(selectedStaff)}
-              >
-                <Ionicons name="trash-outline" size={20} color={Colors.danger} />
-                <Txt maxFontSizeMultiplier={1.3} style={[styles.sheetOptionText, { color: Colors.danger }]}>Delete Staff</Txt>
-              </AnimatedPress>
-
-        </Sheet>
-      )}
-
-      {/* ── Details Modal ── */}
-      {showDetails && selectedStaff && (
-        <Sheet
-          visible
-          title="Staff profile"
-          subtitle={selectedStaff.name}
-          icon="id-card-outline"
-          onDismiss={() => setShowDetails(false)}
-        >
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>PERSONAL DETAILS</Txt>
-              <Spacer size={4} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Name</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.name}</Txt>
-              <Spacer size={8} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Phone</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.phone}</Txt>
-
-              <Spacer size={16} />
-              
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ROLE</Txt>
-              <Spacer size={4} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Assigned Role</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>
-                {ROLE_DISPLAY_NAMES[selectedStaff.role] || selectedStaff.role}
-              </Txt>
-
-              <Spacer size={16} />
-
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>WORK DETAILS</Txt>
-              <Spacer size={4} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Shift</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>{selectedStaff.shiftTime || 'Day Shift'}</Txt>
-              <Spacer size={8} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Monthly Salary</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailValue}>
-                ₹{Math.round(selectedStaff.monthlySalary).toLocaleString('en-IN')}
-              </Txt>
-
-              <Spacer size={16} />
-
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailSecLabel}>ACCOUNT ACCESS</Txt>
-              <Spacer size={4} />
-              <Txt maxFontSizeMultiplier={1.3} style={styles.detailLabel}>Account Status</Txt>
-              <Txt maxFontSizeMultiplier={1.3} style={[styles.detailValue, { color: GREEN }]}>Active</Txt>
-
-              <Spacer size={14} />
-
-              {/* Reset PIN box */}
-              <View style={styles.resetPinBox}>
-                <OutlinedTextField
-                  label="Reset PIN (4 digits)"
-                  placeholder="Enter new 4-digit PIN"
-                  value={newPin}
-                  onChangeText={(v) => { setNewPin(v.replace(/\D/g, '').slice(0, 4)); if (errors.newPin) setErrors((e) => ({ ...e, newPin: undefined })); }}
-                  keyboardType="number-pad"
-                  error={errors.newPin}
-                  style={{ flex: 1, marginRight: 8 }}
-                />
-                <AnimatedPress accessibilityRole="button"
-                  style={styles.resetPinBtn}
-                  onPress={handleResetPin}
-                  disabled={isResettingPin}
-                >
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.resetPinBtnText}>Save</Txt>
-                </AnimatedPress>
-              </View>
-
-        </Sheet>
-      )}
-
-      {/* ── Edit Staff Modal ── */}
-      {/* The capped height, the scrolling body and the always-visible Save/Cancel row were
-          all hand-built here — with a comment explaining the bug that came from getting it
-          wrong. `Sheet` does exactly that natively: content scrolls, `footer` stays put. */}
-      {showEditModal && selectedStaff && (
-        <Sheet
-          visible
-          title="Edit staff details"
-          subtitle={selectedStaff.name}
-          icon="create-outline"
-          onDismiss={() => setShowEditModal(false)}
-          footer={
-            <Row gap={10}>
-              <AnimatedPress accessibilityRole="button" style={styles.editModalSaveBtn} onPress={handleUpdateStaff} disabled={isUpdating}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.editModalSaveText}>
-                  {isUpdating ? 'Saving…' : 'Save changes'}
-                </Txt>
-              </AnimatedPress>
-              <AnimatedPress accessibilityRole="button" style={styles.editModalCancelBtn} onPress={() => setShowEditModal(false)}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.editModalCancelText}>Cancel</Txt>
-              </AnimatedPress>
-            </Row>
-          }
-        >
-                  <OutlinedTextField
-                    label="Full Name"
-                    value={editName}
-                    onChangeText={(v) => { setEditName(v); if (errors.editName) setErrors((e) => ({ ...e, editName: undefined })); }}
-                    error={errors.editName}
-                    style={{ marginBottom: 12 }}
-                  />
-
-                  <OutlinedTextField
-                    label="Phone Number"
-                    value={editPhone}
-                    editable={false}
-                    onChangeText={() => {}}
-                    containerColor={BG}
-                    style={{ marginBottom: 12, opacity: 0.6 }}
-                  />
-
-                  <Row gap={8} style={{ marginBottom: 12 }}>
-                    <OutlinedTextField
-                      label="Salary (₹)"
-                      value={editSalary}
-                      onChangeText={setEditSalary}
-                      keyboardType="number-pad"
-                      containerColor={BG}
-                      style={{ flex: 1 }}
-                    />
-                    
-                    <Col style={{ flex: 1.2 }}>
-                      <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Shift</Txt>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <Row gap={6} align="center">
-                          {SHIFT_OPTIONS.map((opt) => {
-                            const isSelected = editShift === opt;
-                            return (
-                              <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
-                                key={opt}
-                                style={[styles.shiftChip, isSelected && styles.shiftChipActive]}
-                                onPress={() => setEditShift(opt)}
-                              >
-                                <Txt maxFontSizeMultiplier={1.3} style={[styles.shiftChipText, isSelected && styles.shiftChipTextActive]}>
-                                  {opt.replace(' Shift', '').split(' ')[0]}
-                                </Txt>
-                              </AnimatedPress>
-                            );
-                          })}
-                        </Row>
-                      </ScrollView>
-                    </Col>
-                  </Row>
-
-                  <Spacer size={8} />
-
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Role</Txt>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                    <Row gap={6}>
-                      {selectableRoles.map((r) => {
-                        const isSelected = editRole === r;
-                        return (
-                          <AnimatedPress accessibilityState={{ selected: !!isSelected }} accessibilityRole="button"
-                            key={r}
-                            style={[styles.roleChip, isSelected && styles.roleChipActive]}
-                            onPress={() => setEditRole(r)}
-                          >
-                            <Txt maxFontSizeMultiplier={1.3} style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
-                              {r}
-                            </Txt>
-                          </AnimatedPress>
-                        );
-                      })}
-                    </Row>
-                  </ScrollView>
-        </Sheet>
-      )}
 
     </View>
   );

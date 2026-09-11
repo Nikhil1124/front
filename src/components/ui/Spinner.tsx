@@ -9,6 +9,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
+import { PGowApiError } from '@/data/apiClient';
 import { Txt } from './Txt';
 
 export interface SpinnerProps {
@@ -55,24 +56,47 @@ export interface ErrorStateProps {
 }
 
 /**
+ * A 4xx is an answer, not a hiccup. `queryClient` already refuses to retry one automatically
+ * for that reason — but the retry BUTTON was still drawn whenever a caller passed `onRetry`,
+ * so a permission failure offered the user an action that cannot ever succeed. Tapping it
+ * re-runs the same request against the same role and fails identically.
+ *
+ * 403 in particular has to look different from every other failure: the request was
+ * understood and refused, so the honest message is about access, not about the network.
+ */
+function retryability(error: unknown): { canRetry: boolean; icon: 'cloud-offline-outline' | 'lock-closed-outline'; title?: string } {
+  const status = error instanceof PGowApiError ? error.httpStatus : undefined;
+  if (status === 403) {
+    return { canRetry: false, icon: 'lock-closed-outline', title: 'You do not have access to this' };
+  }
+  // 401 tears down to the login screen elsewhere; 404 and 422 are equally final here.
+  if (status === 401 || status === 404 || status === 422) {
+    return { canRetry: false, icon: 'cloud-offline-outline' };
+  }
+  return { canRetry: true, icon: 'cloud-offline-outline' };
+}
+
+/**
  * The other half of a query's non-happy path. Without this a failed fetch renders as an
  * empty list, which reads as "there is nothing here" — the one thing it does not mean.
  */
-export function ErrorState({ error, title = 'Could not load this', onRetry, fill = true }: ErrorStateProps) {
+export function ErrorState({ error, title, onRetry, fill = true }: ErrorStateProps) {
+  const { canRetry, icon, title: forcedTitle } = retryability(error);
+  const heading = forcedTitle ?? title ?? 'Could not load this';
   const message =
     error instanceof Error && error.message ? error.message : 'Something went wrong. Pull down to try again.';
   return (
     <View style={[fill ? styles.fill : styles.block]}>
       <View style={styles.errIcon}>
-        <Ionicons name="cloud-offline-outline" size={28} color={Colors.danger} />
+        <Ionicons name={icon} size={28} color={Colors.danger} />
       </View>
       <Txt variant="cardTitle" color={Colors.textPrimary} align="center" style={styles.label}>
-        {title}
+        {heading}
       </Txt>
       <Txt variant="meta" color={Colors.textMuted} align="center" style={styles.message}>
         {message}
       </Txt>
-      {onRetry ? (
+      {onRetry && canRetry ? (
         <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Retry loading" style={styles.retry}>
           <Txt variant="button" color={Colors.primary}>
             Tap to retry

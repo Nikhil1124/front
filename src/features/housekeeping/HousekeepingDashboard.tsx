@@ -663,6 +663,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           <Spacer size={8} />
           <ChoiceChips
             options={CATS}
+            columns={2}
             value={newCat || null}
             onChange={(c) => { setNewCat(c); setErr(''); }}
             testID="issue_category"

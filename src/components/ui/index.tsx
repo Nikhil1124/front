@@ -355,4 +355,6 @@ export { CountUp } from './CountUp';
 export { PickerField, type PickerFieldProps } from './PickerField';
 export { SearchField, type SearchFieldProps } from './SearchField';
 export { Sheet, type SheetProps } from './Sheet';
+export { PGowDialog, type PGowDialogProps, type PGowDialogPrompt } from './PGowDialog';
+export { PGowActionSheet, type PGowActionSheetProps, type PGowAction } from './PGowActionSheet';
 export { OutlinedTextField, type OutlinedTextFieldProps } from './OutlinedTextField';
