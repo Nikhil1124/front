@@ -164,7 +164,14 @@ export function OwnerServicesTab() {
       style={styles.serviceCard}
     >
       <View style={styles.serviceIconFrame}>
-        <Ionicons name={item.icon} size={30} color={PRIMARY} />
+        {SERVICE_IMAGES[item.id] ? (
+          <Image 
+            source={SERVICE_IMAGES[item.id]} 
+            style={styles.serviceImage} 
+          />
+        ) : (
+          <Ionicons name={item.icon} size={30} color={PRIMARY} />
+        )}
         <View style={styles.addButton}>
           <Ionicons name="add" size={18} color={PRIMARY} />
         </View>
@@ -538,7 +545,8 @@ const styles = StyleSheet.create({
   gridContainer: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', rowGap: 24, columnGap: '3%' },
 
   serviceCard: { width: '31%', backgroundColor: 'transparent' },
-  serviceIconFrame: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceMuted, borderRadius: Radii.control, marginBottom: 12, zIndex: 1 },
+  serviceIconFrame: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', borderRadius: Radii.control, marginBottom: 12, zIndex: 1 },
+  serviceImage: { width: '90%', height: '90%', resizeMode: 'contain' },
 
   addButton: { position: 'absolute', bottom: -12, right: 12, width: 28, height: 28, borderRadius: Radii.badge, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, borderWidth: 1, borderColor: BORDER },
 
