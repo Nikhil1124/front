@@ -10,7 +10,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
-    "check": "node src/data/mappers.check.ts && node src/data/logic.check.ts && node src/data/headers.check.ts && node src/data/tokens.check.ts && node src/data/colors.check.ts && node src/data/forms.check.ts && node src/data/sheets.check.ts && node src/data/press.check.ts",
+    "check": "node src/data/mappers.check.ts && node src/data/logic.check.ts && node src/data/headers.check.ts && node src/data/tokens.check.ts && node src/data/colors.check.ts && node src/data/forms.check.ts && node src/data/sheets.check.ts && node src/data/press.check.ts && node src/data/alerts.check.ts",
     "check:api": "node scripts/check-api-compatibility.mjs",
     "lint": "tsc --noEmit && npm run check"
   },
@@ -65,6 +65,8 @@
     "@types/react": "~19.2.4",
     "babel-plugin-module-resolver": "^5.0.3",
     "babel-preset-expo": "~57.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
   },
   "private": true

@@ -2,7 +2,7 @@
  * OwnerRegisterScreen — port of Kotlin `OwnerRegisterScreen(viewModel)`.
  */
 import { useState } from 'react';
-import { Modal, StyleSheet, Alert, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -17,6 +17,7 @@ import { fetchMe, useRegister } from '@/features/auth/useAuth';
 import { useCreatePropertyMutation } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
 import { Btn, IconBtn, Row, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 export function OwnerRegisterScreen() {
   const registerMutation = useRegister();
@@ -36,6 +37,7 @@ export function OwnerRegisterScreen() {
   const ownerLocationInput = usePGowStore((s) => s.ownerLocationInput);
   const pgTotalBedsInput = usePGowStore((s) => s.pgTotalBedsInput);
   const set = usePGowStore((s) => s.set);
+  const toast = useToast();
 
   const [regErrors, setRegErrors] = useState<{ pgName?: string; ownerName?: string; phone?: string; password?: string; totalBeds?: string }>({});
 
@@ -58,7 +60,7 @@ export function OwnerRegisterScreen() {
     setRegErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
     if (!ownerLocationInput) {
-      Alert.alert('Registration Failed', 'Pin your PG on the map before registering.');
+      toast('error', 'Pin the location first', 'Tap the map and drop a pin on the property before registering.');
       return;
     }
     setIsSubmitting(true);
@@ -87,7 +89,7 @@ export function OwnerRegisterScreen() {
       set('ownerLocationInput', null);
       router.replace('/');
     } catch (err) {
-      Alert.alert('Registration Failed', err instanceof Error ? err.message : 'Unknown error');
+      toast('error', 'Registration failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setIsSubmitting(false);
     }

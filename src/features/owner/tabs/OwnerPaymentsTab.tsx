@@ -4,9 +4,9 @@ import {
   StyleSheet,
   RefreshControl,
   FlatList,
-  ScrollView,
-  Alert } from 'react-native';
+  ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useToast } from '@/hooks/useToast';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
@@ -23,7 +23,7 @@ import { useAllExpensesQuery, useLogExpenseMutation, useReverseExpenseMutation, 
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
-import { AnimatedPress, Btn, Card, ChoiceChips, Col, ListRow, Row, SearchField, Sheet, Spacer, Txt, toneFor } from '@/components/ui';
+import { AnimatedPress, Btn, Card, ChoiceChips, Col, ListRow, Row, SearchField, Sheet, Spacer, Txt, toneFor, PGowDialog } from '@/components/ui';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG
@@ -61,6 +61,7 @@ function getPast12Months() {
 }
 
 export function OwnerPaymentsTab() {
+  const toast = useToast();
   const dockScroll = useDockScroll();
   const { activeEntity: owner } = useActiveProperty();
   const params = useLocalSearchParams<{ tab?: string }>();
@@ -112,24 +113,9 @@ export function OwnerPaymentsTab() {
       const isDuplicateError = msg.toLowerCase().includes('already been verified') || msg.toLowerCase().includes('duplicate');
       
       if (isDuplicateError) {
-        Alert.alert(
-          'Could not verify',
-          msg,
-          [
-            { text: 'Dismiss', style: 'cancel' },
-            { 
-              text: 'Reject Duplicate', 
-              style: 'destructive',
-              onPress: () => {
-                rejectPayment.mutate({ paymentId: p.id, reason: 'Duplicate payment request' }, {
-                  onError: (rejectErr) => Alert.alert('Could not reject', rejectErr instanceof Error ? rejectErr.message : 'Please try again.')
-                });
-              }
-            }
-          ]
-        );
+        setDuplicatePayment({ payment: p, message: msg });
       } else {
-        Alert.alert('Could not verify', msg);
+        toast('error', 'Could not verify', msg);
       }
     }
   };
@@ -140,7 +126,7 @@ export function OwnerPaymentsTab() {
       await rejectPayment.mutateAsync({ paymentId: rejectingPayment.id, reason });
       setRejectingPayment(null);
     } catch (err) {
-      Alert.alert('Could not reject', err instanceof Error ? err.message : 'Please try again.');
+      toast('error', 'Could not reject', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -155,6 +141,10 @@ export function OwnerPaymentsTab() {
   // inside the row, one thumb-slip from the row's own tap target; it now lives behind the
   // row, in the sheet that shows what is about to be reversed.
   const [detailExpense, setDetailExpense] = useState<ExpenseEntity | null>(null);
+  // Two decisions that used to be Alert.alert button arrays. Both destroy or reverse money,
+  // so both stay dialogs — they just stop being OS popups.
+  const [duplicatePayment, setDuplicatePayment] = useState<{ payment: PaymentEntity; message: string } | null>(null);
+  const [reversingExpense, setReversingExpense] = useState<ExpenseEntity | null>(null);
 
   // Log expense form states
   const [expenseTitle, setExpenseTitle] = useState('');
@@ -314,13 +304,13 @@ export function OwnerPaymentsTab() {
         method: EXPENSE_METHOD_MAP[paymentMode] ?? 'cash',
         recipient_name: recipientName,
         notes });
-      Alert.alert('Success', '✅ Expense logged successfully.');
+      toast('success', 'Expense logged', 'It now shows in this month\u2019s expenses.');
       setExpenseTitle('');
       setExpenseAmount('');
       setRecipientName('');
       setNotes('');
     } catch (err) {
-      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown error occurred.');
+      toast('error', 'Could not log expense', err instanceof Error ? err.message : 'Nothing was saved.');
     } finally {
       setIsSubmitting(false);
     }
@@ -381,23 +371,7 @@ export function OwnerPaymentsTab() {
             onPress={() => {
               const e = detailExpense;
               if (!e) return;
-              Alert.alert(
-                'Reverse this entry?',
-                `${e.title} — ${formatINR(e.amount)}. This cannot be undone.`,
-                [
-                  { text: 'Keep it', style: 'cancel' },
-                  {
-                    text: 'Reverse',
-                    style: 'destructive',
-                    onPress: () => {
-                      setDetailExpense(null);
-                      reverseExpenseMutation.mutate(
-                        { expenseId: e.id, reason: 'Reversed from the expense log' },
-                        { onError: (err) => Alert.alert('Could not reverse entry', err instanceof Error ? err.message : 'Nothing was changed.') },
-                      );
-                    } },
-                ],
-              );
+              setReversingExpense(e);
             }}
             containerColor={Palette.TintRed}
             borderRadius={Radii.control}
@@ -985,7 +959,6 @@ export function OwnerPaymentsTab() {
             </AnimatedPress>
           }
         >
-          <Txt variant="sectionTitle" color={CHARCOAL} style={styles.pickerPopupTitle}>Select Custom Range</Txt>
 
           <Txt variant="meta" weight="600" color={MUTED} style={styles.pickerSectionLabel}>Select Month Range</Txt>
           <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220, marginTop: 8 }}>
@@ -1011,7 +984,49 @@ export function OwnerPaymentsTab() {
             })}
           </ScrollView>
         </Sheet>
+
       )}
+
+      <PGowDialog
+        visible={duplicatePayment !== null}
+        title="Could not verify"
+        message={duplicatePayment?.message ?? ''}
+        confirmLabel="Reject duplicate"
+        cancelLabel="Dismiss"
+        tone="destructive"
+        onConfirm={() => {
+          const d = duplicatePayment;
+          setDuplicatePayment(null);
+          if (!d) return;
+          rejectPayment.mutate(
+            { paymentId: d.payment.id, reason: 'Duplicate payment request' },
+            { onError: (e) => toast('error', 'Could not reject', e instanceof Error ? e.message : 'Please try again.') },
+          );
+        }}
+        onCancel={() => setDuplicatePayment(null)}
+        testID="payment_duplicate"
+      />
+
+      <PGowDialog
+        visible={reversingExpense !== null}
+        title="Reverse this entry?"
+        message={reversingExpense ? `${reversingExpense.title} — ${formatINR(reversingExpense.amount)}. This cannot be undone.` : ''}
+        confirmLabel="Reverse"
+        cancelLabel="Keep it"
+        tone="destructive"
+        onConfirm={() => {
+          const e = reversingExpense;
+          setReversingExpense(null);
+          setDetailExpense(null);
+          if (!e) return;
+          reverseExpenseMutation.mutate(
+            { expenseId: e.id, reason: 'Reversed from the expense log' },
+            { onError: (err) => toast('error', 'Could not reverse entry', err instanceof Error ? err.message : 'Nothing was changed.') },
+          );
+        }}
+        onCancel={() => setReversingExpense(null)}
+        testID="expense_reverse"
+      />
     </View>
   );
 }

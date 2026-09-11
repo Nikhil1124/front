@@ -1,12 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import { SectionList, View, StyleSheet, Alert, RefreshControl, ScrollView, Share, BackHandler } from 'react-native';
+import { SectionList, View, StyleSheet, RefreshControl, Share, BackHandler } from 'react-native';
 
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 
 import { EmptyState } from '@/components/EmptyState';
-import { EditPgPropertyDialog } from '@/components/dialogs/EditPgPropertyDialog';
 import { Colors, Palette, Radii } from '@/theme';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -30,7 +29,8 @@ import { usePropertiesEntitiesQuery } from '@/features/properties/useProperties'
 import * as map from '@/data/mappers';
 import QRCode from 'react-native-qrcode-svg';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
-import { AnimatedPress, Btn, Card, Col, ListRow, ListSectionHeader, OutlinedBtn, OutlinedTextField, RoomPicker, Row, Sheet, Spacer, Txt, type StatusTone } from '@/components/ui';
+import { AnimatedPress, Btn, Card, Col, ListRow, ListSectionHeader, OutlinedBtn, OutlinedTextField, PGowDialog, RoomPicker, Row, Sheet, Spacer, Txt, type StatusTone } from '@/components/ui';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 export function OwnerGuestsManagementTab() {
   const dockScroll = useDockScroll();
@@ -68,7 +68,6 @@ export function OwnerGuestsManagementTab() {
   const [busyJoinCode, setBusyJoinCode] = useState(false);
 
   // Detail sheets
-  const [showEditProperty, setShowEditProperty] = useState(false);
 
   const activeRole = useAuthStore((s) => s.activeRole);
   const isManager = activeRole === 'manager';
@@ -166,7 +165,7 @@ export function OwnerGuestsManagementTab() {
         setErrorField('phone');
       }
 
-      Alert.alert('Failed', errorMsg);
+      toast('error', 'Could not register resident', errorMsg);
     } finally {
       setIsCreating(false);
     }
@@ -200,11 +199,12 @@ export function OwnerGuestsManagementTab() {
     setBusyJoinCode(true);
     const result = await run();
     setBusyJoinCode(false);
-    if (!result?.ok) Alert.alert('Failed', result?.error ?? 'Something went wrong.');
+    if (!result?.ok) toast('error', "That didn't work", result?.error ?? 'Please try again.');
     return result;
   };
 
   const [rentError, setRentError] = useState<string | undefined>();
+  const [joinCodeConfirm, setJoinCodeConfirm] = useState<'rotate' | 'disable' | null>(null);
 
   const handleEnableJoinCode = async () => {
     const amount = parseFloat(rentInput);
@@ -220,7 +220,7 @@ export function OwnerGuestsManagementTab() {
   const handleCopyCode = async () => {
     if (!owner?.joinCode) return;
     await Clipboard.setStringAsync(owner.joinCode);
-    Alert.alert('Copied', `Code ${owner.joinCode} is on your clipboard.`);
+    toast('success', 'Copied', `Code ${owner.joinCode} is on your clipboard.`);
   };
 
   const handleShareCode = async () => {
@@ -235,27 +235,8 @@ export function OwnerGuestsManagementTab() {
     }
   };
 
-  const handleRotateCode = () => {
-    Alert.alert(
-      'Replace the code?',
-      'Anyone holding the current code — printed, photographed or forwarded — will no longer be able to join.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Replace', style: 'destructive', onPress: () => guardJoinCode(rotateJoinCode) },
-      ]
-    );
-  };
-
-  const handleDisableCode = () => {
-    Alert.alert(
-      'Turn off self sign-up?',
-      'New residents will have to be added by you again.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Turn off', style: 'destructive', onPress: () => guardJoinCode(disableJoinCode) },
-      ]
-    );
-  };
+  const handleRotateCode = () => setJoinCodeConfirm('rotate');
+  const handleDisableCode = () => setJoinCodeConfirm('disable');
 
   return (
     <View style={styles.root}>
@@ -301,7 +282,7 @@ export function OwnerGuestsManagementTab() {
       {subTab === 0 ? (
         showManualForm ? (
           /* Manual Registration Form UI */
-          <ScrollView
+          <FormScroll
             {...dockScroll}
             contentContainerStyle={styles.formScroll}
             showsVerticalScrollIndicator={false}
@@ -370,10 +351,10 @@ export function OwnerGuestsManagementTab() {
               <Ionicons name="person-add" size={16} color={WHITE} style={{ marginRight: 8 }} />
               <Txt maxFontSizeMultiplier={1.3} style={styles.submitBtnText}>Register Resident ID & Password</Txt>
             </AnimatedPress>
-          </ScrollView>
+          </FormScroll>
         ) : (
           /* Add Resident Options Roster */
-          <ScrollView
+          <FormScroll
             {...dockScroll}
             contentContainerStyle={styles.addRosterScroll}
             showsVerticalScrollIndicator={false}
@@ -481,7 +462,7 @@ export function OwnerGuestsManagementTab() {
                 yet, so it acknowledges the tap honestly instead of doing nothing. */}
             <AnimatedPress accessibilityRole="button"
               style={styles.helpLinkRow}
-              onPress={() => Alert.alert('Need help?', 'A residents management guide is not available yet. Contact PGow support if you have questions.')}
+              onPress={() => toast('info', 'Guide not available yet', 'A residents management guide is still being written. Contact PGow support if you have questions.')}
             >
               <Row justify="space-between" align="center" gap={8} style={{ width: '100%' }}>
                 <Row gap={10} align="center" style={{ flex: 1, minWidth: 0 }}>
@@ -493,7 +474,7 @@ export function OwnerGuestsManagementTab() {
                 <Ionicons name="chevron-forward" size={16} color={MUTED} />
               </Row>
             </AnimatedPress>
-          </ScrollView>
+          </FormScroll>
         )
       ) : (
         /* Directory Roster Renders list of guests */
@@ -638,7 +619,7 @@ export function OwnerGuestsManagementTab() {
               </Row>
 
               {!isManager && (
-                <AnimatedPress accessibilityRole="button" onPress={() => setShowEditProperty(true)}>
+                <AnimatedPress accessibilityRole="button" onPress={() => owner && router.push(`/(owner)/property/${owner.id}/edit` as never)}>
                   <Row gap={6} align="center">
                     <Ionicons name="bed-outline" size={14} color={MUTED} />
                     <Txt variant="caption" color={MUTED}>
@@ -677,10 +658,6 @@ export function OwnerGuestsManagementTab() {
         />
       )}
 
-      {showEditProperty && owner && (
-        <EditPgPropertyDialog pg={owner} onDismiss={() => setShowEditProperty(false)} />
-      )}
-
       {/* Resident Detail Bottom Sheet */}
 
       <TextPromptDialog
@@ -694,6 +671,25 @@ export function OwnerGuestsManagementTab() {
         required
         onCancel={() => setRejecting(null)}
         onSave={handleReject}
+      />
+
+      <PGowDialog
+        visible={joinCodeConfirm != null}
+        title={joinCodeConfirm === 'disable' ? 'Turn off self sign-up?' : 'Replace the code?'}
+        message={
+          joinCodeConfirm === 'disable'
+            ? 'New residents will have to be added by you again.'
+            : 'Anyone holding the current code — printed, photographed or forwarded — will no longer be able to join.'
+        }
+        confirmLabel={joinCodeConfirm === 'disable' ? 'Turn off' : 'Replace'}
+        tone="destructive"
+        busy={busyJoinCode}
+        onConfirm={() => {
+          const which = joinCodeConfirm;
+          setJoinCodeConfirm(null);
+          guardJoinCode(which === 'disable' ? disableJoinCode : rotateJoinCode);
+        }}
+        onCancel={() => setJoinCodeConfirm(null)}
       />
 
       {/* Invite Resident Sign-up Link Sheet / Modal */}

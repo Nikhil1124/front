@@ -1,6 +1,6 @@
 /** Chef dashboard "Eaters" tab or Delivery Dashboard Route */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Linking } from 'react-native';
+import { View, StyleSheet, Linking } from 'react-native';
 import { router } from 'expo-router';
 import {
   Card, Txt, Spacer, Col, Row, Btn, IconBtn, ListRow, OutlinedBtn, StatusChip,
@@ -16,6 +16,7 @@ import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
 import { getGreeting } from '@/utils/format';
+import { toastNow, useToast } from '@/hooks/useToast';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -32,7 +33,7 @@ import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals'
 function openInMaps(query: string) {
   const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   Linking.openURL(url).catch(() => {
-    Alert.alert('Could not open Maps', 'No maps app is available on this device.');
+    toastNow('error', 'Could not open Maps', 'No maps app is available on this device.');
   });
 }
 
@@ -255,6 +256,7 @@ function DeliveryDashboardRoute() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const toast = useToast();
 
   // No fallback route. This used to drop to a MOCK_ROUTE of five invented PGs — complete
   // with invented recipient names and phone numbers — whenever the agent had no assigned
@@ -304,41 +306,35 @@ function DeliveryDashboardRoute() {
     if (!activeTrip) return;
     try {
       await departTripMut.mutateAsync(activeTrip.id);
-      Alert.alert('Trip Started', 'Route is now active. Drive safely!');
+      toast('success', 'Trip started', 'Route is now active. Drive safely!');
     } catch (err: any) {
-      Alert.alert('Error starting trip', err?.message || 'Could not depart.');
+      toast('error', 'Could not start trip', err?.message || 'Please try again.');
     }
   };
 
   const confirmDelivery = async () => {
-    if (!activeDelivery) return;
-    if (activeTrip) {
-      setConfirming(true);
-      try {
-        let proofKey: string | null = null;
-        if (photoUri) {
-          const { upload_url, object_key } = await getStopPhotoUploadUrl(activeTrip.id, activeDelivery.id);
-          await uploadToPresignedUrl(upload_url, photoUri, 'image/jpeg');
-          proofKey = object_key;
-        }
-        await completeStopMut.mutateAsync({
-          tripId: activeTrip.id,
-          orderId: activeDelivery.id,
-          params: { outcome: 'delivered', proof_photo_key: proofKey }
-        });
-        Alert.alert('Delivery Confirmed', `Stop completed for ${activeDelivery.pgName}.`);
-        setActiveDeliveryId(null);
-        setPhotoUri(null);
-      } catch (err: any) {
-        Alert.alert('Failed to complete delivery', err?.message || 'Could not save.');
-      } finally {
-        setConfirming(false);
+    // `route` is [] without a trip, so an `activeDelivery` implies an `activeTrip`.
+    if (!activeDelivery || !activeTrip) return;
+    setConfirming(true);
+    try {
+      let proofKey: string | null = null;
+      if (photoUri) {
+        const { upload_url, object_key } = await getStopPhotoUploadUrl(activeTrip.id, activeDelivery.id);
+        await uploadToPresignedUrl(upload_url, photoUri, 'image/jpeg');
+        proofKey = object_key;
       }
-    } else {
-      // Fallback for mock route
+      await completeStopMut.mutateAsync({
+        tripId: activeTrip.id,
+        orderId: activeDelivery.id,
+        params: { outcome: 'delivered', proof_photo_key: proofKey }
+      });
+      toast('success', 'Delivery confirmed', `Stop completed for ${activeDelivery.pgName}.`);
       setActiveDeliveryId(null);
       setPhotoUri(null);
-      Alert.alert('Mock Success', 'Delivery confirmed mock-style.');
+    } catch (err: any) {
+      toast('error', 'Could not complete delivery', err?.message || 'Please try again.');
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -524,7 +520,7 @@ function DeliveryDashboardRoute() {
             <Txt size={14} weight="700" color={Colors.primaryDark} style={{ letterSpacing: 1 }}>DELIVERY ROUTE</Txt>
             <Txt size={12} color={Colors.textMuted}>Largest orders first</Txt>
           </Col>
-          <OutlinedBtn onPress={() => Alert.alert('Not available yet', 'A combined route map is planned but not built. Tap a stop above to open it in Maps individually.')} borderColor={Colors.borderSubtle} textColor={Colors.primaryDark} height={32}>
+          <OutlinedBtn onPress={() => toast('info', 'Not available yet', 'A combined route map is planned but not built. Tap a stop above to open it in Maps individually.')} borderColor={Colors.borderSubtle} textColor={Colors.primaryDark} height={32}>
             <Ionicons name="map-outline" size={14} color={Colors.primaryDark} style={{ marginRight: 6 }} />
             <Txt size={12} weight="700" color={Colors.primaryDark}>View on Map</Txt>
           </OutlinedBtn>

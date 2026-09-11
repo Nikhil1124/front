@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Alert, Linking, Platform } from "react-native";
+import { Linking, Platform } from "react-native";
+import { toastNow } from "../../hooks/useToast";
 import * as Location from "expo-location";
 import { BASE_URL, API } from "../../config";
 import { fetchWithTimeout } from "../../hooks/useApi";
@@ -16,6 +17,18 @@ export interface PinpointResult {
 export function useDeviceLocation() {
   const { accessToken } = useAuthStore();
   const [locating, setLocating] = useState(false);
+  /**
+   * Permission denied for good is the one case here with something to DO about it, and a
+   * toast has no button — so this raises a flag the caller turns into a real dialog with an
+   * "Open settings" action. Everything else below is a notice, and a notice is a toast.
+   */
+  const [settingsPromptVisible, setSettingsPromptVisible] = useState(false);
+
+  const openAppSettings = useCallback(() => {
+    setSettingsPromptVisible(false);
+    if (Platform.OS === "ios") Linking.openURL("app-settings:");
+    else Linking.openSettings();
+  }, []);
 
   /**
    * Request foreground location permission with helpful dialogs if denied.
@@ -26,31 +39,16 @@ export function useDeviceLocation() {
       if (existing.granted) return true;
 
       if (!existing.canAskAgain) {
-        Alert.alert(
-          "Location Permission Disabled",
-          "PGow needs location permission to pinpoint your property on the map. Please enable location permissions in your device settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Open Settings",
-              onPress: () => {
-                if (Platform.OS === "ios") {
-                  Linking.openURL("app-settings:");
-                } else {
-                  Linking.openSettings();
-                }
-              },
-            },
-          ]
-        );
+        setSettingsPromptVisible(true);
         return false;
       }
 
       const requested = await Location.requestForegroundPermissionsAsync();
       if (!requested.granted) {
-        Alert.alert(
-          "Permission Required",
-          "Location permission is needed to automatically find and pinpoint your property's address."
+        toastNow(
+          "warning",
+          "Permission required",
+          "Location is how the map finds your property's address for you."
         );
         return false;
       }
@@ -75,9 +73,10 @@ export function useDeviceLocation() {
       // Check if location services are enabled
       const enabled = await Location.hasServicesEnabledAsync();
       if (!enabled) {
-        Alert.alert(
-          "Location Services Off",
-          "Please enable GPS / Location Services on your device to pinpoint your property."
+        toastNow(
+          "warning",
+          "Location services are off",
+          "Turn on GPS on your device to pinpoint your property."
         );
         return null;
       }
@@ -103,9 +102,10 @@ export function useDeviceLocation() {
         }
       } catch {}
 
-      Alert.alert(
-        "Location Unavailable",
-        "Could not determine current GPS position. You can search by address or pin it manually on the map."
+      toastNow(
+        "error",
+        "Location unavailable",
+        "Search by address, or drag the pin to the right spot on the map."
       );
       return null;
     } finally {
@@ -161,5 +161,8 @@ export function useDeviceLocation() {
     requestPermission,
     getCurrentCoordinates,
     pinpointCurrentLocation,
+    settingsPromptVisible,
+    dismissSettingsPrompt: () => setSettingsPromptVisible(false),
+    openAppSettings,
   };
 }

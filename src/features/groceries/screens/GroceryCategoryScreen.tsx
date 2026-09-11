@@ -9,7 +9,6 @@ import {
   useWindowDimensions,
   TextInput,
   RefreshControl,
-  ScrollView,
 } from 'react-native';
 import { FormScroll } from '@/components/ui/FormScroll';
 
@@ -21,22 +20,15 @@ import { ProductCard } from '../components/grocery/ProductCard';
 import { useCartStore } from '../store/useCartStore';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
-import { GroceryColors, Radii } from '@/theme';
+import { Colors, GroceryColors, Palette, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 // Map section filter keys → display info
-const SECTION_FILTERS: Record<string, { label: string; icon: string; categoryNames: string[] }> = {
-  deals: { label: "Today's Deals", icon: '🔥', categoryNames: [] },
-  essentials: {
-    label: 'Daily Essentials',
-    icon: '🛒',
-    categoryNames: ['Dairy, Bread & Eggs', 'Atta, Rice & Dal', 'Oil, Ghee & Masala'],
-  },
-  kitchen: {
-    label: "Today's Kitchen Needs",
-    icon: '🍳',
-    categoryNames: ['Vegetables & Fruits', 'Oil, Ghee & Masala', 'Chicken, Meat & Fish', 'PG Kitchen Needs'],
-  },
+/** `deals` is the only one of these the app ever pushes — `openDeals()` in GroceriesScreen is
+ *  the single caller. `essentials` and `kitchen` sat here with category lists naming the old
+ *  mock catalogue, unreachable and unmatchable both. */
+const SECTION_FILTERS: Record<string, { label: string; icon: string }> = {
+  deals: { label: "Today's Deals", icon: '🔥' },
 };
 
 // Category name → grocery image asset
@@ -53,13 +45,16 @@ const getCategoryImage = (name: string) => {
   return require('../../../../assets/productimages/cat_addons_nobg.webp');
 };
 
+/** The tint behind a category's artwork. Palette tints rather than the five off-palette
+ *  hexes that were here ('#EDF7ED', '#FFF8ED', '#FFF0ED', '#F0F4FF'), so a category tile and
+ *  the rest of the app agree on what "a soft green" is. */
 const getCategoryBg = (name: string): string => {
   const n = name.toLowerCase();
-  if (n.includes('fruit') || n.includes('veg')) return '#EDF7ED';
-  if (n.includes('dairy') || n.includes('milk') || n.includes('bread')) return '#FFF8ED';
-  if (n.includes('chicken') || n.includes('meat') || n.includes('egg')) return '#FFF0ED';
-  if (n.includes('oil') || n.includes('masala') || n.includes('ghee')) return '#FFF8ED';
-  if (n.includes('snack') || n.includes('beverage')) return '#F0F4FF';
+  if (n.includes('fruit') || n.includes('veg')) return Palette.TintGreen;
+  if (n.includes('dairy') || n.includes('milk') || n.includes('bread')) return Palette.TintAmber;
+  if (n.includes('chicken') || n.includes('meat') || n.includes('egg')) return Palette.TintRed;
+  if (n.includes('oil') || n.includes('masala') || n.includes('ghee')) return Palette.TintAmber;
+  if (n.includes('snack') || n.includes('beverage')) return Palette.TintBlue;
   return GroceryColors.lightGreen;
 };
 
@@ -116,10 +111,11 @@ export function GroceryCategoryScreen() {
 
   const showProductList = activeSupplyCategory !== null || filter === 'deals' || search.trim().length > 0;
 
-  // 3-column grid math for categories screen
-  const catGap = 10;
+  // 2-column grid. Was 3, which left a fourth category alone on a second row and shrank the
+  // artwork to the point where two leafy greens were hard to tell apart.
+  const catGap = 12;
   const catPadding = 32;
-  const catCardWidth = (width - catPadding - catGap * 2) / 3;
+  const catCardWidth = (width - catPadding - catGap) / 2;
 
   const productCardWidth = (width - 44) / 2;
 
@@ -127,24 +123,23 @@ export function GroceryCategoryScreen() {
     <AnimatedPress
       key={cat.id}
       accessibilityRole="button"
+      accessibilityLabel={cat.name}
       style={[styles.catItem, { width: catCardWidth }]}
       onPress={() => setActiveSupplyCategory(cat.name)}
     >
       <View
         style={[
           styles.catImageContainer,
-          { width: catCardWidth, height: catCardWidth, backgroundColor: getCategoryBg(cat.name) },
+          { height: catCardWidth * 0.82, backgroundColor: getCategoryBg(cat.name) },
         ]}
       >
-        <Image
-          source={getCategoryImage(cat.name)}
-          style={styles.catImage}
-          resizeMode="contain"
-        />
+        <Image source={getCategoryImage(cat.name)} style={styles.catImage} resizeMode="contain" />
       </View>
-      <Txt maxFontSizeMultiplier={1.2} style={styles.catTitle} numberOfLines={2}>
-        {cat.name}
-      </Txt>
+      <View style={styles.catLabelStrip}>
+        <Txt maxFontSizeMultiplier={1.2} style={styles.catTitle} numberOfLines={2}>
+          {cat.name}
+        </Txt>
+      </View>
     </AnimatedPress>
   );
 
@@ -228,101 +223,20 @@ export function GroceryCategoryScreen() {
           contentContainerStyle={styles.sectionsScrollContent}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
         >
-          {(() => {
-            const NAMED_GROUPS: { title: string; names: string[] }[] = [
-              {
-                title: 'Grocery & Kitchen',
-                names: [
-                  'Vegetables & Fruits', 'Fruits & Vegetables',
-                  'Atta, Rice & Dal', 'Dal, Atta & Rice',
-                  'Dairy, Bread & Eggs', 'Eggs, Bread & Dairy',
-                  'Oil, Ghee & Masala', 'Oils & Masala',
-                  'Chicken, Meat & Fish', 'Meat & Fish',
-                  'PG Kitchen Needs', 'Kitchen Essentials',
-                ],
-              },
-              {
-                title: 'Snacks & Drinks',
-                names: [
-                  'Snacks', 'Beverages', 'Drinks',
-                  'Frozen Foods', 'Sauces & Spreads', 'Sweets & Chocolates',
-                  'Canned & Ready-to-eat',
-                ],
-              },
-              {
-                title: 'Household & Essentials',
-                names: ['Cleaning Supplies', 'Household', 'Cleaning', 'Packaging', 'Custom Supplies'],
-              },
-            ];
+          {/* One grid, no section headings.
+              This was a `NAMED_GROUPS` table sorting categories into "Grocery & Kitchen",
+              "Snacks & Drinks" and "Household & Essentials", with anything it could not place
+              falling into "More Categories". Every name in that table came from the old mock
+              catalogue ('Atta, Rice & Dal', 'Cleaning Supplies', 'Frozen Foods') and none of
+              them survives in the real one, so against the four categories actually stocked it
+              matched "Vegetables" and "Chicken" and dropped "Leafy Vegetables" and
+              "Dairy & Eggs" into "More Categories" — two headings inventing a split between
+              four items that belong together. Four tiles need no taxonomy. */}
+          <View style={styles.gridRow}>{categories.map(renderSupplyCategoryItem)}</View>
 
-            const claimedIds = new Set<string>();
-            const grouped: { title: string; cats: SupplyCategory[] }[] = [];
-
-            for (const g of NAMED_GROUPS) {
-              const matched = categories.filter((c) =>
-                g.names.some(
-                  (n) =>
-                    c.name.toLowerCase().includes(n.toLowerCase()) ||
-                    n.toLowerCase().includes(c.name.toLowerCase())
-                )
-              );
-              if (matched.length > 0) {
-                matched.forEach((c) => claimedIds.add(c.id));
-                const filtered =
-                  sectionFilter && sectionFilter.categoryNames.length > 0
-                    ? matched.filter((c) => sectionFilter.categoryNames.includes(c.name))
-                    : matched;
-                if (filtered.length > 0) grouped.push({ title: g.title, cats: filtered });
-              }
-            }
-
-            const unclaimed = categories.filter((c) => !claimedIds.has(c.id));
-            const unclaimedFiltered =
-              sectionFilter && sectionFilter.categoryNames.length > 0
-                ? unclaimed.filter((c) => sectionFilter.categoryNames.includes(c.name))
-                : unclaimed;
-            if (unclaimedFiltered.length > 0) {
-              grouped.push({ title: 'More Categories', cats: unclaimedFiltered });
-            }
-
-            if (grouped.length === 0 && categories.length > 0) {
-              grouped.push({ title: 'All Categories', cats: categories });
-            }
-
-            return grouped.map((g) => (
-              <View key={g.title} style={styles.sectionBlock}>
-                <Txt maxFontSizeMultiplier={1.2} style={styles.sectionHeading}>
-                  {g.title}
-                </Txt>
-                <View style={styles.gridRow}>
-                  {g.cats.map(renderSupplyCategoryItem)}
-                </View>
-              </View>
-            ));
-          })()}
-
-          {/* ── Promo banner at bottom of categories ── */}
-          <View style={styles.promoBanner}>
-            <View style={styles.promoBannerLeft}>
-              <Txt maxFontSizeMultiplier={1.1} style={styles.promoBannerTitle}>
-                {'Healthy Choices\nHappier You'}
-              </Txt>
-              <AnimatedPress
-                accessibilityRole="button"
-                style={styles.promoBannerBtn}
-                onPress={() => setSearch('organic')}
-              >
-                <Txt maxFontSizeMultiplier={1.1} style={styles.promoBannerBtnText}>
-                  Explore Organic Products
-                </Txt>
-              </AnimatedPress>
-            </View>
-            <Image
-              source={require('../../../../assets/pg_grocery_eggs_1785343431667.webp')}
-              style={styles.promoBannerImage}
-              resizeMode="cover"
-            />
-          </View>
+          {/* A "Healthy Choices / Happier You" banner sat here. Its one button searched for
+              "organic", a word no item in this catalogue carries, so it always landed on an
+              empty result — and the categories above are the reason to be on this screen. */}
         </FormScroll>
       ) : (
         /* ── Product Grid ── */
@@ -334,12 +248,8 @@ export function GroceryCategoryScreen() {
                 <Txt maxFontSizeMultiplier={1.1} style={styles.dealsMegaLabel}>MEGA</Txt>
                 <Txt maxFontSizeMultiplier={1.1} style={styles.dealsMegaSale}>SALE</Txt>
                 <Txt maxFontSizeMultiplier={1.1} style={styles.dealsSubLabel}>UP TO 80% OFF</Txt>
-                <AnimatedPress
-                  accessibilityRole="button"
-                  style={styles.dealsShopNowBtn}
-                >
-                  <Txt maxFontSizeMultiplier={1.1} style={styles.dealsShopNowText}>Shop Now →</Txt>
-                </AnimatedPress>
+                {/* No "Shop Now" button: it had no `onPress`, and the deals it would open
+                    are the grid directly below it. */}
               </View>
               <Image
                 source={require('../../../../assets/food_savings_banner.webp')}
@@ -349,24 +259,20 @@ export function GroceryCategoryScreen() {
             </View>
           )}
 
-          {/* Filter tabs for deals */}
+          {/* One chip, and it is a label rather than a control.
+              This was four — All Deals / Fresh Picks / Pantry / Snacks — rendered as plain
+              `View`s with `tab === 'All Deals'` hardcoded as the active one. None of them was
+              pressable and none of them filtered anything: three names of categories this
+              catalogue does not stock, sitting under a heading that says what the list
+              already is. */}
           {filter === 'deals' && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterTabsScroll}
-            >
-              {['All Deals', 'Fresh Picks', 'Pantry', 'Snacks'].map((tab) => (
-                <View key={tab} style={[styles.filterTab, tab === 'All Deals' && styles.filterTabActive]}>
-                  <Txt
-                    maxFontSizeMultiplier={1.2}
-                    style={[styles.filterTabText, tab === 'All Deals' && styles.filterTabTextActive]}
-                  >
-                    {tab}
-                  </Txt>
-                </View>
-              ))}
-            </ScrollView>
+            <View style={styles.filterTabsScroll}>
+              <View style={[styles.filterTab, styles.filterTabActive]}>
+                <Txt maxFontSizeMultiplier={1.2} style={[styles.filterTabText, styles.filterTabTextActive]}>
+                  All Deals
+                </Txt>
+              </View>
+            </View>
           )}
 
           <FlatList
@@ -504,82 +410,43 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 120,
   },
-  sectionBlock: {
-    marginTop: 20,
-    marginBottom: 8,
-  },
-  sectionHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: GroceryColors.textPrimary,
-    marginBottom: 12,
-  },
   gridRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
   catItem: {
-    alignItems: 'center',
     marginBottom: 14,
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    backgroundColor: GroceryColors.surface,
+    overflow: 'hidden',
   },
   catImageContainer: {
-    borderRadius: Radii.card,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
-    marginBottom: 6,
   },
   catImage: {
-    width: '80%',
-    height: '80%',
+    width: '72%',
+    height: '82%',
+  },
+  catLabelStrip: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   catTitle: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '700',
     color: GroceryColors.textPrimary,
     textAlign: 'center',
-    lineHeight: 15,
-    paddingHorizontal: 2,
+    lineHeight: 17,
   },
 
   // ── Promo banner ──
-  promoBanner: {
-    marginTop: 20,
-    marginBottom: 8,
-    borderRadius: Radii.card,
-    backgroundColor: GroceryColors.primaryDark,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    minHeight: 120,
-  },
-  promoBannerLeft: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'center',
-  },
-  promoBannerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: GroceryColors.white,
-    lineHeight: 24,
-    marginBottom: 12,
-  },
-  promoBannerBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: GroceryColors.white,
-    borderRadius: Radii.control,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  promoBannerBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: GroceryColors.primaryDark,
-  },
-  promoBannerImage: {
-    width: '40%',
-  },
 
   // ── Deals hero banner ──
   dealsBanner: {
@@ -613,18 +480,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
     marginBottom: 8,
-  },
-  dealsShopNowBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: GroceryColors.white,
-    borderRadius: Radii.control,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  dealsShopNowText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: GroceryColors.primaryDark,
   },
   dealsBannerImage: {
     width: '42%',

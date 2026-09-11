@@ -71,7 +71,16 @@ export function PGowActionSheet({
   const destructive = actions.filter((a) => a.destructive);
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} testID={testID}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      // Same reason as `Sheet` — see the note there.
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onDismiss}
+      testID={testID}
+    >
       <Animated.View entering={FadeIn.duration(150)} style={styles.backdrop}>
         <Pressable
           accessibilityRole="button"

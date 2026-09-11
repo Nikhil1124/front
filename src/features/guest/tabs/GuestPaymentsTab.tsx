@@ -17,7 +17,7 @@
  */
 import { useState } from 'react';
 import {
-  View, StyleSheet, Alert, RefreshControl,
+  View, StyleSheet, RefreshControl,
   ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
@@ -150,7 +150,7 @@ export function GuestPaymentsTab() {
       payeeName: 'PG Rent Payment',
       amount: totalAmountDue,
       note: `Rent ${currentMonthYear}` });
-    Alert.alert('UPI Payment', result.message);
+    toast(result.success ? 'info' : 'warning', 'UPI payment', result.message);
   };
 
   // The UI's action labels, in the values the API's CHECK constraints accept.
@@ -166,7 +166,8 @@ export function GuestPaymentsTab() {
     // only, so any number of PENDING ones are legal. Every duplicate lands in the owner's
     // verification queue as a separate payment to reconcile against one real transfer.
     if (hasPendingPayment) {
-      Alert.alert(
+      toast(
+        'warning',
         'Already submitted',
         `You have a payment for ${currentMonthYear} awaiting your owner's verification. `
           + 'They will confirm it shortly — no need to submit it again.'
@@ -174,7 +175,7 @@ export function GuestPaymentsTab() {
       return;
     }
     if (!rentKnown && !unpaidInvoice) {
-      Alert.alert('Amount unavailable', 'We could not load what you owe this month. Pull down to refresh and try again.');
+      toast('error', 'Amount unavailable', 'We could not load what you owe this month. Pull down to refresh and try again.');
       return;
     }
     if (!activePgId) return;
@@ -191,7 +192,7 @@ export function GuestPaymentsTab() {
       setShowPayForm(false);
       toast('success', 'Payment submitted!', isBillPaid ? 'Your payment was recorded.' : 'Awaiting owner verification.');
     } catch (err) {
-      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown error occurred.');
+      toast('error', 'Could not submit payment', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -214,7 +215,8 @@ export function GuestPaymentsTab() {
     // Stop at the entry point too, not just at submit — opening the form and filling in a
     // UTR only to be told it was already sent is a worse way to find out.
     if (hasPendingPayment) {
-      Alert.alert(
+      toast(
+        'warning',
         'Already submitted',
         `Your ${currentMonthYear} payment is awaiting verification from your owner.`
       );
@@ -225,7 +227,7 @@ export function GuestPaymentsTab() {
       handleSubmit('CASH_HANDOVER');
     } else {
       if (!hasUpi) {
-        Alert.alert('Payment Method Note', "Owner UPI ID is not configured. Please use Cash Handover or submit UTR ref manually.");
+        toast('warning', 'No UPI ID on file', 'Your owner has not configured one. Use Cash handover, or submit the UTR reference manually.');
         return;
       }
       handleUpiLaunch();

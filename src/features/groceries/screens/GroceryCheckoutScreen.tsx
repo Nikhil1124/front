@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { StyleSheet, View, Image, Alert } from 'react-native';
+import { StyleSheet, View, Image } from 'react-native';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -60,6 +60,7 @@ import {
 import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, OutlinedTextField, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 export function GroceryCheckoutScreen() {
   const { activeEntity: owner } = useActiveProperty();
@@ -150,17 +151,18 @@ export function GroceryCheckoutScreen() {
   }, [paymentMethods, paymentMethod]);
 
   const [showAddressPrompt, setShowAddressPrompt] = useState(false);
+  const toast = useToast();
   const handleUpdateAddress = () => setShowAddressPrompt(true);
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) {
-      Alert.alert("Error", "Your cart is empty. Add items before placing an order.");
+      toast('error', 'Your cart is empty', 'Add something to it before placing an order.');
       return;
     }
 
     const targetPgId = activePgId || owner?.id;
     if (!targetPgId) {
-      Alert.alert("Error", "No active property found to place the order.");
+      toast('error', 'No active property', 'Pick a property before placing an order.');
       return;
     }
 
@@ -185,7 +187,7 @@ export function GroceryCheckoutScreen() {
       clearCart();
       router.push({ pathname: '/groceries/orders/[id]', params: { id: order.id } });
     } catch (err: any) {
-      Alert.alert("Order Failed", err?.message || "Could not place order. Please try again.");
+      toast('error', 'Order failed', err?.message || 'Please try again.');
     }
   };
 

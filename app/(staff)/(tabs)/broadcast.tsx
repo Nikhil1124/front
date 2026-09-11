@@ -1,8 +1,9 @@
 /** Chef dashboard "Broadcast" tab or Delivery History Route */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert, Image } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, IconBtn, Spacer, AnimatedPress } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors, Palette, Radii } from '@/theme';
@@ -71,6 +72,7 @@ export default function ChefBroadcastTab() {
 
 function ChefBroadcastView() {
   const dockScroll = useDockScroll();
+  const toast = useToast();
   const insets = useSafeAreaInsets();
   const [showManualInput, setShowManualInput] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
@@ -206,7 +208,7 @@ function ChefBroadcastView() {
       return;
     }
     if (!activePgId) {
-      Alert.alert('Failed', 'No active property.');
+      toast('error', 'No active property', 'Pick a property before broadcasting a meal.');
       return;
     }
     // "HH:mm" is today's service time in this phone's timezone; the API wants an instant.
@@ -254,11 +256,10 @@ function ChefBroadcastView() {
               title: '🍴 New Meal Broadcasted!',
               description: `${mealTypeSelected} at ${formatServiceTime12h(serviceTimeInput)}\nMenu: ${meal.menu_items}\nScheduled RSVP alert: ${getAlertTriggerTime(serviceTimeInput)}`,
               type: 'MEAL', notificationId: meal.id, timestamp: Date.now() } });
-      Alert.alert('Success', editingMealId ? '✏️ Menu updated — residents already RSVP’d were told about the change.' : '🔔 Menu & Food Push Alert Broadcasted to Residents!');
       clearMenuError(); setSelectedDishes([]);
       setEditingMealId(null);
     } catch (err) {
-      Alert.alert('Failed', err instanceof Error ? err.message : 'Unknown');
+      toast('error', 'Not broadcast', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 

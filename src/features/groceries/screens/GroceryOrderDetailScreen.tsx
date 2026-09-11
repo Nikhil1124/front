@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, RefreshControl } from 'react-native';
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, ErrorState, OutlinedTextField, PGowDialog, Txt } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 const STATUS_HERO: Record<string, string> = {
   placed: 'Order Placed',
@@ -57,9 +58,9 @@ export function GroceryOrderDetailScreen() {
     try {
       await submitUpiPayment.mutateAsync({ orderId: order.id, upiRef: ref });
       setUpiRef('');
-      Alert.alert('Submitted', 'Your payment reference has been sent for verification.');
+      toast('success', 'Reference submitted', 'It has been sent for verification.');
     } catch (err) {
-      Alert.alert('Could not submit', err instanceof Error ? err.message : 'Please try again.');
+      toast('error', 'Could not submit', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -119,7 +120,7 @@ export function GroceryOrderDetailScreen() {
         }
       />
 
-      <ScrollView
+      <FormScroll
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => Promise.all([refetch(), refetchTracking()])} />}
@@ -232,7 +233,7 @@ export function GroceryOrderDetailScreen() {
             <Txt maxFontSizeMultiplier={1.3} style={styles.cancelOrderBtnText}>Cancel Order</Txt>
           </AnimatedPress>
         )}
-      </ScrollView>
+      </FormScroll>
 
       {/* A dialog, not a sheet: the copy already says "This can't be undone", and a
           destructive commitment is an interruption rather than a panel you slid up to look

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextStyle, StyleProp } from 'react-native';
+import { StyleSheet, Text, TextStyle, StyleProp } from 'react-native';
 import { Colors } from '@/theme';
 import { Typography, fontFamilyForWeight, normalizeFontWeight, type TypographyKey } from '@/theme/typography';
 import type { FontWeight } from '@/theme/typography';
@@ -50,8 +50,19 @@ export function Txt({
   maxFontSizeMultiplier = DEFAULT_MAX_FONT_SCALE, tabular = false,
 }: TxtProps) {
   const base = variant ? Typography[variant] : null;
+  // The four weights are four separate FAMILIES (Plus Jakarta ships one file per weight), so
+  // `fontWeight` alone does nothing on Android — the family has to be chosen to match, which
+  // is why the trailing style object below re-asserts both after the caller's `style`.
+  //
+  // That override used to read the weight from the `weight` prop and the variant only, so a
+  // `style` carrying `fontWeight: '700'` had it thrown away and rendered Regular: 331 call
+  // sites across the app were passing a StyleSheet entry that way, and every one of them was
+  // silently un-bolded. A weight named in `style` is a request like any other, so it counts
+  // here — precedence is the explicit prop, then the style, then the variant, then 400.
+  const flat = style ? (StyleSheet.flatten(style) as TextStyle) : undefined;
   const resolvedSize = size ?? base?.fontSize ?? 13;
-  const requestedWeight = weight ?? base?.fontWeight ?? '400';
+  const requestedWeight =
+    weight ?? (flat?.fontWeight as FontWeight | undefined) ?? base?.fontWeight ?? '400';
   const resolvedWeight = normalizeFontWeight(requestedWeight) as RNFontWeight;
   const resolvedLineHeight = lineHeight ?? base?.lineHeight ?? resolvedSize * 1.35;
   const resolvedLetterSpacing = letterSpacing ?? base?.letterSpacing ?? 0;
@@ -66,7 +77,9 @@ export function Txt({
         lineHeight: resolvedLineHeight,
         letterSpacing: resolvedLetterSpacing,
       }, style, tabular && styles.tabular, {
-        fontFamily: fontFamilyForWeight(requestedWeight),
+        // A caller that names a real family of its own keeps it; otherwise the family has to
+        // match the weight or the weight does not happen at all.
+        fontFamily: flat?.fontFamily ?? fontFamilyForWeight(requestedWeight),
         fontWeight: resolvedWeight,
       }]}
       numberOfLines={numberOfLines}

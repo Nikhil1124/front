@@ -35,6 +35,11 @@ export interface PgResponse {
   formatted_address: string;
   // Signed URL for the cached static map, or null when the property has not been geocoded.
   map_image_url: string | null;
+  // The property's manager, or null when nobody manages it yet. Derived server-side from the
+  // live `manager` membership — the properties list is the only place the client can learn
+  // this without one staff request per property.
+  manager_name: string | null;
+  manager_phone: string | null;
   // The lobby code. Null for anyone who does not manage this property — the server treats it
   // as a credential, because whoever holds it can create an account here.
   join_code: string | null;
@@ -154,7 +159,7 @@ export function usePropertiesEntitiesQuery() {
       const res = await listProperties({ limit: 100 });
       return res.items
         .filter((pg) => myPgIds.has(pg.id))
-        .map((pg) => map.toPgOwner(pg, user, null));
+        .map((pg) => map.toPgOwner(pg, user));
     },
   });
 }
@@ -172,7 +177,7 @@ export function useActiveProperty() {
   const user = useAuthStore((s) => s.user);
   const { data: properties = [] } = usePropertiesQuery();
   const activePg = properties.find((p) => p.id === activePgId) ?? properties[0] ?? null;
-  const activeEntity = activePg ? map.toPgOwner(activePg, user, null) : null;
+  const activeEntity = activePg ? map.toPgOwner(activePg, user) : null;
   return { activePg, activeEntity, activePgId };
 }
 

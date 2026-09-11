@@ -7,7 +7,7 @@
  *   - High-Contrast Dark Forest Typography (#173A33)
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, Image } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -16,7 +16,7 @@ import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { GuestKycVerificationTab } from './GuestKycVerificationTab';
 import { useKycStatus } from '@/features/kyc/useKycStatus';
-import { useToast } from '@/hooks/useToast';
+import { toastNow, useToast } from '@/hooks/useToast';
 import { useChangePassword } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
 import { AppHeader } from '@/components/AppHeader';
@@ -36,7 +36,8 @@ async function pickPhoto(from: 'camera' | 'library'): Promise<string | null> {
     ? await ImagePicker.requestCameraPermissionsAsync()
     : await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (perm.status !== 'granted') {
-    Alert.alert(
+    toastNow(
+      'warning',
       from === 'camera' ? 'Camera permission required' : 'Photo permission required',
       `Allow ${from === 'camera' ? 'camera' : 'photo library'} access in your device settings to continue.`,
     );
@@ -133,7 +134,7 @@ export function GuestSecurityTab() {
       const message = err instanceof PGowApiError && err.httpStatus === 401
         ? 'Your current password is not correct.'
         : err instanceof Error ? err.message : 'Unknown error';
-      Alert.alert('Update Failed', message);
+      toast('error', 'Could not update password', message);
     } finally {
       setIsUpdating(false);
     }

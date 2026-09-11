@@ -8,14 +8,14 @@
  * an owner turns it off, matching the backend's own "absence is the off state" model.
  */
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useAdConfigQuery, useUpsertAdConfigMutation, useDeleteAdConfigMutation, type AdConfig } from '@/features/ads/useAds';
-import { Btn, Card, Col, ErrorState, LoadingState, OutlinedBtn, Row, Spacer, Txt } from '@/components/ui';
+import { Btn, Card, Col, ErrorState, LoadingState, OutlinedBtn, PGowDialog, Row, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 import { FormScroll } from '@/components/ui/FormScroll';
 
 const BLANK: Omit<AdConfig, 'pg_id'> = {
@@ -37,6 +37,8 @@ export function ManageAdScreen() {
   const remove = useDeleteAdConfigMutation(pgId ?? undefined);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const toast = useToast();
   const [form, setForm] = useState(BLANK);
   const [brandError, setBrandError] = useState<string | undefined>();
 
@@ -63,22 +65,16 @@ export function ManageAdScreen() {
       });
       setIsEditing(false);
     } catch (e) {
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Something went wrong.');
+      toast('error', 'Could not save', e instanceof Error ? e.message : 'Please try again.');
     }
   };
 
-  const confirmRemove = () => {
-    Alert.alert('Remove ad?', 'Residents will stop seeing this immediately.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          await remove.mutateAsync();
-          setForm(BLANK);
-        },
-      },
-    ]);
+  const confirmRemove = () => setConfirmingRemove(true);
+
+  const doRemove = async () => {
+    setConfirmingRemove(false);
+    await remove.mutateAsync();
+    setForm(BLANK);
   };
 
   if (isLoading) {
@@ -177,6 +173,17 @@ export function ManageAdScreen() {
           </Row>
         </FormScroll>
       )}
+
+      <PGowDialog
+        visible={confirmingRemove}
+        title="Remove this ad?"
+        message="Residents stop seeing it immediately. You can write a new one any time."
+        confirmLabel="Remove"
+        tone="destructive"
+        busy={remove.isPending}
+        onConfirm={doRemove}
+        onCancel={() => setConfirmingRemove(false)}
+      />
     </HubScreenWrapper>
   );
 }

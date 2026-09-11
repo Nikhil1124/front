@@ -120,6 +120,13 @@ const titleCase = (s: string): string =>
  * and a subscription. Only the first exists as an endpoint, so the caller passes the signed-in
  * user for the second, and the third is filled below.
  */
+/**
+ * `manager` is an override for the rare caller that already holds a `StaffMember` and wants
+ * it used. Everyone else should omit it: the property response now carries the manager, which
+ * is the only way a LIST of properties can show one without a request per row. Both callers
+ * used to pass an explicit `null` here — there was nothing else they could pass — so every
+ * property in the app reported no manager.
+ */
 export function toPgOwner(
   pg: PgResponse,
   user: User | null,
@@ -150,8 +157,8 @@ export function toPgOwner(
     subscriptionMode: "FIXED_LIMIT",
     phonePeNumber: "",
     upiId: pg.active_upi_vpa ?? "",
-    managerName: manager?.name ?? "",
-    managerPhone: manager?.phone ?? "",
+    managerName: manager?.name ?? pg.manager_name ?? "",
+    managerPhone: manager?.phone ?? pg.manager_phone ?? "",
     // Never leaves the server — `has_pin` is all the API exposes, by design.
     managerPin: "",
     latitude: pg.latitude,

@@ -38,9 +38,12 @@ export const QuickCategoryRow: React.FC<QuickCategoryRowProps> = ({ onCategoryPr
                 onCategoryPress?.(cat.id === 'all' ? null : cat.label);
               }}
             >
-              <View style={styles.iconWrapper}>
+              {/* The selected state is the tinted box the bottom dock uses, not the 6px dot
+                  that used to sit on the icon's corner: at that size a dot reads as a badge
+                  ("something is waiting here"), which is what it means everywhere else in
+                  this app, rather than "this is the one you are on". */}
+              <View style={[styles.iconBox, isActive && styles.iconBoxActive]}>
                 {cat.icon()}
-                {isActive && <View style={styles.activeDot} />}
               </View>
               <Txt maxFontSizeMultiplier={1.1} style={[styles.chipLabel, isActive && styles.chipLabelActive]}>
                 {cat.label}
@@ -72,20 +75,15 @@ const styles = StyleSheet.create({
     minWidth: 54,
     gap: 8,
   },
-  iconWrapper: {
-    position: 'relative',
-    height: 32,
+  iconBox: {
+    width: 44,
+    height: 38,
+    borderRadius: Radii.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeDot: {
-    position: 'absolute',
-    top: -2,
-    right: -4,
-    width: 6,
-    height: 6,
-    borderRadius: Radii.badge,
-    backgroundColor: GroceryColors.discountRed,
+  iconBoxActive: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
   chipLabel: {
     fontSize: 11,

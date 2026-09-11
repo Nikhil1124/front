@@ -71,7 +71,12 @@ export interface OutlinedTextFieldProps {
   height?: number;
   style?: ViewStyle;
   inputStyle?: TextStyle;
-  onContentSizeChange?: (e: any) => void;
+  /**
+   * Left unset this follows RN's default of 'sentences', which is right for prose and wrong
+   * for every identifier someone types — a UPI handle, a join code, a reference. Defaults to
+   * 'none' on an email keyboard, since that one is never a sentence.
+   */
+  autoCapitalize?: TextInputProps['autoCapitalize'];
 }
 
 export function OutlinedTextField({
@@ -83,6 +88,7 @@ export function OutlinedTextField({
   focusedBorderColor = Colors.borderFocus, unfocusedBorderColor,
   focusedTextColor = Colors.textPrimary, unfocusedTextColor = Colors.textPrimary,
   containerColor, borderRadius = Radii.control, height, style, inputStyle,
+  autoCapitalize,
 }: OutlinedTextFieldProps) {
   const [focused, setFocused] = useState(false);
   const invalid = !!error;
@@ -151,6 +157,7 @@ export function OutlinedTextField({
           placeholder={placeholder}
           placeholderTextColor={Colors.textMuted}
           keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize ?? (keyboardType === 'email-address' ? 'none' : undefined)}
           textContentType={textContentType}
           autoComplete={autoComplete}
           importantForAutofill={autoComplete === 'off' ? 'no' : undefined}

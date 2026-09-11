@@ -6,15 +6,17 @@
  * not somebody else's promotion.
  */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert, Image } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radii, Colors } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { useAdConfigQuery, useRecordAdEventMutation } from '@/features/ads/useAds';
 import { useAuthStore } from '@/store/authStore';
 import { Btn, Card, Col, Row, Sheet, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 export function FeaturedMonetizedAdCard() {
+  const toast = useToast();
   const [showCheckout, setShowCheckout] = useState(false);
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: ad } = useAdConfigQuery(activePgId ?? undefined);
@@ -78,7 +80,7 @@ export function FeaturedMonetizedAdCard() {
               onPress={async () => {
                 recordCouponCopy();
                 await Clipboard.setStringAsync(ad.discount_code);
-                Alert.alert('Copied', `Copied code '${ad.discount_code}'!${ad.discount_percent > 0 ? ` ${ad.discount_percent}% discount applied.` : ''}`);
+                toast('success', 'Code copied', `${ad.discount_code} is on your clipboard.${ad.discount_percent > 0 ? ` Worth ${ad.discount_percent}% off.` : ''}`);
               }}
               containerColor="#1A1F36"
               textColor="#FFD700"

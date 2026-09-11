@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { StyleSheet, View, ScrollView, Image, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, Image } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -7,10 +7,12 @@ import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
 import { ReplacementPicker } from '../components/grocery/ReplacementPicker';
 import { useSupplyItems } from '../useSupply';
+import { useCartDrift } from '../useCartReconciliation';
 import { useAuthStore } from '@/store/authStore';
 
 import { Ionicons } from '@expo/vector-icons';
-import { GroceryColors, Radii } from '@/theme';
+import { Colors, GroceryColors, Radii } from '@/theme';
+import { useToast } from '@/hooks/useToast';
 import { MiniProductCard } from '../components/ui/MiniProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -19,7 +21,7 @@ import { getPerUnitRateLabel } from '../utils/pricing';
 import { useSubmitProcurementOrder } from '@/features/procurement/useProcurement';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { AppHeader } from '@/components/AppHeader';
-import { AnimatedPress, Txt } from '@/components/ui';
+import { AnimatedPress, PGowDialog, Row, Txt } from '@/components/ui';
 
 const FREE_DELIVERY_THRESHOLD = 500;
 const DELIVERY_FEE = 30;
@@ -28,8 +30,11 @@ const PLATFORM_FEE = 5;
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getTotalSavings } = useCartStore();
   const mode = useShoppingModeStore((s) => s.mode);
+  const toast = useToast();
   const activePgId = useAuthStore((s) => s.activePgId) ?? undefined;
   const { data: supplyItems = [] } = useSupplyItems(activePgId);
+  // The catalog moves under a persisted cart — a retired line 404s the whole order.
+  const drift = useCartDrift(activePgId);
 
   const { activeEntity: owner } = useActiveProperty();
   const ownerForGuest = owner;
@@ -49,18 +54,15 @@ export function GroceryCartScreen() {
   const deliveryFreeUnlocked = subtotal >= FREE_DELIVERY_THRESHOLD;
   const progressPercent = Math.min(1, subtotal / FREE_DELIVERY_THRESHOLD);
 
-  const handleClearCart = () => {
-    Alert.alert('Clear Cart', 'Are you sure you want to remove all items from your cart?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear All', style: 'destructive', onPress: () => clearCart() },
-    ]);
-  };
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const handleClearCart = () => setConfirmingClear(true);
 
+  // No confirmation for one line. Taking an item out of a cart is undone by adding it again,
+  // the unavailable-items strip above already removes without asking, and stepping the
+  // quantity down to zero routes here — so a popup fired on the ordinary "−" tap.
   const handleRemoveItem = (itemId: string, itemName: string) => {
-    Alert.alert('Remove Item', `Remove ${itemName} from the cart?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => removeItem(itemId) },
-    ]);
+    removeItem(itemId);
+    toast('info', 'Removed', `${itemName} is no longer in your cart.`);
   };
 
   const [showAddressPrompt, setShowAddressPrompt] = useState(false);
@@ -80,13 +82,18 @@ export function GroceryCartScreen() {
           items: items.map((i) => ({ item_id: i.productId, quantity: i.quantity })),
         });
         clearCart();
-        Alert.alert('Requisition Sent', 'Your grocery list has been sent to the owner/manager for approval.');
+        toast('success', 'Requisition sent', 'Your grocery list is with the owner for approval.');
         router.back();
       } catch (err) {
-        Alert.alert('Could not send request', err instanceof Error ? err.message : 'Please try again.');
+        toast('error', 'Could not send request', err instanceof Error ? err.message : 'Please try again.');
       } finally {
         setSubmittingRequisition(false);
       }
+      return;
+    }
+    if (drift.blocking) {
+      toast('error', 'Some items are no longer available',
+        'Remove them from your cart to continue — the order fails as a whole otherwise.');
       return;
     }
     router.push('/groceries/checkout');
@@ -126,6 +133,31 @@ export function GroceryCartScreen() {
       ) : (
         <>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+            {drift.unavailable.length > 0 || drift.repriced.length > 0 ? (
+              <View style={styles.driftNotice}>
+                {drift.unavailable.map((u) => (
+                  <Row key={u.cartItemId} gap={8} align="center" style={{ marginBottom: 6 }}>
+                    <Ionicons name="alert-circle" size={16} color={Colors.danger} />
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.driftText} numberOfLines={2}>
+                      {u.name} is no longer available
+                    </Txt>
+                    <AnimatedPress accessibilityRole="button" accessibilityLabel={`Remove ${u.name}`}
+                      onPress={() => removeItem(u.cartItemId)}>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.driftAction}>Remove</Txt>
+                    </AnimatedPress>
+                  </Row>
+                ))}
+                {drift.repriced.map((r) => (
+                  <Row key={r.cartItemId} gap={8} align="center" style={{ marginBottom: 6 }}>
+                    <Ionicons name="pricetag" size={16} color={Colors.warning} />
+                    <Txt maxFontSizeMultiplier={1.3} style={styles.driftText} numberOfLines={2}>
+                      {r.name} is now ₹{r.now} (was ₹{r.was})
+                    </Txt>
+                  </Row>
+                ))}
+              </View>
+            ) : null}
 
             {/* ── Delivery progress bar ── */}
             <View style={styles.deliveryProgressCard}>
@@ -398,11 +430,30 @@ export function GroceryCartScreen() {
           setShowAddressPrompt(false);
         }}
       />
+
+      <PGowDialog
+        visible={confirmingClear}
+        title="Clear the cart?"
+        message="Every item comes out. You can add them again from the shop."
+        confirmLabel="Clear all"
+        tone="destructive"
+        onConfirm={() => { setConfirmingClear(false); clearCart(); }}
+        onCancel={() => setConfirmingClear(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  driftNotice: {
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    borderRadius: Radii.control,
+    backgroundColor: Colors.surfaceMuted,
+    padding: 12,
+    marginBottom: 12 },
+  driftText: { flex: 1, fontSize: 12.5, color: Colors.textPrimary },
+  driftAction: { fontSize: 12.5, fontWeight: '700', color: Colors.danger },
   container: {
     flex: 1,
     backgroundColor: GroceryColors.background,

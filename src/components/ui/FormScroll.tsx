@@ -129,7 +129,13 @@ export function FormScroll({
       // 'none' allows the keyboard to stay open while keyboardShouldPersistTaps manages taps.
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
       showsVerticalScrollIndicator={false}
-      bounces={false}
+      // `bounces={false}` everywhere used to be the rule, to kill the rubber-band on a screen
+      // that does not scroll. But on iOS a `RefreshControl` IS the overscroll: with bounces
+      // off the user cannot pull past the top, so pull-to-refresh silently does nothing —
+      // and this container carries the refreshControl for every HubScreenWrapper screen.
+      // Android is unaffected either way (SwipeRefreshLayout owns that gesture there), so
+      // the bounce comes back only for the scrollers that actually have something to refresh.
+      bounces={!!rest.refreshControl}
       overScrollMode="never"
       {...rest}
     >

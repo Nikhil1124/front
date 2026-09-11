@@ -2,7 +2,7 @@
  * GuestHubServicesTab — Redesigned Services & Marketplace tab.
  * Visual System: Unified Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
  */
-import { ScrollView, View, StyleSheet, Alert, RefreshControl } from 'react-native';
+import { ScrollView, View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Palette, Radii } from '@/theme';
@@ -11,7 +11,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, Card, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 export function GuestHubServicesTab() {
+  const toast = useToast();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
@@ -142,7 +144,7 @@ export function GuestHubServicesTab() {
             icon="sparkles"
             available={false}
             buttonText="Notify Me"
-            onPress={() => Alert.alert('Not Available Yet', 'Deep cleaning bookings are coming soon.')}
+            onPress={() => toast('info', 'Not available yet', 'Deep cleaning bookings are coming soon.')}
           />
           <HubServiceCard
             title="WI-FI & INTERNET"
@@ -150,7 +152,7 @@ export function GuestHubServicesTab() {
             icon="wifi"
             available={false}
             buttonText="Manage"
-            onPress={() => Alert.alert('Not Available Yet', 'Wi-Fi plan management is coming soon.')}
+            onPress={() => toast('info', 'Not available yet', 'Wi-Fi plan management is coming soon.')}
           />
         </Row>
 

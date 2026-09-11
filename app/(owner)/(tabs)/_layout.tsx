@@ -21,10 +21,9 @@ import { View, StyleSheet } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Tabs, TabTrigger, TabSlot } from 'expo-router/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { Txt, Row, AnimatedPress, PGowActionSheet, Sheet } from '@/components/ui';
+import { Txt, Row, AnimatedPress, Sheet, SheetActionGrid } from '@/components/ui';
 import { Dock, DockAlert, HeadlessDockTabButton, useDock } from '@/components/HeadlessDockTabButton';
 import { centreOut, NAV_PROFILES } from '@/data/navTabs';
-import { AddPgPropertyDialog } from '@/components/dialogs/AddPgPropertyDialog';
 import { Colors, Radii } from '@/theme';
 import { shortLocation } from '@/utils/format';
 
@@ -52,7 +51,6 @@ export const unstable_settings = { anchor: 'overview' };
 
 export default function OwnerTabsLayout() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showAddPgModal, setShowAddPgModal] = useState(false);
   const [showAddOptions, setShowAddOptions] = useState(false);
 
 
@@ -188,7 +186,7 @@ export default function OwnerTabsLayout() {
         <Sheet
           visible
           title={owner?.pgName ?? 'Select PG'}
-          subtitle={isManager ? `Manager: ${owner?.managerName ?? 'You'}` : `Owner: ${owner?.ownerName ?? 'You'}`}
+          subtitle={isManager ? `Manager: ${owner?.managerName || 'You'}` : `Owner: ${owner?.ownerName || 'You'}`}
           icon="business-outline"
           onDismiss={() => setShowProfileMenu(false)}
         >
@@ -220,7 +218,7 @@ export default function OwnerTabsLayout() {
                   <>
                     <AnimatedPress accessibilityRole="button"
                       style={styles.menuRow}
-                      onPress={() => { setShowProfileMenu(false); setShowAddPgModal(true); }}
+                      onPress={() => { setShowProfileMenu(false); router.push('/(owner)/property/new' as never); }}
                     >
                       <Ionicons name="add-circle-outline" size={18} color={PRIMARY} />
                       <Txt size={13} weight="700" color={CHARCOAL} style={{ marginLeft: 10 }}>Add Property</Txt>
@@ -239,36 +237,43 @@ export default function OwnerTabsLayout() {
 
 
 
-      {/* Property Addition Overlays */}
-      {showAddPgModal && (
-        <AddPgPropertyDialog
-          onDismiss={() => setShowAddPgModal(false)}
-        />
-      )}
-
       {/* ── Add Options Sheet Menu ─────────────────────────────────────────── */}
-      {/* An action sheet, which is what this always was: three or four commands that each
-          navigate somewhere. It wore a detail sheet's chrome — accent icon, title AND
-          subtitle ("Add" / "What are you adding?") — on top of a four-item menu, so the
-          header was taller than the menu it introduced. Rows rather than an icon grid: the
-          labels are readable at a glance and each one is a real 52px target. */}
-      <PGowActionSheet
-        visible={showAddOptions}
-        onDismiss={() => setShowAddOptions(false)}
-        actions={[
-          ...(isComplaintsTab
-            ? [{
-                label: 'Book a repair',
-                icon: 'construct-outline' as const,
-                onPress: () => setShowBookRepair(true),
-              }]
-            : []),
-          { label: 'Add resident', icon: 'person-add-outline' as const, onPress: () => router.navigate('/guests') },
-          { label: 'Add staff', icon: 'ribbon-outline' as const, onPress: () => router.navigate('/staff') },
-          { label: 'Add property', icon: 'business-outline' as const, onPress: () => setShowAddPgModal(true) },
-        ]}
-        testID="owner_add_menu"
-      />
+      {/* Tiles, not rows. These are four distinct destinations rather than verbs acting on one
+          object, and at that size a tinted glyph is told apart faster than a label is read.
+          The tint is the thing carrying the difference, so it is named by role — see
+          `SheetActionGrid`; "Repair" is the only one that is genuinely a warning colour. */}
+      {showAddOptions && (
+        <Sheet
+          visible
+          title="Add"
+          subtitle="What are you adding?"
+          icon="add-circle-outline"
+          onDismiss={() => setShowAddOptions(false)}
+          testID="owner_add_menu"
+        >
+          <SheetActionGrid
+            onDismiss={() => setShowAddOptions(false)}
+            actions={[
+              ...(isComplaintsTab
+                ? [{
+                    // "Repair", because that is what it files. It said "Complaint" once while
+                    // opening `BookRepairDialog`, which submits `kind: 'repair'` — a different
+                    // ticket type on a different queue. An owner has no "raise a complaint"
+                    // action by design: a complaint is a resident reporting something to the
+                    // property, so the owner is its recipient, not its author.
+                    label: 'Repair',
+                    icon: 'construct-outline' as const,
+                    tint: 'danger' as const,
+                    onPress: () => setShowBookRepair(true),
+                  }]
+                : []),
+              { label: 'Resident', icon: 'person-add-outline' as const, tint: 'success' as const, onPress: () => router.navigate('/guests') },
+              { label: 'Staff', icon: 'ribbon-outline' as const, tint: 'brand' as const, onPress: () => router.navigate('/staff') },
+              { label: 'Property', icon: 'business-outline' as const, tint: 'warning' as const, onPress: () => router.push('/(owner)/property/new' as never) },
+            ]}
+          />
+        </Sheet>
+      )}
 
       {showBookRepair && <BookRepairDialog onDismiss={() => setShowBookRepair(false)} />}
     </Tabs>

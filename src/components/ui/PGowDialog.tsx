@@ -111,6 +111,10 @@ export function PGowDialog({
       visible={visible}
       transparent
       animationType="fade"
+      // Centred rather than bottom-anchored, but it dims the whole screen for the same reason
+      // a sheet does — and without these the dimming stops at the system bars.
+      statusBarTranslucent
+      navigationBarTranslucent
       // Hardware back is Cancel, never Confirm. On a blocking dialog it is inert, which is
       // what "you must answer this" means on Android.
       onRequestClose={blocking ? () => {} : onCancel}

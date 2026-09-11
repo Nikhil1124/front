@@ -4,11 +4,11 @@
  * need a resolve/respond/escalate action a resident is waiting on; reviews are read-only
  * sentiment. Same underlying query (`useComplaintsQuery`), two different jobs.
  */
-import { useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { View, StyleSheet, RefreshControl, FlatList, BackHandler } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -55,12 +55,18 @@ export function OwnerComplaintsTab() {
     setResponseStatus(item.status);
   };
 
-  // Back-press override: replace ghost tab state with overview
-  useEffect(() => {
-    const onBack = () => { router.replace('/overview'); return true; };
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
-    return () => sub.remove();
-  }, []);
+  // Back-press override: replace ghost tab state with overview.
+  //
+  // Scoped to focus. `BackHandler` listeners are global and fire most-recently-added
+  // first, so an unscoped one keeps answering back while this tab sits mounted beneath a
+  // pushed route — the pushed screen could never pop.
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => { router.replace('/overview'); return true; };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      return () => sub.remove();
+    }, []),
+  );
 
   const handleSaveReply = async () => {
     if (!activeItem) return;

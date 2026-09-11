@@ -4,12 +4,13 @@
  */
 import { useEffect, type ReactNode } from 'react';
 import {
-  View, StyleSheet, Linking, Platform, BackHandler, Alert
+  View, StyleSheet, Linking, Platform, BackHandler
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Radii, Colors } from '@/theme';
 import { formatDateTime, formatINR } from '@/utils/format';
+import { useToast } from '@/hooks/useToast';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { PaymentEntity } from '@/types';
@@ -53,6 +54,7 @@ export function PaymentReceiptDialog({
   actions }: Props) {
   // Bottom-pinned sheet: the receipt's last row would otherwise sit in the gesture strip.
   const guest = usePGowStore((s) => s.loggedInGuest);
+  const toast = useToast();
   const roomNo = payment.payerId === guest?.id ? guest?.roomNo : null;
   const isVerified = payment.status === 'VERIFIED';
   const modeLabel = (() => {
@@ -192,10 +194,10 @@ export function PaymentReceiptDialog({
               ) : null}
               <Spacer size={6} />
               <Row gap={8} style={{ marginTop: 2 }}>
-                <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.pgId); Alert.alert('Copied', 'PG ID copied to clipboard.'); }} style={styles.idChip}>
+                <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.pgId); toast('success', 'Copied', 'PG ID is on your clipboard.'); }} style={styles.idChip}>
                   <Txt variant="caption" color={Colors.textMuted} tabular>PG ID: {payment.pgId.slice(0, 8)}...</Txt>
                 </AnimatedPress>
-                <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.payerId); Alert.alert('Copied', 'Resident ID copied to clipboard.'); }} style={styles.idChip}>
+                <AnimatedPress accessibilityRole="button" onPress={() => { Clipboard.setStringAsync(payment.payerId); toast('success', 'Copied', 'Resident ID is on your clipboard.'); }} style={styles.idChip}>
                   <Txt variant="caption" color={Colors.textMuted} tabular>Res ID: {payment.payerId.slice(0, 8)}...</Txt>
                 </AnimatedPress>
               </Row>

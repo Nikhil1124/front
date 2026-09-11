@@ -357,4 +357,5 @@ export { SearchField, type SearchFieldProps } from './SearchField';
 export { Sheet, type SheetProps } from './Sheet';
 export { PGowDialog, type PGowDialogProps, type PGowDialogPrompt } from './PGowDialog';
 export { PGowActionSheet, type PGowActionSheetProps, type PGowAction } from './PGowActionSheet';
+export { SheetActionGrid, type SheetActionGridProps, type SheetAction, type SheetActionTint } from './SheetActionGrid';
 export { OutlinedTextField, type OutlinedTextFieldProps } from './OutlinedTextField';

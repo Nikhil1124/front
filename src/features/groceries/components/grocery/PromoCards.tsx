@@ -21,7 +21,9 @@ const PROMO_CARDS: PromoCard[] = [
     badge: 'UP TO 40% OFF',
     bgColor: '#FFF3E0', // Light warm beige/yellow
     badgeColor: GroceryColors.discountRed,
-    image: require('../../../../../assets/productimages/promo_fresh_picks_nobg.webp'),
+    // The same artwork the Vegetables category uses, so the card and the aisle it opens
+    // are visibly the same thing.
+    image: require('../../../../../assets/productimages/cat_fruits_veg_nobg.webp'),
   },
   {
     id: 'pantry-restock',

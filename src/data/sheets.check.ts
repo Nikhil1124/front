@@ -16,8 +16,9 @@
  *
  * ── What should replace them ────────────────────────────────────────────────────────────────
  *   rises from the bottom (detail / form / picker)   `Sheet`
- *   plain yes-or-no confirmation                     native `Alert.alert`
- *   confirmation that needs a typed reason           `TextPromptDialog` (centered)
+ *   plain yes-or-no confirmation                     `PGowDialog` (centred)
+ *   confirmation that needs a typed reason           `PGowDialog` with `prompt`
+ *   a menu of verbs                                  `PGowActionSheet`
  *
  * `EXEMPT` below holds three kinds of file that keep their `<Modal>` on purpose: the
  * implementations of the surfaces above; the full-screen viewers (an image inspector and a
@@ -50,8 +51,10 @@ const EXEMPT = new Set([
   'src/components/CameraProofModal.tsx',
   'src/components/KycDocumentsCard.tsx',
   'src/components/LocationPicker.tsx',
-  'src/components/dialogs/AddPgPropertyDialog.tsx',
-  'src/components/dialogs/EditPgPropertyDialog.tsx',
+  // The property forms became routes; each keeps the full-screen map picker, which is a
+  // device-capability surface and correctly a Modal.
+  'app/(owner)/property/new.tsx',
+  'app/(owner)/property/[id]/edit.tsx',
   'app/_layout.tsx',
   // a modal screen: near-fullscreen room detail with its own dark header bar and a back
   // arrow, deliberately designed that way. Its other four modals were converted.
@@ -69,8 +72,6 @@ const EXEMPT = new Set([
 const BUDGET: Record<string, number> = {
   // These dialogs only keep a full-screen map picker Modal which is a SCREEN_TAKEOVER —
   // treat them as exempt from the Sheet sweep by adding their files to EXEMPT above.
-  // 'src/components/dialogs/AddPgPropertyDialog.tsx': 1,   // 1 is a full-screen map picker
-  // 'src/components/dialogs/EditPgPropertyDialog.tsx': 1,  // 1 is a full-screen map picker
   /* 'src/components/dialogs/KycUploadDialog.tsx': 1,       // 1 was an anchored dropdown (now converted) */
   /* 'src/features/auth/SignInScreen.tsx': 1, */
   /* 'src/features/groceries/components/grocery/FilterSheet.tsx': 1, */
@@ -106,7 +107,7 @@ const problems: string[] = [];
 for (const [file, n] of counts) {
   const allowed = BUDGET[file];
   if (allowed === undefined) {
-    problems.push(`${file} — new raw <Modal> (${n}). Use \`Sheet\`, \`Alert.alert\`, or \`TextPromptDialog\`.`);
+    problems.push(`${file} — new raw <Modal> (${n}). Use \`Sheet\`, \`PGowDialog\`, or \`PGowActionSheet\`.`);
   } else if (n > allowed) {
     problems.push(`${file} — ${n} raw <Modal>, budget is ${allowed}. This file may only go down.`);
   }

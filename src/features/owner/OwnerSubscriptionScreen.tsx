@@ -14,7 +14,7 @@
  * here to ask.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Alert, Image } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -34,7 +34,8 @@ import { useActiveProperty } from '@/features/properties/useProperties';
 import { useAuthStore } from '@/store/authStore';
 import { usePGowStore } from '@/store/usePGowStore';
 import { Radii, Colors, DeckTints, type DeckTint } from '@/theme';
-import { Btn, Card, Col, IconBtn, ListRow, ListSectionHeader, Row, Spacer, Txt, type StatusTone } from '@/components/ui';
+import { Btn, Card, Col, IconBtn, ListRow, ListSectionHeader, PGowActionSheet, Row, Spacer, Txt, type StatusTone } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 /** The two shapes the design already had: a flat-fee one and a pay-as-you-grow one. `brand`
  *  and `green` — not a fifth, off-palette purple — so this screen stays inside the same four
@@ -92,6 +93,8 @@ export function OwnerSubscriptionScreen() {
   // stored capacity with 30 and bill for it. Hydrates once the property arrives, unless
   // the owner has already adjusted it by hand.
   const [bedsCount, setBedsCount] = useState<number>(owner?.totalBeds ?? 0);
+  const [reportingInvoiceId, setReportingInvoiceId] = useState<string | null>(null);
+  const toast = useToast();
   const bedsTouched = useRef(false);
 
   useEffect(() => {
@@ -140,34 +143,19 @@ export function OwnerSubscriptionScreen() {
       }
       await subscribe.mutateAsync(selected.code);
       await refreshAll();
-      Alert.alert('Activated', `${selected.name} is now active for this property.`);
+      toast('success', 'Activated', `${selected.name} is now active for this property.`);
     } catch (err: any) {
-      Alert.alert('Activation failed', err?.message ?? 'Something went wrong.');
+      toast('error', 'Activation failed', err?.message ?? 'Something went wrong.');
     }
   };
 
-  const handleReportPayment = (invoiceId: string) => {
-    Alert.alert(
-      'How did you pay?',
-      'PGow confirms the payment before the invoice is marked settled.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'UPI',
-          onPress: () =>
-            reportPayment
-              .mutateAsync({ invoiceId, method: 'upi_manual' })
-              .then(() => Alert.alert('Recorded', 'PGow will confirm and settle this shortly.'))
-              .catch((e: any) => Alert.alert('Failed', e?.message ?? 'Not recorded.')) },
-        {
-          text: 'Bank transfer',
-          onPress: () =>
-            reportPayment
-              .mutateAsync({ invoiceId, method: 'bank_transfer' })
-              .then(() => Alert.alert('Recorded', 'PGow will confirm and settle this shortly.'))
-              .catch((e: any) => Alert.alert('Failed', e?.message ?? 'Not recorded.')) },
-      ]
-    );
+  const handleReportPayment = (invoiceId: string) => setReportingInvoiceId(invoiceId);
+
+  const reportMethod = (invoiceId: string, method: 'upi_manual' | 'bank_transfer') => {
+    reportPayment
+      .mutateAsync({ invoiceId, method })
+      .then(() => toast('success', 'Recorded', 'PGow will confirm and settle this shortly.'))
+      .catch((e: any) => toast('error', 'Not recorded', e?.message ?? 'Please try again.'));
   };
 
   const active = subscription.data;
@@ -396,6 +384,15 @@ export function OwnerSubscriptionScreen() {
           )}
         </>
       )}
+      <PGowActionSheet
+        visible={!!reportingInvoiceId}
+        title="How did you pay?"
+        actions={[
+          { label: 'UPI', icon: 'phone-portrait-outline', onPress: () => reportMethod(reportingInvoiceId!, 'upi_manual') },
+          { label: 'Bank transfer', icon: 'business-outline', onPress: () => reportMethod(reportingInvoiceId!, 'bank_transfer') },
+        ]}
+        onDismiss={() => setReportingInvoiceId(null)}
+      />
     </HubScreenWrapper>
   );
 }
