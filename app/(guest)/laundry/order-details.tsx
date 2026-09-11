@@ -1,4 +1,4 @@
-import { Share, View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii } from '@/theme';
 import { AnimatedPress, Btn, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
 import { useLaundryOrder } from '@/features/laundry/useLaundryBooking';
-import { buildInvoice, invoiceAsText } from '@/features/payments/invoice';
+import { buildInvoice } from '@/features/payments/invoice';
+import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { useToast } from '@/hooks/useToast';
 
@@ -165,9 +166,9 @@ export default function LaundryOrderDetailsScreen() {
               <Btn
                 onPress={async () => {
                   try {
-                    await Share.share({ message: invoiceAsText(buildLaundryInvoice(order, pg)) });
+                    await shareInvoicePdf(buildLaundryInvoice(order, pg));
                   } catch {
-                    toast('error', 'Could not share', 'The share sheet did not open.');
+                    toast('error', 'Could not share', 'The invoice could not be prepared.');
                   }
                 }}
                 containerColor={Colors.primary}

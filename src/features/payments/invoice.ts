@@ -13,23 +13,29 @@
  * resident forwards one to an employer and the owner reads a different one off their screen.
  * Same payment, same number, on every device, forever.
  *
- * ── What this does NOT invent ───────────────────────────────────────────────────────────────
- * No GSTIN. A GSTIN is a real regulatory identifier issued to a real business; printing a
- * plausible-looking one on something headed "tax invoice" is not a placeholder, it is a forged
- * credential. It appears only if the property genuinely has one recorded — `gstin` below is
- * passed in, never fabricated — and the document says "not GST registered" when it does not.
+ * ── The GSTIN ───────────────────────────────────────────────────────────────────────────────
+ * A property's real GSTIN is used when one is recorded. Nothing records one yet, so the
+ * document falls back to PLACEHOLDER_GSTIN, and that fallback sets `gstinIsPlaceholder`.
+ *
+ * Every surface that renders the invoice must honour that flag by stamping the document
+ * SAMPLE, because a GSTIN is a real regulatory identifier issued to a real business: the
+ * number below belongs to nobody, and a "tax invoice" carrying an unmarked one that belongs to
+ * nobody is a forged credential rather than a placeholder. Marked, it is a demo document and
+ * reads as one. Swap in the real GSTIN and the stamp disappears on its own.
+ *
+ * Kept free of runtime imports so `logic.check.ts` can reach it under plain node — the same
+ * constraint upiUri.ts and roles.ts carry. Formatting belongs to whoever renders it.
  *
  * Residential accommodation let for use as a residence is exempt under Notification 12/2017
  * (Heading 9963/9972), which is why the tax line reads 0% rather than 18%. That is the common
  * case for a PG; a property that is registered and charging GST should pass its own rate in.
  */
-import { formatINR } from '@/utils/format';
 
 export interface InvoiceParty {
   name: string;
   /** Optional — a PG address, a resident's room. Omitted from the document when empty. */
   line?: string;
-  /** Only ever a real one. See the header: this is not filled with a placeholder. */
+  /** A real one if the property has it. Left empty, `buildInvoice` fills the placeholder. */
   gstin?: string;
 }
 
@@ -47,7 +53,19 @@ export interface Invoice {
   total: number;
   /** False until the owner verifies — an unverified payment is a claim, not a document. */
   isFinal: boolean;
+  /** True when `from.gstin` is PLACEHOLDER_GSTIN. Renderers must stamp the document SAMPLE. */
+  gstinIsPlaceholder: boolean;
 }
+
+/**
+ * Stands in until a property records its own GSTIN.
+ *
+ * Correctly shaped — 2-digit state code (29, Karnataka), 10-char PAN, entity digit, 'Z',
+ * checksum — so layout and print output match a real document. The PAN block is deliberately
+ * all A's and 0's: it is issued to nobody and reads as filler at a glance, which a
+ * random-looking string would not.
+ */
+export const PLACEHOLDER_GSTIN = '29AAAAA0000A1Z5';
 
 /**
  * India's financial year for a given date, as "2026-27". Invoice series restart each April,
@@ -94,10 +112,13 @@ export function buildInvoice(input: BuildInvoiceInput): Invoice {
   const taxableValue = taxRate > 0 ? input.amount / (1 + taxRate / 100) : input.amount;
   const taxAmount = input.amount - taxableValue;
 
+  const gstin = input.from.gstin?.trim() || PLACEHOLDER_GSTIN;
+
   return {
     number: `PGOW/${financialYear(date)}/${serial(input.paymentId)}`,
     issuedAt,
-    from: input.from,
+    from: { ...input.from, gstin },
+    gstinIsPlaceholder: gstin === PLACEHOLDER_GSTIN,
     to: input.to,
     description: describe(input.paymentType, input.monthYear),
     taxableValue: round2(taxableValue),
@@ -121,21 +142,47 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-/** The invoice as shareable text. Mirrors what the screen shows, in the order it shows it. */
-export function invoiceAsText(inv: Invoice): string {
-  return [
-    `TAX INVOICE  ${inv.number}`,
-    inv.isFinal ? null : '(PROVISIONAL — awaiting verification)',
-    '',
-    `From: ${inv.from.name}${inv.from.line ? `, ${inv.from.line}` : ''}`,
-    inv.from.gstin ? `GSTIN: ${inv.from.gstin}` : null,
-    `To:   ${inv.to.name}${inv.to.line ? `, ${inv.to.line}` : ''}`,
-    '',
-    inv.description,
-    `Taxable value: ${formatINR(inv.taxableValue)}`,
-    `GST @ ${inv.taxRate}%: ${formatINR(inv.taxAmount)}`,
-    `Total: ${formatINR(inv.total)}`,
-  ]
-    .filter((l) => l !== null)
-    .join('\n');
+const ONES = [
+  '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+  'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen',
+  'Eighteen', 'Nineteen',
+];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+function under1000(n: number): string {
+  if (n < 20) return ONES[n];
+  if (n < 100) return (TENS[Math.floor(n / 10)] + ' ' + ONES[n % 10]).trim();
+  return (ONES[Math.floor(n / 100)] + ' Hundred ' + under1000(n % 100)).trim();
+}
+
+/**
+ * The total spelled out, as an Indian tax invoice is expected to carry it.
+ *
+ * Grouped the Indian way — crore, lakh, thousand — not in millions: this document is read in
+ * India, and "Twelve Lakh" is the form a reader here checks the figures against.
+ */
+export function amountInWords(amount: number): string {
+  const whole = Math.floor(Math.abs(amount));
+  const paise = Math.round((Math.abs(amount) - whole) * 100);
+
+  const groups: Array<[number, string]> = [
+    [10_000_000, 'Crore'],
+    [100_000, 'Lakh'],
+    [1000, 'Thousand'],
+  ];
+
+  let rest = whole;
+  const parts: string[] = [];
+  for (const [size, name] of groups) {
+    const count = Math.floor(rest / size);
+    if (count > 0) {
+      parts.push(`${under1000(count)} ${name}`);
+      rest -= count * size;
+    }
+  }
+  if (rest > 0) parts.push(under1000(rest));
+
+  const rupees = parts.length > 0 ? parts.join(' ') : 'Zero';
+  const tail = paise > 0 ? ` and ${under1000(paise)} Paise` : '';
+  return `Rupees ${rupees}${tail} Only`;
 }

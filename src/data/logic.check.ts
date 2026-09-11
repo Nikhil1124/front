@@ -239,4 +239,73 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
   assert.equal(shortLocation("560066, India"), "");
 }
 
+// ── invoice ─────────────────────────────────────────────────────────────────
+// A tax document a resident forwards to an employer. Two silent failure modes: a number that
+// changes between viewings (the resident and the owner then quote different invoices for the
+// same payment), and an unmarked placeholder GSTIN, which turns a demo into a forged credential.
+{
+  const { buildInvoice, PLACEHOLDER_GSTIN } = await import("../features/payments/invoice.ts");
+  const base = {
+    paymentId: "pay_9f31c0",
+    amount: 6500,
+    monthYear: "Aug 2026",
+    paymentType: "RENT",
+    issuedAt: Date.UTC(2026, 7, 4),
+    isVerified: true,
+    from: { name: "Sunrise PG" },
+    to: { name: "Asha" },
+  };
+
+  // Derived, not generated: same payment, same number, every time and on every device.
+  assert.equal(buildInvoice(base).number, buildInvoice(base).number);
+  assert.match(buildInvoice(base).number, /^PGOW\/\d{4}-\d{2}\/\d{6}$/);
+  assert.notEqual(
+    buildInvoice(base).number,
+    buildInvoice({ ...base, paymentId: "pay_9f31c1" }).number,
+    "a different payment must not collide"
+  );
+
+  // India's financial year turns on 1 April, so March and April sit in different series.
+  assert.ok(buildInvoice({ ...base, issuedAt: Date.UTC(2026, 2, 31) }).number.includes("2025-26"));
+  assert.ok(buildInvoice({ ...base, issuedAt: Date.UTC(2026, 3, 1) }).number.includes("2026-27"));
+
+  // The money is already collected, so tax comes OUT of the amount, never on top of it.
+  const taxed = buildInvoice({ ...base, taxRate: 18 });
+  assert.equal(taxed.total, 6500, "total is what the resident actually paid");
+  assert.equal(taxed.taxableValue, 5508.47);
+  assert.equal(round2(taxed.taxableValue + taxed.taxAmount), 6500, "the parts must sum to the total");
+
+  // At 0% — residential rent is exempt — taxable value and total are the same number.
+  const exempt = buildInvoice(base);
+  assert.equal(exempt.taxAmount, 0);
+  assert.equal(exempt.taxableValue, exempt.total);
+
+  // The flag every renderer keys its SAMPLE stamp off. Miss this and a document carrying a
+  // GSTIN registered to nobody goes out looking genuine.
+  assert.equal(exempt.from.gstin, PLACEHOLDER_GSTIN, "no recorded GSTIN → placeholder");
+  assert.equal(exempt.gstinIsPlaceholder, true, "and the document must know it is a sample");
+  const real = buildInvoice({ ...base, from: { name: "Sunrise PG", gstin: "29ABCDE1234F1Z5" } });
+  assert.equal(real.gstinIsPlaceholder, false, "a real GSTIN must not be stamped SAMPLE");
+  assert.equal(real.from.gstin, "29ABCDE1234F1Z5");
+
+  // Unverified money is a claim, not a document.
+  assert.equal(buildInvoice({ ...base, isVerified: false }).isFinal, false);
+
+  // Amount in words, grouped the Indian way — the printed invoice carries this, and a reader
+  // uses it to check the figure. Lakh and crore, never millions.
+  const { amountInWords } = await import("../features/payments/invoice.ts");
+  assert.equal(amountInWords(840), "Rupees Eight Hundred Forty Only");
+  assert.equal(amountInWords(6500), "Rupees Six Thousand Five Hundred Only");
+  assert.equal(amountInWords(125000), "Rupees One Lakh Twenty Five Thousand Only");
+  assert.equal(amountInWords(10000000), "Rupees One Crore Only");
+  assert.equal(amountInWords(1215), "Rupees One Thousand Two Hundred Fifteen Only");
+  assert.equal(amountInWords(5508.47), "Rupees Five Thousand Five Hundred Eight and Forty Seven Paise Only");
+  // Boundaries that trip the naive versions: a bare zero, and a gap group that must not
+  // print "Zero Thousand".
+  assert.equal(amountInWords(0), "Rupees Zero Only");
+  assert.equal(amountInWords(100007), "Rupees One Lakh Seven Only");
+
+  function round2(n: number) { return Math.round(n * 100) / 100; }
+}
+
 console.log("logic.check.ts — all assertions passed");
