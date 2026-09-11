@@ -21,6 +21,7 @@ import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery
 import { HeroBanner } from '../components/grocery/HeroBanner';
 import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
+import { groupByVariant } from '../variantGroups';
 import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
 import { PGowApiError } from '@/data/apiClient';
 
@@ -176,6 +177,10 @@ export function GroceriesScreen() {
     meatsList,
   ]);
 
+  // One card per product. The count below follows it: "142 products in Vegetables" over a grid
+  // of 36 cards is a number nothing on screen can account for.
+  const searchFamilies = useMemo(() => groupByVariant(searchResults), [searchResults]);
+
   const isSearching = searchQuery.trim().length > 0 || hasActiveFilters || activeQuickCategory !== null;
 
   /**
@@ -264,8 +269,8 @@ export function GroceriesScreen() {
           /* ── Search results ── */
           <View style={styles.searchResultsWrapper}>
             <Txt maxFontSizeMultiplier={1.3} style={styles.searchResultsTitle}>
-              {searchResults.length > 0
-                ? `${searchResults.length} products ${searchQuery ? `for "${searchQuery}"` : activeQuickCategory ? `in ${activeQuickCategory}` : 'found'}`
+              {searchFamilies.length > 0
+                ? `${searchFamilies.length} products ${searchQuery ? `for "${searchQuery}"` : activeQuickCategory ? `in ${activeQuickCategory}` : 'found'}`
                 : `No products ${searchQuery ? `for "${searchQuery}"` : activeQuickCategory ? `in ${activeQuickCategory}` : 'found'}`}
             </Txt>
             {itemsLoading ? (
@@ -291,10 +296,11 @@ export function GroceriesScreen() {
                  could never use, plus RN's "VirtualizedLists should never be nested"
                  warning on every render. A wrapped map does the identical work without it. */
               <View style={styles.searchResultsGrid}>
-                {searchResults.map((item) => (
-                  <View key={item.id} style={{ width: (width - 44) / 2 }}>
+                {searchFamilies.map((family) => (
+                  <View key={family[0].id} style={{ width: (width - 44) / 2 }}>
                     <ProductCard
-                      product={item}
+                      product={family[0]}
+                      variants={family}
                       onPress={(p) => openProduct(p.id)}
                       style={{ width: '100%', marginRight: 0 }}
                     />
@@ -441,7 +447,7 @@ export function GroceriesScreen() {
                 title="Leafy Items"
                 products={leafyItemsList}
                 onProductPress={(p) => openProduct(p.id)}
-                onSeeAllPress={() => openSupplyCategory('Leafy Items')}
+                onSeeAllPress={() => openSupplyCategory('Leafy Vegetables')}
               />
             )}
 
@@ -459,7 +465,7 @@ export function GroceriesScreen() {
                 title="Meats & Poultry"
                 products={meatsList}
                 onProductPress={(p) => openProduct(p.id)}
-                onSeeAllPress={() => openSupplyCategory('Meats')}
+                onSeeAllPress={() => openSupplyCategory('Chicken')}
               />
             )}
 

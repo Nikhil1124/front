@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProductCard } from '../components/grocery/ProductCard';
 import { useCartStore } from '../store/useCartStore';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
+import { groupByVariant } from '../variantGroups';
 import { useAuthStore } from '@/store/authStore';
 import { Colors, GroceryColors, Palette, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
@@ -108,6 +109,10 @@ export function GroceryCategoryScreen() {
     }
     return list;
   }, [activeSupplyCategory, filter, search, supplyItems, categories]);
+
+  // One card per product, not per pack: the catalogue sells "Onion (250 g)" and "Onion (1 kg)"
+  // as separate rows, and the card turns a family into a size picker.
+  const productFamilies = useMemo(() => groupByVariant(products), [products]);
 
   const showProductList = activeSupplyCategory !== null || filter === 'deals' || search.trim().length > 0;
 
@@ -211,7 +216,7 @@ export function GroceryCategoryScreen() {
       {showProductList && (
         <View style={styles.categoryBanner}>
           <Txt maxFontSizeMultiplier={1.2} style={styles.categoryBannerSub}>
-            {products.length} item{products.length !== 1 ? 's' : ''} available
+            {productFamilies.length} item{productFamilies.length !== 1 ? 's' : ''} available
           </Txt>
         </View>
       )}
@@ -276,8 +281,8 @@ export function GroceryCategoryScreen() {
           )}
 
           <FlatList
-            data={products}
-            keyExtractor={(item) => item.id}
+            data={productFamilies}
+            keyExtractor={(family) => family[0].id}
             numColumns={2}
             contentContainerStyle={styles.gridContent}
             columnWrapperStyle={styles.columnWrapper}
@@ -289,10 +294,11 @@ export function GroceryCategoryScreen() {
                 <Txt maxFontSizeMultiplier={1.3} style={styles.emptyText}>No products found</Txt>
               </View>
             }
-            renderItem={({ item }) => (
+            renderItem={({ item: family }) => (
               <View style={{ width: productCardWidth }}>
                 <ProductCard
-                  product={item}
+                  product={family[0]}
+                  variants={family}
                   onPress={(p) =>
                     router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })
                   }

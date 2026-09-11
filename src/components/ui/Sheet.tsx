@@ -137,11 +137,10 @@ export function Sheet({
       visible={visible}
       transparent
       animationType="none"
-      // The sheet has to cover the system bars, not stop at them: without these the modal is a
-      // window inset from both, so the backdrop leaves an undimmed strip under the status bar
-      // and the sheet sits above the navigation bar instead of running to the screen edge.
-      // `insets.bottom` below is then the only thing padding for the gesture strip, which is
-      // what it was always written to do.
+      // Stated explicitly, but a no-op as things stand: RN forces both true whenever the
+      // edge-to-edge feature flag is on (ReactModalHostView.kt — `get() = field ||
+      // isEdgeToEdgeFeatureFlagOn`), and this app is edge-to-edge by default at targetSdk 36.
+      // They are here so the sheet still covers the bars if that flag is ever turned off.
       statusBarTranslucent
       navigationBarTranslucent
       onRequestClose={onDismiss}
@@ -218,13 +217,21 @@ export function Sheet({
 
 const styles = StyleSheet.create({
   backdrop: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     // 0.78 was near-opaque — it read as a new screen rather than a layer over the one you
     // were on, which is the whole point of a sheet. 0.45 is the usual scrim weight and still
     // clears contrast against the surface above it.
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end' },
   sheetWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     maxHeight: '88%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

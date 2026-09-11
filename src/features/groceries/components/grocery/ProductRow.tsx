@@ -3,6 +3,7 @@ import { FlatList, StyleSheet, View } from 'react-native';
 
 import { SupplyItem } from '@/types';
 import { ProductCard } from './ProductCard';
+import { groupByVariant } from '../../variantGroups';
 
 import { GroceryColors } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
@@ -24,7 +25,12 @@ export const ProductRow: React.FC<ProductRowProps> = ({
   onProductPress,
   onSeeAllPress,
 }) => {
-  if (products.length === 0) return null;
+  // One card per product, not per pack. The rail's cards are too narrow for a size picker,
+  // so each shows its smallest pack — tapping through to the product screen is where a size
+  // gets chosen.
+  const families = groupByVariant(products).map((family) => family[0]);
+
+  if (families.length === 0) return null;
 
   return (
     <View style={styles.container}>
@@ -37,7 +43,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={products}
+        data={families}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (

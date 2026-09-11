@@ -75,7 +75,7 @@ export function PGowActionSheet({
       visible={visible}
       transparent
       animationType="none"
-      // Same reason as `Sheet` — see the note there.
+      // Same as `Sheet` — see the note there. A no-op while edge-to-edge is on.
       statusBarTranslucent
       navigationBarTranslucent
       onRequestClose={onDismiss}
@@ -154,8 +154,17 @@ function ActionRow({ action, onRun }: { action: PGowAction; onRun: (a: PGowActio
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  wrapper: { width: '100%' },
+  // Pinned rather than flexed, for the same reason as `Sheet`'s: the sheet's bottom edge has
+  // to be the screen's bottom edge, not wherever the modal container's flex box ends.
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end' },
+  wrapper: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   sheet: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: Radii.sheet,

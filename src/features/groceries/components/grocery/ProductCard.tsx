@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Image,
   StyleProp,
@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 import { SupplyItem } from '@/types';
 import { useCartStore } from '../../store/useCartStore';
-import { useShoppingModeStore } from '../../store/useShoppingModeStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
+import { baseProductName } from '../../variantGroups';
 
 interface ProductCardProps {
   product: SupplyItem;
@@ -25,6 +25,15 @@ interface ProductCardProps {
   onCustomIncrease?: () => void;
   onCustomDecrease?: () => void;
   hideWishlist?: boolean;
+  /**
+   * The pack sizes of this product, smallest first, from `groupByVariant`. Give the card the
+   * whole family and it shows a size picker; give it nothing and it behaves exactly as before,
+   * one pack per card.
+   *
+   * Each entry is a real catalogue row with its own id and price — picking a chip changes
+   * which ROW the card is showing, it does not scale one price by a weight.
+   */
+  variants?: SupplyItem[];
 }
 
 /**
@@ -44,6 +53,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
   onCustomIncrease,
   onCustomDecrease,
   hideWishlist,
+  variants,
 }) => {
   const { width } = useWindowDimensions();
   // Deal card: 2-column grid. Simple card: horizontal rail.
@@ -51,28 +61,37 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
     ? (width - 44) / 2
     : width > 600 ? 140 : Math.min(width * 0.36, 150);
 
-  const mode = useShoppingModeStore((s) => s.mode);
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const isWishlistedStore = useWishlistStore((s) => s.isWishlisted(product.id));
+  // Wishlist stays on the product, not the pack — someone saves "Onion", not "Onion (500 g)".
   const toggleItemStore = useWishlistStore((s) => s.toggleItem);
 
   const isWishlisted = hideWishlist ? false : isWishlistedStore;
   const toggleItem = hideWishlist ? () => {} : toggleItemStore;
 
-  const options = [{ price: product.price, unit: product.unit_label || 'piece', originalPrice: product.mrp ?? undefined }];
+  // `product` is the family's default (the first pack); `packs` is every pack it sells.
+  const packs = variants && variants.length > 0 ? variants : [product];
+  const hasSizePicker = packs.length > 1;
 
   const [selectedIdx, setSelectedIdx] = useState(0);
 
-  useEffect(() => {
-    if (selectedIdx !== 0) setSelectedIdx(0);
-  }, [mode, selectedIdx]);
-
-  if (!options || options.length === 0) return null;
-
-  const selectedOption = options[selectedIdx] || options[0];
-  const compoundId = `${product.id}-${selectedOption.unit}`;
+  // Clamped during render, not in an effect. The family can get shorter between renders (a
+  // search narrowing, a pack going out of stock) while a later chip is selected, and an
+  // effect would leave the index out of range for a frame — long enough for the card to price
+  // one pack while Add adds another.
+  const safeIdx = selectedIdx < packs.length ? selectedIdx : 0;
+  const selectedPack = packs[safeIdx];
+  // With chips under it, "Onion (250 g)" says the size twice — and the bracketed size is the
+  // half that made four packs of one vegetable look like four different products.
+  const displayName = hasSizePicker ? baseProductName(product.name) : product.name;
+  const selectedOption = {
+    price: selectedPack.price,
+    unit: selectedPack.unit_label || 'piece',
+    originalPrice: selectedPack.mrp ?? undefined,
+  };
+  const compoundId = `${selectedPack.id}-${selectedOption.unit}`;
   const cartItem = cartItems.find((item) => item.id === compoundId);
   const quantity = customQuantity !== undefined ? customQuantity : (cartItem ? cartItem.quantity : 0);
 
@@ -82,7 +101,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
 
-  const handleAdd = onCustomAdd || (() => addItem(product, selectedOption, 1));
+  const handleAdd = onCustomAdd || (() => addItem(selectedPack, selectedOption, 1));
   const handleIncrease = onCustomIncrease || (() => updateQuantity(compoundId, quantity + 1));
   const handleDecrease = onCustomDecrease || (() => updateQuantity(compoundId, quantity - 1));
 
@@ -118,7 +137,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
         {/* Info */}
         <View style={styles.simpleInfo}>
           <Txt maxFontSizeMultiplier={1.2} style={styles.simpleName} numberOfLines={2}>
-            {product.name}
+            {displayName}
           </Txt>
           <Txt maxFontSizeMultiplier={1.2} style={styles.simpleUnit}>
             {selectedOption.unit}
@@ -213,11 +232,36 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
       {/* Product details */}
       <View style={styles.details}>
         <Txt maxFontSizeMultiplier={1.2} style={styles.name} numberOfLines={2}>
-          {product.name}
+          {displayName}
         </Txt>
-        <Txt maxFontSizeMultiplier={1.2} style={styles.unit}>
-          {selectedOption.unit}
-        </Txt>
+        {hasSizePicker ? (
+          <View style={styles.sizeRow}>
+            {packs.map((pack, i) => {
+              const active = i === safeIdx;
+              return (
+                <AnimatedPress
+                  key={pack.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${pack.unit_label}, ₹${pack.price}`}
+                  accessibilityState={{ selected: active }}
+                  style={[styles.sizeChip, active && styles.sizeChipActive]}
+                  onPress={() => setSelectedIdx(i)}
+                >
+                  <Txt
+                    maxFontSizeMultiplier={1.1}
+                    style={[styles.sizeChipText, active && styles.sizeChipTextActive]}
+                  >
+                    {pack.unit_label}
+                  </Txt>
+                </AnimatedPress>
+              );
+            })}
+          </View>
+        ) : (
+          <Txt maxFontSizeMultiplier={1.2} style={styles.unit}>
+            {selectedOption.unit}
+          </Txt>
+        )}
 
         <View style={styles.priceRow}>
           <Txt maxFontSizeMultiplier={1.2} style={styles.price}>₹{price}</Txt>
@@ -338,6 +382,32 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 2,
   },
+  // Wraps: four chips do not fit one line of a half-width grid card at every font scale.
+  sizeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginTop: 5,
+    marginBottom: 1 },
+  sizeChip: {
+    minWidth: 42,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: Radii.badge,
+    borderWidth: 1,
+    borderColor: GroceryColors.border,
+    backgroundColor: GroceryColors.white,
+    alignItems: 'center',
+    justifyContent: 'center' },
+  sizeChipActive: {
+    backgroundColor: GroceryColors.primary,
+    borderColor: GroceryColors.primary },
+  sizeChipText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: GroceryColors.textSecondary },
+  sizeChipTextActive: {
+    color: GroceryColors.white },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
