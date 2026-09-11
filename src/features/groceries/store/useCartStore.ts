@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SupplyItem } from '@/types';
 import { splitTaxInclusive } from '../utils/pricing';
+import { toastNow } from '@/hooks/useToast';
 
 export type ReplacementPreference = 'best-match' | 'specific' | 'refund';
 
@@ -66,6 +67,7 @@ export const useCartStore = create<CartState>()(
           const compoundId = `${product.id}-${option.unit}`;
           const existingItem = state.items.find((item) => item.id === compoundId);
           if (existingItem) {
+            // Quantity increase — bump the count, no toast (would fire on every +1 tap)
             return {
               items: state.items.map((item) =>
                 item.id === compoundId
@@ -74,6 +76,8 @@ export const useCartStore = create<CartState>()(
               ),
             };
           }
+          // First-time add — show a cart toast
+          toastNow('success', `Added to cart`, `${product.name} (${option.unit})`);
           const newItem: CartItem = {
             id: compoundId,
             productId: product.id,

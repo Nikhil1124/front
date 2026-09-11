@@ -131,10 +131,13 @@ export function GuestHubServicesTab() {
             buttonText="Order Now"
             onPress={() => router.push('/groceries')}
           />
-          {/* A resident's "Book a technician" card sat here. Residents report a problem and
-              the owner dispatches: a complaint becomes a `kind: 'complaint'` request the
-              owner escalates through their own book-technician screen. "Support & Requests"
-              on the home screen is that path. */}
+          <HubServiceCard
+            title="RAISE COMPLAINT"
+            desc="Report an issue or request"
+            icon="chatbox-ellipses"
+            buttonText="Raise Now"
+            onPress={() => router.push('/(guest)/(tabs)/support')}
+          />
           <HubServiceCard
             title="DEEP CLEANING"
             desc="Room sanitation"

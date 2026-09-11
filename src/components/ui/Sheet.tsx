@@ -80,22 +80,32 @@ export function Sheet({
   visible, title, subtitle, accent = Colors.primary, icon, size = 'auto',
   onDismiss, footer, children, testID,
 }: SheetProps) {
-  // `paddingBottom` used to be `Platform.OS === 'ios' ? 28 : 16` — a hardcoded guess at the
-  // safe area, which is wrong in three directions at once: too much on an iPhone with no home
-  // indicator, too little on an Android device using gesture navigation (where the inset runs
-  // 24–48px, so the sheet's footer landed inside the swipe-up strip), and unnecessary on
-  // Android 3-button nav. The real number is only known at runtime.
   const insets = useSafeAreaInsets();
-  const { height: screenHeight } = useWindowDimensions();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+
+  // ── Responsive design tokens — derived from live screen dimensions ─────────────────────
+  // All magic numbers live here so the component itself reads intent, not pixels.
+  //
+  // Corner radius: ~6% of width feels proportional on both 360-dp and 430-dp phones.
+  const cornerRadius = Math.round(screenWidth * 0.06);
+  // Content padding: 4% of width, floored at 12 and capped at 24.
+  const hPad = Math.min(Math.max(Math.round(screenWidth * 0.04), 12), 24);
+  // Icon chip size: 9.5% of width, floored at 34 and capped at 46.
+  const chipSize = Math.min(Math.max(Math.round(screenWidth * 0.095), 34), 46);
+  // Close button size: 8% of width, floored at 28 and capped at 40.
+  const closeBtnSize = Math.min(Math.max(Math.round(screenWidth * 0.08), 28), 40);
+  // Icon glyph size: proportional to chipSize.
+  const iconSize = Math.round(chipSize * 0.52);
+  // Handle bar width: 11% of width, floored at 36 and capped at 56.
+  const handleWidth = Math.min(Math.max(Math.round(screenWidth * 0.11), 36), 56);
+  // Max height for "auto" sheets: 88% of screen.
+  const maxSheetHeight = Math.round(screenHeight * 0.88);
+  // Fixed height for "3/4" sheets: 75% of screen.
+  const fixedSheetHeight = Math.round(screenHeight * 0.75);
+  // Header vertical padding: 3% of width, floored at 10.
+  const headerVPad = Math.max(Math.round(screenWidth * 0.03), 10);
 
   // ── Keyboard ──────────────────────────────────────────────────────────────────────────
-  // The sheet is anchored to the bottom, so without this the keyboard opens straight over
-  // it: the field being typed into, and the footer holding the submit button, both end up
-  // underneath. Fifteen of this component's call sites are forms, which made "the sliding-up
-  // thing has issues" a fair description of every one of them.
-  //
-  // Measured as OVERLAP against the window rather than taken as the keyboard's height, the
-  // same way `FormScroll` does it — on edge-to-edge Android the two are not the same number.
   const [kbOverlap, setKbOverlap] = useState(0);
   useEffect(() => {
     if (!visible) { setKbOverlap(0); return; }
@@ -112,11 +122,6 @@ export function Sheet({
   }, [visible, screenHeight]);
 
   // ── Drag to dismiss ───────────────────────────────────────────────────────────────────
-  // The grab handle has been drawn since this component was written but was never draggable —
-  // it looked like an affordance and did nothing, so the only ways out were the X and the
-  // backdrop. A downward drag past a third of the sheet (or a fast flick) closes it now, and
-  // anything short of that springs back.
-  // The dock would otherwise show through below the sheet — see the hook for why.
   useHideDockWhileOpen(visible);
 
   const dragY = useSharedValue(0);
@@ -136,84 +141,149 @@ export function Sheet({
     });
   const dragStyle = useAnimatedStyle(() => ({ transform: [{ translateY: dragY.value }] }));
 
+  // Safe-area bottom: at least 16px so nothing touches the nav strip.
+  const bottomPad = Math.max(insets.bottom, Math.round(screenHeight * 0.02));
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="none"
-      // Stated explicitly, but a no-op as things stand: RN forces both true whenever the
-      // edge-to-edge feature flag is on (ReactModalHostView.kt — `get() = field ||
-      // isEdgeToEdgeFeatureFlagOn`), and this app is edge-to-edge by default at targetSdk 36.
-      // They are here so the sheet still covers the bars if that flag is ever turned off.
       statusBarTranslucent
       navigationBarTranslucent
       onRequestClose={onDismiss}
       testID={testID}
     >
+      {/* Full-screen scrim — fades in, catches backdrop taps */}
       <Animated.View entering={FadeIn.duration(150)} style={styles.backdrop}>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onDismiss} />
-        <Animated.View
-          entering={SlideInDown.springify(220).dampingRatio(0.85)}
-          style={[
-            styles.sheetWrapper,
-            // Fixed height only when there is room for it — see `size`.
-            size === '3/4' && kbOverlap === 0 ? { height: '75%' } : null,
-            dragStyle,
-            { marginBottom: kbOverlap },
-          ]}
-        >
-          {/* A plain View, not a `Pressable` wrapping the whole sheet. That wrapper existed
-              only to stop a tap falling through to the backdrop — which it did not need to
-              do, since the backdrop is a sibling behind it, not an ancestor — and it made a
-              screen reader announce the entire sheet as one button.
+      </Animated.View>
 
-              `accessibilityViewIsModal` sits here rather than on the backdrop: the screen
-              behind stays mounted while a sheet is open, so without it a screen reader walks
-              straight out of the sheet and into content the sighted user cannot see or reach.
-              Scoping it to the sheet body is deliberate — the header's labelled ✕ is inside
-              this subtree, so dismissal stays reachable, while the full-screen backdrop
-              Pressable (a redundant second "Close") drops out of the traversal order. */}
-          <View accessibilityViewIsModal>
-            <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-              <GestureDetector gesture={drag}>
-                <View style={styles.handleZone} accessible={false}>
-                  <View style={styles.handleBar} />
-                </View>
-              </GestureDetector>
-
-              <View style={[styles.headerStrip, { backgroundColor: `${accent}22` }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                  {icon && (
-                    <View style={[styles.iconChip, { backgroundColor: `${accent}30` }]}>
-                      <Ionicons name={icon} size={20} color={accent} />
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1}>{title}</Txt>
-                    {subtitle ? (
-                      <Txt variant="caption" color={Colors.textMuted} numberOfLines={2}>{subtitle}</Txt>
-                    ) : null}
-                  </View>
-                </View>
-                <AnimatedPress
-                  accessibilityLabel="Close"
-                  accessibilityRole="button"
-                  onPress={onDismiss}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  style={styles.closeBtn}
-                >
-                  <Ionicons name="close" size={20} color={Colors.textMuted} />
-                </AnimatedPress>
+      {/* Sheet surface — slides up from the bottom independently */}
+      <Animated.View
+        entering={SlideInDown.springify(220).dampingRatio(0.85)}
+        style={[
+          {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            maxHeight: maxSheetHeight,
+            borderTopLeftRadius: cornerRadius,
+            borderTopRightRadius: cornerRadius,
+            overflow: 'hidden',
+          },
+          // Fixed height only when keyboard is not up — see size prop doc.
+          size === '3/4' && kbOverlap === 0 ? { height: fixedSheetHeight } : null,
+          dragStyle,
+          { marginBottom: kbOverlap },
+        ]}
+      >
+        <View accessibilityViewIsModal>
+          <View style={[
+            {
+              backgroundColor: Colors.surface,
+              borderTopLeftRadius: cornerRadius,
+              borderTopRightRadius: cornerRadius,
+              borderWidth: 1.5,
+              borderBottomWidth: 0,
+              borderColor: Colors.borderSubtle,
+              maxHeight: '100%',
+              paddingBottom: bottomPad,
+            },
+          ]}>
+            {/* Drag handle */}
+            <GestureDetector gesture={drag}>
+              <View style={{ paddingTop: Math.round(screenHeight * 0.005), paddingBottom: Math.round(screenHeight * 0.005), alignItems: 'center' }} accessible={false}>
+                <View style={{
+                  width: handleWidth,
+                  height: Math.round(screenHeight * 0.006),
+                  borderRadius: Radii.badge,
+                  backgroundColor: Colors.borderSubtle,
+                  alignSelf: 'center',
+                  marginTop: Math.round(screenHeight * 0.006),
+                  marginBottom: Math.round(screenHeight * 0.004),
+                }} />
               </View>
+            </GestureDetector>
 
-              <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces>
-                {children}
-              </ScrollView>
-
-              {footer ? <View style={styles.footer}>{footer}</View> : null}
+            {/* Header strip */}
+            <View style={[
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: hPad,
+                paddingVertical: headerVPad,
+                borderTopLeftRadius: cornerRadius - 2,
+                borderTopRightRadius: cornerRadius - 2,
+                backgroundColor: `${accent}22`,
+              },
+            ]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Math.round(screenWidth * 0.025), flex: 1 }}>
+                {icon && (
+                  <View style={{
+                    width: chipSize,
+                    height: chipSize,
+                    borderRadius: Radii.pill,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: `${accent}30`,
+                  }}>
+                    <Ionicons name={icon} size={iconSize} color={accent} />
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Txt variant="screenTitle" color={Colors.textPrimary} numberOfLines={1}>{title}</Txt>
+                  {subtitle ? (
+                    <Txt variant="caption" color={Colors.textMuted} numberOfLines={2}>{subtitle}</Txt>
+                  ) : null}
+                </View>
+              </View>
+              <AnimatedPress
+                accessibilityLabel="Close"
+                accessibilityRole="button"
+                onPress={onDismiss}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={{
+                  width: closeBtnSize,
+                  height: closeBtnSize,
+                  borderRadius: Radii.pill,
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="close" size={iconSize} color={Colors.textMuted} />
+              </AnimatedPress>
             </View>
+
+            {/* Scrollable content */}
+            <ScrollView
+              contentContainerStyle={{
+                paddingHorizontal: hPad,
+                paddingTop: Math.round(screenHeight * 0.016),
+                paddingBottom: Math.round(screenHeight * 0.012),
+              }}
+              showsVerticalScrollIndicator={false}
+              bounces
+            >
+              {children}
+            </ScrollView>
+
+            {/* Pinned footer */}
+            {footer ? (
+              <View style={{
+                paddingHorizontal: hPad,
+                paddingVertical: Math.round(screenHeight * 0.016),
+                borderTopWidth: 1,
+                borderTopColor: Colors.borderSubtle,
+                backgroundColor: Colors.canvas,
+              }}>
+                {footer}
+              </View>
+            ) : null}
           </View>
-        </Animated.View>
+        </View>
       </Animated.View>
     </Modal>
   );
@@ -226,65 +296,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    // 0.78 was near-opaque — it read as a new screen rather than a layer over the one you
-    // were on, which is the whole point of a sheet. 0.45 is the usual scrim weight and still
-    // clears contrast against the surface above it.
     backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end' },
-  sheetWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    maxHeight: '88%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden' },
-  sheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1.5,
-    borderBottomWidth: 0,
-    borderColor: Colors.borderSubtle,
-    maxHeight: '100%' },
-  // A real target for the drag gesture — 5px of grabber is not something a thumb can catch.
-  handleZone: { paddingTop: 4, paddingBottom: 4, alignItems: 'center' },
-  handleBar: {
-    width: 44,
-    height: 5,
-    borderRadius: Radii.badge,
-    backgroundColor: Colors.borderSubtle,
-    alignSelf: 'center',
-    marginTop: 4,
-    marginBottom: 4 },
-  headerStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22 },
-  iconChip: {
-    width: 38,
-    height: 38,
-    borderRadius: Radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center' },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.pill,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center' },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8 },
-  footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
-    backgroundColor: Colors.canvas } });
+  },
+});
+
+

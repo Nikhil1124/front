@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { SupplyItem } from '@/types';
 import { ProductCard } from './ProductCard';
@@ -39,19 +39,28 @@ export const ProductRow: React.FC<ProductRowProps> = ({
           <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>See All →</Txt>
         </AnimatedPress>
       </View>
-      <FlatList
+      {/* FlatList nested inside a ScrollView disables virtualisation and clips children —
+          the Add button at the card bottom was hidden by the clipped layout height.
+          A plain horizontal ScrollView renders identically and never clips its children. */}
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={families}
-        keyExtractor={(family) => family[0].id}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item: family }) => (
-          <ProductCard product={family[0]} variants={family} layout="simple" onPress={onProductPress} />
-        )}
-      />
+      >
+        {families.map((family) => (
+          <ProductCard
+            key={family[0].id}
+            product={family[0]}
+            variants={family}
+            layout="simple"
+            onPress={onProductPress}
+          />
+        ))}
+      </ScrollView>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
