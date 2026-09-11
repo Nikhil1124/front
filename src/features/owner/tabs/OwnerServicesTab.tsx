@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { Image, ScrollView, View, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -33,6 +33,44 @@ type ServiceItem = {
   cost: number;
   problems: string[];
   includes: string[];
+};
+
+/**
+ * The artwork for each service, keyed by id.
+ *
+ * A static map rather than a field on `SERVICES` because Metro resolves `require` at build
+ * time — a path built from `item.id` at runtime does not bundle.
+ *
+ * These are Kushal's `assets/Services/Owner_Manager_Services` set. They are used in the detail
+ * sheet only, not on the grid tiles, for two reasons: each one has its service name rendered
+ * INTO the picture, which at a tile's ~110px would be an unreadable second copy of the label
+ * already underneath it, and one that ignores the reader's font-size setting because it is
+ * pixels; and they do not share an aspect ratio (378x250 and 250x250 both appear), so a row
+ * of tiles cropped to a square would frame them inconsistently. Full sheet width is where the
+ * baked label is legible and the ratio does not have to match anything.
+ */
+const SERVICE_IMAGES: Record<string, number> = {
+  plumbing: require('../../../../assets/Services/Owner_Manager_Services/01_Plumbing.png'),
+  wifi: require('../../../../assets/Services/Owner_Manager_Services/02_WiFi_Repairs.png'),
+  electrical: require('../../../../assets/Services/Owner_Manager_Services/03_Electrical.png'),
+  atoz: require('../../../../assets/Services/Owner_Manager_Services/04_A_to_Z_Repairs.png'),
+  welding: require('../../../../assets/Services/Owner_Manager_Services/05_Welding.png'),
+  civil: require('../../../../assets/Services/Owner_Manager_Services/06_Civil_Repairs.png'),
+  painting: require('../../../../assets/Services/Owner_Manager_Services/07_Painting.png'),
+  lock: require('../../../../assets/Services/Owner_Manager_Services/08_Lock_and_Door.png'),
+  window: require('../../../../assets/Services/Owner_Manager_Services/09_Window_and_Grill.png'),
+  ac: require('../../../../assets/Services/Owner_Manager_Services/10_AC_Service.png'),
+  geyser: require('../../../../assets/Services/Owner_Manager_Services/11_Geyser_Repair.png'),
+  ro: require('../../../../assets/Services/Owner_Manager_Services/12_RO_Purifier.png'),
+  washing: require('../../../../assets/Services/Owner_Manager_Services/13_Washing_Machine.png'),
+  bathroom: require('../../../../assets/Services/Owner_Manager_Services/14_Bathroom_Maintenance.png'),
+  furniture: require('../../../../assets/Services/Owner_Manager_Services/15_Furniture_Repair.png'),
+  room_clean: require('../../../../assets/Services/Owner_Manager_Services/16_Room_Cleaning.png'),
+  bath_clean: require('../../../../assets/Services/Owner_Manager_Services/17_Bathroom_Cleaning.png'),
+  common_clean: require('../../../../assets/Services/Owner_Manager_Services/18_Common_Area_Cleaning.png'),
+  waste: require('../../../../assets/Services/Owner_Manager_Services/19_Waste_Cleaning.png'),
+  deep_clean: require('../../../../assets/Services/Owner_Manager_Services/20_Deep_Cleaning.png'),
+  pest: require('../../../../assets/Services/Owner_Manager_Services/21_Pest_Control.png'),
 };
 
 const SERVICES: ServiceItem[] = [
@@ -406,6 +444,19 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
         </Btn>
       ) : undefined}
     >
+      {/* The service's own artwork, above everything. Hidden on the success state — by then
+          the sheet is a receipt for a booking, not a description of a service. */}
+      {!success && SERVICE_IMAGES[service.id] ? (
+        <Image
+          source={SERVICE_IMAGES[service.id]}
+          style={styles.serviceHero}
+          resizeMode="contain"
+          // The picture repeats the title above it, so a reader hears it twice otherwise.
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
+      ) : null}
+
       {success ? (
         <View style={styles.successBox}>
           <Row justify="space-between" style={{ marginBottom: 6 }}>
@@ -490,6 +541,14 @@ const styles = StyleSheet.create({
   
   addButton: { position: 'absolute', bottom: -12, right: 12, width: 28, height: 28, borderRadius: Radii.badge, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', shadowColor: CHARCOAL, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, borderWidth: 1, borderColor: BORDER },
 
+  // `contain` on a fixed height, not a fixed aspect ratio: the set mixes 378x250 and 250x250,
+  // so a ratio that suited one would letterbox or crop the other.
+  serviceHero: {
+    width: '100%',
+    height: 150,
+    borderRadius: Radii.card,
+    backgroundColor: Colors.surfaceMuted,
+    marginBottom: 14 },
   serviceName: { fontSize: 12, fontWeight: '700', color: CHARCOAL, marginBottom: 2 },
   // Two lines at normal scale, more when the reader's font is larger — a hard 28 clipped the
   // second line's descenders and cut a third line off entirely.

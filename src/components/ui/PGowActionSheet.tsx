@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Radii } from '@/theme';
 import { AnimatedPress } from './AnimatedPress';
+import { useHideDockWhileOpen } from '@/components/HeadlessDockTabButton';
 import { Txt } from './Txt';
 
 export interface PGowAction {
@@ -56,6 +57,8 @@ export function PGowActionSheet({
   testID,
 }: PGowActionSheetProps) {
   const insets = useSafeAreaInsets();
+  // Same as `Sheet` — see `useHideDockWhileOpen`.
+  useHideDockWhileOpen(visible);
 
   // Rows close the sheet BEFORE they act. A row that navigates while the sheet is still up
   // leaves a dismissing modal over a screen that is already changing, and a row that opens a

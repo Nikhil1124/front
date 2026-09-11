@@ -45,6 +45,7 @@ import Animated, {
 import { Txt } from './Txt';
 import { Radii, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
+import { useHideDockWhileOpen } from '@/components/HeadlessDockTabButton';
 
 export interface SheetProps {
   visible: boolean;
@@ -115,6 +116,9 @@ export function Sheet({
   // it looked like an affordance and did nothing, so the only ways out were the X and the
   // backdrop. A downward drag past a third of the sheet (or a fast flick) closes it now, and
   // anything short of that springs back.
+  // The dock would otherwise show through below the sheet — see the hook for why.
+  useHideDockWhileOpen(visible);
+
   const dragY = useSharedValue(0);
   useEffect(() => { if (visible) dragY.value = 0; }, [visible, dragY]);
   const drag = Gesture.Pan()

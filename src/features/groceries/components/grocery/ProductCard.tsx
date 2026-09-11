@@ -139,9 +139,34 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
           <Txt maxFontSizeMultiplier={1.2} style={styles.simpleName} numberOfLines={2}>
             {displayName}
           </Txt>
-          <Txt maxFontSizeMultiplier={1.2} style={styles.simpleUnit}>
-            {selectedOption.unit}
-          </Txt>
+          {hasSizePicker ? (
+            <View style={[styles.sizeRow, styles.sizeRowCompact]}>
+              {packs.map((pack, i) => {
+                const active = i === safeIdx;
+                return (
+                  <AnimatedPress
+                    key={pack.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${pack.unit_label}, ₹${pack.price}`}
+                    accessibilityState={{ selected: active }}
+                    style={[styles.sizeChip, styles.sizeChipCompact, active && styles.sizeChipActive]}
+                    onPress={() => setSelectedIdx(i)}
+                  >
+                    <Txt
+                      maxFontSizeMultiplier={1.1}
+                      style={[styles.sizeChipText, styles.sizeChipTextCompact, active && styles.sizeChipTextActive]}
+                    >
+                      {pack.unit_label}
+                    </Txt>
+                  </AnimatedPress>
+                );
+              })}
+            </View>
+          ) : (
+            <Txt maxFontSizeMultiplier={1.2} style={styles.simpleUnit}>
+              {selectedOption.unit}
+            </Txt>
+          )}
           <View style={styles.simplePriceRow}>
             <Txt maxFontSizeMultiplier={1.2} style={styles.simplePrice}>₹{price}</Txt>
             {originalPrice && (
@@ -408,6 +433,10 @@ const styles = StyleSheet.create({
     color: GroceryColors.textSecondary },
   sizeChipTextActive: {
     color: GroceryColors.white },
+  // The rail card is ~140px wide, so its chips have to give up the 42px floor the grid's keep.
+  sizeRowCompact: { gap: 4, marginTop: 4 },
+  sizeChipCompact: { minWidth: 0, paddingHorizontal: 5, paddingVertical: 3 },
+  sizeChipTextCompact: { fontSize: 9.5 },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',

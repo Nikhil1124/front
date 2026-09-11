@@ -180,6 +180,14 @@ export function GroceriesScreen() {
   // One card per product. The count below follows it: "142 products in Vegetables" over a grid
   // of 36 cards is a number nothing on screen can account for.
   const searchFamilies = useMemo(() => groupByVariant(searchResults), [searchResults]);
+  // Group BEFORE slicing, always: slicing pack rows first can cut a family in half and leave a
+  // card offering "1 kg, 2 kg" for a product whose 250 g and 500 g packs fell off the end.
+  const dealFamilies = useMemo(() => groupByVariant(deals), [deals]);
+  const essentialFamilies = useMemo(
+    () => groupByVariant(dailyEssentials.length > 0 ? dailyEssentials : supplyItems),
+    [dailyEssentials, supplyItems],
+  );
+  const allFamilies = useMemo(() => groupByVariant(supplyItems), [supplyItems]);
 
   const isSearching = searchQuery.trim().length > 0 || hasActiveFilters || activeQuickCategory !== null;
 
@@ -374,10 +382,11 @@ export function GroceriesScreen() {
                 /* Same reasoning as the search grid above: six cards, nested in a
                    ScrollView, so a FlatList bought nothing here. */
                 <View style={styles.dealsGrid}>
-                  {deals.slice(0, 6).map((item) => (
-                    <View key={item.id} style={{ width: (width - 44) / 2 }}>
+                  {dealFamilies.slice(0, 6).map((family) => (
+                    <View key={family[0].id} style={{ width: (width - 44) / 2 }}>
                       <ProductCard
-                        product={item}
+                        product={family[0]}
+                        variants={family}
                         layout="deal"
                         onPress={(p) => openProduct(p.id)}
                         style={{ width: '100%', marginRight: 0 }}
@@ -387,8 +396,14 @@ export function GroceriesScreen() {
                 </View>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
-                  {supplyItems.slice(0, 4).map((prod) => (
-                    <ProductCard key={prod.id} product={prod} layout="deal" onPress={(p) => openProduct(p.id)} />
+                  {allFamilies.slice(0, 4).map((family) => (
+                    <ProductCard
+                      key={family[0].id}
+                      product={family[0]}
+                      variants={family}
+                      layout="deal"
+                      onPress={(p) => openProduct(p.id)}
+                    />
                   ))}
                 </ScrollView>
               )}
@@ -411,16 +426,15 @@ export function GroceriesScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.horizontalListContent}
               >
-                {(dailyEssentials.length > 0 ? dailyEssentials : supplyItems.slice(0, 8)).map(
-                  (prod) => (
-                    <ProductCard
-                      key={prod.id}
-                      product={prod}
-                      layout="simple"
-                      onPress={(p) => openProduct(p.id)}
-                    />
-                  )
-                )}
+                {essentialFamilies.slice(0, 8).map((family) => (
+                  <ProductCard
+                    key={family[0].id}
+                    product={family[0]}
+                    variants={family}
+                    layout="simple"
+                    onPress={(p) => openProduct(p.id)}
+                  />
+                ))}
               </ScrollView>
             </View>
 
