@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { Share, View, ScrollView, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,33 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Radii } from '@/theme';
 import { AnimatedPress, Btn, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
 import { useLaundryOrder } from '@/features/laundry/useLaundryBooking';
+import { buildInvoice, invoiceAsText } from '@/features/payments/invoice';
+import { useActiveProperty } from '@/features/properties/useProperties';
+import { useToast } from '@/hooks/useToast';
+
+/**
+ * The invoice for one laundry order.
+ *
+ * Same builder the rent receipt uses, so a resident's two documents are the same shape and
+ * carry the same kind of number. The order id is what makes the number stable — the copy
+ * forwarded to somebody else and the copy on screen are always the same document.
+ */
+function buildLaundryInvoice(
+  order: { id: string; totalCost: number; pickupDate: string; guestName: string; roomNo: string },
+  pg: { pgName: string; address: string } | null,
+) {
+  return buildInvoice({
+    paymentId: order.id,
+    amount: order.totalCost,
+    monthYear: order.pickupDate || 'this pickup',
+    paymentType: 'LAUNDRY',
+    issuedAt: Date.now(),
+    // Only rendered once the provider has marked it delivered, so it is never provisional.
+    isVerified: true,
+    from: { name: pg?.pgName || 'PGow', line: pg?.address || undefined },
+    to: { name: order.guestName || 'Resident', line: order.roomNo ? `Room ${order.roomNo}` : undefined },
+  });
+}
 
 export default function LaundryOrderDetailsScreen() {
   const insets = useSafeAreaInsets();
@@ -13,6 +40,8 @@ export default function LaundryOrderDetailsScreen() {
   // showed whichever order happened to be in memory, not the one that was tapped.
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { order, isLoading, error, refetch } = useLaundryOrder(id);
+  const { activeEntity: pg } = useActiveProperty();
+  const toast = useToast();
 
   if (isLoading && !order) return <LoadingState label="Loading receipt…" />;
   if (error && !order) return <ErrorState error={error} title="Could not load this receipt" onRetry={refetch} />;
@@ -120,6 +149,39 @@ export default function LaundryOrderDetailsScreen() {
             <Txt style={styles.pricingTotalValue}>₹{order.totalCost}</Txt>
           </Row>
         </View>
+
+        {/* INVOICE — only once the clothes are back.
+            Until then there is nothing to invoice for: the provider may still adjust what was
+            actually washed, and a document issued mid-job would be a bill for work in progress. */}
+        {order.status === 'Delivered' ? (
+          <View style={styles.paymentCard}>
+            <Row justify="space-between" align="center" gap={12}>
+              <Col style={{ flex: 1 }}>
+                <Txt style={styles.paymentLabel}>Invoice</Txt>
+                <Txt style={styles.paymentMethod} numberOfLines={1}>
+                  {buildLaundryInvoice(order, pg).number}
+                </Txt>
+              </Col>
+              <Btn
+                onPress={async () => {
+                  try {
+                    await Share.share({ message: invoiceAsText(buildLaundryInvoice(order, pg)) });
+                  } catch {
+                    toast('error', 'Could not share', 'The share sheet did not open.');
+                  }
+                }}
+                containerColor={Colors.primary}
+                textColor={Colors.textInverse}
+                borderRadius={Radii.control}
+                height={40}
+                testID="laundry_invoice_share"
+              >
+                <Ionicons name="share-social-outline" size={15} color={Colors.textInverse} />
+                <Txt variant="button" color={Colors.textInverse} style={{ marginLeft: 6 }}>Invoice</Txt>
+              </Btn>
+            </Row>
+          </View>
+        ) : null}
 
         {/* PAYMENT */}
         <View style={styles.paymentCard}>

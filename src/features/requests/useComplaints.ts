@@ -37,6 +37,10 @@ export interface RequestAttachment {
 export interface RequestRecord {
   id: string;
   pg_id: string;
+  /** Where the work is. A PGow worker holds no membership, so `pg_id` is a UUID they cannot
+   *  resolve — these are what they actually travel to. Null on an older server. */
+  pg_name?: string | null;
+  pg_address?: string | null;
   raised_by: string;
   resident_name?: string | null;
   room_no?: string | null;

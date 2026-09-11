@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SupplyItem } from '@/types';
 import { splitTaxInclusive } from '../utils/pricing';
 import { toastNow } from '@/hooks/useToast';
+import { baseProductName } from '../variantGroups';
 
 export type ReplacementPreference = 'best-match' | 'specific' | 'refund';
 
@@ -63,8 +64,14 @@ export const useCartStore = create<CartState>()(
       items: [],
 
       addItem: (product, option, qty = 1) => {
+        const compoundId = `${product.id}-${option.unit}`;
+        // Read before the write, toast after it. The toast used to sit inside the `set`
+        // updater, which is supposed to be a pure state computation — a store write to
+        // another store from in there is a side effect in a reducer, and it fires wherever
+        // the updater is re-run rather than wherever the item was actually added.
+        const isFirstAdd = !get().items.some((item) => item.id === compoundId);
+
         set((state) => {
-          const compoundId = `${product.id}-${option.unit}`;
           const existingItem = state.items.find((item) => item.id === compoundId);
           if (existingItem) {
             // Quantity increase — bump the count, no toast (would fire on every +1 tap)
@@ -76,8 +83,6 @@ export const useCartStore = create<CartState>()(
               ),
             };
           }
-          // First-time add — show a cart toast
-          toastNow('success', `Added to cart`, `${product.name} (${option.unit})`);
           const newItem: CartItem = {
             id: compoundId,
             productId: product.id,
@@ -93,6 +98,13 @@ export const useCartStore = create<CartState>()(
           };
           return { items: [...state.items, newItem] };
         });
+
+        // `product.name` is the pack row — "Onion (1 kg)" — and `option.unit` is "1 kg", so
+        // the two together read "Onion (1 kg) (1 kg)". The base name plus the unit says it
+        // once.
+        if (isFirstAdd) {
+          toastNow('success', 'Added to cart', `${baseProductName(product.name)} (${option.unit})`);
+        }
       },
 
       removeItem: (cartItemId) =>

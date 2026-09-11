@@ -21,12 +21,16 @@ import { Timeline, TimelineStep } from '@/features/laundry/components/Timeline';
  * owner's side, which is who is holding the clothes. These are those four, in order.
  * Cancelled is not a stage; it is handled separately below.
  */
-const STAGES = ['Pickup Scheduled', 'Picked Up', 'Washing & Ironing', 'Delivered'] as const;
+// These four are exactly what `mappers.laundryStatusOf` can return for a live order, and the
+// middle two now come from the provider's own steps rather than the coarse request status —
+// "Washing & Ironing" was a guess the app made, "Ready for Delivery" is a button someone
+// actually pressed.
+const STAGES = ['Pickup Scheduled', 'Picked Up', 'Ready for Delivery', 'Delivered'] as const;
 
 const STAGE_COPY: Record<string, { icon: string; desc: string }> = {
   'Pickup Scheduled': { icon: 'car', desc: 'Your pickup is booked. Keep your laundry ready for the slot you chose.' },
   'Picked Up': { icon: 'basket', desc: 'Your laundry has been collected and is being sorted.' },
-  'Washing & Ironing': { icon: 'water', desc: 'Your clothes are being washed and finished.' },
+  'Ready for Delivery': { icon: 'water', desc: 'Washing is done — your clothes are on their way back.' },
   Delivered: { icon: 'checkmark-circle', desc: 'Your laundry has been returned to your room.' },
   Cancelled: { icon: 'close-circle', desc: 'This booking was cancelled.' },
 };

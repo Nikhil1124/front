@@ -20,7 +20,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import Notifications from '../src/data/notificationsCompat';
 
 import { usePGowStore } from '@/store/usePGowStore';
-import { useAuthStore } from '@/store/authStore';
+import { isOpsPortalUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
 import { queryClient } from '@/data/queryClient';
 import { setGateHandler, setSessionExpiredHandler } from '@/data/apiClient';
 import {
@@ -192,14 +192,18 @@ function RootLayoutNav() {
     return () => sub.remove();
   }, [submitRSVP, isRouterReady]);
 
-  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent';
+  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent' || activeRole === 'laundry_provider';
   // A self-registered owner holds no membership until property #1 exists, so "signed in with
   // nothing" has to resolve to the owner group or they land nowhere. But that must NOT
   // swallow a resident whose membership ended: they are not an owner, they need the join
   // screen, and claiming them here is what made /guest-join unreachable below.
   const hasNoMemberships = !!user && user.memberships.length === 0;
   const isOwnerRole =
-    activeRole === 'owner' || activeRole === 'manager' || (hasNoMemberships && activeRole !== 'guest');
+    activeRole === 'owner'
+    || activeRole === 'manager'
+    // Same trap as the entry redirect: a PGow worker has no memberships either, and must not
+    // fall into the owner group on that basis.
+    || (hasNoMemberships && activeRole !== 'guest' && !isPlatformWorkerRole(activeRole));
   // A resident with a valid token but no property left to belong to. The (auth) group owns
   // /guest-join, so it stays mounted for them — guarding it on `!accessToken` alone meant
   // app/index.tsx redirected them to a screen its own guard had just unmounted, and they
@@ -249,6 +253,13 @@ function RootLayoutNav() {
 
             <Stack.Protected guard={!accessToken || needsPropertyJoin}>
               <Stack.Screen name="(auth)" />
+            </Stack.Protected>
+
+            {/* A signed-in dead end, not an auth screen: PGow ops land here because the app
+                has nothing for them. Guarded on the same predicate that routes them, so it
+                is unreachable for anyone who does have a dashboard. */}
+            <Stack.Protected guard={!!accessToken && isOpsPortalUser(user)}>
+              <Stack.Screen name="ops-portal" />
             </Stack.Protected>
 
             <Stack.Protected guard={!!accessToken && isOwnerRole}>

@@ -1,6 +1,6 @@
 /** Chef dashboard "Eaters" tab or Delivery Dashboard Route */
 import { useState } from 'react';
-import { View, StyleSheet, Linking } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import {
   Card, Txt, Spacer, Col, Row, Btn, IconBtn, ListRow, OutlinedBtn, StatusChip,
@@ -16,26 +16,19 @@ import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
 import { getGreeting } from '@/utils/format';
-import { toastNow, useToast } from '@/hooks/useToast';
+import { LaundryProviderJobsScreen } from '@/features/laundry/LaundryProviderJobsScreen';
+import { useToast } from '@/hooks/useToast';
+import { openInMaps } from '@/utils/maps';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
   if (activeRole === 'delivery_agent') return <DeliveryDashboardRoute />;
+  if (activeRole === 'laundry_provider') return <LaundryProviderJobsScreen />;
   return <ChefEatersView />;
 }
 
 import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
 
-/** A real Google Maps deep link — was `Alert.alert('Navigation', 'Opening Google Maps to
- *  navigate to X...')` on both call sites below, which opened nothing. `Linking.openURL`
- *  with a maps search query is a platform capability, not a backend one, so this needed no
- *  new API — just to actually call the thing the text already claimed to be doing. */
-function openInMaps(query: string) {
-  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-  Linking.openURL(url).catch(() => {
-    toastNow('error', 'Could not open Maps', 'No maps app is available on this device.');
-  });
-}
 
 
 function ChefEatersView() {

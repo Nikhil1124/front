@@ -41,27 +41,41 @@ export default function StaffTabsLayout() {
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const logout = usePGowStore((s) => s.logout);
   const activeRole = useAuthStore((s) => s.activeRole);
+  const user = useAuthStore((s) => s.user);
 
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
   // No profile argument: neither staff role has a countable "waiting for you" queue in the
   // data model today, so there is nothing honest to tint a tab or a context strip with.
   const { dockStyle, contentPaddingBottom } = useDock();
-  const destinations = centreOut(NAV_PROFILES[activeRole === 'delivery_agent' ? 'delivery' : 'chef']);
+  const profile = activeRole === 'delivery_agent' ? 'delivery'
+    : activeRole === 'laundry_provider' ? 'laundry'
+    : 'chef';
+  const destinations = centreOut(NAV_PROFILES[profile]);
+  // A laundry provider holds no membership, so `loggedInStaff` is empty for them — their name
+  // comes from the account itself. Three roles share this shell, so the chrome names whichever
+  // one is actually signed in rather than defaulting everyone to "Chef".
+  const HEADER = {
+    delivery: { title: 'Delivery Dashboard', role: 'Delivery Agent', icon: 'bicycle' as const },
+    laundry: { title: 'Laundry Dashboard', role: 'Laundry Provider', icon: 'shirt' as const },
+    chef: { title: 'Chef Dashboard', role: 'Chef', icon: 'restaurant' as const },
+  }[profile];
 
   return (
     <Tabs style={styles.root}>
-      {/* Header — its own surface, separate from the scrollable body below,
-          so it reads as fixed chrome rather than the first card in the list.
-          Hide on the broadcast (Menu) tab to allow for a custom personal header. */}
-      {pathname !== '/broadcast' && (
+      {/* Header — its own surface, separate from the scrollable body below, so it reads as
+          fixed chrome rather than the first card in the list.
+          Suppressed on the CHEF's broadcast tab only, because that screen draws a personal
+          header of its own. It used to be suppressed for every role on that route, which left
+          the laundry and ops History tabs — which have no header of their own — running their
+          first card up under the status bar. `AppHeader` is what pays the notch inset
+          (`insets.top + TOP_GAP`), so a screen without it has nothing holding it clear. */}
+      {(pathname !== '/broadcast' || profile !== 'chef') && (
         <AppHeader
-          title={activeRole === 'delivery_agent' ? 'Delivery Dashboard' : 'Chef Dashboard'}
-          subtitle={activeRole === 'delivery_agent'
-            ? `${staff?.name ?? 'Delivery Agent'} · Delivery Agent`
-            : `Chef: ${staff?.name ?? 'Staff'}`}
+          title={HEADER.title}
+          subtitle={`${staff?.name ?? user?.name ?? HEADER.role} · ${HEADER.role}`}
           leading={
             <View style={styles.chefIcon}>
-              <Ionicons name={activeRole === 'delivery_agent' ? 'bicycle' : 'restaurant'} size={20} color={Colors.primary} />
+              <Ionicons name={HEADER.icon} size={20} color={Colors.primary} />
             </View>
           }
           actions={

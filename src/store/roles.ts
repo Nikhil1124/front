@@ -8,17 +8,20 @@
  *
  * Dependency-free apart from types. Keep it that way.
  */
-import type { Membership } from '@/store/authStore';
+import type { ActiveRole } from '@/store/authStore';
 import type { UserRole } from '@/types';
 
 /**
  * Every backend role collapses to one of five UI roles.
  *
- * The catch-all matters: `kitchen_staff`, `maintenance` and `delivery_agent` all render the
- * same STAFF surfaces, so a role added server-side lands somewhere sane instead of falling
- * through as null and leaving someone on a blank screen.
+ * The catch-all matters: `kitchen_staff`, `maintenance`, `delivery_agent` and
+ * `laundry_provider` all render the same STAFF surfaces, so a role added server-side lands
+ * somewhere sane instead of falling through as null and leaving someone on a blank screen.
+ *
+ * `laundry_provider` is a PLATFORM role rather than a membership — PGow's own worker, scoped
+ * to an area — which is why the parameter is `ActiveRole` and not `Membership['role']`.
  */
-export function toUserRole(role: Membership['role'] | null): UserRole | null {
+export function toUserRole(role: ActiveRole | null): UserRole | null {
   if (!role) return null;
   if (role === 'owner') return 'OWNER';
   if (role === 'manager') return 'MANAGER';

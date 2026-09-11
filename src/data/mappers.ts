@@ -425,12 +425,35 @@ const HUB_STATUS: Record<string, Record<RequestRecord["status"], string>> = {
   },
   laundry: {
     open: "Pickup Scheduled",
-    assigned: "Picked Up",
+    // NOT "Picked Up". `assigned` means a provider has been given the job, which happens the
+    // moment the area manager picks one — before anybody has been to the property. The
+    // resident's label comes from `details.laundry_stage` once the provider starts moving;
+    // see `laundryStatusOf`.
+    // Still "Pickup Scheduled" to the resident: a provider having been CHOSEN is not the
+    // same as anybody having turned up, and the resident only cares about the latter.
+    assigned: "Pickup Scheduled",
     in_progress: "Washing & Ironing",
     resolved: "Delivered",
     cancelled: "Cancelled",
   },
 };
+
+/** What the resident is told a laundry order is doing.
+ *
+ *  The provider's own three steps are the truth here — the coarse `status` cannot tell
+ *  "collected" from "washed", since both are `in_progress`. Falls back to the status table
+ *  for an order placed before the stages existed, or one nobody has started. */
+const LAUNDRY_STAGE_LABEL: Record<string, string> = {
+  picked_up: "Picked Up",
+  completed: "Ready for Delivery",
+  delivered: "Delivered",
+};
+
+function laundryStatusOf(r: RequestRecord): string {
+  const stage = detailStr(r, "laundry_stage");
+  if (r.status === "cancelled") return "Cancelled";
+  return LAUNDRY_STAGE_LABEL[stage] ?? HUB_STATUS.laundry[r.status] ?? "Pickup Scheduled";
+}
 
 /** Reverse of the above, so a tap on "Delivered" becomes a real status transition. */
 export function hubStatusToServer(
@@ -521,7 +544,7 @@ export function toLaundryRequest(r: RequestRecord): GuestLaundryRequest {
     items: detailLines(r),
     totalCost: toAmount(r.amount),
     paymentStatus: detailStr(r, "payment_status"),
-    status: HUB_STATUS.laundry[r.status] ?? "Pickup Scheduled",
+    status: laundryStatusOf(r),
     timestamp: toMillis(r.created_at),
   };
 }

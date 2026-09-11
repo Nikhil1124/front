@@ -39,7 +39,7 @@
  */
 import type { Ionicons } from '@expo/vector-icons';
 
-export type NavProfile = 'owner' | 'resident' | 'chef' | 'delivery';
+export type NavProfile = 'owner' | 'resident' | 'chef' | 'delivery' | 'laundry';
 
 /**
  * A work queue a destination owns. The bar tints a tab by the state of its queue — see
@@ -89,6 +89,13 @@ export const NAV_PROFILES: Record<NavProfile, readonly NavDest[]> = {
     { name: 'broadcast', href: '/broadcast', icon: 'time-outline', label: 'History' },
     { name: 'kitchen', href: '/kitchen', icon: 'person-outline', label: 'Profile' },
   ],
+  // Same three route files again, a third job behind them: the pickups assigned to this
+  // provider, the ones they have finished, and their own profile.
+  laundry: [
+    { name: 'eaters', href: '/eaters', icon: 'shirt-outline', label: 'Jobs' },
+    { name: 'broadcast', href: '/broadcast', icon: 'time-outline', label: 'History' },
+    { name: 'kitchen', href: '/kitchen', icon: 'person-outline', label: 'Profile' },
+  ],
 };
 
 /**
@@ -123,6 +130,7 @@ export const ALERT_ORDER: Record<NavProfile, readonly SignalKey[]> = {
   resident: ['rentDue'],
   chef: [],
   delivery: [],
+  laundry: [],
 };
 
 export function alertText(key: SignalKey, n: number): string {

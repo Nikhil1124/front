@@ -36,9 +36,19 @@ export interface Membership {
 
 /** A PGow-staff role, not a property role. `area_id` is null for super_admin and support. */
 export interface PlatformGrant {
-  role: "super_admin" | "area_manager" | "support";
+  role: "super_admin" | "area_manager" | "support" | "delivery_agent" | "laundry_provider";
   area_id: string | null;
 }
+
+/**
+ * A role the app can be "in" — a membership role, or one of the PGow-side roles that has its
+ * own screens in this app.
+ *
+ * `laundry_provider` is the second kind: PGow's own worker, scoped to an AREA rather than a
+ * property, so they hold no membership at all. `activeRole` was derived purely from
+ * `memberships`, which left them signed in with a null role and nowhere to land.
+ */
+export type ActiveRole = Membership["role"] | "laundry_provider";
 
 /** ADR-004's gate for the caller's guest membership. Null for owners and staff — the gate
  *  is about residency, not employment — and null for a resident who is fully cleared. */
@@ -66,8 +76,9 @@ interface AuthState {
   user: User | null;
   activePgId: string | null;
 
-  // Derived from memberships — the role in the active PG
-  activeRole: Membership["role"] | null;
+  // Derived from memberships — the role in the active PG. Falls back to a platform role for
+  // the PGow-side workers who hold no membership; see `platformAppRole`.
+  activeRole: ActiveRole | null;
 
   // This phone's `devices` row, once registered for push. In memory only: it is re-derived
   // on every launch by re-registering the token, so persisting it would just risk holding a
@@ -92,6 +103,50 @@ const KEYS = {
 } as const;
 
 // ─── Store ───────────────────────────────────────────────────────────────────
+
+/**
+ * The PGow-side role this app has screens for, or null.
+ *
+ * Only `laundry_provider`. They are a field worker — they stand in somebody's corridor with a
+ * bag of clothes — so a phone is the only place that job can be worked from.
+ *
+ * `area_manager` and `super_admin` deliberately have none: PGow ops work from the web portal,
+ * where assigning a provider belongs next to the areas, staff-roles and dispatch screens that
+ * are the rest of that job. The membership-flavoured `delivery_agent` arrives through
+ * `memberships` instead — the platform role of the same name is the supply/trips plane.
+ */
+function platformAppRole(user: User): ActiveRole | null {
+  const roles = new Set((user.platform_roles ?? []).map((g) => g.role));
+  return roles.has("laundry_provider") ? "laundry_provider" : null;
+}
+
+/**
+ * True for a PGow role whose work lives on the web portal, not here.
+ *
+ * `area_manager` and `super_admin` run areas, staff roles, dispatch, catalogue and stock —
+ * a desk job with a wide screen. Signing into the app is not wrong, it just has nothing for
+ * them, and without this they fall into the owner branch (they hold no membership either)
+ * and are shown "Add your first property" — an invitation to create a PG, aimed at the one
+ * kind of user who should never do that from here.
+ */
+export function isOpsPortalUser(user: User | null): boolean {
+  if (!user) return false;
+  const roles = new Set((user.platform_roles ?? []).map((g) => g.role));
+  if (roles.has("laundry_provider")) return false;
+  return roles.has("area_manager") || roles.has("super_admin");
+}
+
+/**
+ * True for a PGow worker who DOES have screens here.
+ *
+ * They hold ZERO memberships by design, which is the trap: "no memberships" was being read as
+ * "a freshly registered owner who has not added a property yet" in both the entry redirect
+ * and the route guard, so a laundry provider landed on the owner's "Add your first property"
+ * screen. Anywhere membership count stands in for "new owner", this has to be subtracted.
+ */
+export function isPlatformWorkerRole(role: ActiveRole | null): boolean {
+  return role === 'laundry_provider';
+}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
@@ -120,6 +175,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // than what SecureStore still had recorded, and the mismatch would recur on every
     // future `setUser()` call (every cold start, every post-mutation refetch) rather than
     // ever actually correcting itself.
+    // A laundry provider has no memberships at all, so the membership lookup below finds
+    // nothing and `activeRole` used to come out null — signed in, with no screen to land on.
+    const platformRole = platformAppRole(user);
     const membership = held ?? user.memberships[0];
     if (!held && membership) {
       // Heal the persisted value so this correction sticks instead of silently
@@ -128,7 +186,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     set({
       user,
-      activeRole: membership?.role ?? roleHint ?? null,
+      activeRole: membership?.role ?? platformRole ?? roleHint ?? null,
       activePgId: membership?.pg_id ?? null,
     });
   },
@@ -137,7 +195,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await storage.setItem(KEYS.PG_ID, pgId);
     const { user, activePgId } = get();
     const membership = user?.memberships.find((m) => m.pg_id === pgId);
-    set({ activePgId: pgId, activeRole: membership?.role ?? null });
+    set({
+      activePgId: pgId,
+      activeRole: membership?.role ?? (user ? platformAppRole(user) : null) ?? null,
+    });
     // Clear the persisted cart whenever the active property changes — cart items are scoped
     // to a specific PG (the warehouse area, pricing, catalog all differ per property). Without
     // this, switching to a new PG (or creating one) left the old cart visible with items that

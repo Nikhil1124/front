@@ -7,7 +7,7 @@
  * the lifetime of the session — this only resolves the very first "/" hit on cold start.
  */
 import { Redirect } from 'expo-router';
-import { useAuthStore } from '@/store/authStore';
+import { isOpsPortalUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
 
 export default function IndexRoute() {
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -21,10 +21,20 @@ export default function IndexRoute() {
   // prevents a premature redirect on a role that has not resolved yet.
   if (!user) return null;
 
+  // PGow ops first: they hold no membership, so every membership-count branch below would
+  // otherwise claim them — see `isOpsPortalUser`.
+  if (isOpsPortalUser(user)) return <Redirect href="/ops-portal" />;
+
   // Freshly registered owner with no PG properties yet must land on Owner Overview, which
   // shows the "add your first property" card. Guests are excluded — they get /guest-join
   // below, and the (auth) group stays mounted for exactly that case (see app/_layout.tsx).
-  if (user.memberships.length === 0 && activeRole !== 'guest') {
+  // ...but NOT a PGow worker, who holds no membership by design and would otherwise be sent
+  // to "add your first property" instead of their own dashboard.
+  if (
+    user.memberships.length === 0
+    && activeRole !== 'guest'
+    && !isPlatformWorkerRole(activeRole)
+  ) {
     return <Redirect href="/overview" />;
   }
 
@@ -37,7 +47,12 @@ export default function IndexRoute() {
     return <Redirect href="/home" />;
   }
   if (activeRole === 'maintenance') return <Redirect href="/housekeeping" />;
-  if (activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'delivery_agent') return <Redirect href="/eaters" />;
+  if (
+    activeRole === 'chef'
+    || activeRole === 'kitchen_staff'
+    || activeRole === 'delivery_agent'
+    || activeRole === 'laundry_provider'
+  ) return <Redirect href="/eaters" />;
 
   // No recognized role yet (hydration still resolving, or a genuinely unknown role) —
   // welcome is always safe: if a token turns out to be valid, the role-based guards in
