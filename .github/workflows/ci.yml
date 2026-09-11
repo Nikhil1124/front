@@ -35,6 +35,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # The npm that ships with Node 22.18 is 10.9.x, but everyone here develops on npm 11, and
+      # the two disagree about what belongs in a lockfile: npm 11 prunes the peer deps of an
+      # optional platform package (`@napi-rs/wasm-runtime` -> `@emnapi/core`/`runtime`, reached
+      # only through the wasm32 ESLint resolver binding), npm 10 still demands them. So every
+      # lockfile written on a dev machine was rejected here by `npm ci`, and the entries were
+      # being hand-added one error at a time. Matching the version is the fix; npm 11 accepts a
+      # lockfile written by either.
+      - name: Match the npm developers use
+        run: npm i -g npm@11
+
       # `npm ci`, not `npm install`: installs exactly the lockfile, so CI can never go green on
       # a dependency tree nobody else has.
       - name: Install
