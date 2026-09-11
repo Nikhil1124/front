@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, Alert, FlatList, ScrollView, BackHandler } from 'react-native';
+import { View, StyleSheet, Alert, FlatList, BackHandler } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
 
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { EmptyState } from '@/components/EmptyState';
+import { FormScroll } from '@/components/ui/FormScroll';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
@@ -244,12 +245,19 @@ export function StaffManagementTab() {
         </Row>
       </View>
 
-      {/* ── Sub-Tab 0: Add Staff View ── */}
+      {/* ── Sub-Tab 0: Add Staff View ──
+          `FormScroll`, and scrolling ENABLED. This was a plain ScrollView with
+          `scrollEnabled={false}` — fine when the form packed two controls per row and fit a
+          screen, wrong the moment it became one control per row and grew past one. The bottom
+          of the form, "Create Staff Account" included, simply could not be reached. The other
+          half is the keyboard: an edge-to-edge Android window is not resized when the IME
+          opens, so tapping the PIN field put the keyboard over the submit button with no way
+          to scroll out from under it. FormScroll reserves the covered space as content
+          padding — see its header for why not KeyboardAvoidingView on Android. */}
       {subTab === 0 && (
-        <ScrollView
+        <FormScroll
           {...dockScroll}
           contentContainerStyle={styles.scrollContent}
-          scrollEnabled={false}
           showsVerticalScrollIndicator={false}
         >
           <Txt maxFontSizeMultiplier={1.3} style={styles.bodyTitle}>Add Staff Member</Txt>
@@ -369,7 +377,7 @@ export function StaffManagementTab() {
               {isSubmitting ? 'Registering...' : 'Create Staff Account'}
             </Txt>
           </AnimatedPress>
-        </ScrollView>
+        </FormScroll>
       )}
 
       {/* ── Sub-Tab 1: Staff Directory View ── */}

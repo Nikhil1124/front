@@ -15,9 +15,9 @@ import {
 } from '../../useKitchenMenu';
 import { KitchenMenuDay, KitchenMenuMealType, KitchenMenuWeekday } from '@/types';
 import { Radii, Colors } from '@/theme';
+import { useToast } from '@/hooks/useToast';
 
 // Extracted modal components
-import { CustomAlertModal, CustomAlertState } from './CustomAlertModal';
 import { MenuEditorModal } from './MenuEditorModal';
 import { AnimatedPress, ErrorState, LoadingState, Sheet, Txt } from '@/components/ui';
 
@@ -134,6 +134,7 @@ interface TodaysKitchenNeedsProps {
 export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
   onProductPress, onSeeAllCategoriesPress, products = [], pgId,
 }) => {
+  const toast = useToast();
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
 
@@ -171,11 +172,12 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
   const activeConfig = activeTab === 'veg' ? vegConfig : nonVegConfig;
 
   // ── Alert state ──
-  const [customAlert, setCustomAlert] = useState<CustomAlertState>({
-    visible: false, title: '', message: '', type: 'info',
-  });
-  const showAlert = (title: string, message: string, type: CustomAlertState['type'] = 'info') => {
-    setCustomAlert({ visible: true, title, message, type });
+  // Was a full-screen `CustomAlertModal` — a Sheet with one OK button. Every one of its six
+  // call sites reports success, an error, or a fact; none asks the reader to decide anything,
+  // so none of them earns a surface that has to be dismissed. The toast already exists and is
+  // the app's feedback channel.
+  const showAlert = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    toast(type, title, message);
   };
 
   // ── Menu editor state ──
@@ -447,11 +449,6 @@ export const TodaysKitchenNeeds: React.FC<TodaysKitchenNeedsProps> = ({
         </View>
       </Sheet>
 
-      {/* ── Custom Alert ── */}
-      <CustomAlertModal
-        state={customAlert}
-        onClose={() => setCustomAlert({ ...customAlert, visible: false })}
-      />
     </View>
   );
 };

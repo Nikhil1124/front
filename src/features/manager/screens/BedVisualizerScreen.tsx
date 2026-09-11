@@ -589,7 +589,7 @@ export function BedVisualizerScreen() {
           animationType="slide"
           onRequestClose={() => setSelectedRoomDetail(null)}
         >
-          <View style={styles.detailModalBackdrop}>
+          <View style={styles.detailModalBackdrop} accessibilityViewIsModal>
             <View style={[styles.detailModalCard, { paddingBottom: insets.bottom }]}>
               {/* Header Bar */}
               <View style={styles.detailHeaderBar}>

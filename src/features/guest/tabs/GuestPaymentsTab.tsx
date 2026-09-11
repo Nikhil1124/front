@@ -29,7 +29,6 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
-import { PaymentReceiptDialog } from '@/components/dialogs/PaymentReceiptDialog';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { formatINR } from '@/utils/format';
@@ -37,7 +36,7 @@ import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { buildUpiUri, launchUpiPayment, usePaymentsQuery, useRentDueQuery, useSubmitPaymentMutation } from '@/features/payments/usePayments';
 import { useTenantInvoices, usePayTenantInvoice } from '@/features/billing/useTenantInvoices';
 import { useMyRewardsQuery } from '@/features/rewards/useRewards';
-import type { PaymentEntity, TenantInvoice } from '@/types';
+import type { TenantInvoice } from '@/types';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import * as map from '@/data/mappers';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
@@ -93,7 +92,6 @@ export function GuestPaymentsTab() {
   const [payMode, setPayMode] = useState<'ONLINE_PHONEPE' | 'SCAN_QR' | 'CASH_HANDOVER'>('ONLINE_PHONEPE');
   const [utrNumber, setUtrNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedReceipt, setSelectedReceipt] = useState<PaymentEntity | null>(null);
   const [showResidentCard, setShowResidentCard] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showPayForm, setShowPayForm] = useState(false);
@@ -270,11 +268,10 @@ export function GuestPaymentsTab() {
    * backend has no PDF rendering, and says so. So the button's only possible outcome was a
    * "PDF unavailable" error.
    *
-   * The app already has a real receipt: `PaymentReceiptDialog`, which the transactions list
-   * below opens. An invoice is one rent cycle, so its receipt is the verified payment for
-   * that cycle — shown in full, screenshot-able and shareable, without inventing a PDF
-   * pipeline. If nothing has been verified for that cycle there is genuinely no receipt yet,
-   * and saying so is better than an error about a file format.
+   * The app has a real receipt at `/receipt/[paymentId]` — a route, not a panel, because a
+   * resident produces this to third parties. An invoice is one rent cycle, so its receipt is
+   * the verified payment for that cycle. If nothing has been verified for that cycle there is
+   * genuinely no receipt yet, and saying so is better than an error about a file format.
    */
   const handleInvoiceReceipt = (inv: TenantInvoice) => {
     // `monthYear` on a payment is the DISPLAY string ("September 2026"), not the `2026-09`
@@ -288,7 +285,7 @@ export function GuestPaymentsTab() {
       (pay) => pay.monthYear === invoiceMonth && pay.status === 'VERIFIED',
     );
     if (paid) {
-      setSelectedReceipt(paid);
+      router.push(`/receipt/${paid.id}` as never);
       return;
     }
     toast('info', 'No receipt yet', 'A receipt appears here once a payment for this cycle is verified.');
@@ -296,7 +293,6 @@ export function GuestPaymentsTab() {
 
   return (
     <View style={styles.root}>
-      {selectedReceipt && <PaymentReceiptDialog payment={selectedReceipt} onDismiss={() => setSelectedReceipt(null)} />}
 
       {/* Resident Card Sheet */}
       {showResidentCard && (
@@ -775,7 +771,7 @@ export function GuestPaymentsTab() {
                 leading={<Ionicons name="cash-outline" size={17} color={Colors.primary} />}
                 amount={formatINR(Math.round(p.amount))}
                 status={{ label: p.status, tone: toneFor(p.status) }}
-                onPress={() => setSelectedReceipt(p)}
+                onPress={() => router.push(`/receipt/${p.id}` as never)}
                 first={idx === 0}
                 last={idx === Math.min(guestPayments.length, 6) - 1}
                 testID={`txn_${p.id}`}

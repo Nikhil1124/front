@@ -151,11 +151,27 @@ export function routeFromPushData(data: Record<string, unknown> | undefined): vo
   if (category === "rent" || category === "finance" || actionType === "payment") {
     const { useAuthStore } = require("../../store/authStore");
     const activeRole = useAuthStore.getState().activeRole;
-    screen =
-      activeRole === "owner" || activeRole === "manager"
-        ? "/notifications"
-        : "/(guest)/(tabs)/guest-payments";
+    if (activeRole === "owner" || activeRole === "manager") {
+      // UNCHANGED, and deliberately so — see the note above. Verify/Reject live in the inbox,
+      // so that is where an owner's payment notification has to land. A receipt is a record,
+      // not a decision surface, and routing an owner there would undo this fix.
+      screen = "/notifications";
+    } else if (actionId) {
+      // A resident tapping their own payment notification is checking whether it went
+      // through. Now that the receipt is an addressable route, it can answer that directly
+      // rather than dropping them on the payments tab to find the row themselves.
+      screen = `/receipt/${actionId}`;
+    } else {
+      screen = "/(guest)/(tabs)/guest-payments";
+    }
   }
+
+  // NOT deep-linked to /resident/[id]/kyc, though the route now exists. `kyc/service.py`
+  // sends `action_id = kyc.id` — the SUBMISSION's id, not the membership's — and the resident
+  // routes are keyed on membership (that is what the roster returns). Pointing this at the
+  // resident route would land every KYC push on "this resident is no longer in this PG".
+  // Resolving one to the other needs a lookup the client does not have, so KYC keeps falling
+  // through to the inbox, where its decision card already lives.
 
   // Prevent duplicate navigation by using router.navigate instead of push
   if (screen) {

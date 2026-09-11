@@ -12,6 +12,7 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/AppHeader';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
@@ -59,6 +60,7 @@ function shiftLabelFor(shiftTime: string): string {
 
 export default function EditStaffScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const activePgId = useAuthStore((s) => s.activePgId);
   const isManager = useIsManagerMode();
   const toast = useToast();
@@ -191,7 +193,9 @@ export default function EditStaffScreen() {
         />
       </FormScroll>
 
-      <View style={styles.footer}>
+      {/* The gesture strip sits ON TOP of an edge-to-edge window, so a flat padding
+          leaves this button under it and the system eats taps near the bottom. */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Btn
           onPress={save}
           disabled={!dirty || busy}

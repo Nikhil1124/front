@@ -7,7 +7,7 @@
  *   - High-Contrast Dark Forest Typography (#173A33)
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -21,7 +21,8 @@ import { useChangePassword } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
 import { AppHeader } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
-import { AnimatedPress, Card, Col, Row, Spacer, StatusChip, Txt, type StatusTone } from '@/components/ui';
+import { AnimatedPress, Card, Col, PGowActionSheet, PGowDialog, Row, Spacer, StatusChip, Txt, type StatusTone } from '@/components/ui';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 /**
  * Same camera/gallery pattern as KycUploadDialog's `pickImage`/`choosePhoto` — real
@@ -85,29 +86,32 @@ export function GuestSecurityTab() {
   const kycStatus = useKycStatus() as KycStatus;
   const pill = kycStatusLabel(kycStatus);
 
-  const handleChangePhoto = () => {
-    if (isUploadingPhoto) return;
-    const onPicked = async (uri: string) => {
-      setIsUploadingPhoto(true);
-      try {
-        await updateProfilePhoto(uri);
-      } finally {
-        setIsUploadingPhoto(false);
-      }
-    };
-    Alert.alert('Change Profile Photo', 'Choose a source', [
-      { text: 'Take Photo', onPress: async () => { const u = await pickPhoto('camera'); if (u) onPicked(u); } },
-      { text: 'Choose from Library', onPress: async () => { const u = await pickPhoto('library'); if (u) onPicked(u); } },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+  // Take Photo / Choose from Library / Cancel is a menu of verbs — an action sheet, not a
+  // decision. It was an `Alert.alert` with a buttons array, which Android draws as a centred
+  // alert for what is a source picker everywhere else on the platform.
+  const [photoPickerOpen, setPhotoPickerOpen] = useState(false);
+
+  const applyPickedPhoto = async (uri: string) => {
+    setIsUploadingPhoto(true);
+    try {
+      await updateProfilePhoto(uri);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
-  const confirmLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out of PGow?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: logout },
-    ]);
+  const pickFrom = (from: 'camera' | 'library') => async () => {
+    const uri = await pickPhoto(from);
+    if (uri) await applyPickedPhoto(uri);
   };
+
+  const handleChangePhoto = () => {
+    if (isUploadingPhoto) return;
+    setPhotoPickerOpen(true);
+  };
+
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const confirmLogout = () => setConfirmLogoutOpen(true);
 
   const handleUpdatePassword = async () => {
     if (isUpdating) return;
@@ -144,7 +148,7 @@ export function GuestSecurityTab() {
       />
 
       {/* ── SCROLLABLE CONTENT ── */}
-      <ScrollView
+      <FormScroll
         {...dockScroll}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -291,7 +295,29 @@ export function GuestSecurityTab() {
         </AnimatedPress>
 
         <Spacer size={32} />
-      </ScrollView>
+      </FormScroll>
+
+      <PGowActionSheet
+        visible={photoPickerOpen}
+        title="Change profile photo"
+        onDismiss={() => setPhotoPickerOpen(false)}
+        actions={[
+          { label: 'Take Photo', icon: 'camera-outline', onPress: pickFrom('camera') },
+          { label: 'Choose from Library', icon: 'images-outline', onPress: pickFrom('library') },
+        ]}
+        testID="profile_photo_source"
+      />
+
+      <PGowDialog
+        visible={confirmLogoutOpen}
+        title="Log out of PGow?"
+        message="You will need your phone number and password to sign back in."
+        confirmLabel="Log out"
+        tone="destructive"
+        onConfirm={() => { setConfirmLogoutOpen(false); logout(); }}
+        onCancel={() => setConfirmLogoutOpen(false)}
+        testID="guest_logout"
+      />
     </View>
   );
 }

@@ -8,6 +8,7 @@ import { Colors, Radii } from '@/theme';
 import { AnimatedPress, Btn, Col, OutlinedTextField, Row, Txt } from '@/components/ui';
 import { useLaundryStore, LAUNDRY_PICKUP_TIMES } from '@/features/laundry/store/useLaundryStore';
 import { usePGowStore } from '@/store/usePGowStore';
+import { FormScroll } from '@/components/ui/FormScroll';
 
 /**
  * The next four days, computed. This was `['Today', 'Tomorrow', 'Sep 12', 'Sep 13']` — two
@@ -48,7 +49,7 @@ export default function LaundryPickupScreen() {
         </Row>
       </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <FormScroll style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         
         <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }}>
           <Txt style={styles.pageTitle}>When should we pick up your laundry?</Txt>
@@ -132,7 +133,7 @@ export default function LaundryPickupScreen() {
           </View>
         </View>
 
-      </ScrollView>
+      </FormScroll>
 
       {/* STICKY BOTTOM BAR */}
       <View style={styles.bottomBar}>

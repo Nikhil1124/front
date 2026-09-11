@@ -20,19 +20,18 @@
  * once-in-a-lifetime actions and sit in the footer, not in prime screen space.
  */
 import { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { Colors, Radii } from '@/theme';
 import { useToast } from '@/hooks/useToast';
-import { useLogin, usePinLogin, useChangePassword } from '@/features/auth/useAuth';
-import { useAuthStore } from '@/store/authStore';
-import { usePGowStore } from '@/store/usePGowStore';
-import { toUserRole } from '@/store/roles';
+import { useLogin, usePinLogin } from '@/features/auth/useAuth';
 import { PGowApiError } from '@/data/apiClient';
 import * as map from '@/data/mappers';
-import { AnimatedPress, Btn, Row, Sheet, Spacer, Txt } from '@/components/ui';
+import { AnimatedPress, Btn, Row, Spacer, Txt } from '@/components/ui';
+import { setPendingTempPassword } from '@/features/auth/pendingPasswordChange';
+import { applyRoleBridge } from '@/features/auth/roleBridge';
 
 type Mode = 'password' | 'pin';
 
@@ -58,8 +57,6 @@ export function SignInScreen() {
   const insets = useSafeAreaInsets();
   const loginMutation = useLogin();
   const pinLoginMutation = usePinLogin();
-  const changePasswordMutation = useChangePassword();
-  const refreshAll = usePGowStore((s) => s.refreshAll);
   const toast = useToast();
 
   const [mode, setMode] = useState<Mode>('password');
@@ -69,18 +66,6 @@ export function SignInScreen() {
   const [error, setError] = useState('');
 
   // First-time password: a temporary password must be replaced before the session is usable.
-  const [showFTP, setShowFTP] = useState(false);
-  const [tempPass, setTempPass] = useState('');
-  const [ftpNew, setFtpNew] = useState('');
-  const [ftpConfirm, setFtpConfirm] = useState('');
-
-  /** Mirrors the freshly-derived role into the older store slices that still read it.
-   *  Navigation itself only needs `useAuthStore.activeRole`, which the mutations already set. */
-  const applyRoleBridge = async () => {
-    const role = toUserRole(useAuthStore.getState().activeRole);
-    usePGowStore.getState().patch({ activeRole: role, isManagerMode: role === 'MANAGER' });
-    await refreshAll();
-  };
 
   const isPasswordChangeRequired = (err: unknown) =>
     err instanceof PGowApiError
@@ -100,8 +85,11 @@ export function SignInScreen() {
       } else {
         const data = await loginMutation.mutateAsync({ phone: map.toE164(phone), password: secret });
         if (data.must_change_password) {
-          setTempPass(secret);
-          setShowFTP(true);
+          // A gate in the auth flow, so a screen — see app/(auth)/set-password.tsx. The
+          // temporary password goes through an in-memory holder rather than a route param,
+          // because a param would put a live credential into navigation state.
+          setPendingTempPassword(secret);
+          router.push('/(auth)/set-password');
           return;
         }
       }
@@ -112,8 +100,8 @@ export function SignInScreen() {
       router.replace('/');
     } catch (err) {
       if (mode === 'password' && isPasswordChangeRequired(err)) {
-        setTempPass(secret);
-        setShowFTP(true);
+        setPendingTempPassword(secret);
+        router.push('/(auth)/set-password');
         return;
       }
       setError(
@@ -123,26 +111,6 @@ export function SignInScreen() {
       );
     } finally {
       setBusy(false);
-    }
-  };
-
-  const handleFTPSubmit = async () => {
-    if (ftpNew.trim().length < 8) {
-      Alert.alert('Password too short', 'Use at least 8 characters.');
-      return;
-    }
-    if (ftpNew !== ftpConfirm) {
-      Alert.alert('Passwords do not match', 'Type the same password in both fields.');
-      return;
-    }
-    try {
-      await changePasswordMutation.mutateAsync({ current_password: tempPass, new_password: ftpNew });
-      await applyRoleBridge();
-      setShowFTP(false);
-      toast('success', 'Password updated', 'Loading your dashboard…');
-      router.replace('/');
-    } catch (err) {
-      Alert.alert('Could not update password', err instanceof Error ? err.message : 'Nothing was changed.');
     }
   };
 
@@ -229,41 +197,6 @@ export function SignInScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ── First-time password ─────────────────────────────────────────────── */}
-      <Sheet
-        visible={showFTP}
-        title="Set your password"
-        subtitle="Your account is still on the temporary password you were given. Choose your own to continue."
-        onDismiss={() => setShowFTP(false)}
-        testID="signin_set_password"
-        footer={
-          <Btn onPress={handleFTPSubmit} height={50} borderRadius={Radii.card} style={{ width: '100%' }}>
-            <Txt size={14.5} weight="700" color={Colors.textInverse}>Save and continue</Txt>
-          </Btn>
-        }
-      >
-        <KeyboardAvoidingView style={{}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <Txt variant="meta" weight="600" color={Colors.textMuted} style={{ marginBottom: 5 }}>New password</Txt>
-          <TextInput
-            key="signin-ftp-new-password"
-            value={ftpNew}
-            onChangeText={setFtpNew}
-            secureTextEntry
-            autoComplete="off"
-            style={styles.rawInput}
-          />
-          <Spacer size={12} />
-          <Txt variant="meta" weight="600" color={Colors.textMuted} style={{ marginBottom: 5 }}>Confirm password</Txt>
-          <TextInput
-            key="signin-ftp-confirm-password"
-            value={ftpConfirm}
-            onChangeText={setFtpConfirm}
-            secureTextEntry
-            autoComplete="off"
-            style={styles.rawInput}
-          />
-        </KeyboardAvoidingView>
-      </Sheet>
     </View>
   );
 }

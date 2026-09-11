@@ -27,6 +27,7 @@ const ALLOWED = new Set([
   'src/features/groceries/components/grocery/Header.tsx',
   // Auth screens: no header, they pad their own scroll away from the notch.
   'app/(auth)/reset-password.tsx',
+  'app/(auth)/set-password.tsx',       // forced first-password gate, same pattern
   'src/features/owner/OwnerRegisterScreen.tsx',
   'src/features/auth/SignInScreen.tsx',  // full-screen brand+form, no title header — same pattern
 ]);

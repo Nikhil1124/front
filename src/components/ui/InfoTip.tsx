@@ -22,7 +22,9 @@ export function InfoTip({ text, size = 15 }: Props) {
         <Ionicons name="information-circle-outline" size={size} color={Colors.textMuted} />
       </Pressable>
       <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
-        <Pressable accessibilityRole="button" style={styles.backdrop} onPress={() => setVisible(false)}>
+        {/* Trapped on the backdrop because the tooltip IS the whole surface — there is
+            nothing else inside this Modal to scope it to. */}
+        <Pressable accessibilityViewIsModal accessibilityRole="button" style={styles.backdrop} onPress={() => setVisible(false)}>
           <Card
             containerColor={Colors.surface}
             borderRadius={Radii.card}

@@ -57,6 +57,9 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
   if (picking) {
     return (
       <Modal visible animationType="slide" statusBarTranslucent navigationBarTranslucent>
+        {/* `LocationPicker` is a component, so the trap goes on a wrapper. Without it a
+            screen reader leaves the full-screen map and lands on the form behind it. */}
+        <View style={{ flex: 1 }} accessibilityViewIsModal>
         <LocationPicker
           onCancel={() => setPicking(false)}
           initial={
@@ -70,6 +73,7 @@ export function EditPgPropertyDialog({ pg, onDismiss }: Props) {
             setPicking(false);
           }}
         />
+        </View>
       </Modal>
     );
   }

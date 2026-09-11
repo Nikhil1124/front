@@ -22,7 +22,8 @@ import { useMaintenanceChecklist, type ChecklistItemStatus } from './useMaintena
 import { formatTimeAgo, getGreeting } from '@/utils/format';
 import type { FeedbackComplaintEntity } from '@/types';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
-import { AnimatedPress, Btn, Card, ChoiceChips, Col, Divider, ErrorState, IconBtn, LoadingState, OutlinedTextField, RoomPicker, Row, Sheet, Spacer, Txt } from '@/components/ui';
+import { AnimatedPress, Btn, Card, ChoiceChips, Col, Divider, ErrorState, IconBtn, LoadingState, OutlinedTextField, PGowDialog, RoomPicker, Row, Spacer, Txt } from '@/components/ui';
+import { useToast } from '@/hooks/useToast';
 
 /** `FeedbackComplaintEntity` → the shape every view in this file already renders. Keeping the
  *  UI-facing shape unchanged means MaintenanceStatsSummary / MaintenanceDashView needed no
@@ -301,6 +302,7 @@ function MaintenanceDashView({ staff, inspections, issues, onGoToChecks, refresh
 }
 
 function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelectedCat }: any) {
+  const toast = useToast();
   const [activeArea, setActiveArea] = useState('All Areas');
   const [showAreaPicker, setShowAreaPicker] = useState(false);
 
@@ -344,7 +346,6 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-  const [isSyncSuccess, setIsSyncSuccess] = useState(false);
 
   const handleSelectStatus = (roomIdx: number, itemIdx: number, status: ChecklistItemStatus) => {
     const room = displayedRooms[roomIdx];
@@ -473,34 +474,23 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
         </Btn>
       </FormScroll>
 
-      <Sheet
+      {/* The confirm half is a decision, so a dialog. The success half was a second state of
+          the same sheet saying "saved on this device" with one Done button — feedback nobody
+          has to act on, which is a toast. Two states of one modal became one dialog and one
+          toast. */}
+      <PGowDialog
         visible={showSaveConfirm}
-        title={isSyncSuccess ? 'Saved on this Device' : 'Finish this Check?'}
-        icon={isSyncSuccess ? 'checkmark' : 'phone-portrait-outline'}
-        accent={isSyncSuccess ? Colors.success : Colors.primary}
-        onDismiss={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }}
-        testID="housekeeping-save-confirm"
-        footer={isSyncSuccess ? (
-          <Btn onPress={() => { setShowSaveConfirm(false); setIsSyncSuccess(false); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={50}>
-            <Txt size={15} weight="700">Done</Txt>
-          </Btn>
-        ) : (
-          <Row gap={12}>
-            <AnimatedPress accessibilityRole="button" onPress={() => setShowSaveConfirm(false)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-              <Txt size={15} weight="700" color={Colors.textPrimary}>Keep Checking</Txt>
-            </AnimatedPress>
-            <AnimatedPress accessibilityRole="button" onPress={() => setIsSyncSuccess(true)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-              <Txt size={15} weight="700" color={Colors.textInverse}>Done for Now</Txt>
-            </AnimatedPress>
-          </Row>
-        )}
-      >
-        <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-          {isSyncSuccess
-            ? 'Your inspection progress is saved on this device and will still be here next time you open the app.'
-            : 'Your changes are already saved as you tick them — this just confirms you\'re done with this round.'}
-        </Txt>
-      </Sheet>
+        title="Finish this check?"
+        message="Your changes are already saved as you tick them — this just confirms you're done with this round."
+        confirmLabel="Done for now"
+        cancelLabel="Keep checking"
+        onConfirm={() => {
+          setShowSaveConfirm(false);
+          toast('success', 'Saved on this device', 'Your inspection progress will still be here next time you open the app.');
+        }}
+        onCancel={() => setShowSaveConfirm(false)}
+        testID="housekeeping_save_confirm"
+      />
     </View>
   );
 }
@@ -516,6 +506,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
   error?: unknown;
   onRetry?: () => void;
 }) {
+  const toast = useToast();
   const submitIssue = useSubmitComplaintMutation(pgId ?? undefined);
   const resolveIssue = useResolveComplaintMutation(pgId ?? undefined);
 
@@ -880,46 +871,29 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
         </AnimatedPress>
       </View>
 
-      <Sheet
-        visible={!!selectedIssue}
-        title={selectedIssue?.status === 'Resolved' ? 'Already Resolved' : 'Mark as Resolved?'}
-        icon="checkmark-done"
-        accent={Colors.success}
-        onDismiss={() => setSelectedIssue(null)}
-        testID="housekeeping-issue-sheet"
-        footer={selectedIssue?.status === 'Resolved' ? (
-          <Btn onPress={() => setSelectedIssue(null)} containerColor={Colors.surfaceMuted} textColor={Colors.textPrimary} borderRadius={Radii.card} height={50}>
-            <Txt size={15} weight="700" color={Colors.textPrimary}>Close</Txt>
-          </Btn>
-        ) : (
-          <Row gap={12}>
-            <AnimatedPress accessibilityRole="button" onPress={() => setSelectedIssue(null)} style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-              <Txt size={15} weight="700" color={Colors.textPrimary}>Cancel</Txt>
-            </AnimatedPress>
-            <AnimatedPress accessibilityRole="button"
-              disabled={resolveIssue.isPending}
-              onPress={async () => {
-                if (!selectedIssue) return;
-                try {
-                  await resolveIssue.mutateAsync({ id: selectedIssue.id });
-                  setSelectedIssue(null);
-                } catch (err) {
-                  Alert.alert('Could not resolve', err instanceof Error ? err.message : 'Please try again.');
-                }
-              }}
-              style={{ flex: 1, height: 50, borderRadius: Radii.card, backgroundColor: Colors.success, alignItems: 'center', justifyContent: 'center', opacity: resolveIssue.isPending ? 0.6 : 1 }}
-            >
-              <Txt size={15} weight="700" color={Colors.textInverse}>{resolveIssue.isPending ? 'Resolving…' : 'Resolve'}</Txt>
-            </AnimatedPress>
-          </Row>
-        )}
-      >
-        <Txt size={14} color={Colors.textMuted} style={{ lineHeight: 20 }}>
-          {selectedIssue?.status === 'Resolved'
-            ? `"${selectedIssue?.title}" has been resolved.`
-            : `Mark "${selectedIssue?.title}" as resolved? The resident who reported it will be able to see this.`}
-        </Txt>
-      </Sheet>
+      {/* Resolving is terminal server-side — `workflow.py` refuses any transition out of
+          RESOLVED with a 409 — so there is no undo to offer and this stays a confirmation.
+          The "Already Resolved" branch was informational; tapping a resolved issue now just
+          says so and closes, with no modal at all. */}
+      <PGowDialog
+        visible={!!selectedIssue && selectedIssue?.status !== 'Resolved'}
+        title="Mark as resolved?"
+        message={`"${selectedIssue?.title}" — the resident who reported it will see this. It cannot be reopened.`}
+        confirmLabel={resolveIssue.isPending ? 'Resolving…' : 'Resolve'}
+        busy={resolveIssue.isPending}
+        onConfirm={async () => {
+          if (!selectedIssue) return;
+          try {
+            await resolveIssue.mutateAsync({ id: selectedIssue.id });
+            setSelectedIssue(null);
+            toast('success', 'Resolved', 'The resident has been notified.');
+          } catch (err) {
+            toast('error', 'Could not resolve', err instanceof Error ? err.message : 'Please try again.');
+          }
+        }}
+        onCancel={() => setSelectedIssue(null)}
+        testID="housekeeping_resolve"
+      />
     </View>
   );
 }

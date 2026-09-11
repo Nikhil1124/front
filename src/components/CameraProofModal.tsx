@@ -115,7 +115,7 @@ export function CameraProofModal({ visible, title, subtitle, onCapture, onClose 
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <View style={styles.overlay} accessibilityViewIsModal>
         <View style={styles.container}>
           {/* Header */}
           <Row align="center" justify="space-between" style={styles.header}>
