@@ -19,7 +19,10 @@ import { useToast } from '@/hooks/useToast';
  * forwarded to somebody else and the copy on screen are always the same document.
  */
 function buildLaundryInvoice(
-  order: { id: string; totalCost: number; pickupDate: string; guestName: string; roomNo: string },
+  order: {
+    id: string; totalCost: number; pickupDate: string; guestName: string; roomNo: string;
+    timestamp?: number;
+  },
   pg: { pgName: string; address: string } | null,
 ) {
   return buildInvoice({
@@ -27,7 +30,11 @@ function buildLaundryInvoice(
     amount: order.totalCost,
     monthYear: order.pickupDate || 'this pickup',
     paymentType: 'LAUNDRY',
-    issuedAt: Date.now(),
+    // The order's own timestamp, NOT `Date.now()`. The invoice number embeds the financial
+    // year, so a clock-based date gives the same order two different numbers either side of
+    // 1 April — breaking the one guarantee this module makes (see invoice.ts: same payment,
+    // same number, forever). `timestamp` is fixed when the order is placed.
+    issuedAt: order.timestamp || Date.parse(order.pickupDate) || Date.now(),
     // Only rendered once the provider has marked it delivered, so it is never provisional.
     isVerified: true,
     from: { name: pg?.pgName || 'PGow', line: pg?.address || undefined },

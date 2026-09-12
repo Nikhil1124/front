@@ -329,7 +329,24 @@ export function OwnerPaymentsTab() {
         <PaymentReceiptDialog
           payment={selectedReceipt}
           onDismiss={() => setSelectedReceipt(null)}
-          actions={selectedReceipt.status === 'PENDING' ? (
+          actions={selectedReceipt.status === 'VERIFIED' ? (
+            /* The receipt screen was always built for both viewers — its own header says
+               "an owner reading their own record, or the resident" — but nothing in the
+               owner's UI ever routed to it, so the one party who collected the money could
+               not produce a document for it. This sheet stays the bookkeeping view; the
+               shareable record is one push away, where the PDF already lives. */
+            <Btn
+              onPress={() => { const p = selectedReceipt; setSelectedReceipt(null); router.push(`/receipt/${p.id}` as never); }}
+              containerColor={Colors.surfaceElevated}
+              textColor={GREEN}
+              borderRadius={Radii.control}
+              height={44}
+              testID="receipt_open_btn"
+            >
+              <Ionicons name="document-text-outline" size={15} color={GREEN} />
+              <Txt size={13} weight="700" color={GREEN} style={{ marginLeft: 6 }}>Open receipt</Txt>
+            </Btn>
+          ) : selectedReceipt.status === 'PENDING' ? (
             <Row gap={10}>
               <Btn
                 onPress={() => { const p = selectedReceipt; setSelectedReceipt(null); handleVerifyPayment(p); }}

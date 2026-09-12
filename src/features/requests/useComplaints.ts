@@ -56,6 +56,9 @@ export interface RequestRecord {
   assigned_role?: string | null;
   assigned_at?: string | null;
   amount?: number | string | null;
+  /** What the work actually cost, once resolved. `amount` is what it was quoted at — for a
+   *  repair, the trade's visit fee — so only this may be stated as a total on an invoice. */
+  final_amount?: number | string | null;
   service_date?: string | null;
   /**
    * Everything specific to one kind of service: the laundry's weight and pickup slot, the
@@ -221,10 +224,21 @@ export function assignComplaint(
 }
 
 // POST /v1/requests/{id}/resolve
-export function resolveComplaint(id: string, resolutionNote?: string): Promise<RequestRecord> {
+export function resolveComplaint(
+  id: string,
+  resolutionNote?: string,
+  /** What the work actually cost. Only meaningful for a priced kind — the server refuses it
+   *  on a complaint or feedback, where reporting a problem is free. */
+  finalAmount?: number,
+): Promise<RequestRecord> {
   return apiFetch<RequestRecord>(API.REQUEST_RESOLVE(id), {
     method: "POST",
-    body: JSON.stringify({ resolution_note: resolutionNote }),
+    // Omitted rather than sent as null when there is no charge: the server's CHECK forbids a
+    // final amount on a complaint, and an explicit null would be a claim rather than silence.
+    body: JSON.stringify({
+      resolution_note: resolutionNote,
+      ...(finalAmount != null ? { final_amount: finalAmount } : {}),
+    }),
   });
 }
 
@@ -389,8 +403,12 @@ export function useCancelComplaintMutation(pgId?: string) {
 export function useResolveComplaintMutation(pgId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, resolutionNote }: { id: string; resolutionNote?: string }) =>
-      resolveComplaint(id, resolutionNote),
+    mutationFn: ({
+      id,
+      resolutionNote,
+      finalAmount,
+    }: { id: string; resolutionNote?: string; finalAmount?: number }) =>
+      resolveComplaint(id, resolutionNote, finalAmount),
     onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
   });
 }

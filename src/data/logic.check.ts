@@ -265,6 +265,11 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
     "a different payment must not collide"
   );
 
+  // The number must not move with the clock. This is the bug the laundry invoice shipped
+  // with: `issuedAt: Date.now()` gave one order two numbers either side of 1 April, because
+  // the financial year is part of the number. A caller must pass a date fixed to the thing
+  // being invoiced, and the two dates below prove the number tracks THAT date, not today's.
+  //
   // India's financial year turns on 1 April, so March and April sit in different series.
   assert.ok(buildInvoice({ ...base, issuedAt: Date.UTC(2026, 2, 31) }).number.includes("2025-26"));
   assert.ok(buildInvoice({ ...base, issuedAt: Date.UTC(2026, 3, 1) }).number.includes("2026-27"));
@@ -290,6 +295,66 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
 
   // Unverified money is a claim, not a document.
   assert.equal(buildInvoice({ ...base, isVerified: false }).isFinal, false);
+
+  // Line items. A one-line document must still HAVE a line — the PDF renders `lines`, so a
+  // caller that passes none (every rent receipt) would otherwise print an empty table.
+  const plain = buildInvoice(base);
+  assert.equal(plain.lines.length, 1);
+  assert.equal(plain.lines[0].description, plain.description);
+  // Every line is tax-INCLUSIVE and the lines sum to `total`. Uniform across every document:
+  // a grocery basket's line totals sum to what was charged, so a one-line receipt must too,
+  // or the same column means two different things depending on which screen produced it.
+  assert.equal(plain.lines[0].amount, plain.total);
+
+  // A basket keeps its own rows, quantities and all.
+  const basket = buildInvoice({
+    ...base,
+    amount: 340,
+    paymentType: "GROCERIES",
+    lines: [
+      { description: "Toor dal (1 kg)", qty: 2, amount: 240 },
+      { description: "Milk (500 ml)", qty: 4, amount: 100 },
+    ],
+  });
+  assert.equal(basket.lines.length, 2);
+  assert.equal(basket.lines[1].qty, 4);
+  assert.equal(
+    basket.lines.reduce((n, l) => n + l.amount, 0),
+    basket.total,
+    "the rows must add up to what was charged"
+  );
+
+  // A seller that already reconciled its own split is believed, not recomputed. A grocery
+  // basket mixing 0% and 5% slabs has no single rate to derive, and re-deriving one drifts.
+  const split = buildInvoice({
+    ...base, amount: 139, taxableValue: 132.38, taxAmount: 6.62,
+  });
+  assert.equal(split.taxableValue, 132.38, "the server's taxable value is used verbatim");
+  assert.equal(split.taxAmount, 6.62);
+  assert.equal(round2(split.taxableValue + split.taxAmount), split.total, "it must reconcile");
+  assert.equal(split.taxRate, 5, "the stated rate is the one the split implies");
+
+  // Zero tax is a real answer, not a missing one — residential rent is exempt.
+  const zero = buildInvoice({ ...base, amount: 139, taxableValue: 139, taxAmount: 0 });
+  assert.equal(zero.taxRate, 0);
+
+  // The exemption note cites a law about ACCOMMODATION. It must not appear under a bag of
+  // groceries that happens to be zero-rated for an entirely different reason — the note used
+  // to key off `taxRate === 0` alone, and printed the wrong law on a real grocery invoice.
+  assert.match(buildInvoice(base).taxNote, /Notification 12\/2017/);
+  assert.equal(
+    buildInvoice({ ...base, paymentType: "GROCERIES" }).taxNote,
+    "",
+    "a zero-rated grocery basket is not an accommodation exemption"
+  );
+  // And never on something that did charge tax.
+  assert.equal(buildInvoice({ ...base, taxRate: 18 }).taxNote, "");
+
+  // A repair is priced work, and its document must not borrow the accommodation exemption
+  // either — it is a service charge, not rent.
+  const repair = buildInvoice({ ...base, amount: 900, paymentType: "REPAIR" });
+  assert.match(repair.description, /Repair and maintenance/);
+  assert.equal(repair.taxNote, "");
 
   // Amount in words, grouped the Indian way — the printed invoice carries this, and a reader
   // uses it to check the figure. Lakh and crore, never millions.

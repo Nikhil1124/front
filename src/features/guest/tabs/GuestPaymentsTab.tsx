@@ -35,6 +35,8 @@ import { formatINR } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { buildUpiUri, launchUpiPayment, usePaymentsQuery, useRentDueQuery, useSubmitPaymentMutation } from '@/features/payments/usePayments';
 import { useTenantInvoices, usePayTenantInvoice } from '@/features/billing/useTenantInvoices';
+import { buildInvoice } from '@/features/payments/invoice';
+import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 import { useMyRewardsQuery } from '@/features/rewards/useRewards';
 import type { TenantInvoice } from '@/types';
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -290,7 +292,37 @@ export function GuestPaymentsTab() {
       router.push(`/receipt/${paid.id}` as never);
       return;
     }
-    toast('info', 'No receipt yet', 'A receipt appears here once a payment for this cycle is verified.');
+
+    // Unpaid: there is no receipt, but there IS a bill, and the bill is the document a
+    // resident actually wants at this point — to forward to whoever reimburses them, or to
+    // check the penalty. This used to dead-end on a toast saying to come back after paying.
+    shareInvoicePdf(
+      buildInvoice({
+        paymentId: inv.id,
+        amount: inv.totalAmount,
+        monthYear: invoiceMonth,
+        paymentType: 'RENT',
+        issuedAt: new Date(inv.createdAt).getTime(),
+        // A bill is not a receipt. Nothing has been verified, so the document stamps itself
+        // PROVISIONAL — which is exactly what an unpaid invoice is.
+        isVerified: false,
+        from: { name: ownerForGuest?.pgName || 'Your PG', line: ownerForGuest?.address || undefined },
+        to: {
+          name: guest?.name || 'Resident',
+          line: guest?.roomNo ? `Room ${guest.roomNo}` : undefined,
+        },
+        lines: [
+          { description: `Rent — ${invoiceMonth}`, amount: inv.rentAmount },
+          ...(inv.utilityAmount > 0
+            ? [{ description: 'Utilities', amount: inv.utilityAmount }]
+            : []),
+          ...(inv.penaltyAmount > 0
+            ? [{ description: 'Late payment penalty', amount: inv.penaltyAmount }]
+            : []),
+        ],
+      }),
+      [['Due date', inv.dueDate], ['Status', inv.status.toUpperCase()]],
+    ).catch(() => toast('error', 'Could not share', 'The invoice could not be prepared.'));
   };
 
   return (
@@ -728,7 +760,9 @@ export function GuestPaymentsTab() {
                       onPress={() => handleInvoiceReceipt(inv)}
                     >
                       <Ionicons name="document-text-outline" size={13} color={Colors.primary} />
-                      <Txt variant="meta" weight="600" color={Colors.primary} style={{ marginLeft: 4 }}>Receipt</Txt>
+                      <Txt variant="meta" weight="600" color={Colors.primary} style={{ marginLeft: 4 }}>
+                        {isPaid ? 'Receipt' : 'Invoice'}
+                      </Txt>
                     </AnimatedPress>
                   </Row>
                 </View>

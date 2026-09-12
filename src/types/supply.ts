@@ -69,15 +69,29 @@ export type SupplyPaymentMethod = 'card' | 'upi' | 'credit' | 'cod';
 
 export interface SupplyOrderItem {
   id: string;
-  order_id: string;
+  /** Absent on the detail payload — the items are nested under the order there. */
+  order_id?: string;
   item_id: string;
   item_name: string;
   unit_label: string;
   quantity: number;
   unit_price: number;
-  total_price: number;
+  /** This line's total, tax-INCLUSIVE — the order's `total_amount` is the sum of these.
+   *
+   *  Named `total_price` here until 2026-09-12, which the server has never sent. Nothing
+   *  caught it because the response is cast rather than parsed, so `Number(undefined)` became
+   *  NaN, `formatINR` rendered it as ₹0.00, and every line on a real grocery order showed
+   *  zero against a correct total. */
+  line_total: number;
+  /** Per line, so a mixed basket is possible. The order-level split is the aggregate. */
+  gst_rate?: number;
+  tax_amount?: number;
   fulfilled_quantity?: number;
-  status?: string;
+  /** Same story as `line_total`: the server's field is `fulfilment_status`, so the old
+   *  `status` was always undefined and its row never rendered. */
+  fulfilment_status?: string;
+  substituted_with_item_id?: string | null;
+  refunded_amount?: number | null;
 }
 
 export interface SupplyOrderDetail {

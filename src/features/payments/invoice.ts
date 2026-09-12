@@ -39,6 +39,22 @@ export interface InvoiceParty {
   gstin?: string;
 }
 
+/**
+ * One row of the document.
+ *
+ * A rent payment is a single line, but a grocery order is a basket and a monthly rent invoice
+ * splits into rent, utilities and a penalty. Those documents were previously flattened into one
+ * description and one number, which is the part a resident actually queries — "what is the ₹340
+ * for" is not answerable from a total.
+ */
+export interface InvoiceLine {
+  description: string;
+  /** Only where it means something. A rent line has no quantity; six packets of milk do. */
+  qty?: number;
+  /** This line's total, on the same tax basis as the invoice's own `total`. */
+  amount: number;
+}
+
 export interface Invoice {
   number: string;
   /** The date the invoice is issued for — when the money was verified, else when it was paid. */
@@ -46,6 +62,9 @@ export interface Invoice {
   from: InvoiceParty;
   to: InvoiceParty;
   description: string;
+  /** Every row. Always at least one — a caller that passes none gets `description` as the
+   *  single line, which is what every one-line document already was. */
+  lines: InvoiceLine[];
   /** Rupees, exclusive of tax. Equal to `total` while the rate is 0. */
   taxableValue: number;
   taxRate: number;
@@ -55,6 +74,15 @@ export interface Invoice {
   isFinal: boolean;
   /** True when `from.gstin` is PLACEHOLDER_GSTIN. Renderers must stamp the document SAMPLE. */
   gstinIsPlaceholder: boolean;
+  /**
+   * Why tax is zero, when there is a reason worth printing. Empty otherwise.
+   *
+   * Keyed on what is being sold, not on the rate being 0: residential accommodation is exempt
+   * under a specific notification, but a grocery basket of zero-rated staples is zero for an
+   * entirely different reason. Printing the accommodation exemption under a bag of milk and
+   * paneer cites the wrong law on a document headed "tax invoice".
+   */
+  taxNote: string;
 }
 
 /**
@@ -100,6 +128,18 @@ export interface BuildInvoiceInput {
   to: InvoiceParty;
   /** Percent. Defaults to 0 — see the header on why residential rent is exempt. */
   taxRate?: number;
+  /** Itemised rows. Omit for a single-line document. */
+  lines?: InvoiceLine[];
+  /**
+   * The split, when the seller already computed it.
+   *
+   * A grocery order arrives with `taxable_amount + tax_amount == total_amount` reconciled
+   * server-side, often across per-line GST slabs. Handing those straight over beats deriving
+   * one blended rate and recomputing from it: the round trip drifts by a paisa, and a basket
+   * mixing 0% and 5% has no single rate to state honestly.
+   */
+  taxableValue?: number;
+  taxAmount?: number;
 }
 
 export function buildInvoice(input: BuildInvoiceInput): Invoice {
@@ -109,8 +149,14 @@ export function buildInvoice(input: BuildInvoiceInput): Invoice {
   // The amount collected is what the resident paid, so it is tax-INCLUSIVE — the taxable value
   // is backed out of it rather than added on top, which is how a receipt for money already
   // taken has to work. At 0% the two are the same number.
-  const taxableValue = taxRate > 0 ? input.amount / (1 + taxRate / 100) : input.amount;
-  const taxAmount = input.amount - taxableValue;
+  // Prefer the seller's own figures; fall back to backing tax out of the collected amount.
+  const taxableValue =
+    input.taxableValue != null
+      ? input.taxableValue
+      : taxRate > 0
+        ? input.amount / (1 + taxRate / 100)
+        : input.amount;
+  const taxAmount = input.taxAmount != null ? input.taxAmount : input.amount - taxableValue;
 
   const gstin = input.from.gstin?.trim() || PLACEHOLDER_GSTIN;
 
@@ -121,16 +167,32 @@ export function buildInvoice(input: BuildInvoiceInput): Invoice {
     gstinIsPlaceholder: gstin === PLACEHOLDER_GSTIN,
     to: input.to,
     description: describe(input.paymentType, input.monthYear),
+    lines:
+      input.lines && input.lines.length > 0
+        ? input.lines
+        : [{ description: describe(input.paymentType, input.monthYear), amount: input.amount }],
     taxableValue: round2(taxableValue),
-    taxRate,
+    // When the split was supplied, state the rate it implies rather than the `taxRate` the
+    // caller may not have passed at all — a document showing "GST @ 0%" above a non-zero tax
+    // line is worse than one showing an awkward 4.9%.
+    taxRate:
+      input.taxableValue != null && taxableValue > 0
+        ? round2((taxAmount / taxableValue) * 100)
+        : taxRate,
     taxAmount: round2(taxAmount),
     total: input.amount,
     isFinal: input.isVerified,
+    taxNote:
+      taxRate === 0 && /RENT|DEPOSIT|SUBSCRIPTION/.test(input.paymentType.toUpperCase())
+        ? 'Residential accommodation let for use as a residence is exempt from GST under '
+          + 'Notification 12/2017 (Heading 9963/9972), which is why tax is shown at 0%.'
+        : '',
   };
 }
 
 function describe(paymentType: string, monthYear: string): string {
   const t = paymentType.toUpperCase();
+  if (t.includes('REPAIR')) return `Repair and maintenance — ${monthYear}`;
   if (t.includes('LAUNDRY')) return `Laundry service — ${monthYear}`;
   if (t.includes('FOOD')) return `Food and mess charges — ${monthYear}`;
   if (t.includes('SUBSCRIPTION')) return `PGow subscription — ${monthYear}`;

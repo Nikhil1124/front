@@ -15,6 +15,9 @@ import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, ErrorState, OutlinedTextField, PGowDialog, Txt } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
 import { FormScroll } from '@/components/ui/FormScroll';
+import { buildInvoice } from '@/features/payments/invoice';
+import { shareInvoicePdf } from '@/features/payments/invoicePdf';
+import { useAuthStore } from '@/store/authStore';
 
 const STATUS_HERO: Record<string, string> = {
   placed: 'Order Placed',
@@ -30,6 +33,7 @@ export function GroceryOrderDetailScreen() {
   const { data: order, isLoading, error, refetch, isRefetching } = useSupplyOrderDetailQuery(id as string);
   const { data: tracking, refetch: refetchTracking } = useSupplyTrackingQuery(id as string);
   const toast = useToast();
+  const me = useAuthStore((st) => st.user);
   const cancelOrder = useCancelSupplyOrderMutation();
   const submitUpiPayment = useSubmitUpiPaymentMutation();
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -177,11 +181,11 @@ export function GroceryOrderDetailScreen() {
                 <Txt maxFontSizeMultiplier={1.3} style={styles.lineName}>
                   {item.item_name} ({item.unit_label}) x {item.quantity}
                 </Txt>
-                {item.status ? (
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.status}</Txt>
+                {item.fulfilment_status ? (
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.fulfilment_status}</Txt>
                 ) : null}
               </View>
-              <Txt maxFontSizeMultiplier={1.3} style={styles.linePrice}>{formatINR(Number(item.total_price), 2)}</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.linePrice}>{formatINR(Number(item.line_total), 2)}</Txt>
             </View>
           ))}
 
@@ -199,6 +203,56 @@ export function GroceryOrderDetailScreen() {
             <Txt maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Txt>
             <Txt maxFontSizeMultiplier={1.3} style={styles.totalVal}>{formatINR(Number(order.total_amount), 2)}</Txt>
           </View>
+
+          {/* Only once the basket is settled. An order still being packed can still change,
+              and an invoice for a total that has not stopped moving is worse than none. */}
+          {isDelivered ? (
+            <AnimatedPress
+              accessibilityRole="button"
+              onPress={async () => {
+                try {
+                  await shareInvoicePdf(
+                    buildInvoice({
+                      paymentId: order.id,
+                      amount: Number(order.total_amount),
+                      monthYear: new Date(order.created_at).toLocaleDateString('en-IN', {
+                        month: 'short', year: 'numeric',
+                      }),
+                      paymentType: 'GROCERIES',
+                      issuedAt: new Date(order.updated_at || order.created_at).getTime(),
+                      isVerified: order.payment_status === 'paid',
+                      from: { name: 'PGow Groceries' },
+                      to: { name: me?.name || 'Resident' },
+                      // `taxable_amount + tax_amount == total_amount` exactly, server-side.
+                      // Passing those through beats deriving a rate and recomputing from it:
+                      // the round trip drifts by a paisa, and rounding would turn a 2.5% slab
+                      // into 3% on a document headed "tax invoice".
+                      taxableValue: Number(order.taxable_amount),
+                      taxAmount: Number(order.tax_amount),
+                      lines: (order.items ?? []).map((it) => ({
+                        // `item_name` already reads "Beans (250 g)" — the catalogue bakes the
+                        // pack size into the name. Appending `unit_label` again printed
+                        // "Beans (250 g) (250 g)" on the document.
+                        description: it.item_name?.includes(it.unit_label)
+                          ? it.item_name
+                          : `${it.item_name} (${it.unit_label})`,
+                        qty: Number(it.quantity),
+                        amount: Number(it.line_total),
+                      })),
+                    }),
+                    [['Order', order.id], ['Payment', String(order.payment_status).toUpperCase()]],
+                  );
+                } catch {
+                  toast('error', 'Could not share', 'The invoice could not be prepared.');
+                }
+              }}
+              style={styles.invoiceBtn}
+              testID="grocery_invoice_share"
+            >
+              <Ionicons name="document-text-outline" size={16} color={Colors.primary} />
+              <Txt maxFontSizeMultiplier={1.3} style={styles.invoiceBtnText}>Download invoice</Txt>
+            </AnimatedPress>
+          ) : null}
         </View>
 
         {needsUpiRef && (
@@ -278,6 +332,11 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 40 },
+  invoiceBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+    marginTop: 14, height: 44, borderRadius: Radii.control,
+    borderWidth: 1, borderColor: Colors.primary, backgroundColor: Colors.surface },
+  invoiceBtnText: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
   statusHeroCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radii.card,

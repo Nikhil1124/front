@@ -222,6 +222,9 @@ export interface PGRepairServiceRequest {
   technicianPhone: string;
   technicianRating: number;
   estimatedCost: number;
+  /** What the job actually cost, once the technician has finished. Null while the work is
+   *  open — a repair is quoted after inspection, so until then there is no total to state. */
+  finalCost: number | null;
   status: string;
   etaMinutes: number;
   timestamp: number;

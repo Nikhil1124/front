@@ -3,7 +3,12 @@ import { Image, ScrollView, View, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePGowStore } from '@/store/usePGowStore';
-import { useRepairRequestsQuery } from '@/features/requests/useComplaints';
+import type { PGRepairServiceRequest } from '@/types';
+import { useActiveProperty } from '@/features/properties/useProperties';
+import { useRepairRequestsQuery, useResolveComplaintMutation } from '@/features/requests/useComplaints';
+import { buildInvoice } from '@/features/payments/invoice';
+import { shareInvoicePdf } from '@/features/payments/invoicePdf';
+import { useToast } from '@/hooks/useToast';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
 import { useProcurementOrders } from '@/features/procurement/useProcurement';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -108,6 +113,9 @@ export function OwnerServicesTab() {
   const { tab } = useLocalSearchParams<{ tab?: 'SERVICES' | 'BOOKINGS' | 'PROCUREMENT' }>();
   const insets = useSafeAreaInsets();
   const [activeSubTab, setActiveSubTab] = useState<'SERVICES' | 'BOOKINGS' | 'PROCUREMENT'>(tab ?? 'SERVICES');
+  /** The repair being closed out. Holding the row, not just its id, so the dialog can name
+   *  the job and the invoice can be built without a second lookup. */
+  const [completing, setCompleting] = useState<PGRepairServiceRequest | null>(null);
 
   useEffect(() => {
     if (tab && ['SERVICES', 'BOOKINGS', 'PROCUREMENT'].includes(tab)) {
@@ -126,6 +134,9 @@ export function OwnerServicesTab() {
     isLoading: repairsLoading,
     error: repairsError,
     refetch: refetchRepairs } = useRepairRequestsQuery(activePgId ?? undefined);
+  const resolveRepair = useResolveComplaintMutation(activePgId ?? undefined);
+  const { activeEntity: owner } = useActiveProperty();
+  const toast = useToast();
   const isManagerMode = useIsManagerMode();
 
   const { data: pendingOrders = [] } = useProcurementOrders({
@@ -156,6 +167,36 @@ export function OwnerServicesTab() {
    *     unrelated CDN — each one a network round trip on render, and a broken tile whenever
    *     it 404s or the resident is offline — for something on-brand that cannot fail.
    */
+  /** The document for a finished repair. Built from `finalCost` and nothing else — the visit
+   *  fee is what booking quoted, and stating it as a total is the promise the catalogue's own
+   *  card refuses to make. No charge recorded, no invoice offered. */
+  const shareRepairInvoice = (rep: PGRepairServiceRequest) => {
+    if (rep.finalCost == null) return;
+    shareInvoicePdf(
+      buildInvoice({
+        paymentId: rep.id,
+        amount: rep.finalCost,
+        monthYear: new Date(rep.timestamp).toLocaleDateString('en-IN', {
+          month: 'short', year: 'numeric',
+        }),
+        paymentType: 'REPAIR',
+        issuedAt: rep.timestamp,
+        isVerified: true,
+        from: { name: 'PGow Services' },
+        to: { name: owner?.pgName || 'Your property', line: owner?.address || undefined },
+        lines: [
+          { description: rep.issueTitle || rep.category || 'Repair work', amount: rep.finalCost },
+        ],
+      }),
+      [
+        ['Request', rep.id.slice(0, 8)],
+        ['Technician', rep.assignedTechnicianName || '—'],
+        // Printed as a detail, never as the total — the two are different facts.
+        ['Visit fee quoted', `₹${rep.estimatedCost}`],
+      ],
+    ).catch(() => toast('error', 'Could not share', 'The invoice could not be prepared.'));
+  };
+
   const renderServiceCard = (item: ServiceItem) => (
     <AnimatedPress accessibilityRole="button"
       accessibilityLabel={`${item.name}. Visit fee ₹${item.cost}`}
@@ -258,17 +299,32 @@ export function OwnerServicesTab() {
         <View style={styles.emptyLegacyCard}><Txt maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repair requests.</Txt></View>
       ) : (
         <View>
-          {repairs.map((rep, i) => (
-            <ListRow
-              key={rep.id}
-              title={`Request #${rep.id.slice(0, 4)}`}
-              meta={rep.category}
-              leading={<Ionicons name="construct-outline" size={17} color={Colors.primary} />}
-              status={{ label: rep.status, tone: toneFor(rep.status) }}
-              first={i === 0}
-              last={i === repairs.length - 1}
-            />
-          ))}
+          {repairs.map((rep, i) => {
+            const done = rep.finalCost != null;
+            return (
+              <ListRow
+                key={rep.id}
+                title={`Request #${rep.id.slice(0, 4)}`}
+                meta={
+                  done
+                    ? `${rep.category} · tap for the invoice`
+                    : `${rep.category} · ₹${rep.estimatedCost} visit fee`
+                }
+                leading={<Ionicons name="construct-outline" size={17} color={Colors.primary} />}
+                // The charge, once there is one. Until then there is no total to show — the
+                // trade quotes after inspecting, so the visit fee sits in the meta line
+                // labelled as what it is.
+                amount={done ? formatINR(rep.finalCost!) : undefined}
+                status={{ label: rep.status, tone: toneFor(rep.status) }}
+                // One row, two jobs, and they never overlap: an unfinished repair needs
+                // closing out, a finished one needs its document.
+                onPress={() => (done ? shareRepairInvoice(rep) : setCompleting(rep))}
+                first={i === 0}
+                last={i === repairs.length - 1}
+                testID={`repair_${rep.id}`}
+              />
+            );
+          })}
         </View>
       )}
     </ScrollView>
@@ -390,6 +446,46 @@ export function OwnerServicesTab() {
       {/* Service Detail Modal */}
       {selectedService && <ServiceDetailModal service={selectedService} onDismiss={() => setSelectedService(null)} />}
       {showCustomRequest && <ServiceDetailModal service={SERVICES.find(s => s.id === 'atoz')!} onDismiss={() => setShowCustomRequest(false)} />}
+      {/* Closing out a repair. The charge is captured here rather than on a separate screen
+          because it is known at exactly this moment — the technician has finished and said
+          what it came to. The server writes it in the same statement as the resolution, so a
+          resolved repair and its charge can never disagree. */}
+      <PGowDialog
+        visible={!!completing}
+        title={completing ? `Complete ${completing.issueTitle || 'this repair'}?` : ''}
+        message={
+          completing
+            ? `Booked with a ₹${completing.estimatedCost} visit fee. Enter what the work actually came to — this is the figure the invoice will show.`
+            : undefined
+        }
+        confirmLabel={resolveRepair.isPending ? 'Saving…' : 'Mark complete'}
+        busy={resolveRepair.isPending}
+        prompt={{
+          label: 'Final amount (₹)',
+          placeholder: 'e.g. 900',
+          required: true,
+          requiredMessage: 'Enter what the work cost.',
+          helper: 'The visit fee is kept separately — this is the job total.',
+        }}
+        onConfirm={async (value) => {
+          if (!completing) return;
+          const finalAmount = Number(String(value).replace(/[^0-9.]/g, ''));
+          if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
+            toast('error', 'Enter a valid amount', 'The charge must be more than zero.');
+            return;
+          }
+          try {
+            await resolveRepair.mutateAsync({ id: completing.id, finalAmount });
+            setCompleting(null);
+            toast('success', 'Repair completed', 'The invoice is ready on this request.');
+          } catch (err) {
+            toast('error', 'Could not complete', err instanceof Error ? err.message : 'Please try again.');
+          }
+        }}
+        onCancel={() => setCompleting(null)}
+        testID="repair_complete"
+      />
+
       {showAddSubscription && <AddPgDailySubscriptionDialog onDismiss={() => setShowAddSubscription(false)} />}
 
       <PGowDialog

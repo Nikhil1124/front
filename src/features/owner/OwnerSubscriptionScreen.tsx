@@ -36,6 +36,8 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { Radii, Colors, DeckTints, type DeckTint } from '@/theme';
 import { Btn, Card, Col, IconBtn, ListRow, ListSectionHeader, PGowActionSheet, Row, Spacer, Txt, type StatusTone } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
+import { buildInvoice } from '@/features/payments/invoice';
+import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 
 /** The two shapes the design already had: a flat-fee one and a pay-as-you-grow one. `brand`
  *  and `green` — not a fifth, off-palette purple — so this screen stays inside the same four
@@ -158,6 +160,25 @@ export function OwnerSubscriptionScreen() {
       .catch((e: any) => toast('error', 'Not recorded', e?.message ?? 'Please try again.'));
   };
 
+  /** The owner's own bill from PGow — the one invoice on this screen where PGow is the
+   *  seller rather than the property. Billed BY PGow, TO the property. */
+  const shareSubscriptionInvoice = (inv: { id: string; period: string; amount: string; paid_at: string | null; issued_at: string; status: string }) => {
+    shareInvoicePdf(
+      buildInvoice({
+        paymentId: inv.id,
+        amount: Number(inv.amount),
+        monthYear: inv.period,
+        paymentType: 'SUBSCRIPTION',
+        issuedAt: new Date(inv.paid_at || inv.issued_at).getTime(),
+        isVerified: inv.status === 'paid',
+        from: { name: 'PGow' },
+        to: { name: owner?.pgName || 'Your property', line: owner?.address || undefined },
+      }),
+      [['Invoice period', inv.period], ['Status', inv.status.toUpperCase()]],
+    ).catch(() => toast('error', 'Could not share', 'The invoice could not be prepared.'));
+  };
+
+
   const active = subscription.data;
   // `Subscription` carries `plan_code`, not `billing_period` — look the real plan up in the
   // already-fetched list rather than guess the tint from the plan's display name.
@@ -224,10 +245,17 @@ export function OwnerSubscriptionScreen() {
                   key={inv.id}
                   leading={<Ionicons name="receipt-outline" size={17} color={Colors.primary} />}
                   title={`Period ${inv.period}`}
-                  meta={reportable ? 'Tap to report your payment' : undefined}
+                  meta={reportable ? 'Tap to report your payment' : 'Tap to download the invoice'}
                   amount={money(inv.amount)}
                   status={statusForInvoice(inv)}
-                  onPress={reportable ? () => handleReportPayment(inv.id) : undefined}
+                  // Two different jobs on one row, because they never apply at once: while an
+                  // invoice is awaiting payment the useful action is reporting it, and once it
+                  // is settled the useful action is the document for the owner's own books.
+                  onPress={
+                    reportable
+                      ? () => handleReportPayment(inv.id)
+                      : () => shareSubscriptionInvoice(inv)
+                  }
                   first={i === 0}
                   last={i === arr.length - 1}
                   testID={`invoice_${inv.id}`}

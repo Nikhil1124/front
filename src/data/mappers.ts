@@ -506,6 +506,10 @@ export function toRepairRequest(r: RequestRecord): PGRepairServiceRequest {
     technicianPhone: detailStr(r, "technician_phone"),
     technicianRating: detailNum(r, "technician_rating"),
     estimatedCost: toAmount(r.amount),
+    // The two are different facts and routinely differ — a ₹149 visit fee against a ₹900
+    // job. `estimatedCost` is what booking quoted; this is what the work came to, and it is
+    // the only one an invoice may call a total.
+    finalCost: r.final_amount != null ? toAmount(r.final_amount) : null,
     status: HUB_STATUS.repair[r.status] ?? "Technician Requested",
     etaMinutes: detailNum(r, "eta_minutes"),
     timestamp: toMillis(r.created_at),

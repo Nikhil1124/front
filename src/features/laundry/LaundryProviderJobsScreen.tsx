@@ -20,6 +20,8 @@ import { AnimatedPress, Btn, Card, Col, Row, Spacer, StatusChip, Txt, toneFor } 
 import { useToast } from '@/hooks/useToast';
 import { Colors, Radii } from '@/theme';
 import { formatINR } from '@/utils/format';
+import { buildInvoice } from '@/features/payments/invoice';
+import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 import { openInMaps } from '@/utils/maps';
 import type { RequestRecord } from '@/features/requests/useComplaints';
 import {
@@ -178,6 +180,53 @@ export function LaundryProviderJobsScreen({ history = false }: { history?: boole
                     <Ionicons name="navigate" size={15} color={Colors.primary} />
                     <Txt variant="button" color={Colors.primary} style={{ marginLeft: 6 }}>
                       Open in Google Maps
+                    </Txt>
+                  </Btn>
+                </>
+              ) : null}
+
+              {/* A finished job's invoice. The provider is the one holding the clothes at
+                  handover, so this is where the document is actually wanted — a resident can
+                  be sent it on the doorstep rather than asked to go and find it in the app.
+                  Same document their own order screen renders, from the same request. */}
+              {history ? (
+                <>
+                  <Spacer size={12} />
+                  <Btn
+                    onPress={() => {
+                      shareInvoicePdf(
+                        buildInvoice({
+                          paymentId: job.id,
+                          amount: Number(job.amount ?? 0),
+                          monthYear: new Date(job.created_at).toLocaleDateString('en-IN', {
+                            month: 'short', year: 'numeric',
+                          }),
+                          paymentType: 'LAUNDRY',
+                          // The job's own creation date, never the clock — the invoice number
+                          // embeds the financial year, so a clock-based date would renumber
+                          // the same job either side of 1 April.
+                          issuedAt: new Date(job.created_at).getTime(),
+                          isVerified: job.status === 'resolved',
+                          from: { name: job.pg_name || 'PGow Laundry' },
+                          to: {
+                            name: job.resident_name || 'Resident',
+                            line: job.room_no ? `Room ${job.room_no}` : undefined,
+                          },
+                          lines: [{ description: job.title, amount: Number(job.amount ?? 0) }],
+                        }),
+                      ).catch(() =>
+                        toast('error', 'Could not share', 'The invoice could not be prepared.'),
+                      );
+                    }}
+                    containerColor={Colors.surfaceElevated}
+                    textColor={Colors.primary}
+                    borderRadius={Radii.control}
+                    height={42}
+                    testID={`laundry_invoice_${job.id}`}
+                  >
+                    <Ionicons name="document-text-outline" size={15} color={Colors.primary} />
+                    <Txt variant="button" color={Colors.primary} style={{ marginLeft: 6 }}>
+                      Download invoice
                     </Txt>
                   </Btn>
                 </>
