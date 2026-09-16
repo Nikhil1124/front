@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useSubscriptionsQuery, useSetSubscriptionActiveMutation, DayOfWeek, SubscriptionItem } from '../useSubscriptions';
+import { useSubscriptionsQuery, useSetSubscriptionActiveMutation, WEEKDAY_NAME, type DayOfWeek, type SubscriptionItem } from '../useSubscriptions';
 import { useAuthStore } from '@/store/authStore';
 import { Radii, Colors, Layout } from '@/theme';
 import { AppHeader } from '@/components/AppHeader';
@@ -32,23 +32,30 @@ export function GrocerySubscriptionDetailsScreen() {
     return subscriptions?.find(s => s.id === id);
   }, [subscriptions, id]);
 
+  /**
+   * The plan, grouped out of the server's own day-tagged lines.
+   *
+   * Was parsed out of `delivery_note`, where the create screen had stashed it as
+   * `DAYWISE_PLAN: {json}` because the server had nowhere to put a day. It does now
+   * (`supply_subscription_items.weekday`), which matters beyond tidiness: the note was never
+   * read by the materialiser, so what shipped each morning was not what this screen drew.
+   *
+   * A line with a null weekday runs daily, so it belongs under every day.
+   */
   const schedule = useMemo(() => {
     if (!subscription) return null;
-    
-    if (subscription.schedule) {
-      return subscription.schedule;
-    }
+    const byDay = Object.fromEntries(
+      WEEKDAY_NAME.map((d) => [d, [] as typeof subscription.items]),
+    ) as Record<DayOfWeek, typeof subscription.items>;
 
-    if (subscription.delivery_note?.startsWith('DAYWISE_PLAN: ')) {
-      try {
-        const jsonStr = subscription.delivery_note.replace('DAYWISE_PLAN: ', '');
-        const parsed = JSON.parse(jsonStr) as Record<DayOfWeek, any[]>;
-        return parsed;
-      } catch (e) {
-        return null;
+    for (const line of subscription.items) {
+      if (line.weekday == null) {
+        WEEKDAY_NAME.forEach((d) => byDay[d].push(line));
+      } else if (WEEKDAY_NAME[line.weekday]) {
+        byDay[WEEKDAY_NAME[line.weekday]].push(line);
       }
     }
-    return null;
+    return Object.values(byDay).some((v) => v.length > 0) ? byDay : null;
   }, [subscription]);
 
   const handleToggle = () => {

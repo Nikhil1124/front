@@ -15,9 +15,22 @@ export interface SubscriptionItem {
   item_name: string;
   unit_label: string;
   quantity: number;
+  /** Which day this line runs on, or null for every day. 0=Monday..6=Sunday, matching
+   *  Python's `date.weekday()` — the materialiser compares against it directly. */
+  weekday: number | null;
 }
 
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
+/** The one place the app's day names meet the server's numbers. Monday leads because
+ *  `date.weekday()` does, and the materialiser's filter is a direct comparison against it. */
+export const WEEKDAY_INDEX: Record<DayOfWeek, number> = {
+  monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4, saturday: 5, sunday: 6,
+};
+
+export const WEEKDAY_NAME: DayOfWeek[] = [
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+];
 
 export interface Subscription {
   id: string;
@@ -28,8 +41,9 @@ export interface Subscription {
   is_active: boolean;
   payment_method: string;
   delivery_note: string;
+  /** Every line, day-tagged. A plan is read by grouping on `weekday`; a line with null runs
+   *  daily. There is no separate `schedule` object — the server has one list, not two. */
   items: SubscriptionItem[];
-  schedule?: Record<DayOfWeek, SubscriptionItem[]>;
   created_at: string;
   updated_at: string;
 }
@@ -46,8 +60,8 @@ export interface CreateSubscriptionParams {
   deliver_at: string;
   payment_method: SubscriptionPaymentMethod;
   delivery_note?: string;
-  items?: Array<{ item_id: string; quantity: number }>;
-  schedule?: Record<DayOfWeek, Array<{ item_id: string; quantity: number }>>;
+  /** One entry per item per day. Omit `weekday` for a line that runs every day. */
+  items: Array<{ item_id: string; quantity: number; weekday?: number }>;
 }
 
 export function listSubscriptions(pgId: string): Promise<Subscription[]> {
