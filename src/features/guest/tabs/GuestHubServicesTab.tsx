@@ -65,7 +65,7 @@ export function GuestHubServicesTab() {
               <Col style={{ flex: 1 }}>
                 <Txt size={15} weight="700" color={Colors.textPrimary}>EXPRESS PG LAUNDRY</Txt>
                 <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
-                  Wash & Fold • Wash & Iron • Dry Cleaning
+                  Wash & Fold • Wash & Iron
                 </Txt>
               </Col>
             </Row>

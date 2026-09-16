@@ -185,12 +185,21 @@ export default function GuestHomeTab() {
           </AnimatedPress>
         }
         actions={
-          <HeaderChip
-            icon="notifications-outline"
-            label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-            badge={unreadCount > 0}
-            onPress={() => router.push('/notifications')}
-          />
+          <Row align="center" gap={8}>
+            <HeaderChip
+              icon={isAwayFromPg ? "airplane" : "airplane-outline"}
+              label={isAwayFromPg ? "Away" : "Home"}
+              color={isAwayFromPg ? Colors.warning : Colors.primary}
+              bgColor={isAwayFromPg ? Palette.TintAmber : Colors.surfaceElevated}
+              onPress={() => toggleVacationMode(!isAwayFromPg)}
+            />
+            <HeaderChip
+              icon="notifications-outline"
+              label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+              badge={unreadCount > 0}
+              onPress={() => router.push('/notifications')}
+            />
+          </Row>
         }
       />
 
@@ -257,50 +266,7 @@ export default function GuestHomeTab() {
 
         </AnimatedPress>
 
-        {/* ── HOME VISIT & MEAL ALERTS WIDGET ── */}
-        <AnimatedPress accessibilityRole="button"
-          onPress={() => toggleVacationMode(!isAwayFromPg)}
-          style={[
-            styles.vacationHomeCard,
-            isAwayFromPg && styles.vacationHomeCardActive
-          ]}
-        >
-          <Row justify="space-between" align="center">
-            <Row gap={12} style={{ flex: 1, paddingRight: 8 }}>
-              <View style={[styles.vacationHomeIconWrap, isAwayFromPg && styles.vacationHomeIconWrapActive]}>
-                <Ionicons
-                  name={isAwayFromPg ? "airplane" : "notifications-outline"}
-                  size={20}
-                  color={isAwayFromPg ? Colors.warning : Colors.primary}
-                />
-              </View>
 
-              <Col style={{ flex: 1 }}>
-                <Row gap={6} align="center">
-                  <Txt size={13} weight="700" color={isAwayFromPg ? "#92400E" : Colors.textPrimary}>
-                    {isAwayFromPg ? "Away from PG (Home Visit)" : "Meal Notifications"}
-                  </Txt>
-                  <View style={[styles.vacationChip, { backgroundColor: isAwayFromPg ? Palette.TintAmber : Colors.surfaceElevated }]}>
-                    <Txt size={9} weight="700" color={isAwayFromPg ? Colors.warning : Colors.primary}>
-                      {isAwayFromPg ? "MUTED ✈️" : "ACTIVE 🔔"}
-                    </Txt>
-                  </View>
-                </Row>
-                <Txt size={11} color={isAwayFromPg ? Colors.warning : Colors.textSecondary} style={{ marginTop: 2 }}>
-                  {isAwayFromPg
-                    ? "Staff can see you're away. RSVP \"Not Attending\" yourself on each meal — this doesn't do that automatically."
-                    : "Going home soon? Mark yourself away — staff will see it on the roster."}
-                </Txt>
-              </Col>
-            </Row>
-
-            <View style={[styles.vacationTogglePill, isAwayFromPg && styles.vacationTogglePillActive]}>
-              <Txt size={11} weight="700" color={isAwayFromPg ? Colors.textInverse : Colors.primary}>
-                {isAwayFromPg ? "I'm Back 🏠" : "Mark Away ✈️"}
-              </Txt>
-            </View>
-          </Row>
-        </AnimatedPress>
 
         {/* ── KYC BANNER ── */}
         {(canSubmitKyc(kycStatus) || kycStatus === 'PENDING') && (
@@ -445,6 +411,37 @@ export default function GuestHomeTab() {
           </View>
         </View>
 
+        {/* ── 5. QUICK SERVICES ── */}
+        <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
+          Quick Services
+        </Txt>
+        <View style={styles.grid}>
+          <SvcCard
+            title="Groceries"
+            desc="Essentials delivered to your room"
+            image={require('../../../assets/pg_grocery_eggs_1785343431667.webp')}
+            onPress={() => router.push('/groceries')}
+          />
+          <SvcCard
+            title="Laundry"
+            desc={
+              myLaundry.length > 0
+                ? `${myLaundry.length} active laundry order${myLaundry.length === 1 ? '' : 's'}`
+                : 'Pickup, wash & return'
+            }
+            descColor={myLaundry.length > 0 ? Colors.primary : undefined}
+            image={require('../../../assets/pg_service_laundry_1785343445318.webp')}
+            onPress={() => router.push('/laundry')}
+          />
+          <SvcCard
+            title="Support & Requests"
+            desc="Complaints & maintenance"
+            icon="headset-outline"
+            onPress={() => router.push('/support')}
+            badge={unreadCount > 0 ? unreadCount : undefined}
+          />
+        </View>
+
         {/* ── 4. TODAY AT PGOW ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
           <Txt size={17} weight="700" color={Colors.textPrimary}>Today at PGow</Txt>
@@ -520,39 +517,7 @@ export default function GuestHomeTab() {
           </View>
         )}
 
-        {/* ── 5. QUICK SERVICES ── */}
-        <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
-          Quick Services
-        </Txt>
-        <View style={styles.grid}>
-          <SvcCard
-            title="Groceries"
-            desc="Essentials delivered to your room"
-            image={require('../../../assets/pg_grocery_eggs_1785343431667.webp')}
-            onPress={() => router.push('/groceries')}
-          />
-          <SvcCard
-            title="Laundry"
-            desc={
-              myLaundry.length > 0
-                ? `${myLaundry.length} active laundry order${myLaundry.length === 1 ? '' : 's'}`
-                : 'Pickup, wash & return'
-            }
-            descColor={myLaundry.length > 0 ? Colors.primary : undefined}
-            image={require('../../../assets/pg_service_laundry_1785343445318.webp')}
-            onPress={() => router.push('/laundry')}
-          />
-          {/* "Repairs — Book a technician" was here. Removed with the resident-side booking
-              screen: reporting is "Support & Requests" below, and dispatching a technician is
-              the owner's to do. */}
-          <SvcCard
-            title="Support & Requests"
-            desc="Complaints & maintenance"
-            icon="headset-outline"
-            onPress={() => router.push('/support')}
-            badge={unreadCount > 0 ? unreadCount : undefined}
-          />
-        </View>
+
 
         {/* ── 6. COMMUNITY NOTICE ── */}
         <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>

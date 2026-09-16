@@ -45,6 +45,37 @@ const COMPLAINT_CATEGORIES = [
   { label: 'Staff Issue', icon: 'people-outline' },
 ];
 
+const COMPLAINT_SUGGESTIONS: Record<string, { title: string, desc: string }[]> = {
+  'Food Quality': [
+    { title: 'Food is too spicy', desc: 'The food served today was too spicy to eat.' },
+    { title: 'Stale food', desc: 'The food seems stale and not fresh.' },
+    { title: 'Insufficient quantity', desc: 'The portion size provided was not enough.' },
+  ],
+  'Room Cleanliness': [
+    { title: 'Room not swept', desc: 'My room has not been cleaned today.' },
+    { title: 'Dustbin full', desc: 'The dustbin in my room has not been emptied.' },
+    { title: 'Dirty bathroom', desc: 'The bathroom needs a thorough cleaning.' },
+  ],
+  'Wi-Fi & Internet': [
+    { title: 'No internet access', desc: 'I am unable to connect to the Wi-Fi network.' },
+    { title: 'Slow internet', desc: 'The Wi-Fi speed is extremely slow today.' },
+  ],
+  'Plumbing & Repairs': [
+    { title: 'Leaking tap', desc: 'There is a continuous leak from the tap in my bathroom.' },
+    { title: 'Blocked toilet', desc: 'The toilet is blocked and needs urgent maintenance.' },
+    { title: 'Broken door lock', desc: 'The lock on my door is not working properly.' },
+  ],
+  'Water & Electricity': [
+    { title: 'No hot water', desc: 'There is no hot water coming from the geyser.' },
+    { title: 'Power cut', desc: 'There is no electricity in my room.' },
+    { title: 'No drinking water', desc: 'The water dispenser is empty.' },
+  ],
+  'Staff Issue': [
+    { title: 'Unresponsive staff', desc: 'The staff is not responding to my requests.' },
+    { title: 'Rude behavior', desc: 'A staff member was rude to me.' },
+  ]
+};
+
 export function GuestFeedbackComplaintsTab() {
   const dockScroll = useDockScroll();
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -252,6 +283,36 @@ export function GuestFeedbackComplaintsTab() {
                 {formErrors.category}
               </Txt>
             ) : null}
+
+            {category && COMPLAINT_SUGGESTIONS[category] && (
+              <View style={{ marginTop: 14 }}>
+                <Txt size={12} weight="700" color={Colors.textSecondary} style={{ marginBottom: 8 }}>
+                  Quick Suggestions
+                </Txt>
+                <FormScroll
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  bounces={false}
+                  overScrollMode="never"
+                  style={{ marginHorizontal: -16 }}
+                  contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}
+                >
+                  {COMPLAINT_SUGGESTIONS[category].map((sug) => (
+                    <AnimatedPress accessibilityRole="button"
+                      key={sug.title}
+                      onPress={() => {
+                        setTitle(sug.title);
+                        setDescription(sug.desc);
+                        setFormErrors((e) => ({ ...e, title: undefined, description: undefined }));
+                      }}
+                      style={styles.suggestionChip}
+                    >
+                      <Txt size={12} weight="700" color={Colors.primary}>{sug.title}</Txt>
+                    </AnimatedPress>
+                  ))}
+                </FormScroll>
+              </View>
+            )}
 
             {/* COMPLAINT FORM INPUTS */}
             <Spacer size={18} />
@@ -619,6 +680,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#DCE9EA',
     paddingHorizontal: 14, paddingVertical: 9 },
   catPillActive: { backgroundColor: Colors.primaryDark, borderColor: Colors.primaryDark },
+  suggestionChip: { backgroundColor: Palette.TintGreen, borderRadius: Radii.card, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#DCE9EA' },
 
   // Overall Score Badge
   overallScoreChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: Palette.TintAmber, borderRadius: Radii.card, paddingHorizontal: 10, paddingVertical: 5 },

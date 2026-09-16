@@ -11,6 +11,7 @@ interface HeaderProps {
   /** Cart item count for badge */
   cartItemCount?: number;
   onCartPress?: () => void;
+  onSubscriptionsPress?: () => void;
   onNotificationPress?: () => void;
   /** Back button — shown only on sub-screens, not on the home tab */
   showBack?: boolean;
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   deliveryLabel,
   cartItemCount = 0,
   onCartPress,
+  onSubscriptionsPress,
   onNotificationPress,
   showBack = false,
   onBack,
@@ -92,6 +94,16 @@ export const Header: React.FC<HeaderProps> = ({
               </Txt>
             </View>
           )}
+        </AnimatedPress>
+
+        <AnimatedPress
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          style={styles.iconBtn}
+          accessibilityLabel="Subscriptions"
+          onPress={onSubscriptionsPress}
+        >
+          <Ionicons name="calendar-outline" size={24} color={GroceryColors.white} />
         </AnimatedPress>
 
         <AnimatedPress

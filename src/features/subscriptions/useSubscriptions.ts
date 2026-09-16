@@ -17,6 +17,8 @@ export interface SubscriptionItem {
   quantity: number;
 }
 
+export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
 export interface Subscription {
   id: string;
   pg_id: string;
@@ -27,6 +29,7 @@ export interface Subscription {
   payment_method: string;
   delivery_note: string;
   items: SubscriptionItem[];
+  schedule?: Record<DayOfWeek, SubscriptionItem[]>;
   created_at: string;
   updated_at: string;
 }
@@ -43,7 +46,8 @@ export interface CreateSubscriptionParams {
   deliver_at: string;
   payment_method: SubscriptionPaymentMethod;
   delivery_note?: string;
-  items: Array<{ item_id: string; quantity: number }>;
+  items?: Array<{ item_id: string; quantity: number }>;
+  schedule?: Record<DayOfWeek, Array<{ item_id: string; quantity: number }>>;
 }
 
 export function listSubscriptions(pgId: string): Promise<Subscription[]> {

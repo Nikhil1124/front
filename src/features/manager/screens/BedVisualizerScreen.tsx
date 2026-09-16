@@ -882,8 +882,8 @@ export function BedVisualizerScreen() {
                         }}
                         style={styles.detailQuickActionBtn}
                       >
-                        <Ionicons name="person-add-outline" size={14} color={Colors.primary} />
-                        <Txt size={11} weight="700" color={Colors.textPrimary} style={{ marginLeft: 6 }}>
+                        <Ionicons name="person-add-outline" size={24} color={Colors.primary} />
+                        <Txt size={14} weight="700" color={Colors.textPrimary} style={{ marginLeft: 8 }}>
                           Add Occupant
                         </Txt>
                       </AnimatedPress>
@@ -1283,8 +1283,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderRadius: Radii.control,
     borderWidth: 1,
     borderColor: Colors.borderSubtle },

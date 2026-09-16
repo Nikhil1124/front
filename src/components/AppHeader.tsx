@@ -149,12 +149,14 @@ export function AppHeader({
  * a fourth before. 38 plus hitSlop clears the 48dp minimum target without looking like it does.
  */
 export function HeaderChip({
-  icon, onPress, label, badge = false,
+  icon, onPress, label, badge = false, color = Colors.primary, bgColor = Colors.surfaceElevated,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   label: string;
   badge?: boolean;
+  color?: string;
+  bgColor?: string;
 }) {
   return (
     <AnimatedPress
@@ -162,9 +164,9 @@ export function HeaderChip({
       accessibilityLabel={label}
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       onPress={onPress}
-      style={styles.chip}
+      style={[styles.chip, { backgroundColor: bgColor }]}
     >
-      <Ionicons name={icon} size={18} color={Colors.primary} />
+      <Ionicons name={icon} size={18} color={color} />
       {badge ? <View style={styles.badge} /> : null}
     </AnimatedPress>
   );

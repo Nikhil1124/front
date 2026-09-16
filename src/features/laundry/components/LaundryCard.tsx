@@ -20,8 +20,6 @@ export function LaundryCard({ item, qty, onUpdateQty }: LaundryCardProps) {
   else if (item.name === 'Handbag') imageSource = require('../../../../assets/laundry/handbag.webp');
   else if (item.category === 'Wash & Fold') imageSource = require('../../../../assets/laundry/clothes_stack.webp');
   else if (item.category === 'Wash & Iron') imageSource = require('../../../../assets/laundry/iron.webp');
-  else if (item.category === 'Dry Cleaning' || item.category === 'Home Linen') imageSource = require('../../../../assets/laundry/washing_machine.webp');
-  else if (item.category === 'Shoes & Bags') imageSource = require('../../../../assets/laundry/laundry_basket.webp');
 
   return (
     <AnimatedPress style={styles.cardContainer} accessibilityRole="button">

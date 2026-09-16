@@ -21,6 +21,7 @@ import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery
 import { HeroBanner } from '../components/grocery/HeroBanner';
 import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
+import { FloatingCartBar } from '../components/FloatingCartBar';
 import { groupByVariant } from '../variantGroups';
 import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
 import { PGowApiError } from '@/data/apiClient';
@@ -232,6 +233,7 @@ export function GroceriesScreen() {
         deliveryLabel={deliveryLabel}
         cartItemCount={cartItemCount}
         onCartPress={openCart}
+        onSubscriptionsPress={() => router.push('/groceries/subscriptions')}
         onNotificationPress={() => router.push('/notifications')}
       />
 
@@ -495,6 +497,7 @@ export function GroceriesScreen() {
         )}
       </FormScroll>
 
+      <FloatingCartBar />
     </View>
   );
 }

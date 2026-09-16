@@ -14,6 +14,7 @@ import { useProcurementOrders } from '@/features/procurement/useProcurement';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionsQuery, useSetSubscriptionActiveMutation } from '@/features/subscriptions/useSubscriptions';
 import { AddPgDailySubscriptionDialog } from '@/components/dialogs/HubDialogs';
+import { BookRepairSheet } from '../components/BookRepairSheet';
 
 import { Colors, Palette, Radii } from '@/theme';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
@@ -110,15 +111,15 @@ const SERVICES: ServiceItem[] = [
 ];
 
 export function OwnerServicesTab() {
-  const { tab } = useLocalSearchParams<{ tab?: 'SERVICES' | 'BOOKINGS' | 'PROCUREMENT' }>();
+  const { tab } = useLocalSearchParams<{ tab?: 'SERVICES' | 'BOOKINGS' | 'PROCUREMENT' | 'TECHNICIAN' }>();
   const insets = useSafeAreaInsets();
-  const [activeSubTab, setActiveSubTab] = useState<'SERVICES' | 'BOOKINGS' | 'PROCUREMENT'>(tab ?? 'SERVICES');
+  const [activeSubTab, setActiveSubTab] = useState<'SERVICES' | 'BOOKINGS' | 'PROCUREMENT' | 'TECHNICIAN'>(tab ?? 'SERVICES');
   /** The repair being closed out. Holding the row, not just its id, so the dialog can name
    *  the job and the invoice can be built without a second lookup. */
   const [completing, setCompleting] = useState<PGRepairServiceRequest | null>(null);
 
   useEffect(() => {
-    if (tab && ['SERVICES', 'BOOKINGS', 'PROCUREMENT'].includes(tab)) {
+    if (tab && ['SERVICES', 'BOOKINGS', 'PROCUREMENT', 'TECHNICIAN'].includes(tab)) {
       setActiveSubTab(tab);
     }
   }, [tab]);
@@ -126,6 +127,7 @@ export function OwnerServicesTab() {
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [showCustomRequest, setShowCustomRequest] = useState(false);
   const [showAddSubscription, setShowAddSubscription] = useState(false);
+  const [showBookRepairSheet, setShowBookRepairSheet] = useState(false);
   const [togglingSub, setTogglingSub] = useState<{ id: string; label: string; active: boolean } | null>(null);
 
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -283,50 +285,7 @@ export function OwnerServicesTab() {
     <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingHorizontal: 20 }]} showsVerticalScrollIndicator={false}>
       <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Active & Past Requests</Txt>
       <Spacer size={12} />
-      {/* "No active repair requests" is only true once the fetch has actually succeeded —
-          before these branches it was also what an owner saw while it was still loading, and
-          when it had failed outright. */}
-      {repairsLoading ? (
-        <LoadingState label="Loading requests…" fill={false} />
-      ) : repairsError ? (
-        <ErrorState
-          error={repairsError}
-          title="Could not load repair requests"
-          onRetry={refetchRepairs}
-          fill={false}
-        />
-      ) : repairs.length === 0 ? (
-        <View style={styles.emptyLegacyCard}><Txt maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repair requests.</Txt></View>
-      ) : (
-        <View>
-          {repairs.map((rep, i) => {
-            const done = rep.finalCost != null;
-            return (
-              <ListRow
-                key={rep.id}
-                title={`Request #${rep.id.slice(0, 4)}`}
-                meta={
-                  done
-                    ? `${rep.category} · tap for the invoice`
-                    : `${rep.category} · ₹${rep.estimatedCost} visit fee`
-                }
-                leading={<Ionicons name="construct-outline" size={17} color={Colors.primary} />}
-                // The charge, once there is one. Until then there is no total to show — the
-                // trade quotes after inspecting, so the visit fee sits in the meta line
-                // labelled as what it is.
-                amount={done ? formatINR(rep.finalCost!) : undefined}
-                status={{ label: rep.status, tone: toneFor(rep.status) }}
-                // One row, two jobs, and they never overlap: an unfinished repair needs
-                // closing out, a finished one needs its document.
-                onPress={() => (done ? shareRepairInvoice(rep) : setCompleting(rep))}
-                first={i === 0}
-                last={i === repairs.length - 1}
-                testID={`repair_${rep.id}`}
-              />
-            );
-          })}
-        </View>
-      )}
+      <View style={styles.emptyLegacyCard}><Txt maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active bookings.</Txt></View>
     </ScrollView>
   );
 
@@ -400,6 +359,54 @@ export function OwnerServicesTab() {
     </ScrollView>
   );
 
+  const renderTechnician = () => (
+    <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingHorizontal: 20 }]} showsVerticalScrollIndicator={false}>
+      <Row justify="space-between" align="center">
+        <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Technician Services</Txt>
+        <AnimatedPress accessibilityRole="button" onPress={() => setShowBookRepairSheet(true)}>
+          <Txt maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>+ Book Repair</Txt>
+        </AnimatedPress>
+      </Row>
+      <Spacer size={12} />
+      {repairsLoading ? (
+        <LoadingState label="Loading requests…" fill={false} />
+      ) : repairsError ? (
+        <ErrorState
+          error={repairsError}
+          title="Could not load repair requests"
+          onRetry={refetchRepairs}
+          fill={false}
+        />
+      ) : repairs.length === 0 ? (
+        <View style={styles.emptyLegacyCard}><Txt maxFontSizeMultiplier={1.3} style={styles.emptyLegacyText}>No active repairs.</Txt></View>
+      ) : (
+        <View>
+          {repairs.map((rep, i) => {
+            const done = rep.finalCost != null;
+            return (
+              <ListRow
+                key={rep.id}
+                title={`Request #${rep.id.slice(0, 4)}`}
+                meta={
+                  done
+                    ? `${rep.category} · tap for the invoice`
+                    : `${rep.category} · ₹${rep.estimatedCost || 0} visit fee`
+                }
+                leading={<Ionicons name="construct-outline" size={17} color={Colors.primary} />}
+                amount={done ? formatINR(rep.finalCost!) : undefined}
+                status={{ label: rep.status, tone: toneFor(rep.status) }}
+                onPress={() => (done ? shareRepairInvoice(rep) : setCompleting(rep))}
+                first={i === 0}
+                last={i === repairs.length - 1}
+                testID={`repair_${rep.id}`}
+              />
+            );
+          })}
+        </View>
+      )}
+    </ScrollView>
+  );
+
   return (
     <View style={styles.root}>
       <AppHeader
@@ -425,6 +432,7 @@ export function OwnerServicesTab() {
         {activeSubTab === 'SERVICES' && renderServices()}
         {activeSubTab === 'BOOKINGS' && renderBookings()}
         {activeSubTab === 'PROCUREMENT' && renderProcurement()}
+        {activeSubTab === 'TECHNICIAN' && renderTechnician()}
 
         {/* ── Sub Navigation Bar ── */}
         <View style={[styles.bottomNavBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -439,6 +447,10 @@ export function OwnerServicesTab() {
           <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('PROCUREMENT'); }}>
             <Ionicons name={activeSubTab === 'PROCUREMENT' ? "cube" : "cube-outline"} size={22} color={activeSubTab === 'PROCUREMENT' ? PRIMARY : MUTED} />
             <Txt maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'PROCUREMENT' && styles.navTabTextActive]}>Supplies</Txt>
+          </AnimatedPress>
+          <AnimatedPress accessibilityRole="button" style={styles.navTab} onPress={() => { setActiveSubTab('TECHNICIAN'); }}>
+            <Ionicons name={activeSubTab === 'TECHNICIAN' ? "build" : "build-outline"} size={22} color={activeSubTab === 'TECHNICIAN' ? PRIMARY : MUTED} />
+            <Txt maxFontSizeMultiplier={1.3} style={[styles.navTabText, activeSubTab === 'TECHNICIAN' && styles.navTabTextActive]}>Technician</Txt>
           </AnimatedPress>
         </View>
       </View>
@@ -487,6 +499,7 @@ export function OwnerServicesTab() {
       />
 
       {showAddSubscription && <AddPgDailySubscriptionDialog onDismiss={() => setShowAddSubscription(false)} />}
+      <BookRepairSheet visible={showBookRepairSheet} onDismiss={() => setShowBookRepairSheet(false)} />
 
       <PGowDialog
         visible={togglingSub != null}

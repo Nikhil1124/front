@@ -131,6 +131,7 @@ export interface SupplyOrderSummary {
   status: SupplyOrderStatus;
   total_amount: number;
   item_count: number;
+  payment_method?: SupplyPaymentMethod;
   created_at: string;
 }
 

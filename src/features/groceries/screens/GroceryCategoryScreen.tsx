@@ -17,12 +17,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ProductCard } from '../components/grocery/ProductCard';
-import { useCartStore } from '../store/useCartStore';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
 import { groupByVariant } from '../variantGroups';
 import { useAuthStore } from '@/store/authStore';
 import { Colors, GroceryColors, Palette, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
+import { FloatingCartBar } from '../components/FloatingCartBar';
 
 // Map section filter keys → display info
 /** `deals` is the only one of these the app ever pushes — `openDeals()` in GroceriesScreen is
@@ -80,9 +80,6 @@ export function GroceryCategoryScreen() {
   const handleRefresh = async () => {
     await Promise.all([refetchItems(), refetchCats()]);
   };
-
-  const getCartTotal = useCartStore((s) => s.getCartTotal);
-  const cartItemCount = useCartStore((s) => s.getItemCount());
 
   const [activeSupplyCategory, setActiveSupplyCategory] = useState<string | null>(
     initialSupplyCategory ?? null
@@ -314,34 +311,7 @@ export function GroceryCategoryScreen() {
       )}
 
       {/* ── Floating cart bar ── */}
-      {cartItemCount > 0 && (
-        <View style={styles.floatingCartBar}>
-          <AnimatedPress
-            accessibilityRole="button"
-            style={styles.floatingCart}
-            onPress={() => router.push('/groceries/cart')}
-          >
-            <View style={styles.cartLeft}>
-              <View style={styles.cartIconCircle}>
-                <Ionicons name="cart" size={16} color={GroceryColors.white} />
-              </View>
-              <View>
-                <Txt maxFontSizeMultiplier={1.2} style={styles.cartTotal}>
-                  ₹{getCartTotal()}
-                </Txt>
-                <Txt maxFontSizeMultiplier={1.2} style={styles.cartSub}>
-                  {cartItemCount} item{cartItemCount > 1 ? 's' : ''}
-                </Txt>
-              </View>
-            </View>
-            <View style={styles.viewCartBtn}>
-              <Txt maxFontSizeMultiplier={1.2} style={styles.viewCartText}>
-                View Cart →
-              </Txt>
-            </View>
-          </AnimatedPress>
-        </View>
-      )}
+      <FloatingCartBar />
     </View>
   );
 }
@@ -541,56 +511,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: GroceryColors.textMuted,
-  },
-
-  // ── Floating cart ──
-  floatingCartBar: {
-    position: 'absolute',
-    bottom: 100,
-    left: 16,
-    right: 16,
-    shadowColor: GroceryColors.shadowColor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  floatingCart: {
-    backgroundColor: GroceryColors.primaryDark,
-    borderRadius: Radii.sheet,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  cartLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cartIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: Radii.pill,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartTotal: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: GroceryColors.white,
-  },
-  cartSub: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
-  },
-  viewCartBtn: {
-    backgroundColor: GroceryColors.white,
-    borderRadius: Radii.control,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-  viewCartText: {
-    color: GroceryColors.primaryDark,
-    fontSize: 12,
-    fontWeight: '700',
   },
 });

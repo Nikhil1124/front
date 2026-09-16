@@ -17,7 +17,7 @@ import { create } from 'zustand';
 
 export type LaundryItem = {
   id: string;
-  category: 'Wash & Fold' | 'Wash & Iron' | 'Dry Cleaning' | 'Shoes & Bags' | 'Home Linen';
+  category: 'Wash & Fold' | 'Wash & Iron';
   name: string;
   price: number;
   unit: 'kg' | 'piece' | 'set' | 'pair';
@@ -48,15 +48,6 @@ export const LAUNDRY_SERVICES: LaundryItem[] = [
   { id: 'wi3', category: 'Wash & Iron', name: 'Trousers', price: 18, unit: 'piece' },
   { id: 'wi4', category: 'Wash & Iron', name: 'Jeans', price: 20, unit: 'piece' },
   { id: 'wi5', category: 'Wash & Iron', name: 'Kurta', price: 20, unit: 'piece' },
-  // Dry Cleaning
-  { id: 'dc1', category: 'Dry Cleaning', name: 'Blazer', price: 180, unit: 'piece' },
-  { id: 'dc2', category: 'Dry Cleaning', name: 'Suit', price: 300, unit: 'set' },
-  { id: 'dc3', category: 'Dry Cleaning', name: 'Saree', price: 200, unit: 'piece' },
-  { id: 'dc4', category: 'Dry Cleaning', name: 'Jacket', price: 180, unit: 'piece' },
-  // Shoes & Bags
-  { id: 'sb1', category: 'Shoes & Bags', name: 'Sneakers', price: 150, unit: 'pair' },
-  { id: 'sb2', category: 'Shoes & Bags', name: 'Formal Shoes', price: 150, unit: 'pair' },
-  { id: 'sb3', category: 'Shoes & Bags', name: 'Handbag', price: 180, unit: 'piece' },
 ];
 
 /** Pickup slots and pay modes, shared by the booking flow so both screens offer the same set. */

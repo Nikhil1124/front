@@ -27,6 +27,7 @@
  * needs it a second time — the same invoice regenerates byte-identically from the same payment,
  * since every value on it is derived (see invoice.ts).
  */
+import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
@@ -296,7 +297,14 @@ ${inv.gstinIsPlaceholder ? '<div class="stamp">SAMPLE</div>' : ''}
  * button press is the one outcome worse than an error.
  */
 export async function shareInvoicePdf(inv: Invoice, extras: InvoiceExtras = []): Promise<void> {
-  const { uri } = await Print.printToFileAsync({ html: invoiceHtml(inv, extras) });
+  const html = invoiceHtml(inv, extras);
+
+  if (Platform.OS === 'web') {
+    await Print.printAsync({ html });
+    return;
+  }
+
+  const { uri } = await Print.printToFileAsync({ html });
 
   if (!(await Sharing.isAvailableAsync())) {
     throw new Error('Sharing is not available on this device.');

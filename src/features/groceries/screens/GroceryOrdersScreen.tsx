@@ -1,5 +1,6 @@
 import { SupplyOrderSummary } from '@/types';
 import { StyleSheet, View, FlatList, ActivityIndicator } from 'react-native';
+import { useState } from 'react';
 
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,17 @@ export function GroceryOrdersScreen() {
 
   const activeOrder = orders.find((o) => o.status !== 'delivered' && o.status !== 'cancelled');
 
+  const creditOrders = orders.filter(o => o.payment_method === 'credit').length;
+  const codUpiOrders = orders.filter(o => o.payment_method === 'cod' || o.payment_method === 'upi').length;
+
+  const [filterType, setFilterType] = useState<'all' | 'credit' | 'cod_upi'>('all');
+
+  const displayedOrders = orders.filter(o => {
+    if (filterType === 'credit') return o.payment_method === 'credit';
+    if (filterType === 'cod_upi') return o.payment_method === 'cod' || o.payment_method === 'upi';
+    return true;
+  });
+
   const openOrder = (orderId: string) => {
     router.push({ pathname: '/groceries/orders/[id]', params: { id: orderId } });
   };
@@ -35,7 +47,7 @@ export function GroceryOrdersScreen() {
       status={{ label: item.status, tone: toneFor(item.status) }}
       onPress={() => openOrder(item.id)}
       first={index === 0}
-      last={index === orders.length - 1}
+      last={index === displayedOrders.length - 1}
       testID={`order_${item.id}`}
     />
   );
@@ -70,7 +82,7 @@ export function GroceryOrdersScreen() {
         />
       ) : (
         <FlatList
-          data={orders}
+          data={displayedOrders}
           renderItem={renderOrder}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
@@ -99,6 +111,33 @@ export function GroceryOrdersScreen() {
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
                 </AnimatedPress>
+              )}
+
+              {orders.length > 0 && (
+                <View style={styles.statsContainer}>
+                  <AnimatedPress 
+                    accessibilityRole="button"
+                    style={[styles.statCard, filterType === 'credit' && styles.statCardActive]}
+                    onPress={() => setFilterType(filterType === 'credit' ? 'all' : 'credit')}
+                  >
+                    <Ionicons name="business-outline" size={22} color={Colors.primary} />
+                    <View>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.statValue}>{creditOrders}</Txt>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.statLabel}>On-Credit</Txt>
+                    </View>
+                  </AnimatedPress>
+                  <AnimatedPress 
+                    accessibilityRole="button"
+                    style={[styles.statCard, filterType === 'cod_upi' && styles.statCardActive]}
+                    onPress={() => setFilterType(filterType === 'cod_upi' ? 'all' : 'cod_upi')}
+                  >
+                    <Ionicons name="cash-outline" size={22} color={Colors.primary} />
+                    <View>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.statValue}>{codUpiOrders}</Txt>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.statLabel}>COD / UPI</Txt>
+                    </View>
+                  </AnimatedPress>
+                </View>
               )}
 
               <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Order History</Txt>
@@ -164,6 +203,31 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: Colors.textMuted },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20 },
+  statCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.card,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    ...Layout.shadowCard },
+  statCardActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.brandPale },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary },
+  statLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary },
   loadingBox: {
     flex: 1,
     alignItems: 'center',
