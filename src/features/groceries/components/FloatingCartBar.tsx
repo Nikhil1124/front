@@ -2,7 +2,7 @@
 import { View, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { GroceryColors } from '@/theme';
+import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { useCartStore } from '../store/useCartStore';
 
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   floatingCart: {
     minWidth: '50%',
     backgroundColor: GroceryColors.primaryDark,
-    borderRadius: 100, // Circular rounded corners
+    borderRadius: Radii.pill,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radii.pill,
     backgroundColor: GroceryColors.white,
     padding: 4,
     justifyContent: 'center',
@@ -107,13 +107,13 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 16,
+    borderRadius: Radii.pill,
     resizeMode: 'cover',
   },
   avatarPlaceholder: {
     width: '100%',
     height: '100%',
-    borderRadius: 16,
+    borderRadius: Radii.pill,
     backgroundColor: GroceryColors.background,
     justifyContent: 'center',
     alignItems: 'center',

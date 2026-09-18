@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useSupplyItems } from '../../groceries/useSupply';
 import { useAuthStore } from '@/store/authStore';
-import { useCreateSubscriptionMutation, DayOfWeek } from '../useSubscriptions';
+import { useCreateSubscriptionMutation, WEEKDAY_INDEX, type DayOfWeek } from '../useSubscriptions';
 import { SupplyItem } from '@/types/supply';
 import { Radii, Colors, Layout } from '@/theme';
 import { formatINR } from '@/utils/format';
@@ -68,46 +68,27 @@ export function GroceryCreateSubscriptionScreen() {
   const handleSave = async () => {
     if (!activePgId) return;
 
-    // Build schedule payload
-    const schedulePayload: Record<string, any[]> = {};
-    let hasAnyItems = false;
+    // One line per (item, day). The server stores exactly this and the materialiser reads
+    // it directly, so what is planned here is what ships.
+    //
+    // This replaced an aggregation that took `Math.max` of each item across the week and put
+    // the real plan in `delivery_note` as JSON — a field the materialiser never reads. One
+    // milk on weekdays and three on Saturday therefore shipped THREE every day: eight units
+    // a week planned, twenty-one delivered and charged, silently.
+    const itemsPayload = DAYS.flatMap((day) =>
+      Object.entries(schedule[day.id])
+        .filter(([, quantity]) => quantity > 0)
+        .map(([item_id, quantity]) => ({
+          item_id,
+          quantity,
+          weekday: WEEKDAY_INDEX[day.id],
+        })),
+    );
 
-    DAYS.forEach(day => {
-      const dayItems = schedule[day.id];
-      const itemsForDay = Object.keys(dayItems).map(itemId => ({
-        item_id: itemId,
-        quantity: dayItems[itemId],
-      }));
-      
-      if (itemsForDay.length > 0) {
-        schedulePayload[day.id] = itemsForDay;
-        hasAnyItems = true;
-      }
-    });
-
-    if (!hasAnyItems) {
+    if (itemsPayload.length === 0) {
       toast('error', 'Empty Plan', 'Please configure quantities for at least one day.');
       return;
     }
-
-    // Since the backend strictly requires `items` and rejects `schedule`, 
-    // we aggregate all unique items into the `items` array and put the day-wise
-    // breakdown into the `delivery_note` for ops/backend to read.
-    const aggregatedItems = new Map<string, number>();
-    DAYS.forEach(day => {
-      const dayItems = schedule[day.id];
-      Object.keys(dayItems).forEach(itemId => {
-        // We'll just send the maximum quantity needed on any given day 
-        // to satisfy the backend's validation for `items`.
-        const currentMax = aggregatedItems.get(itemId) || 0;
-        aggregatedItems.set(itemId, Math.max(currentMax, dayItems[itemId]));
-      });
-    });
-
-    const itemsPayload = Array.from(aggregatedItems.entries()).map(([item_id, quantity]) => ({
-      item_id,
-      quantity,
-    }));
 
     try {
       await createMutation.mutateAsync({
@@ -115,12 +96,11 @@ export function GroceryCreateSubscriptionScreen() {
         deliver_at: '07:00:00', // Default morning delivery
         payment_method: 'credit',
         items: itemsPayload,
-        delivery_note: 'DAYWISE_PLAN: ' + JSON.stringify(schedulePayload),
       });
       toast('success', 'Plan Created', 'Your daily subscription has been scheduled.');
       router.back();
-    } catch (err: any) {
-      toast('error', 'Error', err.message || 'Failed to create plan.');
+    } catch (err) {
+      toast('error', 'Error', err instanceof Error ? err.message : 'Failed to create plan.');
     }
   };
 

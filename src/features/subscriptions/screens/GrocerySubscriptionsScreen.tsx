@@ -21,15 +21,12 @@ export function GrocerySubscriptionsScreen() {
   };
 
   const renderItem = ({ item }: { item: Subscription }) => {
-    // If it's day-wise, count the unique items across the week.
-    let itemCount = item.items?.length || 0;
-    if (item.schedule) {
-      const allItemIds = new Set<string>();
-      Object.values(item.schedule).forEach(dayItems => {
-        dayItems.forEach(di => allItemIds.add(di.item_id));
-      });
-      itemCount = allItemIds.size;
-    }
+    // Distinct items, not lines: a day-wise plan holds one line per item per day, so the
+    // same milk on five weekdays is five lines but one item to a reader.
+    const itemCount = new Set((item.items ?? []).map((l) => l.item_id)).size;
+    // Day-wise the moment any line names a day; a plan of only daily lines is a plain
+    // standing order and says nothing extra.
+    const isDaywise = (item.items ?? []).some((l) => l.weekday != null);
 
     return (
       <AnimatedPress style={styles.card} onPress={() => router.push(`/groceries/subscriptions/${item.id}`)}>
@@ -52,7 +49,7 @@ export function GrocerySubscriptionsScreen() {
           <Txt maxFontSizeMultiplier={1.3} style={styles.cardMeta}>
             {itemCount} {itemCount === 1 ? 'item' : 'items'} • Delivery at {item.deliver_at.slice(0, 5)}
           </Txt>
-          {item.schedule && (
+          {isDaywise && (
             <Txt maxFontSizeMultiplier={1.3} style={styles.cardMetaSub}>
               Day-wise custom schedule active
             </Txt>
