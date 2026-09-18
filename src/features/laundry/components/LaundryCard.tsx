@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPress, Row, Txt } from '@/components/ui';
 import { LaundryItem } from '../store/useLaundryStore';
 import { Radii, Colors, Palette } from '@/theme';
+import { useResponsive } from '@/utils/responsive';
 
 type LaundryCardProps = {
   item: LaundryItem;
@@ -11,6 +12,7 @@ type LaundryCardProps = {
 };
 
 export function LaundryCard({ item, qty, onUpdateQty }: LaundryCardProps) {
+  const { isSmallPhone } = useResponsive();
   // Determine the source for the image
   let imageSource: any;
   if (item.name === 'Bedsheet' || item.name === 'Blanket') imageSource = require('../../../../assets/laundry/bedsheet.webp');
@@ -22,7 +24,7 @@ export function LaundryCard({ item, qty, onUpdateQty }: LaundryCardProps) {
   else if (item.category === 'Wash & Iron') imageSource = require('../../../../assets/laundry/iron.webp');
 
   return (
-    <AnimatedPress style={styles.cardContainer} accessibilityRole="button">
+    <AnimatedPress style={[styles.cardContainer, { width: isSmallPhone ? 140 : 160 }]} accessibilityRole="button">
       {/* Top Image Section */}
       <View style={styles.imageSection}>
         {imageSource && <Image source={imageSource} style={styles.cardImage} />}
@@ -77,7 +79,7 @@ export function LaundryCard({ item, qty, onUpdateQty }: LaundryCardProps) {
 }
 
 const styles = StyleSheet.create({
-  cardContainer: { width: 160, marginRight: 12, backgroundColor: Colors.surface, borderRadius: Radii.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: Colors.surfaceMuted },
+  cardContainer: { marginRight: 12, backgroundColor: Colors.surface, borderRadius: Radii.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: Colors.surfaceMuted },
   imageSection: { height: 120, backgroundColor: '#EBF4EC', borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden' },
   cardImage: { width: '100%', height: '100%', resizeMode: 'contain' },
   discountBadge: { position: 'absolute', top: 0, left: 0, backgroundColor: '#FF5252', borderBottomRightRadius: 12, borderTopLeftRadius: 16, paddingHorizontal: 8, paddingVertical: 4 },

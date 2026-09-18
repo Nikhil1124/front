@@ -14,6 +14,7 @@
 import { useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useScreenCaptureGuard } from '@/hooks/useScreenCaptureGuard';
 import { Radii, Colors } from '@/theme';
@@ -27,6 +28,7 @@ export interface KycDocumentsCardProps {
 }
 
 export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocumentsCardProps) {
+  const insets = useSafeAreaInsets();
   const [zoomed, setZoomed] = useState<{ uri: string; label: string } | null>(null);
   const [idFailed, setIdFailed] = useState(false);
   const [selfieFailed, setSelfieFailed] = useState(false);
@@ -106,7 +108,7 @@ export function KycDocumentsCard({ idPhotoUri, selfieUri, emptyHint }: KycDocume
       {/* Full-Screen Document Inspection Viewer */}
       <Modal visible={zoomed != null} transparent animationType="fade" onRequestClose={() => setZoomed(null)}>
         <View style={styles.zoomBackdrop} accessibilityViewIsModal>
-          <View style={styles.zoomHeader}>
+          <View style={[styles.zoomHeader, { paddingTop: insets.top + 16 }]}>
             <View>
               <Txt variant="sectionTitle" color={Colors.textInverse}>{zoomed?.label}</Txt>
               <Txt size={11} color="#A7EBF2" style={{ marginTop: 2 }}>Official KYC Verification Document</Txt>
@@ -218,7 +220,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 54,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(203, 239, 244, 0.2)',

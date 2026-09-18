@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { FormScroll } from '@/components/ui/FormScroll';
@@ -39,6 +40,7 @@ type Step = 'code' | 'room' | 'you';
 export function JoinPgScreen({ initialCode }: { initialCode?: string } = {}) {
   const land = useTokenLanding();
   const toast = useToast();
+  const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState<Step>('code');
   const [scanning, setScanning] = useState(false);
@@ -133,7 +135,7 @@ export function JoinPgScreen({ initialCode }: { initialCode?: string } = {}) {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <AnimatedPress
           onPress={() => router.back()}
           accessibilityLabel="Go back"
@@ -300,7 +302,7 @@ function StepDone({ label, value, onChange }: { label: string; value: string; on
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
-  header: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 14 },
+  header: { paddingHorizontal: 20, paddingBottom: 14 },
   // `flex: 1` here would pin the content to the viewport and defeat scrolling now that
   // this is a contentContainerStyle rather than a View's own style.
   body: { paddingHorizontal: 20, paddingBottom: 32 },

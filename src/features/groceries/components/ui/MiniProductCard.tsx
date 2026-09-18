@@ -8,6 +8,7 @@ import { useCartStore } from '../../store/useCartStore';
 import { GroceryColors, Radii } from '@/theme';
 import { PriceDisplay } from './PriceDisplay';
 import { AnimatedPress, Txt } from '@/components/ui';
+import { useResponsive } from '@/utils/responsive';
 
 export interface MiniProductCardProps {
   product: SupplyItem;
@@ -27,6 +28,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
   onPress,
   showWishlist = false,
 }) => {
+  const { isSmallPhone } = useResponsive();
   const options = [{ price: product.price, unit: product.unit_label, originalPrice: product.mrp ?? undefined }];
 
   const cartItems = useCartStore((s) => s.items);
@@ -56,7 +58,7 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { width: isSmallPhone ? 130 : 142 }]}>
       {/* Discount badge */}
       {discountPercent > 0 && (
         <View style={styles.discountBadge}>
@@ -116,7 +118,6 @@ export const MiniProductCard: React.FC<MiniProductCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    width: 142,
     backgroundColor: GroceryColors.white,
     borderWidth: 1,
     borderColor: GroceryColors.border,

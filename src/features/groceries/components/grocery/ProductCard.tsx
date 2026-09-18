@@ -4,7 +4,6 @@ import {
   Image,
   StyleProp,
   StyleSheet,
-  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
@@ -14,6 +13,7 @@ import { useWishlistStore } from '../../store/useWishlistStore';
 import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { baseProductName } from '../../variantGroups';
+import { useResponsive, useResponsivePadding } from '@/utils/responsive';
 
 interface ProductCardProps {
   product: SupplyItem;
@@ -55,11 +55,12 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
   hideWishlist,
   variants,
 }) => {
-  const { width } = useWindowDimensions();
+  const { width, isTablet } = useResponsive();
+  const padding = useResponsivePadding();
   // Deal card: 2-column grid. Simple card: horizontal rail.
   const cardWidth = layout === 'deal'
-    ? (width - 44) / 2
-    : width > 600 ? 140 : Math.min(width * 0.36, 150);
+    ? (width - (padding * 2) - 12) / 2
+    : isTablet ? 140 : Math.min(width * 0.36, 150);
 
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);

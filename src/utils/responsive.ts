@@ -1,6 +1,23 @@
 import { useWindowDimensions } from 'react-native';
 
 /**
+ * A central responsive hook providing dimensional data and sensible breakpoints.
+ */
+export function useResponsive() {
+  const { width, height, fontScale } = useWindowDimensions();
+  
+  return {
+    width,
+    height,
+    fontScale,
+    isLandscape: width > height,
+    isSmallPhone: width < 360,
+    isPhone: width >= 360 && width < 600,
+    isTablet: width >= 600,
+  };
+}
+
+/**
  * Returns dynamic horizontal padding based on screen width.
  * Compact (<380): 16px
  * Standard (380-428): 20px
