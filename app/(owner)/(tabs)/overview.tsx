@@ -872,7 +872,9 @@ const styles = StyleSheet.create({
   sheetTileBox: {
     width: 62,
     height: 62,
-    borderRadius: 16,
+    // `card`, not `control`: at 62px the tile is a surface holding artwork rather than
+    // something you type into, and 18 is the nearest token to the 16 this was drawn at.
+    borderRadius: Radii.card,
     backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center'

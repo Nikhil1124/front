@@ -19,23 +19,8 @@ export function useSupplyItems(pgId?: string, categoryId?: string, q?: string) {
       if (categoryId) params.append('category_id', categoryId);
       if (q) params.append('q', q);
       // The server already applies `category_id` and `q` — they are query params above — so
-      // there is nothing left to filter client-side. The filtering that used to live here
-      // existed only to keep injected mock items out of the wrong category.
-      const items = await apiFetch<SupplyItem[]>(`/v1/supply/items?${params.toString()}`);
-      
-      // Inject mock Sambar Cut-Vegetables for testing
-      items.push({
-        id: 'mock-sambar-cut-veg',
-        category_id: 'mock-veg-category', // Real category ID is unknown, but it will appear in search/all items
-        name: 'Sambar Cut Vegetables',
-        description: 'Fresh pre-cut vegetables ready for sambar.',
-        unit_label: '500g',
-        price: 65,
-        available: true,
-        image_url: require('react-native').Image.resolveAssetSource(require('../../../assets/productimages/promo_fresh_picks_nobg.webp')).uri,
-      });
-
-      return items;
+      // there is nothing left to filter client-side.
+      return apiFetch<SupplyItem[]>(`/v1/supply/items?${params.toString()}`);
     },
     enabled: !!pgId,
   });
