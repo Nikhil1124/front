@@ -162,7 +162,7 @@ export async function logoutEverywhere(): Promise<void> {
   }
   // Revokes the refresh token server-side. This is the half that makes signing out mean
   // something to a token that has already been copied off the device.
-  pending.push(apiFetch(API.LOGOUT, { method: "POST" }));
+  pending.push(apiFetch(API.LOGOUT, { method: "POST", unauthorized: "throw" }));
 
   // `allSettled`, not `all`: neither failure may strand someone inside a session they asked
   // to leave, and the local clear below happens either way.

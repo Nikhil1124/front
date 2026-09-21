@@ -1051,6 +1051,10 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     // Fire and forget: the local session is cleared either way, and nobody should be held on
     // a dashboard waiting for a network round trip to sign out.
     authApi.logoutEverywhere().catch(() => {});
+    // The OS is holding schedules this account armed, and they are not the server's to
+    // revoke — a chef's daily prep alarms and the fifteen-minute follow-up fire from the
+    // device itself, with no session involved. `logoutEverywhere` above cannot touch them.
+    NotificationHelper.cancelEverythingOnSignOut().catch(() => {});
     queryClient.clear();
     // The (auth) route group's guard is `!accessToken` (see app/_layout.tsx) — without
     // clearing it here too, this action used to rely entirely on `currentScreen` to look

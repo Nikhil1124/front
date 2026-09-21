@@ -63,9 +63,17 @@ export async function registerDevice(pgId: string | null): Promise<DeviceRespons
   });
 }
 
-/** Unsubscribe and forget this device server-side. */
+/**
+ * Unsubscribe and forget this device server-side.
+ *
+ * `unauthorized: 'throw'` because the only caller is sign-out. The default is 'refresh', and
+ * a 401 there ends in a refresh attempt that, when the refresh token is dead too, calls
+ * `logout()` — which calls this again. Signing out of an already-expired session recursed
+ * until it hung, and the local session was never cleared: the one action somebody with an
+ * expired token is guaranteed to take was the one that could not finish.
+ */
 export function unregisterDevice(deviceId: string): Promise<void> {
-  return apiFetch<void>(API.DEVICE(deviceId), { method: "DELETE" });
+  return apiFetch<void>(API.DEVICE(deviceId), { method: "DELETE", unauthorized: "throw" });
 }
 
 export function useDevices() {
@@ -103,8 +111,14 @@ export function useRegisterDeviceForPush(): void {
   useEffect(() => {
     if (!accessToken) return;
     const myGeneration = ++generation.current;
-    registerDevice(activePgId).then((device) => {
-      if (device && generation.current === myGeneration) setDeviceId(device.id);
-    });
+    registerDevice(activePgId)
+      .then((device) => {
+        if (device && generation.current === myGeneration) setDeviceId(device.id);
+      })
+      .catch(() => {
+        // Best effort, and the missing half: `apiFetch` rejects on a 401, an offline phone or
+        // a 5xx, and an unhandled rejection here is a red box on a path that is allowed to
+        // fail. The app works without push — the queue still polls.
+      });
   }, [accessToken, activePgId, setDeviceId]);
 }

@@ -121,4 +121,35 @@ export const NotificationHelper = {
       // ignore
     }
   },
+
+  /**
+   * Everything this app scheduled locally, forgotten. Called on sign-out.
+   *
+   * A locally scheduled notification lives in the OS, not in the app: `scheduleDailyReminder`
+   * and `scheduleRepeatingReminder` hand Android and iOS a recurring request that fires until
+   * something cancels it by identifier. Signing out cancelled nothing, so a chef's prep
+   * alarms and the fifteen-minute follow-up went on firing on a phone with no session —
+   * indefinitely, and with the toggles that control them wiped, so they could not even be
+   * seen to turn off.
+   *
+   * By identifier is not enough here. The store's persisted toggles are cleared on sign-out
+   * too, so the app no longer knows which identifiers it armed. Cancelling everything is both
+   * simpler and correct: every scheduled notification in this app was scheduled by the
+   * account that just left.
+   *
+   * `dismissAll` clears what is already sitting in the shade for the same reason — the next
+   * person to open this phone should not be reading the last one's meal alerts.
+   */
+  async cancelEverythingOnSignOut(): Promise<void> {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch (e) {
+      // Best effort, like every other call here.
+    }
+    try {
+      await Notifications.dismissAllNotificationsAsync();
+    } catch (e) {
+      // ignore
+    }
+  },
 };
