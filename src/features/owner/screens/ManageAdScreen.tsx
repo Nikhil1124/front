@@ -3,7 +3,7 @@
  *
  * No config exists → nothing is shown to residents at all, and this screen is an empty
  * state with an "Add" button. A config exists → residents see it in
- * `FeaturedMonetizedAdCard`, and this screen shows a summary with Edit/Remove. There is
+ * the meal card on the resident’s home tab, and this screen shows a summary with Edit/Remove. There is
  * deliberately no on/off toggle sitting next to filled-in fields — removing the ad is how
  * an owner turns it off, matching the backend's own "absence is the off state" model.
  */
@@ -28,6 +28,8 @@ const BLANK: Omit<AdConfig, 'pg_id'> = {
   cuisines: '',
   image_url: '',
   online_url: '',
+  cta_label: '',
+  accent_color: null,
 };
 
 export function ManageAdScreen() {
@@ -41,6 +43,7 @@ export function ManageAdScreen() {
   const toast = useToast();
   const [form, setForm] = useState(BLANK);
   const [brandError, setBrandError] = useState<string | undefined>();
+  const [colourError, setColourError] = useState<string | undefined>();
 
   // Load the existing ad into the form the moment there is one to edit.
   useEffect(() => {
@@ -56,6 +59,14 @@ export function ManageAdScreen() {
       setBrandError('Give the ad a brand or business name');
       return;
     }
+    // Checked here as well as by the server, because the server's 422 would land as a toast
+    // with no field attached to it — and this is the one input where a wrong value is
+    // invisible until a resident opens the card.
+    if (form.accent_color && !/^#[0-9A-Fa-f]{6}$/.test(form.accent_color)) {
+      setColourError('Six hex digits after a #, like #FFD100');
+      return;
+    }
+    setColourError(undefined);
     try {
       await upsert.mutateAsync({
         pg_id: pgId,
@@ -159,7 +170,24 @@ export function ManageAdScreen() {
           <OutlinedTextField label="Delivery time" value={form.delivery_time} onChangeText={(v) => set('delivery_time', v)} placeholder="12-18 min" style={{ marginBottom: 12 }} />
           <OutlinedTextField label="Cuisines" value={form.cuisines} onChangeText={(v) => set('cuisines', v)} placeholder="Salads, Keto Plates, Grain Bowls" style={{ marginBottom: 12 }} />
           <OutlinedTextField label="Image URL" value={form.image_url ?? ''} onChangeText={(v) => set('image_url', v)} placeholder="https://…" style={{ marginBottom: 12 }} />
-          <OutlinedTextField label="Order / website URL" value={form.online_url ?? ''} onChangeText={(v) => set('online_url', v)} placeholder="https://…" style={{ marginBottom: 20 }} />
+          <OutlinedTextField label="Order / website URL" value={form.online_url ?? ''} onChangeText={(v) => set('online_url', v)} placeholder="https://…" style={{ marginBottom: 12 }} />
+          {/* What the advertiser is buying, beyond the words: their verb and their colour.
+              Both optional — blank keeps our own button label and the PGow accent, which is
+              what every ad configured before these existed already does. */}
+          <OutlinedTextField label="Button label" value={form.cta_label} onChangeText={(v) => set('cta_label', v)} placeholder="Book now" maxLength={24} style={{ marginBottom: 12 }} />
+          <OutlinedTextField
+            label="Brand colour"
+            value={form.accent_color ?? ''}
+            onChangeText={(v) => {
+              set('accent_color', v.trim() === '' ? null : v.trim());
+              if (colourError) setColourError(undefined);
+            }}
+            placeholder="#FFD100"
+            autoCapitalize="characters"
+            maxLength={7}
+            error={colourError}
+            style={{ marginBottom: 20 }}
+          />
 
           <Row gap={10}>
             {data && (

@@ -18,7 +18,6 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { Txt, Row, Col, Spacer, LoadingState, ErrorState, StatusChip } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
@@ -33,6 +32,12 @@ import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { getGreeting } from '@/utils/format';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useMealsQuery, useMyMealResponseQuery } from '@/features/meals/useMeals';
+import { MealAdNotificationCard } from '@/components/NotificationCard/MealAdNotificationCard';
+import { useAdConfigQuery } from '@/features/ads/useAds';
+import { useAdReporter } from '@/features/notifications/useMealAdNotifications';
+import * as Clipboard from 'expo-clipboard';
+import { Linking } from 'react-native';
+import type { MealNotificationData } from '@/types/notification';
 import { useAuthStore } from '@/store/authStore';
 import { usePropertyQuery } from '@/features/properties/useProperties';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
@@ -52,21 +57,7 @@ function getMealCutoffMs(m: MealNotificationEntity): number {
   return d.getTime();
 }
 
-function cutoffLabel(ms: number | null): string {
-  if (!ms) return '';
-  const rem = ms - Date.now();
-  if (rem <= 0) return 'Closed';
-  const mins = Math.floor(rem / 60_000);
-  if (mins < 60) return `Cut-off in ${mins}m`;
-  return `Cut-off in ${Math.floor(mins / 60)}h ${mins % 60}m`;
-}
 
-/** Chef-confirmed only (`MealNotificationEntity.dietaryType`) — null renders nothing rather
- *  than guess at what's being served. */
-const DIETARY_TAG: Record<'veg' | 'non_veg' | 'pure_veg', { label: string; color: string; bg: string }> = {
-  veg: { label: '🥦 VEG', color: '#15803D', bg: '#DCFCE7' },
-  non_veg: { label: '🍗 NON-VEG', color: Colors.danger, bg: Palette.TintRed },
-  pure_veg: { label: '🥗 PURE VEG', color: Colors.success, bg: '#DCFCE7' } };
 
 export default function GuestHomeTab() {
   const dockScroll = useDockScroll();
@@ -135,10 +126,39 @@ export default function GuestHomeTab() {
 
   const cutoffMs = upcomingMeal ? getMealCutoffMs(upcomingMeal) : null;
   const cutoffPassed = cutoffMs ? cutoffMs <= Date.now() : false;
-  const cutoffText = cutoffLabel(cutoffMs);
 
   const { data: myMealResponse } = useMyMealResponseQuery(upcomingMeal?.id, activePgId ?? undefined);
-  const isAttending = myMealResponse?.choice === 'eating';
+
+  // The card's own shape, built from the meal this screen already resolved plus the
+  // property's sponsor. Null when there is no meal — the card is the meal, so there is
+  // nothing to render around.
+  const { data: sponsor } = useAdConfigQuery(activePgId ?? undefined);
+  const reportAd = useAdReporter();
+  const mealCard: MealNotificationData | null = upcomingMeal
+    ? {
+        id: upcomingMeal.id,
+        appLabel: 'PGow',
+        mealType: upcomingMeal.mealType.toLowerCase() as MealNotificationData['mealType'],
+        title: `Your next meal · ${upcomingMeal.mealType[0]}${upcomingMeal.mealType.slice(1).toLowerCase()}`,
+        chefName: upcomingMeal.chefName ?? 'The kitchen',
+        menuItems: (upcomingMeal.menuItems ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+        createdAt: new Date(upcomingMeal.timestamp).toISOString(),
+        dietaryType: upcomingMeal.dietaryType,
+        ad: sponsor
+          ? {
+              id: sponsor.pg_id,
+              brandName: sponsor.brand_name,
+              tagline: sponsor.tagline,
+              ctaLabel: sponsor.cta_label || undefined,
+              imageUrl: sponsor.image_url ?? undefined,
+              accentColor: sponsor.accent_color ?? undefined,
+              deepLink: sponsor.online_url ?? undefined,
+              discountCode: sponsor.discount_code || undefined,
+              discountPercent: sponsor.discount_percent || undefined,
+            }
+          : undefined,
+      }
+    : null;
 
   // Refresh countdown every 30s
   const [, setTick] = useState(0);
@@ -147,11 +167,6 @@ export default function GuestHomeTab() {
     return () => clearInterval(id);
   }, []);
 
-  const toggleAttending = async (attending: boolean) => {
-    if (!upcomingMeal) return;
-    if (cutoffPassed) { toast('warning', 'Cut-off passed', 'The RSVP window for this meal has closed.'); return; }
-    await submitRSVP(upcomingMeal.id, attending ? 'REQUIRED' : 'NOT_REQUIRED');
-  };
 
   // ── Today's timeline items ─────────────────────────────────────────────────
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
@@ -291,125 +306,51 @@ export default function GuestHomeTab() {
           </Animated.View>
         )}
 
-        {/* ── 3. NEXT MEAL HERO ── */}
-        <View style={styles.mealCard}>
-          {/* Right-side food image with gradient fade */}
-          <View style={styles.mealImageContainer}>
-            <Image
-              source={require('../../../assets/img_guest_dashboard_hero.webp')}
-              style={styles.mealImage}
-              resizeMode="cover"
-            />
-            {/* Horizontal left-fade */}
-            <LinearGradient
-              colors={[Colors.surfaceElevated, 'transparent']}
-              start={{ x: 0, y: 0.5 }} end={{ x: 0.6, y: 0.5 }}
-              style={StyleSheet.absoluteFill}
-            />
-            {/* Bottom fade */}
-            <LinearGradient
-              colors={['transparent', Colors.surfaceElevated]}
-              start={{ x: 0.5, y: 0.6 }} end={{ x: 0.5, y: 1 }}
-              style={StyleSheet.absoluteFill}
+        {/* ── 3. NEXT MEAL ── */}
+        {/* One card, one implementation. This screen and the meals tab each had their own
+            hand-rolled meal card with their own Eat/Skip, which is two places to fix a bug
+            and two answers that could disagree. `MealAdNotificationCard` is the single one,
+            and it carries the property's sponsor in a labelled slot below the decision —
+            which is also what retired the standalone ad card that used to sit further down.
+
+            It is seeded from `myMealResponse` rather than assuming unanswered, so it agrees
+            with the server on first paint instead of offering a choice already made. */}
+        {gateCodeOf(mealsError) ? (
+          // A gate is not a failure, it is a step the resident can take — and with the meal
+          // card gone there is nothing else on this screen that would say so.
+          <View style={{ marginBottom: 4 }}>
+            <GateNotice error={mealsError} />
+          </View>
+        ) : null}
+        {mealCard && (
+          <View style={{ marginBottom: 4 }}>
+            <MealAdNotificationCard
+              data={mealCard}
+              currentResponse={
+                myMealResponse?.choice === 'eating'
+                  ? 'eat'
+                  : myMealResponse?.choice === 'skipping'
+                    ? 'skip'
+                    : null
+              }
+              rsvpClosed={cutoffPassed}
+              onRespond={(payload) =>
+                submitRSVP(payload.notificationId, payload.response === 'eat' ? 'REQUIRED' : 'NOT_REQUIRED')
+              }
+              onAdImpression={(ad) => reportAd('impression', ad.id)}
+              onAdPress={(ad) => {
+                reportAd('click', ad.id);
+                if (ad.deepLink) Linking.openURL(ad.deepLink).catch(() => {});
+              }}
+              onAdCouponCopy={(ad) => {
+                if (!ad.discountCode) return;
+                reportAd('coupon_copy', ad.id);
+                void Clipboard.setStringAsync(ad.discountCode);
+                toast('success', 'Code copied', `${ad.discountCode} is on your clipboard.`);
+              }}
             />
           </View>
-
-          {/* Cut-off pill — top right */}
-          {cutoffText && !cutoffPassed && (
-            <View style={styles.cutoffPill}>
-              <Ionicons name="time-outline" size={12} color={Colors.textSecondary} />
-              <Txt size={11} weight="700" color={Colors.textSecondary} style={{ marginLeft: 4 }}>
-                {cutoffText}
-              </Txt>
-            </View>
-          )}
-
-          {/* Content */}
-          <View style={styles.mealContent}>
-            <Txt size={11} weight="700" color={Colors.primary} style={{ letterSpacing: 1 }}>
-              YOUR NEXT MEAL
-            </Txt>
-
-            <Row gap={8} align="center" style={{ marginTop: 8 }}>
-              <Txt size={26} weight="700" color={Colors.textPrimary}>
-                {upcomingMeal
-                  ? upcomingMeal.mealType[0] + upcomingMeal.mealType.slice(1).toLowerCase()
-                  : 'No meal'}
-              </Txt>
-              {upcomingMeal?.dietaryType && (
-                <View style={[styles.dietTag, { backgroundColor: DIETARY_TAG[upcomingMeal.dietaryType].bg }]}>
-                  <Txt size={10} weight="700" color={DIETARY_TAG[upcomingMeal.dietaryType].color}>
-                    {DIETARY_TAG[upcomingMeal.dietaryType].label}
-                  </Txt>
-                </View>
-              )}
-            </Row>
-
-            {/* Menu / error */}
-            {gateCodeOf(mealsError) ? (
-              // A gate is not a failure — it is a step the resident can take. Shown with the
-              // action that clears it, rather than as a dead "Meals unavailable".
-              <Col style={{ marginTop: 4, maxWidth: '65%' }}>
-                <GateNotice error={mealsError} compact />
-              </Col>
-            ) : mealsError ? (
-              <Col style={{ marginTop: 4, maxWidth: '65%' }}>
-                <Txt size={14} weight="700" color={Colors.danger}>Meals unavailable</Txt>
-                <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }} numberOfLines={2}>
-                  {mealsError instanceof Error ? mealsError.message : 'Please try again.'}
-                </Txt>
-              </Col>
-            ) : upcomingMeal ? (
-              <Col style={{ marginTop: 4, maxWidth: '65%' }}>
-                <Txt size={15} weight="700" color={Colors.textPrimary} numberOfLines={1}>
-                  {upcomingMeal.menuItems?.split(',')[0] ?? ''}
-                </Txt>
-                {(upcomingMeal.menuItems?.split(',').length ?? 0) > 1 && (
-                  <Txt size={13} color={Colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
-                    {upcomingMeal.menuItems?.split(',').slice(1).join(' • ')}
-                  </Txt>
-                )}
-                <Row align="center" gap={6} style={{ marginTop: 10 }}>
-                  <Ionicons name="time-outline" size={14} color={Colors.textSecondary} />
-                  <Txt size={12} weight="600" color={Colors.textSecondary}>
-                    {upcomingMeal.serviceTime ?? '—'}
-                  </Txt>
-                </Row>
-              </Col>
-            ) : null}
-
-            {/* RSVP */}
-            <Spacer size={18} />
-            {upcomingMeal && (
-              cutoffPassed ? (
-                <View style={styles.rsvpLocked}>
-                  <Ionicons name="lock-closed" size={13} color={Colors.textSecondary} />
-                  <Txt size={12} weight="700" color={Colors.textSecondary} style={{ marginLeft: 8 }}>
-                    RSVP closed
-                  </Txt>
-                </View>
-              ) : (
-                <Row gap={10}>
-                  <AnimatedPress accessibilityRole="button"
-                    style={[styles.rsvpBtn, isAttending && styles.rsvpBtnActive]}
-                    onPress={() => toggleAttending(true)}
-                  >
-                    {isAttending && <Ionicons name="checkmark" size={14} color={Colors.textInverse} style={{ marginRight: 5 }} />}
-                    <Txt size={13} weight="700" color={isAttending ? Colors.textInverse : Colors.textSecondary}>
-                      Attending
-                    </Txt>
-                  </AnimatedPress>
-                  <AnimatedPress accessibilityRole="button"
-                    style={[styles.rsvpBtn, !isAttending && myMealResponse && styles.rsvpBtnChosen]}
-                    onPress={() => toggleAttending(false)}
-                  >
-                    <Txt size={13} weight="700" color={Colors.textSecondary}>Not Attending</Txt>
-                  </AnimatedPress>
-                </Row>
-              )
-            )}
-          </View>
-        </View>
+        )}
 
         {/* ── 5. QUICK SERVICES ── */}
         <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>

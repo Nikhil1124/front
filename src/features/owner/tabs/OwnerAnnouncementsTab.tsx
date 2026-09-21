@@ -61,9 +61,6 @@ import type { GuestEntity, PaymentEntity, AppRoleNotificationEntity } from '@/ty
 import { OwnerReviewsTab } from './OwnerReviewsTab';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
-import { useMealAdNotificationsQuery } from '@/features/notifications/useMealAdNotifications';
-import { formatPushNotificationBody } from '@/components/NotificationCard/MealAdNotificationCard';
-import Notifications from '@/data/notificationsCompat';
 
 const PRIMARY = Colors.primary;
 const BG = Colors.canvas;
@@ -401,7 +398,6 @@ export function OwnerAnnouncementsTab() {
   const rejectPaymentMutation = useRejectPaymentMutation(activePgId ?? undefined);
   const verifyKyc = usePGowStore((s) => s.verifyGuestKycByOwner);
 
-  const { data: mealAdNotifications = [] } = useMealAdNotificationsQuery();
 
   const { refreshing, onRefresh } = usePullToRefresh();
   const toast = useToast();
@@ -485,7 +481,7 @@ export function OwnerAnnouncementsTab() {
     return items.sort((a, b) => weightRank[a.weight] - weightRank[b.weight] || b.timestamp - a.timestamp);
   }, [guests, roleNotifs, pendingPaymentById, canManage]);
 
-  const totalCount = inboxItems.length + mealAdNotifications.length;
+  const totalCount = inboxItems.length;
   const decisionItems = useMemo(() => inboxItems.filter((i) => i.weight === 'decision'), [inboxItems]);
   const paymentCount = useMemo(() => inboxItems.filter((i) => i.kind === 'PAYMENT').length, [inboxItems]);
   const requestCount = useMemo(() => inboxItems.filter((i) => i.kind === 'REQUEST').length, [inboxItems]);
@@ -662,7 +658,7 @@ export function OwnerAnnouncementsTab() {
     { id: 'REQUESTS', label: 'Requests', count: requestCount },
     { id: 'ANNOUNCEMENTS', label: 'Announcements', count: announcementCount },
     // Hidden when empty: an "Other 0" chip on a tidy inbox is noise.
-    ...(otherItems.length > 0 || mealAdNotifications.length > 0 ? [{ id: 'OTHER', label: 'Other', count: otherItems.length + mealAdNotifications.length }] : []),
+    ...(otherItems.length > 0 ? [{ id: 'OTHER', label: 'Other', count: otherItems.length }] : []),
     ...(canManage ? [{ id: 'REVIEWS', label: 'Reviews' }] : []),
   ];
 
@@ -752,32 +748,6 @@ export function OwnerAnnouncementsTab() {
           <View>
             {/* Decision cards — always their own full-width surface, always first (the sort
                 above already put them there), never demoted no matter how the list re-sorts. */}
-            {(activeSubTab === 'ALL' || activeSubTab === 'OTHER') && mealAdNotifications.length > 0 && (
-              <View style={{ marginBottom: 12 }}>
-                <Btn
-                  onPress={async () => {
-                    const payload = formatPushNotificationBody(mealAdNotifications[0]);
-                    await Notifications.scheduleNotificationAsync({
-                      content: {
-                        title: payload.title,
-                        body: payload.body,
-                        sound: true,
-                      },
-                      trigger: null,
-                    });
-                    toast('success', 'Push Sent', 'Check your device notifications.');
-                  }}
-                  containerColor={Colors.primary}
-                  textColor={Colors.textInverse}
-                  borderRadius={Radii.control}
-                  height={44}
-                >
-                  <Txt variant="button" color={Colors.textInverse}>
-                    Test Mobile Push Notification
-                  </Txt>
-                </Btn>
-              </View>
-            )}
             {displayedItems.filter((i) => i.weight === 'decision').map((item) => (
               <DecisionCard
                 key={item.id}

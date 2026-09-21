@@ -20,6 +20,9 @@ export interface MealOut {
   /** False until the meal has been announced — i.e. it is still a draft. */
   is_broadcast?: boolean;
   created_by: string;
+  /** Who cooked it. `created_by` is a MEMBERSHIP id and nobody reading this can resolve one,
+   *  so the server does the two hops. Null if that account has since been deleted. */
+  chef_name?: string | null;
 }
 
 export interface MealResponse {

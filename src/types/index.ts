@@ -86,6 +86,9 @@ export interface MealNotificationEntity {
    *  backend actually enforces, so it is the only honest thing to count down to. Null when
    *  the chef set no deadline. */
   responseClosesAt: number | null;
+  /** Who cooked it. `created_by` on the API is a MEMBERSHIP id and nothing on this side can
+   *  resolve one, so the server does the lookup. Null if that account is gone. */
+  chefName: string | null;
 }
 
 export interface GuestRSVPEntity {

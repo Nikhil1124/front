@@ -25,7 +25,7 @@
 //   whatever ad source you integrate — the banner uses resizeMode="cover"
 //   at a fixed 90px height, so mismatched aspect ratios will crop, not letterbox.
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -46,6 +46,15 @@ import { NotificationCardColors, Radii } from "@/theme";
 // The card's palette, unchanged, but named in the theme rather than inline — see
 // `NotificationCardColors` there for why it stays separate from `Colors`.
 const COLORS = NotificationCardColors;
+
+/** The three the chef can confirm. Same words and the same colour logic the guest home's
+ *  hero used before this card replaced it — a resident scanning for "is this veg" should
+ *  not have to learn a new tag because the card around it changed. */
+const DIET = {
+  veg:      { label: 'VEG',      bg: COLORS.successBg, fg: COLORS.success },
+  pure_veg: { label: 'PURE VEG', bg: COLORS.successBg, fg: COLORS.successDeep },
+  non_veg:  { label: 'NON-VEG',  bg: COLORS.dangerBg,  fg: COLORS.danger },
+} as const;
 
 const MEAL_ICON: Record<MealNotificationData["mealType"], string> = {
   breakfast: "☕",
@@ -68,6 +77,7 @@ interface AdSlotProps {
   ad: NotificationAd;
   onPress?: (ad: NotificationAd) => void;
   onDismiss?: (ad: NotificationAd) => void;
+  onCouponCopy?: (ad: NotificationAd) => void;
 }
 
 // Store-compliance notes (Google Play ads policy + App Store 4.5.4):
@@ -84,7 +94,7 @@ interface AdSlotProps {
 //   the Eat/Skip buttons, so it can never be mistaken for part of the meal
 //   decision and is always dismissible without side effects (disruptive-ads
 //   policy: never force interaction with an ad to use the app).
-const AdSlot: React.FC<AdSlotProps> = ({ ad, onPress, onDismiss }) => {
+const AdSlot: React.FC<AdSlotProps> = ({ ad, onPress, onDismiss, onCouponCopy }) => {
   return (
     <View style={styles.adWrap}>
       <View style={styles.adHeaderRow}>
@@ -144,6 +154,25 @@ const AdSlot: React.FC<AdSlotProps> = ({ ad, onPress, onDismiss }) => {
           ) : null}
         </View>
       </AnimatedPress>
+
+      {/* The coupon, if the sponsor has one. Its own control rather than part of the banner
+          press: copying a code and opening the sponsor's site are different intentions, and
+          they are separately counted — `coupon_copy` against `click`. */}
+      {ad.discountCode ? (
+        <AnimatedPress
+          onPress={() => onCouponCopy?.(ad)}
+          accessibilityRole="button"
+          accessibilityLabel={`Copy discount code ${ad.discountCode}`}
+          style={styles.adCouponRow}
+        >
+          <Text style={styles.adCouponCode} numberOfLines={1}>
+            {ad.discountCode}
+          </Text>
+          <Text style={styles.adCouponHint} numberOfLines={1}>
+            {ad.discountPercent ? `${ad.discountPercent}% off · tap to copy` : 'Tap to copy'}
+          </Text>
+        </AnimatedPress>
+      ) : null}
     </View>
   );
 };
@@ -154,8 +183,26 @@ export interface MealAdNotificationCardProps {
   onAdPress?: (ad: NotificationAd) => void;
   /** Called when the resident dismisses the ad specifically (not the whole card). */
   onAdDismiss?: (ad: NotificationAd) => void;
+  /** The coupon was copied — a counted event, distinct from a click on the banner. */
+  onAdCouponCopy?: (ad: NotificationAd) => void;
+  /** The ad slot became visible. Fired once per mount, which is what an impression is. */
+  onAdImpression?: (ad: NotificationAd) => void;
   /** Called when the card is tapped outside the action buttons (e.g. expand/navigate) */
   onPress?: () => void;
+  /**
+   * The answer already on the server, if there is one.
+   *
+   * Without this the card assumed unanswered on every mount, so a resident who had already
+   * said they were eating was shown the choice again — and the card would then contradict
+   * whatever surface they answered on. The decision belongs to the server; this seeds from
+   * it and the local state only ever runs ahead of it optimistically.
+   */
+  currentResponse?: MealResponse | null;
+  /**
+   * The RSVP window has closed. The server enforces it (`response_closes_at`), so this is
+   * only what stops the card offering a choice it knows will be refused.
+   */
+  rsvpClosed?: boolean;
 }
 
 export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
@@ -163,13 +210,33 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
   onRespond,
   onAdPress,
   onAdDismiss,
+  onAdCouponCopy,
+  onAdImpression,
   onPress,
+  currentResponse = null,
+  rsvpClosed = false,
 }) => {
   const { width } = useWindowDimensions();
   const isCompact = width < 360;
-  const [responded, setResponded] = useState<MealResponse | null>(null);
+  const [responded, setResponded] = useState<MealResponse | null>(currentResponse);
   const [submitting, setSubmitting] = useState(false);
   const [adDismissed, setAdDismissed] = useState(false);
+
+  // Once per mount, and only when there is an ad to see. Reported from the card rather than
+  // the screen so a card that renders without its slot — no sponsor configured — cannot
+  // report an impression of nothing.
+  // The query usually resolves after the first paint, so seeding the initial state is not
+  // enough on its own — without this the card shows the buttons for one render and then
+  // never corrects itself.
+  useEffect(() => {
+    setResponded(currentResponse);
+  }, [currentResponse]);
+
+  const adId = data.ad?.id;
+  useEffect(() => {
+    if (data.ad) onAdImpression?.(data.ad);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adId]);
 
   const handleRespond = useCallback(
     async (response: MealResponse) => {
@@ -217,7 +284,16 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
           <Text style={styles.title} numberOfLines={2}>
             {data.title}
           </Text>
-          <Text style={styles.chefLine}>By {data.chefName}</Text>
+          <View style={styles.chefRow}>
+            <Text style={styles.chefLine}>By {data.chefName}</Text>
+            {data.dietaryType ? (
+              <View style={[styles.dietTag, { backgroundColor: DIET[data.dietaryType].bg }]}>
+                <Text style={[styles.dietTagText, { color: DIET[data.dietaryType].fg }]}>
+                  {DIET[data.dietaryType].label}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
       </View>
 
@@ -227,7 +303,11 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
 
       {/* Actions come before the ad — the meal decision is the primary task
           and must never be pushed down or blocked by ad content. */}
-      {responded ? (
+      {rsvpClosed && !responded ? (
+        <View style={styles.closedRow}>
+          <Text style={styles.closedText}>RSVP closed for this meal</Text>
+        </View>
+      ) : responded ? (
         <View
           style={[
             styles.statusBanner,
@@ -277,6 +357,7 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
           <AdSlot
             ad={data.ad}
             onPress={onAdPress}
+            onCouponCopy={onAdCouponCopy}
             onDismiss={(ad) => {
               setAdDismissed(true);
               onAdDismiss?.(ad);
@@ -441,6 +522,59 @@ const styles = StyleSheet.create({
     color: COLORS.surface,
     fontSize: 12,
     fontWeight: "700",
+  },
+  adCouponRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: Radii.control,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.neutralBg,
+  },
+  adCouponCode: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    color: COLORS.textPrimary,
+    flexShrink: 1,
+  },
+  adCouponHint: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+  },
+  chefRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 2,
+  },
+  dietTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: Radii.badge,
+  },
+  dietTagText: {
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
+  closedRow: {
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: Radii.control,
+    backgroundColor: COLORS.neutralBg,
+    alignItems: "center",
+  },
+  closedText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
   },
   actionRow: {
     flexDirection: "row",

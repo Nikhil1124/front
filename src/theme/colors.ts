@@ -130,6 +130,11 @@ export const NotificationCardColors = {
   textTertiary:  '#9CA3AF',
   success:       '#16A34A',
   successBg:     '#E9F9EF',
+  //: The non-veg tag, and the only red this card has. Paired with `successBg` at the same
+  //: lightness so the two diet tags read as one set rather than two borrowed styles.
+  danger:        '#DC2626',
+  dangerBg:      '#FDECEC',
+  successDeep:   '#15803D',
   neutralBg:     '#EEF0F5',
   border:        '#ECEDF3',
 } as const;

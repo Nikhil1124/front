@@ -77,6 +77,11 @@ export interface AdConfig {
   cuisines: string;
   image_url: string | null;
   online_url: string | null;
+  /** The verb on the button, chosen by the advertiser. Empty means use our own default —
+   *  which is what every ad configured before this field existed still says. */
+  cta_label: string;
+  /** `#RRGGBB`, the brand's own colour. Null means the card stays in the PGow accent. */
+  accent_color: string | null;
 }
 
 export type UpsertAdConfigInput = Omit<AdConfig, "pg_id"> & { pg_id: string };
