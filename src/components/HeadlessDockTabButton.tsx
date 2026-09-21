@@ -282,7 +282,7 @@ export function useDock(profile?: NavProfile) {
     dockStyle: [styles.bar, { paddingBottom: bottomPad }, hiddenByOverlay && { display: 'none' as const }],
     /** Bottom padding the scrolling content needs so neither the bar nor the strip covers its
      *  last row. */
-    contentPaddingBottom: BAR_CONTENT_HEIGHT + bottomPad + (alert ? ALERT_HEIGHT + ALERT_GAP : 0),
+    contentPaddingBottom: BAR_CONTENT_HEIGHT + bottomPad + (alert && pathname === '/overview' ? ALERT_HEIGHT + ALERT_GAP : 0),
     /** Per-destination queue sizes, keyed by `NavDest.signal`. */
     counts,
     /** Pass to `<DockAlert />`. Null when nothing is waiting. */

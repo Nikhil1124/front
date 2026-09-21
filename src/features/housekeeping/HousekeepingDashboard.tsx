@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Image, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -507,6 +508,7 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
   onRetry?: () => void;
 }) {
   const toast = useToast();
+  const insets = useSafeAreaInsets();
   const submitIssue = useSubmitComplaintMutation(pgId ?? undefined);
   const resolveIssue = useResolveComplaintMutation(pgId ?? undefined);
 
@@ -862,7 +864,11 @@ function IssuesSupervisionView({ issues, pgId, refreshControl, isLoading, error,
           })
         )}
       </FormScroll>
-      <View style={{ position: 'absolute', bottom: 90, right: 20 }}>
+      {/* The FAB floats above the tab bar. `bottom: 90` clears the bar's visual height;
+          `insets.bottom` is added so it also clears the Android system navigation bar
+          (gesture strip or 3-button bar) in the standalone edge-to-edge APK, where
+          the 90 dp alone would leave the button behind or inside the system chrome. */}
+      <View style={{ position: 'absolute', bottom: 90 + insets.bottom, right: 20 }}>
         <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Increase quantity" accessibilityRole="button"
           onPress={() => setShowForm(true)}
           style={{ width: 60, height: 60, borderRadius: Radii.pill, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 5 }}

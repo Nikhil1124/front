@@ -14,14 +14,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   View, StyleSheet, ScrollView, RefreshControl,
-  Image, useWindowDimensions } from 'react-native';
+  Image } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Txt, Row, Col, Spacer, LoadingState, ErrorState, StatusChip } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { Colors, Palette, Radii } from '@/theme';
+import { Colors, Palette, Radii, DeckTints } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
@@ -356,31 +356,52 @@ export default function GuestHomeTab() {
         <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
           Quick Services
         </Txt>
-        <View style={styles.grid}>
-          <SvcCard
-            title="Groceries"
-            desc="Essentials delivered to your room"
-            image={require('../../../assets/pg_grocery_eggs_1785343431667.webp')}
-            onPress={() => router.push('/groceries')}
-          />
-          <SvcCard
-            title="Laundry"
-            desc={
-              myLaundry.length > 0
-                ? `${myLaundry.length} active laundry order${myLaundry.length === 1 ? '' : 's'}`
-                : 'Pickup, wash & return'
-            }
-            descColor={myLaundry.length > 0 ? Colors.primary : undefined}
-            image={require('../../../assets/pg_service_laundry_1785343445318.webp')}
-            onPress={() => router.push('/laundry')}
-          />
-          <SvcCard
-            title="Support & Requests"
-            desc="Complaints & maintenance"
-            icon="headset-outline"
-            onPress={() => router.push('/support')}
-            badge={unreadCount > 0 ? unreadCount : undefined}
-          />
+        <View style={styles.bentoGrid}>
+          {/* Left Column (Groceries) */}
+          <View style={styles.bentoCol}>
+            <AnimatedPress
+              accessibilityRole="button"
+              onPress={() => router.push('/groceries')}
+              style={[styles.bentoTile, styles.bentoTileTall, { backgroundColor: DeckTints.amber.fill, borderColor: DeckTints.amber.ink }]}
+            >
+              <Txt style={styles.bentoTileTitleGroceries}>Groceries</Txt>
+              <Txt size={13} color={Colors.textSecondary} style={{ marginTop: 4, width: '90%', zIndex: 10, lineHeight: 18 }}>
+                Your Daily Needs, Just a Tap Away.
+              </Txt>
+              <Image source={require('../../../assets/Quick Actions/Owner/grocery.png')} style={[styles.bentoTileImageBg, { width: 240, height: 240, bottom: -45, right: -30 }]} />
+            </AnimatedPress>
+          </View>
+
+          {/* Right Column (Laundry & Support) */}
+          <View style={styles.bentoCol}>
+            <AnimatedPress
+              accessibilityRole="button"
+              onPress={() => router.push('/laundry')}
+              style={[styles.bentoTile, { backgroundColor: DeckTints.slate.fill, borderColor: DeckTints.slate.ink }]}
+            >
+              <Txt style={styles.bentoTileTitle}>Laundry</Txt>
+              {myLaundry.length > 0 && (
+                <Txt size={12} weight="700" color={Colors.primary} style={{ marginTop: 2, zIndex: 10, width: '60%' }}>
+                  {`${myLaundry.length} active order${myLaundry.length === 1 ? '' : 's'}`}
+                </Txt>
+              )}
+              <Image source={require('../../../assets/Quick Actions/Resident/laundry_nobg.png')} style={[styles.bentoTileImageBg, { bottom: -10, right: -15, width: 100, height: 100 }]} />
+            </AnimatedPress>
+
+            <AnimatedPress
+              accessibilityRole="button"
+              onPress={() => router.push('/support')}
+              style={[styles.bentoTile, { backgroundColor: DeckTints.green.fill, borderColor: DeckTints.green.ink }]}
+            >
+              <Txt style={styles.bentoTileTitle}>Support</Txt>
+              {unreadCount > 0 && (
+                <View style={styles.bentoBadge}>
+                  <Txt size={11} weight="700" color={Colors.textInverse}>{unreadCount}</Txt>
+                </View>
+              )}
+              <Image source={require('../../../assets/Quick Actions/Owner/04_complaints.png')} style={[styles.bentoTileImageBg, { bottom: -15, right: -15, width: 110, height: 110 }]} />
+            </AnimatedPress>
+          </View>
         </View>
 
         {/* ── 4. TODAY AT PGOW ── */}
@@ -512,60 +533,7 @@ export default function GuestHomeTab() {
   );
 }
 
-// ─── Service Card ─────────────────────────────────────────────────────────────
-function SvcCard({
-  title, desc, descColor, image, icon, onPress, badge }: {
-  title: string; desc: string; descColor?: string; image?: any; icon?: string;
-  onPress: () => void; badge?: number;
-}) {
-  // `Dimensions.get('window')` used to be read once at module scope and baked into
-  // `styles.svcCard`. A value captured at import never updates, so on a fold, a rotation or
-  // a split-screen resize these two-column cards kept the width of whatever the screen was
-  // when the JS bundle first loaded — overflowing or leaving a gap. `useWindowDimensions`
-  // re-renders on every one of those.
-  const { width } = useWindowDimensions();
-  const cardWidth = (width - 32 - 10) / 2;
 
-  return (
-    <AnimatedPress accessibilityRole="button" onPress={onPress} style={[styles.svcCard, { width: cardWidth }]}>
-      {/* Image or icon */}
-      {image ? (
-        <Image source={image} style={styles.svcImage} resizeMode="cover" />
-      ) : (
-        <View style={styles.svcIconWrap}>
-          <Ionicons name={icon as any} size={22} color={Colors.primaryDark} />
-        </View>
-      )}
-
-      <View style={styles.svcTextWrap}>
-        <Row align="center" gap={4}>
-          <Txt
-            size={13}
-            weight="700"
-            color={Colors.textPrimary}
-            numberOfLines={2}
-            style={{ flexShrink: 1, lineHeight: 17 }}
-          >
-            {title}
-          </Txt>
-          {badge ? (
-            <View style={styles.svcBadge}>
-              <Txt size={9} weight="700" color={Colors.textInverse}>{badge}</Txt>
-            </View>
-          ) : null}
-        </Row>
-        <Txt size={11} color={descColor || Colors.textSecondary} weight={descColor ? '700' : '400'} numberOfLines={2} style={{ marginTop: 2, lineHeight: 14 }}>
-          {desc}
-        </Txt>
-      </View>
-
-      {/* Arrow */}
-      <View style={styles.svcArrow}>
-        <Ionicons name="chevron-forward" size={13} color={Colors.textInverse} />
-      </View>
-    </AnimatedPress>
-  );
-}
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -714,35 +682,25 @@ const styles = StyleSheet.create({
   tlNodeCurrent: { borderColor: Colors.primary, borderWidth: 2.5 },
   tlDot: { width: 7, height: 7, borderRadius: Radii.pill, backgroundColor: Colors.primary },
 
-  // ── Quick services grid
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  svcCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radii.card,
-    borderWidth: 1, borderColor: '#D9EDED',
-    padding: 12,
-    flexDirection: 'row', alignItems: 'center',
-    shadowColor: '#0C3B3E', shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05, shadowRadius: 8, elevation: 3,
-    minHeight: 72 },
-  svcImage: { width: 40, height: 40, borderRadius: Radii.control, flexShrink: 0 },
-  svcIconWrap: {
-    width: 40, height: 40, borderRadius: Radii.control, flexShrink: 0,
-    backgroundColor: '#DFF5F3',
-    alignItems: 'center', justifyContent: 'center' },
-  svcTextWrap: {
-    flex: 1,
-    marginLeft: 10,
-    marginRight: 6 },
-  svcArrow: {
-    width: 26, height: 26, borderRadius: Radii.pill, flexShrink: 0,
-    backgroundColor: Colors.primaryDark,
-    alignItems: 'center', justifyContent: 'center' },
-  svcBadge: {
-    minWidth: 16, height: 16, borderRadius: Radii.control,
-    backgroundColor: Colors.danger,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3 },
+  // ── Bento Grid Quick Actions
+  bentoGrid: { flexDirection: 'row', gap: 12 },
+  bentoCol: { flex: 1, gap: 12 },
+  bentoTile: {
+    flex: 1, borderRadius: Radii.sheet, padding: 16,
+    backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.borderSubtle,
+    overflow: 'hidden', position: 'relative', minHeight: 120, justifyContent: 'flex-start'
+  },
+  bentoTileTall: { flex: 2, minHeight: 180 },
+  bentoTileTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, width: '70%', lineHeight: 22, zIndex: 10 },
+  bentoTileTitleGroceries: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginTop: 4, lineHeight: 28, zIndex: 10 },
+  bentoTileImageBg: {
+    position: 'absolute', bottom: -47, right: -25, width: 200, height: 200, resizeMode: 'contain',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 16
+  },
+  bentoBadge: {
+    marginTop: 6, alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: Radii.pill, backgroundColor: Colors.danger, zIndex: 10
+  },
 
   // ── Community notice
   noNoticeCard: {

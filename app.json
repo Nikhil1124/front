@@ -31,7 +31,7 @@
     },
     "androidStatusBar": {
       "translucent": true,
-      "backgroundColor": "transparent"
+      "backgroundColor": "#00000000"
     },
     "plugins": [
       [
@@ -48,6 +48,14 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableEdgeToEdge": true
+          }
         }
       ],
       "@maplibre/maplibre-react-native",

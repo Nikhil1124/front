@@ -32,7 +32,7 @@
  */
 import { type ReactNode, useEffect, useState } from 'react';
 import {
-  Modal, View, StyleSheet, ScrollView, Pressable, Keyboard, Platform,
+  View, StyleSheet, ScrollView, Pressable, Keyboard, Platform,
   useWindowDimensions, type KeyboardEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,7 +45,6 @@ import Animated, {
 import { Txt } from './Txt';
 import { Radii, Colors } from '@/theme';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
-import { useHideDockWhileOpen } from '@/components/HeadlessDockTabButton';
 
 export interface SheetProps {
   visible: boolean;
@@ -122,7 +121,7 @@ export function Sheet({
   }, [visible, screenHeight]);
 
   // ── Drag to dismiss ───────────────────────────────────────────────────────────────────
-  useHideDockWhileOpen(visible);
+  // useHideDockWhileOpen(visible); // Disabled so the dock remains visible under the sheet
 
   const dragY = useSharedValue(0);
   useEffect(() => { if (visible) dragY.value = 0; }, [visible, dragY]);
@@ -144,14 +143,11 @@ export function Sheet({
   // Safe-area bottom: at least 16px so nothing touches the nav strip.
   const bottomPad = Math.max(insets.bottom, Math.round(screenHeight * 0.02));
 
+  if (!visible) return null;
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      navigationBarTranslucent
-      onRequestClose={onDismiss}
+    <View
+      style={[StyleSheet.absoluteFill, { zIndex: 999, elevation: 999 }]}
       testID={testID}
     >
       {/* Full-screen scrim — fades in, catches backdrop taps */}
@@ -167,7 +163,7 @@ export function Sheet({
             position: 'absolute',
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: kbOverlap, // Use bottom instead of marginBottom for reliable Android offset
             maxHeight: maxSheetHeight,
             borderTopLeftRadius: cornerRadius,
             borderTopRightRadius: cornerRadius,
@@ -176,10 +172,9 @@ export function Sheet({
           // Fixed height only when keyboard is not up — see size prop doc.
           size === '3/4' && kbOverlap === 0 ? { height: fixedSheetHeight } : null,
           dragStyle,
-          { marginBottom: kbOverlap },
         ]}
       >
-        <View accessibilityViewIsModal>
+        <View accessibilityViewIsModal style={[{ flexShrink: 1 }, size === '3/4' && kbOverlap === 0 ? { flex: 1 } : null]}>
           <View style={[
             {
               backgroundColor: Colors.surface,
@@ -189,8 +184,10 @@ export function Sheet({
               borderBottomWidth: 0,
               borderColor: Colors.borderSubtle,
               maxHeight: '100%',
+              flexShrink: 1, // Shrink to fit outer constraints so footer isn't pushed down
               paddingBottom: bottomPad,
             },
+            size === '3/4' && kbOverlap === 0 ? { flex: 1 } : null,
           ]}>
             {/* Drag handle */}
             <GestureDetector gesture={drag}>
@@ -259,6 +256,7 @@ export function Sheet({
 
             {/* Scrollable content */}
             <ScrollView
+              style={{ flex: 1, flexShrink: 1 }}
               contentContainerStyle={{
                 paddingHorizontal: hPad,
                 paddingTop: Math.round(screenHeight * 0.016),
@@ -285,7 +283,7 @@ export function Sheet({
           </View>
         </View>
       </Animated.View>
-    </Modal>
+    </View>
   );
 }
 

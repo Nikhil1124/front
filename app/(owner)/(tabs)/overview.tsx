@@ -20,7 +20,8 @@ import {
   ActivityIndicator,
   Linking,
   Text,
-  LayoutAnimation } from 'react-native';
+  Image
+} from 'react-native';
 
 // UIManager.setLayoutAnimationEnabledExperimental is a no-op in New Architecture
 import { router } from 'expo-router';
@@ -44,8 +45,8 @@ function rentReminderAlert(result: RentReminderResult) {
   const description =
     result.reminded > 0
       ? `${result.reminded} resident(s) reminded.`
-        + (result.already_paid ? ` ${result.already_paid} already paid.` : '')
-        + (result.on_cooldown ? ` ${result.on_cooldown} reminded recently.` : '')
+      + (result.already_paid ? ` ${result.already_paid} already paid.` : '')
+      + (result.on_cooldown ? ` ${result.on_cooldown} reminded recently.` : '')
       : result.on_cooldown > 0
         ? `Everyone who owes rent was already reminded in the last day — nothing sent.`
         : "Every resident has cleared this month's rent. Nothing to send.";
@@ -96,21 +97,20 @@ function SplitSegment({ value, color }: { value: number; color: string }) {
 
 interface QuickActionItem {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  image?: any; // e.g., require('@/assets/images/icon.png')
   onPress: () => void;
   color: string;
-  bgColor: string;
 }
 
 export default function OwnerOverviewTab() {
   const dockScroll = useDockScroll();
   const [showOverdueModal, setShowOverdueModal] = useState(false);
   const [showBookRepair, setShowBookRepair] = useState(false);
+  const [showAllActionsSheet, setShowAllActionsSheet] = useState(false);
   // Fixed at 3 months — the interval selector this fed lived on the dashboard's own Revenue
   // Overview card, which is gone; P&L Analytics one tap away is the dedicated place to look
   // at 6m/1y, with its own selector.
   const pnlInterval = '3m';
-  const isQuickActionsExpanded = usePGowStore((s) => s.isQuickActionsExpanded);
   const responsivePadding = useResponsivePadding();
 
   const activePgId = useAuthStore((s) => s.activePgId);
@@ -157,7 +157,8 @@ export default function OwnerOverviewTab() {
     const now = new Date();
     return {
       monthStart: todayLocalISO(new Date(now.getFullYear(), now.getMonth(), 1)),
-      monthEnd: todayLocalISO(now) };
+      monthEnd: todayLocalISO(now)
+    };
   }, []);
   const { data: savingsData } = useMealSavings(activePgId, monthStart, monthEnd);
 
@@ -189,35 +190,30 @@ export default function OwnerOverviewTab() {
   const costPerPlate = savingsData?.cost_per_plate ?? 0;
 
   // Quick Action Grid Items — Cool LUNA Design System Icons
-  const quickActions = useMemo(() => {
-    const top4: QuickActionItem[] = [
-      { label: 'Procurement', icon: 'cube', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/procurement'); } },
-      { label: 'Services', icon: 'sparkles', color: Colors.textSecondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/services'); } },
-      { label: 'Residents', icon: 'people', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/guests'); } },
-      { label: 'Groceries', icon: 'basket', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/groceries'); } },
-    ];
-
-    const rest: QuickActionItem[] = [
-      { label: 'Add Room', icon: 'bed', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/bed-visualizer'); } },
-      { label: 'Ads', icon: 'rocket', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/manage-ad'); } },
-      { label: 'Complaints', icon: 'alert-circle', color: Colors.danger, bgColor: Palette.TintRed, onPress: () => { router.navigate('/complaints'); } },
-      { label: 'Food RSVP', icon: 'fast-food', color: Colors.textSecondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/rsvp-trends'); } },
-      { label: 'Managers', icon: 'ribbon', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/manager-provisioning'); } },
-      { label: 'Portfolio', icon: 'stats-chart', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/portfolio'); } },
-      { label: 'Reviews', icon: 'star', color: Colors.warning, bgColor: Palette.TintAmber, onPress: () => { router.navigate('/reviews'); } },
-      { label: 'Settings', icon: 'options', color: Colors.primaryDark, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/settings'); } },
-      { label: 'Staff', icon: 'id-card', color: Colors.primary, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/staff'); } },
-      { label: 'Technicians', icon: 'construct', color: Colors.secondary, bgColor: Colors.surfaceElevated, onPress: () => { setShowBookRepair(true); } },
-      { label: 'UPI Setup', icon: 'qr-code', color: Colors.primaryDark, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/upi-settings'); } },
+  const allQuickActions = useMemo(() => {
+    // All items for the bottom sheet (Groceries, Services, Procurement are in the main grid, but we keep them here or omit them. Usually omit them from "All" if they are already visible, but user said "containing all the remainng actions" so we omit the main 3).
+    const remaining: QuickActionItem[] = [
+      { label: 'Residents', image: require('../../../assets/Quick Actions/Owner/08_residents.png'), color: Colors.primary, onPress: () => { setShowAllActionsSheet(false); router.navigate('/guests'); } },
+      { label: 'Add Room', image: require('../../../assets/Quick Actions/Owner/02_add_room.png'), color: Colors.secondary, onPress: () => { setShowAllActionsSheet(false); router.navigate('/bed-visualizer'); } },
+      { label: 'Ads', image: require('../../../assets/Quick Actions/Owner/03_ads.png'), color: Colors.primary, onPress: () => { setShowAllActionsSheet(false); router.navigate('/manage-ad'); } },
+      { label: 'Complaints', image: require('../../../assets/Quick Actions/Owner/04_complaints.png'), color: Colors.danger, onPress: () => { setShowAllActionsSheet(false); router.navigate('/complaints'); } },
+      { label: 'Food RSVP', image: require('../../../assets/Quick Actions/Owner/05_food_rsvp.png'), color: Colors.textSecondary, onPress: () => { setShowAllActionsSheet(false); router.navigate('/rsvp-trends'); } },
+      { label: 'Managers', image: require('../../../assets/Quick Actions/Owner/06_managers.png'), color: Colors.primary, onPress: () => { setShowAllActionsSheet(false); router.navigate('/manager-provisioning'); } },
+      { label: 'Portfolio', image: require('../../../assets/Quick Actions/Owner/07_portfolio.png'), color: Colors.secondary, onPress: () => { setShowAllActionsSheet(false); router.navigate('/portfolio'); } },
+      { label: 'Reviews', image: require('../../../assets/Quick Actions/Owner/09_reviews.png'), color: Colors.warning, onPress: () => { setShowAllActionsSheet(false); router.navigate('/reviews'); } },
+      { label: 'Settings', image: require('../../../assets/Quick Actions/Owner/10_settings.png'), color: Colors.primaryDark, onPress: () => { setShowAllActionsSheet(false); router.navigate('/settings'); } },
+      { label: 'Staff', image: require('../../../assets/Quick Actions/Owner/11_staff.png'), color: Colors.primary, onPress: () => { setShowAllActionsSheet(false); router.navigate('/staff'); } },
+      { label: 'Technicians', image: require('../../../assets/Quick Actions/Owner/13_add_more.png'), color: Colors.secondary, onPress: () => { setShowAllActionsSheet(false); setShowBookRepair(true); } },
+      { label: 'UPI Setup', image: require('../../../assets/Quick Actions/Owner/12_upi_setup.png'), color: Colors.primaryDark, onPress: () => { setShowAllActionsSheet(false); router.navigate('/upi-settings'); } },
     ];
 
     if (!isManager) {
-      rest.push({ label: 'Add Property', icon: 'business', color: Colors.primaryDark, bgColor: Colors.surfaceElevated, onPress: () => { router.navigate('/manage-properties'); } });
+      remaining.push({ label: 'Add Property', image: require('../../../assets/Quick Actions/Owner/01_add_property.png'), color: Colors.primaryDark, onPress: () => { setShowAllActionsSheet(false); router.navigate('/manage-properties'); } });
     }
 
-    rest.sort((a, b) => a.label.localeCompare(b.label));
+    remaining.sort((a, b) => a.label.localeCompare(b.label));
 
-    return [...top4, ...rest];
+    return remaining;
   }, [isManager]);
 
   // Revenue by month, for the trend chart — self-measuring, so no chart-width math lives
@@ -225,7 +221,8 @@ export default function OwnerOverviewTab() {
   const monthlyRevenuePoints: TrendChartPoint[] = useMemo(
     () => (pnlData?.monthly ?? []).map((m) => ({
       label: periodToMonthYear(m.period).split(' ')[0],
-      values: { revenue: m.revenue } })),
+      values: { revenue: m.revenue }
+    })),
     [pnlData],
   );
 
@@ -257,19 +254,23 @@ export default function OwnerOverviewTab() {
       numericValue: revenueTotal, format: formatINR,
       ...(revenueGrowthPct !== null && Math.abs(revenueGrowthPct) >= 0.5
         ? { delta: `${revenueGrowthPct >= 0 ? '↑' : '↓'} ${Math.abs(revenueGrowthPct).toFixed(1)}%`, deltaTone: (revenueGrowthPct >= 0 ? 'up' : 'down') as 'up' | 'down' }
-        : {}) },
+        : {})
+    },
     {
       key: 'residents', tint: 'green', label: 'Residents', value: String(occupiedCount),
       numericValue: occupiedCount, format: (n) => String(Math.round(n)),
-      delta: `${occupancyPercent}% of ${capacity} beds` },
+      delta: `${occupancyPercent}% of ${capacity} beds`
+    },
     {
       key: 'outstanding', tint: 'amber', label: 'Outstanding', value: formatINR(overdueAmount),
       numericValue: overdueAmount, format: formatINR,
-      ...(overdueCount > 0 ? { delta: `${overdueCount} resident${overdueCount === 1 ? '' : 's'}`, deltaTone: 'down' as const } : {}) },
+      ...(overdueCount > 0 ? { delta: `${overdueCount} resident${overdueCount === 1 ? '' : 's'}`, deltaTone: 'down' as const } : {})
+    },
     {
       key: 'requests', tint: 'slate', label: 'Open requests', value: String(openRequests),
       numericValue: openRequests, format: (n) => String(Math.round(n)),
-      ...(openRequests > 0 ? { delta: 'Needs attention', deltaTone: 'down' as const } : { delta: 'All clear', deltaTone: 'up' as const }) },
+      ...(openRequests > 0 ? { delta: 'Needs attention', deltaTone: 'down' as const } : { delta: 'All clear', deltaTone: 'up' as const })
+    },
   ];
 
   // Donut Chart calculations. No fallback counts: a property with zero complaints is good
@@ -393,42 +394,63 @@ export default function OwnerOverviewTab() {
 
 
             {/* ── 3. Quick Actions ───────────────────────────────────────────── */}
-            <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
-              <Row gap={6} align="center">
-                <Ionicons name="flash" size={16} color={Colors.primary} />
-                <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Quick Actions</Text>
-              </Row>
-              <AnimatedPress accessibilityRole="button"
-                onPress={() => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                  usePGowStore.getState().set('isQuickActionsExpanded', !isQuickActionsExpanded);
-                }}
-                style={{ paddingHorizontal: 8, paddingVertical: 4 }}
-              >
-                <Row align="center" gap={4}>
-                  <Text maxFontSizeMultiplier={1.3} style={styles.viewAllText}>{isQuickActionsExpanded ? 'Show less' : 'View all'}</Text>
-                  <Ionicons name={isQuickActionsExpanded ? "chevron-up" : "chevron-down"} size={16} color={PRIMARY} />
-                </Row>
-              </AnimatedPress>
-            </Row>
+            {(() => {
+              // TODO: Add your custom image assets here for the main Bento Grid
+              const servicesImage = require('../../../assets/Quick Actions/Owner/services.png');
+              const procurementImage = require('../../../assets/Quick Actions/Owner/procurment.png');
+              const groceriesImage = require('../../../assets/Quick Actions/Owner/grocery.png');
+              const allServicesImage = require('../../../assets/Quick Actions/Owner/View all.png');
 
-            <View style={[styles.actionsBox, { paddingHorizontal: 14, paddingVertical: 18 }]}>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 18 }}>
-                {(isQuickActionsExpanded ? quickActions : quickActions.slice(0, 4)).map(act => (
-                  <AnimatedPress key={act.label} scale={0.92} onPress={act.onPress} style={{ width: '22%', alignItems: 'center' }}>
-                    <View style={{ alignItems: 'center', gap: 6, width: '100%' }}>
-                      <View style={[styles.actionIconCircle, { backgroundColor: act.bgColor, borderColor: Colors.borderSubtle, borderWidth: 1 }]}>
-                        <Ionicons name={act.icon} size={22} color={act.color} />
-                      </View>
-                      {/* Two lines: these are four tiles across, so at a larger font scale
-                          one line turned "Procurement" into "Procureme…" — a truncated word
-                          in a tile that has room to wrap. */}
-                      <Text maxFontSizeMultiplier={1.3} style={styles.actionLabel} numberOfLines={2}>{act.label}</Text>
+              return (
+                <>
+                  <Row justify="space-between" align="center" style={styles.sectionHeaderRow}>
+                    <Row gap={6} align="center">
+                      <Ionicons name="flash" size={16} color={Colors.primary} />
+                      <Text maxFontSizeMultiplier={1.3} style={styles.sectionHeading}>Quick Actions</Text>
+                    </Row>
+                  </Row>
+
+                  <View style={styles.bentoGrid}>
+                    {/* Left Column (2 Short Tiles) */}
+                    <View style={styles.bentoCol}>
+                      <AnimatedPress accessibilityRole="button" scale={0.96} onPress={() => router.navigate('/services')}
+                        style={[styles.bentoTile, { backgroundColor: Palette.TintBlue, borderColor: Palette.TintBlue }]}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.bentoTileTitle}>Services</Text>
+                        {servicesImage && <Image source={servicesImage} style={styles.bentoTileImageBg} />}
+                      </AnimatedPress>
+
+                      <AnimatedPress accessibilityRole="button" scale={0.96} onPress={() => router.navigate('/procurement')}
+                        style={[styles.bentoTile, { backgroundColor: Palette.TintAmber, borderColor: Palette.TintAmber }]}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.bentoTileTitle}>Procurement</Text>
+                        {procurementImage && <Image source={procurementImage} style={styles.bentoTileImageBg} />}
+                      </AnimatedPress>
                     </View>
-                  </AnimatedPress>
-                ))}
-              </View>
-            </View>
+
+                    {/* Right Column (1 Tall Tile, 1 Short Tile) */}
+                    <View style={styles.bentoCol}>
+                      <AnimatedPress accessibilityRole="button" scale={0.96} onPress={() => router.navigate('/groceries')}
+                        style={[styles.bentoTile, styles.bentoTileTall, { backgroundColor: Palette.TintGreen, borderColor: Palette.TintGreen }]}>
+                        <View style={styles.bentoBadge}>
+                          <Ionicons name="pricetag" size={10} color={SUCCESS} />
+                          <Text maxFontSizeMultiplier={1.2} style={styles.bentoBadgeText}>Offers</Text>
+                        </View>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.bentoTileTitleGroceries}>Groceries</Text>
+                        <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 13, color: Colors.textSecondary, marginTop: 4, width: '90%', zIndex: 10, lineHeight: 18 }}>
+                          Your Daily Needs, Just a Tap Away.
+                        </Text>
+                        {groceriesImage && <Image source={groceriesImage} style={styles.bentoTileImageBg} />}
+                      </AnimatedPress>
+
+                      <AnimatedPress accessibilityRole="button" scale={0.96} onPress={() => setShowAllActionsSheet(true)}
+                        style={[styles.bentoTile, { backgroundColor: Colors.surfaceElevated }]}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.bentoTileTitleAll}>All Services</Text>
+                        {allServicesImage && <Image source={allServicesImage} style={styles.bentoTileImageCorner} />}
+                      </AnimatedPress>
+                    </View>
+                  </View>
+                </>
+              );
+            })()}
 
 
             <Spacer size={24} />
@@ -608,13 +630,15 @@ export default function OwnerOverviewTab() {
                     usePGowStore.getState().set('activeAlert', {
                       ...rentReminderAlert(result),
                       type: 'PAYMENT',
-                      timestamp: Date.now() });
+                      timestamp: Date.now()
+                    });
                   } catch (err) {
                     usePGowStore.getState().set('activeAlert', {
                       title: '❌ REMINDERS NOT SENT',
                       description: err instanceof Error ? err.message : 'Nothing was sent. Try again.',
                       type: 'PAYMENT',
-                      timestamp: Date.now() });
+                      timestamp: Date.now()
+                    });
                   }
                 }}
               >
@@ -674,13 +698,15 @@ export default function OwnerOverviewTab() {
                     usePGowStore.getState().set('activeAlert', {
                       ...rentReminderAlert(result),
                       type: 'PAYMENT',
-                      timestamp: Date.now() });
+                      timestamp: Date.now()
+                    });
                   } catch (err) {
                     usePGowStore.getState().set('activeAlert', {
                       title: '❌ REMINDERS NOT SENT',
                       description: err instanceof Error ? err.message : 'Nothing was sent. Try again.',
                       type: 'PAYMENT',
-                      timestamp: Date.now() });
+                      timestamp: Date.now()
+                    });
                   }
                 }}
               >
@@ -735,6 +761,38 @@ export default function OwnerOverviewTab() {
           </ScrollView>
         </Sheet>
       )}
+
+      {/* ── All Actions Sheet ─────────────────────────────────────────────── */}
+      {showAllActionsSheet && (
+        <Sheet
+          visible={showAllActionsSheet}
+          title="All Services"
+          subtitle="Manage your entire portfolio from here."
+          icon="grid"
+          accent={PRIMARY}
+          size="auto"
+          onDismiss={() => setShowAllActionsSheet(false)}
+          testID="owner-all-actions-sheet"
+        >
+          <View style={[styles.actionsBox, { paddingHorizontal: 14, paddingVertical: 18 }]}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 24 }}>
+              {allQuickActions.map(act => (
+                <AnimatedPress key={act.label} scale={0.92} onPress={act.onPress} style={{ width: '25%', alignItems: 'center' }}>
+                  <View style={{ alignItems: 'center', gap: 4, width: '100%' }}>
+                    <View style={styles.sheetTileBox}>
+                      {act.image ? (
+                        <Image source={act.image} style={styles.sheetTileImage} />
+                      ) : null}
+                    </View>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.sheetTileLabel} numberOfLines={2}>{act.label}</Text>
+                  </View>
+                </AnimatedPress>
+              ))}
+            </View>
+          </View>
+        </Sheet>
+      )}
+
       {showBookRepair && (
         <BookRepairDialog
           onDismiss={() => setShowBookRepair(false)}
@@ -767,7 +825,8 @@ const styles = StyleSheet.create({
     borderColor: '#FECACA',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 16 },
+    marginBottom: 16
+  },
   loadFailedText: { flex: 1, fontSize: 12.5, fontWeight: '700', color: Colors.danger, lineHeight: 17 },
 
   // Get Started / empty state cards
@@ -778,10 +837,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
     shadowRadius: 12,
-    elevation: 3 },
+    elevation: 3
+  },
   tileIconBox: {
     width: 46, height: 46, borderRadius: Radii.card,
-    alignItems: 'center', justifyContent: 'center' },
+    alignItems: 'center', justifyContent: 'center'
+  },
   noMembershipTitle: { fontSize: 20, fontWeight: '700', color: CHARCOAL },
   noMembershipDesc: { color: MUTED, fontSize: 13, lineHeight: 18 },
   btnText: { fontSize: 14, fontWeight: '700', color: WHITE },
@@ -792,36 +853,137 @@ const styles = StyleSheet.create({
 
   // 3. Quick Actions
   sectionHeaderRow: {
-    marginBottom: 10 },
+    marginBottom: 10
+  },
   sectionHeading: {
     fontSize: 15,
     fontWeight: '700',
-    color: CHARCOAL },
+    color: CHARCOAL
+  },
   viewAllText: {
     fontSize: 12,
     fontWeight: '700',
-    color: PRIMARY },
+    color: PRIMARY
+  },
   actionsBox: {
-    backgroundColor: WHITE,
-    borderRadius: Radii.sheet,
     paddingVertical: 18,
-    paddingHorizontal: 14,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2 },
-  actionIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: Radii.card,
+    paddingHorizontal: 14
+  },
+  sheetTileBox: {
+    width: 62,
+    height: 62,
+    borderRadius: 16,
+    backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
-    justifyContent: 'center' },
-  actionLabel: {
-    fontSize: 10,
+    justifyContent: 'center'
+  },
+  sheetTileImage: {
+    width: 56,
+    height: 56,
+    resizeMode: 'contain',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  sheetTileLabel: {
+    fontSize: 11,
     fontWeight: '700',
     color: CHARCOAL,
-    textAlign: 'center' },
+    textAlign: 'center',
+    lineHeight: 14
+  },
+
+  // Bento Grid Quick Actions
+  bentoGrid: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  bentoCol: {
+    flex: 1,
+    gap: 12
+  },
+  bentoTile: {
+    flex: 1,
+    borderRadius: Radii.sheet,
+    padding: 16,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    overflow: 'hidden',
+    position: 'relative',
+    minHeight: 120,
+    justifyContent: 'flex-start'
+  },
+  bentoTileTall: {
+    flex: 2,
+    minHeight: 180
+  },
+  bentoTileTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: CHARCOAL,
+    width: '70%',
+    lineHeight: 22
+  },
+  bentoTileTitleGroceries: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: CHARCOAL,
+    marginTop: 4,
+    lineHeight: 28
+  },
+  bentoTileTitleAll: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: CHARCOAL,
+    width: '60%',
+    lineHeight: 22,
+    marginTop: 8
+  },
+  bentoTileImageBg: {
+    position: 'absolute',
+    bottom: -47,
+    right: -25,
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+  },
+  bentoTileImageCorner: {
+    position: 'absolute',
+    bottom: -10,
+    right: -10,
+    width: 120,
+    height: 120,
+    resizeMode: 'contain',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
+  bentoBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: WHITE,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: Radii.pill,
+    shadowColor: SUCCESS,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2
+  },
+  bentoBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: SUCCESS
+  },
 
   // Charts General
 
@@ -830,21 +992,25 @@ const styles = StyleSheet.create({
   // 5. Maintenance Donut Chart
   dividerLine: {
     height: 1,
-    backgroundColor: BORDER },
+    backgroundColor: BORDER
+  },
 
   // 6. Recent Requests
   emptyRequestsBox: {
     padding: 18,
     alignItems: 'center',
-    gap: 8 },
+    gap: 8
+  },
   emptyRequestsText: {
     fontSize: 12,
     fontWeight: '700',
-    color: SUCCESS },
+    color: SUCCESS
+  },
 
   // 7. Recent Activity Timeline
   timelineEmptyDot: {
-    width: 10, height: 10, borderRadius: Radii.pill, backgroundColor: BORDER },
+    width: 10, height: 10, borderRadius: Radii.pill, backgroundColor: BORDER
+  },
   timelineEmptyTitle: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   timelineEmptySub: { fontSize: 11, color: MUTED },
   timelineVerticalLine: {
@@ -853,7 +1019,8 @@ const styles = StyleSheet.create({
     top: 10,
     bottom: 10,
     width: 1.5,
-    backgroundColor: BORDER },
+    backgroundColor: BORDER
+  },
   timelineNode: {
     width: 24,
     height: 24,
@@ -862,17 +1029,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 2,
     borderWidth: 2,
-    borderColor: WHITE },
+    borderColor: WHITE
+  },
   timelineTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: CHARCOAL },
+    color: CHARCOAL
+  },
   timelineTime: {
     fontSize: 10,
-    color: MUTED },
+    color: MUTED
+  },
   timelineDesc: {
     fontSize: 11,
-    color: MUTED },
+    color: MUTED
+  },
 
   // 8. Important Notices
   noticeHeroCard: {
@@ -880,49 +1051,58 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
-    elevation: 2 },
+    elevation: 2
+  },
   noticeIconBox: {
     width: 44,
     height: 44,
     borderRadius: Radii.card,
     backgroundColor: WHITE,
     alignItems: 'center',
-    justifyContent: 'center' },
+    justifyContent: 'center'
+  },
   noticeHeroTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: CHARCOAL },
+    color: CHARCOAL
+  },
   noticeHeroDesc: {
     fontSize: 11,
     color: MUTED,
-    lineHeight: 15 },
+    lineHeight: 15
+  },
   remindBtn: {
     height: 40,
     borderRadius: Radii.control,
     backgroundColor: PRIMARY,
     alignItems: 'center',
-    justifyContent: 'center' },
+    justifyContent: 'center'
+  },
   remindBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: WHITE },
+    color: WHITE
+  },
   noticeBulletDot: {
     width: 6,
     height: 6,
     borderRadius: Radii.pill,
-    backgroundColor: PRIMARY },
+    backgroundColor: PRIMARY
+  },
   quickNoticeText: {
     fontSize: 12,
     fontWeight: '600',
     color: CHARCOAL,
-    flex: 1 },
+    flex: 1
+  },
 
   // Overdue Modal Dialog
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(21, 23, 26, 0.45)',
     justifyContent: 'center',
-    alignItems: 'center' },
+    alignItems: 'center'
+  },
   modalCard: {
     width: '92%',
     maxHeight: '80%',
@@ -933,24 +1113,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 10 },
+    elevation: 10
+  },
   modalIconBox: {
     width: 40,
     height: 40,
     borderRadius: Radii.card,
     backgroundColor: Palette.TintAmber,
     alignItems: 'center',
-    justifyContent: 'center' },
+    justifyContent: 'center'
+  },
   modalTitle: { fontSize: 16, fontWeight: '700', color: CHARCOAL },
   modalSub: { fontSize: 12, color: MUTED, marginTop: 1 },
   menuDivider: { height: 1, backgroundColor: BORDER, marginVertical: 14 },
   closeBtn: {
     width: 32, height: 32, borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceMuted,
-    alignItems: 'center', justifyContent: 'center' },
+    alignItems: 'center', justifyContent: 'center'
+  },
   allPaidBox: {
     alignItems: 'center', padding: 24,
-    backgroundColor: Palette.TintGreen, borderRadius: Radii.card, marginBottom: 8 },
+    backgroundColor: Palette.TintGreen, borderRadius: Radii.card, marginBottom: 8
+  },
   allPaidTitle: { fontSize: 14, fontWeight: '700', color: SUCCESS, marginTop: 8 },
   allPaidSub: { fontSize: 12, color: MUTED, marginTop: 2 },
   overdueRow: {
@@ -958,25 +1142,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER },
+    borderBottomColor: BORDER
+  },
   overdueGuestName: { fontSize: 14, fontWeight: '700', color: CHARCOAL },
   overdueGuestSub: { fontSize: 12, color: MUTED, marginTop: 2 },
   overdueAmount: { fontSize: 15, fontWeight: '700', color: WARNING },
   callBtn: {
     marginTop: 4, width: 28, height: 28, borderRadius: Radii.pill,
-    backgroundColor: Palette.TintBlue, alignItems: 'center', justifyContent: 'center' },
+    backgroundColor: Palette.TintBlue, alignItems: 'center', justifyContent: 'center'
+  },
   roomPill: {
     paddingHorizontal: 6, paddingVertical: 2,
-    borderRadius: Radii.badge, backgroundColor: Palette.TintBlue },
+    borderRadius: Radii.badge, backgroundColor: Palette.TintBlue
+  },
   roomPillText: { fontSize: 10, fontWeight: '700', color: PRIMARY },
   modalPrimaryBtn: {
     height: 46, backgroundColor: PRIMARY,
-    borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center' },
+    borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center'
+  },
   modalPrimaryBtnText: { fontSize: 13, fontWeight: '700', color: WHITE },
   modalSecondaryBtn: {
     height: 46,
     borderRadius: Radii.card, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: BORDER },
+    borderWidth: 1, borderColor: BORDER
+  },
   modalSecondaryBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   // Food Savings Styles
 });

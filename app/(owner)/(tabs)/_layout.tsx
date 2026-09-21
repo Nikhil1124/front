@@ -155,8 +155,8 @@ export default function OwnerTabsLayout() {
       </View>
 
       {/* Context strip — a sibling of Dock, never a child: TabList is laid out as a row and
-          its children are walked for triggers. */}
-      <DockAlert alert={alert} />
+          its children are walked for triggers. Only visible on the overview tab. */}
+      {isOverviewActive && <DockAlert alert={alert} />}
 
       {/* ── Bottom bar ─────────────────────────────────────────────────────────
           TabList must be a direct child of Tabs and cannot be nested in an ordinary View, or

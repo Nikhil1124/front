@@ -1,5 +1,6 @@
 
 import { View, StyleSheet, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { GroceryColors, Radii } from '@/theme';
@@ -8,7 +9,14 @@ import { useCartStore } from '../store/useCartStore';
 
 export function FloatingCartBar() {
   const items = useCartStore((s) => s.items);
+  const insets = useSafeAreaInsets();
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // `bottom: 20` is the designer's intended clearance from the bottom edge of the screen.
+  // In a true edge-to-edge APK the bottom edge sits behind the gesture strip / nav bar,
+  // so we must add insets.bottom to clear it. `Math.max(..., 20)` preserves the 20dp
+  // minimum on devices with no bottom inset (hardware buttons, old Android).
+  const bottomOffset = Math.max(insets.bottom + 16, 20);
 
   if (cartItemCount === 0) {
     return null;
@@ -18,7 +26,7 @@ export function FloatingCartBar() {
   const previewItems = items.slice(0, 3);
 
   return (
-    <View style={styles.floatingCartBar}>
+    <View style={[styles.floatingCartBar, { bottom: bottomOffset }]}>
       <AnimatedPress
         accessibilityRole="button"
         style={styles.floatingCart}
@@ -64,7 +72,8 @@ export function FloatingCartBar() {
 const styles = StyleSheet.create({
   floatingCartBar: {
     position: 'absolute',
-    bottom: 20, // Nearer to the nav bar
+    // `bottom` is applied as an inline style (see bottomOffset above) — the safe-area
+    // inset is only available at runtime and must not be hardcoded here.
     left: 0,
     right: 0,
     alignItems: 'center',
