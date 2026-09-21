@@ -36,9 +36,35 @@ export interface Membership {
 
 /** A PGow-staff role, not a property role. `area_id` is null for super_admin and support. */
 export interface PlatformGrant {
-  role: "super_admin" | "area_manager" | "support" | "delivery_agent" | "laundry_provider";
+  role:
+    | "super_admin"
+    | "area_manager"
+    | "support"
+    | "delivery_agent"
+    | "laundry_provider"
+    | "service_technician";
   area_id: string | null;
 }
+
+/**
+ * PGow roles that have no screens in THIS app.
+ *
+ * Two different elsewheres, and the distinction only matters for what we tell them:
+ *
+ *   PGow ops              →  the web portal (areas, staff, stock, queues);
+ *   the two field workers  →  their own app, PGow Laundry or PGow Services, which is where a
+ *                             provider's pickups and a technician's jobs now live. They used
+ *                             to be served here.
+ *
+ * Naming them matters either way. All four hold ZERO memberships, and "no memberships" reads
+ * as "a freshly registered owner who has not added a property yet" in both the entry redirect
+ * and the route guard — so an unnamed role lands on the owner's "Add your first property"
+ * screen, an invitation to create a PG shown to the one kind of user who must never do that.
+ */
+const PORTAL_ROLES = ["area_manager", "super_admin"] as const;
+
+/** Served by the standalone partner apps, not this one. */
+const PARTNER_APP_ROLES = ["laundry_provider", "service_technician"] as const;
 
 /**
  * A role the app can be "in" — a membership role, or one of the PGow-side roles that has its
@@ -48,7 +74,7 @@ export interface PlatformGrant {
  * property, so they hold no membership at all. `activeRole` was derived purely from
  * `memberships`, which left them signed in with a null role and nowhere to land.
  */
-export type ActiveRole = Membership["role"] | "laundry_provider";
+export type ActiveRole = Membership["role"];
 
 /** ADR-004's gate for the caller's guest membership. Null for owners and staff — the gate
  *  is about residency, not employment — and null for a resident who is fully cleared. */
@@ -105,47 +131,56 @@ const KEYS = {
 // ─── Store ───────────────────────────────────────────────────────────────────
 
 /**
- * The PGow-side role this app has screens for, or null.
+ * The PGow-side role this app has screens for.
  *
- * Only `laundry_provider`. They are a field worker — they stand in somebody's corridor with a
- * bag of clothes — so a phone is the only place that job can be worked from.
+ * None, now. `laundry_provider` and `service_technician` were the only two, and both moved to
+ * the standalone partner apps — a provider carrying a bag of clothes and a technician carrying
+ * a spanner have nothing else to do in a resident's app, and keeping them here meant every
+ * PGow release was also their release.
  *
- * `area_manager` and `super_admin` deliberately have none: PGow ops work from the web portal,
- * where assigning a provider belongs next to the areas, staff-roles and dispatch screens that
- * are the rest of that job. The membership-flavoured `delivery_agent` arrives through
- * `memberships` instead — the platform role of the same name is the supply/trips plane.
+ * Kept as a function rather than deleted because the shape is the seam: a future PGow-side
+ * role that genuinely belongs on this phone plugs in here, and the call sites already handle
+ * null.
  */
-function platformAppRole(user: User): ActiveRole | null {
-  const roles = new Set((user.platform_roles ?? []).map((g) => g.role));
-  return roles.has("laundry_provider") ? "laundry_provider" : null;
+function platformAppRole(_user: User): ActiveRole | null {
+  return null;
 }
 
 /**
  * True for a PGow role whose work lives on the web portal, not here.
  *
- * `area_manager` and `super_admin` run areas, staff roles, dispatch, catalogue and stock —
- * a desk job with a wide screen. Signing into the app is not wrong, it just has nothing for
- * them, and without this they fall into the owner branch (they hold no membership either)
- * and are shown "Add your first property" — an invitation to create a PG, aimed at the one
- * kind of user who should never do that from here.
+ * A field-worker grant always wins: somebody who is both a technician and a desk manager has
+ * real work to do on this phone, so they are not sent away.
  */
 export function isOpsPortalUser(user: User | null): boolean {
   if (!user) return false;
   const roles = new Set((user.platform_roles ?? []).map((g) => g.role));
-  if (roles.has("laundry_provider")) return false;
-  return roles.has("area_manager") || roles.has("super_admin");
+  return PORTAL_ROLES.some((r) => roles.has(r));
+}
+
+/**
+ * True for somebody whose work is in PGow Laundry or PGow Services.
+ *
+ * They can still sign in here — same account, same backend — and land on nothing. Telling them
+ * which app to open is the entire value of this function; without it they get the owner's
+ * "Add your first property", which is worse than a dead end because it invites them to do
+ * something harmful.
+ */
+export function isPartnerAppUser(user: User | null): boolean {
+  if (!user) return false;
+  const roles = new Set((user.platform_roles ?? []).map((g) => g.role));
+  return PARTNER_APP_ROLES.some((r) => roles.has(r));
 }
 
 /**
  * True for a PGow worker who DOES have screens here.
  *
- * They hold ZERO memberships by design, which is the trap: "no memberships" was being read as
- * "a freshly registered owner who has not added a property yet" in both the entry redirect
- * and the route guard, so a laundry provider landed on the owner's "Add your first property"
- * screen. Anywhere membership count stands in for "new owner", this has to be subtracted.
+ * Nobody, since the partner apps took the two field roles. Retained so the entry redirect and
+ * the route guard keep reading as "is this a platform worker?" rather than growing a hardcoded
+ * `false` that nobody can trace back to a decision.
  */
-export function isPlatformWorkerRole(role: ActiveRole | null): boolean {
-  return role === 'laundry_provider';
+export function isPlatformWorkerRole(_role: ActiveRole | null): boolean {
+  return false;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({

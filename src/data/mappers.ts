@@ -455,6 +455,30 @@ function laundryStatusOf(r: RequestRecord): string {
   return LAUNDRY_STAGE_LABEL[stage] ?? HUB_STATUS.laundry[r.status] ?? "Pickup Scheduled";
 }
 
+/** What the resident is told a repair is doing.
+ *
+ *  Same problem the laundry table had, and the same fix. The coarse `status` collapses the
+ *  technician's whole visit into one word: every one of "on the way", "in your room" and
+ *  "finished, being priced" is `in_progress`, so the repair table read "En-Route" while
+ *  somebody was standing in the room and still read it after the work was done.
+ *
+ *  The last stage says "Awaiting Final Cost" rather than "Completed" deliberately: the job is
+ *  physically finished but not closed, because a repair closes when the service manager
+ *  records what it cost. Telling the resident "Completed" there would promise a final bill
+ *  that does not exist yet. */
+const SERVICE_STAGE_LABEL: Record<string, string> = {
+  en_route: "Technician En-Route",
+  on_site: "Technician On Site",
+  work_done: "Awaiting Final Cost",
+};
+
+function repairStatusOf(r: RequestRecord): string {
+  if (r.status === "cancelled") return "Cancelled";
+  if (r.status === "resolved") return "Completed";
+  const stage = detailStr(r, "service_stage");
+  return SERVICE_STAGE_LABEL[stage] ?? HUB_STATUS.repair[r.status] ?? "Technician Requested";
+}
+
 /** Reverse of the above, so a tap on "Delivered" becomes a real status transition. */
 export function hubStatusToServer(
   kind: "grocery" | "repair" | "laundry",
@@ -510,7 +534,7 @@ export function toRepairRequest(r: RequestRecord): PGRepairServiceRequest {
     // job. `estimatedCost` is what booking quoted; this is what the work came to, and it is
     // the only one an invoice may call a total.
     finalCost: r.final_amount != null ? toAmount(r.final_amount) : null,
-    status: HUB_STATUS.repair[r.status] ?? "Technician Requested",
+    status: repairStatusOf(r),
     etaMinutes: detailNum(r, "eta_minutes"),
     timestamp: toMillis(r.created_at),
   };

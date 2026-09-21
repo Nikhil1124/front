@@ -4,7 +4,6 @@ import { View, StyleSheet, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, IconBtn, Spacer, AnimatedPress } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
-import { LaundryProviderJobsScreen } from '@/features/laundry/LaundryProviderJobsScreen';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors, Palette, Radii } from '@/theme';
@@ -68,7 +67,6 @@ const PRESET_DISHES: VisualDishItem[] = [
 export default function ChefBroadcastTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
   if (activeRole === 'delivery_agent') return <DeliveryHistoryRoute />;
-  if (activeRole === 'laundry_provider') return <LaundryProviderJobsScreen history />;
   return <ChefBroadcastView />;
 }
 

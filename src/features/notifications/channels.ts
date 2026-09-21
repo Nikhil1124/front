@@ -31,6 +31,19 @@ Notifications.setNotificationHandler({
  * can silence shift chatter without silencing "your rent is overdue". One channel for
  * everything is the reason people turn an app's notifications off wholesale rather than
  * turning down the part that annoys them.
+ *
+ * ── Two things about importance that are easy to get wrong ──
+ *
+ * `LOW` on Android means NO SOUND and no heads-up banner — the notification slides into the
+ * shade in silence. That is correct for genuine chatter and wrong for anything a person has
+ * to act on. It is what made the meal RSVP silent: meals had no channel of their own, so they
+ * were sent as `announcement` and inherited this channel's LOW.
+ *
+ * And Android will not let an app RAISE a channel's importance once the channel exists —
+ * that dial belongs to the user, permanently. So correcting an importance in this file does
+ * nothing on any phone that already has the app. A NEW id is the only way the fix lands,
+ * which is why `announcements` is now `announcements_v2` and the old one is deleted below
+ * rather than left behind as a dead row in the user's notification settings.
  */
 const CHANNELS: {
   id: string;
@@ -63,25 +76,54 @@ const CHANNELS: {
     importance: Notifications.AndroidImportance.DEFAULT,
   },
   {
-    id: "announcements",
+    // MAX, not HIGH: this is the one push with a deadline attached. A resident who misses it
+    // is not mildly inconvenienced — they are counted as eating, or not, by a kitchen that
+    // has already started cooking. It is also the only channel whose notification carries
+    // buttons, and a silent notification with buttons is a contradiction.
+    id: "meals",
+    name: "Meals",
+    description: "Meal prompts you need to answer, and your points.",
+    importance: Notifications.AndroidImportance.MAX,
+  },
+  {
+    // DEFAULT, not LOW: a notice makes a sound now. "Water is off tomorrow morning" arriving
+    // in silence is a notice nobody reads. Still below meals and rent, which is the point of
+    // having the levels — a resident who mutes this one keeps the two that matter.
+    id: "announcements_v2",
     name: "Announcements",
     description: "Notices from your property or from PGow.",
-    importance: Notifications.AndroidImportance.LOW,
+    importance: Notifications.AndroidImportance.DEFAULT,
   },
 ];
 
+/** Channels that have been superseded by a new id. Deleted on launch so a phone that had the
+ *  old one does not show a dead, un-silenceable entry in the app's notification settings
+ *  alongside its replacement. */
+const RETIRED_CHANNELS = ["announcements"];
+
 export async function registerNotificationChannels(): Promise<void> {
   if (Platform.OS !== "android") return;
-  await Promise.all(
-    CHANNELS.map((c) =>
+  await Promise.all([
+    ...CHANNELS.map((c) =>
       Notifications.setNotificationChannelAsync(c.id, {
         name: c.name,
         description: c.description,
         importance: c.importance,
         lightColor: Colors.primary,
+        // Explicit rather than relying on the importance default. An OEM skin that ships a
+        // stricter default is exactly the environment where "it is silent on my phone only"
+        // comes from, and these two cost nothing to state.
+        sound: "default",
+        enableVibrate: true,
       })
-    )
-  );
+    ),
+    // Best effort: deleting a channel that was never created is not an error worth failing
+    // launch over.
+    ...RETIRED_CHANNELS.map((id) =>
+      Notifications.deleteNotificationChannelAsync?.(id)?.catch?.(() => {}) ??
+      Promise.resolve()
+    ),
+  ]);
 }
 
 /**

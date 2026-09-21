@@ -339,6 +339,27 @@ export function useGroceryOrdersQuery(pgId?: string) {
   });
 }
 
+/**
+ * How often a resident's own list re-reads itself while somebody else is moving their job.
+ *
+ * Repairs and laundry are the two kinds a PGow field worker walks forward from their own
+ * phone, so the resident's screen is not the one acting — it just has to notice. A push is
+ * posted at every stage, but a push is a nudge, not a refresh: a resident already looking at
+ * the screen when the technician taps "I've arrived" would otherwise sit on "En-Route".
+ *
+ * Only while something is actually in flight. A list of finished jobs cannot change, and
+ * polling it is battery spent on a guaranteed no-op — the same rule grocery orders already
+ * follow via `isOrderClosed`.
+ */
+const LIVE_WHILE_OPEN = <T extends { status: string }>(closed: (s: string) => boolean) => ({
+  refetchInterval: (query: { state: { data?: T[] } }) =>
+    (query.state.data ?? []).some((row) => !closed(row.status)) ? 20000 : (false as const),
+});
+
+/** The resident-facing labels that mean "nothing more will happen to this". */
+const repairClosed = (s: string) => s === "Completed" || s === "Cancelled";
+const laundryClosed = (s: string) => s === "Delivered" || s === "Cancelled";
+
 export function useRepairRequestsQuery(pgId?: string) {
   return useQuery<PGRepairServiceRequest[]>({
     queryKey: [...qk.requests.list(pgId ?? ""), "repair"],
@@ -348,6 +369,7 @@ export function useRepairRequestsQuery(pgId?: string) {
       return res.items.map(map.toRepairRequest);
     },
     enabled: !!pgId,
+    ...LIVE_WHILE_OPEN<PGRepairServiceRequest>(repairClosed),
   });
 }
 
@@ -363,6 +385,7 @@ export function useLaundryRequestsQuery(pgId?: string) {
       return res.items.map(map.toLaundryRequest);
     },
     enabled: !!pgId,
+    ...LIVE_WHILE_OPEN<GuestLaundryRequest>(laundryClosed),
   });
 }
 

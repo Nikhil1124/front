@@ -20,7 +20,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import Notifications from '../src/data/notificationsCompat';
 
 import { usePGowStore } from '@/store/usePGowStore';
-import { isOpsPortalUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
+import { isOpsPortalUser, isPartnerAppUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
 import { queryClient } from '@/data/queryClient';
 import { setGateHandler, setSessionExpiredHandler } from '@/data/apiClient';
 import {
@@ -210,7 +210,14 @@ function RootLayoutNav() {
     return () => sub.remove();
   }, [submitRSVP, isRouterReady]);
 
-  const isStaffRole = activeRole === 'chef' || activeRole === 'kitchen_staff' || activeRole === 'maintenance' || activeRole === 'delivery_agent' || activeRole === 'laundry_provider';
+  const isStaffRole =
+    activeRole === 'chef'
+    || activeRole === 'kitchen_staff'
+    || activeRole === 'maintenance'
+    || activeRole === 'delivery_agent'
+    // Same reason as the entry redirect: derived, so the guard cannot go stale behind a new
+    // field role and lock its holder out of the shell they were just routed to.
+    || isPlatformWorkerRole(activeRole);
   // A self-registered owner holds no membership until property #1 exists, so "signed in with
   // nothing" has to resolve to the owner group or they land nowhere. But that must NOT
   // swallow a resident whose membership ended: they are not an owner, they need the join
@@ -276,6 +283,9 @@ function RootLayoutNav() {
             {/* A signed-in dead end, not an auth screen: PGow ops land here because the app
                 has nothing for them. Guarded on the same predicate that routes them, so it
                 is unreachable for anyone who does have a dashboard. */}
+            <Stack.Protected guard={!!accessToken && isPartnerAppUser(user)}>
+              <Stack.Screen name="partner-app" />
+            </Stack.Protected>
             <Stack.Protected guard={!!accessToken && isOpsPortalUser(user)}>
               <Stack.Screen name="ops-portal" />
             </Stack.Protected>

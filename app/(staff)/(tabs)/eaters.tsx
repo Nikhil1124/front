@@ -16,14 +16,12 @@ import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
 import { getGreeting } from '@/utils/format';
-import { LaundryProviderJobsScreen } from '@/features/laundry/LaundryProviderJobsScreen';
 import { useToast } from '@/hooks/useToast';
 import { openInMaps } from '@/utils/maps';
 
 export default function ChefEatersTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
   if (activeRole === 'delivery_agent') return <DeliveryDashboardRoute />;
-  if (activeRole === 'laundry_provider') return <LaundryProviderJobsScreen />;
   return <ChefEatersView />;
 }
 

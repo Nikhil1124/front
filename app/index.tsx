@@ -7,7 +7,7 @@
  * the lifetime of the session — this only resolves the very first "/" hit on cold start.
  */
 import { Redirect } from 'expo-router';
-import { isOpsPortalUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
+import { isOpsPortalUser, isPartnerAppUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
 
 export default function IndexRoute() {
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -24,6 +24,8 @@ export default function IndexRoute() {
   // PGow ops first: they hold no membership, so every membership-count branch below would
   // otherwise claim them — see `isOpsPortalUser`.
   if (isOpsPortalUser(user)) return <Redirect href="/ops-portal" />;
+  // Same reasoning one role along: their account works here, their job does not.
+  if (isPartnerAppUser(user)) return <Redirect href="/partner-app" />;
 
   // Freshly registered owner with no PG properties yet must land on Owner Overview, which
   // shows the "add your first property" card. Guests are excluded — they get /guest-join
@@ -51,7 +53,12 @@ export default function IndexRoute() {
     activeRole === 'chef'
     || activeRole === 'kitchen_staff'
     || activeRole === 'delivery_agent'
-    || activeRole === 'laundry_provider'
+    // Always false since the partner apps took the two field roles, and kept as the seam
+    // rather than deleted: the next PGow-side role that genuinely belongs on a resident's
+    // phone plugs in there, and a role reaching this point with nowhere to land falls
+    // through to /welcome — which is how a dispatched technician ended up on the owner's
+    // "Add your first property".
+    || isPlatformWorkerRole(activeRole)
   ) return <Redirect href="/eaters" />;
 
   // No recognized role yet (hydration still resolving, or a genuinely unknown role) —

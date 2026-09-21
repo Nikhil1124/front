@@ -47,16 +47,12 @@ export default function StaffTabsLayout() {
   // No profile argument: neither staff role has a countable "waiting for you" queue in the
   // data model today, so there is nothing honest to tint a tab or a context strip with.
   const { dockStyle, contentPaddingBottom } = useDock();
-  const profile = activeRole === 'delivery_agent' ? 'delivery'
-    : activeRole === 'laundry_provider' ? 'laundry'
-    : 'chef';
+  const profile = activeRole === 'delivery_agent' ? 'delivery' : 'chef';
   const destinations = centreOut(NAV_PROFILES[profile]);
-  // A laundry provider holds no membership, so `loggedInStaff` is empty for them — their name
-  // comes from the account itself. Three roles share this shell, so the chrome names whichever
-  // one is actually signed in rather than defaulting everyone to "Chef".
+  // Two roles share this shell, so the chrome names whichever one is signed in rather than
+  // defaulting everyone to "Chef".
   const HEADER = {
     delivery: { title: 'Delivery Dashboard', role: 'Delivery Agent', icon: 'bicycle' as const },
-    laundry: { title: 'Laundry Dashboard', role: 'Laundry Provider', icon: 'shirt' as const },
     chef: { title: 'Chef Dashboard', role: 'Chef', icon: 'restaurant' as const },
   }[profile];
 

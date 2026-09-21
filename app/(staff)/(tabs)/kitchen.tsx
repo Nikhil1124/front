@@ -4,7 +4,6 @@ import { View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, PGowDialog, Row, Spacer, Col, AnimatedPress } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
-import { LaundryProviderProfileScreen } from '@/features/laundry/LaundryProviderJobsScreen';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -26,7 +25,6 @@ const ANNOUNCEMENTS = [
 export default function ChefKitchenTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
   if (activeRole === 'delivery_agent') return <DeliveryProfileRoute />;
-  if (activeRole === 'laundry_provider') return <LaundryProfileRoute />;
   return <ChefKitchenView />;
 }
 
@@ -145,30 +143,6 @@ import { useMyTripsQuery } from '@/features/staff/useTrips';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 /** The laundry provider's profile tab. Same sign-out confirmation every other role gets. */
-function LaundryProfileRoute() {
-  const user = useAuthStore((st) => st.user);
-  const logout = usePGowStore((st) => st.logout);
-  const [confirming, setConfirming] = useState(false);
-  return (
-    <>
-      <LaundryProviderProfileScreen
-        name={user?.name ?? 'PGow'}
-        onSignOut={() => setConfirming(true)}
-      />
-      <PGowDialog
-        visible={confirming}
-        title="Sign out?"
-        message="You will need your password to get back in."
-        confirmLabel="Sign out"
-        tone="destructive"
-        onConfirm={() => { setConfirming(false); logout(); router.replace('/'); }}
-        onCancel={() => setConfirming(false)}
-      />
-    </>
-  );
-}
-
-
 function DeliveryProfileRoute() {
   const dockScroll = useDockScroll();
   const staff = usePGowStore((s) => s.loggedInStaff);

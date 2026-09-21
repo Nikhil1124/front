@@ -14,12 +14,14 @@ import type { UserRole } from '@/types';
 /**
  * Every backend role collapses to one of five UI roles.
  *
- * The catch-all matters: `kitchen_staff`, `maintenance`, `delivery_agent` and
- * `laundry_provider` all render the same STAFF surfaces, so a role added server-side lands
- * somewhere sane instead of falling through as null and leaving someone on a blank screen.
+ * The catch-all matters: `kitchen_staff`, `maintenance` and `delivery_agent` all render the
+ * same STAFF surfaces, so a role added server-side lands somewhere sane instead of falling
+ * through as null and leaving someone on a blank screen.
  *
- * `laundry_provider` is a PLATFORM role rather than a membership — PGow's own worker, scoped
- * to an area — which is why the parameter is `ActiveRole` and not `Membership['role']`.
+ * The parameter is `ActiveRole` rather than `Membership['role']` because this app used to
+ * serve PGow's own field workers too. They are in the standalone partner apps now, so every
+ * value reaching here is a membership — but the seam is left open for the next platform role
+ * that genuinely belongs on a resident's phone.
  */
 export function toUserRole(role: ActiveRole | null): UserRole | null {
   if (!role) return null;

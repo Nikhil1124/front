@@ -108,6 +108,34 @@ export const GroceryColors = {
 
 export type GroceryColorToken = keyof typeof GroceryColors;
 
+/**
+ * NotificationCardColors — the meal/ad notification card's own palette.
+ *
+ * Isolated from `Colors` for the same reason `GroceryColors` is: the card is a faithful
+ * rendering of a supplied notification design, and its violet/slate scheme is not PGow's
+ * botanical one. Folding these into the main palette would put a second primary next to
+ * `Colors.primary`; leaving them inline in the component put eleven raw hexes in a file the
+ * palette guard reads. Named here, the values are unchanged and the component holds none.
+ *
+ * If the card is ever restyled to the app's own identity, this block is what gets deleted —
+ * which is the point of keeping it separable rather than merged.
+ */
+export const NotificationCardColors = {
+  primary:       '#5B45E8',
+  primaryDark:   '#4338CA',
+  canvas:        '#F7F8FC',
+  surface:       '#FFFFFF',
+  textPrimary:   '#1A1B25',
+  textSecondary: '#6B7280',
+  textTertiary:  '#9CA3AF',
+  success:       '#16A34A',
+  successBg:     '#E9F9EF',
+  neutralBg:     '#EEF0F5',
+  border:        '#ECEDF3',
+} as const;
+
+export type NotificationCardColorToken = keyof typeof NotificationCardColors;
+
 
 /**
  * Palette — a minimal set of values that have no direct Colors.* semantic equivalent.

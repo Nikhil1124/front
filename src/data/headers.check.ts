@@ -25,7 +25,13 @@ const ALLOWED = new Set([
   'src/features/groceries/screens/GroceryCategoryScreen.tsx',
   'src/features/groceries/screens/GroceryProductScreen.tsx',
   'src/features/groceries/components/grocery/Header.tsx',
+  // A full-screen Modal overlay, not a screen: `AppHeader` is screen chrome and cannot sit
+  // inside a transparent modal, so the zoom viewer's own top bar has to know where the notch
+  // ends. Was a hardcoded `paddingTop: 54` until the responsiveness pass, which is why this
+  // entry is newer than the pattern it covers.
+  'src/components/KycDocumentsCard.tsx',
   // Auth screens: no header, they pad their own scroll away from the notch.
+  'src/features/auth/JoinPgScreen.tsx',  // back button over a full-bleed step flow, same pattern
   'app/(auth)/reset-password.tsx',
   'app/(auth)/set-password.tsx',       // forced first-password gate, same pattern
   'src/features/owner/OwnerRegisterScreen.tsx',
@@ -43,11 +49,27 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 const offenders: string[] = [];
+const hardcoded: string[] = [];
 for (const file of [...walk(join(ROOT, 'src')), ...walk(join(ROOT, 'app'))]) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '');
   if (ALLOWED.has(rel)) continue;
   const body = readFileSync(file, 'utf8');
   if (/paddingTop:\s*insets\.top/.test(body)) offenders.push(rel);
+  // The blind spot, and it points the wrong way: this guard only sees `insets.top`, so a file
+  // hardcoding `paddingTop: 52` for the notch passes while the corrected version fails. Two
+  // files were caught by exactly that on the responsiveness pass — they were wrong before and
+  // right after. A magic number in that range is almost always a notch guess.
+  else if (/paddingTop:\s*(4[5-9]|5[0-9]|6[0-4])\b/.test(body)) hardcoded.push(rel);
+}
+
+if (hardcoded.length) {
+  console.error(
+    'headers.check.ts — these files hardcode a notch gap instead of reading the inset:\n'
+    + hardcoded.map((f) => `  ${f}`).join('\n')
+    + '\n\nUse <AppHeader>, or `insets.top` from useSafeAreaInsets() plus an ALLOWED entry. '
+    + 'A fixed number is wrong on every device whose notch is not the one it was measured on.',
+  );
+  process.exit(1);
 }
 
 if (offenders.length) {

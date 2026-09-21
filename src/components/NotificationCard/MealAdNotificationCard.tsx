@@ -20,7 +20,7 @@
 // - Route onRespond/onAdDismiss through your React Query mutation -> service/API
 //   layer (mock service now, real endpoint later) per the project's data-flow convention.
 // - If you already have Button/Card/StatusBadge primitives, replace the raw
-//   TouchableOpacity/View here with those instead of duplicating styles.
+//   AnimatedPress/View here with those instead of duplicating styles.
 // - Ad creative images should be provided pre-cropped to a ~16:6 ratio by
 //   whatever ad source you integrate — the banner uses resizeMode="cover"
 //   at a fixed 90px height, so mismatched aspect ratios will crop, not letterbox.
@@ -31,7 +31,6 @@ import {
   Text,
   Image,
   StyleSheet,
-  TouchableOpacity,
   useWindowDimensions,
   AccessibilityInfo,
 } from "react-native";
@@ -41,21 +40,12 @@ import {
   MealResponsePayload,
   NotificationAd,
 } from "../../types/notification";
+import { AnimatedPress } from "@/components/ui";
+import { NotificationCardColors, Radii } from "@/theme";
 
-// --- Theme (pull from your shared theme/constants file if one exists) ---
-const COLORS = {
-  primary: "#5B45E8",
-  primaryDark: "#4338CA",
-  canvas: "#F7F8FC",
-  surface: "#FFFFFF",
-  textPrimary: "#1A1B25",
-  textSecondary: "#6B7280",
-  textTertiary: "#9CA3AF",
-  success: "#16A34A",
-  successBg: "#E9F9EF",
-  neutralBg: "#EEF0F5",
-  border: "#ECEDF3",
-};
+// The card's palette, unchanged, but named in the theme rather than inline — see
+// `NotificationCardColors` there for why it stays separate from `Colors`.
+const COLORS = NotificationCardColors;
 
 const MEAL_ICON: Record<MealNotificationData["mealType"], string> = {
   breakfast: "☕",
@@ -102,19 +92,18 @@ const AdSlot: React.FC<AdSlotProps> = ({ ad, onPress, onDismiss }) => {
           Ad · served by {ad.brandName}
         </Text>
         {onDismiss ? (
-          <TouchableOpacity
+          <AnimatedPress
             onPress={() => onDismiss(ad)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Dismiss ad"
           >
             <Text style={styles.adDismissGlyph}>✕</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         ) : null}
       </View>
 
-      <TouchableOpacity
-        activeOpacity={0.9}
+      <AnimatedPress
         onPress={() => onPress?.(ad)}
         accessibilityRole="button"
         accessibilityLabel={`Advertisement from ${ad.brandName}: ${ad.tagline}`}
@@ -154,7 +143,7 @@ const AdSlot: React.FC<AdSlotProps> = ({ ad, onPress, onDismiss }) => {
             </View>
           ) : null}
         </View>
-      </TouchableOpacity>
+      </AnimatedPress>
     </View>
   );
 };
@@ -206,8 +195,7 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
   );
 
   return (
-    <TouchableOpacity
-      activeOpacity={onPress ? 0.9 : 1}
+    <AnimatedPress
       onPress={onPress}
       disabled={!onPress}
       style={styles.card}
@@ -260,7 +248,7 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
         </View>
       ) : (
         <View style={[styles.actionRow, isCompact && styles.actionRowCompact]}>
-          <TouchableOpacity
+          <AnimatedPress
             style={[styles.actionBtn, styles.eatBtn]}
             onPress={() => handleRespond("eat")}
             disabled={submitting}
@@ -268,8 +256,8 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
             accessibilityLabel="Eat this meal"
           >
             <Text style={styles.eatBtnText}>🍴  Eat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </AnimatedPress>
+          <AnimatedPress
             style={[styles.actionBtn, styles.skipBtn]}
             onPress={() => handleRespond("skip")}
             disabled={submitting}
@@ -277,7 +265,7 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
             accessibilityLabel="Skip this meal"
           >
             <Text style={styles.skipBtnText}>✕  Skip</Text>
-          </TouchableOpacity>
+          </AnimatedPress>
         </View>
       )}
 
@@ -296,7 +284,7 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
           />
         </>
       ) : null}
-    </TouchableOpacity>
+    </AnimatedPress>
   );
 };
 
@@ -318,12 +306,12 @@ export function formatPushNotificationBody(data: MealNotificationData): {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 20,
+    borderRadius: Radii.card,      // was 20
     padding: 16,
     width: "100%",
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: "#1A1B25",
+    shadowColor: COLORS.textPrimary,
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -337,7 +325,7 @@ const styles = StyleSheet.create({
   appIconWrap: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: Radii.badge,     // was 8
     backgroundColor: COLORS.successBg,
     alignItems: "center",
     justifyContent: "center",
@@ -406,7 +394,7 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
   },
   adCard: {
-    borderRadius: 14,
+    borderRadius: Radii.control,   // was 14
     overflow: "hidden",
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -422,7 +410,7 @@ const styles = StyleSheet.create({
   adBrandFallback: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#1A1B25",
+    color: COLORS.textPrimary,
   },
   adFooterRow: {
     flexDirection: "row",
@@ -444,13 +432,13 @@ const styles = StyleSheet.create({
   },
   adCtaPill: {
     alignSelf: "center",
-    backgroundColor: "#1A1B25",
-    borderRadius: 999,
+    backgroundColor: COLORS.textPrimary,
+    borderRadius: Radii.pill,
     paddingVertical: 7,
     paddingHorizontal: 14,
   },
   adCtaText: {
-    color: "#FFFFFF",
+    color: COLORS.surface,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -464,16 +452,16 @@ const styles = StyleSheet.create({
   actionBtn: {
     flex: 1,
     minHeight: 44, // touch-friendly
-    borderRadius: 12,
+    borderRadius: Radii.control,   // was 12
     alignItems: "center",
     justifyContent: "center",
   },
   eatBtn: { backgroundColor: COLORS.success },
-  eatBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+  eatBtnText: { color: COLORS.surface, fontWeight: "700", fontSize: 15 },
   skipBtn: { backgroundColor: COLORS.neutralBg },
   skipBtnText: { color: COLORS.textSecondary, fontWeight: "700", fontSize: 15 },
   statusBanner: {
-    borderRadius: 12,
+    borderRadius: Radii.control,   // was 12
     paddingVertical: 10,
     alignItems: "center",
   },
