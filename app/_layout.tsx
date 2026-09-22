@@ -157,7 +157,7 @@ function RootLayoutNav() {
     const sub = Notifications.addNotificationResponseReceivedListener(async (response: any) => {
       const { actionIdentifier, notification } = response;
       const data = notification.request.content.data as
-        | { actionType?: string; actionId?: string; screen?: string }
+        | { actionType?: string; actionId?: string; screen?: string; promoRoute?: string }
         | undefined;
 
       // The confirmation notification's only button. Nothing to submit — it exists so the
@@ -192,6 +192,21 @@ function RootLayoutNav() {
           });
         }
         // On failure, submitRSVP already surfaced its own "❌ RSVP NOT RECORDED" alert.
+        await Notifications.dismissNotificationAsync(notification.request.identifier).catch(() => {});
+        return;
+      }
+
+      if (actionIdentifier === 'PROMO_CTA') {
+        const promoRoute = data?.promoRoute;
+        if (promoRoute && typeof promoRoute === 'string') {
+          // Temporarily inject the promo route so the standard routing handles it
+          const routeData = { ...(data as Record<string, unknown>), screen: promoRoute };
+          if (isRouterReady) {
+            routeFromPushData(routeData);
+          } else {
+            pendingPushData.current = routeData;
+          }
+        }
         await Notifications.dismissNotificationAsync(notification.request.identifier).catch(() => {});
         return;
       }

@@ -138,6 +138,7 @@ export async function registerMealRsvpCategory(): Promise<void> {
   await Notifications.setNotificationCategoryAsync(MEAL_RSVP_CATEGORY, [
     { identifier: "EAT", buttonTitle: "I'll eat ✅", options: { opensAppToForeground: false } },
     { identifier: "SKIP", buttonTitle: "Skip ❌", options: { opensAppToForeground: false } },
+    { identifier: "PROMO_CTA", buttonTitle: "View Offer", options: { opensAppToForeground: true } },
   ]);
 
   // The second state. Once the RSVP is in, "I'll eat" and "Skip" are no longer the available
