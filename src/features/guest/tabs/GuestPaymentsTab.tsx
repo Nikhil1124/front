@@ -89,6 +89,9 @@ export function GuestPaymentsTab() {
   // Invoices (server-side monthly invoices)
   const { data: invoices = [], isLoading: invoicesLoading } = useTenantInvoices(activePgId, activeMembership ?? undefined);
   const payInvoice = usePayTenantInvoice(activePgId);
+  // The six below are a preview; `guestPayments` already holds the rest (the query asks for
+  // 100), so "View All" is a sheet over data in hand, not another round trip.
+  const [allTxnsOpen, setAllTxnsOpen] = useState(false);
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
 
   const [payMode, setPayMode] = useState<'ONLINE_PHONEPE' | 'SCAN_QR' | 'CASH_HANDOVER'>('ONLINE_PHONEPE');
@@ -327,6 +330,35 @@ export function GuestPaymentsTab() {
 
   return (
     <View style={styles.root}>
+
+      <Sheet
+        visible={allTxnsOpen}
+        title="All transactions"
+        subtitle={`${guestPayments.length} payment${guestPayments.length === 1 ? '' : 's'}`}
+        icon="receipt"
+        accent={Colors.primary}
+        size="3/4"
+        onDismiss={() => setAllTxnsOpen(false)}
+      >
+        {guestPayments.length === 0 ? (
+          <Txt size={13} color={Colors.textSecondary}>No payments recorded yet.</Txt>
+        ) : (
+          guestPayments.map((p, idx) => (
+            <ListRow
+              key={p.id}
+              title={`Rent · ${p.monthYear}`}
+              meta={`${p.paymentMode ? p.paymentMode.replace(/_/g, ' ').toLowerCase() : 'online payment'}${p.timestamp ? ` · ${String(p.timestamp).slice(0, 11)}` : ''}`}
+              leading={<Ionicons name="cash-outline" size={17} color={Colors.primary} />}
+              amount={formatINR(Math.round(p.amount))}
+              status={{ label: p.status, tone: toneFor(p.status) }}
+              onPress={() => { setAllTxnsOpen(false); router.push(`/receipt/${p.id}` as never); }}
+              first={idx === 0}
+              last={idx === guestPayments.length - 1}
+              testID={`all_txn_${p.id}`}
+            />
+          ))
+        )}
+      </Sheet>
 
       {/* Resident Card Sheet */}
       {showResidentCard && (
@@ -692,12 +724,9 @@ export function GuestPaymentsTab() {
         {/* ── 4. INVOICES SECTION ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
           <Txt variant="sectionTitle" numberOfLines={1} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>Invoices</Txt>
-          <AnimatedPress accessibilityRole="button" onPress={() => toast('info', 'Not Available Yet', 'A full invoice list is coming soon — every invoice you have is already shown above.')}>
-            <Row align="center" gap={4}>
-              <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
-              <Ionicons name="chevron-forward" size={13} color={Colors.textMuted} />
-            </Row>
-          </AnimatedPress>
+          {/* No "View All" here. The list below renders every invoice this resident has —
+              the link used to toast "coming soon" while admitting, in the same sentence,
+              that everything was already on screen. */}
         </Row>
 
         {invoicesLoading ? (
@@ -774,7 +803,7 @@ export function GuestPaymentsTab() {
         {/* ── 5. RECENT TRANSACTIONS SECTION ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 28, marginBottom: 14 }}>
           <Txt variant="sectionTitle" numberOfLines={1} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>Recent Transactions</Txt>
-          <AnimatedPress accessibilityRole="button" onPress={() => toast('info', 'Not Available Yet', 'A full transaction history is coming soon — only the 6 most recent are shown below.')}>
+          <AnimatedPress accessibilityRole="button" onPress={() => setAllTxnsOpen(true)}>
             <Row align="center" gap={4}>
               <Txt size={13} weight="700" color={Colors.primary}>View All</Txt>
               <Ionicons name="chevron-forward" size={13} color={Colors.textMuted} />

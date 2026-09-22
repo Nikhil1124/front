@@ -301,6 +301,19 @@ export function useCloseMealMutation(pgId?: string) {
   });
 }
 
+/** Rate a meal, comment on it, or both. The endpoint has always accepted these; nothing
+ *  in the app had ever called it, so the banner told residents it was coming soon. Posting
+ *  again replaces the earlier answer rather than stacking a second one. */
+export function submitMealFeedback(
+  mealId: string,
+  body: { rating?: number | null; comment?: string | null },
+): Promise<{ meal_id: string; accepted: boolean }> {
+  return apiFetch(API.MEAL_FEEDBACK(mealId), {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export function useMeals() {
   return {
     listMeals,
@@ -311,6 +324,7 @@ export function useMeals() {
     broadcastMeal,
     closeMeal,
     submitResponse,
+    submitMealFeedback,
     getMyResponse,
     getMealSavingsAnalytics,
     getMealRSVPTrends,

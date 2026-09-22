@@ -22,6 +22,7 @@ import { GATE_CODES, gateCodeFrom } from "./gateCodes.ts";
 // reads it under plain node. Asserted below so a future re-export cannot quietly break it.
 import { currentPeriod, periodToMonthYear, toAmount } from "./mappers.ts";
 import { toneFor } from "../components/ui/statusTone.ts";
+import { todayLocalISO } from "../utils/format.ts";
 import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
 
 // ── UPI deep link ───────────────────────────────────────────────────────────
@@ -371,6 +372,20 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
   assert.equal(amountInWords(100007), "Rupees One Lakh Seven Only");
 
   function round2(n: number) { return Math.round(n * 100) / 100; }
+}
+
+// ── The day a meal belongs to ───────────────────────────────────────────────────────────
+// The meals tab filters a week of meals against this key, so a wrong answer here does not
+// look like a bug — it looks like the kitchen never posted dinner. The trap is
+// `toISOString()`: east of UTC a late dinner is already tomorrow, and before 05:30 IST a
+// breakfast is still yesterday. Both directions are checked.
+{
+  assert.equal(todayLocalISO(new Date(2026, 8, 22, 21, 30)), "2026-09-22", "a 21:30 dinner stays on its own day");
+  assert.equal(todayLocalISO(new Date(2026, 8, 22, 4, 0)), "2026-09-22", "a 04:00 timestamp is not yesterday");
+  // Month and day are zero-padded, because the comparison is a string equality.
+  assert.equal(todayLocalISO(new Date(2026, 0, 5, 12, 0)), "2026-01-05");
+  // Midnight is the first moment of its own day, not the last of the previous one.
+  assert.equal(todayLocalISO(new Date(2026, 8, 22, 0, 0)), "2026-09-22");
 }
 
 console.log("logic.check.ts — all assertions passed");

@@ -1,21 +1,14 @@
 import { create } from "zustand";
-import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+/** SecureStore only. The AsyncStorage arm here existed because SecureStore has no web
+ *  implementation — it put tokens in plain localStorage on that one platform. There is no
+ *  web build any more, so the fallback is gone and every token is in the keystore. */
 const storage = {
-  getItem: async (key: string): Promise<string | null> => {
-    if (Platform.OS === 'web') return AsyncStorage.getItem(key);
-    return SecureStore.getItemAsync(key);
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    if (Platform.OS === 'web') return AsyncStorage.setItem(key, value);
-    return SecureStore.setItemAsync(key, value);
-  },
-  deleteItem: async (key: string): Promise<void> => {
-    if (Platform.OS === 'web') return AsyncStorage.removeItem(key);
-    return SecureStore.deleteItemAsync(key);
-  },
+  getItem: (key: string): Promise<string | null> => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string): Promise<void> => SecureStore.setItemAsync(key, value),
+  deleteItem: (key: string): Promise<void> => SecureStore.deleteItemAsync(key),
 };
 
 // ─── Types (matching /v1/me response) ────────────────────────────────────────
