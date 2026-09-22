@@ -2,7 +2,11 @@ import Notifications from "../../data/notificationsCompat";
 import { Platform } from "react-native";
 import { router } from "expo-router";
 import { Colors } from "../../theme";
-import { MEAL_DONE_CATEGORY, MEAL_RSVP_CATEGORY } from "../../tasks/backgroundNotificationTask";
+import {
+  MEAL_DONE_CATEGORY,
+  MEAL_RSVP_CATEGORY,
+  MEAL_RSVP_PROMO_CATEGORY,
+} from "../../tasks/backgroundNotificationTask";
 
 /**
  * Without this, expo-notifications' default handler shows nothing while the app is in the
@@ -135,6 +139,14 @@ export async function registerNotificationChannels(): Promise<void> {
  */
 export async function registerMealRsvpCategory(): Promise<void> {
   await Notifications.setNotificationCategoryAsync(MEAL_RSVP_CATEGORY, [
+    { identifier: "EAT", buttonTitle: "I'll eat ✅", options: { opensAppToForeground: false } },
+    { identifier: "SKIP", buttonTitle: "Skip ❌", options: { opensAppToForeground: false } },
+  ]);
+
+  // Same two actions, plus the sponsor's. Android shows at most three, which is exactly
+  // what this holds. A meal reaches this category only when the server found an ad for the
+  // property — see `push._gcm_payload`, which picks the categoryId.
+  await Notifications.setNotificationCategoryAsync(MEAL_RSVP_PROMO_CATEGORY, [
     { identifier: "EAT", buttonTitle: "I'll eat ✅", options: { opensAppToForeground: false } },
     { identifier: "SKIP", buttonTitle: "Skip ❌", options: { opensAppToForeground: false } },
     { identifier: "PROMO_CTA", buttonTitle: "View Offer", options: { opensAppToForeground: true } },

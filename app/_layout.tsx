@@ -5,7 +5,7 @@
  * every one of the 23 screens that used to wrap themselves in it.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import { Stack, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -156,7 +156,7 @@ function RootLayoutNav() {
     const sub = Notifications.addNotificationResponseReceivedListener(async (response: any) => {
       const { actionIdentifier, notification } = response;
       const data = notification.request.content.data as
-        | { actionType?: string; actionId?: string; screen?: string; promoRoute?: string }
+        | { actionType?: string; actionId?: string; screen?: string; promoUrl?: string }
         | undefined;
 
       // The confirmation notification's only button. Nothing to submit — it exists so the
@@ -196,15 +196,15 @@ function RootLayoutNav() {
       }
 
       if (actionIdentifier === 'PROMO_CTA') {
-        const promoRoute = data?.promoRoute;
-        if (promoRoute && typeof promoRoute === 'string') {
-          // Temporarily inject the promo route so the standard routing handles it
-          const routeData = { ...(data as Record<string, unknown>), screen: promoRoute };
-          if (isRouterReady) {
-            routeFromPushData(routeData);
-          } else {
-            pendingPushData.current = routeData;
-          }
+        // `promoUrl` is the advertiser's own page (`ad_configs.online_url`), not an in-app
+        // route, so this opens a URL rather than pushing a screen — `routeFromPushData`
+        // ends in an expo-router push, which cannot open https://.
+        const promoUrl = data?.promoUrl;
+        if (typeof promoUrl === 'string' && /^https?:\/\//i.test(promoUrl)) {
+          // Scheme-checked before opening: the payload is the server's, but `openURL` will
+          // hand any scheme to whatever claims it, and a notification is not the place to
+          // launch an arbitrary intent.
+          await Linking.openURL(promoUrl).catch(() => {});
         }
         await Notifications.dismissNotificationAsync(notification.request.identifier).catch(() => {});
         return;

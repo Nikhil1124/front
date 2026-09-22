@@ -10,9 +10,12 @@
  * headless JS launch — which re-runs the whole entry bundle without mounting any screen —
  * reaches this `TaskManager.defineTask` call before the OS delivers the action tap.
  *
- * The category is only ever attached to a meal push server-side (`action_type="meal"`, see
- * `push.MEAL_RSVP_CATEGORY` in pg-backend), so a stray tap from any other push category never
- * reaches here at all.
+ * A meal category is only ever attached server-side (`action_type="meal"` — see
+ * `push._gcm_payload`, which names `MEAL_RSVP_CATEGORY` or, for a sponsored meal,
+ * `MEAL_RSVP_PROMO_CATEGORY`), so a stray tap from any other push category never reaches
+ * here at all. The gate below is on the ACTION, not the category, so Eat and Skip behave
+ * identically in both — the sponsor's button only adds a third action, it does not change
+ * the two that matter.
  */
 import * as TaskManager from "expo-task-manager";
 import Notifications, { Notification } from "../data/notificationsCompat";
@@ -22,6 +25,11 @@ import { useAuthStore } from "../store/authStore";
 
 export const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND-NOTIFICATION-TASK";
 export const MEAL_RSVP_CATEGORY = "MEAL_RSVP";
+/** Eat/Skip plus a sponsor's button. A category is registered once at app start and cannot
+ *  vary per notification, so the offer button cannot be hidden inside `MEAL_RSVP_CATEGORY`
+ *  on a meal with no sponsor — it would read "View Offer" with no offer behind it. The
+ *  server picks the category instead: it names this one only when the meal carries an ad. */
+export const MEAL_RSVP_PROMO_CATEGORY = "MEAL_RSVP_PROMO";
 /** The confirmation state's category — one action, `CLOSE`. Registered in `channels.ts`. */
 export const MEAL_DONE_CATEGORY = "MEAL_DONE";
 
