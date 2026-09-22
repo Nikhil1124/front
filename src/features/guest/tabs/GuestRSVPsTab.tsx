@@ -14,6 +14,7 @@ import { useQueries } from '@tanstack/react-query';
 
 import { InfoTip } from '@/components/ui/InfoTip';
 import { MealToggleWidget } from '@/components/MealToggleWidget';
+import { FeaturedMonetizedAdCard } from '@/components/FeaturedMonetizedAdCard';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -441,6 +442,12 @@ export function GuestRSVPsTab() {
         </View>
 
 
+
+        {/* The OWNER's ad — the property's own sponsor, on its own surface. Distinct from
+            the PGow ad that rides the meal notification card: different advertiser, different
+            revenue, different screen. Conflating the two put one brand in both places. */}
+        <FeaturedMonetizedAdCard />
+        <Spacer size={12} />
 
         {/* ── 4. MEAL TYPE TABS ── */}
         <Row style={styles.tabRow} gap={8}>

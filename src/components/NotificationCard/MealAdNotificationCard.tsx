@@ -120,11 +120,20 @@ const AdSlot: React.FC<AdSlotProps> = ({ ad, onPress, onDismiss, onCouponCopy })
         style={styles.adCard}
       >
         {ad.imageUrl ? (
-          <Image
-            source={{ uri: ad.imageUrl }}
-            style={styles.adBanner}
-            resizeMode="cover"
-          />
+          <View>
+            <Image
+              source={{ uri: ad.imageUrl }}
+              style={styles.adBanner}
+              resizeMode="cover"
+            />
+            {/* On the banner, where the standalone card had it: for a delivery sponsor the
+                time IS the offer, and it reads against the artwork rather than below it. */}
+            {ad.deliveryTime ? (
+              <View style={styles.adBannerPill}>
+                <Text style={styles.adBannerPillText}>⏱️ {ad.deliveryTime}</Text>
+              </View>
+            ) : null}
+          </View>
         ) : (
           <View
             style={[
@@ -146,6 +155,18 @@ const AdSlot: React.FC<AdSlotProps> = ({ ad, onPress, onDismiss, onCouponCopy })
             <Text style={styles.adTagline} numberOfLines={2}>
               {ad.tagline}
             </Text>
+            {/* The tagline sells, these two explain — both were on the card this slot
+                replaced, and a sponsor who filled them in expects them shown. */}
+            {ad.description ? (
+              <Text style={styles.adDescription} numberOfLines={3}>
+                {ad.description}
+              </Text>
+            ) : null}
+            {ad.cuisines ? (
+              <Text style={styles.adCuisines} numberOfLines={1}>
+                {ad.cuisines}
+              </Text>
+            ) : null}
           </View>
           {ad.ctaLabel ? (
             <View style={styles.adCtaPill}>
@@ -240,7 +261,11 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
 
   const handleRespond = useCallback(
     async (response: MealResponse) => {
-      if (submitting || responded) return;
+      // NOT `|| responded`. An answer is changeable: the server takes a second RSVP and
+      // its own points logic accounts for one ("zero when the resident is changing an answer
+      // already awarded"). Locking after the first tap blocked a flow the backend supports,
+      // and the hero this card replaced kept both buttons live for exactly that reason.
+      if (submitting || response === responded) return;
       setSubmitting(true);
       try {
         const payload: MealResponsePayload = {
@@ -252,7 +277,9 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
         onRespond?.(payload);
         setResponded(response);
         AccessibilityInfo.announceForAccessibility?.(
-          response === "eat" ? "Marked as eating" : "Meal skipped"
+          response === "eat"
+            ? "Thanks, the kitchen has you down for this meal"
+            : "Thanks for letting us know, the kitchen will cook the right amount"
         );
       } finally {
         setSubmitting(false);
@@ -301,52 +328,85 @@ export const MealAdNotificationCard: React.FC<MealAdNotificationCardProps> = ({
         {data.menuItems.join(" • ")}
       </Text>
 
+      {/* Served-at and the deadline, both on the hero this card replaced. The deadline is the
+          only number that changes what a resident does in the next ten minutes, so it is not
+          something to drop for tidiness. */}
+      {data.serviceTime || data.cutoffLabel ? (
+        <View style={styles.metaRow}>
+          {data.serviceTime ? (
+            <Text style={styles.metaText}>🕐 {data.serviceTime}</Text>
+          ) : null}
+          {data.cutoffLabel ? (
+            <Text style={[styles.metaText, styles.metaUrgent]}>{data.cutoffLabel}</Text>
+          ) : null}
+        </View>
+      ) : null}
+
       {/* Actions come before the ad — the meal decision is the primary task
           and must never be pushed down or blocked by ad content. */}
       {rsvpClosed && !responded ? (
         <View style={styles.closedRow}>
           <Text style={styles.closedText}>RSVP closed for this meal</Text>
         </View>
-      ) : responded ? (
-        <View
-          style={[
-            styles.statusBanner,
-            {
-              backgroundColor:
-                responded === "eat" ? COLORS.successBg : COLORS.neutralBg,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.statusBannerText,
-              { color: responded === "eat" ? COLORS.success : COLORS.textSecondary },
-            ]}
-          >
-            {responded === "eat" ? "✓ You're eating this meal" : "Meal skipped"}
-          </Text>
-        </View>
       ) : (
-        <View style={[styles.actionRow, isCompact && styles.actionRowCompact]}>
-          <AnimatedPress
-            style={[styles.actionBtn, styles.eatBtn]}
-            onPress={() => handleRespond("eat")}
-            disabled={submitting}
-            accessibilityRole="button"
-            accessibilityLabel="Eat this meal"
-          >
-            <Text style={styles.eatBtnText}>🍴  Eat</Text>
-          </AnimatedPress>
-          <AnimatedPress
-            style={[styles.actionBtn, styles.skipBtn]}
-            onPress={() => handleRespond("skip")}
-            disabled={submitting}
-            accessibilityRole="button"
-            accessibilityLabel="Skip this meal"
-          >
-            <Text style={styles.skipBtnText}>✕  Skip</Text>
-          </AnimatedPress>
-        </View>
+        <>
+          {responded ? (
+            <View
+              style={[
+                styles.statusBanner,
+                {
+                  backgroundColor:
+                    responded === "eat" ? COLORS.successBg : COLORS.neutralBg,
+                },
+              ]}
+            >
+              {/* Thanks first, then what it achieved. Two earlier versions were wrong in
+                  different ways: "You're eating this meal" stated back at the resident what
+                  they had just told the app, and "the kitchen won't cook for you" framed a
+                  skip as an absence. It is not one — `/meals/analytics/savings` exists
+                  because a skip is a portion not wasted and money the property keeps. Both
+                  answers are useful, so both are thanked for what they let the kitchen do. */}
+              <Text
+                style={[
+                  styles.statusBannerText,
+                  { color: responded === "eat" ? COLORS.success : COLORS.textSecondary },
+                ]}
+              >
+                {responded === "eat"
+                  ? "Thanks — the kitchen has you down for this meal."
+                  : "Thanks for letting us know — the kitchen will cook the right amount."}
+              </Text>
+              <Text style={styles.statusBannerHint}>
+                Changed your mind? Tap the other option any time before the cut-off.
+              </Text>
+            </View>
+          ) : null}
+          {/* Both stay, with the answer marked — the hero this replaced did the same. An
+              answered meal that offers no way to change the answer is a resident phoning the
+              kitchen, and the server accepts the change perfectly well. */}
+          <View style={[styles.actionRow, isCompact && styles.actionRowCompact]}>
+            <AnimatedPress
+              style={[styles.actionBtn, styles.eatBtn, responded === "skip" && styles.actionBtnMuted]}
+              onPress={() => handleRespond("eat")}
+              disabled={submitting}
+              accessibilityRole="button"
+              accessibilityState={{ selected: responded === "eat" }}
+              accessibilityLabel="Eat this meal"
+            >
+              <Text style={styles.eatBtnText}>{responded === "eat" ? "✓  Eating" : "🍴  Eat"}</Text>
+            </AnimatedPress>
+            <AnimatedPress
+              style={[styles.actionBtn, styles.skipBtn, responded === "eat" && styles.actionBtnMuted]}
+              onPress={() => handleRespond("skip")}
+              disabled={submitting}
+              accessibilityRole="button"
+              accessibilityState={{ selected: responded === "skip" }}
+              accessibilityLabel="Skip this meal"
+            >
+              <Text style={styles.skipBtnText}>{responded === "skip" ? "✕  Skipping" : "✕  Skip"}</Text>
+            </AnimatedPress>
+          </View>
+        </>
       )}
 
       {/* Ad slot — separated below a divider, independently dismissible.
@@ -523,6 +583,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  adBannerPill: {
+    position: "absolute",
+    left: 8,
+    bottom: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radii.pill,
+    backgroundColor: "rgba(26,27,37,0.78)",
+  },
+  adBannerPillText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: COLORS.surface,
+  },
+  adDescription: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+  },
+  adCuisines: {
+    fontSize: 10.5,
+    color: COLORS.textTertiary,
+    marginTop: 3,
+  },
   adCouponRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -580,6 +665,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
+  /** The one not chosen, once an answer is in: still tappable, visibly not the answer. */
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 6,
+  },
+  metaText: {
+    fontSize: 11.5,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+  metaUrgent: {
+    color: COLORS.primary,
+  },
+  actionBtnMuted: {
+    opacity: 0.45,
+  },
   actionRowCompact: {
     flexDirection: "column",
   },
@@ -597,9 +700,17 @@ const styles = StyleSheet.create({
   statusBanner: {
     borderRadius: Radii.control,   // was 12
     paddingVertical: 10,
+    paddingHorizontal: 12,
     alignItems: "center",
+    marginBottom: 8,
   },
-  statusBannerText: { fontWeight: "700", fontSize: 14 },
+  statusBannerText: { fontWeight: "700", fontSize: 13.5, textAlign: "center" },
+  statusBannerHint: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    marginTop: 3,
+    textAlign: "center",
+  },
 });
 
 export default MealAdNotificationCard;

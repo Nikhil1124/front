@@ -18,6 +18,13 @@ export interface NotificationAd {
    *  would have quietly removed a revenue signal rather than moved it. */
   discountCode?: string;
   discountPercent?: number;
+  /** The longer blurb. Carried over from the standalone ad card this slot replaced — the
+   *  tagline sells, this explains. */
+  description?: string;
+  /** "Salads, Keto Plates". What a food sponsor is, in the words a resident scans for. */
+  cuisines?: string;
+  /** "12-18 min", shown on the banner. For a delivery sponsor it is the offer. */
+  deliveryTime?: string;
 }
 
 export interface MealNotificationData {
@@ -31,6 +38,12 @@ export interface MealNotificationData {
   /** Chef-confirmed, never inferred from the menu text. Null renders no tag rather than a
    *  guess — in a shared kitchen this is the field a resident scans for first. */
   dietaryType?: 'veg' | 'non_veg' | 'pure_veg' | null;
+  /** When it is served, "12:30". The hero this card replaced showed it, and it is the one
+   *  fact a resident deciding whether to eat in actually needs. */
+  serviceTime?: string;
+  /** "Cut-off in 2h 15m", already formatted. Counted down from the server's
+   *  `response_closes_at` — the value the backend enforces — not from a local guess. */
+  cutoffLabel?: string;
   ad?: NotificationAd; // optional — card degrades gracefully without it
 }
 

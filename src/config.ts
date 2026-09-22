@@ -140,6 +140,9 @@ export const API = {
   // there is deliberately no separate on/off flag, see the backend model's own doc comment.
   // GET/DELETE take pg_id as a query param; PUT takes it in the body instead.
   ADS_CONFIG_BASE: "/v1/ads/config",
+  /** PGow's own ad for this viewer today, or null. Rotated server-side by share of
+   *  voice — distinct from ADS_CONFIG, which is ONE property owner's sponsor. */
+  ADS_NOTIFICATION: "/v1/ads/notification",
   ADS_CONFIG: (pgId: string) => `/v1/ads/config?pg_id=${pgId}`,
 
   // Staff sign in with a PIN their owner issued, so the owner can reissue it — without this

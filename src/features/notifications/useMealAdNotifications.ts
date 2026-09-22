@@ -18,7 +18,7 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { listMeals, submitResponse } from '../meals/useMeals';
-import { useAdConfigQuery, recordAdEvent } from '../ads/useAds';
+import { useNotificationAdQuery, recordAdEvent } from '../ads/useAds';
 import { useAuthStore } from '../../store/authStore';
 import { MealNotificationData, MealResponsePayload } from '../../types/notification';
 
@@ -36,7 +36,9 @@ function isToday(iso: string): boolean {
 
 export function useMealAdNotificationsQuery() {
   const pgId = useAuthStore((s) => s.activePgId);
-  const { data: ad } = useAdConfigQuery(pgId ?? undefined);
+  // PGow's own, rotated server-side — not the property owner's, which is a banner on the
+  // meals tab and a different advertiser's money.
+  const { data: ad } = useNotificationAdQuery();
 
   const meals = useQuery({
     queryKey: ['mealAdNotifications', pgId],
@@ -62,7 +64,7 @@ export function useMealAdNotificationsQuery() {
         // without one — so this stays undefined rather than inventing a house ad.
         ad: ad
           ? {
-              id: ad.pg_id,
+              id: ad.id,
               brandName: ad.brand_name,
               tagline: ad.tagline,
               ctaLabel: ad.cta_label || undefined,
@@ -71,6 +73,9 @@ export function useMealAdNotificationsQuery() {
               deepLink: ad.online_url ?? undefined,
               discountCode: ad.discount_code || undefined,
               discountPercent: ad.discount_percent || undefined,
+              description: ad.description || undefined,
+              cuisines: ad.cuisines || undefined,
+              deliveryTime: ad.delivery_time || undefined,
             }
           : undefined,
       }));

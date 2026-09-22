@@ -33,7 +33,7 @@ import { getGreeting } from '@/utils/format';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useMealsQuery, useMyMealResponseQuery } from '@/features/meals/useMeals';
 import { MealAdNotificationCard } from '@/components/NotificationCard/MealAdNotificationCard';
-import { useAdConfigQuery } from '@/features/ads/useAds';
+import { useNotificationAdQuery } from '@/features/ads/useAds';
 import { useAdReporter } from '@/features/notifications/useMealAdNotifications';
 import * as Clipboard from 'expo-clipboard';
 import { Linking } from 'react-native';
@@ -46,6 +46,17 @@ import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 const CUTOFF_HOURS: Record<string, number> = { BREAKFAST: 10, LUNCH: 14, DINNER: 21 };
+
+/** "Cut-off in 2h 15m", or nothing once it has passed — the card shows "RSVP closed" then,
+ *  and a countdown next to it would be two ways of saying the same thing. */
+function cutoffLabel(ms: number | null): string {
+  if (!ms) return '';
+  const rem = ms - Date.now();
+  if (rem <= 0) return '';
+  const mins = Math.floor(rem / 60_000);
+  if (mins < 60) return `Cut-off in ${mins}m`;
+  return `Cut-off in ${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
 
 function getMealCutoffMs(m: MealNotificationEntity): number {
   // The server's deadline is what the backend enforces, so it is what the countdown shows.
@@ -129,10 +140,19 @@ export default function GuestHomeTab() {
 
   const { data: myMealResponse } = useMyMealResponseQuery(upcomingMeal?.id, activePgId ?? undefined);
 
-  // The card's own shape, built from the meal this screen already resolved plus the
-  // property's sponsor. Null when there is no meal — the card is the meal, so there is
-  // nothing to render around.
-  const { data: sponsor } = useAdConfigQuery(activePgId ?? undefined);
+  // The card's own shape, built from the meal this screen already resolved plus PGow's ad.
+  //
+  // PGow's, not the property owner's. The owner's sponsor is a banner on the meals tab and
+  // earns that owner a share; this is PGow's own inventory, rotated server-side, and it is
+  // the only ad that rides a notification. Putting one brand in both places was the bug.
+  //
+  // Null when there is no meal — the card IS the meal, so there is nothing to render around.
+  // The rotation cursor. One number, bumped by anything the resident deliberately does to
+  // the card — answering the meal, tapping the sponsor, copying a code, dismissing it — so
+  // the next ad arrives between actions rather than swapping under a reader mid-glance.
+  const [adSeq, setAdSeq] = useState(0);
+  const nextAd = () => setAdSeq((n) => n + 1);
+  const { data: sponsor } = useNotificationAdQuery(adSeq);
   const reportAd = useAdReporter();
   const mealCard: MealNotificationData | null = upcomingMeal
     ? {
@@ -144,9 +164,11 @@ export default function GuestHomeTab() {
         menuItems: (upcomingMeal.menuItems ?? '').split(',').map((s) => s.trim()).filter(Boolean),
         createdAt: new Date(upcomingMeal.timestamp).toISOString(),
         dietaryType: upcomingMeal.dietaryType,
+        serviceTime: upcomingMeal.serviceTime ?? undefined,
+        cutoffLabel: cutoffLabel(cutoffMs) || undefined,
         ad: sponsor
           ? {
-              id: sponsor.pg_id,
+              id: sponsor.id,
               brandName: sponsor.brand_name,
               tagline: sponsor.tagline,
               ctaLabel: sponsor.cta_label || undefined,
@@ -155,6 +177,9 @@ export default function GuestHomeTab() {
               deepLink: sponsor.online_url ?? undefined,
               discountCode: sponsor.discount_code || undefined,
               discountPercent: sponsor.discount_percent || undefined,
+              description: sponsor.description || undefined,
+              cuisines: sponsor.cuisines || undefined,
+              deliveryTime: sponsor.delivery_time || undefined,
             }
           : undefined,
       }
@@ -334,20 +359,24 @@ export default function GuestHomeTab() {
                     : null
               }
               rsvpClosed={cutoffPassed}
-              onRespond={(payload) =>
-                submitRSVP(payload.notificationId, payload.response === 'eat' ? 'REQUIRED' : 'NOT_REQUIRED')
-              }
+              onRespond={(payload) => {
+                submitRSVP(payload.notificationId, payload.response === 'eat' ? 'REQUIRED' : 'NOT_REQUIRED');
+                nextAd();
+              }}
               onAdImpression={(ad) => reportAd('impression', ad.id)}
               onAdPress={(ad) => {
                 reportAd('click', ad.id);
                 if (ad.deepLink) Linking.openURL(ad.deepLink).catch(() => {});
+                nextAd();
               }}
               onAdCouponCopy={(ad) => {
                 if (!ad.discountCode) return;
                 reportAd('coupon_copy', ad.id);
                 void Clipboard.setStringAsync(ad.discountCode);
                 toast('success', 'Code copied', `${ad.discountCode} is on your clipboard.`);
+                nextAd();
               }}
+              onAdDismiss={nextAd}
             />
           </View>
         )}
