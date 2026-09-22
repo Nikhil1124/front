@@ -156,6 +156,12 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
           ) : null}
 
           {showRSVP && (
+            <View style={{ marginTop: 8, height: 100, backgroundColor: '#E2E8F0', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name="image-outline" size={32} color="#94A3B8" />
+            </View>
+          )}
+
+          {showRSVP && (
             <View style={{ marginTop: 8 }}>
               {rsvpChoice == null ? (
                 <Row gap={6}>

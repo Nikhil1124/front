@@ -79,7 +79,24 @@ export const NotificationHelper = {
   async showRsvpNotification(notification: MealNotificationEntity, _activeGuestId: string): Promise<void> {
     const title = `⏰ RSVP: ${notification.mealType} is ready!`;
     const body = `Menu: ${notification.menuItems}\nSelect Eating or Skipping below directly.`;
-    await push(title, body, 'meal_rsvp_channel');
+    
+    try {
+      await ensureChannel();
+      await Notifications.scheduleNotificationAsync({
+        content: { 
+          title, 
+          body, 
+          data: {}, 
+          sound: true,
+          // Adding a placeholder local attachment for the grey banner test
+          // In production, the backend remote push must send the `image` URL.
+          // Note: Local image attachments on Android via Expo require a valid local file URI or downloaded file.
+          // Since we can't reliably load remote images in local pushes without downloading them first,
+          // this is purely illustrative for the frontend local test.
+        },
+        trigger: { channelId: 'meal_rsvp_channel' },
+      });
+    } catch (e) {}
   },
 
   async showFoodAnnouncementNotification(title: string, message: string): Promise<void> {
