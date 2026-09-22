@@ -156,8 +156,8 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
           ) : null}
 
           {showRSVP && (
-            <View style={{ marginTop: 8, height: 100, backgroundColor: '#E2E8F0', borderRadius: 6, justifyContent: 'center', alignItems: 'center' }}>
-              <Ionicons name="image-outline" size={32} color="#94A3B8" />
+            <View style={styles.banner}>
+              <Ionicons name="image-outline" size={32} color={Colors.textMuted} />
             </View>
           )}
 
@@ -212,6 +212,17 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   icon: { marginTop: 1 },
+  /** Placeholder for the sponsored-meal banner. The real image is drawn by the OS from the
+   *  push payload's `notification.image` — this stands in for it inside the app's own toast,
+   *  which never sees a remote notification. `badge` is 6, the radius this was written with. */
+  banner: {
+    marginTop: 8,
+    height: 100,
+    backgroundColor: Colors.borderMuted,
+    borderRadius: Radii.badge,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   miniBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
