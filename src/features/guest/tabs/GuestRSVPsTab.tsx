@@ -13,15 +13,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useQueries } from '@tanstack/react-query';
 
 import { InfoTip } from '@/components/ui/InfoTip';
+import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { MealToggleWidget } from '@/components/MealToggleWidget';
 import { FeaturedMonetizedAdCard } from '@/components/FeaturedMonetizedAdCard';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
-import { formatTime12h } from '@/utils/format';
+import { formatTime12h, todayLocalISO } from '@/utils/format';
 import type { MealNotificationEntity, MealToggleState } from '@/types';
-import { useMealsQuery, getMyResponse } from '@/features/meals/useMeals';
+import { useMealsQuery, getMyResponse, submitMealFeedback } from '@/features/meals/useMeals';
 import { useAuthStore } from '@/store/authStore';
 import { qk } from '@/data/queryKeys';
 import { useSetAwayMutation } from '@/features/auth/useAuth';
@@ -110,6 +111,12 @@ export function GuestRSVPsTab() {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [activeMealTab, setActiveMealTab] = useState('LUNCH');
   const [selectedDay, setSelectedDay] = useState(0);
+  // Feedback is per meal, and the banner is not. The meal being rated is the last one on the
+  // selected day whose cut-off has already passed — the one they would actually have eaten.
+  const [feedbackMeal, setFeedbackMeal] = useState<MealNotificationEntity | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [sendingFeedback, setSendingFeedback] = useState(false);
   const [detailMeal, setDetailMeal] = useState<MealNotificationEntity | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
   // The preferences panel renders well below the fold, while the button that opens it lives
@@ -209,6 +216,17 @@ export function GuestRSVPsTab() {
 
   const weekDays = buildWeekDays();
 
+  // The day strips below have always set `selectedDay` and nothing has ever read it: every
+  // section rendered the whole week at once, so tapping a day highlighted a circle and
+  // changed nothing on screen. Everything meal-shaped now reads the selected day instead.
+  const selectedDayKey = todayLocalISO(weekDays[selectedDay]?.full ?? new Date());
+  // Not memoised: a week of meals is a handful of rows, and the key it filters on is
+  // derived from `new Date()` — which the React Compiler correctly refuses to memoise
+  // around, and which would make a cached result wrong the moment the day rolled over.
+  const dayMeals = notifications.filter(
+    (n) => todayLocalISO(new Date(n.timestamp)) === selectedDayKey,
+  );
+
   // Each meal's REAL response from the server — `rsvpChoices` above is only this-session's
   // optimistic taps, and used to be the sole source of truth, which meant a meal you already
   // RSVP'd to (from the Home tab, or an earlier visit here) showed as "Not Decided" until
@@ -233,8 +251,10 @@ export function GuestRSVPsTab() {
   // everything else, including meals RSVP'd to before this screen was ever opened.
   const effectiveChoices = { ...serverRsvpChoices, ...rsvpChoices };
 
-  // Active meal for the selected tab
-  const activeMealNotif = notifications.find(
+  // Active meal for the selected tab, on the selected day. Unscoped, this found the first
+  // breakfast anywhere in the week — so the card could be showing Thursday's menu while the
+  // day strip above it said Monday.
+  const activeMealNotif = dayMeals.find(
     (n) => n.mealType.toUpperCase() === activeMealTab
   ) ?? null;
   // The server's own deadline first. `getCutoffMs` derives one from the meal TYPE against
@@ -251,8 +271,32 @@ export function GuestRSVPsTab() {
   const isAttending = currentChoice === 'REQUIRED';
   const isSkipping = currentChoice === 'NOT_REQUIRED';
 
-  const totalMealsCount = notifications.length;
-  const answeredMealsCount = notifications.filter((n) => effectiveChoices[n.id] !== undefined).length;
+  const sendFeedback = useCallback(async () => {
+    if (!feedbackMeal || sendingFeedback) return;
+    if (!feedbackRating && !feedbackComment.trim()) {
+      toast('info', 'Nothing to send yet', 'Tap a star, or write a line about the meal.');
+      return;
+    }
+    setSendingFeedback(true);
+    try {
+      await submitMealFeedback(feedbackMeal.id, {
+        rating: feedbackRating || null,
+        comment: feedbackComment.trim() || null,
+      });
+      setFeedbackMeal(null);
+      setFeedbackRating(0);
+      setFeedbackComment('');
+      toast('success', 'Thanks — the kitchen has your feedback',
+        'It goes straight to whoever cooked it.');
+    } catch {
+      toast('error', 'Could not send that', 'Please try again in a moment.');
+    } finally {
+      setSendingFeedback(false);
+    }
+  }, [feedbackMeal, feedbackRating, feedbackComment, sendingFeedback, toast]);
+
+  const totalMealsCount = dayMeals.length;
+  const answeredMealsCount = dayMeals.filter((n) => effectiveChoices[n.id] !== undefined).length;
 
   const handleRSVP = useCallback(
     async (id: string, choice: 'REQUIRED' | 'NOT_REQUIRED') => {
@@ -290,7 +334,18 @@ export function GuestRSVPsTab() {
                 payments tab, which is where they are spent, not where they come from. */}
             <HeaderChip icon="star-outline" label="Points" onPress={() => router.push('/rewards')} />
             <HeaderChip icon="options-outline" label="Meal preferences" onPress={openPreferences} />
-            <HeaderChip icon="calendar-outline" label="Choose a date" onPress={() => { toast('info', 'Not Available Yet', 'A weekly meal calendar is coming soon.'); }} />
+            {/* Was "Choose a date", and it toasted "coming soon" — while the day strip
+                directly below it had been on screen the whole time. Now that the strip
+                actually filters, the one thing a header chip is useful for on a
+                day-scoped screen is getting back to today from Friday. */}
+            <HeaderChip
+              icon="calendar-outline"
+              label="Today"
+              onPress={() => {
+                setSelectedDay(0);
+                scrollRef.current?.scrollTo({ y: 0, animated: true });
+              }}
+            />
           </Row>
         }
       />
@@ -334,16 +389,6 @@ export function GuestRSVPsTab() {
               </Txt>
             </AnimatedPress>
           ))}
-          {/* Weekly View button */}
-          <AnimatedPress accessibilityRole="button"
-            style={styles.weeklyViewBtn}
-            onPress={() => { toast('info', 'Not Available Yet', 'A 7-day meal overview is coming soon.'); }}
-          >
-            <Ionicons name="calendar" size={16} color={Colors.primary} />
-            <Txt size={10} weight="700" color={Colors.primary} style={{ marginTop: 4, textAlign: 'center' }}>
-              Weekly{'\n'}View
-            </Txt>
-          </AnimatedPress>
         </ScrollView>
 
         {/* Optional: Persistent Preferences Widget when toggled or top section */}
@@ -640,22 +685,26 @@ export function GuestRSVPsTab() {
             posted yet" is both untrue and a dead end. */}
         {gateCodeOf(mealsError) ? (
           <GateNotice error={mealsError} />
-        ) : notifications.length === 0 ? (
+        ) : dayMeals.length === 0 ? (
           <View style={styles.emptyBox}>
             <Ionicons name="restaurant-outline" size={28} color={Colors.textSecondary} />
             <Txt size={14} weight="700" color={Colors.textSecondary} style={{ marginTop: 12 }}>
-              {isLoading ? 'Loading meals...' : 'No meals posted yet.'}
+              {isLoading
+                ? 'Loading meals...'
+                : notifications.length === 0
+                  ? 'No meals posted yet.'
+                  : `Nothing posted for ${weekDays[selectedDay]?.label ?? 'this day'} yet.`}
             </Txt>
           </View>
         ) : (
           <View style={styles.mealListCard}>
-            {notifications.map((n, idx) => {
+            {dayMeals.map((n, idx) => {
               const choice = effectiveChoices[n.id];
               const isEat = choice === 'REQUIRED';
               const isSkip = choice === 'NOT_REQUIRED';
               const lowerType = n.mealType.toLowerCase();
               const icon = lowerType === 'breakfast' ? 'sunny-outline' : lowerType === 'dinner' ? 'moon-outline' : 'restaurant-outline';
-              const isLast = idx === notifications.length - 1;
+              const isLast = idx === dayMeals.length - 1;
 
               // Skipping is a valid answer, not a failure — it reads `neutral`, not danger.
               // Only "Not decided" past the cutoff is actually something to act on.
@@ -714,7 +763,20 @@ export function GuestRSVPsTab() {
         {/* ── 8. FEEDBACK BANNER ── */}
         <AnimatedPress accessibilityRole="button"
           style={styles.feedbackBanner}
-          onPress={() => { toast('info', 'Not Available Yet', 'Meal feedback submission is coming soon.'); }}
+          onPress={() => {
+            // Read at tap, not during render: "has the cut-off passed" is a clock
+            // question, and an event handler is where the clock may be read.
+            const served = dayMeals.filter((n) => getCutoffMs(n.mealType) <= Date.now());
+            const ratableMeal = served.length ? served[served.length - 1] : null;
+            if (!ratableMeal) {
+              toast('info', 'Nothing to rate yet',
+                'Feedback opens once a meal has been served.');
+              return;
+            }
+            setFeedbackMeal(ratableMeal);
+            setFeedbackRating(0);
+            setFeedbackComment('');
+          }}
         >
           <View style={styles.feedbackIcon}>
             <Ionicons name="star-outline" size={20} color={Colors.primaryDark} />
@@ -734,6 +796,58 @@ export function GuestRSVPsTab() {
 
         <Spacer size={32} />
       </ScrollView>
+
+      {/* Feedback sheet — the banner above used to say this was coming soon while
+          POST /v1/meals/{id}/feedback had been live the whole time. */}
+      <Sheet
+        visible={feedbackMeal != null}
+        title={`How was ${feedbackMeal?.mealType?.toLowerCase() ?? 'the meal'}?`}
+        subtitle={feedbackMeal?.menuItems}
+        icon="star"
+        accent={Colors.primary}
+        onDismiss={() => setFeedbackMeal(null)}
+        footer={
+          <AnimatedPress
+            accessibilityRole="button"
+            onPress={sendFeedback}
+            style={[styles.feedbackSubmit, sendingFeedback && { opacity: 0.6 }]}
+          >
+            <Txt size={14} weight="700" color={Colors.textInverse}>
+              {sendingFeedback ? 'Sending…' : 'Send feedback'}
+            </Txt>
+          </AnimatedPress>
+        }
+      >
+        <Row justify="center" gap={10} style={{ marginVertical: 8 }}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <AnimatedPress
+              accessibilityRole="button"
+              accessibilityLabel={`${star} star${star > 1 ? 's' : ''}`}
+              accessibilityState={{ selected: feedbackRating === star }}
+              key={star}
+              onPress={() => setFeedbackRating(star)}
+            >
+              <Ionicons
+                name={star <= feedbackRating ? 'star' : 'star-outline'}
+                size={34}
+                color={star <= feedbackRating ? Colors.pending : Colors.borderSubtle}
+              />
+            </AnimatedPress>
+          ))}
+        </Row>
+        <OutlinedTextField
+          label="Anything the kitchen should know? (optional)"
+          value={feedbackComment}
+          onChangeText={setFeedbackComment}
+          multiline
+          numberOfLines={4}
+          borderRadius={Radii.card}
+          style={{ minHeight: 90 }}
+        />
+        <Txt size={11} color={Colors.textMuted} style={{ marginTop: 10 }}>
+          Sent without your name. The chef sees the rating and the note, not who wrote it.
+        </Txt>
+      </Sheet>
 
       {/* Detail Sheet */}
       <Sheet
@@ -954,6 +1068,13 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#BDD8D6',
     padding: 16, overflow: 'hidden' },
   feedbackIcon: { width: 46, height: 46, borderRadius: Radii.card, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  feedbackSubmit: {
+    height: 46,
+    borderRadius: Radii.control,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   feedbackImage: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 90, opacity: 0.35 },
 
   // Sheet
