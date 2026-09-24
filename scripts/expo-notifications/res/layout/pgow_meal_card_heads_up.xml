@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PGow meal card, as it drops in from the top of the screen: no chef, no sponsor. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include
+        layout="@layout/pgow_meal_card_head"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <include
+        layout="@layout/pgow_meal_card_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</LinearLayout>

@@ -343,12 +343,12 @@ export default function GuestHomeTab() {
         {gateCodeOf(mealsError) ? (
           // A gate is not a failure, it is a step the resident can take — and with the meal
           // card gone there is nothing else on this screen that would say so.
-          <View style={{ marginBottom: 4 }}>
+          <View style={{ marginTop: 12, marginBottom: 4 }}>
             <GateNotice error={mealsError} />
           </View>
         ) : null}
         {mealCard && (
-          <View style={{ marginBottom: 4 }}>
+          <View style={{ marginTop: 12, marginBottom: 4 }}>
             <MealAdNotificationCard
               data={mealCard}
               currentResponse={
@@ -603,9 +603,10 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
 
-  // ── Residence card (overlaps header curve)
+  // ── Residence card
+  // It used to pull itself up 16px to sit over a curved header. The header is flat now, so
+  // that tucked the card's top edge under the header border.
   residenceCard: {
-    marginTop: -16,
     backgroundColor: Colors.surface,
     borderRadius: Radii.sheet,
     borderWidth: 1,
@@ -615,8 +616,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
-    elevation: 6,
-    zIndex: 20 },
+    elevation: 6 },
   buildingIconWrap: {
     width: 46, height: 46, borderRadius: Radii.card,
     backgroundColor: Colors.primaryDark,

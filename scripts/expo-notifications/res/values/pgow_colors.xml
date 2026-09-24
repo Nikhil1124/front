@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pgow_line">#297F8596</color>
+    <color name="pgow_line_strong">#4D7F8596</color>
+    <color name="pgow_cta_bg">#1A1B25</color>
+    <color name="pgow_cta_text">#FFFFFF</color>
+</resources>
