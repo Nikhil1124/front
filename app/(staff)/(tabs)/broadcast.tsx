@@ -1,6 +1,5 @@
-/** Chef dashboard "Broadcast" tab or Delivery History Route */
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { Card, Txt, Btn, Row, IconBtn, Spacer, AnimatedPress } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
@@ -13,6 +12,9 @@ import { EmptyState } from '@/components/EmptyState';
 import type { VisualDishItem } from '@/types';
 import { FormScroll } from '@/components/ui/FormScroll';
 import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
+import { useCustomDishesQuery } from '@/features/meals/useDishes';
+import { DishProductCard } from '@/features/meals/components/DishProductCard';
+import type { Dish, MealType } from '@/types';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { Ionicons } from '@expo/vector-icons';
 import { useGuestsQuery } from '@/features/guests/useGuests';
@@ -30,8 +32,6 @@ import { parseTime, todayLocalISO } from '@/utils/format';
 import type { MealNotificationEntity } from '@/types';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
-// Fixed identifiers so (re)scheduling — a toggle flip, a tab remount, a fresh app launch —
-// replaces the existing OS-level schedule instead of stacking a duplicate reminder.
 const CHEF_ALARM_ROWS = [
   { key: 'chefAlarm9amEnabled' as const, id: 'pgow-chef-alarm-9am', time: '9:00 AM', hour: 9, minute: 0, label: 'Remind to post lunch' },
   { key: 'chefAlarm1pmEnabled' as const, id: 'pgow-chef-alarm-1pm', time: '1:00 PM', hour: 13, minute: 0, label: 'Remind to post dinner' },
@@ -50,18 +50,15 @@ const PRESET_DISHES: VisualDishItem[] = [
   { name: 'Upma', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.4', image_url: require('../../../assets/food/upma.webp') },
   { name: 'Poha', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.3', image_url: require('../../../assets/food/poha.webp') },
   { name: 'Pasta', icon: '🍝', category: 'Breakfast', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/pasta.webp') },
-  { name: 'White Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/whiterice.webp') },
+  { name: 'Steamed Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/whiterice.webp') },
   { name: 'Dal', icon: '🥣', category: 'Rice & Dal', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/dal.webp') },
-  { name: 'Jeera Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/whiterice.webp') },
+  { name: 'Sambar', icon: '🥘', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/dal.webp') },
   { name: 'Lemon Rice', icon: '🍋', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/whiterice.webp') },
   { name: 'Biryani', icon: '🍛', category: 'Rice & Dal', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/biryani.webp') },
-  { name: 'Paneer Rice', icon: '🧀', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/biryani.webp') },
-  { name: 'Paneer Curry', icon: '🧀', category: 'Curry & Fry', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/paneer.webp') },
-  { name: 'Egg Curry', icon: '🥚', category: 'Curry & Fry', isVeg: false, rating: '4.6', image_url: require('../../../assets/food/chicken.webp') },
-  { name: 'Egg Rice', icon: '🍳', category: 'Curry & Fry', isVeg: false, rating: '4.4', image_url: require('../../../assets/food/biryani.webp') },
-  { name: 'Chicken', icon: '🍗', category: 'Curry & Fry', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/chicken.webp') },
-  { name: 'Fry', icon: '🍟', category: 'Curry & Fry', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/paneer.webp') },
-  { name: 'Sweet', icon: '🍬', category: 'Sweets', isVeg: true, rating: '4.8', image_url: require('../../../assets/food/sweet.webp') },
+  { name: 'Paneer Curry', icon: '🧀', category: 'Curry', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/paneer.webp') },
+  { name: 'Egg Curry', icon: '🥚', category: 'Curry', isVeg: false, rating: '4.6', image_url: require('../../../assets/food/chicken.webp') },
+  { name: 'Chicken Curry', icon: '🍗', category: 'Curry', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/chicken.webp') },
+  { name: 'Sweets', icon: '🍬', category: 'Snacks', isVeg: true, rating: '4.8', image_url: require('../../../assets/food/sweet.webp') },
 ];
 
 export default function ChefBroadcastTab() {
@@ -74,27 +71,21 @@ function ChefBroadcastView() {
   const dockScroll = useDockScroll();
   const toast = useToast();
   const insets = useSafeAreaInsets();
-  const [showManualInput, setShowManualInput] = useState(false);
   const [showAutomation, setShowAutomation] = useState(false);
   const [selectedCat, setSelectedCat] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedDishes, setSelectedDishes] = useState<string[]>([]);
-  // Cleared wherever the menu changes, so the message goes the moment the problem does —
-  // the same contract `OutlinedTextField.error` has on every other form in the app.
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
 
   const activePgId = useAuthStore((s) => s.activePgId);
+  const { data: customDishes = [] } = useCustomDishesQuery(activePgId ?? undefined);
   const staff = usePGowStore((s) => s.loggedInStaff);
   const { data: guests = [] } = useGuestsQuery(activePgId ?? undefined);
   const { activeMeal } = useActiveMeal();
   const { data: allMeals = [] } = useMealsQuery(activePgId ?? undefined);
-  // Editing an old meal from a prior day is asking for trouble (a stale service_at, a
-  // menu nobody eating today cares about) — today's own meals are the only sane edit set.
   const todaysMeals = allMeals.filter((m) => todayLocalISO(new Date(m.timestamp)) === todayLocalISO());
   const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
-  // This tab hides the shared staff layout header (see app/(staff)/(tabs)/_layout.tsx —
-  // "Hide on the broadcast (Menu) tab to allow for a custom personal header") and builds its
-  // own instead, so it needs its own copy of the bell/unread-count/sheet the shared header
-  // already provides everywhere else, rather than a bell that looks real but does nothing.
+
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
   const unreadCount = roleNotifs.filter((n) => !n.isRead).length;
 
@@ -103,7 +94,6 @@ function ChefBroadcastView() {
   const alarm3 = usePGowStore((s) => s.chefAlarm330pmEnabled);
   const autoFollowup = usePGowStore((s) => s.auto15MinFollowupEnabled);
   const mealTypeSelected = usePGowStore((s) => s.mealTypeSelected);
-  const mealDietaryTypeSelected = usePGowStore((s) => s.mealDietaryTypeSelected);
   const menuItemsInput = usePGowStore((s) => s.menuItemsInput);
   const chefNoteInput = usePGowStore((s) => s.chefNoteInput);
   const serviceTimeInput = usePGowStore((s) => s.serviceTimeInput);
@@ -118,10 +108,6 @@ function ChefBroadcastView() {
   const set = usePGowStore((s) => s.set);
   const scheduleChefAlarm = usePGowStore((s) => s.scheduleChefAlarm);
 
-  // Re-arms whichever reminders are already toggled on — scheduling is idempotent (fixed
-  // identifiers), so this is safe to run on every mount, including the remount this tab gets
-  // every time the chef switches tabs and back (app/(staff)/(tabs)/_layout.tsx keys its
-  // content view on pathname).
   useEffect(() => {
     CHEF_ALARM_ROWS.forEach((row) => {
       if (usePGowStore.getState()[row.key]) {
@@ -131,7 +117,6 @@ function ChefBroadcastView() {
     if (usePGowStore.getState().auto15MinFollowupEnabled) {
       NotificationHelper.scheduleRepeatingReminder(FOLLOWUP_REMINDER_ID, FOLLOWUP_INTERVAL_SECONDS, FOLLOWUP_REMINDER_TITLE, FOLLOWUP_REMINDER_BODY);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleChefAlarmRow = async (row: (typeof CHEF_ALARM_ROWS)[number], enabled: boolean) => {
@@ -161,28 +146,37 @@ function ChefBroadcastView() {
   const toggleDish = (dish: string) => {
     clearMenuError(); setSelectedDishes((cur) => {
       const next = cur.includes(dish) ? cur.filter((d) => d !== dish) : [...cur, dish];
-      // Suggests veg/non-veg from what's actually on the plate — the chef can still
-      // override with the chips below.
-      if (next.length > 0) {
-        const hasNonVeg = next.some((name) => PRESET_DISHES.find((d) => d.name === name)?.isVeg === false);
-        set('mealDietaryTypeSelected', hasNonVeg ? 'non_veg' : 'veg');
-      }
       return next;
     });
   };
 
-  const filteredDishes = selectedCat === 'All' ? PRESET_DISHES : PRESET_DISHES.filter((d) => d.category === selectedCat);
+  const defaultCatalogDishes: Dish[] = PRESET_DISHES.map((d, i) => ({
+    id: `default_${i}`,
+    name: d.name,
+    imageUrl: undefined, // Handle locally required images below
+    category: d.category.replace(/^[^\s]+\s/, ''), // Remove emojis
+    source: 'default',
+    mealTypes: ['breakfast', 'lunch', 'dinner'],
+    isActive: true,
+    createdAt: '',
+    updatedAt: '',
+  }));
+  PRESET_DISHES.forEach((d, i) => {
+    (defaultCatalogDishes[i] as any).imageUrl = d.image_url;
+  });
+
+  const allCatalogDishes = [...defaultCatalogDishes, ...customDishes];
+
+  let filteredDishes = selectedCat === 'All' ? allCatalogDishes : allCatalogDishes.filter((d) => d.category === selectedCat);
+  if (searchQuery.trim().length > 0) {
+    const q = searchQuery.toLowerCase();
+    filteredDishes = filteredDishes.filter(d => d.name.toLowerCase().includes(q));
+  }
 
   const startEditingMeal = (meal: MealNotificationEntity) => {
     setEditingMealId(meal.id);
     clearMenuError(); setSelectedDishes([]);
-    // The meal's own text rarely matches a preset dish name exactly — the free-text field is
-    // what can actually show it back, so open that rather than leaving the chef staring at an
-    // empty dish grid for a menu that already has words in it.
-    setShowManualInput(true);
     set('mealTypeSelected', meal.mealType);
-    // `pure_veg` is no longer offered — an older meal carrying it edits as plain veg.
-    set('mealDietaryTypeSelected', meal.dietaryType === 'non_veg' ? 'non_veg' : 'veg');
     set('menuItemsInput', meal.menuItems);
     set('chefNoteInput', meal.chefNote ?? '');
     set('serviceTimeInput', meal.serviceTime);
@@ -211,7 +205,13 @@ function ChefBroadcastView() {
       toast('error', 'No active property', 'Pick a property before broadcasting a meal.');
       return;
     }
-    // "HH:mm" is today's service time in this phone's timezone; the API wants an instant.
+    
+    // Default to veg if no custom selection dictates otherwise. The prompt requested removing the UI for it, but the API still needs it.
+    let finalDietaryType: 'veg' | 'non_veg' = 'veg';
+    if (selectedDishes.some(name => PRESET_DISHES.find(d => d.name === name)?.isVeg === false)) {
+      finalDietaryType = 'non_veg';
+    }
+
     const { hour, minute } = parseTime(serviceTimeInput);
     const serviceAt = new Date();
     serviceAt.setHours(hour, minute, 0, 0);
@@ -225,11 +225,6 @@ function ChefBroadcastView() {
             menu_items: menuItems.trim(),
             chef_note: chefNoteInput.trim() || undefined,
             service_at: serviceAt.toISOString() } });
-        // Residents who already RSVP'd deserve to hear about a real change — but
-        // re-announcing would read as a brand new meal and reset what "already broadcast"
-        // means to them. `menu_update` is the server's own middle ground: a fresh push,
-        // same RSVP untouched. A meal nobody has seen yet (still a draft) has no RSVPs to
-        // preserve and no audience to notify.
         if (meal.is_broadcast) {
           await broadcastMealMutation.mutateAsync({ mealId: editingMealId, params: { kind: 'menu_update' } });
         }
@@ -238,15 +233,14 @@ function ChefBroadcastView() {
         meal = await createMealMutation.mutateAsync({
           meal_type: ['breakfast', 'lunch', 'dinner'].includes(mealType) ? mealType : 'lunch',
           menu_items: menuItems.trim(),
-          dietary_type: mealDietaryTypeSelected,
+          dietary_type: finalDietaryType,
           chef_note: chefNoteInput.trim() || undefined,
           service_at: serviceAt.toISOString() });
-        // Creating a meal writes a draft; the broadcast is what residents actually receive.
         await broadcastMealMutation.mutateAsync({ mealId: meal.id, params: { kind: 'announce' } });
       }
 
       usePGowStore.getState().patch({
-        menuItemsInput: '', chefNoteInput: '', mealDietaryTypeSelected: 'veg',
+        menuItemsInput: '', chefNoteInput: '',
         activeAlert: editingMealId
           ? {
               title: '✏️ Meal Updated',
@@ -264,8 +258,8 @@ function ChefBroadcastView() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.canvas }}>
-      {/* Personalized Header */}
+    <View style={{ flex: 1, backgroundColor: '#F7F9FC' }}>
+      {/* Personalized Header - Restored to exact original */}
       <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, 16) }]}>
         <Row justify="space-between" align="center">
           <Row gap={12} align="center">
@@ -274,8 +268,7 @@ function ChefBroadcastView() {
             </View>
             <View>
               <Row gap={4} align="center">
-                <Txt size={18} weight="700" color={Colors.textPrimary}>Hi Chef {staff?.name?.split(' ')[0] ?? 'there'}</Txt>
-                <Ionicons name="hand-left-outline" size={18} color={Colors.primary} />
+                <Txt size={18} weight="700" color={Colors.textPrimary}>Hi Chef {staff?.name?.split(' ')[0] ?? 'there'} 👋</Txt>
               </Row>
               <Txt size={12} color={Colors.textSecondary}>Plan today's menu & keep everyone happy</Txt>
             </View>
@@ -295,49 +288,46 @@ function ChefBroadcastView() {
         </Row>
       </View>
 
-      <FormScroll {...dockScroll} contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
+      <FormScroll {...dockScroll} contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 16 }}>
         <ChefGroceriesShortcut />
 
-        <Spacer size={4} />
-        {/* "How it works?" used to sit here with no onPress — dead, and redundant with the
-            InfoTip right below anyway, which already explains the mechanic. */}
-        <Row gap={6} align="center">
-          <Txt size={18} weight="700" color={Colors.textPrimary}>Plan &amp; Broadcast Food Alert</Txt>
-          <InfoTip text="Tap dishes to build menu plate. Registered residents will receive instant push notifications." />
-        </Row>
-
-        {editingMealId ? (
-          <View style={styles.editingBanner}>
-            <Row gap={8} align="center" style={{ flex: 1 }}>
-              <Ionicons name="create-outline" size={16} color={Colors.primary} />
-              <Txt size={12} weight="700" color={Colors.primaryDark} style={{ flex: 1 }}>
-                Editing today's {mealTypeSelected.toLowerCase()} — Save Changes updates this meal instead of posting a new one.
-              </Txt>
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+          <View style={{ gap: 16 }}>
+            <Row gap={6} align="center">
+              <Txt size={18} weight="700" color={Colors.textPrimary}>Plan & Broadcast Food Alert</Txt>
+              <InfoTip text="Tap dishes to build menu plate. Registered residents will receive instant push notifications." />
             </Row>
-            <AnimatedPress accessibilityRole="button" onPress={cancelEditingMeal}>
-              <Txt size={12} weight="700" color={Colors.textSecondary}>Cancel</Txt>
-            </AnimatedPress>
-          </View>
-        ) : todaysMeals.length > 0 ? (
-          <>
-            <Spacer size={10} />
-            <Txt size={12} weight="700" color={Colors.textSecondary}>Today's meals — tap to edit</Txt>
-            <Spacer size={6} />
-            <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {todaysMeals.map((meal) => (
-                <AnimatedPress accessibilityRole="button" key={meal.id} onPress={() => startEditingMeal(meal)} style={styles.mealEditChip}>
-                  <Ionicons name="pencil" size={12} color={Colors.primaryDark} />
-                  <Txt size={12} weight="700" color={Colors.primaryDark}>{meal.mealType}</Txt>
-                  {meal.isAlertSent && <View style={styles.mealEditChipDot} />}
-                </AnimatedPress>
-              ))}
-            </FormScroll>
-          </>
-        ) : null}
 
-        <Spacer size={8} />
-        <Txt size={13} weight="700" color={Colors.textPrimary}>Meal Type</Txt>
-        <Row gap={8} style={{ marginTop: 6 }}>
+            {editingMealId ? (
+              <View style={styles.editingBanner}>
+                <Row gap={8} align="center" style={{ flex: 1 }}>
+                  <Ionicons name="create-outline" size={16} color={Colors.primary} />
+                  <Txt size={12} weight="700" color={Colors.primaryDark} style={{ flex: 1 }}>
+                    Editing today's {mealTypeSelected.toLowerCase()} — Save Changes updates this meal instead of posting a new one.
+                  </Txt>
+                </Row>
+                <AnimatedPress accessibilityRole="button" onPress={cancelEditingMeal}>
+                  <Txt size={12} weight="700" color={Colors.textSecondary}>Cancel</Txt>
+                </AnimatedPress>
+              </View>
+            ) : todaysMeals.length > 0 ? (
+              <View>
+                <Txt size={12} weight="700" color={Colors.textSecondary}>Today's meals — tap to edit</Txt>
+                <Spacer size={6} />
+                <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  {todaysMeals.map((meal) => (
+                    <AnimatedPress accessibilityRole="button" key={meal.id} onPress={() => startEditingMeal(meal)} style={styles.mealEditChip}>
+                      <Ionicons name="pencil" size={12} color={Colors.primaryDark} />
+                      <Txt size={12} weight="700" color={Colors.primaryDark}>{meal.mealType}</Txt>
+                      {meal.isAlertSent && <View style={styles.mealEditChipDot} />}
+                    </AnimatedPress>
+                  ))}
+                </FormScroll>
+              </View>
+            ) : null}
+
+        {/* Meal Type Selection */}
+        <Row gap={8}>
           {[
             { id: 'Breakfast', icon: 'partly-sunny' },
             { id: 'Lunch', icon: 'sunny' },
@@ -353,214 +343,158 @@ function ChefBroadcastView() {
                   isSel ? styles.mealPillActive : styles.mealPillInactive
                 ]}
               >
-                <Ionicons name={m.icon as any} size={16} color={isSel ? Colors.textInverse : Colors.textSecondary} />
+                <Ionicons name={m.icon as any} size={16} color={isSel ? Colors.textInverse : Colors.textPrimary} />
                 <Txt size={13} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{m.id}</Txt>
               </AnimatedPress>
             );
           })}
         </Row>
 
-        <Spacer size={12} />
-        <Row gap={6} align="center">
-          <Txt size={13} weight="700" color={Colors.textPrimary}>Dietary Tag</Txt>
-          <InfoTip text="Shown to residents on the meal card. Suggested from the dishes you pick below — tap to override." />
-        </Row>
-        <Row gap={8} style={{ marginTop: 6 }}>
-          {/* No "Pure Veg". It is still a value the server accepts and still renders on
-              meals that already carry it (see DIETARY_TAG), so history is intact — it is
-              simply no longer offered for new meals. `pure_veg` on an existing meal is
-              coerced to `veg` when that meal is loaded for editing, below, so the picker
-              always has a selection rather than showing none. */}
-          {[
-            { id: 'veg' as const, label: 'Veg', icon: '🥦' },
-            { id: 'non_veg' as const, label: 'Non-Veg', icon: '🍗' },
-          ].map((d) => {
-            const isSel = mealDietaryTypeSelected === d.id;
+        {/* Dish Categories */}
+        <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {['All', '🍞 Breakfast', '🍚 Rice & Dal', '🌶 Curry', '🥥 South Indian', '🥖 Bread', '🥨 Snacks'].map((c) => {
+            const rawCat = c.replace(/^[^\s]+\s/, ''); 
+            const matchCat = c === 'All' ? 'All' : rawCat;
+            const isSel = selectedCat === matchCat;
             return (
               <AnimatedPress accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
-                key={d.id}
-                onPress={() => set('mealDietaryTypeSelected', d.id)}
+                key={c}
+                onPress={() => setSelectedCat(matchCat)}
                 style={[
-                  styles.mealPill,
-                  isSel ? styles.mealPillActive : styles.mealPillInactive
+                  styles.categoryChip,
+                  isSel ? styles.categoryChipActive : styles.categoryChipInactive
                 ]}
               >
-                <Txt size={14}>{d.icon}</Txt>
-                <Txt size={13} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{d.label}</Txt>
+                <Txt size={12} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{c}</Txt>
               </AnimatedPress>
             );
           })}
-        </Row>
+        </FormScroll>
 
-      <Spacer size={14} />
-      {/* Selected plate */}
-      <Spacer size={14} />
-      <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 16]}>
-        <Row justify="space-between" align="center">
-          <Row gap={14} align="center">
-            <View style={{ width: 56, height: 56, borderRadius: Radii.pill, backgroundColor: Colors.surfaceMuted, overflow: 'hidden' }}>
-              {selectedDishes.length > 0 ? (
-                <Image source={PRESET_DISHES.find(d => d.name === selectedDishes[0])?.image_url} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-              ) : (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="restaurant-outline" size={22} color={Colors.textMuted} /></View>
-              )}
-            </View>
-            <View>
-              <Txt size={15} weight="700" color={Colors.textPrimary}>Today's Selected Menu</Txt>
-              <Spacer size={2} />
-              <Txt size={13} color={menuError ? Colors.danger : Colors.textMuted}>{selectedDishes.length > 0 ? `${selectedDishes.length} items selected for ${mealTypeSelected}` : `Tap dishes below to build menu`}</Txt>
-              {menuError ? (
-                <>
-                  <Spacer size={3} />
-                  <Row gap={4} align="center">
-                    <Ionicons name="alert-circle" size={13} color={Colors.danger} />
-                    <Txt size={11} color={Colors.danger}>{menuError}</Txt>
-                  </Row>
-                </>
-              ) : null}
-            </View>
-          </Row>
-          <AnimatedPress accessibilityRole="button" onPress={() => { clearMenuError(); setSelectedDishes([]); set('menuItemsInput', ''); }}>
-            <Row align="center" gap={2}>
-              <Txt size={12} weight="700" color={Colors.primaryDark}>View Menu</Txt>
-              <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
-            </Row>
-          </AnimatedPress>
-        </Row>
-      </Card>
-
-      <Spacer size={16} />
-      {/* "See all" used to sit here with no onPress — dead, and redundant: the category
-          chips below default to "All", which already shows every dish. */}
-      <Txt size={14} weight="700" color={Colors.textPrimary}>Tap dishes to add to today's menu</Txt>
-      <Spacer size={10} />
-      <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        {['All', '🍞 Breakfast', '🍚 Rice & Dal', '🌶 Curry & Fry', '🍬 Sweets', '🥤 Beverages'].map((c) => {
-          const rawCat = c.replace(/^[^\s]+\s/, ''); // strip emoji for matching logic if needed, but 'All' stays 'All'
-          const label = c;
-          const matchCat = c === 'All' ? 'All' : rawCat;
-          const isSel = selectedCat === matchCat;
-          return (
-            <AnimatedPress accessibilityState={{ selected: !!isSel }} accessibilityRole="button"
-              key={c}
-              onPress={() => setSelectedCat(matchCat)}
-              style={[
-                styles.categoryChip,
-                isSel ? styles.categoryChipActive : styles.categoryChipInactive
-              ]}
-            >
-              <Txt size={12} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{label}</Txt>
-            </AnimatedPress>
-          );
-        })}
-      </FormScroll>
-      <Spacer size={12} />
-
-      {/* Horizontal shelf of modern food cards */}
-      <FormScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-        {filteredDishes.map((dish) => {
-          const isSel = selectedDishes.includes(dish.name);
-          return (
-            <AnimatedPress accessibilityState={{ selected: !!isSel }} accessibilityRole="button" 
-              key={dish.name} 
-              onPress={() => toggleDish(dish.name)}
-              style={[styles.foodCard, isSel && styles.foodCardSelected]}
-            >
-              <View style={styles.foodImageContainer}>
-                {dish.image_url ? (
-                  <Image source={dish.image_url} style={styles.foodImage} />
-                ) : (
-                  <View style={[styles.foodImage, { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Txt size={32}>{dish.icon}</Txt>
-                  </View>
-                )}
-                
-                {/* Add/Check Button */}
-                <View style={[styles.foodAddBtn, isSel && styles.foodAddBtnSelected]}>
-                  {isSel ? (
-                    <Ionicons name="checkmark" size={16} color={Colors.textInverse} />
-                  ) : (
-                    <Ionicons name="add" size={16} color={Colors.textInverse} />
-                  )}
-                </View>
-              </View>
-
-              <View style={styles.foodCardBody}>
-                <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1}>{dish.name}</Txt>
-                
-                <Row justify="space-between" align="center" style={{ marginTop: 4 }}>
-                  <Row gap={4} align="center">
-                    <View style={[styles.vegDotSmall, { backgroundColor: dish.isVeg ? Colors.success : Colors.danger }]} />
-                    <Txt size={10} weight="700" color={Colors.textMuted}>{dish.isVeg ? 'Veg' : 'Non-Veg'}</Txt>
-                  </Row>
-                  
-                  {dish.rating && (
-                    <Row gap={2} align="center" style={styles.ratingBadge}>
-                      <Ionicons name="star" size={10} color={Colors.warning} />
-                      <Txt size={10} weight="700" color={Colors.textPrimary}>{dish.rating}</Txt>
-                    </Row>
-                  )}
-                </Row>
-              </View>
-            </AnimatedPress>
-          );
-        })}
-      </FormScroll>
-
-      <Spacer size={14} />
-      {/* Add Custom Item */}
-      <AnimatedPress accessibilityRole="button" 
-        onPress={() => setShowManualInput(!showManualInput)}
-        style={styles.addCustomBtn}
-      >
-        <Ionicons name={showManualInput ? "remove" : "add"} size={16} color={Colors.primaryDark} />
-        <Txt size={14} weight="700" color={Colors.primaryDark}>{showManualInput ? 'Close Custom Item' : 'Add Custom Item'}</Txt>
-      </AnimatedPress>
-      {showManualInput && (
-        <View style={{ marginTop: 8 }}>
-          <OutlinedTextField label="Food Items (Menu) *" placeholder="Masala Dosa, Sambar, Chutney" value={menuItemsInput} onChangeText={(v) => set('menuItemsInput', v)} focusedBorderColor={Colors.primary} multiline numberOfLines={3} />
+        {/* Search */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color={Colors.textMuted} />
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Search dishes..." 
+            placeholderTextColor={Colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
-      )}
 
-      <Spacer size={16} />
-      <Spacer size={16} />
-      {/* Notes */}
-      <View>
-        <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
-          <Txt size={13} weight="700" color={Colors.textPrimary}>Note / Instructions <Txt color={Colors.textMuted} weight="600">(Visible to guests)</Txt></Txt>
-          <View style={{ backgroundColor: Colors.primaryGlow, width: 36, height: 36, borderRadius: Radii.control, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="pencil" size={18} color={Colors.primaryDark} />
+        {/* 2-Column Grid for Dishes */}
+        <View style={styles.gridContainer}>
+          {filteredDishes.map((dish) => {
+            const isSel = selectedDishes.includes(dish.name);
+            const isEligible = dish.mealTypes.includes(mealTypeSelected.toLowerCase() as MealType);
+            return (
+              <DishProductCard
+                key={dish.id}
+                dish={dish as Dish}
+                isSelected={isSel}
+                isEligible={isEligible}
+                onToggle={() => toggleDish(dish.name)}
+              />
+            );
+          })}
+        </View>
+
+        {/* Add Custom Item */}
+        <AnimatedPress accessibilityRole="button" 
+          onPress={() => router.push('/custom-dish/create')}
+          style={styles.addCustomBtn}
+        >
+          <Ionicons name="add" size={16} color={Colors.success} />
+          <Txt size={14} weight="700" color={Colors.success}>Create New Custom Dish</Txt>
+        </AnimatedPress>
           </View>
-        </Row>
-        <OutlinedTextField placeholder="Please confirm RSVP before 11:30 AM" value={chefNoteInput} onChangeText={(v) => set('chefNoteInput', v)} focusedBorderColor={Colors.primary} />
-      </View>
+        </Card>
 
-      <Spacer size={16} />
-      {/* Automation settings */}
-      <AnimatedPress accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)}>
-        <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 16]}>
-          <Row justify="space-between" align="center" gap={8}>
-            <Row gap={12} align="center" style={{ flex: 1, minWidth: 0 }}>
-              <View style={styles.automationIconBadge}>
-                <Ionicons name="settings" size={20} color={Colors.primaryDark} />
+        {/* Today's Selected Menu */}
+        <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+          <Row gap={12} align="center" justify="space-between">
+            <Row gap={12} align="center">
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="restaurant-outline" size={20} color={Colors.textMuted} />
               </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Txt size={14} weight="700" color={Colors.textPrimary}>Automation Settings</Txt>
+              <View>
+                <Txt size={15} weight="700" color={Colors.textPrimary}>Today's Selected Menu</Txt>
                 <Spacer size={2} />
-                <Txt variant="labelSmall" weight="600" color={Colors.textMuted}>3 daily alarms • Follow-up {autoFollowup ? 'ON' : 'OFF'}</Txt>
+                <Txt size={13} color={menuError ? Colors.danger : Colors.textMuted}>
+                  {selectedDishes.length > 0 ? `${selectedDishes.length} items selected` : `Tap dishes to build menu`}
+                </Txt>
               </View>
             </Row>
-            <AnimatedPress accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primaryGlow, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.sheet }}>
-               <Txt size={12} weight="700" color={Colors.primaryDark}>Manage</Txt>
-               <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
+            <AnimatedPress accessibilityRole="button" onPress={() => { clearMenuError(); setSelectedDishes([]); set('menuItemsInput', ''); }}>
+              <Row align="center" gap={2}>
+                <Txt size={12} weight="700" color={Colors.primaryDark}>View Menu</Txt>
+                <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
+              </Row>
             </AnimatedPress>
           </Row>
-        </Card>
-      </AnimatedPress>
 
-      {showAutomation && (
-        <>
-          <Spacer size={10} />
+          {menuError ? (
+            <Row gap={4} align="center" style={{ marginTop: 8 }}>
+              <Ionicons name="alert-circle" size={13} color={Colors.danger} />
+              <Txt size={11} color={Colors.danger}>{menuError}</Txt>
+            </Row>
+          ) : null}
+
+          {selectedDishes.length > 0 && (
+            <View style={styles.selectedItemsContainer}>
+              {selectedDishes.map(dishName => {
+                const dishObj = PRESET_DISHES.find(d => d.name === dishName);
+                return (
+                  <AnimatedPress key={dishName} onPress={() => toggleDish(dishName)} style={styles.selectedMiniCard}>
+                    {dishObj?.image_url ? (
+                      <Image source={dishObj.image_url} style={styles.selectedMiniImg} />
+                    ) : (
+                      <View style={[styles.selectedMiniImg, { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }]}><Txt size={14}>{dishObj?.icon}</Txt></View>
+                    )}
+                    <Txt size={12} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ flex: 1 }}>{dishName}</Txt>
+                    <Ionicons name="close" size={14} color={Colors.textMuted} />
+                  </AnimatedPress>
+                );
+              })}
+            </View>
+          )}
+        </Card>
+
+        {/* Notes */}
+        <View>
+          <Row justify="space-between" align="center" style={{ marginBottom: 10 }}>
+            <Txt size={13} weight="700" color={Colors.textPrimary}>Note / Instructions <Txt color={Colors.textMuted} weight="600">(Visible to guests)</Txt></Txt>
+            <View style={{ backgroundColor: Colors.surfaceElevated, width: 36, height: 36, borderRadius: Radii.control, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="pencil" size={16} color={Colors.primaryDark} />
+            </View>
+          </Row>
+          <OutlinedTextField placeholder="Please confirm RSVP before 11:30 AM" value={chefNoteInput} onChangeText={(v) => set('chefNoteInput', v)} focusedBorderColor={Colors.primary} />
+        </View>
+
+        {/* Automation settings */}
+        <AnimatedPress accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[14, 16]}>
+            <Row justify="space-between" align="center" gap={8}>
+              <Row gap={12} align="center" style={{ flex: 1, minWidth: 0 }}>
+                <View style={styles.automationIconBadge}>
+                  <Ionicons name="settings" size={20} color={Colors.primaryDark} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Txt size={14} weight="700" color={Colors.textPrimary}>Automation Settings</Txt>
+                  <Spacer size={2} />
+                  <Txt variant="labelSmall" weight="600" color={Colors.textMuted}>3 daily alarms • Follow-up {autoFollowup ? 'ON' : 'OFF'}</Txt>
+                </View>
+              </Row>
+              <AnimatedPress accessibilityRole="button" onPress={() => setShowAutomation(!showAutomation)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.surfaceElevated, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.sheet, borderWidth: 1, borderColor: Colors.borderSubtle }}>
+                 <Txt size={12} weight="700" color={Colors.primaryDark}>Manage</Txt>
+                 <Ionicons name="chevron-forward" size={14} color={Colors.primaryDark} />
+              </AnimatedPress>
+            </Row>
+          </Card>
+        </AnimatedPress>
+
+        {showAutomation && (
           <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[6, 6]}>
             {CHEF_ALARM_ROWS.map((row) => {
               const enabled = row.key === 'chefAlarm9amEnabled' ? alarm9 : row.key === 'chefAlarm1pmEnabled' ? alarm1 : alarm3;
@@ -582,9 +516,7 @@ function ChefBroadcastView() {
                 </View>
               );
             })}
-
             <View style={styles.automationDivider} />
-
             <View style={styles.automationRow}>
               <Row gap={8} style={{ flex: 1 }} align="center">
                 <Ionicons name="alert-circle" size={18} color={Colors.danger} />
@@ -608,21 +540,19 @@ function ChefBroadcastView() {
               </View>
             )}
           </Card>
-        </>
-      )}
+        )}
 
-      <Row align="center" gap={6} style={{ marginTop: 14, justifyContent: 'center' }}>
-        <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
-        <Txt size={13} weight="700" color={Colors.textSecondary}>{mealTypeSelected} will be broadcast at <Txt color={Colors.primaryDark} weight="700">7:30 AM</Txt></Txt>
-      </Row>
+        <Row align="center" gap={6} style={{ marginTop: 8, justifyContent: 'center' }}>
+          <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
+          <Txt size={13} weight="600" color={Colors.textSecondary}>{mealTypeSelected} will be broadcast at <Txt color={Colors.textPrimary} weight="700">7:30 AM</Txt></Txt>
+        </Row>
 
-      <Spacer size={20} />
-      <Btn onPress={handleSubmit} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.card} height={56} style={styles.broadcastBtn}>
-        <Txt size={14} weight="700" color={Colors.textInverse}>
-          {editingMealId ? 'Save Changes ✏️' : 'Broadcast Menu & Send Food Alerts to Guests 🚀'}
-        </Txt>
-      </Btn>
-    </FormScroll>
+        <Btn onPress={handleSubmit} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.card} height={56} style={styles.broadcastBtn}>
+          <Txt size={15} weight="700" color={Colors.textInverse}>
+            {editingMealId ? 'Save Changes ✏️' : 'Broadcast Menu & Send Food Alerts to Guests 🚀'}
+          </Txt>
+        </Btn>
+      </FormScroll>
     </View>
   );
 }
@@ -643,7 +573,6 @@ function DeliveryHistoryRoute() {
         status: s.status === 'failed' ? 'Failed' : 'Delivered' }))
   );
 
-  // Was `: MOCK_HISTORY` — four invented delivery records shown to an agent who had none.
   const history = completedStops;
 
   return (
@@ -690,22 +619,12 @@ function DeliveryHistoryRoute() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.canvas },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radii.badge },
-  selectedDishPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.control, borderWidth: 1, borderColor: Colors.primary, paddingHorizontal: 10, paddingVertical: 6 },
-  automationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 8 },
-  automationDivider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 2 },
-  switchTrack: { width: 44, height: 24, borderRadius: Radii.card, padding: 2, flexDirection: 'row' },
-  switchThumb: { width: 20, height: 20, borderRadius: Radii.pill, backgroundColor: Colors.surface },
-  historyThumbBox: { width: 44, height: 44, borderRadius: Radii.control, backgroundColor: Colors.surfaceMuted, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
-  editingBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.primary, padding: 10, marginTop: 10 },
-  mealEditChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.sheet, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: 12, paddingVertical: 8 },
-  mealEditChipDot: { width: 6, height: 6, borderRadius: Radii.pill, backgroundColor: Colors.success },
+  root: { flex: 1, backgroundColor: '#F7F9FC' },
   headerContainer: {
     paddingHorizontal: 18,
-    paddingTop: 16, // Assuming safe area is handled by Tabs wrapper or add inset if needed
+    paddingTop: 16,
     paddingBottom: 16,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle },
   avatar: {
@@ -735,13 +654,16 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: Radii.pill,
     backgroundColor: Colors.danger },
+  editingBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.primary, padding: 10, marginTop: 10 },
+  mealEditChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.sheet, borderWidth: 1, borderColor: Colors.borderSubtle, paddingHorizontal: 12, paddingVertical: 8 },
+  mealEditChipDot: { width: 6, height: 6, borderRadius: Radii.pill, backgroundColor: Colors.success },
   mealPill: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: Radii.card,
+    paddingVertical: 14,
+    borderRadius: Radii.pill,
     gap: 6,
     borderWidth: 1 },
   mealPillActive: {
@@ -749,16 +671,16 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3 },
   mealPillInactive: {
     backgroundColor: Colors.surface,
     borderColor: Colors.borderSubtle },
   categoryChip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: Radii.sheet,
+    borderRadius: Radii.pill,
     borderWidth: 1 },
   categoryChipActive: {
     backgroundColor: Colors.primary,
@@ -766,8 +688,31 @@ const styles = StyleSheet.create({
   categoryChipInactive: {
     backgroundColor: Colors.surface,
     borderColor: Colors.borderSubtle },
-  foodCard: {
-    width: 140,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.sheet,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    marginTop: 4
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: Colors.textPrimary
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between'
+  },
+  gridFoodCard: {
+    width: '48%',
     backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderWidth: 1,
@@ -792,14 +737,12 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: Radii.pill,
-    backgroundColor: Colors.primary,
+    backgroundColor: 'rgba(255,255,255,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4 },
   foodAddBtnSelected: {
     backgroundColor: Colors.success },
@@ -814,24 +757,55 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: Radii.badge },
-  automationIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.primaryGlow,
-    justifyContent: 'center',
-    alignItems: 'center' },
   addCustomBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: Radii.card,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: Colors.success,
     borderStyle: 'dashed',
-    backgroundColor: Colors.primaryGlow },
+    backgroundColor: '#F0FDF4' },
+  selectedItemsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 16
+  },
+  selectedMiniCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Radii.pill,
+    padding: 6,
+    paddingRight: 10,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+    gap: 8,
+    maxWidth: '48%'
+  },
+  selectedMiniImg: {
+    width: 24,
+    height: 24,
+    borderRadius: 12
+  },
+  automationIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: Radii.pill,
+    backgroundColor: Colors.surfaceElevated,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle },
+  automationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 8 },
+  automationDivider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 2 },
+  switchTrack: { width: 44, height: 24, borderRadius: Radii.card, padding: 2, flexDirection: 'row' },
+  switchThumb: { width: 20, height: 20, borderRadius: Radii.pill, backgroundColor: Colors.surface },
+  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radii.badge },
+  historyThumbBox: { width: 44, height: 44, borderRadius: Radii.control, backgroundColor: Colors.surfaceMuted, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   broadcastBtn: {
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 8 },

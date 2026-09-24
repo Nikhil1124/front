@@ -466,7 +466,7 @@ export function GuestPaymentsTab() {
         bounces={false}
         overScrollMode="never"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} progressViewOffset={30} />
         }
       >
         {/* ── 2. TOTAL AMOUNT DUE CARD (Overlaps header) ── */}
@@ -894,11 +894,10 @@ const styles = StyleSheet.create({
   // Header
 
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 16 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
 
   // Amount due card
   dueCard: {
-    marginTop: -16,
     backgroundColor: Colors.surface,
     borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: '#DCE9E9',

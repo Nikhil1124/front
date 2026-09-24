@@ -207,25 +207,7 @@ export function GuestSecurityTab() {
         </View>
 
         {/* ── 3. IDENTITY DOCUMENT (KYC) VERIFICATION ── */}
-        <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
-          Identity Verification (KYC)
-        </Txt>
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={Radii.sheet}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[16, 16]}
-          style={styles.sectionCard}
-        >
-          <Row gap={10} align="center" style={{ marginBottom: 10 }}>
-            <View style={styles.sectionIconWrap}>
-              <Ionicons name="shield-checkmark" size={18} color={Colors.primary} />
-            </View>
-            <Txt size={15} weight="700" color={Colors.textPrimary}>Official Document Verification</Txt>
-          </Row>
-          <GuestKycVerificationTab scrollable={false} />
-        </Card>
+        <GuestKycVerificationTab scrollable={false} />
 
         {/* ── 4. SECURITY & PASSCODE MANAGEMENT ── */}
         <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
@@ -329,11 +311,11 @@ const styles = StyleSheet.create({
   // Header
 
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 16 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
 
   // Profile Card
   profileCard: {
-    marginTop: -14, backgroundColor: Colors.surface, borderRadius: Radii.sheet,
+    backgroundColor: Colors.surface, borderRadius: Radii.sheet,
     borderWidth: 1, borderColor: Colors.borderSubtle, padding: 16,
     shadowColor: Colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
   avatarRing: {

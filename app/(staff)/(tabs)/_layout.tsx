@@ -35,7 +35,6 @@ export const unstable_settings = { anchor: 'eaters' };
 
 export default function StaffTabsLayout() {
   const pathname = usePathname();
-
   const staff = usePGowStore((s) => s.loggedInStaff);
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: roleNotifs = [] } = useRoleNotificationsQuery(activePgId ?? undefined);
@@ -59,13 +58,8 @@ export default function StaffTabsLayout() {
   return (
     <Tabs style={styles.root}>
       {/* Header — its own surface, separate from the scrollable body below, so it reads as
-          fixed chrome rather than the first card in the list.
-          Suppressed on the CHEF's broadcast tab only, because that screen draws a personal
-          header of its own. It used to be suppressed for every role on that route, which left
-          the laundry and ops History tabs — which have no header of their own — running their
-          first card up under the status bar. `AppHeader` is what pays the notch inset
-          (`insets.top + TOP_GAP`), so a screen without it has nothing holding it clear. */}
-      {(pathname !== '/broadcast' || profile !== 'chef') && (
+          fixed chrome rather than the first card in the list. */}
+      {!(profile === 'chef' && pathname === '/broadcast') && (
         <AppHeader
           title={HEADER.title}
           subtitle={`${staff?.name ?? user?.name ?? HEADER.role} · ${HEADER.role}`}
@@ -115,4 +109,5 @@ export default function StaffTabsLayout() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.canvas },
 
-  chefIcon: { width: 46, height: 46, borderRadius: Radii.pill, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' } });
+  chefIcon: { width: 46, height: 46, borderRadius: Radii.pill, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' }
+});

@@ -1,11 +1,11 @@
 /** Chef dashboard "Eaters" tab or Delivery Dashboard Route */
 import { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { View, StyleSheet, ImageBackground } from 'react-native';
+
 import {
-  Card, Txt, Spacer, Col, Row, Btn, IconBtn, ListRow, OutlinedBtn, StatusChip,
+  Card, Txt, Spacer, Col, Row, Btn, IconBtn, OutlinedBtn, StatusChip,
   AnimatedPress } from '@/components/ui';
-import { Colors, DeckTints, Palette, Radii } from '@/theme';
+import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { EmptyState } from '@/components/EmptyState';
@@ -25,206 +25,156 @@ export default function ChefEatersTab() {
   return <ChefEatersView />;
 }
 
-import { useMealsQuery, useMealResponsesQuery } from '@/features/meals/useMeals';
-
+import { useMealsQuery, useMealResponsesQuery, useBroadcastMealMutation } from '@/features/meals/useMeals';
 
 
 function ChefEatersView() {
   const dockScroll = useDockScroll();
   const activePgId = useAuthStore((s) => s.activePgId);
+  const toast = useToast();
+  const broadcastMutation = useBroadcastMealMutation(activePgId ?? undefined);
+
   const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
   const { activeMeal, setActiveMeal } = useActiveMeal();
   const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
 
+  // Stats
   const reqCount = mealResponses.filter((r) => r.choice === 'eating').length;
   const notReqCount = mealResponses.filter((r) => r.choice === 'skipping').length;
-  // Away, self-reported (PATCH /v1/me/away), is a real reason for silence — split it out of
-  // "no reply" so a chef reading the roster isn't left guessing which unanswered rows are
-  // actually just unanswered.
-  const awayCount = mealResponses.filter((r) => r.choice === null && r.is_away).length;
-  // Counted from the roster, like every other figure on this card.
-  //
-  // This was `guests.length - reqCount - notReqCount - awayCount`, off `useGuestsQuery` —
-  // and `GET /v1/guests` answers a chef with 403 FORBIDDEN ("Only the owner or a manager may
-  // do this"). So `guests` was permanently `[]` for the one role this screen belongs to:
-  // `noResponse` was always 0 and `totalGuests` always 0, which made every percentage on the
-  // chef's dashboard read 0% no matter what the residents had actually answered. The
-  // giveaway was this card claiming "No reply 0" directly above a list captioned "1 of 1".
-  //
-  // `GET /v1/meals/{id}/roster` is the endpoint a chef IS allowed to read, it already returns
-  // one row per resident, and this screen was already fetching it — so the numbers cost
-  // nothing extra and cannot disagree with the names listed underneath them.
   const noResponse = mealResponses.filter((r) => r.choice === null && !r.is_away).length;
-  // Away residents sort last — they are the ones the chef least needs to chase.
   const pendingReplies = mealResponses
     .filter((r) => r.choice === null)
     .sort((a, b) => Number(a.is_away) - Number(b.is_away) || a.name.localeCompare(b.name));
-  const totalGuests = mealResponses.length;
-  const pct = (n: number) => (totalGuests > 0 ? Math.round((n / totalGuests) * 1000) / 10 : 0);
 
-  // The progress ring and the three tinted boxes beneath it used to show the same three
-  // counts twice — once as a ring fraction, once as cards with their own hand-picked hex
-  // (`#F0F9FF`/`#0EA5E9`/…, none of them a token). One deck, the app's four verified tints.
-  // The three mutually exclusive answers to "are you eating?", shown together on one card.
-  const breakdown = [
-    { key: 'eating', label: 'Eating', count: reqCount, ink: DeckTints.green.ink },
-    { key: 'skipping', label: 'Skipping', count: notReqCount, ink: DeckTints.amber.ink },
-    {
-      key: 'noreply',
-      label: awayCount > 0 ? `No reply · ${awayCount} away` : 'No reply',
-      count: noResponse,
-      ink: DeckTints.slate.ink,
-    },
-  ];
+  const handleResendBroadcast = async () => {
+    if (!activeMeal?.id) return;
+    try {
+      await broadcastMutation.mutateAsync({ mealId: activeMeal.id, params: { kind: 'announce' } });
+      toast('success', 'Sent', 'Broadcast notification resent successfully!');
+    } catch (e: any) {
+      toast('error', 'Failed to resend', e.message);
+    }
+  };
+
+  const todayStr = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const FOOD_BG = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80";
 
   return (
-    <FormScroll {...dockScroll} contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
-      <ChefGroceriesShortcut />
+    <View style={styles.root}>
+      <FormScroll {...dockScroll} contentContainerStyle={{ padding: 20, paddingBottom: 120, gap: 24 }}>
+        
+        {/* Groceries Banner */}
+        <ChefGroceriesShortcut />
 
-      {!activeMeal ? (
-        <View style={styles.emptyMealBox}>
-          <Txt size={12} color={Colors.textMuted} align="center">No active meals. Use 'Broadcast Food Alert' tab to create a meal.</Txt>
-        </View>
-      ) : (
-        <>
-          <Txt size={12} weight="700" color={Colors.textPrimary}>Select Active Meal to View RSVP Data</Txt>
-          <Spacer size={8} />
-          {/* Wraps instead of scrolling sideways. There are at most three meals in a day, and
-              a horizontal strip put the third one half off the right edge with no hint it was
-              there. `.slice(0, 20)` also cut the menu mid-word — the meal type is what
-              identifies the button, so it leads, and the menu is a second line that
-              ellipsises properly. */}
-          <View style={styles.mealPickerRow}>
-            {notifications.map((n) => {
+        {/* Today's Meals Navigation */}
+        <Col gap={16}>
+          <Row justify="space-between" align="center">
+            <Txt size={18} weight="800" color={Colors.textPrimary}>Today's Meals</Txt>
+            <Row align="center" gap={6}>
+              <Ionicons name="calendar-outline" size={16} color={Colors.textSecondary} />
+              <Txt size={13} weight="700" color={Colors.textSecondary}>{todayStr}</Txt>
+            </Row>
+          </Row>
+          
+          <Row gap={10}>
+            {notifications.slice(0,3).map((n) => {
               const isSel = activeMeal?.id === n.id;
+              const iconName = n.mealType.toLowerCase().includes('lunch') ? 'sunny' : n.mealType.toLowerCase().includes('dinner') ? 'moon' : 'partly-sunny';
               return (
-                <AnimatedPress
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSel }}
-                  key={n.id}
-                  onPress={() => setActiveMeal(n)}
-                  style={[styles.mealPill, isSel ? styles.mealPillOn : styles.mealPillOff]}
-                >
-                  <Txt size={12} weight="700" numberOfLines={1} color={isSel ? Colors.textInverse : Colors.textPrimary}>
-                    {n.mealType}
-                  </Txt>
-                  {!!n.menuItems && (
-                    <Txt size={10.5} numberOfLines={1} color={isSel ? Colors.textInverse : Colors.textMuted}>
-                      {n.menuItems}
-                    </Txt>
-                  )}
+                <AnimatedPress key={n.id} onPress={() => setActiveMeal(n)} style={[styles.mealTab, isSel ? styles.mealTabOn : styles.mealTabOff]}>
+                  <Ionicons name={iconName} size={16} color={isSel ? Colors.textInverse : Colors.textPrimary} style={{ marginRight: 6 }} />
+                  <Txt size={14} weight="700" color={isSel ? Colors.textInverse : Colors.textPrimary}>{n.mealType}</Txt>
                 </AnimatedPress>
               );
             })}
-          </View>
-          <Spacer size={16} />
+          </Row>
+        </Col>
 
-          {/* One card, not a swipeable deck.
-              `MetricDeck` pages horizontally with a dot row, so three of these four numbers
-              were always off-screen — and they are not independent metrics, they are one
-              breakdown that only means anything read together ("40 portions: 40 eating, 3
-              skipping, 5 who never answered"). A chef checking how much to cook should not
-              have to swipe three times to see whether the numbers add up. The deck is still
-              the right shape elsewhere, where the cards genuinely are separate figures. */}
-          <Card
-            containerColor={Colors.surface}
-            borderRadius={Radii.card}
-            borderWidth={1}
-            borderColor={Colors.borderSubtle}
-            padding={[16, 16]}
-          >
-            <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.4 }}>
-              PORTIONS TO COOK
-            </Txt>
-            <Row align="flex-end" gap={8} style={{ marginTop: 2 }}>
-              <Txt size={34} weight="800" color={Colors.primaryDark} tabular>{reqCount}</Txt>
-              {totalGuests > 0 && (
-                <Txt size={12} color={Colors.textMuted} style={{ marginBottom: 7 }}>of {totalGuests}</Txt>
-              )}
-            </Row>
-            {!!activeMeal?.menuItems && (
-              <Txt size={12} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2 }}>
-                {activeMeal.menuItems}
-              </Txt>
-            )}
-
-            <View style={styles.breakdownRule} />
-
-            <Row gap={10}>
-              {breakdown.map((b) => (
-                <Col key={b.key} style={{ flex: 1 }}>
-                  <View style={[styles.breakdownDot, { backgroundColor: b.ink }]} />
-                  <Txt size={16} weight="800" color={Colors.textPrimary} tabular style={{ marginTop: 5 }}>
-                    {b.count}
-                  </Txt>
-                  <Txt size={10.5} color={Colors.textMuted} numberOfLines={2}>{b.label}</Txt>
-                  <Txt size={10} color={Colors.textMuted} tabular>{pct(b.count)}%</Txt>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-
-          {/* Who is still to answer.
-              The deck's "No reply" card gives the chef a number; this gives them the names,
-              which is the part they can act on — one message to four people beats guessing a
-              headcount. `GET /v1/meals/{id}/roster` already returns a row per resident with
-              `choice: null` for anyone who has not answered (its own docstring calls those
-              rows "the point of this endpoint"), and this screen was already fetching it for
-              the counts — so nothing new is requested, the rows were simply never shown.
-              `is_away` is kept visible: a chef reading an unanswered row needs to tell
-              "away, don't wait on them" apart from "hasn't answered yet". */}
-          {pendingReplies.length > 0 && (
-            <>
-              <Spacer size={24} />
+        {/* Active Meal Card */}
+        {activeMeal ? (
+          <Card containerColor={Colors.surface} borderRadius={20} padding={[0,0]} style={styles.activeMealCard}>
+            <ImageBackground source={{ uri: FOOD_BG }} style={styles.mealImagePlaceholder} imageStyle={{ borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
+              <View style={styles.darkGradientOverlay} />
+              <View style={styles.activeBadge}>
+                <View style={styles.activeDot} />
+                <Txt size={10} weight="800" color={Colors.textInverse} style={{ letterSpacing: 0.5 }}>ACTIVE</Txt>
+              </View>
+              <View style={{ position: 'absolute', bottom: 12, left: 16 }}>
+                 <Txt size={22} weight="800" color={Colors.textInverse}>{activeMeal.mealType}</Txt>
+                 <Row align="center" gap={4} style={{ marginTop: 2 }}>
+                   <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.9)" />
+                   <Txt size={12} weight="700" color="rgba(255,255,255,0.9)">12:00 PM - 2:00 PM</Txt>
+                 </Row>
+              </View>
+            </ImageBackground>
+            <View style={{ padding: 16 }}>
+              <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={2} style={{ lineHeight: 20 }}>{activeMeal.menuItems}</Txt>
+              
+              <View style={styles.divider} />
+              
               <Row justify="space-between" align="center">
-                <Txt size={15} weight="700" color={Colors.textPrimary}>Yet to reply</Txt>
-                <Txt size={13} weight="700" color={Colors.textMuted}>
-                  {pendingReplies.length} of {mealResponses.length}
-                </Txt>
+                <Col align="center" style={{ flex: 1, borderRightWidth: 1, borderColor: Colors.borderSubtle }}>
+                  <Txt size={24} weight="800" color={Colors.success}>{reqCount}</Txt>
+                  <Txt size={10} weight="700" color={Colors.textSecondary} style={{ marginTop: 2, letterSpacing: 1 }}>EATING</Txt>
+                </Col>
+                <Col align="center" style={{ flex: 1, borderRightWidth: 1, borderColor: Colors.borderSubtle }}>
+                  <Txt size={24} weight="800" color={Colors.warning}>{notReqCount}</Txt>
+                  <Txt size={10} weight="700" color={Colors.textSecondary} style={{ marginTop: 2, letterSpacing: 1 }}>SKIPPING</Txt>
+                </Col>
+                <Col align="center" style={{ flex: 1 }}>
+                  <Txt size={24} weight="800" color={Colors.textMuted}>{noResponse}</Txt>
+                  <Txt size={10} weight="700" color={Colors.textSecondary} style={{ marginTop: 2, letterSpacing: 1 }}>NO REPLY</Txt>
+                </Col>
               </Row>
-              <Spacer size={10} />
-              <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[0, 0]}>
-                {pendingReplies.map((r, i) => (
-                  <ListRow
-                    key={r.membership_id}
-                    title={r.name}
-                    meta={[r.room_no ? `Room ${r.room_no}` : null, r.is_away ? 'Away' : null]
-                      .filter(Boolean)
-                      .join(' · ') || 'No room assigned'}
-                    status={r.is_away
-                      ? { label: 'Away', tone: 'info' as const }
-                      : { label: 'No reply', tone: 'warn' as const }}
-                    first={i === 0}
-                    last={i === pendingReplies.length - 1}
-                  />
-                ))}
-              </Card>
-            </>
-          )}
+              
+              <Spacer size={16} />
+              <Btn onPress={() => {}} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.pill} height={44} style={{ shadowColor: Colors.primary, shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 }}>
+                <Txt size={14} weight="800" color={Colors.textInverse}>View RSVP Details</Txt>
+                <Ionicons name="arrow-forward" size={16} color={Colors.textInverse} style={{ marginLeft: 6 }} />
+              </Btn>
+            </View>
+          </Card>
+        ) : (
+          <EmptyState icon="restaurant-outline" title="No active meals" subtitle="Use 'Menu' tab to create a meal." />
+        )}
 
-          <Spacer size={28} />
-          <AnimatedPress accessibilityRole="button" onPress={() => router.push('/rsvp-trends')}>
-            <Row justify="space-between" align="center" gap={8}>
-              <Row align="center" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                <Txt size={15} weight="700" numberOfLines={1} color={Colors.textPrimary}>RSVP Trend</Txt>
-                <Txt size={13} weight="600" color={Colors.textSecondary}>(Last 7 Days)</Txt>
-              </Row>
-              <Row align="center" gap={4}>
-                <Txt size={13} weight="700" color={Colors.primary}>View Details</Txt>
-                <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
-              </Row>
+
+
+        {/* Pending RSVPs */}
+        {pendingReplies.length > 0 && (
+          <Col gap={16}>
+            <Row justify="space-between" align="center">
+              <Txt size={18} weight="800" color={Colors.textPrimary}>Pending RSVP's</Txt>
+              <AnimatedPress onPress={handleResendBroadcast} disabled={broadcastMutation.isPending}>
+                <Row align="center" gap={6} style={{ backgroundColor: Colors.brandPale, paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.pill }}>
+                  <Ionicons name="notifications-outline" size={14} color={Colors.primaryDark} />
+                  <Txt size={13} weight="800" color={Colors.primaryDark}>{broadcastMutation.isPending ? 'Sending...' : 'Remind All'}</Txt>
+                </Row>
+              </AnimatedPress>
             </Row>
-          </AnimatedPress>
-          {/* The trend chart and a "Today's Top Skipped Items" list used to render here —
-              both were static SVG mockups (fixed points, a fixed "48" tooltip, hardcoded
-              Dosa/Idli skip counts) that never reflected real data. The real 7-day trend,
-              backed by useRSVPTrends, is one tap away via the link above and the button at
-              the top of this screen; there is no backend aggregation for per-dish skip
-              counts, so that list had nothing real to show. */}
-
-        </>
-      )}
-    </FormScroll>
+            
+            <Card containerColor={Colors.surface} borderRadius={24} padding={[0, 0]} style={styles.shadowCard}>
+              {pendingReplies.slice(0,5).map((r, i) => (
+                <View key={r.membership_id} style={[styles.pendingRow, i !== pendingReplies.slice(0,5).length - 1 && { borderBottomWidth: 1, borderColor: Colors.borderSubtle }]}>
+                  <Row align="center" gap={14} style={{ flex: 1 }}>
+                    <View style={styles.initialsBox}><Txt size={16} weight="800" color={Colors.primaryDark}>{r.name[0]}</Txt></View>
+                    <Col>
+                      <Txt size={15} weight="800" color={Colors.textPrimary}>{r.name}</Txt>
+                      <Txt size={13} weight="600" color={Colors.textSecondary} style={{ marginTop: 2 }}>{r.room_no ? `Room ${r.room_no}` : 'No room assigned'}</Txt>
+                    </Col>
+                  </Row>
+                  <Row align="center" gap={10}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: r.is_away ? Colors.info : Colors.warning }} />
+                    <Txt size={13} weight="700" color={r.is_away ? Colors.info : Colors.textSecondary}>{r.is_away ? 'Away' : 'No reply'}</Txt>
+                    <Ionicons name="chevron-forward" size={18} color={Colors.borderSubtle} style={{ marginLeft: 6 }} />
+                  </Row>
+                </View>
+              ))}
+            </Card>
+          </Col>
+        )}
+      </FormScroll>
+    </View>
   );
 }
 
@@ -595,10 +545,26 @@ function DeliveryDashboardRoute() {
 const Divider = ({ color }: { color: string }) => <View style={{ height: 1, backgroundColor: color }} />;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.canvas },
+  root: { flex: 1, backgroundColor: '#F8F9FE' },
+  groceryBanner: { height: 110, borderRadius: 24, overflow: 'hidden', backgroundColor: Colors.primaryDark, justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.primaryDark, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  groceryOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(20, 10, 80, 0.4)' },
+  cartIconBox: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  bannerArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  mealTab: { flexGrow: 1, paddingVertical: 14, borderRadius: Radii.pill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  mealTabOn: { backgroundColor: Colors.primary, shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 5 },
+  mealTabOff: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle },
+  activeMealCard: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8, overflow: 'hidden', borderWidth: 0 },
+  mealImagePlaceholder: { height: 120, backgroundColor: '#E2E8F0', justifyContent: 'center' },
+  darkGradientOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.3)' },
+  activeBadge: { position: 'absolute', top: 12, left: 16, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: Radii.pill, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
+  divider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 12 },
+  shadowCard: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6, borderWidth: 0 },
+  chefHatIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(91, 69, 232, 0.1)', alignItems: 'center', justifyContent: 'center' },
+  navCirc: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.borderSubtle },
+  pendingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18 },
+  initialsBox: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(91, 69, 232, 0.08)', alignItems: 'center', justifyContent: 'center' },
   mealPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  // `flexGrow` with a floor, so two meals share the row and three still fit without any of
-  // them being pushed off the edge.
   mealPill: { flexGrow: 1, flexBasis: 96, minWidth: 96, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control, borderWidth: 1 },
   mealPillOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   mealPillOff: { backgroundColor: Colors.surfaceMuted, borderColor: Colors.borderSubtle },
@@ -608,4 +574,5 @@ const styles = StyleSheet.create({
   progressTrack: { height: 8, backgroundColor: Colors.surfaceElevated, borderRadius: Radii.badge, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: Colors.primary },
   statusPill: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: Radii.control, alignSelf: 'flex-start' },
-  photoPreviewBox: { height: 160, backgroundColor: Colors.surfaceMuted, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' } });
+  photoPreviewBox: { height: 160, backgroundColor: Colors.surfaceMuted, borderRadius: Radii.card, borderWidth: 1, borderColor: Colors.borderSubtle, alignItems: 'center', justifyContent: 'center' } 
+});

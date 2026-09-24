@@ -463,3 +463,19 @@ export interface PnLData {
 export * from './supply';
 
 
+export type DishSource = 'default' | 'custom';
+export type MealType = 'breakfast' | 'lunch' | 'dinner';
+
+export interface Dish {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  category: string;
+  source: DishSource;
+  pgId?: string;
+  createdBy?: string;
+  mealTypes: MealType[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

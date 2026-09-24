@@ -118,7 +118,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
   const Container = scrollable ? ScrollView : View;
   const containerProps = scrollable
     ? { contentContainerStyle: { padding: 16, gap: 16 } }
-    : { style: { gap: 16 } };
+    : { style: { gap: 16, marginTop: 24 } };
 
   return (
     <Container {...containerProps}>

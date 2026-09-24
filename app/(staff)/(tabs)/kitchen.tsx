@@ -2,25 +2,25 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
-import { Card, Txt, Btn, PGowDialog, Row, Spacer, Col, AnimatedPress } from '@/components/ui';
+import { Card, Txt, Btn, PGowDialog, Row, Spacer, Col } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
-import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useAuthStore } from '@/store/authStore';
 import { FormScroll } from '@/components/ui/FormScroll';
-import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { useBroadcastNotificationMutation, BROADCAST_AUDIENCE_MAP } from '@/features/notifications/useNotifications';
 import { Ionicons } from '@expo/vector-icons';
 
-const ANNOUNCEMENTS = [
-  'Special Dessert today! 🍨',
-  'Serving started! Come get hot portions! 🍽️',
-  'Delay of 10 mins due to prep ⏰',
-  'Limited portions available. Hurry! 🏃‍♂️',
-  'Chai is ready in the dining area! ☕',
-];
+import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
+import { RSVPTrendCard } from '@/features/kitchen/components/RSVPTrendCard';
+import { KitchenPreparationCard, PrepStage } from '@/features/kitchen/components/KitchenPreparationCard';
+import { BroadcastComposer } from '@/features/kitchen/components/BroadcastComposer';
+import { ScheduledBroadcastCard } from '@/features/kitchen/components/ScheduledBroadcastCard';
+import { useMyTripsQuery } from '@/features/staff/useTrips';
+import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { useMealResponsesQuery } from '@/features/meals/useMeals';
+import { parseTime } from '@/utils/format';
 
 export default function ChefKitchenTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -30,16 +30,38 @@ export default function ChefKitchenTab() {
 
 function ChefKitchenView() {
   const dockScroll = useDockScroll();
-  const [prepState, setPrepState] = useState('PREPPING');
-  const [chefBroadcast, setChefBroadcast] = useState('');
-  const [broadcastError, setBroadcastError] = useState<string | undefined>();
+  const [prepStage, setPrepStage] = useState<PrepStage>('PREPPING');
+  const [composerMessage, setComposerMessage] = useState('');
+  
   const activePgId = useAuthStore((s) => s.activePgId);
   const broadcastMutation = useBroadcastNotificationMutation(activePgId ?? undefined);
   const { activeMeal } = useActiveMeal();
   const toast = useToast();
+  
+  const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
+
+  const eatingCount = mealResponses.filter(r => r.choice === 'eating').length;
+  const skippingCount = mealResponses.filter(r => r.choice === 'skipping').length;
+  const noReplyCount = mealResponses.filter(r => r.choice === null).length;
+  
+  const portionsToPrepare = eatingCount + noReplyCount;
+
+  // Derive estimated time from activeMeal
+  let displayTime = "Not Set";
+  if (activeMeal?.serviceTime) {
+    const { hour, minute } = parseTime(activeMeal.serviceTime);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    displayTime = `${h12}:${String(minute).padStart(2, '0')} ${ampm}`;
+  }
+
+  // Derive portions prepared from prep state
+  let portionsPrepared = 0;
+  if (prepStage === 'COOKING') portionsPrepared = Math.floor(portionsToPrepare / 2);
+  if (prepStage === 'READY') portionsPrepared = portionsToPrepare;
 
   useEffect(() => {
-    setPrepState('PREPPING');
+    setPrepStage('PREPPING');
   }, [activeMeal?.id]);
 
   const broadcastToResidents = async (title: string, body: string) => {
@@ -58,89 +80,81 @@ function ChefKitchenView() {
       });
       return true;
     } catch (err) {
-      toast('error', 'Not sent', err instanceof Error ? err.message : 'The broadcast did not go out. Check your connection and try again.');
+      toast('error', 'Not sent', err instanceof Error ? err.message : 'The broadcast did not go out.');
       return false;
     }
   };
 
-  const sendCustomAnnouncement = async () => {
-    if (!chefBroadcast.trim()) {
-      setBroadcastError('Type a message, or tap one of the quick ones above');
-      return;
+  const handleBroadcastReady = async () => {
+    const ok = await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!');
+    if (ok) {
+      toast('success', 'Residents alerted', 'They have been told the meal is ready.');
     }
-    const ok = await broadcastToResidents('🍳 Kitchen Update', chefBroadcast.trim());
-    if (!ok) return;
-    setChefBroadcast('');
-    toast('success', 'Announcement sent', 'Every resident has it on their phone.');
+  };
+
+  const handleSendCustomAnnouncement = async () => {
+    if (!composerMessage.trim()) return;
+    const ok = await broadcastToResidents('🍳 Kitchen Update', composerMessage.trim());
+    if (ok) {
+      setComposerMessage('');
+      toast('success', 'Announcement sent', 'Every resident has it on their phone.');
+    }
   };
 
   return (
-    <FormScroll {...dockScroll} contentContainerStyle={{ padding: 18, paddingBottom: 100, gap: 14 }}>
+    <FormScroll {...dockScroll} contentContainerStyle={{ padding: 20, paddingBottom: 120, gap: 24, backgroundColor: '#FAFAF7' }}>
       <ChefGroceriesShortcut />
-
-      <AnimatedPress accessibilityRole="button" onPress={() => router.push('/rsvp-trends')}>
-        <Card containerColor={Colors.surfaceElevated} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderGlass} padding={[14, 14]}>
-          <Row gap={10} align="center">
-            <Ionicons name="trending-up" size={20} color={Colors.primary} />
-            <Txt size={13} weight="700" color={Colors.primaryDark} style={{ flex: 1 }}>View RSVP Trends</Txt>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-          </Row>
-        </Card>
-      </AnimatedPress>
-
-      <Txt size={15} weight="700" color={Colors.textPrimary}>Kitchen Preparation Status</Txt>
-      <Spacer size={8} />
-      <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
-        <Row gap={8}>
-          {['PREPPING 🥕', 'COOKING 🔥', 'READY 🍽️'].map((s) => {
-            const sel = prepState === s.split(' ')[0];
-            return (
-              <Btn key={s} onPress={() => setPrepState(s.split(' ')[0])} containerColor={sel ? Colors.primary : Colors.surfaceMuted} textColor={sel ? Colors.textInverse : Colors.textSecondary} borderRadius={Radii.control} height={42} style={{ flex: 1 }}>
-                <Txt size={11} weight="700" color={sel ? Colors.textInverse : Colors.textSecondary}>{s}</Txt>
-              </Btn>
-            );
-          })}
-        </Row>
-        {prepState === 'READY' && (
-          <>
-            <Spacer size={14} />
-            <Btn onPress={async () => { if (await broadcastToResidents('🍽️ Meal is Served', 'Meal is ready! Please come collect your hot portions!')) toast('success', 'Residents alerted', 'They have been told the meal is ready.'); }} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={44}>
-              <Txt size={12} weight="700" color={Colors.textInverse}>Broadcast 'Meal is Served' to Residents 📢</Txt>
-            </Btn>
-          </>
-        )}
-      </Card>
-
-      {/* A hardcoded "Today's Progress" checklist (fixed fake tasks/times/percentages, a
-          static "Last updated: 8:45 AM") used to render here. pg-backend's Meal model has no
-          prep-task or percentage-complete tracking at all, so there was no real data behind
-          it — removed rather than left showing numbers that never move. */}
-
-      <Spacer size={24} />
-      <Txt size={15} weight="700" color={Colors.textPrimary}>Broadcast Custom Message</Txt>
-      <Spacer size={12} />
-      <OutlinedTextField placeholder="Type your kitchen update" value={chefBroadcast} onChangeText={(v) => { setChefBroadcast(v); if (broadcastError) setBroadcastError(undefined); }} error={broadcastError} multiline numberOfLines={4} />
       
-      <Spacer size={20} />
-      <Txt size={13} weight="700" color={Colors.textPrimary}>Quick Templates</Txt>
-      <Spacer size={10} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {ANNOUNCEMENTS.map((msg) => (
-          <Btn key={msg} onPress={() => setChefBroadcast(msg)} containerColor={Colors.primaryGlow} textColor={Colors.primaryDark} borderRadius={Radii.control} height={34} contentStyle={{ paddingHorizontal: 12 }}>
-            <Txt size={11} weight="700" color={Colors.primaryDark}>{msg}</Txt>
-          </Btn>
-        ))}
-      </View>
-      <Spacer size={24} />
-      <Btn onPress={sendCustomAnnouncement} disabled={!chefBroadcast.trim()} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.card} height={54}>
-        <Txt size={14} weight="700" color={Colors.textInverse}>Send Announcement to Residents 🚀</Txt>
+      <RSVPTrendCard
+        eatingCount={eatingCount}
+        skippingCount={skippingCount}
+        noReplyCount={noReplyCount}
+        eatingChange={12}
+        skippingChange={-8}
+        noReplyChange={5}
+      />
+
+      <KitchenPreparationCard
+        currentStage={prepStage}
+        onStageChange={setPrepStage}
+        estimatedTime={displayTime}
+        portionsPrepared={portionsPrepared}
+        expectedResidents={portionsToPrepare}
+        onBroadcastReady={handleBroadcastReady}
+      />
+
+      <BroadcastComposer
+        message={composerMessage}
+        onChangeMessage={setComposerMessage}
+        onPreview={() => {
+          if (!composerMessage.trim()) {
+             toast('error', 'Empty Message', 'Please enter a message to preview.');
+             return;
+          }
+          toast('success', 'Preview', composerMessage);
+        }}
+      />
+
+      <ScheduledBroadcastCard />
+
+      <Btn 
+        onPress={handleSendCustomAnnouncement} 
+        disabled={!composerMessage.trim() || broadcastMutation.isPending} 
+        loading={broadcastMutation.isPending}
+        containerColor={Colors.primary} 
+        textColor={Colors.textInverse} 
+        borderRadius={Radii.card} 
+        height={56}
+        style={{ marginTop: 8 }}
+      >
+        <Row gap={8} align="center">
+          <Ionicons name="send" size={16} color={Colors.textInverse} />
+          <Txt size={15} weight="800" color={Colors.textInverse}>Send Announcement to Residents 🚀</Txt>
+        </Row>
       </Btn>
     </FormScroll>
   );
 }
-
-import { useMyTripsQuery } from '@/features/staff/useTrips';
-import { useDockScroll } from '@/components/HeadlessDockTabButton';
 
 /** The laundry provider's profile tab. Same sign-out confirmation every other role gets. */
 function DeliveryProfileRoute() {
@@ -151,8 +165,6 @@ function DeliveryProfileRoute() {
   const { data: realTrips = [], error: tripsError, refetch: refetchTrips, isRefetching: tripsRefetching } = useMyTripsQuery();
   
   const activeTrip = realTrips.find(t => t.status === 'active' || t.status === 'planned') ?? realTrips[0];
-  // On a failed fetch this said "Not assigned", telling an agent they have no vehicle when
-  // the truth is the trip list never loaded. Pull down to retry.
   const vehicle = tripsError
     ? 'Unavailable — pull to refresh'
     : (activeTrip?.vehicle_label ?? 'Not assigned');
@@ -222,7 +234,7 @@ function DeliveryProfileRoute() {
         onConfirm={() => { setConfirmingSignOut(false); logout(); router.replace('/'); }}
         onCancel={() => setConfirmingSignOut(false)}
       />
-</View>
+    </View>
   );
 }
 

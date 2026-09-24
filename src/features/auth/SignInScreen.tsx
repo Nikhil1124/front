@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Radii } from '@/theme';
 import { useToast } from '@/hooks/useToast';
@@ -64,6 +65,7 @@ export function SignInScreen() {
   const [secret, setSecret] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [showSecret, setShowSecret] = useState(false);
 
   // First-time password: a temporary password must be replaced before the session is usable.
 
@@ -150,18 +152,27 @@ export function SignInScreen() {
             <Txt variant="meta" weight="600" color={Colors.textMuted} style={{ marginBottom: 5 }}>
               {mode === 'pin' ? 'PIN' : 'Password'}
             </Txt>
-            <TextInput
-              key="signin-secret"
-              value={secret}
-              onChangeText={setSecret}
-              secureTextEntry
-              keyboardType={mode === 'pin' ? 'number-pad' : 'default'}
-              textContentType={mode === 'pin' ? 'oneTimeCode' : 'password'}
-              autoComplete="off"
-              testID="signin_secret"
-              style={styles.rawInput}
-              placeholderTextColor={Colors.textMuted}
-            />
+            <View style={{ position: 'relative' }}>
+              <TextInput
+                key="signin-secret"
+                value={secret}
+                onChangeText={setSecret}
+                secureTextEntry={!showSecret}
+                keyboardType={mode === 'pin' ? 'number-pad' : 'default'}
+                textContentType={mode === 'pin' ? 'oneTimeCode' : 'password'}
+                autoComplete="off"
+                testID="signin_secret"
+                style={[styles.rawInput, { paddingRight: 40 }]}
+                placeholderTextColor={Colors.textMuted}
+              />
+              <AnimatedPress 
+                onPress={() => setShowSecret(prev => !prev)}
+                style={{ position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name={showSecret ? "eye-off-outline" : "eye-outline"} size={20} color={Colors.textMuted} />
+              </AnimatedPress>
+            </View>
             {error ? (
               <Txt size={12} color={Colors.danger} style={{ marginTop: 10 }}>{error}</Txt>
             ) : null}
