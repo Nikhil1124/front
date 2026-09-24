@@ -79,16 +79,7 @@ function buildWeekDays(): { label: string; short: string; date: number; isToday:
   return result;
 }
 
-/** "28 Aug – 3 Sep 2026" across a month boundary, "1 – 7 Sep 2026" within one — never a
- *  fixed string, which used to read "Sep 2025" no matter what the real dates were. */
-function weekRangeLabel(start: Date, end: Date): string {
-  const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
-  const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
-  const year = end.getFullYear();
-  return startMonth === endMonth
-    ? `${start.getDate()} – ${end.getDate()} ${endMonth} ${year}`
-    : `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth} ${year}`;
-}
+
 
 const MEAL_TABS: { key: string; label: string; icon: any; time: string }[] = [
   { key: 'BREAKFAST', label: 'Breakfast', icon: 'sunny-outline', time: '7:30 AM – 9:00 AM' },
@@ -645,39 +636,12 @@ export function GuestRSVPsTab() {
           </View>
         )}
 
-        {/* ── 6. WEEKLY MENU ── */}
+        {/* ── 6. DAILY MENU ── */}
         <Row justify="space-between" align="center" style={{ marginTop: 24, marginBottom: 16 }}>
-          <Txt size={17} weight="700" numberOfLines={1} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>Weekly Menu</Txt>
-          <Row align="center" gap={4}>
-            <Txt size={12} color={Colors.textSecondary}>
-              {weekRangeLabel(weekDays[0].full, weekDays[6].full)}
-            </Txt>
-            <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
-          </Row>
+          <Txt size={17} weight="700" numberOfLines={1} color={Colors.textPrimary} style={{ flex: 1, minWidth: 0 }}>
+            {weekDays[selectedDay]?.isToday ? 'Menu for Today' : `Menu for ${weekDays[selectedDay]?.short} ${weekDays[selectedDay]?.date}`}
+          </Txt>
         </Row>
-
-        {/* Day row */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          bounces={false}
-          overScrollMode="never"
-          style={{ marginHorizontal: -16 }}
-          contentContainerStyle={{ gap: 12, paddingHorizontal: 16, paddingBottom: 16 }}
-        >
-          {weekDays.map((d, i) => (
-            <AnimatedPress accessibilityRole="button" key={i} onPress={() => setSelectedDay(i)}>
-              <Col align="center" style={{ width: 38 }}>
-                <Txt size={11} weight="600" color={Colors.textSecondary}>{d.label.slice(0, 3).toUpperCase()}</Txt>
-                <View style={[styles.weekDayCircle, selectedDay === i && styles.weekDayCircleActive]}>
-                  <Txt size={13} weight="700" color={selectedDay === i ? Colors.textInverse : Colors.textPrimary}>
-                    {String(d.date).padStart(2, '0')}
-                  </Txt>
-                </View>
-              </Col>
-            </AnimatedPress>
-          ))}
-        </ScrollView>
 
         {/* Meal rows */}
         {/* The gate check comes first, and before the empty state: a gated resident gets an
@@ -858,24 +822,45 @@ export function GuestRSVPsTab() {
         accent={Colors.primary}
         onDismiss={() => setDetailMeal(null)}
         footer={
-          detailMeal ? (
-            <Row gap={10}>
-              <AnimatedPress accessibilityRole="button"
-                style={[styles.sheetBtn, { backgroundColor: Colors.primary }]}
-                onPress={() => { handleRSVP(detailMeal.id, 'REQUIRED'); setDetailMeal(null); }}
-              >
-                <Ionicons name="checkmark" size={16} color={Colors.textInverse} />
-                <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>I'll Attend ✅</Txt>
-              </AnimatedPress>
-              <AnimatedPress accessibilityRole="button"
-                style={[styles.sheetBtn, { backgroundColor: Colors.danger }]}
-                onPress={() => { handleRSVP(detailMeal.id, 'NOT_REQUIRED'); setDetailMeal(null); }}
-              >
-                <Ionicons name="close" size={16} color={Colors.textInverse} />
-                <Txt size={13} weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Skip Portion</Txt>
-              </AnimatedPress>
-            </Row>
-          ) : null
+          (() => {
+            if (!detailMeal) return null;
+            const cutoff = detailMeal.responseClosesAt ?? getCutoffMs(detailMeal.mealType);
+            if (cutoff <= Date.now()) {
+              return (
+                <View style={[styles.rsvpClosed, { height: 46 }]}>
+                  <Ionicons name="lock-closed" size={16} color={Colors.textSecondary} />
+                  <Txt size={14} weight="700" color={Colors.textSecondary} style={{ marginLeft: 8 }}>RSVP window closed</Txt>
+                </View>
+              );
+            }
+            const currentChoice = effectiveChoices[detailMeal.id];
+            const isAttending = currentChoice === 'REQUIRED';
+            const isSkipping = currentChoice === 'NOT_REQUIRED';
+            
+            return (
+              <Row gap={12}>
+                <AnimatedPress accessibilityRole="button"
+                  style={[styles.attendBtn, isAttending && styles.attendBtnActive]}
+                  onPress={() => { handleRSVP(detailMeal.id, 'REQUIRED'); setDetailMeal(null); }}
+                  disabled={!!submittingId}
+                >
+                  {isAttending && <Ionicons name="checkmark" size={15} color={Colors.textInverse} style={{ marginRight: 5 }} />}
+                  <Txt size={13} weight="700" color={isAttending ? Colors.textInverse : Colors.textPrimary}>
+                    {isAttending ? "I'll Attend" : "I'll Attend"}
+                  </Txt>
+                </AnimatedPress>
+                <AnimatedPress accessibilityRole="button"
+                  style={[styles.skipBtn, isSkipping && styles.skipBtnActive]}
+                  onPress={() => { handleRSVP(detailMeal.id, 'NOT_REQUIRED'); setDetailMeal(null); }}
+                  disabled={!!submittingId}
+                >
+                  <Txt size={13} weight="700" color={isSkipping ? Colors.textInverse : Colors.textSecondary}>
+                    Not Attending
+                  </Txt>
+                </AnimatedPress>
+              </Row>
+            );
+          })()
         }
       >
         {detailMeal && (

@@ -24,7 +24,6 @@
 import { useEffect, useState } from 'react';
 import {
   View, StyleSheet, Platform, BackHandler,
-  KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +32,7 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useToast } from '@/hooks/useToast';
-import { Btn, Card, ChoiceChips, Col, OutlinedBtn, PGowActionSheet, Row, Sheet, Spacer, Txt, type PGowAction } from '@/components/ui';
+import { Btn, ChoiceChips, Col, OutlinedBtn, PGowActionSheet, Row, Sheet, Spacer, Txt, type PGowAction } from '@/components/ui';
 const ID_TYPES = ['Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID'];
 
 interface Props {
@@ -166,174 +165,153 @@ export function KycUploadDialog({
     <>
     <Sheet
       visible={visible}
-      title={reupload ? 'Re-upload Documents' : 'Verify Your Identity'}
-      subtitle={reupload ? 'Update your KYC and resubmit for review' : 'Required for resident onboarding'}
-      icon="ribbon"
-      accent={Colors.primary}
-      onDismiss={onDismiss}
-      testID="kyc_upload_dialog"
-      footer={
-        <Row gap={10}>
-          <Btn
-            onPress={handleSubmit}
-            containerColor={Colors.primary}
-            textColor={Colors.textInverse}
-            borderRadius={Radii.control}
-            height={48}
-            loading={submitting}
-            style={{ flex: 1 }}
-            testID="kyc_submit_btn"
-          >
-            <Ionicons name="send" size={16} color={Colors.textInverse} />
-            <Txt variant="button" color={Colors.textInverse} style={{ marginLeft: 8 }}>
-              {submitting ? 'Submitting…' : 'Submit for Verification'}
-            </Txt>
-          </Btn>
-          <OutlinedBtn
-            onPress={onDismiss}
-            borderColor={Colors.borderMuted}
-            textColor={Colors.textSecondary}
-            borderRadius={Radii.control}
-            height={48}
-            testID="kyc_cancel_btn"
-          >
-            <Txt variant="body" weight="700" color={Colors.textSecondary}>Cancel</Txt>
-          </OutlinedBtn>
-        </Row>
-      }
-    >
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={Radii.sheet}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[20, 20]}
-          style={{ width: '100%', maxWidth: 480 }}
-        >
-          {/* Rejected banner — only when re-uploading */}
-          {reupload && (
-            <>
-              <Spacer size={14} />
-              <View style={styles.rejectedBanner}>
-                <Ionicons name="warning" size={18} color={Colors.danger} />
-                <Col style={{ flex: 1 }}>
-                  <Txt variant="statusChip" color={Colors.danger}>Action Required</Txt>
-                  <Txt variant="caption" color={Colors.textSecondary}>
-                    {guest?.kycRejectReason
-                      ? `Reason: ${guest.kycRejectReason}`
-                      : 'Your previous submission was rejected. Please update and resubmit.'}
-                  </Txt>
-                </Col>
-              </View>
-            </>
-          )}
-
-          <Spacer size={16} />
-
-          <ScrollView
-            style={{ maxHeight: 370 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            automaticallyAdjustKeyboardInsets
-          >
-
-            {/* 1. Selfie / Profile photo */}
-            <Txt variant="body" weight="700" color={Colors.primary}>1. Selfie / Profile Photo</Txt>
-            <Spacer size={8} />
-            <Row gap={12} align="center">
-              <View style={[styles.photoBox, profilePhotoUri ? styles.photoBoxFilled : null]}>
-                {profilePhotoUri
-                  ? <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
-                  : <Col align="center"><Ionicons name="person-circle" size={28} color={Colors.textMuted} /><Txt size={9} color={Colors.textMuted}>No selfie</Txt></Col>}
-              </View>
-              <Col style={{ flex: 1 }}>
-                <Btn
-                  onPress={() => choosePhoto((uri) => { setProfilePhotoUri(uri); setPhotoErrors((e) => ({ ...e, selfie: undefined })); }, 'Selfie')}
-                  containerColor={Colors.primary}
-                  textColor={Colors.textInverse}
-                  borderRadius={Radii.control}
-                  height={36}
-                  testID="kyc_upload_selfie_btn"
-                >
-                  <Ionicons name="camera" size={16} color={Colors.textInverse} />
-                  <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Take / Choose Photo</Txt>
-                </Btn>
-              </Col>
-            </Row>
-            {photoErrors.selfie ? (
-              <Txt size={11} color={Colors.danger} style={{ marginTop: 6 }}>{photoErrors.selfie}</Txt>
-            ) : null}
-
-            <Spacer size={16} />
-
-            {/* 2. ID type — five fixed options, shown rather than hidden.
-                This was a `Sheet` rendered INSIDE this sheet: the only true nested sheet in
-                the app. Two drag handles, two scrims, and a swipe-down whose target was
-                ambiguous — on the onboarding path a resident cannot skip. There is room for
-                all five here, so the surface is not needed at all. */}
-            <Txt variant="body" weight="700" color={Colors.primary}>2. ID Document Type</Txt>
-            <Spacer size={8} />
-            <ChoiceChips
-              options={ID_TYPES}
-              value={selectedIdType}
-              onChange={setSelectedIdType}
-              columns={2}
-              testID="kyc_id_type"
-            />
-
-            <Spacer size={12} />
-
-            {/* 3. ID number — required only for Aadhaar; see the note on `isAadhaar` above. */}
-            <OutlinedTextField
-              label={isAadhaar ? 'Aadhaar Number *' : 'ID Document Number (optional)'}
-              placeholder={isAadhaar ? '1234 5678 9012' : 'Not required — we read it from your photo'}
-              value={idNumber}
-              onChangeText={(v) => { setIdNumber(v); if (idError) setIdError(undefined); }}
-              error={idError}
-              keyboardType={isAadhaar ? 'number-pad' : 'default'}
-              testID="kyc_id_number_input"
-            />
-            <Txt size={11} color={Colors.textMuted} style={{ marginTop: 4 }}>
-              {isAadhaar
-                ? 'Only the last 4 digits are stored. Your full number is never saved.'
-                : 'Your manager verifies this document from the photo — the number is not stored.'}
-            </Txt>
-
+        title={reupload ? 'Re-upload Documents' : 'Verify Your Identity'}
+        subtitle={reupload ? 'Update your KYC and resubmit for review' : 'Required for resident onboarding'}
+        icon="ribbon"
+        accent={Colors.primary}
+        onDismiss={onDismiss}
+        testID="kyc_upload_dialog"
+        footer={
+          <Row gap={10}>
+            <Btn
+              onPress={handleSubmit}
+              containerColor={Colors.primary}
+              textColor={Colors.textInverse}
+              borderRadius={Radii.control}
+              height={48}
+              loading={submitting}
+              style={{ flex: 1 }}
+              testID="kyc_submit_btn"
+            >
+              <Ionicons name="send" size={16} color={Colors.textInverse} />
+              <Txt variant="button" color={Colors.textInverse} style={{ marginLeft: 8 }}>
+                {submitting ? 'Submitting…' : 'Submit for Verification'}
+              </Txt>
+            </Btn>
+            <OutlinedBtn
+              onPress={onDismiss}
+              borderColor={Colors.borderMuted}
+              textColor={Colors.textSecondary}
+              borderRadius={Radii.control}
+              height={48}
+              testID="kyc_cancel_btn"
+            >
+              <Txt variant="body" weight="700" color={Colors.textSecondary}>Cancel</Txt>
+            </OutlinedBtn>
+          </Row>
+        }
+      >
+        {/* Rejected banner — only when re-uploading */}
+        {reupload && (
+          <>
             <Spacer size={14} />
-
-            {/* 4. ID photo */}
-            <Txt variant="body" weight="700" color={Colors.primary}>3. ID Document Photo</Txt>
-            <Spacer size={8} />
-            <Row gap={12} align="center">
-              <View style={[styles.idPhotoBox, idPhotoUri ? styles.photoBoxFilled : null]}>
-                {idPhotoUri
-                  ? <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
-                  : <Col align="center"><Ionicons name="card" size={26} color={Colors.textMuted} /><Txt size={9} color={Colors.textMuted}>No ID photo</Txt></Col>}
-              </View>
+            <View style={styles.rejectedBanner}>
+              <Ionicons name="warning" size={18} color={Colors.danger} />
               <Col style={{ flex: 1 }}>
-                <Btn
-                  onPress={() => choosePhoto((uri) => { setIdPhotoUri(uri); setPhotoErrors((e) => ({ ...e, idPhoto: undefined })); }, 'ID Document Photo')}
-                  containerColor={Colors.primary}
-                  textColor={Colors.textInverse}
-                  borderRadius={Radii.control}
-                  height={36}
-                  testID="kyc_upload_id_doc_btn"
-                >
-                  <Ionicons name="cloud-upload" size={16} color={Colors.textInverse} />
-                  <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Upload ID Image</Txt>
-                </Btn>
+                <Txt variant="statusChip" color={Colors.danger}>Action Required</Txt>
+                <Txt variant="caption" color={Colors.textSecondary}>
+                  {guest?.kycRejectReason
+                    ? `Reason: ${guest.kycRejectReason}`
+                    : 'Your previous submission was rejected. Please update and resubmit.'}
+                </Txt>
               </Col>
-            </Row>
-            {photoErrors.idPhoto ? (
-              <Txt size={11} color={Colors.danger} style={{ marginTop: 6 }}>{photoErrors.idPhoto}</Txt>
-            ) : null}
+            </View>
+          </>
+        )}
 
-          </ScrollView>
+        <Spacer size={16} />
 
-        </Card>
-      </KeyboardAvoidingView>
-    </Sheet>
+        {/* 1. Selfie / Profile photo */}
+        <Txt variant="body" weight="700" color={Colors.primary}>1. Selfie / Profile Photo</Txt>
+        <Spacer size={8} />
+        <Row gap={12} align="center">
+          <View style={[styles.photoBox, profilePhotoUri ? styles.photoBoxFilled : null]}>
+            {profilePhotoUri
+              ? <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
+              : <Col align="center"><Ionicons name="person-circle" size={28} color={Colors.textMuted} /><Txt size={9} color={Colors.textMuted}>No selfie</Txt></Col>}
+          </View>
+          <Col style={{ flex: 1 }}>
+            <Btn
+              onPress={() => choosePhoto((uri) => { setProfilePhotoUri(uri); setPhotoErrors((e) => ({ ...e, selfie: undefined })); }, 'Selfie')}
+              containerColor={Colors.primary}
+              textColor={Colors.textInverse}
+              borderRadius={Radii.control}
+              height={36}
+              testID="kyc_upload_selfie_btn"
+            >
+              <Ionicons name="camera" size={16} color={Colors.textInverse} />
+              <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Take / Choose Photo</Txt>
+            </Btn>
+          </Col>
+        </Row>
+        {photoErrors.selfie ? (
+          <Txt size={11} color={Colors.danger} style={{ marginTop: 6 }}>{photoErrors.selfie}</Txt>
+        ) : null}
+
+        <Spacer size={16} />
+
+        {/* 2. ID type — five fixed options, shown rather than hidden.
+            This was a `Sheet` rendered INSIDE this sheet: the only true nested sheet in
+            the app. Two drag handles, two scrims, and a swipe-down whose target was
+            ambiguous — on the onboarding path a resident cannot skip. There is room for
+            all five here, so the surface is not needed at all. */}
+        <Txt variant="body" weight="700" color={Colors.primary}>2. ID Document Type</Txt>
+        <Spacer size={8} />
+        <ChoiceChips
+          options={ID_TYPES}
+          value={selectedIdType}
+          onChange={setSelectedIdType}
+          columns={2}
+          testID="kyc_id_type"
+        />
+
+        <Spacer size={12} />
+
+        {/* 3. ID number — required only for Aadhaar; see the note on `isAadhaar` above. */}
+        <OutlinedTextField
+          label={isAadhaar ? 'Aadhaar Number *' : 'ID Document Number (optional)'}
+          placeholder={isAadhaar ? '1234 5678 9012' : 'Not required — we read it from your photo'}
+          value={idNumber}
+          onChangeText={(v) => { setIdNumber(v); if (idError) setIdError(undefined); }}
+          error={idError}
+          keyboardType={isAadhaar ? 'number-pad' : 'default'}
+          testID="kyc_id_number_input"
+        />
+        <Txt size={11} color={Colors.textMuted} style={{ marginTop: 4 }}>
+          {isAadhaar
+            ? 'Only the last 4 digits are stored. Your full number is never saved.'
+            : 'Your manager verifies this document from the photo — the number is not stored.'}
+        </Txt>
+
+        <Spacer size={14} />
+
+        {/* 4. ID photo */}
+        <Txt variant="body" weight="700" color={Colors.primary}>3. ID Document Photo</Txt>
+        <Spacer size={8} />
+        <Row gap={12} align="center">
+          <View style={[styles.idPhotoBox, idPhotoUri ? styles.photoBoxFilled : null]}>
+            {idPhotoUri
+              ? <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
+              : <Col align="center"><Ionicons name="card" size={26} color={Colors.textMuted} /><Txt size={9} color={Colors.textMuted}>No ID photo</Txt></Col>}
+          </View>
+          <Col style={{ flex: 1 }}>
+            <Btn
+              onPress={() => choosePhoto((uri) => { setIdPhotoUri(uri); setPhotoErrors((e) => ({ ...e, idPhoto: undefined })); }, 'ID Document Photo')}
+              containerColor={Colors.primary}
+              textColor={Colors.textInverse}
+              borderRadius={Radii.control}
+              height={36}
+              testID="kyc_upload_id_doc_btn"
+            >
+              <Ionicons name="cloud-upload" size={16} color={Colors.textInverse} />
+              <Txt variant="caption" weight="700" color={Colors.textInverse} style={{ marginLeft: 6 }}>Upload ID Image</Txt>
+            </Btn>
+          </Col>
+        </Row>
+        {photoErrors.idPhoto ? (
+          <Txt size={11} color={Colors.danger} style={{ marginTop: 6 }}>{photoErrors.idPhoto}</Txt>
+        ) : null}
+      </Sheet>
 
     {/* Sibling of the Sheet, not a child. It is still a surface over a surface while this
         whole screen remains a Sheet — transitional: once KYC becomes the four-route workflow

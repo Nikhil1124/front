@@ -15,6 +15,7 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { GuestKycVerificationTab } from './GuestKycVerificationTab';
+import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus } from '@/features/kyc/useKycStatus';
 import { toastNow, useToast } from '@/hooks/useToast';
 import { useChangePassword } from '@/features/auth/useAuth';
@@ -91,6 +92,7 @@ export function GuestSecurityTab() {
   // decision. It was an `Alert.alert` with a buttons array, which Android draws as a centred
   // alert for what is a source picker everywhere else on the platform.
   const [photoPickerOpen, setPhotoPickerOpen] = useState(false);
+  const [showKycUpload, setShowKycUpload] = useState(false);
 
   const applyPickedPhoto = async (uri: string) => {
     setIsUploadingPhoto(true);
@@ -207,7 +209,7 @@ export function GuestSecurityTab() {
         </View>
 
         {/* ── 3. IDENTITY DOCUMENT (KYC) VERIFICATION ── */}
-        <GuestKycVerificationTab scrollable={false} />
+        <GuestKycVerificationTab scrollable={false} onOpenUpload={() => setShowKycUpload(true)} />
 
         {/* ── 4. SECURITY & PASSCODE MANAGEMENT ── */}
         <Txt size={15} weight="700" color={Colors.textPrimary} style={{ marginTop: 24, marginBottom: 10 }}>
@@ -300,6 +302,13 @@ export function GuestSecurityTab() {
         onConfirm={() => { setConfirmLogoutOpen(false); logout(); }}
         onCancel={() => setConfirmLogoutOpen(false)}
         testID="guest_logout"
+      />
+
+      <KycUploadDialog
+        visible={showKycUpload}
+        onDismiss={() => setShowKycUpload(false)}
+        reupload={kycStatus === 'REJECTED'}
+        initialIdType={guest?.idProofType || 'Aadhaar Card'}
       />
     </View>
   );

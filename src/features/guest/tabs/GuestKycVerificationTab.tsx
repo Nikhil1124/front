@@ -18,17 +18,16 @@
  * `['kyc', pgId]` and `['session']` in the store, so any banner reading
  * `guest.kycStatus` re-renders with the new state on the next tick.
  */
-import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { InfoTip } from '@/components/ui/InfoTip';
 import { Colors, Palette, Radii } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
-import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
 import { Btn, Card, Col, Row, Spacer, Txt } from '@/components/ui';
 interface Props {
   scrollable?: boolean;
+  onOpenUpload?: () => void;
 }
 
 type KycStatus = 'UNKNOWN' | 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
@@ -99,18 +98,13 @@ function bannerFor(status: KycStatus, rejectReason: string | undefined): BannerC
   }
 }
 
-export function GuestKycVerificationTab({ scrollable = true }: Props) {
+export function GuestKycVerificationTab({ scrollable = true, onOpenUpload }: Props) {
   const guest = usePGowStore((s) => s.loggedInGuest);
-  const [showUpload, setShowUpload] = useState(false);
 
   // `/v1/me`'s gate, not `loggedInGuest` — see useKycStatus for why the old
   // `guest?.kycStatus ?? 'NOT_SUBMITTED'` showed a verified resident an upload prompt.
   const kycStatus = useKycStatus() as KycStatus;
   const banner = bannerFor(kycStatus, guest?.kycRejectReason);
-
-  const openUpload = () => {
-    setShowUpload(true);
-  };
 
   // The container is either a ScrollView (when this tab is the only thing
   // on the screen) or a plain View (when it's embedded inside another tab
@@ -190,7 +184,7 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
           </Row>
           <Spacer size={14} />
           <Btn
-            onPress={openUpload}
+            onPress={onOpenUpload || (() => {})}
             containerColor={kycStatus === 'REJECTED' ? Colors.danger : Colors.primary}
             textColor={Colors.textInverse}
             borderRadius={Radii.control}
@@ -223,15 +217,6 @@ export function GuestKycVerificationTab({ scrollable = true }: Props) {
           </Col>
         </Row>
       </Card>
-
-      {/* The actual upload modal — opened on tap. Carries its own
-          BackHandler + backdrop-dismiss so residents never get trapped. */}
-      <KycUploadDialog
-        visible={showUpload}
-        onDismiss={() => setShowUpload(false)}
-        reupload={kycStatus === 'REJECTED'}
-        initialIdType={guest?.idProofType || 'Aadhaar Card'}
-      />
     </Container>
   );
 }
