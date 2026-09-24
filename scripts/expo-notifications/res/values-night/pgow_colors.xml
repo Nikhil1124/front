@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- #5B45E8 is too dark to read on the dark shade. -->
+    <color name="pgow_violet">#A99CFF</color>
     <color name="pgow_cta_bg">#F2F3F7</color>
     <color name="pgow_cta_text">#1A1B25</color>
 </resources>

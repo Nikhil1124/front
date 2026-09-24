@@ -23,6 +23,7 @@ import { Colors, Palette, Radii } from '@/theme';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 import { useResponsivePadding } from '@/utils/responsive';
 import { AnimatedPress, Col, ErrorState, ListRow, LoadingState, OutlinedTextField, Row, Sheet, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
+import { keyboardAwareBack } from '@/hooks/keyboardAwareBack';
 
 const GREEN = '#176B3A';
 const BG = '#F7FAF7';
@@ -63,7 +64,7 @@ export function OwnerComplaintsTab() {
   useFocusEffect(
     useCallback(() => {
       const onBack = () => { router.replace('/overview'); return true; };
-      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      const sub = BackHandler.addEventListener('hardwareBackPress', keyboardAwareBack(onBack));
       return () => sub.remove();
     }, []),
   );

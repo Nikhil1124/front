@@ -3,6 +3,7 @@ import { apiFetch } from "../../data/apiClient";
 import type { Page } from "../../data/apiClient";
 import { qk } from "../../data/queryKeys";
 import { API } from "../../config";
+import { uploadToPresignedUrl } from "../kyc/useKyc";
 import * as map from "../../data/mappers";
 import type {
   FeedbackComplaintEntity,
@@ -155,35 +156,9 @@ export function getAttachmentUploadUrl(
   });
 }
 
-export async function uploadAttachment(
-  uploadUrl: string,
-  uri: string,
-  contentType: string
-): Promise<void> {
-  // Mock builds hand out a `mock://` url from getAttachmentUploadUrl — nothing real to PUT to.
-  if (uploadUrl.startsWith("mock://")) return;
-  // Was `return` — an attachment that silently "uploaded" nothing, so the ticket reached the
-  // manager with a photo icon and no photo behind it. The stub pickers that produced these
-  // uris are gone; anything still shaped like one is a bug worth surfacing.
-  if (/^(sample:|mock_media|mock_photo)/.test(uri)) {
-    throw new Error("No photo was captured. Take or choose a photo and try again.");
-  }
-  const local = await fetch(uri);
-  const rawImage = await local.blob();
-  // Same fix as kyc/useKyc.ts's uploadToPresignedUrl: React Native's networking bridge can
-  // send the Content-Type it reads off the Blob's own `type` rather than the header below,
-  // and that often doesn't match what the presigned URL was signed for — a 403
-  // SignatureDoesNotMatch, not a transient failure.
-  const image = rawImage.type === contentType ? rawImage : new Blob([rawImage], { type: contentType });
-  const uploaded = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: image,
-  });
-  if (!uploaded.ok) {
-    const detail = (await uploaded.text()).trim().slice(0, 180);
-    throw new Error(`Photo upload failed (${uploaded.status})${detail ? `: ${detail}` : ""}`);
-  }
+/** The same presigned PUT as a KYC photo — one implementation, so a fix to it reaches both. */
+export function uploadAttachment(uploadUrl: string, uri: string, contentType: string): Promise<void> {
+  return uploadToPresignedUrl(uploadUrl, uri, contentType);
 }
 
 export function addAttachment(

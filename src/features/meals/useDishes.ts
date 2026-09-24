@@ -33,7 +33,8 @@ export function useUpdateDishMutation(pgId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ dishId, data }: { dishId: string; data: UpdateDishInput }) => {
-      return dishService.updateCustomDish(dishId, data);
+      if (!pgId) throw new Error('No PG ID provided');
+      return dishService.updateCustomDish(pgId, dishId, data);
     },
     onSuccess: () => {
       if (pgId) {

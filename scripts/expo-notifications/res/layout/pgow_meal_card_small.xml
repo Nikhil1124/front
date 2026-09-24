@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- PGow meal card as it drops in from the top of the screen: the meal and its two buttons.
-     A heads-up notification is capped at 136dp with its header, so no menu and no sponsor. -->
+<!-- PGow meal card, collapsed. Android 12+ leaves ~38dp under the header for this. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -29,9 +28,12 @@
             android:textSize="15sp" />
     </LinearLayout>
 
-    <include
-        layout="@layout/pgow_meal_card_buttons"
+    <TextView
+        android:id="@+id/pgow_menu"
         android:layout_width="match_parent"
-        android:layout_height="34dp"
-        android:layout_marginTop="8dp" />
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textAppearance="@style/TextAppearance.Compat.Notification"
+        android:textSize="13sp" />
 </LinearLayout>

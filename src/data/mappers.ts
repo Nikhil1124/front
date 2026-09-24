@@ -265,6 +265,7 @@ export function toMeal(m: MealOut): MealNotificationEntity {
     responseClosesAt: m.response_closes_at ? toMillis(m.response_closes_at) : null,
     chefName: m.chef_name ?? null,
     isAlertSent: !!m.is_broadcast,
+    prepStatus: m.prep_status ?? "prepping",
   };
 }
 

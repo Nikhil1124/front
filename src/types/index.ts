@@ -89,6 +89,8 @@ export interface MealNotificationEntity {
   /** Who cooked it. `created_by` on the API is a MEMBERSHIP id and nothing on this side can
    *  resolve one, so the server does the lookup. Null if that account is gone. */
   chefName: string | null;
+  /** Prepping / Cooking / Ready — the kitchen's own progress. */
+  prepStatus: 'prepping' | 'cooking' | 'ready';
 }
 
 export interface GuestRSVPEntity {
@@ -466,11 +468,15 @@ export * from './supply';
 export type DishSource = 'default' | 'custom';
 export type MealType = 'breakfast' | 'lunch' | 'dinner';
 
+export type DishDietaryType = 'veg' | 'non_veg' | 'pure_veg' | 'eggitarian';
+
 export interface Dish {
   id: string;
   name: string;
   imageUrl?: string;
   category: string;
+  description?: string;
+  dietaryType?: DishDietaryType;
   source: DishSource;
   pgId?: string;
   createdBy?: string;

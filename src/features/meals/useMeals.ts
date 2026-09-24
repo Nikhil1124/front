@@ -6,6 +6,17 @@ import { API } from "../../config";
 import * as map from "../../data/mappers";
 import type { MealNotificationEntity } from "../../types";
 
+export type PrepStatus = "prepping" | "cooking" | "ready";
+
+/** A push the server will send by itself — see `useScheduledBroadcastsQuery`. */
+export interface ScheduledBroadcast {
+  meal_id: string;
+  meal_type: "breakfast" | "lunch" | "dinner";
+  kind: "announce" | "reminder_2h" | "followup_15m";
+  at: string;
+  service_at: string;
+}
+
 export interface MealOut {
   id: string;
   pg_id: string;
@@ -19,6 +30,10 @@ export interface MealOut {
   is_open: boolean;
   /** False until the meal has been announced — i.e. it is still a draft. */
   is_broadcast?: boolean;
+  /** The kitchen's progress, kept on the server so it survives the app restarting. */
+  prep_status?: PrepStatus;
+  /** Set while an announcement is scheduled and not yet sent. */
+  announce_at?: string | null;
   created_by: string;
   /** Who cooked it. `created_by` is a MEMBERSHIP id and nobody reading this can resolve one,
    *  so the server does the two hops. Null if that account has since been deleted. */
@@ -329,4 +344,29 @@ export function useMeals() {
     getMealSavingsAnalytics,
     getMealRSVPTrends,
   };
+}
+
+/** Prepping / Cooking / Ready. Silent — the kitchen tracking itself, not a message to residents. */
+export function useUpdatePrepStatusMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ mealId, prepStatus }: { mealId: string; prepStatus: PrepStatus }) =>
+      apiFetch<MealOut>(API.MEAL_PREP_STATUS(mealId), {
+        method: "PATCH",
+        body: JSON.stringify({ prep_status: prepStatus }),
+      }),
+    onSuccess: () => {
+      if (pgId) qc.invalidateQueries({ queryKey: qk.meals.list(pgId) });
+    },
+  });
+}
+
+/** What the server will push by itself, soonest first: scheduled announcements and the
+ *  automatic reminders of announced meals. */
+export function useScheduledBroadcastsQuery(pgId?: string) {
+  return useQuery<ScheduledBroadcast[]>({
+    queryKey: [...qk.meals.all(pgId ?? ""), "scheduled"],
+    queryFn: () => apiFetch<ScheduledBroadcast[]>(API.MEALS_SCHEDULED(pgId as string)),
+    enabled: !!pgId,
+  });
 }

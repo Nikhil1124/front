@@ -1,7 +1,6 @@
 
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { Card, Txt, Row, Btn, Col, AnimatedPress } from '@/components/ui';
 import { Colors, Radii } from '@/theme';
 

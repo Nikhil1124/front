@@ -1,20 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- PGow meal card, expanded: the whole in-app card. Android caps an expanded custom view's
-     height, so the sponsor's banner is a short strip rather than the in-app card's photo. -->
+<!-- PGow meal card, expanded: the supplied notification design. Sizes are in pgow_dimens —
+     the design's own on Android 12+, a compact set below it where the height cap is lower. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <include
-        layout="@layout/pgow_meal_card_head"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/pgow_icon"
+            android:layout_width="@dimen/pgow_icon"
+            android:layout_height="@dimen/pgow_icon"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/pgow_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+                android:textSize="@dimen/pgow_title" />
+
+            <TextView
+                android:id="@+id/pgow_chef"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textAppearance="@style/TextAppearance.Compat.Notification"
+                android:textSize="@dimen/pgow_chef" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/pgow_menu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/pgow_menu_gap"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textAppearance="@style/TextAppearance.Compat.Notification"
+        android:textSize="@dimen/pgow_menu" />
 
     <include
         layout="@layout/pgow_meal_card_buttons"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="@dimen/pgow_button_height"
+        android:layout_marginTop="@dimen/pgow_buttons_gap" />
 
     <LinearLayout
         android:id="@+id/pgow_ad"
@@ -34,16 +78,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:ellipsize="end"
-            android:letterSpacing="0.04"
+            android:letterSpacing="0.06"
             android:singleLine="true"
             android:textAllCaps="true"
             android:textAppearance="@style/TextAppearance.Compat.Notification"
-            android:textSize="11sp" />
+            android:textSize="12sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="@dimen/pgow_card_gap"
             android:background="@drawable/pgow_ad_card"
             android:clipToOutline="true"
             android:orientation="vertical">
@@ -51,7 +95,7 @@
             <ImageView
                 android:id="@+id/pgow_ad_image"
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
+                android:layout_height="@dimen/pgow_ad_image"
                 android:scaleType="centerCrop" />
 
             <LinearLayout
@@ -78,8 +122,7 @@
                         android:ellipsize="end"
                         android:singleLine="true"
                         android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:textSize="@dimen/pgow_brand" />
 
                     <TextView
                         android:id="@+id/pgow_ad_tagline"
@@ -88,22 +131,21 @@
                         android:ellipsize="end"
                         android:singleLine="true"
                         android:textAppearance="@style/TextAppearance.Compat.Notification"
-                        android:textSize="12sp" />
+                        android:textSize="@dimen/pgow_tagline" />
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/pgow_ad_cta"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_height="@dimen/pgow_cta_height"
                     android:layout_marginStart="10dp"
                     android:background="@drawable/pgow_btn_cta"
                     android:gravity="center"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
                     android:singleLine="true"
                     android:textColor="@color/pgow_cta_text"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textSize="@dimen/pgow_cta_text" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

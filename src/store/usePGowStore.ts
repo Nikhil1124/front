@@ -34,6 +34,7 @@ import { useAuthStore } from '@/store/authStore';
 // others import it from this store); the implementation lives in a module a plain
 // `node` check can reach.
 import { toUserRole } from '@/store/roles';
+import { clearKycDraft } from '@/features/kyc/kycDraft';
 
 export { toUserRole };
 import type {
@@ -1066,6 +1067,9 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     import('@react-native-async-storage/async-storage')
       .then((m) => m.default.multiRemove(PERSISTED_STORE_KEYS).catch(() => {}))
       .catch(() => {});
+    // The next person on this phone must not open a KYC form holding this one's photos, or
+    // their Aadhaar number, which lives only in memory.
+    void clearKycDraft();
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
       activeRole: null, isManagerMode: false,

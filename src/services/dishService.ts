@@ -1,65 +1,103 @@
-import type { Dish } from '@/types';
+import { apiFetch } from '@/data/apiClient';
+import { API } from '@/config';
+import { uploadToPresignedUrl } from '@/features/kyc/useKyc';
+import type { Dish, DishDietaryType, MealType } from '@/types';
 
 /**
- * Service abstraction for dish catalog API.
- * Currently uses mock delays and localStorage/in-memory data for frontend implementation.
- * Ready to be swapped with FastAPI + PostgreSQL endpoints.
+ * The property's own dish catalog, kept by the server (`/v1/dishes`). It was an in-memory
+ * mock, so every dish a chef made vanished when the app restarted.
+ *
+ * Built-in dishes are not here: they ship with the app, photos and all (see broadcast.tsx).
  */
 
-// In-memory mock storage (simulate DB)
-let MOCK_DB_DISHES: Dish[] = [];
+type DishOut = {
+  id: string;
+  pg_id: string;
+  name: string;
+  description: string;
+  category: string;
+  meal_types: MealType[];
+  dietary_type: DishDietaryType | null;
+  image_url: string | null;
+  source: 'custom';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
 
-// Simulate network delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export type CreateDishInput = Omit<Dish, 'id' | 'createdAt' | 'updatedAt' | 'source' | 'isActive'>;
+export type CreateDishInput = {
+  name: string;
+  category: string;
+  mealTypes: MealType[];
+  description?: string;
+  dietaryType?: DishDietaryType | null;
+  /** A photo just picked on this phone, or the dish's current photo link. */
+  imageUrl?: string;
+};
 export type UpdateDishInput = Partial<CreateDishInput>;
 
+const toDish = (d: DishOut): Dish => ({
+  id: d.id,
+  name: d.name,
+  imageUrl: d.image_url ?? undefined,
+  category: d.category,
+  description: d.description || undefined,
+  dietaryType: d.dietary_type ?? undefined,
+  source: d.source,
+  pgId: d.pg_id,
+  mealTypes: d.meal_types,
+  isActive: d.is_active,
+  createdAt: d.created_at,
+  updatedAt: d.updated_at,
+});
+
+/** A photo picked on this phone goes up to storage first; the dish then records its key.
+ *  An `https:` link is the dish's existing photo and needs nothing. */
+async function uploadIfLocal(pgId: string, uri?: string): Promise<string | undefined> {
+  if (!uri || !/^(file|content):/.test(uri)) return undefined;
+  const contentType = /\.png$/i.test(uri) ? 'image/png' : 'image/jpeg';
+  const { upload_url, object_key } = await apiFetch<{ upload_url: string; object_key: string }>(
+    API.DISH_IMAGE_UPLOAD_URL(pgId),
+    { method: 'POST', body: JSON.stringify({ content_type: contentType }) },
+  );
+  await uploadToPresignedUrl(upload_url, uri, contentType);
+  return object_key;
+}
+
+const toBody = (data: UpdateDishInput, imageKey?: string) => ({
+  ...(data.name !== undefined ? { name: data.name } : {}),
+  ...(data.category !== undefined ? { category: data.category } : {}),
+  ...(data.mealTypes !== undefined ? { meal_types: data.mealTypes } : {}),
+  ...(data.description !== undefined ? { description: data.description } : {}),
+  ...(data.dietaryType !== undefined ? { dietary_type: data.dietaryType } : {}),
+  ...(imageKey ? { image_key: imageKey } : {}),
+});
+
 export const dishService = {
-  /**
-   * Fetch custom dishes for a specific PG.
-   * Enforces the core business rule: A custom dish belongs to one PG only.
-   */
   async getPGDishes(pgId: string): Promise<Dish[]> {
-    await delay(300);
-    // Filter active dishes that belong to this exact PG
-    return MOCK_DB_DISHES.filter((d) => d.pgId === pgId && d.isActive && d.source === 'custom');
+    const rows = await apiFetch<DishOut[]>(API.DISHES(pgId));
+    return rows.map(toDish);
   },
 
   async createCustomDish(pgId: string, data: CreateDishInput): Promise<Dish> {
-    await delay(500);
-    const newDish: Dish = {
-      ...data,
-      id: `dish_${Date.now()}`,
-      pgId,
-      source: 'custom',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    MOCK_DB_DISHES.push(newDish);
-    return newDish;
+    const imageKey = await uploadIfLocal(pgId, data.imageUrl);
+    const created = await apiFetch<DishOut>(API.DISHES(pgId), {
+      method: 'POST',
+      body: JSON.stringify(toBody(data, imageKey)),
+    });
+    return toDish(created);
   },
 
-  async updateCustomDish(dishId: string, data: UpdateDishInput): Promise<Dish> {
-    await delay(500);
-    const idx = MOCK_DB_DISHES.findIndex((d) => d.id === dishId);
-    if (idx === -1) throw new Error('Dish not found');
-    
-    const updated = {
-      ...MOCK_DB_DISHES[idx],
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-    MOCK_DB_DISHES[idx] = updated;
-    return updated;
+  async updateCustomDish(pgId: string, dishId: string, data: UpdateDishInput): Promise<Dish> {
+    const imageKey = await uploadIfLocal(pgId, data.imageUrl);
+    const updated = await apiFetch<DishOut>(API.DISH(dishId), {
+      method: 'PATCH',
+      body: JSON.stringify(toBody(data, imageKey)),
+    });
+    return toDish(updated);
   },
 
   async archiveCustomDish(dishId: string): Promise<void> {
-    await delay(400);
-    const idx = MOCK_DB_DISHES.findIndex((d) => d.id === dishId);
-    if (idx === -1) throw new Error('Dish not found');
-    MOCK_DB_DISHES[idx].isActive = false;
-    MOCK_DB_DISHES[idx].updatedAt = new Date().toISOString();
+    await apiFetch<DishOut>(API.DISH_ARCHIVE(dishId), { method: 'POST' });
   },
 };

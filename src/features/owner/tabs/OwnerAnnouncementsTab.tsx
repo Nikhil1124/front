@@ -61,6 +61,7 @@ import type { GuestEntity, PaymentEntity, AppRoleNotificationEntity } from '@/ty
 import { OwnerReviewsTab } from './OwnerReviewsTab';
 import { KycDocumentsCard } from '@/components/KycDocumentsCard';
 import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
+import { keyboardAwareBack } from '@/hooks/keyboardAwareBack';
 
 const PRIMARY = Colors.primary;
 const BG = Colors.canvas;
@@ -414,7 +415,7 @@ export function OwnerAnnouncementsTab() {
   useFocusEffect(
     useCallback(() => {
       const onBack = () => { router.back(); return true; };
-      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      const sub = BackHandler.addEventListener('hardwareBackPress', keyboardAwareBack(onBack));
       return () => sub.remove();
     }, []),
   );

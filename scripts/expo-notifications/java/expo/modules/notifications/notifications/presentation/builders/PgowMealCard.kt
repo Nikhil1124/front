@@ -5,11 +5,14 @@ import android.graphics.Bitmap
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import expo.modules.notifications.R
 import expo.modules.notifications.notifications.model.Notification
 import expo.modules.notifications.notifications.model.NotificationCategory
 import expo.modules.notifications.notifications.model.triggers.FirebaseNotificationTrigger
 import expo.modules.notifications.service.NotificationsService.Companion.createNotificationResponseIntent
+import java.util.Calendar
+import java.util.Locale
 
 /**
  * PGow: the app's meal card (MealAdNotificationCard.tsx) drawn in the notification shade —
@@ -22,15 +25,19 @@ import expo.modules.notifications.service.NotificationsService.Companion.createN
  * category's own action intents, so a tap reaches the app's background task exactly as the
  * standard "I'll eat" button did and nothing on the JS side changes.
  *
- * The text comes from the push's data: `chef`, `menu`, `adBrand`, `adTagline`, `adCta`, each
- * optional (see `_gcm_payload` in the backend). A reminder, or an older server, sends none of
- * them, and the card falls back to the title and the message text.
+ * The text comes from the push's data: `chef`, `menu`, `serviceAt`, `adBrand`, `adTagline`,
+ * `adCta`, each optional (see `_gcm_payload` in the backend). A reminder, or an older server,
+ * sends none of them, and the card falls back to the title and the message text.
  *
  * Android only. iOS would need a Notification Content Extension, which the app does not have.
  */
 internal object PgowMealCard {
   private val CATEGORIES = setOf("MEAL_RSVP", "MEAL_RSVP_PROMO")
-  private val ICON = mapOf("breakfast" to "☕", "lunch" to "🍽️", "dinner" to "🌙", "snacks" to "🍪")
+  private val ICON = mapOf(
+    "breakfast" to R.drawable.pgow_ic_breakfast,
+    "lunch" to R.drawable.pgow_ic_lunch,
+    "dinner" to R.drawable.pgow_ic_dinner,
+  )
 
   // A notification's views cross the binder in one transaction; a full-size photo can push
   // it over the limit and the notification is silently dropped.
@@ -55,33 +62,36 @@ internal object PgowMealCard {
     val skip = intent("SKIP")
     val offer = intent("PROMO_CTA")
 
-    val title = content.title.orEmpty()
+    val meal = content.title.orEmpty()  // "Lunch" — the server sends the meal type as the title
+    val heading = data["serviceAt"]?.toLongOrNull()?.let { dayOf(it) }
+      ?.let { "$it's ${meal.lowercase()}" } ?: meal
     val chef = data["chef"].orEmpty()
     val menu = data["menu"].orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
-      .joinToString("  •  ").ifEmpty { content.text.orEmpty() }
+      .joinToString(" • ").ifEmpty { content.text.orEmpty() }
     val brand = data["adBrand"].orEmpty()
     val tagline = data["adTagline"].orEmpty()
 
-    fun card(layout: Int, withChef: Boolean, withButtons: Boolean) =
-      RemoteViews(context.packageName, layout).apply {
-        setTextViewText(R.id.pgow_icon, ICON[title.lowercase()] ?: "🍽️")
-        setTextViewText(R.id.pgow_title, title)
-        setTextViewText(R.id.pgow_chef, "By $chef")
-        setViewVisibility(R.id.pgow_chef, visibleIf(withChef && chef.isNotEmpty()))
-        setTextViewText(R.id.pgow_menu, menu)
-        if (withButtons) {
-          if (eat != null && skip != null) {
-            setOnClickPendingIntent(R.id.pgow_eat, eat)
-            setOnClickPendingIntent(R.id.pgow_skip, skip)
-          } else {
-            // The category is registered when the app first starts; until then there is
-            // nothing for the buttons to fire.
-            setViewVisibility(R.id.pgow_buttons, View.GONE)
-          }
-        }
+    fun views(layout: Int) = RemoteViews(context.packageName, layout).apply {
+      setImageViewResource(R.id.pgow_icon, ICON[meal.lowercase()] ?: R.drawable.pgow_ic_lunch)
+      setTextViewText(R.id.pgow_title, heading)
+    }
+    fun RemoteViews.buttons() = apply {
+      if (eat != null && skip != null) {
+        setOnClickPendingIntent(R.id.pgow_eat, eat)
+        setOnClickPendingIntent(R.id.pgow_skip, skip)
+      } else {
+        // The category is registered when the app first starts; until then there is nothing
+        // for the buttons to fire.
+        setViewVisibility(R.id.pgow_buttons, View.GONE)
       }
+    }
 
-    val big = card(R.layout.pgow_meal_card, withChef = true, withButtons = true).apply {
+    val collapsed = views(R.layout.pgow_meal_card_small).apply { setTextViewText(R.id.pgow_menu, menu) }
+    val headsUp = views(R.layout.pgow_meal_card_heads_up).buttons()
+    val big = views(R.layout.pgow_meal_card).buttons().apply {
+      setTextViewText(R.id.pgow_chef, "By chef $chef")
+      setViewVisibility(R.id.pgow_chef, visibleIf(chef.isNotEmpty()))
+      setTextViewText(R.id.pgow_menu, menu)
       setViewVisibility(R.id.pgow_ad, visibleIf(picture != null || brand.isNotEmpty()))
       setTextViewText(R.id.pgow_ad_label, if (brand.isEmpty()) "Ad" else "Ad · served by $brand")
       if (picture != null) {
@@ -106,10 +116,27 @@ internal object PgowMealCard {
     // plain text actions underneath it.
     builder.clearActions()
     builder.setStyle(NotificationCompat.DecoratedCustomViewStyle())
-    builder.setCustomContentView(card(R.layout.pgow_meal_card_head, withChef = false, withButtons = false))
-    builder.setCustomHeadsUpContentView(card(R.layout.pgow_meal_card_heads_up, withChef = false, withButtons = true))
+    builder.setCustomContentView(collapsed)
+    builder.setCustomHeadsUpContentView(headsUp)
     builder.setCustomBigContentView(big)
+    // The design's violet on the header's house icon, in place of the server's accent.
+    builder.color = ContextCompat.getColor(context, R.color.pgow_violet)
     return true
+  }
+
+  /** "Today", "Tomorrow" or a weekday within the week, in the phone's own timezone; else null. */
+  private fun dayOf(epochMillis: Long): String? {
+    fun startOfDay(c: Calendar) = c.apply {
+      set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    val service = Calendar.getInstance().apply { timeInMillis = epochMillis }
+    val days = Math.round((startOfDay(service.clone() as Calendar) - startOfDay(Calendar.getInstance())) / 86_400_000.0)
+    return when (days) {
+      0L -> "Today"
+      1L -> "Tomorrow"
+      in 2L..6L -> service.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.ENGLISH)
+      else -> null
+    }
   }
 
   /** Centre-crops to at most `ratio`:1 and caps the width at [MAX_WIDTH]. */

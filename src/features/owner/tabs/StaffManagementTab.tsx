@@ -17,6 +17,7 @@ import * as map from '@/data/mappers';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
 import { useToast } from '@/hooks/useToast';
 import { AnimatedPress, ListRow, Row, SearchField, Spacer, Txt } from '@/components/ui';
+import { keyboardAwareBack } from '@/hooks/keyboardAwareBack';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG
@@ -99,7 +100,7 @@ export function StaffManagementTab() {
         router.replace('/overview');
         return true; // prevent default
       };
-      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      const sub = BackHandler.addEventListener('hardwareBackPress', keyboardAwareBack(onBack));
       return () => sub.remove();
     }, []),
   );

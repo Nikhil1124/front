@@ -12,6 +12,11 @@
  *   2. It draws every push with the standard template, and uses the image only as the square
  *      thumbnail. Edit 2 hands meal pushes to PgowMealCard.kt, a custom layout; anything else
  *      keeps the template, with its image as a full-width banner cropped to 2:1.
+ *   3. With the app OPEN it drops a data-only push without showing it ("for consistency with
+ *      iOS"), though with the app closed it shows any that has a title. So a meal announced
+ *      while a resident was looking at the app never appeared. Edit 3 applies the closed-app
+ *      rule in both states: a data-only push with a title or text goes to the app's
+ *      notification handler like any other; one without stays silent.
  *
  * PgowMealCard.kt and its layouts live in scripts/expo-notifications/, laid out like the
  * module's android/src/main/, and are copied over it here.
@@ -82,6 +87,16 @@ const EDITS = [
       '    } else if (!drawnAsCard && !notificationContent.containsImage()) {',
       '      builder.setLargeIcon(largeIcon)',
       '    }',
+    ].join('\n'),
+  },
+  {
+    file: path.join(root, 'handling', 'NotificationsHandler.kt'),
+    mark: 'PGow: data-only in the foreground',
+    from: '    if (content is RemoteNotificationContent && content.isDataOnly) {',
+    to: [
+      '    // PGow: data-only in the foreground — shown when it has something to show, as it is when',
+      '    // the app is closed (ExpoHandlingDelegate.shouldPresent). See scripts/patch-expo-notifications.js.',
+      '    if (content is RemoteNotificationContent && content.isDataOnly && content.title.isNullOrEmpty() && content.text.isNullOrEmpty()) {',
     ].join('\n'),
   },
 ];

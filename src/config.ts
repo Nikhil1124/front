@@ -67,6 +67,12 @@ export const API = {
   MEALS: "/v1/meals",
   MEAL: (id: string) => `/v1/meals/${id}`,
   MEAL_BROADCAST: (id: string) => `/v1/meals/${id}/broadcast`,
+  MEAL_PREP_STATUS: (id: string) => `/v1/meals/${id}/prep-status`,
+  MEALS_SCHEDULED: (pgId: string) => `/v1/meals/scheduled?pg_id=${pgId}`,
+  DISHES: (pgId: string) => `/v1/dishes?pg_id=${pgId}`,
+  DISH: (id: string) => `/v1/dishes/${id}`,
+  DISH_ARCHIVE: (id: string) => `/v1/dishes/${id}/archive`,
+  DISH_IMAGE_UPLOAD_URL: (pgId: string) => `/v1/dishes/image-upload-url?pg_id=${pgId}`,
   MEAL_CLOSE: (id: string) => `/v1/meals/${id}/close`,
   MEAL_RESPONSE: (id: string) => `/v1/meals/${id}/response`,
   MEAL_SUMMARY: (id: string) => `/v1/meals/${id}/response-summary`,
@@ -99,6 +105,8 @@ export const API = {
 
   // Complaints & Requests (Flow #3)
   REQUESTS: "/v1/requests",
+  HUB_SERVICES: "/v1/hub-services",
+  HUB_SERVICE_REQUEST: (id: string) => `/v1/hub-services/${id}/request`,
   REQUEST_DETAIL: (id: string) => `/v1/requests/${id}`,
   REQUEST_EVENTS: (id: string) => `/v1/requests/${id}/events`,
   REQUEST_ATTACHMENT_UPLOAD_URL: (id: string) => `/v1/requests/${id}/attachments/upload-url`,

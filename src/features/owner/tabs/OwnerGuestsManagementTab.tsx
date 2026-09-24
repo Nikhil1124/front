@@ -14,6 +14,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useToast } from '@/hooks/useToast';
 import { formatINR } from '@/utils/format';
 import type { GuestEntity } from '@/types';
+import { keyboardAwareBack } from '@/hooks/keyboardAwareBack';
 
 const GREEN = Colors.primary;        // Deep Ocean Blue brand primary
 const BG = Colors.canvas;            // Light Ice Canvas BG
@@ -104,7 +105,7 @@ export function OwnerGuestsManagementTab() {
         router.replace('/overview');
         return true;
       };
-      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      const sub = BackHandler.addEventListener('hardwareBackPress', keyboardAwareBack(onBack));
       return () => sub.remove();
     }, []),
   );

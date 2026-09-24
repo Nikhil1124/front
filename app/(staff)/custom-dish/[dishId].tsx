@@ -41,6 +41,7 @@ export default function EditCustomDishScreen() {
       setName(dish.name);
       setCategory(dish.category);
       setMealTypes(dish.mealTypes);
+      setDescription(dish.description ?? '');
       setImageUrl(dish.imageUrl);
     }
   }, [dish]);
@@ -85,6 +86,7 @@ export default function EditCustomDishScreen() {
           category,
           mealTypes,
           imageUrl,
+          description: description.trim(),
         }
       });
       toast('success', 'Custom Dish Updated', `${trimmedName} was updated successfully.`);

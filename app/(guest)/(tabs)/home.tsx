@@ -25,6 +25,9 @@ import { Colors, Palette, Radii, DeckTints } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
+import { loadKycDraft } from '@/features/kyc/kycDraft';
+import { serviceImage, useHubServices, useServiceTap } from '@/features/hubServices/useHubServices';
+import { ServiceRequestSheet } from '@/features/hubServices/ServiceRequestSheet';
 import { useToast } from '@/hooks/useToast';
 import { useSetAwayMutation } from '@/features/auth/useAuth';
 import type { MealNotificationEntity } from '@/types';
@@ -112,6 +115,19 @@ export default function GuestHomeTab() {
   };
 
   const kycStatus = useKycStatus();
+
+  // Quick Services: the first three live services from PGow's catalog.
+  const hubServices = useHubServices();
+  const serviceTap = useServiceTap();
+  const [leadService, ...sideServices] = hubServices.slice(0, 3);
+
+  // Back on the KYC form if Android killed the app while its camera was open — the app
+  // restarts here, and the form's draft says a photo was in progress (see kycDraft.ts).
+  const kycSubmittable = canSubmitKyc(kycStatus);
+  useEffect(() => {
+    if (!kycSubmittable) return;
+    loadKycDraft().then((d) => { if (d.pendingSlot) setShowKycDialog(true); }).catch(() => {});
+  }, [kycSubmittable]);
   // `guest` is undefined until the profile loads, and `?? false` made that indistinguishable
   // from "not paid" — so every single login flashed "Rent Status: Pending" and a "₹X due"
   // banner before the real (often Paid) status arrived. A wrong financial status, however
@@ -385,52 +401,63 @@ export default function GuestHomeTab() {
         <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
           Quick Services
         </Txt>
+        {/* The first three live services, in the order the super admin set in the portal —
+            the tall tile first. They were hard-coded here; the colours stay by position, and
+            a service without an uploaded picture keeps the one it always had. */}
         <View style={styles.bentoGrid}>
-          {/* Left Column (Groceries) */}
-          <View style={styles.bentoCol}>
-            <AnimatedPress
-              accessibilityRole="button"
-              onPress={() => router.push('/groceries')}
-              style={[styles.bentoTile, styles.bentoTileTall, { backgroundColor: DeckTints.amber.fill, borderColor: DeckTints.amber.ink }]}
-            >
-              <Txt style={styles.bentoTileTitleGroceries}>Groceries</Txt>
-              <Txt size={13} color={Colors.textSecondary} style={{ marginTop: 4, width: '90%', zIndex: 10, lineHeight: 18 }}>
-                Your Daily Needs, Just a Tap Away.
-              </Txt>
-              <Image source={require('../../../assets/Quick Actions/Owner/grocery.png')} style={[styles.bentoTileImageBg, { width: 240, height: 240, bottom: -45, right: -30 }]} />
-            </AnimatedPress>
-          </View>
+          {leadService && (
+            <View style={styles.bentoCol}>
+              <AnimatedPress
+                accessibilityRole="button"
+                accessibilityLabel={leadService.title}
+                onPress={() => serviceTap.open(leadService)}
+                style={[styles.bentoTile, styles.bentoTileTall, { backgroundColor: BENTO_TINTS[0].fill, borderColor: BENTO_TINTS[0].ink }]}
+              >
+                <Txt style={styles.bentoTileTitleGroceries}>{leadService.title}</Txt>
+                {leadService.subtitle ? (
+                  <Txt size={13} color={Colors.textSecondary} style={{ marginTop: 4, width: '90%', zIndex: 10, lineHeight: 18 }}>
+                    {leadService.subtitle}
+                  </Txt>
+                ) : null}
+                {serviceImage(leadService) && (
+                  <Image source={serviceImage(leadService)!} style={[styles.bentoTileImageBg, { width: 240, height: 240, bottom: -45, right: -30 }]} />
+                )}
+              </AnimatedPress>
+            </View>
+          )}
 
-          {/* Right Column (Laundry & Support) */}
-          <View style={styles.bentoCol}>
-            <AnimatedPress
-              accessibilityRole="button"
-              onPress={() => router.push('/laundry')}
-              style={[styles.bentoTile, { backgroundColor: DeckTints.slate.fill, borderColor: DeckTints.slate.ink }]}
-            >
-              <Txt style={styles.bentoTileTitle}>Laundry</Txt>
-              {myLaundry.length > 0 && (
-                <Txt size={12} weight="700" color={Colors.primary} style={{ marginTop: 2, zIndex: 10, width: '60%' }}>
-                  {`${myLaundry.length} active order${myLaundry.length === 1 ? '' : 's'}`}
-                </Txt>
-              )}
-              <Image source={require('../../../assets/Quick Actions/Resident/laundry_nobg.png')} style={[styles.bentoTileImageBg, { bottom: -10, right: -15, width: 100, height: 100 }]} />
-            </AnimatedPress>
-
-            <AnimatedPress
-              accessibilityRole="button"
-              onPress={() => router.push('/support')}
-              style={[styles.bentoTile, { backgroundColor: DeckTints.green.fill, borderColor: DeckTints.green.ink }]}
-            >
-              <Txt style={styles.bentoTileTitle}>Support</Txt>
-              {unreadCount > 0 && (
-                <View style={styles.bentoBadge}>
-                  <Txt size={11} weight="700" color={Colors.textInverse}>{unreadCount}</Txt>
-                </View>
-              )}
-              <Image source={require('../../../assets/Quick Actions/Owner/04_complaints.png')} style={[styles.bentoTileImageBg, { bottom: -15, right: -15, width: 110, height: 110 }]} />
-            </AnimatedPress>
-          </View>
+          {sideServices.length > 0 && (
+            <View style={styles.bentoCol}>
+              {sideServices.map((svc, i) => (
+                <AnimatedPress
+                  key={svc.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={svc.title}
+                  onPress={() => serviceTap.open(svc)}
+                  style={[styles.bentoTile, { backgroundColor: BENTO_TINTS[i + 1].fill, borderColor: BENTO_TINTS[i + 1].ink }]}
+                >
+                  <Txt style={styles.bentoTileTitle}>{svc.title}</Txt>
+                  {svc.action === 'laundry' && myLaundry.length > 0 ? (
+                    <Txt size={12} weight="700" color={Colors.primary} style={{ marginTop: 2, zIndex: 10, width: '60%' }}>
+                      {`${myLaundry.length} active order${myLaundry.length === 1 ? '' : 's'}`}
+                    </Txt>
+                  ) : svc.action === 'request' && svc.subtitle ? (
+                    <Txt size={12} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 2, zIndex: 10, width: '60%' }}>
+                      {svc.subtitle}
+                    </Txt>
+                  ) : null}
+                  {svc.action === 'support' && unreadCount > 0 && (
+                    <View style={styles.bentoBadge}>
+                      <Txt size={11} weight="700" color={Colors.textInverse}>{unreadCount}</Txt>
+                    </View>
+                  )}
+                  {serviceImage(svc) && (
+                    <Image source={serviceImage(svc)!} style={[styles.bentoTileImageBg, { bottom: -12, right: -15, width: 105, height: 105 }]} />
+                  )}
+                </AnimatedPress>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* ── 4. TODAY AT PGOW ── */}
@@ -558,6 +585,7 @@ export default function GuestHomeTab() {
       </ScrollView>
 
       <KycUploadDialog visible={showKycDialog} onDismiss={() => setShowKycDialog(false)} />
+      <ServiceRequestSheet service={serviceTap.requesting} onDismiss={serviceTap.close} />
     </View>
   );
 }
@@ -565,6 +593,9 @@ export default function GuestHomeTab() {
 
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+/** Quick Services tile colours, by position — the tall tile, then the two beside it. */
+const BENTO_TINTS = [DeckTints.amber, DeckTints.slate, DeckTints.green] as const;
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFB' },
 

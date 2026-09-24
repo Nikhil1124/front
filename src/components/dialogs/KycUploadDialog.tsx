@@ -32,6 +32,11 @@ import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Radii, Colors } from '@/theme';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useToast } from '@/hooks/useToast';
+import { keyboardAwareBack } from '@/hooks/keyboardAwareBack';
+import {
+  clearKycDraft, draftIdNumber, loadKycDraft, recoverPendingPhoto, saveKycDraft,
+  type KycPhotoSlot,
+} from '@/features/kyc/kycDraft';
 import { Btn, ChoiceChips, Col, OutlinedBtn, PGowActionSheet, Row, Sheet, Spacer, Txt, type PGowAction } from '@/components/ui';
 const ID_TYPES = ['Aadhaar Card', 'PAN Card', 'Passport', 'Driving License', 'Voter ID'];
 
@@ -70,7 +75,7 @@ export function KycUploadDialog({
    * stored a document row pointing at it, and the owner opened a verification screen
    * showing a broken image for a photo that was never taken.
    */
-  const pickImage = async (from: 'camera' | 'library'): Promise<string | null> => {
+  const pickImage = async (from: 'camera' | 'library', slot?: KycPhotoSlot): Promise<string | null> => {
     const perm = from === 'camera'
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -82,9 +87,13 @@ export function KycUploadDialog({
       );
       return null;
     }
+    // Recorded before leaving the app: if Android kills it while the camera is open, the
+    // restarted app knows which photo the result belongs to (see kycDraft.ts).
+    if (slot) await saveKycDraft({ pendingSlot: slot });
     const result = from === 'camera'
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+    if (slot) await saveKycDraft({ pendingSlot: undefined });
     if (result.canceled) return null;
     return result.assets?.[0]?.uri ?? null;
   };
@@ -92,8 +101,9 @@ export function KycUploadDialog({
   // Take Photo / Choose from Library / Cancel is a menu of verbs, not a decision — an action
   // sheet, not a dialog. It was an `Alert.alert` with a buttons array, which on Android draws
   // a centred alert for what is a source picker everywhere else in the platform.
-  const [photoPicker, setPhotoPicker] = useState<{ label: string; onPicked: (uri: string) => void } | null>(null);
-  const choosePhoto = (onPicked: (uri: string) => void, label: string) => setPhotoPicker({ label, onPicked });
+  const [photoPicker, setPhotoPicker] = useState<{ label: string; slot: KycPhotoSlot; onPicked: (uri: string) => void } | null>(null);
+  const choosePhoto = (onPicked: (uri: string) => void, label: string, slot: KycPhotoSlot) =>
+    setPhotoPicker({ label, slot, onPicked });
 
   // Android hardware back: dismiss the modal rather than letting the OS
   // navigate away. Same pattern as PaymentReceiptDialog — see that file for
@@ -101,25 +111,46 @@ export function KycUploadDialog({
   useEffect(() => {
     if (!visible) return;
     if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', keyboardAwareBack(() => {
       onDismiss();
       return true;
-    });
+    }));
     return () => sub.remove();
   }, [visible, onDismiss]);
 
-  // Reset the form fields when the dialog is opened fresh. Without this,
-  // a resident who opens, types half a number, closes, and reopens would
-  // see stale state — they expect a clean form on each open.
+  // Opening picks up where the resident left off. It used to reset every field, so a form
+  // closed by accident — a Back press, a swipe, Android killing the app behind the camera —
+  // came back empty and both photos had to be taken again. The draft is cleared on submit.
+  const [restored, setRestored] = useState(false);
   useEffect(() => {
-    if (visible) {
-      setSelectedIdType(initialIdType || guest?.idProofType || 'Aadhaar Card');
-      setIdNumber(initialIdNumber);
-      setProfilePhotoUri('');
-      setIdPhotoUri('');
+    if (!visible) { setRestored(false); return; }
+    let live = true;
+    (async () => {
+      const draft = await loadKycDraft();
+      // Only after a restart does a slot stay pending; a normal return clears it.
+      const recovered = draft.pendingSlot ? await recoverPendingPhoto() : null;
+      const selfie = draft.pendingSlot === 'selfie' && recovered ? recovered : draft.selfieUri ?? '';
+      const idPhoto = draft.pendingSlot === 'idPhoto' && recovered ? recovered : draft.idPhotoUri ?? '';
+      if (draft.pendingSlot) await saveKycDraft({ pendingSlot: undefined, selfieUri: selfie, idPhotoUri: idPhoto });
+      if (!live) return;
+      setSelectedIdType(draft.idType || initialIdType || guest?.idProofType || 'Aadhaar Card');
+      setIdNumber(draftIdNumber.get() || initialIdNumber);
+      setProfilePhotoUri(selfie);
+      setIdPhotoUri(idPhoto);
       setSubmitting(false);
-    }
+      setRestored(true);
+    })();
+    return () => { live = false; };
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Kept as it changes, not on close: a killed app never gets to run a close handler.
+  useEffect(() => {
+    if (!restored) return;
+    void saveKycDraft({ idType: selectedIdType, selfieUri: profilePhotoUri, idPhotoUri });
+  }, [restored, selectedIdType, profilePhotoUri, idPhotoUri]);
+  useEffect(() => {
+    if (restored) draftIdNumber.set(idNumber);
+  }, [restored, idNumber]);
 
   // Only Aadhaar has anywhere to go: the backend stores `aadhaar_last4` and NOTHING else —
   // `user_documents` has no column for a PAN or passport number, deliberately ("the owner
@@ -150,6 +181,7 @@ export function KycUploadDialog({
     const r = await submitKyc(selectedIdType, idNumber, idPhotoUri, profilePhotoUri);
     setSubmitting(false);
     if (r.ok) {
+      await clearKycDraft();
       toast(
         'success',
         'Documents submitted',
@@ -160,6 +192,9 @@ export function KycUploadDialog({
       toast('error', 'Could not submit', r.error ?? 'Please try again.');
     }
   };
+
+  // Read at render, like `onPicked`: the action sheet clears `photoPicker` before its handler runs.
+  const pickerSlot = photoPicker?.slot;
 
   return (
     <>
@@ -232,7 +267,7 @@ export function KycUploadDialog({
           </View>
           <Col style={{ flex: 1 }}>
             <Btn
-              onPress={() => choosePhoto((uri) => { setProfilePhotoUri(uri); setPhotoErrors((e) => ({ ...e, selfie: undefined })); }, 'Selfie')}
+              onPress={() => choosePhoto((uri) => { setProfilePhotoUri(uri); setPhotoErrors((e) => ({ ...e, selfie: undefined })); }, 'Selfie', 'selfie')}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
               borderRadius={Radii.control}
@@ -296,7 +331,7 @@ export function KycUploadDialog({
           </View>
           <Col style={{ flex: 1 }}>
             <Btn
-              onPress={() => choosePhoto((uri) => { setIdPhotoUri(uri); setPhotoErrors((e) => ({ ...e, idPhoto: undefined })); }, 'ID Document Photo')}
+              onPress={() => choosePhoto((uri) => { setIdPhotoUri(uri); setPhotoErrors((e) => ({ ...e, idPhoto: undefined })); }, 'ID Document Photo', 'idPhoto')}
               containerColor={Colors.primary}
               textColor={Colors.textInverse}
               borderRadius={Radii.control}
@@ -324,7 +359,7 @@ export function KycUploadDialog({
       visible={photoPicker != null}
       title={photoPicker?.label}
       onDismiss={() => setPhotoPicker(null)}
-      actions={photoSourceActions(photoPicker?.onPicked, pickImage)}
+      actions={photoSourceActions(photoPicker?.onPicked, (from) => pickImage(from, pickerSlot))}
       testID="kyc_photo_source"
     />
     </>

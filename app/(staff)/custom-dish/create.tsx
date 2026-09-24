@@ -71,7 +71,7 @@ export default function CreateCustomDishScreen() {
         category,
         mealTypes,
         imageUrl,
-        // Description could be added to the Dish type, omitting for now or mapped to an extension
+        description: description.trim(),
       });
       toast('success', 'Custom Dish Created', `${trimmedName} added to catalog`);
       router.back();

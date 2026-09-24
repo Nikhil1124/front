@@ -2,7 +2,7 @@
  * GuestHubServicesTab — Redesigned Services & Marketplace tab.
  * Visual System: Unified Luxury Emerald Palette (#0F5E4A / #173A33 / #F6F1E9 / #B8C4B2).
  */
-import { ScrollView, View, StyleSheet, RefreshControl } from 'react-native';
+import { ScrollView, View, StyleSheet, RefreshControl, Image, type ImageSourcePropType } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Palette, Radii } from '@/theme';
@@ -11,9 +11,24 @@ import { useAuthStore } from '@/store/authStore';
 import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, Card, Col, ErrorState, LoadingState, Row, Spacer, Txt } from '@/components/ui';
-import { useToast } from '@/hooks/useToast';
+import { serviceImage, useHubServices, useServiceTap, type HubServiceAction } from '@/features/hubServices/useHubServices';
+import { ServiceRequestSheet } from '@/features/hubServices/ServiceRequestSheet';
+
+const SERVICE_ICON: Record<HubServiceAction, keyof typeof Ionicons.glyphMap> = {
+  groceries: 'basket',
+  laundry: 'shirt-outline',
+  support: 'chatbox-ellipses',
+  request: 'sparkles',
+};
+const SERVICE_BUTTON: Record<HubServiceAction, string> = {
+  groceries: 'Order Now',
+  laundry: 'Book Pickup',
+  support: 'Raise Now',
+  request: 'Request',
+};
 export function GuestHubServicesTab() {
-  const toast = useToast();
+  const hubServices = useHubServices();
+  const serviceTap = useServiceTap();
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
   const {
@@ -124,36 +139,20 @@ export function GuestHubServicesTab() {
           PG Marketplace & Quick Amenities
         </Txt>
         <Row gap={12} style={{ flexWrap: 'wrap' }}>
-          <HubServiceCard
-            title="GROCERIES"
-            desc="Essentials delivered to room"
-            icon="basket"
-            buttonText="Order Now"
-            onPress={() => router.push('/groceries')}
-          />
-          <HubServiceCard
-            title="RAISE COMPLAINT"
-            desc="Report an issue or request"
-            icon="chatbox-ellipses"
-            buttonText="Raise Now"
-            onPress={() => router.push('/(guest)/(tabs)/support')}
-          />
-          <HubServiceCard
-            title="DEEP CLEANING"
-            desc="Room sanitation"
-            icon="sparkles"
-            available={false}
-            buttonText="Notify Me"
-            onPress={() => toast('info', 'Not available yet', 'Deep cleaning bookings are coming soon.')}
-          />
-          <HubServiceCard
-            title="WI-FI & INTERNET"
-            desc="Bandwidth & plans"
-            icon="wifi"
-            available={false}
-            buttonText="Manage"
-            onPress={() => toast('info', 'Not available yet', 'Wi-Fi plan management is coming soon.')}
-          />
+          {/* From PGow's catalog, kept in the portal. Laundry has its own card above. The two
+              "coming soon" tiles that used to sit here are gone: a super admin adds a real
+              service instead, and residents can ask for it. */}
+          {hubServices.filter((svc) => svc.action !== 'laundry').map((svc) => (
+            <HubServiceCard
+              key={svc.id}
+              title={svc.title.toUpperCase()}
+              desc={svc.subtitle}
+              icon={SERVICE_ICON[svc.action]}
+              image={serviceImage(svc)}
+              buttonText={SERVICE_BUTTON[svc.action]}
+              onPress={() => serviceTap.open(svc)}
+            />
+          ))}
         </Row>
 
         <Spacer size={16} />
@@ -171,6 +170,7 @@ export function GuestHubServicesTab() {
 
         <Spacer size={32} />
       </ScrollView>
+      <ServiceRequestSheet service={serviceTap.requesting} onDismiss={serviceTap.close} />
 
 
     </View>
@@ -191,8 +191,9 @@ export function GuestHubServicesTab() {
  * twice to check whether the first one registered.
  */
 function HubServiceCard({
-  title, desc, icon, buttonText, onPress, available = true }: {
+  title, desc, icon, image, buttonText, onPress, available = true }: {
   title: string; desc: string; icon: keyof typeof Ionicons.glyphMap;
+  image?: ImageSourcePropType | null;
   buttonText: string; onPress: () => void; available?: boolean;
 }) {
   return (
@@ -204,7 +205,11 @@ function HubServiceCard({
     >
       <Row justify="space-between" align="center">
         <View style={styles.gridIconWrap}>
-          <Ionicons name={icon} size={22} color={Colors.primary} />
+          {image ? (
+            <Image source={image} style={{ width: 30, height: 30 }} resizeMode="contain" />
+          ) : (
+            <Ionicons name={icon} size={22} color={Colors.primary} />
+          )}
         </View>
         {available ? (
           <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />

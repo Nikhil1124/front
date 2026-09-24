@@ -19,7 +19,7 @@ import { BroadcastComposer } from '@/features/kitchen/components/BroadcastCompos
 import { ScheduledBroadcastCard } from '@/features/kitchen/components/ScheduledBroadcastCard';
 import { useMyTripsQuery } from '@/features/staff/useTrips';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
-import { useMealResponsesQuery } from '@/features/meals/useMeals';
+import { useMealResponsesQuery, useUpdatePrepStatusMutation, type PrepStatus } from '@/features/meals/useMeals';
 import { parseTime } from '@/utils/format';
 
 export default function ChefKitchenTab() {
@@ -30,13 +30,32 @@ export default function ChefKitchenTab() {
 
 function ChefKitchenView() {
   const dockScroll = useDockScroll();
-  const [prepStage, setPrepStage] = useState<PrepStage>('PREPPING');
   const [composerMessage, setComposerMessage] = useState('');
   
   const activePgId = useAuthStore((s) => s.activePgId);
   const broadcastMutation = useBroadcastNotificationMutation(activePgId ?? undefined);
   const { activeMeal } = useActiveMeal();
   const toast = useToast();
+
+  // The stage lives on the meal, on the server — it used to be state here, so it went back to
+  // Prepping every time the app restarted. A tap shows at once and is saved behind it.
+  const updatePrep = useUpdatePrepStatusMutation(activePgId ?? undefined);
+  const [pendingStage, setPendingStage] = useState<PrepStage | null>(null);
+  const prepStage: PrepStage =
+    pendingStage ?? ((activeMeal?.prepStatus ?? 'prepping').toUpperCase() as PrepStage);
+  const setPrepStage = (stage: PrepStage) => {
+    if (!activeMeal) return;
+    setPendingStage(stage);
+    updatePrep.mutate(
+      { mealId: activeMeal.id, prepStatus: stage.toLowerCase() as PrepStatus },
+      {
+        onError: (err) => {
+          setPendingStage(null);
+          toast('error', 'Not saved', err instanceof Error ? err.message : 'Check your connection and try again.');
+        },
+      },
+    );
+  };
   
   const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
 
@@ -60,8 +79,9 @@ function ChefKitchenView() {
   if (prepStage === 'COOKING') portionsPrepared = Math.floor(portionsToPrepare / 2);
   if (prepStage === 'READY') portionsPrepared = portionsToPrepare;
 
+  // A different meal brings its own saved stage.
   useEffect(() => {
-    setPrepStage('PREPPING');
+    setPendingStage(null);
   }, [activeMeal?.id]);
 
   const broadcastToResidents = async (title: string, body: string) => {

@@ -47,7 +47,15 @@ export async function uploadToPresignedUrl(
   if (/^(sample:|mock_media|mock_photo)/.test(fileUri)) {
     throw new Error("No photo was captured. Take or choose a photo and try again.");
   }
-  const rawBlob = await (await fetch(fileUri)).blob();
+  const local = await fetch(fileUri);
+  // Reading a local file that is not there does not throw: Expo's fetch answers a missing
+  // file:// with a 404 whose body is the text "File not found". Unchecked, those 14 bytes
+  // went up as the photo, and the server rejected them as "not a recognised image" — a
+  // message about the photo when the photo had never been read.
+  if (!local.ok) {
+    throw new Error("That photo could not be read from your phone. Take it again, or choose another.");
+  }
+  const rawBlob = await local.blob();
   // React Native's networking bridge sends the Content-Type it reads off the Blob's own
   // `type`, not reliably the explicit header below — and a blob read back from a local
   // file:// URI often doesn't carry the one we asked S3 to sign for. That mismatch is a 403

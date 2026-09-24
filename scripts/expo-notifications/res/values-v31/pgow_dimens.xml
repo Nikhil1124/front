@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The supplied design's sizes. Android 12+ caps an expanded notification at 358dp, header
+     included, which leaves ~288dp for the card; this comes to ~280. -->
+<resources>
+    <dimen name="pgow_icon">22dp</dimen>
+    <dimen name="pgow_title">18sp</dimen>
+    <dimen name="pgow_chef">14sp</dimen>
+    <dimen name="pgow_menu">15sp</dimen>
+    <dimen name="pgow_menu_gap">6dp</dimen>
+    <dimen name="pgow_button_height">42dp</dimen>
+    <dimen name="pgow_button_text">16sp</dimen>
+    <dimen name="pgow_buttons_gap">12dp</dimen>
+    <dimen name="pgow_card_gap">8dp</dimen>
+    <dimen name="pgow_ad_image">60dp</dimen>
+    <dimen name="pgow_brand">15sp</dimen>
+    <dimen name="pgow_tagline">13sp</dimen>
+    <dimen name="pgow_cta_height">32dp</dimen>
+    <dimen name="pgow_cta_text">14sp</dimen>
+</resources>

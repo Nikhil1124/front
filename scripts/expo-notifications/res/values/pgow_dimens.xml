@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The expanded meal card below Android 12, where a custom view gets 256dp. values-v31 holds
+     the design's own sizes, which need the ~288dp Android 12 allows. -->
+<resources>
+    <dimen name="pgow_icon">20dp</dimen>
+    <dimen name="pgow_title">16sp</dimen>
+    <dimen name="pgow_chef">13sp</dimen>
+    <dimen name="pgow_menu">14sp</dimen>
+    <dimen name="pgow_menu_gap">4dp</dimen>
+    <dimen name="pgow_button_height">38dp</dimen>
+    <dimen name="pgow_button_text">15sp</dimen>
+    <dimen name="pgow_buttons_gap">10dp</dimen>
+    <dimen name="pgow_card_gap">6dp</dimen>
+    <dimen name="pgow_ad_image">48dp</dimen>
+    <dimen name="pgow_brand">14sp</dimen>
+    <dimen name="pgow_tagline">12sp</dimen>
+    <dimen name="pgow_cta_height">30dp</dimen>
+    <dimen name="pgow_cta_text">13sp</dimen>
+</resources>
