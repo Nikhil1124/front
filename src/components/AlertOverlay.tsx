@@ -144,42 +144,44 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
         onPress={onDismiss}
         style={[styles.toast, { borderLeftColor: style.accent }]}
       >
-        <Ionicons name={style.icon} size={18} color={style.accent} style={styles.icon} />
-        <View style={{ flex: 1 }}>
-          <Txt size={13} weight="700" color={Colors.textPrimary} numberOfLines={1}>
-            {alert.title}
-          </Txt>
-          {alert.description ? (
-            <Txt size={11} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 1, lineHeight: 15 }}>
-              {alert.description}
+        <View style={styles.headerRow}>
+          <Ionicons name={style.icon} size={18} color={style.accent} style={styles.icon} />
+          <View style={{ flex: 1 }}>
+            <Txt size={13} weight="700" color={Colors.textPrimary} numberOfLines={1}>
+              {alert.title}
             </Txt>
-          ) : null}
-
-          {showRSVP && (
-            <View style={styles.banner}>
-              <Ionicons name="image-outline" size={32} color={Colors.textMuted} />
-            </View>
-          )}
-
-          {showRSVP && (
-            <View style={{ marginTop: 8 }}>
-              {rsvpChoice == null ? (
-                <Row gap={6}>
-                  <AnimatedPress accessibilityRole="button" onPress={() => answer('EATING')} style={[styles.miniBtn, { backgroundColor: Colors.success }]}>
-                    <Txt size={11} weight="700" color={Colors.textInverse}>I'll eat</Txt>
-                  </AnimatedPress>
-                  <AnimatedPress accessibilityRole="button" onPress={() => answer('SKIPPING')} style={[styles.miniBtn, { backgroundColor: Colors.danger }]}>
-                    <Txt size={11} weight="700" color={Colors.textInverse}>Skip</Txt>
-                  </AnimatedPress>
-                </Row>
-              ) : (
-                <Txt size={11} weight="700" color={Colors.success}>
-                  Marked as {rsvpChoice === 'EATING' ? 'eating' : 'skipping'} ✓
-                </Txt>
-              )}
-            </View>
-          )}
+            {alert.description ? (
+              <Txt size={11} color={Colors.textSecondary} numberOfLines={2} style={{ marginTop: 1, lineHeight: 15 }}>
+                {alert.description}
+              </Txt>
+            ) : null}
+          </View>
         </View>
+
+        {showRSVP && (
+          <View style={styles.banner}>
+            <Ionicons name="image-outline" size={42} color={Colors.textMuted} />
+          </View>
+        )}
+
+        {showRSVP && (
+          <View style={{ marginTop: 12 }}>
+            {rsvpChoice == null ? (
+              <Row gap={8}>
+                <AnimatedPress accessibilityRole="button" onPress={() => answer('EATING')} style={[styles.miniBtn, { backgroundColor: Colors.success, flex: 1, alignItems: 'center' }]}>
+                  <Txt size={13} weight="700" color={Colors.textInverse}>I'll eat</Txt>
+                </AnimatedPress>
+                <AnimatedPress accessibilityRole="button" onPress={() => answer('SKIPPING')} style={[styles.miniBtn, { backgroundColor: Colors.danger, flex: 1, alignItems: 'center' }]}>
+                  <Txt size={13} weight="700" color={Colors.textInverse}>Skip</Txt>
+                </AnimatedPress>
+              </Row>
+            ) : (
+              <Txt size={12} weight="700" color={Colors.success} style={{ textAlign: 'center' }}>
+                Marked as {rsvpChoice === 'EATING' ? 'eating' : 'skipping'} ✓
+              </Txt>
+            )}
+          </View>
+        )}
       </AnimatedPress>
     </Animated.View>
   );
@@ -195,33 +197,35 @@ const styles = StyleSheet.create({
   },
   animWrap: { width: '100%', maxWidth: 420 },
   toast: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
     backgroundColor: Colors.surface,
     borderRadius: Radii.card,
     borderLeftWidth: 3,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    // A soft shadow reads as "floating above the screen", which is what tells the eye this
-    // is a transient toast and not another card in the layout underneath it.
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 6,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
   icon: { marginTop: 1 },
   /** Placeholder for the sponsored-meal banner. The real image is drawn by the OS from the
    *  push payload's `notification.image` — this stands in for it inside the app's own toast,
    *  which never sees a remote notification. `badge` is 6, the radius this was written with. */
   banner: {
-    marginTop: 8,
-    height: 100,
+    marginTop: 12,
+    height: 140,
+    width: '100%',
     backgroundColor: Colors.borderMuted,
-    borderRadius: Radii.badge,
+    borderRadius: Radii.control,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   miniBtn: {
     paddingHorizontal: 10,
