@@ -19,7 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
 import Notifications from '../src/data/notificationsCompat';
 
-import { usePGowStore } from '@/store/usePGowStore';
+import { usePGowStore, resetPerPersonState } from '@/store/usePGowStore';
 import { isOpsPortalUser, isPartnerAppUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
 import { queryClient } from '@/data/queryClient';
 import { setGateHandler, setSessionExpiredHandler } from '@/data/apiClient';
@@ -65,6 +65,8 @@ setSessionExpiredHandler(() => {
     loggedInStaff: null,
     _initialized: false,
   });
+  // The cart, checklist, meal defaults and KYC draft too — the same as signing out.
+  resetPerPersonState();
   useAuthStore.getState().logout();
 });
 

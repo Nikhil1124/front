@@ -1,20 +1,23 @@
 /**
- * The facility-checks room/item grid (Working / Needs Attention / Broken), persisted on this
- * device only.
+ * The facility-checks grid (Working / Needs Attention / Not Working).
  *
- * ponytail: there is no backend concept for this — checked pg-backend for anything named
- * checklist/inspection/facility and found nothing. `HousekeepingDashboard`'s "Save Progress"
- * used to show a confirmation dialog that read "Your inspection progress has been securely
- * saved to the server" and then discarded the whole tree the moment the component unmounted;
- * nothing was ever saved anywhere, server or otherwise. This at least makes the save real —
- * AsyncStorage, same pattern as the grocery cart and wishlist — so progress survives an app
- * restart. It does not sync across devices and there is no history of who changed what when.
- * Upgrade path: a real `pg-backend` endpoint (a `facility_checks` table keyed by pg_id, room,
- * item) if this ever needs to be visible to more than the one device that filled it in.
+ * The rooms are the property's own, as the owner set them up — floors and room numbers, from
+ * `GET /v1/pgs/{id}/rooms`. They used to be a fixed "Room 201 / 202 / 203" at every property.
+ * The building-wide checks (cleanliness, kitchen, plumbing, general) are the same everywhere.
+ *
+ * ponytail: the statuses are still kept on this phone only — pg-backend has no checklist
+ * table. They are kept per property, so someone working at two never sees one's checks on
+ * the other's rooms, and they are cleared on sign-out. Upgrade path: a `facility_checks`
+ * table keyed by pg_id, room, item, if they ever need to reach the owner or another phone.
  */
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from "@tanstack/react-query";
+
+import { API } from "../../config";
+import { apiFetch } from "../../data/apiClient";
+import { qk } from "../../data/queryKeys";
 
 export type ChecklistItemStatus = "Working" | "Needs Attention" | "Not Working";
 
@@ -30,51 +33,84 @@ export interface ChecklistRoom {
 
 export type ChecklistTree = Record<string, ChecklistRoom[]>;
 
-const DEFAULT_TREE: ChecklistTree = {
-  Electrical: [
-    { room: "Room 201", items: [{ name: "Lights", status: "Working" }, { name: "Fan", status: "Working" }, { name: "Switches", status: "Working" }] },
-    { room: "Room 202", items: [{ name: "Lights", status: "Working" }, { name: "Fan", status: "Working" }, { name: "Switches", status: "Working" }] },
-    { room: "Room 203", items: [{ name: "Lights", status: "Working" }, { name: "Fan", status: "Working" }, { name: "Switches", status: "Working" }] },
-  ],
-  Cleanliness: [
-    { room: "Building Cleanliness", items: [{ name: "Rooms", status: "Working" }, { name: "Bathrooms", status: "Working" }, { name: "Common Area", status: "Working" }, { name: "Corridors", status: "Working" }, { name: "Waste Disposal", status: "Working" }] },
-  ],
-  "Kitchen Hygiene": [
-    { room: "Kitchen Check", items: [{ name: "Cooking Area", status: "Working" }, { name: "Utensils", status: "Working" }, { name: "Food Storage", status: "Working" }, { name: "Refrigerator", status: "Working" }, { name: "Waste Disposal", status: "Working" }] },
-  ],
-  General: [
-    { room: "General Facilities", items: [{ name: "Doors & Windows", status: "Working" }, { name: "Pest Control", status: "Working" }] },
-  ],
-  Plumbing: [
-    { room: "Plumbing Checks", items: [{ name: "Water Supply", status: "Working" }, { name: "Leaks", status: "Working" }, { name: "Drainage", status: "Working" }] },
-  ],
+interface PgRoom {
+  floor_number: number;
+  room_number: string;
+}
+
+/** Checked in every room the owner set up. */
+const ROOM_ITEMS = ["Lights", "Fan", "Switches"];
+
+/** The same at every property. */
+const BUILDING: Record<string, { room: string; items: string[] }[]> = {
+  Cleanliness: [{ room: "Building Cleanliness", items: ["Rooms", "Bathrooms", "Common Area", "Corridors", "Waste Disposal"] }],
+  "Kitchen Hygiene": [{ room: "Kitchen Check", items: ["Cooking Area", "Utensils", "Food Storage", "Refrigerator", "Waste Disposal"] }],
+  General: [{ room: "General Facilities", items: ["Doors & Windows", "Pest Control"] }],
+  Plumbing: [{ room: "Plumbing Checks", items: ["Water Supply", "Leaks", "Drainage"] }],
 };
 
+const key = (category: string, room: string, item: string) => `${category}|${room}|${item}`;
+
+function buildChecklist(rooms: PgRoom[], statuses: Record<string, ChecklistItemStatus>): ChecklistTree {
+  const group = (category: string, room: string, items: string[]): ChecklistRoom => ({
+    room,
+    items: items.map((name) => ({ name, status: statuses[key(category, room, name)] ?? "Working" })),
+  });
+  const tree: ChecklistTree = {
+    Electrical: rooms.map((r) => group("Electrical", `Floor ${r.floor_number} · Room ${r.room_number}`, ROOM_ITEMS)),
+  };
+  for (const [category, groups] of Object.entries(BUILDING)) {
+    tree[category] = groups.map((g) => group(category, g.room, g.items));
+  }
+  return tree;
+}
+
 interface MaintenanceChecklistState {
-  tree: ChecklistTree;
-  setItemStatus: (category: string, room: string, itemName: string, status: ChecklistItemStatus) => void;
+  /** pgId → "category|room|item" → status. Only what someone actually changed. */
+  statuses: Record<string, Record<string, ChecklistItemStatus>>;
+  setItemStatus: (pgId: string, category: string, room: string, itemName: string, status: ChecklistItemStatus) => void;
 }
 
 export const useMaintenanceChecklist = create<MaintenanceChecklistState>()(
   persist(
     (set) => ({
-      tree: DEFAULT_TREE,
-      setItemStatus: (category, room, itemName, status) =>
-        set((state) => {
-          const rooms = state.tree[category] ?? [];
-          const nextRooms = rooms.map((r) =>
-            r.room !== room
-              ? r
-              : { ...r, items: r.items.map((it) => (it.name === itemName ? { ...it, status } : it)) }
-          );
-          return { tree: { ...state.tree, [category]: nextRooms } };
-        }),
+      statuses: {},
+      setItemStatus: (pgId, category, room, itemName, status) =>
+        set((state) => ({
+          statuses: {
+            ...state.statuses,
+            [pgId]: { ...state.statuses[pgId], [key(category, room, itemName)]: status },
+          },
+        })),
     }),
     {
       name: "pgow-maintenance-checklist",
       storage: createJSONStorage(() => AsyncStorage),
+      // v0 was one tree for the phone, on made-up rooms; nothing in it maps onto real ones.
+      version: 1,
+      migrate: () => ({ statuses: {} }),
     }
   )
 );
+
+/** The checklist for this property: its real rooms, the building-wide checks, and whatever
+ *  has been marked on this phone. `hasRooms` false means the owner has not set rooms up yet. */
+export function useFacilityChecklist(pgId: string | null) {
+  const { data: rooms = [], isLoading } = useQuery({
+    queryKey: qk.properties.rooms(pgId ?? ""),
+    queryFn: () => apiFetch<PgRoom[]>(API.PG_ROOMS(pgId!)),
+    enabled: !!pgId,
+  });
+  const statuses = useMaintenanceChecklist((s) => (pgId ? s.statuses[pgId] : undefined));
+  const save = useMaintenanceChecklist((s) => s.setItemStatus);
+  return {
+    tree: buildChecklist(rooms, statuses ?? {}),
+    roomsLoading: isLoading,
+    hasRooms: rooms.length > 0,
+    setItemStatus: (category: string, room: string, itemName: string, status: ChecklistItemStatus) => {
+      if (pgId) save(pgId, category, room, itemName, status);
+    },
+  };
+}
 
 export default useMaintenanceChecklist;

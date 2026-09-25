@@ -23,7 +23,8 @@ import {
   useMealsQuery,
   useCreateMealMutation,
   useUpdateMealMutation,
-  useBroadcastMealMutation } from '@/features/meals/useMeals';
+  useBroadcastMealMutation,
+  useNudgeMealMutation } from '@/features/meals/useMeals';
 import { useMyTripsQuery } from '@/features/staff/useTrips';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
@@ -43,23 +44,46 @@ const FOLLOWUP_REMINDER_TITLE = '🚨 15-Min RSVP Check';
 const FOLLOWUP_REMINDER_BODY = "Check who hasn't responded to the active meal, and tap Send Follow-up Now if it's worth another nudge.";
 
 const PRESET_DISHES: VisualDishItem[] = [
-  { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/poori.webp') },
-  { name: 'Idli', icon: '⚪', category: 'Breakfast', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/idli.webp') },
-  { name: 'Dosa', icon: '🥞', category: 'Breakfast', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/dosa.webp') },
-  { name: 'Uttapam', icon: '🍕', category: 'Breakfast', isVeg: true, rating: '4.4', image_url: require('../../../assets/food/uttapam.webp') },
-  { name: 'Upma', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.4', image_url: require('../../../assets/food/upma.webp') },
-  { name: 'Poha', icon: '🥣', category: 'Breakfast', isVeg: true, rating: '4.3', image_url: require('../../../assets/food/poha.webp') },
-  { name: 'Pasta', icon: '🍝', category: 'Breakfast', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/pasta.webp') },
-  { name: 'Steamed Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, rating: '4.6', image_url: require('../../../assets/food/whiterice.webp') },
-  { name: 'Dal', icon: '🥣', category: 'Rice & Dal', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/dal.webp') },
-  { name: 'Sambar', icon: '🥘', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/dal.webp') },
-  { name: 'Lemon Rice', icon: '🍋', category: 'Rice & Dal', isVeg: true, rating: '4.5', image_url: require('../../../assets/food/whiterice.webp') },
-  { name: 'Biryani', icon: '🍛', category: 'Rice & Dal', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/biryani.webp') },
-  { name: 'Paneer Curry', icon: '🧀', category: 'Curry', isVeg: true, rating: '4.7', image_url: require('../../../assets/food/paneer.webp') },
-  { name: 'Egg Curry', icon: '🥚', category: 'Curry', isVeg: false, rating: '4.6', image_url: require('../../../assets/food/chicken.webp') },
-  { name: 'Chicken Curry', icon: '🍗', category: 'Curry', isVeg: false, rating: '4.8', image_url: require('../../../assets/food/chicken.webp') },
-  { name: 'Sweets', icon: '🍬', category: 'Snacks', isVeg: true, rating: '4.8', image_url: require('../../../assets/food/sweet.webp') },
+  { name: 'Poori', icon: '🫓', category: 'Breakfast', isVeg: true, image_url: require('../../../assets/food/poori.webp') },
+  { name: 'Idli', icon: '⚪', category: 'Breakfast', isVeg: true, image_url: require('../../../assets/food/idli.webp') },
+  { name: 'Dosa', icon: '🥞', category: 'Breakfast', isVeg: true, image_url: require('../../../assets/food/dosa.webp') },
+  { name: 'Uttapam', icon: '🍕', category: 'Breakfast', isVeg: true, image_url: require('../../../assets/food/uttapam.webp') },
+  { name: 'Upma', icon: '🥣', category: 'Breakfast', isVeg: true, image_url: require('../../../assets/food/upma.webp') },
+  { name: 'Poha', icon: '🥣', category: 'Breakfast', isVeg: true, image_url: require('../../../assets/food/poha.webp') },
+  { name: 'Pasta', icon: '🍝', category: 'Breakfast', isVeg: true, image_url: require('../../../assets/food/pasta.webp') },
+  { name: 'Steamed Rice', icon: '🍚', category: 'Rice & Dal', isVeg: true, image_url: require('../../../assets/food/whiterice.webp') },
+  { name: 'Dal', icon: '🥣', category: 'Rice & Dal', isVeg: true, image_url: require('../../../assets/food/dal.webp') },
+  { name: 'Sambar', icon: '🥘', category: 'Rice & Dal', isVeg: true, image_url: require('../../../assets/food/dal.webp') },
+  { name: 'Lemon Rice', icon: '🍋', category: 'Rice & Dal', isVeg: true, image_url: require('../../../assets/food/whiterice.webp') },
+  { name: 'Biryani', icon: '🍛', category: 'Rice & Dal', isVeg: false, image_url: require('../../../assets/food/biryani.webp') },
+  { name: 'Paneer Curry', icon: '🧀', category: 'Curry', isVeg: true, image_url: require('../../../assets/food/paneer.webp') },
+  { name: 'Egg Curry', icon: '🥚', category: 'Curry', isVeg: false, image_url: require('../../../assets/food/chicken.webp') },
+  { name: 'Chicken Curry', icon: '🍗', category: 'Curry', isVeg: false, image_url: require('../../../assets/food/chicken.webp') },
+  { name: 'Sweets', icon: '🍬', category: 'Snacks', isVeg: true, image_url: require('../../../assets/food/sweet.webp') },
 ];
+
+/**
+ * When a meal is served. A new meal takes the next time the clock shows the chosen time —
+ * tomorrow once today's has passed, which is how a chef posts tomorrow's breakfast the evening
+ * before. It used to be today regardless, so a breakfast posted at night was dated that
+ * morning: its RSVPs closed the moment it was announced, or it collided with today's
+ * breakfast. An edited meal keeps its own day and only its time moves.
+ */
+function serviceDateFor(serviceTime: string, editingMealDate: number | null): Date {
+  const { hour, minute } = parseTime(serviceTime);
+  const at = editingMealDate ? new Date(editingMealDate) : new Date();
+  at.setHours(hour, minute, 0, 0);
+  if (!editingMealDate && at.getTime() <= Date.now()) at.setDate(at.getDate() + 1);
+  return at;
+}
+
+function dayWord(at: Date): string {
+  const start = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((start(at) - start(new Date())) / 86_400_000);
+  if (days === 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  return at.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+}
 
 export default function ChefBroadcastTab() {
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -76,6 +100,7 @@ function ChefBroadcastView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDishes, setSelectedDishes] = useState<string[]>([]);
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
+  const [editingMealDate, setEditingMealDate] = useState<number | null>(null);
 
   const activePgId = useAuthStore((s) => s.activePgId);
   const { data: customDishes = [] } = useCustomDishesQuery(activePgId ?? undefined);
@@ -101,7 +126,18 @@ function ChefBroadcastView() {
   const getAlertTriggerTime = usePGowStore((s) => s.getAlertTriggerTime);
   const selectMealType = usePGowStore((s) => s.selectMealType);
   const triggerChefAlarm = usePGowStore((s) => s.triggerChefAlarm);
-  const triggerFollowup = usePGowStore((s) => s.trigger15MinUnresponsiveFollowup);
+  const nudge = useNudgeMealMutation();
+  // To the residents who have not answered the meal on screen. It used to re-send the newest
+  // meal in the list (tomorrow's, if posted) as "Menu updated" to everyone.
+  const triggerFollowup = async () => {
+    if (!activeMeal) return;
+    try {
+      const { reminded } = await nudge.mutateAsync(activeMeal.id);
+      toast('success', 'Follow-up sent', reminded === 1 ? '1 resident who has not answered.' : `${reminded} residents who have not answered.`);
+    } catch (err) {
+      toast('error', 'Not sent', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
   const createMealMutation = useCreateMealMutation(activePgId ?? undefined);
   const updateMealMutation = useUpdateMealMutation(activePgId ?? undefined);
   const broadcastMealMutation = useBroadcastMealMutation(activePgId ?? undefined);
@@ -175,6 +211,7 @@ function ChefBroadcastView() {
 
   const startEditingMeal = (meal: MealNotificationEntity) => {
     setEditingMealId(meal.id);
+    setEditingMealDate(meal.timestamp);
     clearMenuError(); setSelectedDishes([]);
     set('mealTypeSelected', meal.mealType);
     set('menuItemsInput', meal.menuItems);
@@ -184,6 +221,7 @@ function ChefBroadcastView() {
 
   const cancelEditingMeal = () => {
     setEditingMealId(null);
+    setEditingMealDate(null);
     clearMenuError(); setSelectedDishes([]);
     set('menuItemsInput', '');
     set('chefNoteInput', '');
@@ -207,14 +245,17 @@ function ChefBroadcastView() {
     }
     
     // Default to veg if no custom selection dictates otherwise. The prompt requested removing the UI for it, but the API still needs it.
+    // The chef's own dishes count too: they carry a dietary type from the catalog. Only the
+    // built-in list was checked, so a custom "Mutton Curry" went out labelled veg. Egg counts
+    // as non-veg — that is the line a vegetarian resident draws.
     let finalDietaryType: 'veg' | 'non_veg' = 'veg';
-    if (selectedDishes.some(name => PRESET_DISHES.find(d => d.name === name)?.isVeg === false)) {
+    if (selectedDishes.some((name) =>
+      PRESET_DISHES.find((d) => d.name === name)?.isVeg === false
+      || ['non_veg', 'eggitarian'].includes(customDishes.find((d) => d.name === name)?.dietaryType ?? ''))) {
       finalDietaryType = 'non_veg';
     }
 
-    const { hour, minute } = parseTime(serviceTimeInput);
-    const serviceAt = new Date();
-    serviceAt.setHours(hour, minute, 0, 0);
+    const serviceAt = serviceDateFor(serviceTimeInput, editingMealDate);
 
     try {
       let meal;
@@ -245,13 +286,17 @@ function ChefBroadcastView() {
           ? {
               title: '✏️ Meal Updated',
               description: `${mealTypeSelected} at ${formatServiceTime12h(serviceTimeInput)}\nMenu: ${meal.menu_items}`,
-              type: 'MEAL', notificationId: meal.id, timestamp: Date.now() }
+              // No `notificationId`: with one, the toast grows a resident's "I'll eat / Skip"
+              // buttons — on the chef's own confirmation, answering as someone who cannot RSVP.
+              type: 'MEAL', timestamp: Date.now() }
           : {
               title: '🍴 New Meal Broadcasted!',
-              description: `${mealTypeSelected} at ${formatServiceTime12h(serviceTimeInput)}\nMenu: ${meal.menu_items}\nScheduled RSVP alert: ${getAlertTriggerTime(serviceTimeInput)}`,
-              type: 'MEAL', notificationId: meal.id, timestamp: Date.now() } });
+              // The 2-hour reminder goes out only if that moment is still ahead.
+              description: `${mealTypeSelected} at ${formatServiceTime12h(serviceTimeInput)}\nMenu: ${meal.menu_items}${serviceAt.getTime() - 2 * 3_600_000 > Date.now() ? `\nRSVP reminder at ${getAlertTriggerTime(serviceTimeInput)}` : ''}`,
+              type: 'MEAL', timestamp: Date.now() } });
       clearMenuError(); setSelectedDishes([]);
       setEditingMealId(null);
+      setEditingMealDate(null);
     } catch (err) {
       toast('error', 'Not broadcast', err instanceof Error ? err.message : 'Please try again.');
     }
@@ -534,7 +579,7 @@ function ChefBroadcastView() {
             </View>
             {noResponse > 0 && (
               <View style={{ paddingHorizontal: 8, paddingBottom: 6 }}>
-                <Btn onPress={() => triggerFollowup()} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={36}>
+                <Btn onPress={() => triggerFollowup()} loading={nudge.isPending} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.control} height={36}>
                   <Txt size={11} weight="700" color={Colors.textInverse}>Send follow-up now ({noResponse})</Txt>
                 </Btn>
               </View>
@@ -544,7 +589,12 @@ function ChefBroadcastView() {
 
         <Row align="center" gap={6} style={{ marginTop: 8, justifyContent: 'center' }}>
           <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
-          <Txt size={13} weight="600" color={Colors.textSecondary}>{mealTypeSelected} will be broadcast at <Txt color={Colors.textPrimary} weight="700">7:30 AM</Txt></Txt>
+          {/* Was a fixed "will be broadcast at 7:30 AM": the broadcast goes out when the button
+              is tapped, and the time that matters is when the meal is served. */}
+          <Txt size={13} weight="600" color={Colors.textSecondary}>
+            {`${mealTypeSelected} is served ${dayWord(serviceDateFor(serviceTimeInput, editingMealDate))} at `}
+            <Txt color={Colors.textPrimary} weight="700">{formatServiceTime12h(serviceTimeInput)}</Txt>
+          </Txt>
         </Row>
 
         <Btn onPress={handleSubmit} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.card} height={56} style={styles.broadcastBtn}>
@@ -752,11 +802,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: Radii.pill },
-  ratingBadge: {
-    backgroundColor: Palette.TintAmber,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: Radii.badge },
   addCustomBtn: {
     flexDirection: 'row',
     alignItems: 'center',

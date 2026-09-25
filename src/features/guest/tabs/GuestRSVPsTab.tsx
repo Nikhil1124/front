@@ -182,16 +182,18 @@ export function GuestRSVPsTab() {
 
   const buildMealToggleState = useCallback(
     (mealType: 'breakfast' | 'lunch' | 'dinner'): MealToggleState => {
-      const notif = notifications.find((n) => n.mealType.toUpperCase() === mealType.toUpperCase());
-      const cutoffHour = CUTOFF_HOURS[mealType];
-      const now = new Date();
-      const cutoff = new Date(now);
-      cutoff.setHours(cutoffHour, 0, 0, 0);
-      const nextCutoffMs = cutoff.getTime() < now.getTime() ? cutoff.getTime() + 24 * 60 * 60 * 1000 : cutoff.getTime();
-      const cutoffTimeStr = `${String(cutoffHour).padStart(2, '0')}:00`;
+      // The next meal of this type still taking answers: its menu and its real deadline. It
+      // was the furthest-future one's menu beside a fixed hour (lunch "12:00", whatever the
+      // kitchen had set). No such meal, no cutoff to count down to.
+      const now = Date.now();
+      const open = notifications.filter(
+        (n) => n.mealType.toUpperCase() === mealType.toUpperCase() && (n.responseClosesAt ?? 0) > now,
+      );
+      const notif = open[open.length - 1];
+      const nextCutoffMs = notif?.responseClosesAt ?? null;
       return {
         enabled: mealPrefs[mealType],
-        cutoffTime: cutoffTimeStr,
+        cutoffTime: nextCutoffMs ? formatTime12h(nextCutoffMs) : '',
         nextCutoffMs,
         menuSummary: notif?.menuItems ?? '' };
     },
@@ -224,20 +226,20 @@ export function GuestRSVPsTab() {
   // tapped again in THIS screen. `refreshAll()` (called after every RSVP) invalidates the
   // whole query cache, so these refetch automatically once a response changes.
   const myResponseQueries = useQueries({
-    queries: notifications.map((n) => ({
+    queries: dayMeals.map((n) => ({
       queryKey: qk.meals.myResponse(activePgId ?? '', n.id),
       queryFn: () => getMyResponse(n.id),
       enabled: !!activePgId })) });
   const serverRsvpChoices = useMemo(() => {
     const map: Record<string, 'REQUIRED' | 'NOT_REQUIRED'> = {};
-    notifications.forEach((n, i) => {
+    dayMeals.forEach((n, i) => {
       const choice = myResponseQueries[i]?.data?.choice;
       if (choice === 'eating') map[n.id] = 'REQUIRED';
       else if (choice === 'skipping') map[n.id] = 'NOT_REQUIRED';
     });
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications, myResponseQueries.map((q) => q.data).join('|')]);
+  }, [dayMeals.map((n) => n.id).join('|'), myResponseQueries.map((q) => q.data).join('|')]);
   // This-session taps win immediately (no round trip to wait for); the server view fills in
   // everything else, including meals RSVP'd to before this screen was ever opened.
   const effectiveChoices = { ...serverRsvpChoices, ...rsvpChoices };
@@ -672,7 +674,9 @@ export function GuestRSVPsTab() {
 
               // Skipping is a valid answer, not a failure — it reads `neutral`, not danger.
               // Only "Not decided" past the cutoff is actually something to act on.
-              const isUpcoming = !choice && getCutoffMs(n.mealType) > Date.now();
+              // The meal's own deadline: the fixed-hour guess is for today, so tomorrow's
+              // unanswered lunch read "Not decided" from noon today.
+              const isUpcoming = !choice && (n.responseClosesAt ?? getCutoffMs(n.mealType)) > Date.now();
               const status: { label: string; tone: StatusTone } =
                 isEat ? { label: 'Attending', tone: 'ok' }
                 : isSkip ? { label: 'Skipping', tone: 'neutral' }
@@ -730,7 +734,7 @@ export function GuestRSVPsTab() {
           onPress={() => {
             // Read at tap, not during render: "has the cut-off passed" is a clock
             // question, and an event handler is where the clock may be read.
-            const served = dayMeals.filter((n) => getCutoffMs(n.mealType) <= Date.now());
+            const served = dayMeals.filter((n) => n.timestamp <= Date.now());
             const ratableMeal = served.length ? served[served.length - 1] : null;
             if (!ratableMeal) {
               toast('info', 'Nothing to rate yet',

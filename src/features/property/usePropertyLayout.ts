@@ -49,6 +49,18 @@ export function createRoom(
   }).then(toPropertyLayout);
 }
 
+/** The owner's first description of the building — every floor, room and bed at once, only
+ *  while the property has no rooms. It also makes the property's bed count what was described. */
+export function setupLayout(
+  pgId: string,
+  floors: { floor_number: number; rooms: { room_number: string; sharing_type: number }[] }[],
+): Promise<PropertyLayoutResponse> {
+  return apiFetch<any>(API.PG_LAYOUT_SETUP(pgId), {
+    method: "POST",
+    body: JSON.stringify({ floors }),
+  }).then(toPropertyLayout);
+}
+
 /**
  * Set how many beds a room holds, in either direction.
  *
@@ -111,6 +123,16 @@ export function useCreateRoom(pgId: string | null) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.properties.layout(pgId ?? "") });
     },
+  });
+}
+
+export function useSetupLayout(pgId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (floors: Parameters<typeof setupLayout>[1]) => setupLayout(pgId!, floors),
+    // Every "properties" key: the layout, the staff room list, and the property itself,
+    // whose bed count this sets.
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.properties.all() }),
   });
 }
 

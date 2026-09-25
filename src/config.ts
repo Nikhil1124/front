@@ -68,6 +68,7 @@ export const API = {
   MEAL: (id: string) => `/v1/meals/${id}`,
   MEAL_BROADCAST: (id: string) => `/v1/meals/${id}/broadcast`,
   MEAL_PREP_STATUS: (id: string) => `/v1/meals/${id}/prep-status`,
+  MEAL_NUDGE: (id: string) => `/v1/meals/${id}/nudge`,
   MEALS_SCHEDULED: (pgId: string) => `/v1/meals/scheduled?pg_id=${pgId}`,
   DISHES: (pgId: string) => `/v1/dishes?pg_id=${pgId}`,
   DISH: (id: string) => `/v1/dishes/${id}`,
@@ -186,6 +187,7 @@ export const API = {
   // them yet. The compatibility check reports them as gaps; removing them would hide planned
   // frontend work instead of integrating it.
   PG_LAYOUT: (pgId: string) => `/v1/pgs/${pgId}/layout`,
+  PG_LAYOUT_SETUP: (pgId: string) => `/v1/pgs/${pgId}/layout/setup`,
   PG_BED_ASSIGN: (pgId: string, bedId: string) => `/v1/pgs/${pgId}/beds/${bedId}/assign`,
   PG_BED_VACATE: (pgId: string, bedId: string) => `/v1/pgs/${pgId}/beds/${bedId}/vacate`,
   PG_ROOMS: (pgId: string) => `/v1/pgs/${pgId}/rooms`,

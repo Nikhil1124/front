@@ -25,7 +25,16 @@ export function useActiveMeal(): {
   const activeId = usePGowStore((s) => s.activeNotificationId);
   const setActiveNotificationId = usePGowStore((s) => s.setActiveNotificationId);
 
-  const activeMeal = notifications.find((n) => n.id === activeId) ?? notifications[0] ?? null;
+  // The list is newest service first, so `[0]` was the furthest-future meal: posting
+  // tomorrow's breakfast moved every chef screen off tonight's dinner. The default is the
+  // next meal still to be served; after the last one, the most recent.
+  const now = Date.now();
+  const upcoming = notifications.filter((n) => n.timestamp >= now);
+  const activeMeal =
+    notifications.find((n) => n.id === activeId) ??
+    upcoming[upcoming.length - 1] ??
+    notifications[0] ??
+    null;
 
   return {
     activeMeal,

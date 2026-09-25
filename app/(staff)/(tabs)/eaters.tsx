@@ -15,7 +15,7 @@ import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useActiveMeal } from '@/features/staff/useActiveMeal';
 import { CameraProofModal } from '@/components/CameraProofModal';
 import { Ionicons } from '@expo/vector-icons';
-import { getGreeting } from '@/utils/format';
+import { getGreeting, formatTime12h, todayLocalISO } from '@/utils/format';
 import { useToast } from '@/hooks/useToast';
 import { openInMaps } from '@/utils/maps';
 
@@ -25,16 +25,21 @@ export default function ChefEatersTab() {
   return <ChefEatersView />;
 }
 
-import { useMealsQuery, useMealResponsesQuery, useBroadcastMealMutation } from '@/features/meals/useMeals';
+import { useMealsQuery, useMealResponsesQuery, useNudgeMealMutation } from '@/features/meals/useMeals';
 
 
 function ChefEatersView() {
   const dockScroll = useDockScroll();
   const activePgId = useAuthStore((s) => s.activePgId);
   const toast = useToast();
-  const broadcastMutation = useBroadcastMealMutation(activePgId ?? undefined);
+  const nudge = useNudgeMealMutation();
 
   const { data: notifications = [] } = useMealsQuery(activePgId ?? undefined);
+  // Under a "Today's Meals" heading, today's only, in serving order. It was the three newest
+  // of the last fifty — tomorrow's breakfast beside last night's dinner.
+  const todaysMeals = notifications
+    .filter((n) => todayLocalISO(new Date(n.timestamp)) === todayLocalISO())
+    .reverse();
   const { activeMeal, setActiveMeal } = useActiveMeal();
   const { data: mealResponses = [] } = useMealResponsesQuery(activeMeal?.id, activePgId ?? undefined);
 
@@ -46,13 +51,15 @@ function ChefEatersView() {
     .filter((r) => r.choice === null)
     .sort((a, b) => Number(a.is_away) - Number(b.is_away) || a.name.localeCompare(b.name));
 
-  const handleResendBroadcast = async () => {
+  // Was a second `announce`, which the server refuses for a meal already announced — so this
+  // failed every time it could be tapped. A nudge goes to the unanswered, and only them.
+  const handleRemind = async () => {
     if (!activeMeal?.id) return;
     try {
-      await broadcastMutation.mutateAsync({ mealId: activeMeal.id, params: { kind: 'announce' } });
-      toast('success', 'Sent', 'Broadcast notification resent successfully!');
+      const { reminded } = await nudge.mutateAsync(activeMeal.id);
+      toast('success', 'Reminded', reminded === 1 ? '1 resident who has not answered.' : `${reminded} residents who have not answered.`);
     } catch (e: any) {
-      toast('error', 'Failed to resend', e.message);
+      toast('error', 'Not sent', e.message);
     }
   };
 
@@ -77,7 +84,7 @@ function ChefEatersView() {
           </Row>
           
           <Row gap={10}>
-            {notifications.slice(0,3).map((n) => {
+            {todaysMeals.map((n) => {
               const isSel = activeMeal?.id === n.id;
               const iconName = n.mealType.toLowerCase().includes('lunch') ? 'sunny' : n.mealType.toLowerCase().includes('dinner') ? 'moon' : 'partly-sunny';
               return (
@@ -103,7 +110,7 @@ function ChefEatersView() {
                  <Txt size={22} weight="800" color={Colors.textInverse}>{activeMeal.mealType}</Txt>
                  <Row align="center" gap={4} style={{ marginTop: 2 }}>
                    <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.9)" />
-                   <Txt size={12} weight="700" color="rgba(255,255,255,0.9)">12:00 PM - 2:00 PM</Txt>
+                   <Txt size={12} weight="700" color="rgba(255,255,255,0.9)">{formatTime12h(activeMeal.timestamp)}</Txt>
                  </Row>
               </View>
             </ImageBackground>
@@ -127,11 +134,6 @@ function ChefEatersView() {
                 </Col>
               </Row>
               
-              <Spacer size={16} />
-              <Btn onPress={() => {}} containerColor={Colors.primary} textColor={Colors.textInverse} borderRadius={Radii.pill} height={44} style={{ shadowColor: Colors.primary, shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 }}>
-                <Txt size={14} weight="800" color={Colors.textInverse}>View RSVP Details</Txt>
-                <Ionicons name="arrow-forward" size={16} color={Colors.textInverse} style={{ marginLeft: 6 }} />
-              </Btn>
             </View>
           </Card>
         ) : (
@@ -145,10 +147,10 @@ function ChefEatersView() {
           <Col gap={16}>
             <Row justify="space-between" align="center">
               <Txt size={18} weight="800" color={Colors.textPrimary}>Pending RSVP's</Txt>
-              <AnimatedPress onPress={handleResendBroadcast} disabled={broadcastMutation.isPending}>
+              <AnimatedPress onPress={handleRemind} disabled={nudge.isPending}>
                 <Row align="center" gap={6} style={{ backgroundColor: Colors.brandPale, paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radii.pill }}>
                   <Ionicons name="notifications-outline" size={14} color={Colors.primaryDark} />
-                  <Txt size={13} weight="800" color={Colors.primaryDark}>{broadcastMutation.isPending ? 'Sending...' : 'Remind All'}</Txt>
+                  <Txt size={13} weight="800" color={Colors.primaryDark}>{nudge.isPending ? 'Sending...' : 'Remind them'}</Txt>
                 </Row>
               </AnimatedPress>
             </Row>

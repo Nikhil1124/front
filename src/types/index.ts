@@ -340,7 +340,6 @@ export interface VisualDishItem {
   category: string;
   isVeg: boolean;
   image_url?: any; // require() source or string URL
-  rating?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

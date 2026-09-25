@@ -35,6 +35,10 @@ import { useAuthStore } from '@/store/authStore';
 // `node` check can reach.
 import { toUserRole } from '@/store/roles';
 import { clearKycDraft } from '@/features/kyc/kycDraft';
+import { useCartStore } from '@/features/groceries/store/useCartStore';
+import { useWishlistStore } from '@/features/groceries/store/useWishlistStore';
+import { useShoppingModeStore } from '@/features/groceries/store/useShoppingModeStore';
+import { useMaintenanceChecklist } from '@/features/housekeeping/useMaintenanceChecklist';
 
 export { toUserRole };
 import type {
@@ -42,7 +46,6 @@ import type {
   PGOwnerEntity,
   GuestEntity,
   StaffMemberEntity,
-  MealNotificationEntity,
   SimulatedAlert } from '@/types';
 
 
@@ -141,7 +144,6 @@ export interface PGowState {
   chefAlarm330pmEnabled: boolean;
   lastChefAlarmTriggered: string | null;
   auto15MinFollowupEnabled: boolean;
-  lastFollowupTimestamp: number;
 
   // ===== UI / Selected Active Item =====
   activeNotificationId: string | null;
@@ -168,7 +170,6 @@ export interface PGowState {
   selectMealType: (meal: string) => void;
   getAlertTriggerTime: (serviceTime: string) => string;
   formatServiceTime12h: (serviceTime: string) => string;
-  triggerSimulated2HourAlert: (notification: MealNotificationEntity) => Promise<void>;
 
   // ===== Chef alarms =====
   triggerChefAlarm: (alarmSlot: string) => Promise<void>;
@@ -176,7 +177,6 @@ export interface PGowState {
    *  a fixed `identifier` so calling this again (a toggle flipped back on, a tab remount)
    *  replaces the existing schedule instead of stacking a duplicate. */
   scheduleChefAlarm: (identifier: string, alarmSlot: string, hour: number, minute: number) => Promise<void>;
-  trigger15MinUnresponsiveFollowup: () => Promise<void>;
 
   // ===== Multi-PG portfolio =====
   // `location` is required on create and optional on update, mirroring the API: a property
@@ -221,10 +221,22 @@ export interface PGowState {
   dismissAlert: () => void;
 }
 
-/** The zustand `persist` names this app owns, cleared on sign-out so the next person on this
- *  device does not inherit the previous one's cart or wishlist. Keep in sync with the
- *  `name:` given to each persisted store. */
-const PERSISTED_STORE_KEYS = ['slv-cart', 'slv-wishlist', 'slv-shopping-mode'];
+/** What this phone keeps for whoever is signed in, reset on sign-out so the next person on it
+ *  starts clean. In memory as well as on disk: sign-out used to delete only the saved copies,
+ *  so the previous person's cart stayed on screen for the next one — and their next tap
+ *  saved it straight back. The facility checklist and meal defaults were not cleared at all. */
+export function resetPerPersonState() {
+  // Their photos, and the Aadhaar number, which lives only in memory.
+  void clearKycDraft();
+  useCartStore.setState(useCartStore.getInitialState(), true);
+  useWishlistStore.setState(useWishlistStore.getInitialState(), true);
+  useShoppingModeStore.setState(useShoppingModeStore.getInitialState(), true);
+  useMaintenanceChecklist.setState(useMaintenanceChecklist.getInitialState(), true);
+  // The resident's meal opt-in defaults, kept by GuestRSVPsTab outside any store.
+  import('@react-native-async-storage/async-storage')
+    .then((m) => m.default.removeItem('@pgow/meal_preferences').catch(() => {}))
+    .catch(() => {});
+}
 
 /** Shared by the manual "trigger now" bell and the real daily-scheduled version of the same
  *  alarm, so the two never drift into showing different copy for the same slot. */
@@ -291,7 +303,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   chefAlarm330pmEnabled: true,
   lastChefAlarmTriggered: null,
   auto15MinFollowupEnabled: true,
-  lastFollowupTimestamp: 0,
 
   activeNotificationId: null,
   isQuickActionsExpanded: false,
@@ -502,23 +513,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     return serviceTime;
   },
 
-  /** The real "tell everyone about this meal" action: a broadcast, which is what actually
-   *  fans out to residents' devices. The local banner stays as immediate feedback. */
-  triggerSimulated2HourAlert: async (notification) => {
-    try {
-      await mealsApi.broadcastMeal(notification.id, { kind: 'announce' });
-    } catch (err) {
-      console.warn('[PGow] meal broadcast failed:', err);
-    }
-    set({
-      activeAlert: {
-        title: '⏰ RSVP REMINDER: 2h Until Service!',
-        description: `Meal: ${notification.mealType} at ${get().formatServiceTime12h(notification.serviceTime)}\nMenu: ${notification.menuItems}\n\nPlease submit your RSVP now to avoid food wastage!`,
-        type: 'MEAL', notificationId: notification.id, timestamp: Date.now() } });
-    await NotificationHelper.showRsvpNotification(notification, get().loggedInGuest?.id ?? '');
-    await get().refreshAll();
-  },
-
   // Local reminders for the chef's own phone — a scheduled nudge to go and broadcast, not
   // something anyone else receives. No server involvement by design.
   triggerChefAlarm: async (alarmSlot) => {
@@ -532,31 +526,6 @@ export const usePGowStore = create<PGowState>((set, get) => ({
   scheduleChefAlarm: async (identifier, alarmSlot, hour, minute) => {
     const { title, msg } = chefAlarmContent(alarmSlot);
     await NotificationHelper.scheduleDailyReminder(identifier, hour, minute, title, msg);
-  },
-
-  /**
-   * Re-broadcast the open meal as a menu update, which is the one server action that reaches
-   * residents who have not answered. Who has and has not answered is deliberately not
-   * computed here: the API exposes only counts, so a per-resident list would be invented.
-   */
-  trigger15MinUnresponsiveFollowup: async () => {
-    const pgId = useAuthStore.getState().activePgId;
-    if (!pgId) return;
-    try {
-      const meals = await mealsApi.listMeals(pgId, { limit: 1 });
-      const activeMeal = meals.items[0];
-      if (!activeMeal) return;
-      await mealsApi.broadcastMeal(activeMeal.id, { kind: 'menu_update' });
-      set({
-        activeAlert: {
-          title: '🚨 15-Min RSVP Follow-Up Sent',
-          description: `Chef is preparing ${activeMeal.meal_type} (${activeMeal.menu_items}). Residents who have not answered have been reminded to respond EATING or SKIPPING.`,
-          type: 'MEAL', notificationId: activeMeal.id, timestamp: Date.now() },
-        lastFollowupTimestamp: Date.now() });
-      await get().refreshAll();
-    } catch (err) {
-      console.warn('[PGow] follow-up broadcast failed:', err);
-    }
   },
 
   // ── Inbox ─────────────────────────────────────────────────────────────────
@@ -1026,7 +995,8 @@ export const usePGowStore = create<PGowState>((set, get) => ({
         activeAlert: {
           title: '❌ RSVP NOT RECORDED',
           description: message,
-          type: 'MEAL', notificationId, timestamp: Date.now() } });
+          // An error, not a meal offer: red, with Eat/Skip to try again, and no sponsor.
+          type: 'ERROR', notificationId, timestamp: Date.now() } });
       return { ok: false, error: message };
     }
     await get().refreshAll();
@@ -1061,15 +1031,8 @@ export const usePGowStore = create<PGowState>((set, get) => ({
     // clearing it here too, this action used to rely entirely on `currentScreen` to look
     // like a sign-out while the real session token sat untouched in authStore/SecureStore.
     useAuthStore.getState().logout();
-    // Named keys, not AsyncStorage.clear(). `clear()` empties the whole app-wide bucket —
-    // every other library's data along with ours — for what only needs to be this app's own
-    // persisted zustand slices.
-    import('@react-native-async-storage/async-storage')
-      .then((m) => m.default.multiRemove(PERSISTED_STORE_KEYS).catch(() => {}))
-      .catch(() => {});
-    // The next person on this phone must not open a KYC form holding this one's photos, or
-    // their Aadhaar number, which lives only in memory.
-    void clearKycDraft();
+    // Named stores, not AsyncStorage.clear(), which would empty every library's data too.
+    resetPerPersonState();
     set({
       loggedInOwner: null, loggedInGuest: null, loggedInStaff: null,
       activeRole: null, isManagerMode: false,

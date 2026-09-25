@@ -23,6 +23,7 @@ import {
   useCreateRoom,
   useSetRoomSharing } from '@/features/property/usePropertyLayout';
 import { useGuestsQuery } from '@/features/guests/useGuests';
+import { LayoutSetupForm } from '@/features/property/LayoutSetupForm';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '@/hooks/useToast';
 import type { BedResponse, RoomResponse } from '@/types';
@@ -327,12 +328,11 @@ export function BedVisualizerScreen() {
             </Col>
           </Row>
         </Card>
-      ) : !layout || totalBeds === 0 ? (
-        <EmptyState
-          icon="bed-outline"
-          title="No Beds Configured"
-          subtitle="Beds are initialized automatically from your property capacity."
-        />
+      ) : !layout ? (
+        <EmptyState icon="bed-outline" title="No property selected" subtitle="Choose a property to see its rooms." />
+      ) : layout.floors.every((f) => f.rooms.length === 0) ? (
+        // A new property: nothing is invented any more, the owner describes the building.
+        <LayoutSetupForm pgId={pgId} />
       ) : (
         <>
           {/* Total beds · occupied · vacant · occupancy — was two cards. */}

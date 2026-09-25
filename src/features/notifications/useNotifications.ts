@@ -144,7 +144,18 @@ export function useRoleNotificationsQuery(pgId?: string) {
     queryKey: qk.notifications.list(pgId ?? ""),
     queryFn: async () => {
       const res = await listNotifications({ pgId, limit: 100 });
-      return res.items.map(map.toRoleNotification);
+      // One row per meal. Its announcement, 2-hour reminder, last call and a nudge are one
+      // meal, and listed apart they read as the same history four times over. The server
+      // sends newest first, so the first seen is the one kept. Reading or clearing that row
+      // reads or clears the ones behind it on the server too, and `/unread-count` counts a
+      // meal once — the same answer as this list.
+      const seenMeals = new Set<string>();
+      return res.items.map(map.toRoleNotification).filter((n) => {
+        if (n.category !== "MEAL" || !n.actionId) return true;
+        if (seenMeals.has(n.actionId)) return false;
+        seenMeals.add(n.actionId);
+        return true;
+      });
     },
   });
 }

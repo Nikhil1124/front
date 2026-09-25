@@ -32,7 +32,7 @@ import { useToast } from '@/hooks/useToast';
 import { useSetAwayMutation } from '@/features/auth/useAuth';
 import type { MealNotificationEntity } from '@/types';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
-import { getGreeting } from '@/utils/format';
+import { getGreeting, todayLocalISO } from '@/utils/format';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { useMealsQuery, useMyMealResponseQuery } from '@/features/meals/useMeals';
 import { MealAdNotificationCard } from '@/components/NotificationCard/MealAdNotificationCard';
@@ -210,8 +210,11 @@ export default function GuestHomeTab() {
 
 
   // ── Today's timeline items ─────────────────────────────────────────────────
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const todayMeals = meals.filter((m) => new Date(m.timestamp) >= todayStart);
+  // Today's only. `>= start of today` also took tomorrow's and every later posted meal, so
+  // the timeline could show two Lunches.
+  const todayMeals = meals
+    .filter((m) => todayLocalISO(new Date(m.timestamp)) === todayLocalISO())
+    .reverse();
   // These are the labels `mappers.HUB_STATUS.laundry` produces. The filter used to look for
   // 'Open' / 'In Progress' / 'Scheduled', which that table never emits for laundry, so this
   // list was always empty and no laundry pickup ever appeared on the home timeline.

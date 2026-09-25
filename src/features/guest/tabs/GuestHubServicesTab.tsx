@@ -42,6 +42,8 @@ export function GuestHubServicesTab() {
   // `data = []` on a failed fetch is indistinguishable from "you have no orders", and this
   // card silently rendered nothing in both cases. First load and failure now say so.
   const showLaundryState = laundryLoading || !!laundryError;
+  // The card is the catalog's laundry service; a super admin removing that removes the card.
+  const laundryLive = hubServices.some((svc) => svc.action === 'laundry');
 
   return (
     <View style={styles.root}>
@@ -64,75 +66,77 @@ export function GuestHubServicesTab() {
         overScrollMode="never"
       >
         {/* ── 2. EXPRESS LAUNDRY CARD ── */}
-        <Card
-          containerColor={Colors.surface}
-          borderRadius={Radii.sheet}
-          borderWidth={1}
-          borderColor={Colors.borderSubtle}
-          padding={[16, 16]}
-          style={styles.laundryCard}
-        >
-          <Row justify="space-between" align="center">
-            <Row gap={12} style={{ flex: 1, paddingRight: 8 }}>
-              <View style={styles.laundryIconWrap}>
-                <Ionicons name="shirt-outline" size={21} color={Colors.primary} />
-              </View>
-              <Col style={{ flex: 1 }}>
-                <Txt size={15} weight="700" color={Colors.textPrimary}>EXPRESS PG LAUNDRY</Txt>
-                <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
-                  Wash & Fold • Wash & Iron
-                </Txt>
-              </Col>
+        {laundryLive && (
+          <Card
+            containerColor={Colors.surface}
+            borderRadius={Radii.sheet}
+            borderWidth={1}
+            borderColor={Colors.borderSubtle}
+            padding={[16, 16]}
+            style={styles.laundryCard}
+          >
+            <Row justify="space-between" align="center">
+              <Row gap={12} style={{ flex: 1, paddingRight: 8 }}>
+                <View style={styles.laundryIconWrap}>
+                  <Ionicons name="shirt-outline" size={21} color={Colors.primary} />
+                </View>
+                <Col style={{ flex: 1 }}>
+                  <Txt size={15} weight="700" color={Colors.textPrimary}>EXPRESS PG LAUNDRY</Txt>
+                  <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                    Wash & Fold • Wash & Iron
+                  </Txt>
+                </Col>
+              </Row>
+
+              <AnimatedPress accessibilityRole="button"
+                onPress={() => { router.push('/laundry'); }}
+                style={styles.bookBtn}
+              >
+                <Txt size={11} weight="700" color={Colors.textInverse}>Book Pickup</Txt>
+              </AnimatedPress>
             </Row>
 
-            <AnimatedPress accessibilityRole="button"
-              onPress={() => { router.push('/laundry'); }}
-              style={styles.bookBtn}
-            >
-              <Txt size={11} weight="700" color={Colors.textInverse}>Book Pickup</Txt>
-            </AnimatedPress>
-          </Row>
+            {showLaundryState && (
+              <>
+                <Spacer size={14} />
+                <View style={{ height: 1, backgroundColor: '#F6F1E9' }} />
+                <Spacer size={12} />
+                {laundryError ? (
+                  <ErrorState error={laundryError} title="Could not load your orders" onRetry={refetchLaundry} fill={false} />
+                ) : (
+                  <LoadingState label="Loading your orders…" size="small" fill={false} />
+                )}
+              </>
+            )}
 
-          {showLaundryState && (
-            <>
-              <Spacer size={14} />
-              <View style={{ height: 1, backgroundColor: '#F6F1E9' }} />
-              <Spacer size={12} />
-              {laundryError ? (
-                <ErrorState error={laundryError} title="Could not load your orders" onRetry={refetchLaundry} fill={false} />
-              ) : (
-                <LoadingState label="Loading your orders…" size="small" fill={false} />
-              )}
-            </>
-          )}
-
-          {!showLaundryState && myLaundry.length > 0 && (
-            <>
-              <Spacer size={14} />
-              <View style={{ height: 1, backgroundColor: '#F6F1E9' }} />
-              <Spacer size={12} />
-              <Txt size={12} weight="700" color={Colors.primary} style={{ letterSpacing: 0.5 }}>
-                ACTIVE LAUNDRY ORDERS
-              </Txt>
-              <Spacer size={8} />
-              {myLaundry.slice(0, 2).map((req) => (
-                <View key={req.id} style={styles.laundryItem}>
-                  <Col style={{ flex: 1 }}>
-                    <Txt size={13} weight="700" color={Colors.textPrimary}>{req.serviceType} • {req.weightOrCount}</Txt>
-                    <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
-                      Slot: {req.preferredSlot} • {req.paymentStatus}
-                    </Txt>
-                  </Col>
-                  <View style={[styles.statusPill, { backgroundColor: req.status === 'Delivered' ? Palette.TintGreen : Palette.TintAmber }]}>
-                    <Txt size={10} weight="700" color={req.status === 'Delivered' ? Colors.primary : Colors.warning}>
-                      {req.status.toUpperCase()}
-                    </Txt>
+            {!showLaundryState && myLaundry.length > 0 && (
+              <>
+                <Spacer size={14} />
+                <View style={{ height: 1, backgroundColor: '#F6F1E9' }} />
+                <Spacer size={12} />
+                <Txt size={12} weight="700" color={Colors.primary} style={{ letterSpacing: 0.5 }}>
+                  ACTIVE LAUNDRY ORDERS
+                </Txt>
+                <Spacer size={8} />
+                {myLaundry.slice(0, 2).map((req) => (
+                  <View key={req.id} style={styles.laundryItem}>
+                    <Col style={{ flex: 1 }}>
+                      <Txt size={13} weight="700" color={Colors.textPrimary}>{req.serviceType} • {req.weightOrCount}</Txt>
+                      <Txt size={11} color={Colors.textSecondary} style={{ marginTop: 2 }}>
+                        Slot: {req.preferredSlot} • {req.paymentStatus}
+                      </Txt>
+                    </Col>
+                    <View style={[styles.statusPill, { backgroundColor: req.status === 'Delivered' ? Palette.TintGreen : Palette.TintAmber }]}>
+                      <Txt size={10} weight="700" color={req.status === 'Delivered' ? Colors.primary : Colors.warning}>
+                        {req.status.toUpperCase()}
+                      </Txt>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </>
-          )}
-        </Card>
+                ))}
+              </>
+            )}
+          </Card>
+        )}
 
         {/* ── 3. HUB SERVICE GRID ── */}
         <Txt size={16} weight="700" color={Colors.textPrimary} style={{ marginTop: 22, marginBottom: 12 }}>

@@ -3,7 +3,7 @@ import { View, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { AnimatedPress, Txt, Row } from '@/components/ui';
-import { Colors, Radii, Palette } from '@/theme';
+import { Colors, Radii } from '@/theme';
 import type { Dish } from '@/types';
 
 interface DishProductCardProps {
@@ -74,14 +74,7 @@ export function DishProductCard({ dish, isSelected, onToggle, isEligible = true 
           <Row gap={4} align="center">
             <Txt size={11} weight="600" color={Colors.textMuted}>{dish.category}</Txt>
           </Row>
-          
-          {/* Mock Rating for default dishes, none for custom */}
-          {!isCustom && (
-            <Row gap={2} align="center" style={styles.ratingBadge}>
-              <Ionicons name="star" size={10} color={Colors.warning} />
-              <Txt size={10} weight="700" color={Colors.textPrimary}>4.5</Txt>
-            </Row>
-          )}
+
         </Row>
       </View>
     </AnimatedPress>
@@ -164,11 +157,5 @@ const styles = StyleSheet.create({
   },
   foodCardBody: {
     padding: 10,
-  },
-  ratingBadge: {
-    backgroundColor: Palette.TintAmber,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: Radii.badge,
   },
 });

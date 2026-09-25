@@ -29,7 +29,7 @@
  * keyboard may still be up, and a bottom-anchored card would be behind it.
  */
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { View, StyleSheet, AccessibilityInfo } from 'react-native';
+import { View, StyleSheet, AccessibilityInfo, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 
@@ -39,6 +39,7 @@ import { HEADER_BAND_HEIGHT } from '@/components/AppHeader';
 import { usePGowStore } from '@/store/usePGowStore';
 import type { SimulatedAlert } from '@/types';
 import { AnimatedPress, Row, Txt } from '@/components/ui';
+import { useNotificationAdQuery } from '@/features/ads/useAds';
 
 interface ToastStyle {
   accent: string;
@@ -64,7 +65,10 @@ function toastStyleFor(type: string): ToastStyle {
  *  over competing designs. */
 const HEADER_CLEARANCE = HEADER_BAND_HEIGHT;
 
-const hasRSVP = (a: SimulatedAlert) => a.type === 'MEAL' && a.notificationId != null;
+/** Eat/Skip on a meal toast — and on a failed answer (`ERROR` with the meal's id), so the
+ *  resident can try again from the same card. */
+const hasRSVP = (a: SimulatedAlert) =>
+  a.notificationId != null && (a.type === 'MEAL' || a.type === 'ERROR');
 
 /** How long the card stays up, in ms. A card waiting on a tap outlives one only being read,
  *  and a description outlives a bare title. */
@@ -125,6 +129,12 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
 
   const style = toastStyleFor(alert.type);
   const showRSVP = hasRSVP(alert);
+  // The sponsor's own picture: the same PGow ad the meal card shows. This was a grey box with
+  // an image icon, standing in for a picture the toast never had. No ad running, no picture —
+  // and none on a failed answer: an ad over "RSVP not recorded" sells nothing.
+  const offersMeal = showRSVP && alert.type === 'MEAL';
+  const { data: ad } = useNotificationAdQuery(0, offersMeal);
+  const adImage = offersMeal ? ad?.image_url : null;
 
   const answer = (choice: 'EATING' | 'SKIPPING') => {
     if (alert.notificationId == null) return;
@@ -158,11 +168,14 @@ function ToastCard({ alert, onDismiss }: { alert: SimulatedAlert; onDismiss: () 
           </View>
         </View>
 
-        {showRSVP && (
-          <View style={styles.banner}>
-            <Ionicons name="image-outline" size={42} color={Colors.textMuted} />
-          </View>
-        )}
+        {adImage ? (
+          <Image
+            source={{ uri: adImage }}
+            style={styles.banner}
+            resizeMode="cover"
+            accessibilityLabel={ad?.brand_name ? `${ad.brand_name} offer` : 'Sponsor offer'}
+          />
+        ) : null}
 
         {showRSVP && (
           <View style={{ marginTop: 12 }}>
@@ -214,17 +227,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   icon: { marginTop: 1 },
-  /** Placeholder for the sponsored-meal banner. The real image is drawn by the OS from the
-   *  push payload's `notification.image` — this stands in for it inside the app's own toast,
-   *  which never sees a remote notification. `badge` is 6, the radius this was written with. */
+  /** The sponsor's picture; the muted fill shows only while it loads. */
   banner: {
     marginTop: 12,
     height: 140,
     width: '100%',
     backgroundColor: Colors.borderMuted,
     borderRadius: Radii.control,
-    justifyContent: 'center',
-    alignItems: 'center',
     overflow: 'hidden',
   },
   miniBtn: {

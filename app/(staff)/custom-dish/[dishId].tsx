@@ -10,7 +10,7 @@ import { Colors, Radii } from '@/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useCustomDishesQuery, useUpdateDishMutation, useArchiveDishMutation } from '@/features/meals/useDishes';
 import { useToast } from '@/hooks/useToast';
-import type { MealType } from '@/types';
+import type { DishDietaryType, MealType } from '@/types';
 
 export default function EditCustomDishScreen() {
   const { dishId } = useLocalSearchParams<{ dishId: string }>();
@@ -27,6 +27,7 @@ export default function EditCustomDishScreen() {
   const [category, setCategory] = useState('');
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
   const [description, setDescription] = useState('');
+  const [dietaryType, setDietaryType] = useState<DishDietaryType | undefined>();
   const [imageUrl, setImageUrl] = useState<string | undefined>();
 
   const CATEGORIES = ['Breakfast', 'Rice & Dal', 'Curry', 'South Indian', 'Bread', 'Snacks', 'Other'];
@@ -35,6 +36,11 @@ export default function EditCustomDishScreen() {
     { id: 'lunch', label: 'Lunch' },
     { id: 'dinner', label: 'Dinner' }
   ];
+  const DIETARY: { id: DishDietaryType; label: string }[] = [
+    { id: 'veg', label: 'Veg' },
+    { id: 'non_veg', label: 'Non-veg' },
+    { id: 'eggitarian', label: 'Egg' },
+  ];
 
   useEffect(() => {
     if (dish) {
@@ -42,6 +48,7 @@ export default function EditCustomDishScreen() {
       setCategory(dish.category);
       setMealTypes(dish.mealTypes);
       setDescription(dish.description ?? '');
+      setDietaryType(dish.dietaryType);
       setImageUrl(dish.imageUrl);
     }
   }, [dish]);
@@ -73,6 +80,10 @@ export default function EditCustomDishScreen() {
       toast('error', 'Validation Error', 'Dish name is required');
       return;
     }
+    if (!dietaryType) {
+      toast('error', 'Validation Error', 'Choose veg, non-veg or egg');
+      return;
+    }
     if (mealTypes.length === 0) {
       toast('error', 'Validation Error', 'Select at least one meal type');
       return;
@@ -87,6 +98,7 @@ export default function EditCustomDishScreen() {
           mealTypes,
           imageUrl,
           description: description.trim(),
+          dietaryType,
         }
       });
       toast('success', 'Custom Dish Updated', `${trimmedName} was updated successfully.`);
@@ -195,6 +207,26 @@ export default function EditCustomDishScreen() {
                 style={[styles.chip, isSelected && styles.chipActive]}
               >
                 <Txt size={12} weight="700" color={isSelected ? Colors.textInverse : Colors.textPrimary}>{mt.label}</Txt>
+              </AnimatedPress>
+            );
+          })}
+        </View>
+
+        <Spacer size={20} />
+
+        {/* Decides the meal's veg / non-veg label when this dish is on the menu. */}
+        <Txt size={13} weight="700" color={Colors.textPrimary}>Veg or non-veg? *</Txt>
+        <Spacer size={8} />
+        <View style={styles.chipContainer}>
+          {DIETARY.map((d) => {
+            const isSelected = dietaryType === d.id;
+            return (
+              <AnimatedPress
+                key={d.id}
+                onPress={() => setDietaryType(d.id)}
+                style={[styles.chip, isSelected && styles.chipActive]}
+              >
+                <Txt size={12} weight="700" color={isSelected ? Colors.textInverse : Colors.textPrimary}>{d.label}</Txt>
               </AnimatedPress>
             );
           })}

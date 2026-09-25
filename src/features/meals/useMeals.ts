@@ -346,6 +346,15 @@ export function useMeals() {
   };
 }
 
+/** "You haven't answered yet" — a personal push to each resident who has not answered this
+ *  meal and is not away, and to nobody else. Resolves to how many were reminded. */
+export function useNudgeMealMutation() {
+  return useMutation({
+    mutationFn: (mealId: string) =>
+      apiFetch<{ reminded: number }>(API.MEAL_NUDGE(mealId), { method: "POST" }),
+  });
+}
+
 /** Prepping / Cooking / Ready. Silent — the kitchen tracking itself, not a message to residents. */
 export function useUpdatePrepStatusMutation(pgId?: string) {
   const qc = useQueryClient();
@@ -355,9 +364,8 @@ export function useUpdatePrepStatusMutation(pgId?: string) {
         method: "PATCH",
         body: JSON.stringify({ prep_status: prepStatus }),
       }),
-    onSuccess: () => {
-      if (pgId) qc.invalidateQueries({ queryKey: qk.meals.list(pgId) });
-    },
+    // Returned, so the caller's own onSuccess runs once the meal list holds the new stage.
+    onSuccess: () => (pgId ? qc.invalidateQueries({ queryKey: qk.meals.list(pgId) }) : undefined),
   });
 }
 

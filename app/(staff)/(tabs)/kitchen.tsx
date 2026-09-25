@@ -49,6 +49,9 @@ function ChefKitchenView() {
     updatePrep.mutate(
       { mealId: activeMeal.id, prepStatus: stage.toLowerCase() as PrepStatus },
       {
+        // The saved stage is in the refetched meal now; holding the tap any longer would hide
+        // a change another cook makes later.
+        onSuccess: () => setPendingStage(null),
         onError: (err) => {
           setPendingStage(null);
           toast('error', 'Not saved', err instanceof Error ? err.message : 'Check your connection and try again.');
@@ -129,9 +132,6 @@ function ChefKitchenView() {
         eatingCount={eatingCount}
         skippingCount={skippingCount}
         noReplyCount={noReplyCount}
-        eatingChange={12}
-        skippingChange={-8}
-        noReplyChange={5}
       />
 
       <KitchenPreparationCard

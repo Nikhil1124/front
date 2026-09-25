@@ -24,6 +24,8 @@ export const qk = {
     // that changes on a different cadence (assign/vacate) than the property
     // metadata (rename, address edit).
     layout: (pgId: string) => ["properties", "layout", pgId] as const,
+    // Floor and number of each room, for staff (housekeeping's checklist). No residents.
+    rooms: (pgId: string) => ["properties", "rooms", pgId] as const,
     // The owner's cross-property rollup. Keyed by the sorted, comma-joined id list rather
     // than the array itself — two calls with the same properties in a different order (or a
     // fresh array reference from a re-render) must hit the same cache entry, not refetch.

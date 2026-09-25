@@ -19,8 +19,8 @@ import {
   uploadAttachment,
   addAttachment,
 } from '@/features/requests/useComplaints';
-import { useMaintenanceChecklist, type ChecklistItemStatus } from './useMaintenanceChecklist';
-import { formatTimeAgo, getGreeting } from '@/utils/format';
+import { useFacilityChecklist, type ChecklistItemStatus } from './useMaintenanceChecklist';
+import { formatTimeAgo, getGreeting, todayLocalISO } from '@/utils/format';
 import type { FeedbackComplaintEntity } from '@/types';
 import { useRoleNotificationsQuery } from '@/features/notifications/useNotifications';
 import { AnimatedPress, Btn, Card, ChoiceChips, Col, Divider, ErrorState, IconBtn, LoadingState, OutlinedTextField, PGowDialog, RoomPicker, Row, Spacer, Txt } from '@/components/ui';
@@ -37,6 +37,7 @@ function toIssueView(c: FeedbackComplaintEntity) {
     priority: c.priorityLabel ?? 'Medium',
     status: c.status,
     time: formatTimeAgo(c.timestamp),
+    timestamp: c.timestamp,
   };
 }
 
@@ -58,10 +59,9 @@ export function HousekeepingDashboard() {
 
   const { dockStyle } = useDock();
 
-  // Facility checks: real, but local to this device — see useMaintenanceChecklist for why
-  // there is no server counterpart yet.
-  const inspections = useMaintenanceChecklist((s) => s.tree);
-  const setItemStatus = useMaintenanceChecklist((s) => s.setItemStatus);
+  // Facility checks, on this property's own rooms; the statuses stay on this phone — see
+  // useMaintenanceChecklist for why there is no server counterpart yet.
+  const { tree: inspections, setItemStatus, hasRooms, roomsLoading } = useFacilityChecklist(activePgId);
 
   // Issues: real requests. `useComplaintsQuery` is the same query OwnerReviewsTab and
   // OwnerAnnouncementsTab already read — a maintenance staffer is in `_QUEUE_ROLES`
@@ -101,7 +101,7 @@ export function HousekeepingDashboard() {
           onNotifPress={() => router.push('/notifications')}
         />
       )}
-      {activeTab === 'check' && <FacilityCheckView inspections={inspections} setItemStatus={setItemStatus} selectedCat={checkTabCategory} setSelectedCat={setCheckTabCategory} />}
+      {activeTab === 'check' && <FacilityCheckView inspections={inspections} setItemStatus={setItemStatus} selectedCat={checkTabCategory} setSelectedCat={setCheckTabCategory} noRooms={!roomsLoading && !hasRooms} />}
       {activeTab === 'issues' && (
         <IssuesSupervisionView
           issues={issues}
@@ -148,6 +148,9 @@ export function MaintenanceStatsSummary({ inspections, issues, onGoToChecks }: a
   const kitch = getCategoryStats('Kitchen Hygiene');
   const gen = getCategoryStats('General');
   const plumb = getCategoryStats('Plumbing');
+
+  // Under "Today": issues raised today. It was every complaint the property ever had.
+  const issuesToday = issues.filter((i: { timestamp: number }) => todayLocalISO(new Date(i.timestamp)) === todayLocalISO()).length;
 
   let totalInspections = 0;
   Object.values(inspections).forEach((cat: any) => {
@@ -229,11 +232,11 @@ export function MaintenanceStatsSummary({ inspections, issues, onGoToChecks }: a
       <Row gap={10} style={{ marginTop: 4, flexWrap: 'wrap' }}>
         <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ flex: 1, minWidth: 140, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
           <Txt size={24} weight="700" color={Colors.primaryDark}>{totalInspections}</Txt>
-          <Txt size={12} weight="700" color={Colors.textPrimary}>Total Inspections</Txt>
-          <Txt size={11} color={Colors.textMuted}>This Month</Txt>
+          <Txt size={12} weight="700" color={Colors.textPrimary}>Checklist items</Txt>
+          <Txt size={11} color={Colors.textMuted}>On this phone</Txt>
         </Card>
         <Card containerColor={Colors.surface} borderRadius={Radii.control} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]} style={{ flex: 1, minWidth: 140, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
-          <Txt size={24} weight="700" color={Colors.danger}>{issues.length}</Txt>
+          <Txt size={24} weight="700" color={Colors.danger}>{issuesToday}</Txt>
           <Txt size={12} weight="700" color={Colors.textPrimary}>Issues Found</Txt>
           <Txt size={11} color={Colors.textMuted}>Today</Txt>
         </Card>
@@ -302,7 +305,7 @@ function MaintenanceDashView({ staff, inspections, issues, onGoToChecks, refresh
   );
 }
 
-function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelectedCat }: any) {
+function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelectedCat, noRooms }: any) {
   const toast = useToast();
   const [activeArea, setActiveArea] = useState('All Areas');
   const [showAreaPicker, setShowAreaPicker] = useState(false);
@@ -418,6 +421,12 @@ function FacilityCheckView({ inspections, setItemStatus, selectedCat, setSelecte
               </View>
             )}
           </>
+        )}
+
+        {selectedCat === 'Electrical' && noRooms && (
+          <Txt size={13} color={Colors.textSecondary}>
+            No rooms yet. They appear here once the owner adds the property's floors and rooms.
+          </Txt>
         )}
 
         {/* Room Checklists */}
