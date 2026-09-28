@@ -1,60 +1,57 @@
 import React from 'react';
-import { StyleSheet, View, Image, useWindowDimensions, Linking } from 'react-native';
-import { GroceryColors, Radii } from '@/theme';
+import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
+
 import { AnimatedPress } from '@/components/ui';
-import { PromotionalCampaign } from '../../usePromotionalCampaign';
+import { Radii } from '@/theme';
+import { storefrontImage, type BuiltinImage } from '../../useStorefront';
 
 interface PromotionalBannerProps {
-  campaign: PromotionalCampaign;
-  onPress?: (campaign: PromotionalCampaign) => void;
+  imageUrl: string | null;
+  builtinImage: BuiltinImage | null;
+  /** `hero`: full width under the search bar. `banner`: a card-width strip further down. */
+  variant: 'hero' | 'banner';
+  onPress: () => void;
 }
 
-export const PromotionalBanner: React.FC<PromotionalBannerProps> = ({ campaign, onPress }) => {
+/** A banner from the storefront — the picture ops uploaded in the portal (animated GIFs play). */
+export const PromotionalBanner: React.FC<PromotionalBannerProps> = ({
+  imageUrl,
+  builtinImage,
+  variant,
+  onPress,
+}) => {
   const { width } = useWindowDimensions();
-  
-  // Calculate dynamic height to maintain a premium wide aspect ratio (e.g., 16:9 or similar)
-  const bannerWidth = width;
-  // A slightly taller aspect ratio for the seamless hero shot
-  const bannerHeight = bannerWidth * 0.75; 
+  const source = storefrontImage(imageUrl, builtinImage);
+  if (!source) return null;
 
-  const handlePress = () => {
-    if (onPress) {
-      onPress(campaign);
-    } else if (campaign.redirectUrl) {
-      Linking.openURL(campaign.redirectUrl);
-    }
-  };
+  const isHero = variant === 'hero';
+  const bannerWidth = isHero ? width : width - 32;
+  const bannerHeight = bannerWidth * (isHero ? 0.75 : 0.42);
 
   return (
-    <AnimatedPress accessibilityRole="button" onPress={handlePress} style={styles.outerContainer}>
-      <View style={[styles.bannerWrapper, { width: bannerWidth, height: bannerHeight }]}>
-        <Image 
-          source={typeof campaign.imageUrl === 'number' ? campaign.imageUrl : { uri: campaign.imageUrl }} 
-          style={styles.image} 
-          resizeMode="cover"
-        />
+    <AnimatedPress
+      accessibilityRole="button"
+      accessibilityLabel="Offer banner"
+      onPress={onPress}
+      style={[styles.outer, !isHero && styles.stripOuter]}
+    >
+      <View
+        style={[
+          styles.frame,
+          { width: bannerWidth, height: bannerHeight },
+          !isHero && styles.stripFrame,
+        ]}
+      >
+        <Image source={source} style={styles.image} resizeMode="cover" />
       </View>
     </AnimatedPress>
   );
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    marginHorizontal: 0,
-    marginTop: 0,
-    marginBottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  bannerWrapper: {
-    width: '100%',
-    overflow: 'hidden',
-    backgroundColor: 'transparent', 
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-
+  outer: { width: '100%', alignItems: 'center' },
+  stripOuter: { marginVertical: 12 },
+  frame: { overflow: 'hidden' },
+  stripFrame: { borderRadius: Radii.card },
+  image: { width: '100%', height: '100%' },
 });

@@ -3,43 +3,24 @@ import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPress, Txt } from '@/components/ui';
 
-interface PromoCard {
-  id: string;
-  title: string;
-  bgColor: string;
-  imageBg: string;
-  image: any;
-}
+import type { StorefrontCard } from '../../useStorefront';
+import { storefrontImage } from '../../useStorefront';
 
-const PROMO_CARDS: PromoCard[] = [
-  {
-    id: 'fresh-produce',
-    title: 'Fresh\nProduce',
-    bgColor: '#F4FFF4', // Extremely soft mint tint
-    imageBg: '#DDF4DD', // Slightly deeper mint for spotlight
-    image: require('../../../../../assets/productimages/promo_fresh_picks_nobg.webp'), 
-  },
-  {
-    id: 'pantry-restock',
-    title: 'Pantry\nRestock',
-    bgColor: '#FFFBF4', // Extremely soft warm tint
-    imageBg: '#FFECD1', // Slightly deeper warm orange for spotlight
-    image: require('../../../../../assets/productimages/cat_masala_nobg.webp'), 
-  },
-  {
-    id: 'festive-sweets',
-    title: 'Festive\nSweets',
-    bgColor: '#FFF4F7', // Extremely soft pink tint
-    imageBg: '#FCE0E9', // Slightly deeper rose pink for spotlight
-    image: require('../../../../../assets/productimages/d1_nobg.webp'), 
-  },
-];
+/** A slightly deeper shade of the card's tint, for the circle behind its picture. */
+function deeper(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const shade = (c: number) => Math.round(c * 0.92);
+  const r = shade((n >> 16) & 255), g = shade((n >> 8) & 255), b = shade(n & 255);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
 
 interface PromoCardsProps {
-  onCardPress?: (cardId: string) => void;
+  /** From the storefront, set in the portal. */
+  cards: StorefrontCard[];
+  onCardPress: (card: StorefrontCard) => void;
 }
 
-export const PromoCards: React.FC<PromoCardsProps> = ({ onCardPress }) => {
+export const PromoCards: React.FC<PromoCardsProps> = ({ cards, onCardPress }) => {
   return (
     <View style={styles.wrapper}>
       <ScrollView
@@ -47,32 +28,40 @@ export const PromoCards: React.FC<PromoCardsProps> = ({ onCardPress }) => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {PROMO_CARDS.map((card) => (
-          <AnimatedPress
-            key={card.id}
-            accessibilityRole="button"
-            scale={0.97}
-            style={[styles.card, { backgroundColor: card.bgColor }]}
-            onPress={() => onCardPress?.(card.id)}
-          >
-            {/* Product Image with Premium Backdrop */}
-            <View style={styles.imageContainer}>
-              <View style={[styles.imageBackdrop, { backgroundColor: card.imageBg }]} />
-              <Image source={card.image} style={styles.image} resizeMode="contain" />
-            </View>
+        {cards.map((card, index) => {
+          const source = storefrontImage(card.image_url, card.builtin_image);
+          return (
+            <AnimatedPress
+              key={`${index}-${card.title}`}
+              accessibilityRole="button"
+              scale={0.97}
+              style={[styles.card, { backgroundColor: card.tint }]}
+              onPress={() => onCardPress(card)}
+            >
+              {/* Product Image with Premium Backdrop */}
+              <View style={styles.imageContainer}>
+                <View style={[styles.imageBackdrop, { backgroundColor: deeper(card.tint) }]} />
+                {source ? <Image source={source} style={styles.image} resizeMode="contain" /> : null}
+              </View>
 
-            {/* Text */}
-            <Txt maxFontSizeMultiplier={1.1} style={styles.title} numberOfLines={2}>
-              {card.title}
-            </Txt>
+              {/* Text */}
+              <Txt maxFontSizeMultiplier={1.1} style={styles.title} numberOfLines={2}>
+                {card.title}
+              </Txt>
+              {card.subtitle ? (
+                <Txt maxFontSizeMultiplier={1.1} style={styles.subtitle} numberOfLines={1}>
+                  {card.subtitle}
+                </Txt>
+              ) : null}
 
-            {/* Premium Action Pill */}
-            <View style={styles.actionPill}>
-              <Txt maxFontSizeMultiplier={1.1} style={styles.actionText}>Shop Now</Txt>
-              <Ionicons name="chevron-forward" size={10} color="#FFFFFF" />
-            </View>
-          </AnimatedPress>
-        ))}
+              {/* Premium Action Pill */}
+              <View style={styles.actionPill}>
+                <Txt maxFontSizeMultiplier={1.1} style={styles.actionText}>Shop Now</Txt>
+                <Ionicons name="chevron-forward" size={10} color="#FFFFFF" />
+              </View>
+            </AnimatedPress>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -102,6 +91,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 20,
     elevation: 5,
+  },
+  subtitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#5A5F7A',
+    textAlign: 'center',
+    marginTop: 2,
   },
   title: {
     fontSize: 14, // Slightly larger

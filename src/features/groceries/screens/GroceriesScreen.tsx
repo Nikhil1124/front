@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { toAmount } from '@/data/mappers';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  Linking,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
   useWindowDimensions } from 'react-native';
@@ -23,9 +23,9 @@ import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
 import { FloatingCartBar } from '../components/FloatingCartBar';
 import { groupByVariant } from '../variantGroups';
-import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
+import { useSupplyCategories, useSupplyItems } from '../useSupply';
 import { PGowApiError } from '@/data/apiClient';
-import { usePromotionalCampaign } from '../usePromotionalCampaign';
+import { useStorefront, type StorefrontLink, type StorefrontSection } from '../useStorefront';
 
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
@@ -37,7 +37,7 @@ import { usePGowStore } from '@/store/usePGowStore';
  * Guest → personal). No manual toggle UI needed.
  */
 import { useActiveProperty } from '@/features/properties/useProperties';
-import { AnimatedPress, ErrorState, LoadingState, Txt } from '@/components/ui';
+import { ErrorState, LoadingState, Txt } from '@/components/ui';
 
 export function GroceriesScreen() {
   const { width } = useWindowDimensions();
@@ -59,8 +59,13 @@ export function GroceriesScreen() {
     isRefetching: isRefetchingItems,
   } = useSupplyItems(activePgId ?? undefined);
   const { data: categories = [], refetch: refetchCategories } = useSupplyCategories(activePgId ?? undefined);
-  const { data: deals = [], refetch: refetchDeals } = useDeals(activePgId ?? undefined);
-  const { campaign } = usePromotionalCampaign();
+  // The home's layout — banners, cards, rows, headings, colours — comes from the backend.
+  const {
+    data: storefront,
+    isLoading: storefrontLoading,
+    error: storefrontError,
+    refetch: refetchStorefront,
+  } = useStorefront(activePgId ?? undefined);
 
   const queryClient = useQueryClient();
 
@@ -68,7 +73,7 @@ export function GroceriesScreen() {
     await Promise.all([
       refetchItems(),
       refetchCategories(),
-      refetchDeals(),
+      refetchStorefront(),
       queryClient.invalidateQueries({ queryKey: ['kitchen_menu', activePgId ?? undefined] }),
     ]);
   };
@@ -76,7 +81,8 @@ export function GroceriesScreen() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
-  const [activeQuickCategory, setActiveQuickCategory] = useState<string | null>(null);
+  // The chip chosen along the top: a category id, or null for All.
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
 
   useEffect(() => {
     const isBulkRole = activeRole === 'OWNER' || activeRole === 'MANAGER' || activeRole === 'CHEF';
@@ -85,52 +91,9 @@ export function GroceriesScreen() {
     if (pgOwner) setPgDetails(pgOwner.pgName, pgOwner.address);
   }, [activeRole, owner, ownerForGuest, setMode, setPgDetails]);
 
-  // Derived product lists
-  const dailyEssentials = useMemo(() => {
-    const keywords = ['milk', 'curd', 'bread', 'egg', 'banana', 'tomato', 'onion', 'potato', 'water', 'oil'];
-    return supplyItems.filter((p) =>
-      keywords.some((k) => p.id.toLowerCase().includes(k) || p.name.toLowerCase().includes(k))
-    );
-  }, [supplyItems]);
-
-  const recommendedProducts = useMemo(() => supplyItems.slice(0, 6), [supplyItems]);
-  const popularProducts = useMemo(() => supplyItems.slice(6, 12), [supplyItems]);
-
-  /**
-   * Items in whichever categories match a predicate on the category NAME.
-   *
-   * All four lists below used to test `p.category_id.toLowerCase().includes('vegetable')`.
-   * `category_id` is a UUID (`schemas.py` types it `uuid.UUID`), and a UUID never contains
-   * the word "vegetable" — so every one of these lists was permanently empty, which is why
-   * the quick-category chips reported "No products in Vegetables" and the home screen's
-   * category sections never rendered. The name lives on the category, so the name is what
-   * has to be matched, and the ids it resolves to are what the items carry.
-   */
-  const itemsInCategories = useMemo(
-    () => (matches: (name: string) => boolean) => {
-      const ids = new Set(categories.filter((c) => matches(c.name.toLowerCase())).map((c) => c.id));
-      return supplyItems.filter((p) => ids.has(p.category_id));
-    },
-    [supplyItems, categories],
-  );
-
-  // "Leafy Vegetables" contains "vegetable", so plain Vegetables has to exclude it or the two
-  // chips would show the same list.
-  const vegetablesList = useMemo(
-    () => itemsInCategories((n) => n.includes('vegetable') && !n.includes('leafy')),
-    [itemsInCategories],
-  );
-  const leafyItemsList = useMemo(() => itemsInCategories((n) => n.includes('leafy')), [itemsInCategories]);
-  const dairyAndEggsList = useMemo(
-    () => itemsInCategories((n) => n.includes('dairy') || n.includes('egg')),
-    [itemsInCategories],
-  );
-  // The catalogue's meat category is named "Chicken"; keep the other two so a later "Mutton"
-  // or "Fish" category lands here without another edit.
-  const meatsList = useMemo(
-    () => itemsInCategories((n) => n.includes('meat') || n.includes('chicken') || n.includes('fish')),
-    [itemsInCategories],
-  );
+  const itemsById = useMemo(() => new Map(supplyItems.map((i) => [i.id, i])), [supplyItems]);
+  const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
+  const activeCategory = activeCategoryId ? categoriesById.get(activeCategoryId) ?? null : null;
 
   const hasActiveFilters =
     filters.sort !== 'popular' || filters.maxPrice !== undefined || filters.onDealOnly === true;
@@ -139,16 +102,14 @@ export function GroceriesScreen() {
     let list = supplyItems;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
+      // A product's own name, or its category's ("dairy" finds the whole Dairy shelf).
       list = list.filter(
-        (p) => p.name.toLowerCase().includes(q) || p.category_id.toLowerCase().includes(q)
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (categoriesById.get(p.category_id)?.name.toLowerCase().includes(q) ?? false)
       );
-    } else if (activeQuickCategory) {
-      const q = activeQuickCategory.toLowerCase();
-      if (q.includes('vegetable')) list = vegetablesList;
-      else if (q.includes('leafy')) list = leafyItemsList;
-      else if (q.includes('dairy') || q.includes('egg')) list = dairyAndEggsList;
-      else if (q.includes('meat')) list = meatsList;
-      else list = [];
+    } else if (activeCategoryId) {
+      list = list.filter((p) => p.category_id === activeCategoryId);
     } else if (hasActiveFilters) {
       list = [...list];
     } else {
@@ -173,26 +134,14 @@ export function GroceriesScreen() {
     filters,
     hasActiveFilters,
     supplyItems,
-    activeQuickCategory,
-    vegetablesList,
-    leafyItemsList,
-    dairyAndEggsList,
-    meatsList,
+    activeCategoryId,
+    categoriesById,
   ]);
 
   // One card per product. The count below follows it: "142 products in Vegetables" over a grid
   // of 36 cards is a number nothing on screen can account for.
   const searchFamilies = useMemo(() => groupByVariant(searchResults), [searchResults]);
-  // Group BEFORE slicing, always: slicing pack rows first can cut a family in half and leave a
-  // card offering "1 kg, 2 kg" for a product whose 250 g and 500 g packs fell off the end.
-  const dealFamilies = useMemo(() => groupByVariant(deals), [deals]);
-  const essentialFamilies = useMemo(
-    () => groupByVariant(dailyEssentials.length > 0 ? dailyEssentials : supplyItems),
-    [dailyEssentials, supplyItems],
-  );
-  const allFamilies = useMemo(() => groupByVariant(supplyItems), [supplyItems]);
-
-  const isSearching = searchQuery.trim().length > 0 || hasActiveFilters || activeQuickCategory !== null;
+  const isSearching = searchQuery.trim().length > 0 || hasActiveFilters || activeCategoryId !== null;
 
   /**
    * AREA_NOT_SERVICED is not a failure — it is an answer. The server is saying this property
@@ -222,14 +171,110 @@ export function GroceriesScreen() {
   const openDeals = () => router.push({ pathname: '/groceries/categories', params: { filter: 'deals' } });
   const openCart = () => router.push('/groceries/cart');
 
-  const dealsTitle = mode === 'owner' ? 'Deals for Your PG' : 'Deals for You';
+  /** Where a tap on a banner, card or "See All" goes — set per block in the portal. */
+  const followLink = (link: StorefrontLink) => {
+    switch (link.type) {
+      case 'category':
+        openSupplyCategory(categoriesById.get(link.target_id)?.name ?? null);
+        break;
+      case 'item':
+        openProduct(link.target_id);
+        break;
+      case 'deals':
+        openDeals();
+        break;
+      case 'all_products':
+        openSupplyCategory(null);
+        break;
+      case 'url':
+        Linking.openURL(link.url).catch(() => {});
+        break;
+      default:
+        break;
+    }
+  };
+
+  // The header takes the leading banner's colour; links on white use it too — it is dark
+  // enough for white text, so it is readable as text on white as well.
+  const themeColor = storefront?.theme.primary_color ?? null;
+  const accentColor = themeColor ?? GroceryColors.primary;
+
+  const renderSection = (section: StorefrontSection, onColour: boolean) => {
+    switch (section.kind) {
+      case 'hero':
+      case 'banner':
+        return (
+          <PromotionalBanner
+            key={section.id}
+            variant={section.kind}
+            imageUrl={section.data.image_url}
+            builtinImage={section.data.builtin_image}
+            onPress={() => followLink(section.data.link)}
+          />
+        );
+      case 'promo_cards':
+        return (
+          <View key={section.id} style={styles.promoCardsWrap}>
+            {section.title ? (
+              <Txt
+                maxFontSizeMultiplier={1.3}
+                style={[styles.promoHeading, { color: onColour ? GroceryColors.white : GroceryColors.textPrimary }]}
+              >
+                {section.title}
+              </Txt>
+            ) : null}
+            <PromoCards cards={section.data.cards} onCardPress={(card) => followLink(card.link)} />
+          </View>
+        );
+      case 'categories': {
+        const chosen = section.data.category_ids.length
+          ? section.data.category_ids.flatMap((id) => categoriesById.get(id) ?? [])
+          : categories;
+        return (
+          <SupplyCategoryGrid
+            key={section.id}
+            categories={chosen}
+            title={section.title}
+            columns={section.data.columns}
+            accentColor={accentColor}
+            onSupplyCategoryPress={(cat) => openSupplyCategory(cat.name)}
+            onSeeAllPress={() => openSupplyCategory(null)}
+          />
+        );
+      }
+      case 'products':
+        return (
+          <ProductRow
+            key={section.id}
+            title={section.title}
+            subtitle={section.subtitle}
+            products={section.data.item_ids.flatMap((id) => itemsById.get(id) ?? [])}
+            layout={section.data.layout}
+            columns={section.data.columns}
+            accentColor={accentColor}
+            onProductPress={(p) => openProduct(p.id)}
+            onSeeAllPress={() => followLink(section.data.see_all)}
+          />
+        );
+      default:
+        // A block this version of the app does not know yet: skipped, not a crash.
+        return null;
+    }
+  };
+
+  // Leading banners and promo cards sit on the coloured top; from the first other block on,
+  // everything is on the white sheet — in the portal's order either way.
+  const sections = storefront?.sections ?? [];
+  const firstOnSheet = sections.findIndex((s) => s.kind !== 'hero' && s.kind !== 'promo_cards');
+  const topSections = firstOnSheet === -1 ? sections : sections.slice(0, firstOnSheet);
+  const sheetSections = firstOnSheet === -1 ? [] : sections.slice(firstOnSheet);
   const deliveryLabel =
     owner || ownerForGuest
       ? `${(owner ?? ownerForGuest)?.pgName}`
       : 'Your PG';
 
   return (
-    <View style={[styles.container, { backgroundColor: campaign?.primaryColor || GroceryColors.primaryDark }]}>
+    <View style={[styles.container, { backgroundColor: themeColor ?? GroceryColors.primaryDark }]}>
       {/* ── Green Header ── */}
       <Header
         deliveryLabel={deliveryLabel}
@@ -254,11 +299,11 @@ export function GroceriesScreen() {
       />
 
       {/* ── Quick Category Row ── */}
-      {(!isSearching || activeQuickCategory !== null) && (
+      {(!isSearching || activeCategoryId !== null) && (
         <QuickCategoryRow
-          onCategoryPress={(name) => {
-            setActiveQuickCategory(name);
-          }}
+          categories={categories}
+          activeId={activeCategoryId}
+          onSelect={setActiveCategoryId}
         />
       )}
 
@@ -282,8 +327,8 @@ export function GroceriesScreen() {
           <View style={styles.searchResultsWrapper}>
             <Txt maxFontSizeMultiplier={1.3} style={styles.searchResultsTitle}>
               {searchFamilies.length > 0
-                ? `${searchFamilies.length} products ${searchQuery ? `for "${searchQuery}"` : activeQuickCategory ? `in ${activeQuickCategory}` : 'found'}`
-                : `No products ${searchQuery ? `for "${searchQuery}"` : activeQuickCategory ? `in ${activeQuickCategory}` : 'found'}`}
+                ? `${searchFamilies.length} products ${searchQuery ? `for "${searchQuery}"` : activeCategory ? `in ${activeCategory.name}` : 'found'}`
+                : `No products ${searchQuery ? `for "${searchQuery}"` : activeCategory ? `in ${activeCategory.name}` : 'found'}`}
             </Txt>
             {itemsLoading ? (
               <LoadingState label="Loading catalog…" fill={false} />
@@ -336,171 +381,29 @@ export function GroceriesScreen() {
               fill={false}
             />
           </View>
-        ) : itemsLoading ? (
+        ) : itemsLoading || storefrontLoading ? (
           <View style={styles.errorWrapper}>
             <LoadingState label="Loading catalog…" fill={false} />
           </View>
+        ) : storefrontError ? (
+          /* The layout did not load but the catalog did: the categories are still a real way
+             in, so show those rather than a dead end. Nothing made up in between. */
+          <View style={styles.bottomWhiteSection}>
+            <SupplyCategoryGrid
+              categories={categories}
+              title="Shop by category"
+              columns={4}
+              accentColor={GroceryColors.primary}
+              onSupplyCategoryPress={(cat) => openSupplyCategory(cat.name)}
+              onSeeAllPress={() => openSupplyCategory(null)}
+            />
+          </View>
         ) : (
           <>
-            {/* ── Promotional Banner (Replaces Mega Sale) ── */}
-            {campaign && (
-              <PromotionalBanner 
-                campaign={campaign} 
-                onPress={() => openSupplyCategory(null)} 
-              />
-            )}
-
-            {/* ── Promo Cards ── */}
-            <View style={{ marginTop: 16, marginBottom: 16, zIndex: 10 }}>
-              <PromoCards onCardPress={(_id) => openDeals()} />
-            </View>
+            {topSections.map((section) => renderSection(section, true))}
 
             <View style={styles.bottomWhiteSection}>
-              {/* "Today's Kitchen Needs" sat here (owner/chef only, the weekly menu planner
-                  over `GET/PUT /v1/supply/kitchen-menu`). Removed from the shop home on
-                  request. The planner's own components are still in
-                  `components/kitchen/` and its endpoints are still live, so it can be
-                  reinstated — or given its own screen — without rebuilding anything. */}
-
-              {/* ── Popular Categories ── */}
-              <SupplyCategoryGrid
-                categories={categories}
-                onSupplyCategoryPress={(cat) => openSupplyCategory(cat.name)}
-                onSeeAllPress={() => openSupplyCategory(null)}
-              />
-
-
-            {/* ── Deals for Your PG ── */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeaderRow}>
-                <View>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>{dealsTitle}</Txt>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.sectionSubtitle}>
-                    {mode === 'owner'
-                      ? 'Save more on your PG kitchen essentials'
-                      : 'Everything you need during your stay'}
-                  </Txt>
-                </View>
-                <AnimatedPress accessibilityRole="button" onPress={openDeals}>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>
-                    See All →
-                  </Txt>
-                </AnimatedPress>
-              </View>
-
-              {/* 2-column grid for deals */}
-              {deals.length > 0 ? (
-                /* Same reasoning as the search grid above: six cards, nested in a
-                   ScrollView, so a FlatList bought nothing here. */
-                <View style={styles.dealsGrid}>
-                  {dealFamilies.slice(0, 6).map((family) => (
-                    <View key={family[0].id} style={{ width: (width - 44) / 2 }}>
-                      <ProductCard
-                        product={family[0]}
-                        variants={family}
-                        layout="deal"
-                        onPress={(p) => openProduct(p.id)}
-                        style={{ width: '100%', marginRight: 0 }}
-                      />
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalListContent}>
-                  {allFamilies.slice(0, 4).map((family) => (
-                    <ProductCard
-                      key={family[0].id}
-                      product={family[0]}
-                      variants={family}
-                      layout="deal"
-                      onPress={(p) => openProduct(p.id)}
-                    />
-                  ))}
-                </ScrollView>
-              )}
-            </View>
-
-            {/* ── Buy Again / Popular PG Essentials ── */}
-            <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeaderRow}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>
-                  Popular PG Essentials
-                </Txt>
-                <AnimatedPress accessibilityRole="button" onPress={() => openSupplyCategory(null)}>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.seeAllText}>
-                    See All →
-                  </Txt>
-                </AnimatedPress>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalListContent}
-              >
-                {essentialFamilies.slice(0, 8).map((family) => (
-                  <ProductCard
-                    key={family[0].id}
-                    product={family[0]}
-                    variants={family}
-                    layout="simple"
-                    onPress={(p) => openProduct(p.id)}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* ── Popular with PG Residents ── */}
-            <ProductRow
-              title="Popular with PG Residents"
-              products={popularProducts}
-              onProductPress={(p) => openProduct(p.id)}
-              onSeeAllPress={() => openSupplyCategory(null)}
-            />
-
-            {/* ── Dynamic Category Rows ── */}
-            {vegetablesList.length > 0 && (
-              <ProductRow
-                title="Fresh Vegetables"
-                products={vegetablesList}
-                onProductPress={(p) => openProduct(p.id)}
-                onSeeAllPress={() => openSupplyCategory('Vegetables')}
-              />
-            )}
-            
-            {leafyItemsList.length > 0 && (
-              <ProductRow
-                title="Leafy Items"
-                products={leafyItemsList}
-                onProductPress={(p) => openProduct(p.id)}
-                onSeeAllPress={() => openSupplyCategory('Leafy Vegetables')}
-              />
-            )}
-
-            {dairyAndEggsList.length > 0 && (
-              <ProductRow
-                title="Dairy & Eggs"
-                products={dairyAndEggsList}
-                onProductPress={(p) => openProduct(p.id)}
-                onSeeAllPress={() => openSupplyCategory('Dairy & Eggs')}
-              />
-            )}
-
-            {meatsList.length > 0 && (
-              <ProductRow
-                title="Meats & Poultry"
-                products={meatsList}
-                onProductPress={(p) => openProduct(p.id)}
-                onSeeAllPress={() => openSupplyCategory('Chicken')}
-              />
-            )}
-
-            {/* ── Recommended for You ── */}
-            <ProductRow
-              title="Recommended for You"
-              products={recommendedProducts}
-              onProductPress={(p) => openProduct(p.id)}
-              onSeeAllPress={() => openSupplyCategory(null)}
-            />
+              {sheetSections.map((section) => renderSection(section, false))}
             </View>
           </>
         )}
@@ -552,46 +455,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     rowGap: 10,
   },
-  dealsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
   noResultsBox: {
     alignItems: 'center',
     paddingVertical: 60,
     gap: 12,
   },
-  sectionContainer: {
-    marginTop: 20,
-    marginBottom: 4,
+  promoCardsWrap: {
+    marginTop: 16,
+    marginBottom: 16,
+    zIndex: 10,
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 14,
-  },
-  horizontalListContent: {
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
+  promoHeading: {
+    fontSize: 16,
     fontWeight: '700',
-    color: GroceryColors.textPrimary,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: GroceryColors.textSecondary,
-    marginTop: 2,
-  },
-  seeAllText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#E6A800', // Gold/warm accent
+    paddingHorizontal: 16,
+    marginBottom: 8,
   },
   searchResultsTitle: {
     fontSize: 13,

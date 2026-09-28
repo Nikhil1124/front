@@ -1,24 +1,26 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import type { SupplyCategory } from '@/types';
+import { categoryPicture } from '../../categoryVisuals';
 
 interface QuickCategoryRowProps {
-  onCategoryPress?: (categoryName: string | null) => void;
+  /** The backend's categories, in their order. */
+  categories: SupplyCategory[];
+  /** The chosen category's id, or null for All. */
+  activeId: string | null;
+  onSelect: (categoryId: string | null) => void;
 }
 
-export const QuickCategoryRow: React.FC<QuickCategoryRowProps> = ({ onCategoryPress }) => {
-  const [active, setActive] = useState<string>('all');
-
-  const categories = [
-    { id: 'all', label: 'All', icon: () => <MaterialCommunityIcons name="view-grid-outline" size={26} color={GroceryColors.white} /> },
-    { id: 'vegetables', label: 'Vegetables', icon: () => <MaterialCommunityIcons name="carrot" size={26} color={GroceryColors.white} /> },
-    { id: 'leafy', label: 'Leafy Items', icon: () => <MaterialCommunityIcons name="leaf" size={26} color={GroceryColors.white} /> },
-    { id: 'dairy', label: 'Dairy & Eggs', icon: () => <MaterialCommunityIcons name="egg" size={26} color={GroceryColors.white} /> },
-    { id: 'meats', label: 'Meats', icon: () => <MaterialCommunityIcons name="food-drumstick" size={26} color={GroceryColors.white} /> },
+/** Chips across the top: All, then the real categories — not five names written into the
+ *  app that stopped matching the moment ops renamed a category. */
+export const QuickCategoryRow: React.FC<QuickCategoryRowProps> = ({ categories, activeId, onSelect }) => {
+  const chips: { id: string | null; label: string; category?: SupplyCategory }[] = [
+    { id: null, label: 'All' },
+    ...categories.slice(0, 12).map((c) => ({ id: c.id, label: c.name, category: c })),
   ];
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -26,27 +28,31 @@ export const QuickCategoryRow: React.FC<QuickCategoryRowProps> = ({ onCategoryPr
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {categories.map((cat) => {
-          const isActive = active === cat.id;
+        {chips.map((chip) => {
+          const isActive = activeId === chip.id;
           return (
             <AnimatedPress
-              key={cat.id}
+              key={chip.id ?? 'all'}
               accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
               style={styles.chip}
-              onPress={() => {
-                setActive(cat.id);
-                onCategoryPress?.(cat.id === 'all' ? null : cat.label);
-              }}
+              onPress={() => onSelect(chip.id)}
             >
-              {/* The selected state is the tinted box the bottom dock uses, not the 6px dot
-                  that used to sit on the icon's corner: at that size a dot reads as a badge
-                  ("something is waiting here"), which is what it means everywhere else in
-                  this app, rather than "this is the one you are on". */}
+              {/* The selected state is the tinted box the bottom dock uses, not a dot: a dot
+                  reads as a badge everywhere else in this app. */}
               <View style={[styles.iconBox, isActive && styles.iconBoxActive]}>
-                {cat.icon()}
+                {chip.category ? (
+                  <Image source={categoryPicture(chip.category)} style={styles.picture} resizeMode="contain" />
+                ) : (
+                  <MaterialCommunityIcons name="view-grid-outline" size={26} color={GroceryColors.white} />
+                )}
               </View>
-              <Txt maxFontSizeMultiplier={1.1} style={[styles.chipLabel, isActive && styles.chipLabelActive]}>
-                {cat.label}
+              <Txt
+                maxFontSizeMultiplier={1.1}
+                numberOfLines={1}
+                style={[styles.chipLabel, isActive && styles.chipLabelActive]}
+              >
+                {chip.label}
               </Txt>
             </AnimatedPress>
           );
@@ -65,8 +71,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     gap: 16,
-    justifyContent: 'space-between',
-    width: '100%',
   },
   chip: {
     flexDirection: 'column',
@@ -82,6 +86,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  picture: {
+    width: 30,
+    height: 30,
+  },
   iconBoxActive: {
     backgroundColor: 'rgba(255,255,255,0.18)',
   },
@@ -90,6 +98,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
+    maxWidth: 72,
   },
   chipLabelActive: {
     color: GroceryColors.white,

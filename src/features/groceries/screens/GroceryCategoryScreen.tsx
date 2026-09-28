@@ -14,13 +14,14 @@ import { FormScroll } from '@/components/ui/FormScroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { categoryPicture, categoryTint } from '../categoryVisuals';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ProductCard } from '../components/grocery/ProductCard';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
 import { groupByVariant } from '../variantGroups';
 import { useAuthStore } from '@/store/authStore';
-import { Colors, GroceryColors, Palette, Radii } from '@/theme';
+import { Colors, GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { FloatingCartBar } from '../components/FloatingCartBar';
 
@@ -32,35 +33,7 @@ const SECTION_FILTERS: Record<string, { label: string; icon: string }> = {
   deals: { label: "Today's Deals", icon: '🔥' },
 };
 
-// Category name → grocery image asset
-const getCategoryImage = (name: string) => {
-  const n = name.toLowerCase();
-  // `promo_fresh_picks_nobg`, not `cat_fruits_veg_nobg`: the latter is a cabbage, an apple and
-  // some chard on a white block, which reads as a pale square sitting on the tile's tint. This
-  // one is a cut-out spread of real vegetables — and this catalogue sells no fruit.
-  if (n.includes('fruit') || n.includes('veg'))
-    return require('../../../../assets/productimages/promo_fresh_picks_nobg.webp');
-  if (n.includes('dairy') || n.includes('milk') || n.includes('bread') || n.includes('egg'))
-    return require('../../../../assets/productimages/cat_dairy_nobg.webp');
-  if (n.includes('chicken') || n.includes('meat') || n.includes('fish'))
-    return require('../../../../assets/productimages/cat_chicken_eggs_nobg.webp');
-  if (n.includes('oil') || n.includes('masala') || n.includes('ghee') || n.includes('spice') || n.includes('atta') || n.includes('rice') || n.includes('dal'))
-    return require('../../../../assets/productimages/cat_masala_nobg.webp');
-  return require('../../../../assets/productimages/cat_addons_nobg.webp');
-};
 
-/** The tint behind a category's artwork. Palette tints rather than the five off-palette
- *  hexes that were here ('#EDF7ED', '#FFF8ED', '#FFF0ED', '#F0F4FF'), so a category tile and
- *  the rest of the app agree on what "a soft green" is. */
-const getCategoryBg = (name: string): string => {
-  const n = name.toLowerCase();
-  if (n.includes('fruit') || n.includes('veg')) return Palette.TintGreen;
-  if (n.includes('dairy') || n.includes('milk') || n.includes('bread')) return Palette.TintAmber;
-  if (n.includes('chicken') || n.includes('meat') || n.includes('egg')) return Palette.TintRed;
-  if (n.includes('oil') || n.includes('masala') || n.includes('ghee')) return Palette.TintAmber;
-  if (n.includes('snack') || n.includes('beverage')) return Palette.TintBlue;
-  return GroceryColors.lightGreen;
-};
 
 export function GroceryCategoryScreen() {
   const insets = useSafeAreaInsets();
@@ -135,10 +108,10 @@ export function GroceryCategoryScreen() {
       <View
         style={[
           styles.catImageContainer,
-          { height: catCardWidth * 0.82, backgroundColor: getCategoryBg(cat.name) },
+          { height: catCardWidth * 0.82, backgroundColor: categoryTint(cat) },
         ]}
       >
-        <Image source={getCategoryImage(cat.name)} style={styles.catImage} resizeMode="contain" />
+        <Image source={categoryPicture(cat)} style={styles.catImage} resizeMode="contain" />
       </View>
       <View style={styles.catLabelStrip}>
         <Txt maxFontSizeMultiplier={1.2} style={styles.catTitle} numberOfLines={2}>

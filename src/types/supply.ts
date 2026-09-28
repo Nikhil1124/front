@@ -4,6 +4,9 @@ export interface SupplyCategory {
   sort_order: number;
   area_id?: string;
   is_active?: boolean;
+  /** Set in the portal; null keeps the app's own picture (`categoryVisuals.ts`). */
+  image_url?: string | null;
+  tint?: string | null;
 }
 
 export interface SupplyItem {
