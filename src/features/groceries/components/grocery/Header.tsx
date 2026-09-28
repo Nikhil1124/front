@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: GroceryColors.primaryDark,
+    paddingBottom: 16, // Increased spacing
+    backgroundColor: 'transparent', // Let parent dark green show through
   },
   leftSection: {
     flexDirection: 'row',
@@ -151,6 +151,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: GroceryColors.white,
     letterSpacing: -0.5,
+    textShadowColor: 'rgba(0,0,0,0.2)', // Subtle shadow/glow
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   pgNameRow: {
     flexDirection: 'row',
@@ -169,11 +172,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   iconBtn: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    backgroundColor: 'rgba(255,255,255,0.1)', // Glass background for icons
+    borderRadius: Radii.pill,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   notifBadge: {
     position: 'absolute',

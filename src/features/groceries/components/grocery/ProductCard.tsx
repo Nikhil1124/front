@@ -6,6 +6,7 @@ import {
   StyleSheet,
   View,
   ViewStyle,
+  ScrollView,
 } from 'react-native';
 import { SupplyItem } from '@/types';
 import { useCartStore } from '../../store/useCartStore';
@@ -141,7 +142,11 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             {displayName}
           </Txt>
           {hasSizePicker ? (
-            <View style={[styles.sizeRow, styles.sizeRowCompact]}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.sizeRow, styles.sizeRowCompact]}
+            >
               {packs.map((pack, i) => {
                 const active = i === safeIdx;
                 return (
@@ -162,19 +167,22 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
                   </AnimatedPress>
                 );
               })}
-            </View>
+            </ScrollView>
           ) : (
             <Txt maxFontSizeMultiplier={1.2} style={styles.simpleUnit}>
               {selectedOption.unit}
             </Txt>
           )}
+        </View>
+
+        {/* Bottom Section (Price + Add) locked to the bottom */}
+        <View style={styles.simpleBottomSection}>
           <View style={styles.simplePriceRow}>
             <Txt maxFontSizeMultiplier={1.2} style={styles.simplePrice}>₹{price}</Txt>
             {originalPrice && (
               <Txt maxFontSizeMultiplier={1.2} style={styles.simpleStrike}>₹{originalPrice}</Txt>
             )}
           </View>
-        </View>
 
         {/* Add / qty control */}
         {quantity > 0 ? (
@@ -206,6 +214,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             <Txt maxFontSizeMultiplier={1.1} style={styles.simpleAddText}>Add</Txt>
           </AnimatedPress>
         )}
+        </View>
       </AnimatedPress>
     );
   }
@@ -261,7 +270,11 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
           {displayName}
         </Txt>
         {hasSizePicker ? (
-          <View style={styles.sizeRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sizeRow}
+          >
             {packs.map((pack, i) => {
               const active = i === safeIdx;
               return (
@@ -282,7 +295,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
                 </AnimatedPress>
               );
             })}
-          </View>
+          </ScrollView>
         ) : (
           <Txt maxFontSizeMultiplier={1.2} style={styles.unit}>
             {selectedOption.unit}
@@ -340,17 +353,12 @@ const styles = StyleSheet.create({
   // ── Deal Card ──
   card: {
     backgroundColor: GroceryColors.white,
-    borderRadius: Radii.control,
-    padding: 8,
+    borderRadius: 20, // Modern premium curves
+    padding: 10,
     borderWidth: 1,
-    borderColor: GroceryColors.border,
+    borderColor: '#F2F2F2', // Very subtle border
     marginRight: 10,
     marginBottom: 10,
-    shadowColor: GroceryColors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
@@ -377,13 +385,13 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   imageContainer: {
-    height: 85,
+    height: 100, // Taller image area for better product visibility
     width: '100%',
-    backgroundColor: 'transparent',
-    borderRadius: Radii.badge,
+    backgroundColor: 'transparent', // Removed studio backdrop
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
     overflow: 'hidden',
   },
   image: {
@@ -392,15 +400,14 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   details: {
-    flex: 1,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   name: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: GroceryColors.textPrimary,
-    lineHeight: 16,
-    minHeight: 32,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A', // Deep premium black
+    lineHeight: 18,
+    minHeight: 36,
   },
   unit: {
     fontSize: 10,
@@ -411,18 +418,18 @@ const styles = StyleSheet.create({
   // Wraps: four chips do not fit one line of a half-width grid card at every font scale.
   sizeRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     gap: 5,
     marginTop: 5,
     marginBottom: 1 },
   sizeChip: {
     minWidth: 42,
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: Radii.badge,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: GroceryColors.border,
-    backgroundColor: GroceryColors.white,
+    borderColor: '#E8E8E8',
+    backgroundColor: '#FAFAFA',
     alignItems: 'center',
     justifyContent: 'center' },
   sizeChipActive: {
@@ -454,12 +461,17 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   addBtn: {
-    backgroundColor: GroceryColors.primary,
-    borderRadius: Radii.control,
-    height: 36,
+    backgroundColor: '#00845B', // Fresh rich green
+    borderRadius: 20, // Pill shaped designer button
+    height: 38,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#00845B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 2,
   },
   addBtnText: {
     color: GroceryColors.white,
@@ -470,9 +482,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: GroceryColors.primary,
-    borderRadius: Radii.control,
-    height: 36,
+    backgroundColor: '#00845B',
+    borderRadius: 20,
+    height: 38,
     paddingHorizontal: 4,
   },
   qtyBtn: {
@@ -492,17 +504,14 @@ const styles = StyleSheet.create({
   // ── Simple Card (horizontal rails) ──
   simpleCard: {
     backgroundColor: GroceryColors.white,
-    borderRadius: Radii.card,
+    borderRadius: 18,
     padding: 10,
     borderWidth: 1,
-    borderColor: GroceryColors.border,
-    marginRight: 8,
-    shadowColor: GroceryColors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 1,
+    borderColor: '#F2F2F2',
+    marginRight: 10,
     position: 'relative',
+    height: 255, // Fixed height so all cards are perfectly uniform
+    flexDirection: 'column',
   },
   simpleDiscountBadge: {
     position: 'absolute',
@@ -521,12 +530,12 @@ const styles = StyleSheet.create({
   },
   simpleImageContainer: {
     width: '100%',
-    height: 70,
+    height: 80, // Taller
     backgroundColor: 'transparent',
-    borderRadius: Radii.control,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
     overflow: 'hidden',
   },
   simpleImage: {
@@ -535,14 +544,17 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   simpleInfo: {
-    flex: 1,
-    marginBottom: 8,
+    marginBottom: 0,
+  },
+  simpleBottomSection: {
+    marginTop: 'auto',
   },
   simpleName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: GroceryColors.textPrimary,
-    lineHeight: 16,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    lineHeight: 18,
+    minHeight: 36, // Ensure 2 lines are always reserved
   },
   simpleUnit: {
     fontSize: 10,
@@ -566,9 +578,9 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   simpleAddBtn: {
-    backgroundColor: GroceryColors.primary,
-    borderRadius: Radii.badge,
-    height: 30,
+    backgroundColor: '#00845B',
+    borderRadius: 20,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -581,9 +593,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: GroceryColors.primary,
-    borderRadius: Radii.badge,
-    height: 30,
+    backgroundColor: '#00845B',
+    borderRadius: 20,
+    height: 32,
     paddingHorizontal: 4,
   },
   simpleQtyBtn: {

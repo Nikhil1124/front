@@ -18,13 +18,14 @@ import { ProductRow } from '../components/grocery/ProductRow';
 import { Header } from '../components/grocery/Header';
 import { SearchBar } from '../components/grocery/SearchBar';
 import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery/FilterSheet';
-import { HeroBanner } from '../components/grocery/HeroBanner';
+import { PromotionalBanner } from '../components/grocery/PromotionalBanner';
 import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
 import { FloatingCartBar } from '../components/FloatingCartBar';
 import { groupByVariant } from '../variantGroups';
 import { useSupplyCategories, useSupplyItems, useDeals } from '../useSupply';
 import { PGowApiError } from '@/data/apiClient';
+import { usePromotionalCampaign } from '../usePromotionalCampaign';
 
 import { useCartStore } from '../store/useCartStore';
 import { useShoppingModeStore } from '../store/useShoppingModeStore';
@@ -59,6 +60,7 @@ export function GroceriesScreen() {
   } = useSupplyItems(activePgId ?? undefined);
   const { data: categories = [], refetch: refetchCategories } = useSupplyCategories(activePgId ?? undefined);
   const { data: deals = [], refetch: refetchDeals } = useDeals(activePgId ?? undefined);
+  const { campaign } = usePromotionalCampaign();
 
   const queryClient = useQueryClient();
 
@@ -227,7 +229,7 @@ export function GroceriesScreen() {
       : 'Your PG';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: campaign?.primaryColor || GroceryColors.primaryDark }]}>
       {/* ── Green Header ── */}
       <Header
         deliveryLabel={deliveryLabel}
@@ -340,11 +342,18 @@ export function GroceriesScreen() {
           </View>
         ) : (
           <>
-            {/* ── Hero Banner (Mega Sale) ── */}
-            <HeroBanner onPress={() => openSupplyCategory(null)} />
+            {/* ── Promotional Banner (Replaces Mega Sale) ── */}
+            {campaign && (
+              <PromotionalBanner 
+                campaign={campaign} 
+                onPress={() => openSupplyCategory(null)} 
+              />
+            )}
 
             {/* ── Promo Cards ── */}
-            <PromoCards onCardPress={(_id) => openDeals()} />
+            <View style={{ marginTop: 16, marginBottom: 16, zIndex: 10 }}>
+              <PromoCards onCardPress={(_id) => openDeals()} />
+            </View>
 
             <View style={styles.bottomWhiteSection}>
               {/* "Today's Kitchen Needs" sat here (owner/chef only, the weekly menu planner
@@ -511,10 +520,10 @@ const styles = StyleSheet.create({
     // Transparent so the green container shows through for the top half
   },
   bottomWhiteSection: {
-    backgroundColor: GroceryColors.background,
+    backgroundColor: GroceryColors.background, 
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingTop: 20,
+    paddingTop: 24,
     paddingBottom: 120, // Moved from scrollContent
   },
 
@@ -582,7 +591,7 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: GroceryColors.primary,
+    color: '#E6A800', // Gold/warm accent
   },
   searchResultsTitle: {
     fontSize: 13,

@@ -68,7 +68,7 @@ export const SupplyCategoryGrid: React.FC<SupplyCategoryGridProps> = ({
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Txt maxFontSizeMultiplier={1.2} style={styles.sectionTitle}>
-          Popular Categories
+          Shop by category
         </Txt>
         <AnimatedPress accessibilityRole="button" onPress={onSeeAllPress}>
           <Txt maxFontSizeMultiplier={1.2} style={styles.seeAllText}>
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: GroceryColors.primary,
+    color: '#E6A800',
   },
   grid: {
     flexDirection: 'row',
@@ -149,8 +149,13 @@ const styles = StyleSheet.create({
     borderRadius: Radii.card,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
     marginBottom: 6,
+    // Add subtle shadow for premium feel
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
   image: {
     width: '78%',

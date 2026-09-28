@@ -58,7 +58,7 @@ export const QuickCategoryRow: React.FC<QuickCategoryRowProps> = ({ onCategoryPr
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: GroceryColors.primaryDark,
+    backgroundColor: 'transparent',
     paddingBottom: 24,
     paddingTop: 12,
   },

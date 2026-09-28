@@ -1,45 +1,37 @@
 import React from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
-import { GroceryColors, Radii, Colors } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPress, Txt } from '@/components/ui';
 
 interface PromoCard {
   id: string;
   title: string;
-  subtitle: string;
-  badge: string;
   bgColor: string;
-  badgeColor: string;
+  imageBg: string;
   image: any;
 }
 
 const PROMO_CARDS: PromoCard[] = [
   {
-    id: 'fresh-picks',
-    title: 'Fresh Picks',
-    subtitle: 'Fresh every day',
-    badge: 'UP TO 40% OFF',
-    bgColor: '#FFF3E0', // Light warm beige/yellow
-    badgeColor: GroceryColors.discountRed,
-    image: require('../../../../../assets/productimages/promo_fresh_picks_nobg.webp'),
+    id: 'fresh-produce',
+    title: 'Fresh\nProduce',
+    bgColor: '#F4FFF4', // Extremely soft mint tint
+    imageBg: '#DDF4DD', // Slightly deeper mint for spotlight
+    image: require('../../../../../assets/productimages/promo_fresh_picks_nobg.webp'), 
   },
   {
     id: 'pantry-restock',
-    title: 'Pantry Restock',
-    subtitle: 'Stock up & save',
-    badge: 'UP TO 35% OFF',
-    bgColor: '#FFF8E1', // Lighter yellow
-    badgeColor: Colors.warning, // Amber
-    image: require('../../../../../assets/productimages/cat_masala_nobg.webp'),
+    title: 'Pantry\nRestock',
+    bgColor: '#FFFBF4', // Extremely soft warm tint
+    imageBg: '#FFECD1', // Slightly deeper warm orange for spotlight
+    image: require('../../../../../assets/productimages/cat_masala_nobg.webp'), 
   },
   {
-    id: 'breakfast-time',
-    title: 'Breakfast...',
-    subtitle: 'Start fresh every day',
-    badge: 'FROM ₹49',
-    bgColor: '#E0F2FE', // Light sky blue
-    badgeColor: '#38BDF8', // Light blue
-    image: require('../../../../../assets/productimages/d1_nobg.webp'),
+    id: 'festive-sweets',
+    title: 'Festive\nSweets',
+    bgColor: '#FFF4F7', // Extremely soft pink tint
+    imageBg: '#FCE0E9', // Slightly deeper rose pink for spotlight
+    image: require('../../../../../assets/productimages/d1_nobg.webp'), 
   },
 ];
 
@@ -63,24 +55,21 @@ export const PromoCards: React.FC<PromoCardsProps> = ({ onCardPress }) => {
             style={[styles.card, { backgroundColor: card.bgColor }]}
             onPress={() => onCardPress?.(card.id)}
           >
-            {/* Text */}
-            <Txt maxFontSizeMultiplier={1.1} style={styles.title} numberOfLines={1}>
-              {card.title}
-            </Txt>
-            <Txt maxFontSizeMultiplier={1.1} style={styles.subtitle} numberOfLines={1}>
-              {card.subtitle}
-            </Txt>
-
-            {/* Badge */}
-            <View style={[styles.badge, { backgroundColor: card.badgeColor }]}>
-              <Txt maxFontSizeMultiplier={1.1} style={styles.badgeText}>
-                {card.badge}
-              </Txt>
+            {/* Product Image with Premium Backdrop */}
+            <View style={styles.imageContainer}>
+              <View style={[styles.imageBackdrop, { backgroundColor: card.imageBg }]} />
+              <Image source={card.image} style={styles.image} resizeMode="contain" />
             </View>
 
-            {/* Product Image */}
-            <View style={styles.imageWrapper}>
-              <Image source={card.image} style={styles.image} resizeMode="contain" />
+            {/* Text */}
+            <Txt maxFontSizeMultiplier={1.1} style={styles.title} numberOfLines={2}>
+              {card.title}
+            </Txt>
+
+            {/* Premium Action Pill */}
+            <View style={styles.actionPill}>
+              <Txt maxFontSizeMultiplier={1.1} style={styles.actionText}>Shop Now</Txt>
+              <Ionicons name="chevron-forward" size={10} color="#FFFFFF" />
             </View>
           </AnimatedPress>
         ))}
@@ -99,47 +88,69 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   card: {
-    width: 140, // slightly wider
-    height: 160,
-    borderRadius: Radii.card,
-    paddingTop: 14,
-    paddingHorizontal: 12,
-    position: 'relative',
-    overflow: 'hidden',
+    width: 125, // Wider for the pill
+    height: 200, // Taller to fix overlaying issues and give elements breathing room
+    borderRadius: 24, // Luxurious large curve
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#FFFFFF', // Creates a glassmorphism reflection effect
+    shadowColor: '#1B1464', // Deep tinted shadow instead of harsh black
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
   },
   title: {
-    fontSize: 14,
+    fontSize: 14, // Slightly larger
     fontWeight: '800',
-    color: GroceryColors.textPrimary,
+    color: '#1B1464', 
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 6,
   },
-  subtitle: {
+  actionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1B1464', // Matches the deep blue text
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 'auto', // Pushes to the bottom
+    shadowColor: '#1B1464',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  actionText: {
     fontSize: 10,
-    color: GroceryColors.textSecondary,
-    marginTop: 4,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginRight: 2,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    borderRadius: Radii.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginTop: 8,
+  imageContainer: {
+    width: 85,
+    height: 85,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4, // Reduced to give title more space
+    position: 'relative',
   },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: GroceryColors.white,
-    letterSpacing: 0.3,
-  },
-  imageWrapper: {
+  imageBackdrop: {
     position: 'absolute',
-    bottom: -10, // overlap bottom edge
-    alignSelf: 'center',
-    width: 100,
-    height: 90,
+    width: 70,
+    height: 70,
+    borderRadius: 35, // Perfect circle
+    top: 8, // Shifted slightly down so product sits 'on' it
   },
   image: {
     width: '100%',
     height: '100%',
+    zIndex: 1,
   },
 });
 

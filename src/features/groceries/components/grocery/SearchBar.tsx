@@ -53,7 +53,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <View style={styles.container}>
       <View style={styles.searchBar}>
         {/* Search icon */}
-        <Ionicons name="search" size={18} color={GroceryColors.textMuted} style={styles.searchIcon} />
+        <Ionicons name="search" size={18} color={GroceryColors.textSecondary} style={styles.searchIcon} />
 
         {/* Input / animated placeholder */}
         <View style={styles.inputWrapper}>
@@ -82,7 +82,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             onPress={onFilterPress}
             style={styles.iconButton}
           >
-            <Ionicons name="swap-vertical" size={18} color={GroceryColors.textMuted} />
+            <Ionicons name="swap-vertical" size={18} color={GroceryColors.textSecondary} />
           </AnimatedPress>
           <View style={styles.iconDivider} />
           <AnimatedPress
@@ -95,7 +95,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <Ionicons
               name={hasActiveFilters ? 'options' : 'options-outline'}
               size={18}
-              color={hasActiveFilters ? GroceryColors.primary : GroceryColors.textMuted}
+              color={hasActiveFilters ? '#E6A800' : GroceryColors.textSecondary}
             />
             {hasActiveFilters && <View style={styles.filterDot} />}
           </AnimatedPress>
@@ -108,41 +108,42 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: GroceryColors.primaryDark,
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: GroceryColors.white,
-    borderRadius: Radii.pill,
-    height: 48,
-    paddingHorizontal: 14,
-    shadowColor: GroceryColors.shadowColor,
+    backgroundColor: '#FFFFFF', // Solid white
+    borderRadius: Radii.card, // More rounded (card vs pill or larger)
+    height: 52,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 6,
   },
   searchIcon: {
     marginRight: 8,
+    color: GroceryColors.textSecondary,
   },
   inputWrapper: {
     flex: 1,
     justifyContent: 'center',
-    height: 48,
+    height: 52,
   },
   placeholder: {
     position: 'absolute',
-    fontSize: 13,
-    color: GroceryColors.textMuted,
+    fontSize: 14,
+    color: GroceryColors.textSecondary,
   },
   input: {
-    fontSize: 13,
+    fontSize: 14,
     color: GroceryColors.textPrimary,
-    // `minHeight`: the field is single-line so it never wraps, but a hard 48 still crops the
-    // glyphs top and bottom once the font scale grows past the box.
-    minHeight: 48,
+    minHeight: 52,
     padding: 0,
   },
   rightIcons: {
@@ -159,9 +160,9 @@ const styles = StyleSheet.create({
   },
   iconDivider: {
     width: 1,
-    height: 18,
-    backgroundColor: GroceryColors.borderSubtle,
-    marginHorizontal: 2,
+    height: 20,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 4,
   },
   filterDot: {
     position: 'absolute',

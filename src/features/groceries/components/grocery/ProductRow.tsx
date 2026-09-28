@@ -82,9 +82,10 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: GroceryColors.primary,
+    color: '#E6A800',
   },
   listContent: {
     paddingHorizontal: 16,
+    paddingVertical: 8,
   },
 });

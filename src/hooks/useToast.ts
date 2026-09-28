@@ -9,7 +9,6 @@
  * overlay already renders.
  */
 import { useCallback } from 'react';
-import { usePGowStore } from '@/store/usePGowStore';
 export type ToastTone = 'success' | 'warning' | 'error' | 'info' | 'meal' | 'payment';
 
 const TONE_TO_TYPE: Record<ToastTone, 'MEAL' | 'PAYMENT' | 'SUCCESS' | 'ERROR' | 'ANNOUNCEMENT'> = {
@@ -27,6 +26,7 @@ const TONE_TO_TYPE: Record<ToastTone, 'MEAL' | 'PAYMENT' | 'SUCCESS' | 'ERROR' |
  * the same store the hook writes to, so both land in the one `AlertOverlay`.
  */
 export function toastNow(tone: ToastTone, title: string, description?: string) {
+  const { usePGowStore } = require('@/store/usePGowStore');
   usePGowStore.getState().set('activeAlert', {
     title,
     description: description ?? '',
