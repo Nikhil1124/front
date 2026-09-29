@@ -21,6 +21,7 @@ import { FilterSheet, FilterState, DEFAULT_FILTERS } from '../components/grocery
 import { PromotionalBanner } from '../components/grocery/PromotionalBanner';
 import { PromoCards } from '../components/grocery/PromoCards';
 import { QuickCategoryRow } from '../components/grocery/QuickCategoryRow';
+import { DussehraPromoLayer } from '../components/grocery/DussehraPromoLayer';
 import { FloatingCartBar } from '../components/FloatingCartBar';
 import { groupByVariant } from '../variantGroups';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
@@ -275,6 +276,7 @@ export function GroceriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: themeColor ?? GroceryColors.primaryDark }]}>
+      <DussehraPromoLayer />
       {/* ── Green Header ── */}
       <Header
         deliveryLabel={deliveryLabel}
@@ -404,6 +406,13 @@ export function GroceriesScreen() {
 
             <View style={styles.bottomWhiteSection}>
               {sheetSections.map((section) => renderSection(section, false))}
+              
+              {/* ── PGow Brand Footer ── */}
+              <View style={styles.footerBrand}>
+                <Ionicons name="leaf" size={28} color="#00845B" />
+                <Txt maxFontSizeMultiplier={1.3} style={styles.footerBrandTitle}>PGow Grocery</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.footerBrandSub}>Fresh & Fast • Delivered to your PG</Txt>
+              </View>
             </View>
           </>
         )}
@@ -427,7 +436,27 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 24,
-    paddingBottom: 120, // Moved from scrollContent
+    paddingBottom: 60, // Reduced padding since the footer takes up space
+  },
+  footerBrand: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 60, // Shifted some of the padding here so the floating cart doesn't cover it
+    opacity: 0.6,
+  },
+  footerBrandTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#00845B',
+    marginTop: 8,
+    letterSpacing: 0.5,
+  },
+  footerBrandSub: {
+    fontSize: 11,
+    color: GroceryColors.textMuted,
+    marginTop: 4,
+    fontWeight: '600',
   },
 
   errorWrapper: {

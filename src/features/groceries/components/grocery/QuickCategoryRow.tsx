@@ -1,10 +1,23 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { SupplyCategory } from '@/types';
-import { categoryPicture } from '../../categoryVisuals';
+
+function getCategoryIcon(name: string): keyof typeof MaterialCommunityIcons.glyphMap {
+  const n = name.toLowerCase();
+  if (n.includes('leaf')) return 'leaf';
+  if (n.includes('veg') || n.includes('fruit')) return 'carrot';
+  if (n.includes('egg') || n.includes('dairy') || n.includes('milk')) return 'egg';
+  if (n.includes('chicken') || n.includes('meat') || n.includes('fish')) return 'food-drumstick';
+  if (n.includes('oil') || n.includes('ghee') || n.includes('masala') || n.includes('spice')) return 'shaker';
+  if (n.includes('bread') || n.includes('bakery')) return 'bread-slice-outline';
+  if (n.includes('clean') || n.includes('wash') || n.includes('hygiene')) return 'spray-bottle';
+  if (n.includes('snack') || n.includes('biscuit')) return 'cookie-outline';
+  if (n.includes('drink') || n.includes('beverage')) return 'bottle-soda-outline';
+  return 'basket-outline';
+}
 
 interface QuickCategoryRowProps {
   /** The backend's categories, in their order. */
@@ -42,7 +55,7 @@ export const QuickCategoryRow: React.FC<QuickCategoryRowProps> = ({ categories, 
                   reads as a badge everywhere else in this app. */}
               <View style={[styles.iconBox, isActive && styles.iconBoxActive]}>
                 {chip.category ? (
-                  <Image source={categoryPicture(chip.category)} style={styles.picture} resizeMode="contain" />
+                  <MaterialCommunityIcons name={getCategoryIcon(chip.label)} size={24} color={GroceryColors.white} />
                 ) : (
                   <MaterialCommunityIcons name="view-grid-outline" size={26} color={GroceryColors.white} />
                 )}

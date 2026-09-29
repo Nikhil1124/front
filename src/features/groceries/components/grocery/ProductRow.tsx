@@ -86,13 +86,15 @@ export const ProductRow: React.FC<ProductRowProps> = ({
           contentContainerStyle={styles.listContent}
         >
           {families.map((family) => (
-            <ProductCard
-              key={family[0].id}
-              product={family[0]}
-              variants={family}
-              layout="simple"
-              onPress={onProductPress}
-            />
+            <View key={family[0].id} style={{ width: 140, marginRight: 16 }}>
+              <ProductCard
+                product={family[0]}
+                variants={family}
+                layout="deal"
+                onPress={onProductPress}
+                style={{ width: '100%', marginRight: 0 }}
+              />
+            </View>
           ))}
         </ScrollView>
       )}

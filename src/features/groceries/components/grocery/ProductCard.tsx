@@ -219,40 +219,14 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
     );
   }
 
-  // ── Full "deal" layout — 2-column grid card ───────────────────────────────
+  // ── Full "deal" layout — Reference UI ───────────────────────────────
   return (
     <AnimatedPress
       style={[styles.card, { width: cardWidth }, style]}
       scale={0.97}
       onPress={() => onPress?.(product)}
     >
-      {/* Top row: discount badge + wishlist */}
-      <View style={styles.topRow}>
-        {discountPercent > 0 ? (
-          <View style={styles.discountBadge}>
-            <Txt maxFontSizeMultiplier={1.1} style={styles.discountText}>
-              {discountPercent}% OFF
-            </Txt>
-          </View>
-        ) : (
-          <View style={styles.newBadgePlaceholder} />
-        )}
-
-        <AnimatedPress
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityRole="button"
-          style={styles.wishlistBtn}
-          onPress={() => toggleItem(product)}
-        >
-          <Ionicons
-            name={isWishlisted ? 'heart' : 'heart-outline'}
-            size={18}
-            color={isWishlisted ? GroceryColors.discountRed : GroceryColors.textMuted}
-          />
-        </AnimatedPress>
-      </View>
-
-      {/* Product image */}
+      {/* Product Image Section */}
       <View style={styles.imageContainer}>
         <Image
           source={
@@ -262,13 +236,74 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
           }
           style={styles.image}
         />
+        
+        {/* Top Left Badge */}
+        {discountPercent > 0 ? (
+          <View style={[styles.imageBadge, { backgroundColor: GroceryColors.discountRed }]}>
+            <Txt maxFontSizeMultiplier={1.1} style={styles.imageBadgeText}>BESTSELLER</Txt>
+          </View>
+        ) : (
+          <View style={[styles.imageBadge, { backgroundColor: GroceryColors.primary }]}>
+            <Txt maxFontSizeMultiplier={1.1} style={styles.imageBadgeText}>FRESH</Txt>
+          </View>
+        )}
+
+        {/* Top Right Wishlist */}
+        <AnimatedPress
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          style={styles.wishlistBtn}
+          onPress={() => toggleItem(product)}
+        >
+          <Ionicons
+            name={isWishlisted ? 'heart' : 'heart-outline'}
+            size={18}
+            color={isWishlisted ? GroceryColors.discountRed : GroceryColors.white}
+          />
+        </AnimatedPress>
+
+        {/* Bottom Left Veg Icon */}
+        <View style={styles.vegIconWrap}>
+          <View style={styles.vegIconInner} />
+        </View>
+
+        {/* Floating Add/Qty Button (Overlaps image bottom edge) */}
+        <View style={styles.floatingActionBtn}>
+          {quantity > 0 ? (
+            <View style={styles.floatingQtyControl}>
+              <AnimatedPress
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                style={styles.floatingQtyBtn}
+                onPress={handleDecrease}
+              >
+                <Ionicons name="remove" size={16} color={GroceryColors.primary} />
+              </AnimatedPress>
+              <Txt maxFontSizeMultiplier={1.1} style={styles.floatingQtyText}>{quantity}</Txt>
+              <AnimatedPress
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                style={styles.floatingQtyBtn}
+                onPress={handleIncrease}
+              >
+                <Ionicons name="add" size={16} color={GroceryColors.primary} />
+              </AnimatedPress>
+            </View>
+          ) : (
+            <AnimatedPress
+              accessibilityRole="button"
+              style={styles.floatingAddBtn}
+              onPress={handleAdd}
+            >
+              <Ionicons name="add" size={20} color={GroceryColors.primary} />
+            </AnimatedPress>
+          )}
+        </View>
       </View>
 
-      {/* Product details */}
+      {/* Product Details Section */}
       <View style={styles.details}>
-        <Txt maxFontSizeMultiplier={1.2} style={styles.name} numberOfLines={2}>
-          {displayName}
-        </Txt>
+        {/* Size Pill */}
         {hasSizePicker ? (
           <ScrollView
             horizontal
@@ -281,14 +316,13 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
                 <AnimatedPress
                   key={pack.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`${pack.unit_label}, ₹${pack.price}`}
                   accessibilityState={{ selected: active }}
-                  style={[styles.sizeChip, active && styles.sizeChipActive]}
+                  style={[styles.sizePill, active && styles.sizePillActive]}
                   onPress={() => setSelectedIdx(i)}
                 >
                   <Txt
                     maxFontSizeMultiplier={1.1}
-                    style={[styles.sizeChipText, active && styles.sizeChipTextActive]}
+                    style={[styles.sizePillText, active && styles.sizePillTextActive]}
                   >
                     {pack.unit_label}
                   </Txt>
@@ -297,131 +331,238 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
             })}
           </ScrollView>
         ) : (
-          <Txt maxFontSizeMultiplier={1.2} style={styles.unit}>
-            {selectedOption.unit}
-          </Txt>
+          <View style={styles.sizePill}>
+            <Txt maxFontSizeMultiplier={1.1} style={styles.sizePillText}>
+              {selectedOption.unit}
+            </Txt>
+          </View>
         )}
 
+        {/* Price */}
         <View style={styles.priceRow}>
           <Txt maxFontSizeMultiplier={1.2} style={styles.price}>₹{price}</Txt>
           {originalPrice && (
-            <Txt maxFontSizeMultiplier={1.2} style={styles.strikePrice}>
-              ₹{originalPrice}
-            </Txt>
+            <Txt maxFontSizeMultiplier={1.2} style={styles.strikePrice}>₹{originalPrice}</Txt>
           )}
         </View>
-      </View>
 
-      {/* Add / quantity control */}
-      {quantity > 0 ? (
-        <View style={styles.qtyControl}>
-          <AnimatedPress
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel="Decrease quantity"
-            accessibilityRole="button"
-            style={styles.qtyBtn}
-            onPress={handleDecrease}
-          >
-            <Ionicons name="remove" size={15} color={GroceryColors.white} />
-          </AnimatedPress>
-          <Txt maxFontSizeMultiplier={1.1} style={styles.qtyText}>{quantity}</Txt>
-          <AnimatedPress
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel="Increase quantity"
-            accessibilityRole="button"
-            style={styles.qtyBtn}
-            onPress={handleIncrease}
-          >
-            <Ionicons name="add" size={15} color={GroceryColors.white} />
-          </AnimatedPress>
+        {/* Unit Price */}
+        <Txt maxFontSizeMultiplier={1.1} style={styles.unitPriceText}>
+          ₹{price}/{selectedOption.unit}
+        </Txt>
+
+        {/* Discount */}
+        {discountPercent > 0 && (
+          <Txt maxFontSizeMultiplier={1.1} style={styles.discountTextGreen}>
+            {discountPercent}% OFF
+          </Txt>
+        )}
+
+        {/* Name */}
+        <Txt maxFontSizeMultiplier={1.2} style={styles.name} numberOfLines={2}>
+          {displayName}
+        </Txt>
+
+        {/* Rating & Delivery */}
+        <View style={styles.ratingRow}>
+          <Ionicons name="star" size={10} color="#00845B" />
+          <Txt maxFontSizeMultiplier={1.1} style={styles.ratingText}>
+            4.4  <Txt style={{ color: GroceryColors.textMuted }}>1.8k | 18 MINS</Txt>
+          </Txt>
         </View>
-      ) : (
-        <AnimatedPress
-          accessibilityRole="button"
-          style={styles.addBtn}
-          onPress={handleAdd}
-        >
-          <Ionicons name="cart-outline" size={14} color={GroceryColors.white} style={{ marginRight: 4 }} />
-          <Txt maxFontSizeMultiplier={1.1} style={styles.addBtnText}>Add</Txt>
-        </AnimatedPress>
-      )}
+      </View>
     </AnimatedPress>
   );
 };
 
 const styles = StyleSheet.create({
-  // ── Deal Card ──
+  // ── Deal Card (Reference UI) ──
   card: {
-    backgroundColor: GroceryColors.white,
-    borderRadius: 20, // Modern premium curves
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#F2F2F2', // Very subtle border
+    backgroundColor: 'transparent',
     marginRight: 10,
-    marginBottom: 10,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-    minHeight: 22,
-  },
-  discountBadge: {
-    backgroundColor: GroceryColors.discountRed,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: Radii.badge,
-  },
-  discountText: {
-    color: GroceryColors.white,
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  newBadgePlaceholder: {
-    width: 10,
-  },
-  wishlistBtn: {
-    padding: 2,
+    marginBottom: 16,
   },
   imageContainer: {
-    height: 100, // Taller image area for better product visibility
     width: '100%',
-    backgroundColor: 'transparent', // Removed studio backdrop
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    overflow: 'hidden',
+    aspectRatio: 1,
+    backgroundColor: '#F9F9F9',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    position: 'relative',
   },
   image: {
-    width: '90%',
-    height: '90%',
-    resizeMode: 'contain',
+    width: '100%',
+    height: '100%',
+    borderRadius: 15,
+  },
+  imageBadge: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderBottomRightRadius: 8,
+    borderTopLeftRadius: 15,
+  },
+  imageBadgeText: {
+    color: GroceryColors.white,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  wishlistBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  vegIconWrap: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    width: 14,
+    height: 14,
+    borderWidth: 1,
+    borderColor: '#00845B',
+    backgroundColor: GroceryColors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 2,
+  },
+  vegIconInner: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00845B',
+  },
+  floatingActionBtn: {
+    position: 'absolute',
+    bottom: -16,
+    right: 8,
+    zIndex: 10,
+  },
+  floatingAddBtn: {
+    backgroundColor: GroceryColors.white,
+    borderWidth: 1,
+    borderColor: GroceryColors.primary,
+    borderRadius: 8,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  floatingQtyControl: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GroceryColors.white,
+    borderWidth: 1,
+    borderColor: GroceryColors.primary,
+    borderRadius: 8,
+    height: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  floatingQtyBtn: {
+    width: 28,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  floatingQtyText: {
+    color: GroceryColors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    minWidth: 14,
+    textAlign: 'center',
   },
   details: {
+    padding: 8,
+    paddingTop: 8,
+  },
+  sizeRow: {
+    flexDirection: 'row',
+    gap: 4,
     marginBottom: 4,
+  },
+  sizePill: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  sizePillActive: {
+    backgroundColor: GroceryColors.primary,
+  },
+  sizePillText: {
+    fontSize: 10,
+    color: GroceryColors.primary,
+    fontWeight: '600',
+  },
+  sizePillTextActive: {
+    color: GroceryColors.white,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  strikePrice: {
+    fontSize: 11,
+    color: GroceryColors.textMuted,
+    textDecorationLine: 'line-through',
+  },
+  unitPriceText: {
+    fontSize: 10,
+    color: GroceryColors.textMuted,
+    marginTop: 2,
+  },
+  discountTextGreen: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#00845B',
+    marginTop: 4,
+    marginBottom: 2,
   },
   name: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1A1A1A', // Deep premium black
+    color: '#111827',
     lineHeight: 18,
-    minHeight: 36,
+    marginTop: 4,
+    marginBottom: 4,
   },
-  unit: {
-    fontSize: 10,
-    color: GroceryColors.textSecondary,
-    marginTop: 2,
-    marginBottom: 2,
-  },
-  // Wraps: four chips do not fit one line of a half-width grid card at every font scale.
-  sizeRow: {
+  ratingRow: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 5,
-    marginTop: 5,
-    marginBottom: 1 },
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 10,
+    color: '#00845B',
+    fontWeight: '700',
+  },
+
+  // ── Missing Simple Layout Styles ──
+  sizeRowCompact: { gap: 4, marginTop: 4 },
+  sizeChipCompact: { minWidth: 0, paddingHorizontal: 5, paddingVertical: 3 },
+  sizeChipTextCompact: { fontSize: 9.5 },
   sizeChip: {
     minWidth: 42,
     paddingHorizontal: 8,
@@ -431,74 +572,19 @@ const styles = StyleSheet.create({
     borderColor: '#E8E8E8',
     backgroundColor: '#FAFAFA',
     alignItems: 'center',
-    justifyContent: 'center' },
+    justifyContent: 'center',
+  },
   sizeChipActive: {
     backgroundColor: GroceryColors.primary,
-    borderColor: GroceryColors.primary },
+    borderColor: GroceryColors.primary,
+  },
   sizeChipText: {
     fontSize: 10.5,
     fontWeight: '700',
-    color: GroceryColors.textSecondary },
+    color: GroceryColors.textSecondary,
+  },
   sizeChipTextActive: {
-    color: GroceryColors.white },
-  // The rail card is ~140px wide, so its chips have to give up the 42px floor the grid's keep.
-  sizeRowCompact: { gap: 4, marginTop: 4 },
-  sizeChipCompact: { minWidth: 0, paddingHorizontal: 5, paddingVertical: 3 },
-  sizeChipTextCompact: { fontSize: 9.5 },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 5,
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: GroceryColors.primary,
-  },
-  strikePrice: {
-    fontSize: 11,
-    color: GroceryColors.textMuted,
-    textDecorationLine: 'line-through',
-  },
-  addBtn: {
-    backgroundColor: '#00845B', // Fresh rich green
-    borderRadius: 20, // Pill shaped designer button
-    height: 38,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#00845B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  addBtnText: {
     color: GroceryColors.white,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  qtyControl: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#00845B',
-    borderRadius: 20,
-    height: 38,
-    paddingHorizontal: 4,
-  },
-  qtyBtn: {
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qtyText: {
-    color: GroceryColors.white,
-    fontSize: 14,
-    fontWeight: '700',
-    minWidth: 20,
-    textAlign: 'center',
   },
 
   // ── Simple Card (horizontal rails) ──
