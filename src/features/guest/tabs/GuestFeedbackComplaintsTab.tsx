@@ -83,7 +83,7 @@ export function GuestFeedbackComplaintsTab() {
     data: submissions = [],
     isLoading: submissionsLoading,
     error: submissionsError,
-    refetch: refetchSubmissions } = useComplaintsQuery(activePgId ?? undefined);
+    refetch: refetchSubmissions } = useComplaintsQuery(activePgId ?? undefined, { withRepairs: true });
   const submit = usePGowStore((s) => s.submitFeedbackComplaint);
   const toast = useToast();
   const { refreshing, onRefresh } = usePullToRefresh();

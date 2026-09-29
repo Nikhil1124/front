@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
 
 import { AnimatedPress } from '@/components/ui';
 import { Radii } from '@/theme';
@@ -22,11 +23,38 @@ export const PromotionalBanner: React.FC<PromotionalBannerProps> = ({
 }) => {
   const { width } = useWindowDimensions();
   const source = storefrontImage(imageUrl, builtinImage);
-  if (!source) return null;
 
   const isHero = variant === 'hero';
   const bannerWidth = isHero ? width : width - 32;
   const bannerHeight = bannerWidth * (isHero ? 0.75 : 0.42);
+
+  // Subtle pulsing glow.
+  //
+  // Every hook stays ABOVE the `!source` return below. React tracks hooks by call order, so a
+  // banner that renders empty once and then gets its picture — which is exactly what happens
+  // when the storefront refetches after an upload — would call three more hooks on the second
+  // render than the first, and React throws rather than rendering.
+  const glowOpacity = useSharedValue(0.3);
+  React.useEffect(() => {
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.3, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+  }, [glowOpacity]);
+
+  const animatedGlowStyle = useAnimatedStyle(() => ({
+    shadowColor: '#FFD54A',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: glowOpacity.value,
+    shadowRadius: 15,
+    elevation: glowOpacity.value * 15,
+  }));
+
+  if (!source) return null;
 
   return (
     <AnimatedPress
@@ -35,15 +63,17 @@ export const PromotionalBanner: React.FC<PromotionalBannerProps> = ({
       onPress={onPress}
       style={[styles.outer, !isHero && styles.stripOuter]}
     >
-      <View
+      <Animated.View
         style={[
-          styles.frame,
           { width: bannerWidth, height: bannerHeight },
-          !isHero && styles.stripFrame,
+          !isHero && { borderRadius: Radii.card, backgroundColor: '#FFD54A' },
+          animatedGlowStyle,
         ]}
       >
-        <Image source={source} style={styles.image} resizeMode="cover" />
-      </View>
+        <View style={[styles.frame, { width: '100%', height: '100%' }, !isHero && styles.stripFrame]}>
+          <Image source={source} style={styles.image} resizeMode="cover" />
+        </View>
+      </Animated.View>
     </AnimatedPress>
   );
 };

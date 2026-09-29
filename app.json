@@ -63,9 +63,10 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "PGow uses the camera so you can scan the QR code on your PG\u2019s lobby poster instead of typing its join code."
+          "cameraPermission": "PGow uses the camera so you can scan the QR code on your PG’s lobby poster instead of typing its join code."
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }

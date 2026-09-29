@@ -108,6 +108,8 @@ export const API = {
   REQUESTS: "/v1/requests",
   HUB_SERVICES: "/v1/hub-services",
   HUB_SERVICE_REQUEST: (id: string) => `/v1/hub-services/${id}/request`,
+  SERVICE_CATALOG: "/v1/service-catalog",
+  SERVICE_CATALOG_BOOK: (id: string) => `/v1/service-catalog/${id}/book`,
   REQUEST_DETAIL: (id: string) => `/v1/requests/${id}`,
   REQUEST_EVENTS: (id: string) => `/v1/requests/${id}/events`,
   REQUEST_ATTACHMENT_UPLOAD_URL: (id: string) => `/v1/requests/${id}/attachments/upload-url`,

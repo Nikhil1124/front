@@ -35,7 +35,7 @@ import { formatINR } from '@/utils/format';
 import { currentPeriod, periodToMonthYear } from '@/data/mappers';
 import { buildUpiUri, launchUpiPayment, usePaymentsQuery, useRentDueQuery, useSubmitPaymentMutation } from '@/features/payments/usePayments';
 import { useTenantInvoices, usePayTenantInvoice } from '@/features/billing/useTenantInvoices';
-import { buildInvoice } from '@/features/payments/invoice';
+import { buildInvoice, docDate, statusWords } from '@/features/payments/invoice';
 import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 import { useMyRewardsQuery } from '@/features/rewards/useRewards';
 import type { TenantInvoice } from '@/types';
@@ -324,7 +324,7 @@ export function GuestPaymentsTab() {
             : []),
         ],
       }),
-      [['Due date', inv.dueDate], ['Status', inv.status.toUpperCase()]],
+      [['Due date', docDate(inv.dueDate)], ['Status', statusWords(inv.status)]],
     ).catch(() => toast('error', 'Could not share', 'The invoice could not be prepared.'));
   };
 

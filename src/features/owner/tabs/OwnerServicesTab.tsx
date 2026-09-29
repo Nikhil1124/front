@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { Image, ScrollView, View, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { usePGowStore } from '@/store/usePGowStore';
 import type { PGRepairServiceRequest } from '@/types';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { useRepairRequestsQuery, useResolveComplaintMutation } from '@/features/requests/useComplaints';
-import { buildInvoice } from '@/features/payments/invoice';
+import { buildInvoice, shortRef } from '@/features/payments/invoice';
 import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 import { useToast } from '@/hooks/useToast';
 import { useAuthStore, useIsManagerMode } from '@/store/authStore';
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionsQuery, useSetSubscriptionActiveMutation } from '@/features/subscriptions/useSubscriptions';
 import { AddPgDailySubscriptionDialog } from '@/components/dialogs/HubDialogs';
 import { BookRepairSheet } from '../components/BookRepairSheet';
+import { bySection, useBookServiceMutation, useServiceCatalog, type CatalogService } from '@/features/serviceCatalog/useServiceCatalog';
 
 import { Colors, Palette, Radii } from '@/theme';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
@@ -29,22 +29,12 @@ const CHARCOAL = Colors.textPrimary; // Obsidian Navy
 const MUTED = Colors.textMuted;      // Ocean Muted
 const BORDER = Colors.borderSubtle;  // Ice Subtle Border
 
-type ServiceItem = {
-  id: string;
-  name: string;
-  desc: string;
-  icon: any;
-  type: 'POPULAR' | 'REPAIR' | 'ESSENTIAL' | 'CLEANING';
-  /** Indicative visit/inspection fee. Not a quote for the job — see `renderServiceCard`. */
-  cost: number;
-  problems: string[];
-  includes: string[];
-};
+type ServiceItem = CatalogService;
 
 /**
  * The artwork for each service, keyed by id.
  *
- * A static map rather than a field on `SERVICES` because Metro resolves `require` at build
+ * A static map rather than a field on the service because Metro resolves `require` at build
  * time — a path built from `item.id` at runtime does not bundle.
  *
  * These are Kushal's `assets/Services/Owner_Manager_Services` set. They are used in the detail
@@ -79,36 +69,11 @@ const SERVICE_IMAGES: Record<string, number> = {
   pest: require('../../../../assets/Services/Owner_Manager_Services/21_Pest_Control.png'),
 };
 
-const SERVICES: ServiceItem[] = [
-  // Popular
-  { id: 'plumbing', name: 'Plumbing', desc: 'Tap, pipe, sink & bathroom issues', icon: 'water', type: 'POPULAR', cost: 30, problems: ['Leaking tap', 'Blocked sink', 'Flush not working'], includes: ['Technician inspection', 'Basic repair'] },
-  { id: 'wifi', name: 'Wi-Fi Repairs', desc: 'Internet, router & connectivity issues', icon: 'wifi', type: 'POPULAR', cost: 30, problems: ['No internet', 'Router not turning on', 'Slow speed'], includes: ['Technician inspection', 'Configuration fixing'] },
-  { id: 'electrical', name: 'Electrical', desc: 'Lights, switches, sockets & more', icon: 'flash', type: 'POPULAR', cost: 30, problems: ['Socket not working', 'Light flickering', 'MCB tripping'], includes: ['Technician inspection', 'Basic repair'] },
-  { id: 'atoz', name: 'A to Z Repairs', desc: "Anything broken? We'll fix it.", icon: 'construct', type: 'POPULAR', cost: 30, problems: ['General breakage', 'Unidentified issue'], includes: ['Expert diagnosis', 'Custom repair quote'] },
-
-  // Repairs & Maintenance
-  { id: 'welding', name: 'Welding', desc: 'Gates, grills & metal work', icon: 'sparkles', type: 'REPAIR', cost: 30, problems: ['Grill broken', 'Gate hinge off'], includes: ['Inspection', 'Welding equipment'] },
-  { id: 'civil', name: 'Civil Repairs', desc: 'Walls, tiles, cracks & minor work', icon: 'business', type: 'REPAIR', cost: 30, problems: ['Tile broken', 'Wall crack'], includes: ['Inspection', 'Minor plastering'] },
-  { id: 'painting', name: 'Painting', desc: 'Touch-ups & minor painting', icon: 'color-palette', type: 'REPAIR', cost: 30, problems: ['Wall peeling', 'Stains on wall'], includes: ['Inspection', 'Painting labor'] },
-  { id: 'lock', name: 'Lock & Door', desc: 'Lock repair & door fixes', icon: 'lock-closed', type: 'REPAIR', cost: 30, problems: ['Key stuck', 'Lock jammed'], includes: ['Inspection', 'Lock adjustment'] },
-  { id: 'window', name: 'Window & Grill', desc: 'Windows, grills & sliding fixes', icon: 'grid', type: 'REPAIR', cost: 30, problems: ['Glass broken', 'Sliding jammed'], includes: ['Inspection', 'Track oiling'] },
-
-  // Essentials
-  { id: 'ac', name: 'AC Service', desc: 'AC repair & maintenance', icon: 'snow', type: 'ESSENTIAL', cost: 149, problems: ['Not cooling', 'Water leaking'], includes: ['Filter cleaning', 'Gas check'] },
-  { id: 'geyser', name: 'Geyser Repair', desc: 'Geyser & water heater issues', icon: 'thermometer', type: 'ESSENTIAL', cost: 149, problems: ['Not heating', 'Water leaking'], includes: ['Inspection', 'Element check'] },
-  { id: 'ro', name: 'RO / Purifier', desc: 'RO repair & maintenance', icon: 'water', type: 'ESSENTIAL', cost: 149, problems: ['Water flow slow', 'Bad taste'], includes: ['Inspection', 'Filter wash'] },
-  { id: 'washing', name: 'Washing Machine', desc: 'Machine repair & cleaning', icon: 'shirt', type: 'ESSENTIAL', cost: 149, problems: ['Not spinning', 'Water not draining'], includes: ['Inspection', 'Motor check'] },
-  { id: 'bathroom', name: 'Bathroom', desc: 'Bathroom maintenance', icon: 'cut', type: 'ESSENTIAL', cost: 149, problems: ['Drain block', 'Shower head leak'], includes: ['Inspection', 'Unclogging'] },
-  { id: 'furniture', name: 'Furniture Repair', desc: 'Bed, chair & furniture fixes', icon: 'hammer', type: 'ESSENTIAL', cost: 149, problems: ['Bed squeaking', 'Chair wobble'], includes: ['Inspection', 'Glue/nail fixing'] },
-
-  // Cleaning
-  { id: 'room_clean', name: 'Room Cleaning', desc: 'Basic room cleaning', icon: 'bed', type: 'CLEANING', cost: 30, problems: ['Dusty floor', 'Messy room'], includes: ['Sweeping', 'Mopping'] },
-  { id: 'bath_clean', name: 'Bathroom Cleaning', desc: 'Bathroom deep cleaning', icon: 'sparkles', type: 'CLEANING', cost: 30, problems: ['Dirty tiles', 'Hard water stains'], includes: ['Acid wash', 'Tile scrubbing'] },
-  { id: 'common_clean', name: 'Common Area', desc: 'Common areas cleaning', icon: 'home', type: 'CLEANING', cost: 30, problems: ['Dirty hallway', 'Staircase dust'], includes: ['Sweeping', 'Mopping'] },
-  { id: 'waste', name: 'Waste Cleaning', desc: 'Garbage & waste management', icon: 'trash', type: 'CLEANING', cost: 30, problems: ['Trash full', 'Bad odor'], includes: ['Waste removal', 'Bin washing'] },
-  { id: 'deep_clean', name: 'Deep Cleaning', desc: 'Deep cleaning service', icon: 'star', type: 'CLEANING', cost: 30, problems: ['Moving in', 'Post-party'], includes: ['Full room wash', 'Bathroom descale'] },
-  { id: 'pest', name: 'Pest Control', desc: 'Pest & insect control', icon: 'bug', type: 'CLEANING', cost: 30, problems: ['Bed bugs', 'Cockroaches'], includes: ['Chemical spray', 'Gel baiting'] },
-];
+/** A picture for a catalog service: the uploaded one, else the one this app ships for it. */
+function serviceArt(item: ServiceItem) {
+  if (item.image_url) return { uri: item.image_url };
+  return item.builtin_image ? SERVICE_IMAGES[item.builtin_image] : undefined;
+}
 
 export function OwnerServicesTab() {
   const { tab } = useLocalSearchParams<{ tab?: 'SERVICES' | 'BOOKINGS' | 'PROCUREMENT' | 'TECHNICIAN' }>();
@@ -124,6 +89,10 @@ export function OwnerServicesTab() {
     }
   }, [tab]);
   const [searchQuery, setSearchQuery] = useState('');
+  const catalog = useServiceCatalog();
+  const services = catalog.data ?? [];
+  // "Can't find what you need?" books the catch-all service, when the catalog has one.
+  const anything = services.find(s => s.builtin_image === 'atoz') ?? null;
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [showCustomRequest, setShowCustomRequest] = useState(false);
   const [showAddSubscription, setShowAddSubscription] = useState(false);
@@ -191,7 +160,7 @@ export function OwnerServicesTab() {
         ],
       }),
       [
-        ['Request', rep.id.slice(0, 8)],
+        ['Request', shortRef(rep.id)],
         ['Technician', rep.assignedTechnicianName || '—'],
         // Printed as a detail, never as the total — the two are different facts.
         ['Visit fee quoted', `₹${rep.estimatedCost}`],
@@ -201,19 +170,16 @@ export function OwnerServicesTab() {
 
   const renderServiceCard = (item: ServiceItem) => (
     <AnimatedPress accessibilityRole="button"
-      accessibilityLabel={`${item.name}. Visit fee ₹${item.cost}`}
+      accessibilityLabel={`${item.name}. Visit fee ${formatINR(Number(item.visit_fee))}`}
       key={item.id}
       onPress={() => { setSelectedService(item); }}
       style={styles.serviceCard}
     >
       <View style={styles.serviceIconFrame}>
-        {SERVICE_IMAGES[item.id] ? (
-          <Image 
-            source={SERVICE_IMAGES[item.id]} 
-            style={styles.serviceImage} 
-          />
+        {serviceArt(item) ? (
+          <Image source={serviceArt(item)!} style={styles.serviceImage} />
         ) : (
-          <Ionicons name={item.icon} size={30} color={PRIMARY} />
+          <Ionicons name="construct" size={30} color={PRIMARY} />
         )}
         <View style={styles.addButton}>
           <Ionicons name="add" size={18} color={PRIMARY} />
@@ -222,25 +188,18 @@ export function OwnerServicesTab() {
       {/* Two lines, not one: "Washing Machine" and "Bathroom Cleaning" both truncated at the
           card's 31% width, and at a large font scale most of them did. */}
       <Txt maxFontSizeMultiplier={1.3} style={styles.serviceName} numberOfLines={2}>{item.name}</Txt>
-      <Txt maxFontSizeMultiplier={1.3} style={styles.visitFeeText}>₹{item.cost} visit fee</Txt>
+      <Txt maxFontSizeMultiplier={1.3} style={styles.visitFeeText}>{formatINR(Number(item.visit_fee))} visit fee</Txt>
     </AnimatedPress>
   );
 
-  const renderSection = (title: string, type: string) => {
-    const items = SERVICES.filter(s => s.type === type);
-    if (items.length === 0) return null;
-    return (
-      <View style={styles.sectionContainer}>
-        {/* No "View all" here: the horizontal scroll below already renders every item in
-            this section (see `items` above — it's the full filtered list, not a slice), so
-            there was never anything more for that button to reveal. */}
-        <Txt maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, styles.sectionHeaderRow]}>{title}</Txt>
-        <View style={styles.gridContainer}>
-          {items.map(s => renderServiceCard(s))}
-        </View>
+  const renderSection = (title: string, items: ServiceItem[]) => (
+    <View key={title} style={styles.sectionContainer}>
+      <Txt maxFontSizeMultiplier={1.3} style={[styles.sectionTitle, styles.sectionHeaderRow]}>{title}</Txt>
+      <View style={styles.gridContainer}>
+        {items.map(s => renderServiceCard(s))}
       </View>
-    );
-  };
+    </View>
+  );
 
   const renderServices = () => (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -249,15 +208,16 @@ export function OwnerServicesTab() {
           <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>Search Results</Txt>
           <Spacer size={12} />
           <View style={styles.gridContainer}>
-            {SERVICES.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => renderServiceCard(s))}
+            {services.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => renderServiceCard(s))}
           </View>
         </View>
       ) : (
         <>
-          {renderSection('Most Used', 'POPULAR')}
-          {renderSection('Repairs & Maintenance', 'REPAIR')}
-          {renderSection('PG Essentials', 'ESSENTIAL')}
-          {renderSection('Cleaning & Common Areas', 'CLEANING')}
+          {catalog.isLoading && !catalog.data ? <LoadingState label="Loading services…" /> : null}
+          {catalog.error && !catalog.data ? (
+            <ErrorState error={catalog.error} title="Could not load services" onRetry={catalog.refetch} />
+          ) : null}
+          {bySection(services).map(([title, items]) => renderSection(title, items))}
         </>
       )}
 
@@ -457,7 +417,7 @@ export function OwnerServicesTab() {
 
       {/* Service Detail Modal */}
       {selectedService && <ServiceDetailModal service={selectedService} onDismiss={() => setSelectedService(null)} />}
-      {showCustomRequest && <ServiceDetailModal service={SERVICES.find(s => s.id === 'atoz')!} onDismiss={() => setShowCustomRequest(false)} />}
+      {showCustomRequest && anything && <ServiceDetailModal service={anything} onDismiss={() => setShowCustomRequest(false)} />}
       {/* Closing out a repair. The charge is captured here rather than on a separate screen
           because it is known at exactly this moment — the technician has finished and said
           what it came to. The server writes it in the same statement as the resolution, so a
@@ -529,28 +489,39 @@ const TIME_SLOT_OPTIONS = [
 
 function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDismiss: () => void }) {
   const [success, setSuccess] = useState(false);
-  const bookRepair = usePGowStore((s) => s.bookPgRepairService);
+  const { activePgId } = useAuthStore();
+  const book = useBookServiceMutation(activePgId ?? undefined);
+  const toast = useToast();
   const [time, setTime] = useState(TIME_SLOT_OPTIONS[1]);
 
+  // Success only once the server has it. This used to flip to "Request created" before the
+  // request was even sent, so a failed booking still told the owner it went through.
   const handleBook = () => {
-    bookRepair(service.name, `Requesting ${service.name}`, time, service.cost);
-    setSuccess(true);
-    setTimeout(() => {
-      onDismiss();
-    }, 2500);
+    book.mutate(
+      { serviceId: service.id, note: `Preferred time: ${time}` },
+      {
+        onSuccess: () => {
+          setSuccess(true);
+          setTimeout(onDismiss, 2500);
+        },
+        onError: (err) =>
+          toast('error', 'Not booked', err instanceof Error ? err.message : 'The booking was not saved.'),
+      },
+    );
   };
 
   return (
     <Sheet
       visible
       title={success ? 'Request created' : service.name}
-      subtitle={success ? 'Technician assignment is in progress.' : service.desc}
+      subtitle={success ? 'PGow is assigning a technician.' : service.description}
       accent={success ? Colors.success : PRIMARY}
-      icon={success ? 'checkmark-circle' : service.icon}
+      icon={success ? 'checkmark-circle' : 'construct'}
       onDismiss={success ? () => { } : onDismiss}
       footer={!success ? (
         <Btn
           onPress={handleBook}
+          loading={book.isPending}
           containerColor={PRIMARY}
           textColor={SURFACE}
           borderRadius={Radii.control}
@@ -563,9 +534,9 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
     >
       {/* The service's own artwork, above everything. Hidden on the success state — by then
           the sheet is a receipt for a booking, not a description of a service. */}
-      {!success && SERVICE_IMAGES[service.id] ? (
+      {!success && serviceArt(service) ? (
         <Image
-          source={SERVICE_IMAGES[service.id]}
+          source={serviceArt(service)!}
           style={styles.serviceHero}
           resizeMode="contain"
           // The picture repeats the title above it, so a reader hears it twice otherwise.
@@ -629,7 +600,7 @@ function ServiceDetailModal({ service, onDismiss }: { service: ServiceItem, onDi
           <View style={styles.bookingBox}>
             <Row justify="space-between" align="center">
               <Txt variant="meta" color={MUTED}>Estimated charges</Txt>
-              <Txt variant="sectionTitle" color={CHARCOAL} tabular>{formatINR(service.cost)}</Txt>
+              <Txt variant="sectionTitle" color={CHARCOAL} tabular>{formatINR(Number(service.visit_fee))}</Txt>
             </Row>
           </View>
         </>

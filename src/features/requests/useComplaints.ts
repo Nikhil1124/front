@@ -288,14 +288,20 @@ export function useEscalateComplaintMutation(pgId?: string) {
   });
 }
 
-export function useComplaintsQuery(pgId?: string) {
+/**
+ * `withRepairs` is the resident's view. A complaint the owner escalated with "Book a
+ * technician" becomes a repair job server-side, and a requested Resident Service is filed as
+ * one — either way it is still the resident's own ticket to follow in Support. The owner's
+ * screens leave it off: repairs have their own list on the Services tab.
+ */
+export function useComplaintsQuery(pgId?: string, { withRepairs = false } = {}) {
   return useQuery<FeedbackComplaintEntity[]>({
-    queryKey: qk.requests.list(pgId ?? ""),
+    queryKey: withRepairs ? [...qk.requests.list(pgId ?? ""), "with-repairs"] : qk.requests.list(pgId ?? ""),
     queryFn: async () => {
       if (!pgId) return [];
       const res = await listComplaints(pgId, { limit: 200 });
       return res.items
-        .filter((r) => r.kind === "complaint" || r.kind === "feedback")
+        .filter((r) => r.kind === "complaint" || r.kind === "feedback" || (withRepairs && r.kind === "repair"))
         .map(map.toComplaint);
     },
     enabled: !!pgId,

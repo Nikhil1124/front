@@ -36,7 +36,7 @@ import { usePGowStore } from '@/store/usePGowStore';
 import { Radii, Colors, DeckTints, type DeckTint } from '@/theme';
 import { Btn, Card, Col, IconBtn, ListRow, ListSectionHeader, PGowActionSheet, Row, Spacer, Txt, type StatusTone } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
-import { buildInvoice } from '@/features/payments/invoice';
+import { buildInvoice, statusWords } from '@/features/payments/invoice';
 import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 
 /** The two shapes the design already had: a flat-fee one and a pay-as-you-grow one. `brand`
@@ -174,7 +174,7 @@ export function OwnerSubscriptionScreen() {
         from: { name: 'PGow' },
         to: { name: owner?.pgName || 'Your property', line: owner?.address || undefined },
       }),
-      [['Invoice period', inv.period], ['Status', inv.status.toUpperCase()]],
+      [['Invoice period', inv.period], ['Status', statusWords(inv.status)]],
     ).catch(() => toast('error', 'Could not share', 'The invoice could not be prepared.'));
   };
 

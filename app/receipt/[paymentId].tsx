@@ -18,7 +18,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { Col, ErrorState, LoadingState, Row, Spacer, StatusChip, Txt, toneFor } from '@/components/ui';
 import { usePayment } from '@/features/payments/usePayments';
-import { buildInvoice } from '@/features/payments/invoice';
+import { buildInvoice, shortRef, statusWords } from '@/features/payments/invoice';
 import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 import { usePGowStore } from '@/store/usePGowStore';
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -79,9 +79,9 @@ export default function ReceiptScreen() {
       // The mode and references are not part of the invoice itself — they describe how this
       // particular payment arrived — so they print below the totals rather than in the table.
       await shareInvoicePdf(invoice, [
-        ['Mode', MODE_LABELS[payment.paymentMode] ?? payment.paymentMode],
+        ['Mode', MODE_LABELS[payment.paymentMode] ?? statusWords(payment.paymentMode)],
         ...(payment.transactionRef ? [['Reference', payment.transactionRef] as [string, string]] : []),
-        ...(payment.receiptId ? [['Receipt ID', payment.receiptId] as [string, string]] : []),
+        ...(payment.receiptId ? [['Receipt ID', shortRef(payment.receiptId)] as [string, string]] : []),
       ]);
     } catch {
       toast('error', 'Could not share', 'The invoice could not be prepared.');

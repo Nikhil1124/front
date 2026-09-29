@@ -200,6 +200,43 @@ function describe(paymentType: string, monthYear: string): string {
   return `Accommodation charges — ${monthYear}`;
 }
 
+/**
+ * A status as a person reads it on a document. Invoices used to print the API's own codes —
+ * "UNPAID", "PARTIALLY_PAID", "ISSUED" — which read as system output, not as a bill.
+ */
+const STATUS_WORDS: Record<string, string> = {
+  paid: 'Paid',
+  unpaid: 'Unpaid',
+  pending: 'Awaiting verification',
+  submitted: 'Awaiting verification',
+  issued: 'Due',
+  overdue: 'Overdue',
+  partially_paid: 'Partly paid',
+  verified: 'Verified',
+  rejected: 'Rejected',
+  refunded: 'Refunded',
+  cancelled: 'Cancelled',
+  void: 'Cancelled',
+};
+
+export function statusWords(status: string): string {
+  const key = status.trim().toLowerCase();
+  return STATUS_WORDS[key] ?? key.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}
+
+/** "2026-09-05" as "05 Sep 2026". Anything that is not a date is returned as it came. */
+export function docDate(value: string): string {
+  const ms = Date.parse(value);
+  return Number.isNaN(ms)
+    ? value
+    : new Date(ms).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/** A reference a person can read out: the first block of an id, not a 36-character UUID. */
+export function shortRef(id: string): string {
+  return id.split('-')[0].toUpperCase();
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }

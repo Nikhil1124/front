@@ -15,7 +15,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, ErrorState, OutlinedTextField, PGowDialog, Txt } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
 import { FormScroll } from '@/components/ui/FormScroll';
-import { buildInvoice } from '@/features/payments/invoice';
+import { buildInvoice, shortRef, statusWords } from '@/features/payments/invoice';
 import { shareInvoicePdf } from '@/features/payments/invoicePdf';
 import { useAuthStore } from '@/store/authStore';
 
@@ -240,7 +240,7 @@ export function GroceryOrderDetailScreen() {
                         amount: Number(it.line_total),
                       })),
                     }),
-                    [['Order', order.id], ['Payment', String(order.payment_status).toUpperCase()]],
+                    [['Order', order.order_no || shortRef(order.id)], ['Payment', statusWords(String(order.payment_status))]],
                   );
                 } catch {
                   toast('error', 'Could not share', 'The invoice could not be prepared.');

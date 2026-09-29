@@ -245,7 +245,13 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
 // changes between viewings (the resident and the owner then quote different invoices for the
 // same payment), and an unmarked placeholder GSTIN, which turns a demo into a forged credential.
 {
-  const { buildInvoice, PLACEHOLDER_GSTIN } = await import("../features/payments/invoice.ts");
+  const { buildInvoice, PLACEHOLDER_GSTIN, statusWords, shortRef } = await import("../features/payments/invoice.ts");
+
+  // A document prints words, never the API's codes.
+  assert.equal(statusWords("UNPAID"), "Unpaid");
+  assert.equal(statusWords("partially_paid"), "Partly paid");
+  assert.equal(statusWords("SOME_NEW_STATE"), "Some new state");
+  assert.equal(shortRef("0192f3a4-7b1c-7d2e-9f00-123456789abc"), "0192F3A4");
   const base = {
     paymentId: "pay_9f31c0",
     amount: 6500,
