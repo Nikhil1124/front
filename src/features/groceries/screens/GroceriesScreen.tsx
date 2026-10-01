@@ -269,6 +269,17 @@ export function GroceriesScreen() {
   const firstOnSheet = sections.findIndex((s) => s.kind !== 'hero' && s.kind !== 'promo_cards');
   const topSections = firstOnSheet === -1 ? sections : sections.slice(0, firstOnSheet);
   const sheetSections = firstOnSheet === -1 ? [] : sections.slice(firstOnSheet);
+  /**
+   * Sparkles ride the banner, rather than running for ever.
+   *
+   * The layer was rendered unconditionally, so a festival's decoration stayed on the screen
+   * long after the festival — in December as much as in October. The server only sends
+   * sections that are live (`_is_live` honours `is_active` and the start/end dates) and the
+   * built-in layout carries no hero at all, so a hero arriving here means somebody put a
+   * banner up on purpose. Tying the two together means the decoration turns up with the
+   * banner and leaves when its schedule ends, with nothing to remember to switch off.
+   */
+  const hasBanner = sections.some((s) => s.kind === 'hero');
   const deliveryLabel =
     owner || ownerForGuest
       ? `${(owner ?? ownerForGuest)?.pgName}`
@@ -276,7 +287,7 @@ export function GroceriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: themeColor ?? GroceryColors.primaryDark }]}>
-      <DussehraPromoLayer />
+      {hasBanner && <DussehraPromoLayer />}
       {/* ── Green Header ── */}
       <Header
         deliveryLabel={deliveryLabel}
