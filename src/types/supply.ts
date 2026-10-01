@@ -97,6 +97,20 @@ export interface SupplyOrderItem {
   refunded_amount?: number | null;
 }
 
+/**
+ * `SupplyOrderPaymentStatus` server-side, exactly — four values, in the order an order moves
+ * through them.
+ *
+ * This type used to read `'pending' | 'submitted' | 'paid' | 'failed' | 'refunded'`: it was
+ * missing `unpaid`, which is the state every order is BORN in, and invented `submitted` and
+ * `failed`, which the server has never sent. That cost us the whole UPI flow — the
+ * order-detail screen gated its "enter your UTR" form on `payment_status === 'pending'`
+ * because `unpaid` was not in the union to compare against, and `pending` is the state
+ * `submit_upi_payment` *produces*. The form could therefore only appear after the reference
+ * had already been submitted, so a UPI order sat on UNPAID for ever with nowhere to pay.
+ */
+export type SupplyPaymentStatus = 'unpaid' | 'pending' | 'paid' | 'refunded';
+
 export interface SupplyOrderDetail {
   id: string;
   order_no: string;
@@ -116,7 +130,9 @@ export interface SupplyOrderDetail {
   tax_amount: number;
   total_amount: number;
   payment_method: SupplyPaymentMethod;
-  payment_status: 'pending' | 'submitted' | 'paid' | 'failed' | 'refunded';
+  payment_status: SupplyPaymentStatus;
+  /** Set once the payer submits a reference; `null` until then. */
+  upi_ref?: string | null;
   /** The server's field is singular `delivery_note` and there is no slot column — the
    *  chosen slot is prefixed into this note at checkout. */
   delivery_note?: string;

@@ -181,8 +181,10 @@ export function GuestSecurityTab() {
                 <Txt size={18} weight="700" color={Colors.textPrimary}>
                   {guest?.name ?? 'Resident'}
                 </Txt>
+                {/* "• Premium Resident" was here for every resident alike. No tier exists
+                    to be premium of, so it said nothing and implied something. */}
                 <Txt size={12} weight="600" color={Colors.textSecondary} style={{ marginTop: 2 }}>
-                  Room {guest?.roomNo ?? 'N/A'} • Premium Resident
+                  {guest?.roomNo ? `Room ${guest.roomNo}` : 'Room not assigned yet'}
                 </Txt>
               </Col>
             </Row>

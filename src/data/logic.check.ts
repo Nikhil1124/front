@@ -394,4 +394,56 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
   assert.equal(todayLocalISO(new Date(2026, 8, 22, 0, 0)), "2026-09-22");
 }
 
+// ── A supply order's payable total, and its one way to pay ──────────────────────────────
+// Both halves of the same QA finding, and both were money the app stated and the server did
+// not. Asserted against source text because they live in screens: these two files are not
+// reachable under plain node, and the facts being pinned are what the screens *print*.
+{
+  const cart = readFileSync(
+    new URL("../features/groceries/screens/GroceryCartScreen.tsx", import.meta.url), "utf8"
+  );
+  // `supply_items.price` is tax-inclusive and `create_order` totals nothing but line totals.
+  // There is no delivery-fee or platform-fee field on `CreateOrderRequest`, no `fee` column on
+  // `supply_delivery_slots`, and `extra="forbid"` rejects an invented one — so any fee added
+  // here is a number the resident is shown and never charged. The cart used to add ₹30 + ₹5,
+  // so it read "Total ₹69" and the very next screen read "₹34".
+  for (const invented of ["DELIVERY_FEE", "PLATFORM_FEE", "FREE_DELIVERY_THRESHOLD"]) {
+    assert.ok(
+      !new RegExp(`(const|let)\\s+${invented}\\b`).test(cart),
+      `GroceryCartScreen must not define ${invented} — the server charges no such fee, so the `
+        + "cart total would overstate what the order will actually cost."
+    );
+  }
+
+  const detail = readFileSync(
+    new URL("../features/groceries/screens/GroceryOrderDetailScreen.tsx", import.meta.url), "utf8"
+  );
+  // `submit_upi_payment` accepts ONLY `unpaid` and is what produces `pending`, so the UTR form
+  // must open on `unpaid`. Gating it on `pending` — which is what shipped — meant the form
+  // appeared only after the reference had been submitted, and a UPI order had no way to be
+  // paid at all.
+  assert.ok(
+    /needsUpiRef\s*=.*payment_status === 'unpaid'/.test(detail),
+    "the UTR form must be offered while the order is 'unpaid'; 'pending' already means a "
+      + "reference was submitted, so gating on it makes the form unreachable."
+  );
+}
+
+// ── The payment states the server actually has ──────────────────────────────────────────
+// Four values, from `SupplyOrderPaymentStatus`. The union used to omit `unpaid` — the state
+// every order is BORN in — and invent `submitted` and `failed`, which is how the gate above
+// came to compare against the wrong one: `unpaid` was not in the type to compare against.
+{
+  const types = readFileSync(new URL("../types/supply.ts", import.meta.url), "utf8");
+  const union = types.match(/export type SupplyPaymentStatus = ([^;]+);/);
+  assert.ok(union, "SupplyPaymentStatus must be declared in types/supply.ts");
+  const values = union![1].split("|").map((v) => v.trim().replace(/'/g, "")).sort();
+  assert.deepEqual(
+    values,
+    ["paid", "pending", "refunded", "unpaid"],
+    "SupplyPaymentStatus must mirror pg-backend's SupplyOrderPaymentStatus exactly — a value "
+      + "it lacks cannot be compared against, and one it invents will never arrive."
+  );
+}
+
 console.log("logic.check.ts — all assertions passed");

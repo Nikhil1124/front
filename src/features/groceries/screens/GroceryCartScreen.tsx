@@ -23,9 +23,12 @@ import { TextPromptDialog } from '@/components/dialogs/TextPromptDialog';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, PGowDialog, Row, Txt } from '@/components/ui';
 
-const FREE_DELIVERY_THRESHOLD = 500;
-const DELIVERY_FEE = 30;
-const PLATFORM_FEE = 5;
+// No delivery fee, no platform fee, no free-delivery threshold. All three were invented
+// here: `CreateOrderRequest` has no field for either charge, `SupplyDeliverySlot` has no
+// `fee` column, and `create_order` totals nothing but the line items — so a cart reading
+// "Total ₹69" handed over to a checkout reading "₹34" and the resident was shown ₹35 of
+// charges nobody bills. Same call the laundry payment screen already made for its own
+// invented ₹30 "service fee". The cart now totals what the server will total.
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getTotalSavings } = useCartStore();
@@ -48,11 +51,6 @@ export function GroceryCartScreen() {
   const subtotal = getCartTotal();
   const { subtotal: billSubtotal } = getBillEstimate();
   const totalSavings = getTotalSavings();
-
-  // Delivery progress
-  const amountToFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
-  const deliveryFreeUnlocked = subtotal >= FREE_DELIVERY_THRESHOLD;
-  const progressPercent = Math.min(1, subtotal / FREE_DELIVERY_THRESHOLD);
 
   const [confirmingClear, setConfirmingClear] = useState(false);
   const handleClearCart = () => setConfirmingClear(true);
@@ -159,30 +157,9 @@ export function GroceryCartScreen() {
               </View>
             ) : null}
 
-            {/* ── Delivery progress bar ── */}
-            <View style={styles.deliveryProgressCard}>
-              <View style={styles.deliveryProgressRow}>
-                <Ionicons name="bicycle" size={18} color={GroceryColors.primary} />
-                {deliveryFreeUnlocked ? (
-                  <Txt maxFontSizeMultiplier={1.2} style={styles.deliveryProgressText}>
-                    🎉 You've unlocked{' '}
-                    <Txt style={styles.deliveryProgressBold}>FREE delivery!</Txt>
-                  </Txt>
-                ) : (
-                  <Txt maxFontSizeMultiplier={1.2} style={styles.deliveryProgressText}>
-                    You are just{' '}
-                    <Txt style={styles.deliveryProgressBold}>₹{amountToFreeDelivery}</Txt>
-                    {' '}away from FREE delivery!
-                  </Txt>
-                )}
-                <Txt maxFontSizeMultiplier={1.1} style={styles.deliveryThreshold}>
-                  ₹{FREE_DELIVERY_THRESHOLD}
-                </Txt>
-              </View>
-              <View style={styles.progressBarTrack}>
-                <View style={[styles.progressBarFill, { width: `${progressPercent * 100}%` }]} />
-              </View>
-            </View>
+            {/* The "₹X away from FREE delivery" bar lived here. Delivery is always free —
+                there is no fee to waive and no threshold to cross — so the bar was pure
+                urgency over nothing, pushing a resident to spend ₹500 to save ₹0. */}
 
             {/* ── Cart items ── */}
             {items.map((item) => {
@@ -327,40 +304,24 @@ export function GroceryCartScreen() {
                 <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{subtotal}</Txt>
               </View>
 
-              {totalSavings > 0 && (
-                <View style={styles.billRow}>
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Discount</Txt>
-                  <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, { color: GroceryColors.discountRed }]}>
-                    -₹{totalSavings}
-                  </Txt>
-                </View>
-              )}
+              {/* "Discount −₹X" sat here and it did not subtract from anything: savings are
+                  `originalPrice - price`, so the discount is already inside Item Total. As a
+                  line between Item Total and Total Amount it made the column stop adding up
+                  (34 − 5 ≠ 34), and it said the same thing as the "You save ₹X" banner
+                  directly above this card. Counted once, where it reads as a saving against
+                  MRP rather than a deduction from the bill. */}
 
               <View style={styles.billRow}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Txt>
-                {deliveryFreeUnlocked ? (
-                  <View style={styles.freeBadgeRow}>
-                    <Txt maxFontSizeMultiplier={1.3} style={styles.billStrike}>₹{DELIVERY_FEE}</Txt>
-                    <Txt maxFontSizeMultiplier={1.3} style={styles.freeLabel}>FREE</Txt>
-                  </View>
-                ) : (
-                  <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{DELIVERY_FEE}</Txt>
-                )}
-              </View>
-
-              <View style={styles.billRow}>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Platform Fee</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{PLATFORM_FEE}</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.freeLabel}>FREE</Txt>
               </View>
 
               <View style={[styles.billRow, styles.totalRow]}>
                 <Txt maxFontSizeMultiplier={1.3} style={styles.totalLabel}>Total Amount</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.totalValue}>
-                  ₹{billSubtotal + (deliveryFreeUnlocked ? 0 : DELIVERY_FEE) + PLATFORM_FEE}
-                </Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{billSubtotal}</Txt>
               </View>
               <Txt maxFontSizeMultiplier={1.2} style={styles.billFootnote}>
-                Item prices are GST-inclusive.
+                Item prices are GST-inclusive. Delivery is free.
               </Txt>
             </View>
 
@@ -393,7 +354,7 @@ export function GroceryCartScreen() {
           <View style={[styles.checkoutBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View>
               <Txt maxFontSizeMultiplier={1.3} style={styles.checkoutPrice}>
-                ₹{billSubtotal + (deliveryFreeUnlocked ? 0 : DELIVERY_FEE) + PLATFORM_FEE}
+                ₹{billSubtotal}
               </Txt>
               <Txt maxFontSizeMultiplier={1.2} style={styles.checkoutPriceSub}>
                 View Details
@@ -467,48 +428,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 12,
     paddingBottom: 110,
-  },
-
-  // ── Delivery progress ──
-  deliveryProgressCard: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: GroceryColors.white,
-    borderRadius: Radii.card,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: GroceryColors.border,
-  },
-  deliveryProgressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-  },
-  deliveryProgressText: {
-    flex: 1,
-    fontSize: 12,
-    color: GroceryColors.textSecondary,
-  },
-  deliveryProgressBold: {
-    fontWeight: '700',
-    color: GroceryColors.primary,
-  },
-  deliveryThreshold: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: GroceryColors.textMuted,
-  },
-  progressBarTrack: {
-    height: 5,
-    backgroundColor: GroceryColors.lightGreen,
-    borderRadius: Radii.pill,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: GroceryColors.primary,
-    borderRadius: Radii.pill,
   },
 
   // ── Cart card ──
@@ -689,13 +608,6 @@ const styles = StyleSheet.create({
   },
   billLabel: { fontSize: 13, color: GroceryColors.textSecondary },
   billValue: { fontSize: 13, color: GroceryColors.textPrimary, fontWeight: '500' },
-  billStrike: {
-    fontSize: 12,
-    color: GroceryColors.textMuted,
-    textDecorationLine: 'line-through',
-    marginRight: 6,
-  },
-  freeBadgeRow: { flexDirection: 'row', alignItems: 'center' },
   freeLabel: {
     fontSize: 12,
     fontWeight: '700',

@@ -10,7 +10,9 @@ interface KitchenPreparationCardProps {
   currentStage: PrepStage;
   onStageChange: (stage: PrepStage) => void;
   estimatedTime: string;
-  portionsPrepared: number;
+  /** Residents who answered "eating". Counted, not derived. */
+  confirmedCount: number;
+  /** Portions to cook: the confirmed answers plus everyone who has not replied. */
   expectedResidents: number;
   onBroadcastReady: () => void;
 }
@@ -19,7 +21,7 @@ export function KitchenPreparationCard({
   currentStage,
   onStageChange,
   estimatedTime,
-  portionsPrepared,
+  confirmedCount,
   expectedResidents,
   onBroadcastReady,
 }: KitchenPreparationCardProps) {
@@ -77,20 +79,26 @@ export function KitchenPreparationCard({
           <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 6 }} numberOfLines={1}>{estimatedTime}</Txt>
         </View>
 
+        {/* A "Prepared — 0 / 8" tile used to sit here and it was invented end to end: the
+            numerator was `floor(expected / 2)` whenever the stage read COOKING, the
+            denominator was `expected + 4`, and nothing in this product counts a portion.
+            Moving the stage to COOKING made it jump to half-done, so the cook was told four
+            portions were ready by a number no one had counted. There is no portion counter to
+            report, so this reports the two things that are real instead. */}
         <View style={styles.metricCard}>
           <Row gap={4} align="center">
-            <Ionicons name="restaurant-outline" size={14} color={Colors.textSecondary} />
-            <Txt size={10} weight="700" color={Colors.textSecondary} numberOfLines={2}>Prepared</Txt>
+            <Ionicons name="people-outline" size={14} color={Colors.textSecondary} />
+            <Txt size={10} weight="700" color={Colors.textSecondary} numberOfLines={2}>To cook</Txt>
           </Row>
-          <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 6 }} numberOfLines={1}>{portionsPrepared} / {expectedResidents + 4}</Txt>
+          <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 6 }} numberOfLines={1}>{expectedResidents}</Txt>
         </View>
 
         <View style={styles.metricCard}>
           <Row gap={4} align="center">
-            <Ionicons name="people-outline" size={14} color={Colors.textSecondary} />
-            <Txt size={10} weight="700" color={Colors.textSecondary} numberOfLines={2}>Expected</Txt>
+            <Ionicons name="checkmark-circle-outline" size={14} color={Colors.textSecondary} />
+            <Txt size={10} weight="700" color={Colors.textSecondary} numberOfLines={2}>Confirmed</Txt>
           </Row>
-          <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 6 }} numberOfLines={1}>{expectedResidents}</Txt>
+          <Txt size={15} weight="800" color={Colors.textPrimary} style={{ marginTop: 6 }} numberOfLines={1}>{confirmedCount}</Txt>
         </View>
       </Row>
 

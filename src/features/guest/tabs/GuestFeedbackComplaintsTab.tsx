@@ -284,36 +284,6 @@ export function GuestFeedbackComplaintsTab() {
               </Txt>
             ) : null}
 
-            {category && COMPLAINT_SUGGESTIONS[category] && (
-              <View style={{ marginTop: 14 }}>
-                <Txt size={12} weight="700" color={Colors.textSecondary} style={{ marginBottom: 8 }}>
-                  Quick Suggestions
-                </Txt>
-                <FormScroll
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  bounces={false}
-                  overScrollMode="never"
-                  style={{ marginHorizontal: -16 }}
-                  contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}
-                >
-                  {COMPLAINT_SUGGESTIONS[category].map((sug) => (
-                    <AnimatedPress accessibilityRole="button"
-                      key={sug.title}
-                      onPress={() => {
-                        setTitle(sug.title);
-                        setDescription(sug.desc);
-                        setFormErrors((e) => ({ ...e, title: undefined, description: undefined }));
-                      }}
-                      style={styles.suggestionChip}
-                    >
-                      <Txt size={12} weight="700" color={Colors.primary}>{sug.title}</Txt>
-                    </AnimatedPress>
-                  ))}
-                </FormScroll>
-              </View>
-            )}
-
             {/* COMPLAINT FORM INPUTS */}
             <Spacer size={18} />
             <View style={styles.inputWrapper}>
@@ -348,6 +318,41 @@ export function GuestFeedbackComplaintsTab() {
                 style={{ flex: 1, minHeight: 90 }}
               />
             </View>
+
+            {/* Below the two fields it fills, not above them. Picking a category used to
+                insert this row between the chips and the inputs, shoving Title and
+                Description ~190px down the screen under the finger that had just tapped —
+                and a chip that writes into a field the person can no longer see is a poor
+                offer anyway. Here it appears without moving anything. */}
+            {category && COMPLAINT_SUGGESTIONS[category] && (
+              <View style={{ marginTop: 14 }}>
+                <Txt size={12} weight="700" color={Colors.textSecondary} style={{ marginBottom: 8 }}>
+                  Quick Suggestions
+                </Txt>
+                <FormScroll
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  bounces={false}
+                  overScrollMode="never"
+                  style={{ marginHorizontal: -16 }}
+                  contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}
+                >
+                  {COMPLAINT_SUGGESTIONS[category].map((sug) => (
+                    <AnimatedPress accessibilityRole="button"
+                      key={sug.title}
+                      onPress={() => {
+                        setTitle(sug.title);
+                        setDescription(sug.desc);
+                        setFormErrors((e) => ({ ...e, title: undefined, description: undefined }));
+                      }}
+                      style={styles.suggestionChip}
+                    >
+                      <Txt size={12} weight="700" color={Colors.primary}>{sug.title}</Txt>
+                    </AnimatedPress>
+                  ))}
+                </FormScroll>
+              </View>
+            )}
 
             {/* ATTACH PHOTO/VIDEO EVIDENCE */}
             <Spacer size={14} />

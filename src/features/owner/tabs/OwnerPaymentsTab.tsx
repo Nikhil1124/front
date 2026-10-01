@@ -646,7 +646,7 @@ export function OwnerPaymentsTab() {
                         <Txt variant="meta" weight="600" color={CHARCOAL}>{item.name}</Txt>
                       </Row>
                       <Row gap={12} align="center">
-                        <Txt variant="meta" weight="600" color={CHARCOAL} tabular>
+                        <Txt variant="meta" weight="600" color={CHARCOAL} align="right" tabular style={styles.breakdownAmount}>
                           {formatINR(Math.round(item.amount))}
                         </Txt>
                         <Txt variant="meta" color={MUTED} align="right" tabular style={styles.breakdownPercent}>
@@ -1174,8 +1174,12 @@ const styles = StyleSheet.create({
   breakdownRow: {
     marginBottom: 12 },
   breakdownLabel: { fontSize: 12, fontWeight: '600', color: CHARCOAL },
-  breakdownAmount: { fontSize: 12, fontWeight: '700', color: CHARCOAL },
-  breakdownPercent: { fontSize: 11, color: MUTED, width: 34, textAlign: 'right' },
+  breakdownAmount: { fontSize: 12, fontWeight: '700', color: CHARCOAL, minWidth: 72, textAlign: 'right' },
+  // 34px could not hold "100.0%" at 11pt, so the one row that reached 100% overflowed its
+  // own column and sat further left than every "0.0%" above it — the figures looked
+  // misaligned because the widest one was. 46 fits the longest value these can produce.
+  breakdownPercent: { fontSize: 11, color: MUTED, width: 46, textAlign: 'right' },
+  // The money column had no width, so ₹0 and ₹9,250 started at different x — see `breakdownAmount` above.
   progressBarBg: {
     height: 4,
     backgroundColor: BG,

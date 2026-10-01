@@ -23,6 +23,7 @@ import { usePGowStore, resetPerPersonState } from '@/store/usePGowStore';
 import { isOpsPortalUser, isPartnerAppUser, isPlatformWorkerRole, useAuthStore } from '@/store/authStore';
 import { queryClient } from '@/data/queryClient';
 import { setGateHandler, setSessionExpiredHandler } from '@/data/apiClient';
+import { toastNow } from '@/hooks/useToast';
 import {
   registerNotificationChannels,
   registerMealRsvpCategory,
@@ -68,6 +69,12 @@ setSessionExpiredHandler(() => {
   // The cart, checklist, meal defaults and KYC draft too — the same as signing out.
   resetPerPersonState();
   useAuthStore.getState().logout();
+  // Say why. This used to clear everything and land the person on the sign-in screen with no
+  // word about what happened — mid-tap, from whatever they were doing — which reads as the app
+  // crashing and losing their work rather than as a session that ran out. QA filed it as
+  // exactly that: "app dropped session and returned to Login", blamed on the button they
+  // happened to be pressing. The toast outlives the unmount because it lives in the store.
+  toastNow('warning', 'You were signed out', 'Your session expired. Sign in again to carry on.');
 });
 
 // Gates do NOT navigate. This app surfaces KYC state inside the guest dashboard's own tab,

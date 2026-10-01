@@ -69,6 +69,10 @@ export function SignInScreen() {
 
   // First-time password: a temporary password must be replaced before the session is usable.
 
+  /** Exactly four digits — `Pin` server-side (`^[0-9]{4}$`). Nothing shorter or longer is a
+   *  PIN, and no password that short is accepted anywhere, so this is unambiguous. */
+  const looksLikePin = (value: string) => /^[0-9]{4}$/.test(value.trim());
+
   const isPasswordChangeRequired = (err: unknown) =>
     err instanceof PGowApiError
     && err.httpStatus === 403
@@ -108,7 +112,17 @@ export function SignInScreen() {
       }
       setError(
         err instanceof PGowApiError && err.httpStatus === 401
-          ? mode === 'pin' ? 'That phone number and PIN do not match.' : 'That phone number and password do not match.'
+          ? mode === 'pin'
+            ? 'That phone number and PIN do not match.'
+            // A staff member's 4-digit PIN typed into the password field is the single most
+            // common way to see this error, and the generic wording sent QA chasing it as a
+            // critical auth bug: a PIN-only chef or manager has no password at all
+            // (`users.password_hash` is null by design) and a password must be at least 8
+            // characters, so 4 digits can never be one. Naming the likely mistake costs
+            // nothing — it reveals no account, since it is read off what was typed here.
+            : looksLikePin(secret)
+              ? 'That looks like a staff PIN. Tap “Staff? Sign in with a PIN” below and enter it there.'
+              : 'That phone number and password do not match.'
           : err instanceof Error ? err.message : 'Something went wrong. Try again.',
       );
     } finally {
@@ -165,7 +179,13 @@ export function SignInScreen() {
                 style={[styles.rawInput, { paddingRight: 40 }]}
                 placeholderTextColor={Colors.textMuted}
               />
-              <AnimatedPress 
+              <AnimatedPress
+                accessibilityRole="button"
+                // The label changes with the state, so a screen reader announces what the
+                // tap will do rather than reading the icon font's glyph.
+                accessibilityLabel={showSecret
+                  ? `Hide ${mode === 'pin' ? 'PIN' : 'password'}`
+                  : `Show ${mode === 'pin' ? 'PIN' : 'password'}`}
                 onPress={() => setShowSecret(prev => !prev)}
                 style={{ position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

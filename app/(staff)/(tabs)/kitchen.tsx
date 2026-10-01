@@ -77,10 +77,9 @@ function ChefKitchenView() {
     displayTime = `${h12}:${String(minute).padStart(2, '0')} ${ampm}`;
   }
 
-  // Derive portions prepared from prep state
-  let portionsPrepared = 0;
-  if (prepStage === 'COOKING') portionsPrepared = Math.floor(portionsToPrepare / 2);
-  if (prepStage === 'READY') portionsPrepared = portionsToPrepare;
+  // No portions-prepared figure. It used to be derived from the stage —
+  // `floor(portionsToPrepare / 2)` on COOKING — which is not a count of anything; nobody
+  // tallies plates, so the card reports the RSVP numbers it actually has.
 
   // A different meal brings its own saved stage.
   useEffect(() => {
@@ -138,7 +137,7 @@ function ChefKitchenView() {
         currentStage={prepStage}
         onStageChange={setPrepStage}
         estimatedTime={displayTime}
-        portionsPrepared={portionsPrepared}
+        confirmedCount={eatingCount}
         expectedResidents={portionsToPrepare}
         onBroadcastReady={handleBroadcastReady}
       />

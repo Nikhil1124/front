@@ -110,7 +110,15 @@ export function GroceryOrderDetailScreen() {
   // The server is the real authority on when a cancel is still allowed (e.g. once dispatched)
   // — this just avoids offering the button on the two states where it obviously can't apply.
   const canCancel = !isDelivered && !isCancelled;
-  const needsUpiRef = order.payment_method === 'upi' && order.payment_status === 'pending';
+  // `unpaid`, not `pending`. These two conditions were mutually exclusive: a UPI order is
+  // born `unpaid` (`create_order`), `submit_upi_payment` accepts ONLY `unpaid` and is what
+  // sets `pending`, so gating the form on `pending` meant it appeared only after the thing
+  // it exists to do had already been done. The UPI path had no way through it at all —
+  // place an order, watch it say UNPAID for ever, with nowhere to enter the reference.
+  const needsUpiRef = order.payment_method === 'upi' && order.payment_status === 'unpaid';
+  // Submitted, waiting on ops. Worth saying, because the form it replaces is now gone and
+  // "UNPAID" was the only word this screen ever offered about a UPI payment.
+  const upiRefUnderReview = order.payment_method === 'upi' && order.payment_status === 'pending';
 
   return (
     <View style={styles.container}>
@@ -278,6 +286,16 @@ export function GroceryOrderDetailScreen() {
                 <Txt maxFontSizeMultiplier={1.3} style={styles.upiSubmitText}>{submitUpiPayment.isPending ? 'Submitting…' : 'Submit'}</Txt>
               </AnimatedPress>
             </View>
+          </View>
+        )}
+
+        {upiRefUnderReview && (
+          <View style={styles.sectionCard}>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.sectionTitle}>UPI Payment Submitted</Txt>
+            <Txt maxFontSizeMultiplier={1.3} style={styles.summaryMeta}>
+              Reference {order.upi_ref ?? '—'} is with the team for verification. You will see
+              this order marked paid once it lands.
+            </Txt>
           </View>
         )}
 

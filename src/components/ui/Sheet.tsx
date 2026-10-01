@@ -260,7 +260,11 @@ export function Sheet({
               contentContainerStyle={{
                 paddingHorizontal: hPad,
                 paddingTop: Math.round(screenHeight * 0.016),
-                paddingBottom: Math.round(screenHeight * 0.012),
+                // A footer is pinned below this, so the last row needs room to look like it
+                // ended rather than like it was cut off against the divider. 1.2% of a tall
+                // screen is ~29px, which read as a collision in QA's coordinate dump; 32dp is
+                // the gap the rest of the app leaves above a pinned bar.
+                paddingBottom: footer ? 32 : Math.round(screenHeight * 0.012),
               }}
               showsVerticalScrollIndicator={false}
               bounces

@@ -32,7 +32,7 @@ export function UpiConfigSection() {
   const toast = useToast();
   const qc = useQueryClient();
 
-  const { data: upiList = [], isLoading, isError } = useQuery({
+  const { data: upiList = [], isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: qk.properties.upiIds(pgId ?? ''),
     queryFn: () => listUpiIds(pgId!),
     enabled: !!pgId });
@@ -138,10 +138,24 @@ export function UpiConfigSection() {
           <View style={styles.emptyCard}>
             <Ionicons name="cloud-offline-outline" size={32} color={Colors.danger} />
             <Txt variant="cardTitle" color={CHARCOAL} style={styles.emptyTitle}>Could not load your UPI handles</Txt>
+            {/* The warning used to run three lines and the only way out of this state was a
+                pull-to-refresh on a card that does not obviously scroll. The reason to wait
+                still belongs here, but one line of it — and the retry is a button now. */}
             <Txt variant="meta" color={MUTED} align="center" style={styles.emptySubText}>
-              Pull to refresh, or check your connection. Do not add a handle until this loads —
-              you may already have one.
+              Wait for this to load before adding one — you may already have a handle.
             </Txt>
+            <AnimatedPress
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading your UPI handles"
+              onPress={() => refetch()}
+              disabled={isFetching}
+              style={[styles.retryBtn, isFetching && styles.retryBtnBusy]}
+            >
+              <Ionicons name="refresh" size={15} color={GREEN} />
+              <Txt variant="meta" color={GREEN} style={{ marginLeft: 6 }}>
+                {isFetching ? 'Retrying…' : 'Try again'}
+              </Txt>
+            </AnimatedPress>
           </View>
         ) : upiList.length === 0 ? (
           /* Empty State */
@@ -308,4 +322,15 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center' },
   emptyTitle: { marginTop: 8 },
-  emptySubText: { marginTop: 2 } });
+  emptySubText: { marginTop: 2 },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+    borderColor: GREEN,
+  },
+  retryBtnBusy: { opacity: 0.6 } });

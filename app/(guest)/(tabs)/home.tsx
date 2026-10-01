@@ -231,8 +231,12 @@ export default function GuestHomeTab() {
       {/* ══════════════ HEADER ══════════════ */}
       <AppHeader
         eyebrow={`${getGreeting()}, ${guest?.name?.split(' ')[0] ?? 'Resident'}`}
-        title={`Room ${guest?.roomNo ?? '—'}`}
-        subtitle="Premium Resident"
+        /* "Room —" used to show here on every cold start, while the em-dash placeholder sat
+           beside a "Premium Resident" subtitle that was hardcoded for everyone — PGow has no
+           resident tier, in this app or in pg-backend, so it was a badge nobody had earned
+           and nobody could lose. The room is the one thing this header knows; it waits for it
+           rather than drawing a dash. */
+        title={guest?.roomNo ? `Room ${guest.roomNo}` : 'Your room'}
         leading={
           <AnimatedPress accessibilityLabel="Profile" scale={0.93} onPress={() => router.push('/profile')}>
             <View style={styles.hAvatar}>
