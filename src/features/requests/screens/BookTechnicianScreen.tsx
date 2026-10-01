@@ -54,10 +54,15 @@ export function BookTechnicianScreen() {
     }
     try {
       await escalate.mutateAsync({ id, note: value });
+      // Two things this has to say, because neither is visible from where it leaves you.
+      // Escalating turns the complaint into a repair job, so it leaves this list — without a
+      // signpost it reads as the ticket having been lost. And it goes to the area's technician
+      // where there is one, falling back to the area manager, so naming the manager outright
+      // was only true for an unstaffed area.
       toast(
         'success',
-        'Sent to PGow support',
-        'The area manager has the ticket and will arrange a technician. The resident has been told.'
+        'Sent to PGow',
+        'PGow has it and will arrange a technician. It moves to your Services tab from here, and the resident has been told.'
       );
       router.back();
     } catch (err) {
