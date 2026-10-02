@@ -194,6 +194,7 @@ export const API = {
   PG_BED_VACATE: (pgId: string, bedId: string) => `/v1/pgs/${pgId}/beds/${bedId}/vacate`,
   PG_ROOMS: (pgId: string) => `/v1/pgs/${pgId}/rooms`,
   PG_ROOM_SHARING: (pgId: string, roomId: string) => `/v1/pgs/${pgId}/rooms/${roomId}/sharing`,
+  PG_ROOM: (pgId: string, roomId: string) => `/v1/pgs/${pgId}/rooms/${roomId}`,
 
   PROCUREMENT_CATALOG: "/v1/procurement/catalog",
   PROCUREMENT_ORDERS: "/v1/procurement/orders",

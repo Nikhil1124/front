@@ -21,7 +21,9 @@ import {
   useAssignBed,
   useVacateBed,
   useCreateRoom,
-  useSetRoomSharing } from '@/features/property/usePropertyLayout';
+  useDeleteRoom,
+  useSetRoomSharing,
+  useUpdateRoom } from '@/features/property/usePropertyLayout';
 import { useGuestsQuery } from '@/features/guests/useGuests';
 import { LayoutSetupForm } from '@/features/property/LayoutSetupForm';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +32,11 @@ import type { BedResponse, RoomResponse } from '@/types';
 import { Btn, Card, Chip, ChoiceChips, Col, MetricDeck, OutlinedBtn, Row, Sheet, Spacer, Txt, type DeckCardData } from '@/components/ui';
 
 const FLOORPLAN_IMG = require('../../../../assets/room_floorplan_preview.webp');
+
+/** How many of a room's beds have somebody in them. The delete guard is the server's, but the
+ *  sheet says so beforehand rather than letting the owner find out through a 422. */
+const occupiedCount = (room: RoomResponse) =>
+  room.beds.filter((b) => b.status === 'occupied').length;
 
 /** The room sizes a PG is actually built at. Beyond 6 it is a dormitory, not a room. */
 const SHARING_OPTIONS = [1, 2, 3, 4, 5, 6];
@@ -55,6 +62,8 @@ export function BedVisualizerScreen() {
   const vacateBed = useVacateBed(pgId);
   const createRoom = useCreateRoom(pgId);
   const setSharing = useSetRoomSharing(pgId);
+  const updateRoom = useUpdateRoom(pgId);
+  const removeRoom = useDeleteRoom(pgId);
 
   // Main screen filter & UI states
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
@@ -74,6 +83,10 @@ export function BedVisualizerScreen() {
   const [newBaseRent, setNewBaseRent] = useState('');
   const [increasingRoom, setIncreasingRoom] = useState<RoomResponse | null>(null);
   const [increasedSharing, setIncreasedSharing] = useState('');
+  const [renamingRoom, setRenamingRoom] = useState<RoomResponse | null>(null);
+  const [renamedNumber, setRenamedNumber] = useState('');
+  const [renamedFloor, setRenamedFloor] = useState('');
+  const [deletingRoom, setDeletingRoom] = useState<RoomResponse | null>(null);
 
   const floors = layout?.floors ?? [];
   // Every floor that exists, plus the next one up — the only floor you can legitimately be
@@ -247,6 +260,53 @@ export function BedVisualizerScreen() {
       setIncreasedSharing('');
     } catch (err: any) {
       toast('error', 'Could not change sharing', err?.message ?? 'Please try again.');
+    }
+  };
+
+  const handleRenameRoom = async () => {
+    if (!renamingRoom) return;
+    const number = renamedNumber.trim();
+    const floor = parseInt(renamedFloor, 10);
+    if (!number) {
+      toast('error', 'Check the form', 'A room needs a number.');
+      return;
+    }
+    if (!Number.isFinite(floor) || floor < 0) {
+      toast('error', 'Check the form', 'Pick which floor this room is on.');
+      return;
+    }
+    if (number === renamingRoom.roomNumber && floor === renamingRoom.floorNumber) {
+      setRenamingRoom(null);
+      return;
+    }
+    try {
+      await updateRoom.mutateAsync({
+        roomId: renamingRoom.id,
+        changes: { room_number: number, floor_number: floor },
+      });
+      toast(
+        'success',
+        'Room updated',
+        `Room ${renamingRoom.roomNumber} is now Room ${number} on Floor ${floor}.`,
+      );
+      setRenamingRoom(null);
+    } catch (err: any) {
+      // A 409 here means the number is taken; the server's wording already says so.
+      toast('error', 'Could not update the room', err?.message ?? 'Please try again.');
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!deletingRoom) return;
+    try {
+      await removeRoom.mutateAsync(deletingRoom.id);
+      toast('success', 'Room deleted', `Room ${deletingRoom.roomNumber} and its beds are gone.`);
+      setDeletingRoom(null);
+      setSelectedRoomDetail(null);
+    } catch (err: any) {
+      // The server names who is still in the room, which is more use than anything this
+      // screen could compose.
+      toast('error', 'Could not delete the room', err?.message ?? 'Please try again.');
     }
   };
 
@@ -666,6 +726,61 @@ export function BedVisualizerScreen() {
                       </Row>
                     </Col>
                   </Row>
+                </Card>
+
+                {/* RENAME / MOVE / DELETE
+                    A property created before the room screens existed never had its layout
+                    described: a room was conjured from each resident's typed room number, with
+                    the floor guessed from the digits. Correcting one used to mean an UPDATE
+                    against the production database, because nothing in the product could
+                    renumber or remove a room. These two buttons are that. */}
+                <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
+                  <Txt size={11} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>
+                    ROOM DETAILS
+                  </Txt>
+                  <Spacer size={12} />
+                  <Row gap={10}>
+                    <AnimatedPress
+                      accessibilityRole="button"
+                      accessibilityLabel={`Rename or move room ${activeRoomDetailObject.roomNumber}`}
+                      onPress={() => {
+                        setRenamingRoom(activeRoomDetailObject);
+                        setRenamedNumber(activeRoomDetailObject.roomNumber);
+                        setRenamedFloor(String(activeRoomDetailObject.floorNumber));
+                      }}
+                      style={[styles.roomActionBtn, { borderColor: Colors.primary }]}
+                    >
+                      <Ionicons name="pencil-outline" size={15} color={Colors.primary} />
+                      <Txt size={12} weight="700" color={Colors.primary} style={{ marginLeft: 6 }}>
+                        Rename / Move
+                      </Txt>
+                    </AnimatedPress>
+
+                    <AnimatedPress
+                      accessibilityRole="button"
+                      accessibilityLabel={`Delete room ${activeRoomDetailObject.roomNumber}`}
+                      onPress={() => setDeletingRoom(activeRoomDetailObject)}
+                      style={[styles.roomActionBtn, { borderColor: Colors.danger }]}
+                    >
+                      <Ionicons name="trash-outline" size={15} color={Colors.danger} />
+                      <Txt size={12} weight="700" color={Colors.danger} style={{ marginLeft: 6 }}>
+                        Delete Room
+                      </Txt>
+                    </AnimatedPress>
+                  </Row>
+                  {occupiedCount(activeRoomDetailObject) > 0 && (
+                    <>
+                      <Spacer size={10} />
+                      {/* Said up front rather than discovered through a 422: the server refuses
+                          the delete while anyone is housed here, and renaming is the one that
+                          still works. */}
+                      <Txt size={11} color={Colors.textMuted}>
+                        Renaming works with residents in the room — nobody moves. Deleting needs
+                        the {occupiedCount(activeRoomDetailObject)} occupied bed
+                        {occupiedCount(activeRoomDetailObject) === 1 ? '' : 's'} vacated first.
+                      </Txt>
+                    </>
+                  )}
                 </Card>
 
                 {/* SEGMENTED TAB SELECTOR */}
@@ -1089,6 +1204,104 @@ export function BedVisualizerScreen() {
         </Sheet>
       )}
 
+      {/* RENAME / MOVE A ROOM
+          Deliberately available with residents in the room. The room is not moving — the owner
+          is saying what it has always been called, and the server brings each occupant's own
+          `room_no` across so nothing re-invents the old number afterwards. */}
+      {renamingRoom && (
+        <Sheet
+          visible
+          title="Rename or move room"
+          subtitle={`Currently Room ${renamingRoom.roomNumber} on Floor ${renamingRoom.floorNumber}`}
+          icon="pencil-outline"
+          onDismiss={() => setRenamingRoom(null)}
+          footer={
+            <Btn
+              onPress={handleRenameRoom}
+              loading={updateRoom.isPending}
+              disabled={updateRoom.isPending}
+              containerColor={Colors.primary}
+              textColor={Colors.textInverse}
+              borderRadius={Radii.control}
+              height={44}
+            >
+              <Txt size={12} weight="700" color={Colors.textInverse}>Save room</Txt>
+            </Btn>
+          }
+        >
+          <Txt size={11} color={Colors.textMuted}>
+            Nobody is moved and no bed changes. Residents in this room keep their bed and their
+            room number follows the new one.
+          </Txt>
+          <Spacer size={14} />
+          <OutlinedTextField
+            label="Room number"
+            value={renamedNumber}
+            onChangeText={setRenamedNumber}
+            style={{ marginBottom: 12 }}
+          />
+          <ChoiceChips
+            label="Floor"
+            options={floorOptions}
+            value={renamedFloor === '' ? null : Number(renamedFloor)}
+            onChange={(f) => setRenamedFloor(String(f))}
+            render={(f) => (f === 0 ? 'Ground' : `Floor ${f}`)}
+            testID="rename_room_floor"
+          />
+        </Sheet>
+      )}
+
+      {/* DELETE A ROOM */}
+      {deletingRoom && (
+        <Sheet
+          visible
+          title={`Delete Room ${deletingRoom.roomNumber}?`}
+          icon="trash-outline"
+          accent={Colors.danger}
+          onDismiss={() => setDeletingRoom(null)}
+          footer={
+            <Row gap={10}>
+              <OutlinedBtn
+                onPress={() => setDeletingRoom(null)}
+                borderColor={Colors.borderSubtle}
+                textColor={Colors.textPrimary}
+                borderRadius={Radii.control}
+                height={44}
+                style={{ flex: 1 }}
+              >
+                <Txt size={12} weight="700" color={Colors.textPrimary}>Keep it</Txt>
+              </OutlinedBtn>
+              <Btn
+                onPress={handleDeleteRoom}
+                loading={removeRoom.isPending}
+                disabled={removeRoom.isPending || occupiedCount(deletingRoom) > 0}
+                containerColor={Colors.danger}
+                textColor={Colors.textInverse}
+                borderRadius={Radii.control}
+                height={44}
+                style={{ flex: 1 }}
+              >
+                <Txt size={12} weight="700" color={Colors.textInverse}>Delete room</Txt>
+              </Btn>
+            </Row>
+          }
+        >
+          {occupiedCount(deletingRoom) > 0 ? (
+            <Txt size={12} color={Colors.textPrimary}>
+              {occupiedCount(deletingRoom)} of this room's {deletingRoom.beds.length} beds still
+              has somebody in it. Vacate {occupiedCount(deletingRoom) === 1 ? 'it' : 'them'} from
+              Bed Allocation first — a room being deleted is not allowed to end a resident's stay.
+            </Txt>
+          ) : (
+            <Txt size={12} color={Colors.textPrimary}>
+              This removes Room {deletingRoom.roomNumber}, its {deletingRoom.beds.length} bed
+              {deletingRoom.beds.length === 1 ? '' : 's'}, and the record of past stays in it.
+              That history cannot be recovered.
+            </Txt>
+          )}
+        </Sheet>
+      )}
+
       {/* 10. INCREASE SHARING MODAL */}
       {increasingRoom && (
         <Sheet
@@ -1249,6 +1462,15 @@ const styles = StyleSheet.create({
     borderRadius: Radii.control },
   detailTabBtnActive: {
     backgroundColor: Colors.primary },
+  roomActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
+    borderWidth: 1,
+    borderRadius: Radii.control,
+  },
   editBedsBtn: {
     flexDirection: 'row',
     alignItems: 'center',

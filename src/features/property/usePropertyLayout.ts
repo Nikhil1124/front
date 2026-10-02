@@ -80,6 +80,38 @@ export function setRoomSharing(
   }).then(toPropertyLayout);
 }
 
+/**
+ * Correct a room's number, its floor, or its rent.
+ *
+ * Allowed while residents are in the room, unlike resizing or deleting: nobody moves, the
+ * label changes, and the server carries each occupant's own `room_no` across with it. This is
+ * the one route by which a property whose rooms were never described — invented instead from
+ * each resident's typed room number — can be made to match the actual building.
+ *
+ * Only the fields passed are touched. A 409 means another room already has that number.
+ */
+export function updateRoom(
+  pgId: string,
+  roomId: string,
+  changes: { room_number?: string; floor_number?: number; base_rent?: number | null },
+): Promise<PropertyLayoutResponse> {
+  return apiFetch<any>(API.PG_ROOM(pgId, roomId), {
+    method: "PATCH",
+    body: JSON.stringify(changes),
+  }).then(toPropertyLayout);
+}
+
+/**
+ * Remove a room and its beds.
+ *
+ * Refused with a 422 while anybody lives in it — the server will not let a room disappearing
+ * be how a tenancy ends, and names who is still there. Vacate them first. Past stays in the
+ * room go with it; there is no archive.
+ */
+export function deleteRoom(pgId: string, roomId: string): Promise<PropertyLayoutResponse> {
+  return apiFetch<any>(API.PG_ROOM(pgId, roomId), { method: "DELETE" }).then(toPropertyLayout);
+}
+
 // ─── React bindings ──────────────────────────────────────────────────────────
 
 export function usePropertyLayout(pgId: string | null) {
@@ -143,6 +175,33 @@ export function useSetRoomSharing(pgId: string | null) {
       setRoomSharing(pgId!, params.roomId, params.sharingType),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.properties.layout(pgId ?? "") });
+    },
+  });
+}
+
+export function useUpdateRoom(pgId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      roomId: string;
+      changes: { room_number?: string; floor_number?: number; base_rent?: number | null };
+    }) => updateRoom(pgId!, params.roomId, params.changes),
+    // Not just the layout: renumbering rewrites the occupants' own `room_no`, which is what
+    // the residents list and every room picker read.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.properties.all() });
+      qc.invalidateQueries({ queryKey: ["guests"] });
+    },
+  });
+}
+
+export function useDeleteRoom(pgId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (roomId: string) => deleteRoom(pgId!, roomId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.properties.all() });
+      qc.invalidateQueries({ queryKey: ["guests"] });
     },
   });
 }
