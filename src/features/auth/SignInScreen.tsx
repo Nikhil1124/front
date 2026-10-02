@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { Colors, Radii } from '@/theme';
 import { useToast } from '@/hooks/useToast';
@@ -111,7 +111,7 @@ export function SignInScreen() {
         return;
       }
       setError(
-        err instanceof PGowApiError && err.httpStatus === 401
+        err instanceof PGowApiError && (err.httpStatus === 401 || err.httpStatus === 422)
           ? mode === 'pin'
             ? 'That phone number and PIN do not match.'
             // A staff member's 4-digit PIN typed into the password field is the single most
@@ -122,7 +122,7 @@ export function SignInScreen() {
             // nothing — it reveals no account, since it is read off what was typed here.
             : looksLikePin(secret)
               ? 'That looks like a staff PIN. Tap “Staff? Sign in with a PIN” below and enter it there.'
-              : 'That phone number and password do not match.'
+              : 'That phone number and password do not match. (If you are staff, try signing in with your PIN below)'
           : err instanceof Error ? err.message : 'Something went wrong. Try again.',
       );
     } finally {
@@ -190,7 +190,7 @@ export function SignInScreen() {
                 style={{ position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name={showSecret ? "eye-off-outline" : "eye-outline"} size={20} color={Colors.textMuted} />
+                <MaterialIcons name={showSecret ? "visibility-off" : "visibility"} size={20} color={Colors.textMuted} />
               </AnimatedPress>
             </View>
             {error ? (

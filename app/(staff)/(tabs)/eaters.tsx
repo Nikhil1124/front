@@ -166,7 +166,7 @@ function ChefEatersView() {
                     </Col>
                   </Row>
                   <Row align="center" gap={10}>
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: r.is_away ? Colors.info : Colors.warning }} />
+                    <View style={{ width: 8, height: 8, borderRadius: Radii.badge, backgroundColor: r.is_away ? Colors.info : Colors.warning }} />
                     <Txt size={13} weight="700" color={r.is_away ? Colors.info : Colors.textSecondary}>{r.is_away ? 'Away' : 'No reply'}</Txt>
                     <Ionicons name="chevron-forward" size={18} color={Colors.borderSubtle} style={{ marginLeft: 6 }} />
                   </Row>
@@ -548,7 +548,7 @@ const Divider = ({ color }: { color: string }) => <View style={{ height: 1, back
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8F9FE' },
-  groceryBanner: { height: 110, borderRadius: 24, overflow: 'hidden', backgroundColor: Colors.primaryDark, justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.primaryDark, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  groceryBanner: { height: 110, borderRadius: Radii.pill, overflow: 'hidden', backgroundColor: Colors.primaryDark, justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.primaryDark, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
   groceryOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(20, 10, 80, 0.4)' },
   cartIconBox: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
   bannerArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
@@ -562,8 +562,8 @@ const styles = StyleSheet.create({
   activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
   divider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 12 },
   shadowCard: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6, borderWidth: 0 },
-  chefHatIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(91, 69, 232, 0.1)', alignItems: 'center', justifyContent: 'center' },
-  navCirc: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.borderSubtle },
+  chefHatIcon: { width: 52, height: 52, borderRadius: Radii.card, backgroundColor: 'rgba(91, 69, 232, 0.1)', alignItems: 'center', justifyContent: 'center' },
+  navCirc: { width: 32, height: 32, borderRadius: Radii.card, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.borderSubtle },
   pendingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18 },
   initialsBox: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(91, 69, 232, 0.08)', alignItems: 'center', justifyContent: 'center' },
   mealPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

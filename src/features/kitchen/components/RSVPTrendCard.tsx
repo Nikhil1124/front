@@ -54,5 +54,5 @@ export function RSVPTrendCard({
 }
 
 const styles = StyleSheet.create({
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  dot: { width: 8, height: 8, borderRadius: Radii.badge },
 });

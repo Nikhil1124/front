@@ -264,17 +264,19 @@ export function OwnerComplaintsTab() {
 
                 <Spacer size={14} />
 
-                <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Set Status:</Txt>
-                <Row gap={6} style={{ marginTop: 4 }}>
-                  {['Open', 'In Progress', 'Resolved'].map((st) => (
-                    <AnimatedPress accessibilityRole="button"
-                      key={st}
-                      style={[styles.smallChip, responseStatus === st && styles.smallChipActive]}
-                      onPress={() => setResponseStatus(st)}
-                    >
-                      <Txt maxFontSizeMultiplier={1.3} style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Txt>
-                    </AnimatedPress>
-                  ))}
+                <Row align="center" justify="space-between" style={{ marginTop: 4 }}>
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.inputLabelStyle}>Set Status:</Txt>
+                  <Row gap={6}>
+                    {['Open', 'In Progress', 'Resolved'].map((st) => (
+                      <AnimatedPress accessibilityRole="button"
+                        key={st}
+                        style={[styles.smallChip, responseStatus === st && styles.smallChipActive]}
+                        onPress={() => setResponseStatus(st)}
+                      >
+                        <Txt maxFontSizeMultiplier={1.3} style={[styles.smallChipText, responseStatus === st && styles.smallChipTextActive]}>{st}</Txt>
+                      </AnimatedPress>
+                    ))}
+                  </Row>
                 </Row>
 
         </Sheet>

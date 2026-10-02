@@ -11,8 +11,9 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('../..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
 /** Files allowed to name a raw radius. */
 const ALLOWED = new Set([
@@ -32,7 +33,7 @@ function walk(dir: string, out: string[] = []): string[] {
 
 const offenders: string[] = [];
 for (const file of [...walk(join(ROOT, 'src')), ...walk(join(ROOT, 'app'))]) {
-  const rel = file.slice(ROOT.length).replace(/^\/+/, '');
+  const rel = file.slice(ROOT.length).replace(/^[\\\/]+/, '').replace(/\\/g, '/');
   // The checks themselves quote the pattern they look for.
   if (ALLOWED.has(rel) || rel.endsWith('.check.ts')) continue;
   const body = readFileSync(file, 'utf8');
