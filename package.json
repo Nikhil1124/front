@@ -6,7 +6,7 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --port 8083",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",

@@ -170,9 +170,9 @@ export function routeFromPushData(data: Record<string, unknown> | undefined): vo
   let screen = typeof data?.screen === "string" ? data.screen : null;
 
   // Maintenance and Ticket routing override
-  const category = data?.category as string | undefined;
-  const actionType = data?.actionType as string | undefined;
-  const actionId = data?.actionId as string | undefined;
+  const category = (data?.category ?? data?.category) as string | undefined;
+  const actionType = (data?.actionType ?? data?.action_type) as string | undefined;
+  const actionId = (data?.actionId ?? data?.action_id) as string | undefined;
 
   if (
     category === "complaint" ||
