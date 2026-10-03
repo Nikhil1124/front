@@ -140,9 +140,13 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
   }
 
   const content = payload?.notification?.request?.content?.data as
-    | { category?: string; actionType?: string; actionId?: string }
+    | { category?: string; actionType?: string; actionId?: string; action_type?: string; action_id?: string }
     | undefined;
-  if (content?.actionType !== "meal" || !content.actionId) return;
+  
+  const actionType = content?.actionType ?? content?.action_type;
+  const actionId = content?.actionId ?? content?.action_id;
+
+  if (actionType !== "meal" || !actionId) return;
 
   const choice = actionIdentifier === "EAT" ? "eating" : "skipping";
 
@@ -153,7 +157,7 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
 
   try {
     const { points_awarded, points_balance } = await submitMealResponse(
-      content.actionId,
+      actionId,
       choice
     );
     // Android leaves an action-button notification in the tray after the tap — nothing

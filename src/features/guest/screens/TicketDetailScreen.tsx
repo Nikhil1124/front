@@ -23,9 +23,10 @@ import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Radii, Colors } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { useAuthStore } from '@/store/authStore';
-import { useCancelComplaintMutation } from '@/features/requests/useComplaints';
+import { useAddCommentMutation, useCancelComplaintMutation } from '@/features/requests/useComplaints';
 import type { FeedbackComplaintEntity } from '@/types';
-import { Card, Col, OutlinedBtn, PGowDialog, Pill, Row, Spacer, Txt } from '@/components/ui';
+import { Btn, Card, Col, OutlinedBtn, PGowDialog, Pill, Row, Spacer, Txt } from '@/components/ui';
+import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { useToast } from '@/hooks/useToast';
 
 interface Props {
@@ -70,7 +71,40 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
   // Mirrors the server: RESOLVED and CANCELLED are both terminal (cancel_request:
   // "This ticket is already closed."), and REQUEST_STATUS collapses both into the single
   // UI label "Resolved" (mappers.ts) — so that's the one check needed here too.
-  const canCancel = ticket.status !== 'Resolved';
+  // A repair's real progress is its stage, not its status. REPAIR's stage machine has
+  // `resolves_on=None` — the desk still has to price the work before the ticket closes — so
+  // `status` stops at "In Progress" and stays there after the technician has finished.
+  const workFinished = ticket.serviceStage === 'work_done';
+  // Mirrors the server: RESOLVED and CANCELLED are both terminal (cancel_request:
+  // "This ticket is already closed."), and REQUEST_STATUS collapses both into the single
+  // UI label "Resolved" (mappers.ts) — so that's the one check needed here too.
+  //
+  // Finished work is excluded on top of that. `cancel_request` would happily accept it: only
+  // RESOLVED and CANCELLED are terminal there, so a ticket sitting at `work_done` is still
+  // cancellable server-side. Withdrawing it then voids a job the technician has already done
+  // and the desk has not yet billed — so the button comes off once the work is in.
+  const canCancel = ticket.status !== 'Resolved' && !workFinished;
+
+  // Real: POST /v1/requests/{id}/events, which `add_event` permits for the ticket's own
+  // raiser (`req.raised_by == membership.id`). It lands on the ticket's timeline, which is
+  // where the manager and PGow's desk read it. Not a star rating — nothing server-side
+  // stores one for a repair, and a star that goes nowhere is worse than no star.
+  const addComment = useAddCommentMutation(activePgId ?? undefined);
+  const [feedback, setFeedback] = useState('');
+  const [feedbackSent, setFeedbackSent] = useState(false);
+
+  const sendFeedback = async () => {
+    const body = feedback.trim();
+    if (!body) return;
+    try {
+      await addComment.mutateAsync({ id: ticket.id, body });
+      setFeedback('');
+      setFeedbackSent(true);
+      toast('success', 'Thanks — sent', 'Your manager can see this on the ticket.');
+    } catch (err) {
+      toast('error', 'Could not send', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
 
   const handleCancel = () => setConfirmingWithdraw(true);
 
@@ -140,6 +174,75 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
           })}
         </Row>
       </Card>
+
+      {workFinished ? (
+        <>
+          <Spacer size={14} />
+          <Card
+            containerColor={`${Colors.success}0F`}
+            borderRadius={Radii.card}
+            borderWidth={1}
+            borderColor={Colors.success}
+            padding={[16, 16]}
+          >
+            <Row gap={10} align="center">
+              <Ionicons name="checkmark-done-circle" size={22} color={Colors.success} />
+              <Col style={{ flex: 1 }}>
+                <Txt variant="body" weight="700" color={Colors.textPrimary}>Work finished</Txt>
+                <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 16, marginTop: 2 }}>
+                  The technician is done. Your property is working out the final cost — your
+                  bill still shows the visit fee until they do.
+                </Txt>
+              </Col>
+            </Row>
+
+            {feedbackSent ? (
+              <>
+                <Spacer size={12} />
+                <Row gap={8} align="center">
+                  <Ionicons name="chatbubble-ellipses" size={15} color={Colors.success} />
+                  <Txt variant="caption" weight="700" color={Colors.success}>
+                    Your note is on this ticket.
+                  </Txt>
+                </Row>
+              </>
+            ) : (
+              <>
+                <Spacer size={14} />
+                <Txt variant="caption" weight="700" color={Colors.textPrimary}>
+                  How did it go?
+                </Txt>
+                <Txt variant="caption" color={Colors.textMuted} style={{ lineHeight: 16, marginTop: 2 }}>
+                  Anything still not right, or worth passing on about the technician.
+                </Txt>
+                <Spacer size={10} />
+                <OutlinedTextField
+                  placeholder="Tap still drips a little…"
+                  value={feedback}
+                  onChangeText={setFeedback}
+                  multiline
+                  numberOfLines={3}
+                  maxLength={500}
+                />
+                <Spacer size={10} />
+                <Btn
+                  onPress={sendFeedback}
+                  loading={addComment.isPending}
+                  disabled={!feedback.trim()}
+                  containerColor={Colors.primary}
+                  textColor={Colors.textInverse}
+                  borderRadius={Radii.control}
+                  height={46}
+                >
+                  <Txt variant="body" weight="700" color={Colors.textInverse}>
+                    {addComment.isPending ? 'Sending…' : 'Send to my manager'}
+                  </Txt>
+                </Btn>
+              </>
+            )}
+          </Card>
+        </>
+      ) : null}
 
       <Spacer size={14} />
 

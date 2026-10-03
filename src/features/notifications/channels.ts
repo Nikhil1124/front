@@ -162,17 +162,25 @@ export async function registerMealRsvpCategory(): Promise<void> {
 }
 
 /**
- * Where a tapped push goes. The backend puts `screen` in the push `data` block precisely so
- * this does not have to re-derive it — without it every notification opens the home screen
- * and the person has to go find whatever it was about.
+ * Where a tapped push goes.
+ *
+ * This DOES have to re-derive the screen: `lambdas/notify.py` builds the data block from a
+ * fixed set — title, body, `category`, `action_type`, `action_id`, `urgent` — and there is no
+ * `screen` key in it. An earlier comment here claimed there was, which is why the fallbacks
+ * below matter so much; they are the normal path, not the degraded one.
+ *
+ * And those keys are snake_case on the wire. Reading only `actionType`/`actionId` left both
+ * undefined, so every ticket push resolved to the LIST fallback instead of the ticket: an
+ * owner tapping "Work finished" landed on the Services tab, which opens on a grid of bookable
+ * services, and read as the app offering to book a technician for work already finished.
  */
 export function routeFromPushData(data: Record<string, unknown> | undefined): void {
   let screen = typeof data?.screen === "string" ? data.screen : null;
 
   // Maintenance and Ticket routing override
   const category = data?.category as string | undefined;
-  const actionType = data?.actionType as string | undefined;
-  const actionId = data?.actionId as string | undefined;
+  const actionType = (data?.actionType ?? data?.action_type) as string | undefined;
+  const actionId = (data?.actionId ?? data?.action_id) as string | undefined;
 
   if (
     category === "complaint" ||

@@ -29,11 +29,14 @@ export function useActiveMeal(): {
   // tomorrow's breakfast moved every chef screen off tonight's dinner. The default is the
   // next meal still to be served; after the last one, the most recent.
   const now = Date.now();
-  const upcoming = notifications.filter((n) => n.timestamp >= now);
+  const upcoming = [...notifications]
+    .filter((n) => n.timestamp >= now)
+    .sort((a, b) => a.timestamp - b.timestamp);
+  
   const activeMeal =
     notifications.find((n) => n.id === activeId) ??
-    upcoming[upcoming.length - 1] ??
-    notifications[0] ??
+    upcoming[0] ??
+    [...notifications].sort((a, b) => b.timestamp - a.timestamp)[0] ??
     null;
 
   return {

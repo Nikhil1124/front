@@ -73,7 +73,10 @@ function serviceDateFor(serviceTime: string, editingMealDate: number | null): Da
   const { hour, minute } = parseTime(serviceTime);
   const at = editingMealDate ? new Date(editingMealDate) : new Date();
   at.setHours(hour, minute, 0, 0);
-  if (!editingMealDate && at.getTime() <= Date.now()) at.setDate(at.getDate() + 1);
+  // Add a 4-hour grace period so a Chef posting Lunch an hour late doesn't accidentally post it for tomorrow.
+  if (!editingMealDate && (at.getTime() + 4 * 60 * 60 * 1000) <= Date.now()) {
+    at.setDate(at.getDate() + 1);
+  }
   return at;
 }
 
