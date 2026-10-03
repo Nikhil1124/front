@@ -13,6 +13,10 @@
  *
  * Grouping is presentation only. The thing added to the cart is still the individual pack row,
  * with its own id and its own price.
+ *
+ * Grouping is per category. The tag is free text that nothing validates, so two unrelated
+ * products can carry the same one; without the scope they merge into a single card and one of
+ * them vanishes from its own category.
  */
 import type { SupplyItem } from '@/types';
 
@@ -39,8 +43,20 @@ export function groupByVariant(items: SupplyItem[]): SupplyItem[][] {
   const order: string[] = [];
 
   for (const item of items) {
+    const tag = item.variant_group?.trim();
+    // Scoped to the category, because `variant_group` is free text with no uniqueness and no
+    // FK — `models/catalog.py` is explicit that it is "purely how the client re-groups those
+    // rows", so nothing server-side stops two unrelated products carrying the same tag. Keyed
+    // on the tag alone, a "value-pack" on a chicken row and a "value-pack" on a detergent row
+    // became ONE card: the group takes its name, image and category from whichever member came
+    // first, so the second product disappears from its own category and reappears as a size
+    // chip under the first. Two packs of the same product always share a category, so scoping
+    // costs nothing and removes the whole class of collision.
+    //
+    // NUL as the separator: a category id is a UUID and the tag is free text, so no tag can
+    // contain one and no two pairs can collide by concatenation.
     // Fall back to the item's own id so an untagged item cannot collide with another.
-    const key = item.variant_group?.trim() || `__solo_${item.id}`;
+    const key = tag ? `${item.category_id}\u0000${tag}` : `__solo_${item.id}`;
     const existing = groups.get(key);
     if (existing) {
       existing.push(item);

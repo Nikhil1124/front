@@ -1,6 +1,6 @@
 // No types needed here
 import { toAmount } from '@/data/mappers';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { categoryPicture } from '../categoryVisuals';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -44,6 +44,30 @@ export function GroceryCategoryScreen() {
 
   const [activeSupplyCategory, setActiveSupplyCategory] = useState<string | null>(
     initialSupplyCategory ?? null
+  );
+
+  /**
+   * Take the category from the route every time this screen is shown, not only the first time.
+   *
+   * This screen is a TAB — `app/groceries/(tabs)/categories.tsx`, inside a `Tabs`/`TabSlot`
+   * layout — so it mounts once and then stays mounted for the life of the mini-app. A
+   * `useState` initialiser runs on that first mount and never again, so tapping Chicken on the
+   * home screen and then tapping Dairy routed here both times and left the screen showing
+   * Chicken: the param changed, the state did not. Whichever category was opened first was the
+   * only one the catalogue ever showed, which reads as every category containing the same
+   * products.
+   *
+   * On focus rather than on param change, because re-selecting the category you are already on
+   * has to work too, and the param's value is identical in that case.
+   *
+   * A missing param means the Categories tab was tapped directly rather than a category chosen,
+   * so the left rail's own selection stands — that is the one case where the screen's state is
+   * the more recent intent.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      if (initialSupplyCategory) setActiveSupplyCategory(initialSupplyCategory);
+    }, [initialSupplyCategory])
   );
 
   const products = useMemo(() => {

@@ -19,7 +19,14 @@ export type NotificationCategory =
   | "complaint"
   | "finance"
   | "shift"
-  | "service";
+  | "service"
+  // `meal` belongs here because the server sends it, not because the bell shows it.
+  // `notifications_category_valid` permits eight categories and `list_notifications` filters
+  // none of them, so a meal row does arrive here — it is this client that chooses not to
+  // surface it, for the reason above. Leaving it out of the union did not stop it arriving;
+  // it only told TypeScript the value was impossible, so an exhaustive `switch` would have
+  // compiled while falling through on real data.
+  | "meal";
 
 export interface NotificationRecord {
   id: string;

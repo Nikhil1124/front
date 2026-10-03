@@ -24,6 +24,7 @@ import { currentPeriod, periodToMonthYear, toAmount } from "./mappers.ts";
 import { toneFor } from "../components/ui/statusTone.ts";
 import { todayLocalISO } from "../utils/format.ts";
 import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
+import { groupByVariant } from "../features/groceries/variantGroups.ts";
 
 // ── UPI deep link ───────────────────────────────────────────────────────────
 // The highest-consequence string this app builds. A VPA that is wrong — or worse, silently
@@ -443,6 +444,55 @@ import { ALERT_ORDER, centreOut, NAV_PROFILES, pickAlert } from "./navTabs.ts";
     ["paid", "pending", "refunded", "unpaid"],
     "SupplyPaymentStatus must mirror pg-backend's SupplyOrderPaymentStatus exactly — a value "
       + "it lacks cannot be compared against, and one it invents will never arrive."
+  );
+}
+
+// ── Grouping pack sizes into one product card ───────────────────────────────────────────
+// `variant_group` is free text with no uniqueness and no FK, so the only thing stopping two
+// unrelated products sharing a tag is that nobody has typed the same word twice yet.
+{
+  const item = (id: string, category_id: string, name: string, unit_label: string,
+                variant_group: string | null) =>
+    ({ id, category_id, name, unit_label, variant_group }) as never;
+
+  // The feature itself: three packs of one product collapse to one card, smallest first.
+  const onions = groupByVariant([
+    item("1", "cat-veg", "Onion 1 kg", "1 kg", "onion"),
+    item("2", "cat-veg", "Onion 250 g", "250 g", "onion"),
+    item("3", "cat-veg", "Onion 500 g", "500 g", "onion"),
+  ]);
+  assert.equal(onions.length, 1, "one product, not three");
+  assert.deepEqual(
+    onions[0].map((i: { name: string }) => i.name),
+    ["Onion 250 g", "Onion 500 g", "Onion 1 kg"],
+    "pack sizes read smallest first, whatever order they arrived in"
+  );
+
+  // The collision. Same tag, different categories — these are not the same product, and
+  // merging them takes one of them out of its own category entirely.
+  const clash = groupByVariant([
+    item("4", "cat-meat", "Chicken value pack", "1 kg", "value-pack"),
+    item("5", "cat-clean", "Detergent value pack", "1 kg", "value-pack"),
+  ]);
+  assert.equal(clash.length, 2, "a shared tag across categories must not merge two products");
+
+  // An untagged item is its own card; two of them never merge with each other.
+  const solo = groupByVariant([
+    item("6", "cat-veg", "Ginger", "100 g", null),
+    item("7", "cat-veg", "Garlic", "100 g", null),
+  ]);
+  assert.equal(solo.length, 2, "untagged items stay separate");
+
+  // A group takes the position of its first member, so an ordered list is not reshuffled.
+  const ordered = groupByVariant([
+    item("8", "cat-veg", "Apple 1 kg", "1 kg", "apple"),
+    item("9", "cat-veg", "Banana", "1 dozen", null),
+    item("10", "cat-veg", "Apple 500 g", "500 g", "apple"),
+  ]);
+  assert.deepEqual(
+    ordered.map((g: { name: string }[]) => g[0].name),
+    ["Apple 500 g", "Banana"],
+    "the apple group holds slot one, where its first member was"
   );
 }
 
