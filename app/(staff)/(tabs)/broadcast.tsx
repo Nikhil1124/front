@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Image, TextInput } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { router } from 'expo-router';
-import { Card, Txt, Btn, Row, IconBtn, Spacer, AnimatedPress } from '@/components/ui';
+import { Card, Txt, Btn, Row, IconBtn, Spacer, AnimatedPress, SearchField } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { InfoTip } from '@/components/ui/InfoTip';
@@ -293,7 +293,8 @@ function ChefBroadcastView() {
               title: '🍴 New Meal Broadcasted!',
               // The 2-hour reminder goes out only if that moment is still ahead.
               description: `${mealTypeSelected} at ${formatServiceTime12h(serviceTimeInput)}\nMenu: ${meal.menu_items}${serviceAt.getTime() - 2 * 3_600_000 > Date.now() ? `\nRSVP reminder at ${getAlertTriggerTime(serviceTimeInput)}` : ''}`,
-              type: 'MEAL', timestamp: Date.now() } });
+              // notificationId carries the meal through, so tapping the toast opens that meal.
+              type: 'MEAL', notificationId: meal.id, timestamp: Date.now() } });
       clearMenuError(); setSelectedDishes([]);
       setEditingMealId(null);
       setEditingMealDate(null);
@@ -417,16 +418,12 @@ function ChefBroadcastView() {
         </FormScroll>
 
         {/* Search */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={Colors.textMuted} />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Search dishes..." 
-            placeholderTextColor={Colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+        <SearchField
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search dishes..."
+          style={styles.searchContainer}
+        />
 
         {/* 2-Column Grid for Dishes */}
         <View style={styles.gridContainer}>
@@ -460,7 +457,7 @@ function ChefBroadcastView() {
         <Card containerColor={Colors.surface} borderRadius={Radii.card} borderWidth={1} borderColor={Colors.borderSubtle} padding={[16, 16]}>
           <Row gap={12} align="center" justify="space-between">
             <Row gap={12} align="center">
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 40, height: 40, borderRadius: Radii.pill, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="restaurant-outline" size={20} color={Colors.textMuted} />
               </View>
               <View>
@@ -674,7 +671,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 16,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderSubtle },
   avatar: {

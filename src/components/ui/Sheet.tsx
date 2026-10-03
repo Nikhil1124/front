@@ -121,7 +121,9 @@ export function Sheet({
   }, [visible, screenHeight]);
 
   // ── Drag to dismiss ───────────────────────────────────────────────────────────────────
-  // useHideDockWhileOpen(visible); // Disabled so the dock remains visible under the sheet
+  // No useHideDockWhileOpen here: the sheet is an absoluteFill View inside the app tree at
+  // zIndex 999, so it already covers the dock. The hook is only needed by a Modal-based
+  // sheet, which renders in its own window and lets the dock show through.
 
   const dragY = useSharedValue(0);
   useEffect(() => { if (visible) dragY.value = 0; }, [visible, dragY]);

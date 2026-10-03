@@ -1,8 +1,9 @@
 
-import { View, StyleSheet, TextInput } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Txt, Row, Col, AnimatedPress } from '@/components/ui';
+import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { Colors, Radii } from '@/theme';
 
 interface BroadcastComposerProps {
@@ -44,19 +45,14 @@ export function BroadcastComposer({
         </AnimatedPress>
       </Row>
 
-      <View style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type your kitchen update..."
-          placeholderTextColor={Colors.textMuted}
-          multiline
-          numberOfLines={4}
-          value={message}
-          onChangeText={onChangeMessage}
-          maxLength={maxLength}
-          textAlignVertical="top"
-        />
-      </View>
+      <OutlinedTextField
+        placeholder="Type your kitchen update..."
+        value={message}
+        onChangeText={onChangeMessage}
+        multiline
+        numberOfLines={4}
+        maxLength={maxLength}
+      />
       <Row justify="flex-end" style={{ marginTop: 8 }}>
         <Txt size={11} weight="600" color={Colors.textMuted}>{message.length}/{maxLength}</Txt>
       </Row>

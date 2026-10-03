@@ -97,7 +97,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const counts = new Map<string, number>();
 for (const dir of ['app', 'src']) {
   for (const file of walk(join(ROOT, dir))) {
-    const rel = file.slice(ROOT.length);
+    const rel = file.slice(ROOT.length).replace(/^[\\\/]+/, '').replace(/\\/g, '/');
     if (EXEMPT.has(rel)) continue;
     const n = (readFileSync(file, 'utf8').match(/<Modal/g) ?? []).length;
     if (n > 0) counts.set(rel, n);

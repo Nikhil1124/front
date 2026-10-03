@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
     backgroundColor: '#F9F9F9',
-    borderRadius: 16,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: '#E8E8E8',
     position: 'relative',
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 15,
+    borderRadius: Radii.card,
   },
   imageBadge: {
     position: 'absolute',
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
     backgroundColor: 'rgba(0,0,0,0.2)',
-    borderRadius: 12,
+    borderRadius: Radii.control,
     padding: 4,
   },
   vegIconWrap: {
@@ -429,12 +429,12 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 2,
+    borderRadius: Radii.mark,
   },
   vegIconInner: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: Radii.pill,
     backgroundColor: '#00845B',
   },
   floatingActionBtn: {
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     borderWidth: 1,
     borderColor: GroceryColors.primary,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     width: 32,
     height: 32,
     justifyContent: 'center',
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     borderWidth: 1,
     borderColor: GroceryColors.primary,
-    borderRadius: 8,
+    borderRadius: Radii.control,
     height: 32,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -489,16 +489,11 @@ const styles = StyleSheet.create({
     padding: 8,
     paddingTop: 8,
   },
-  sizeRow: {
-    flexDirection: 'row',
-    gap: 4,
-    marginBottom: 4,
-  },
   sizePill: {
     backgroundColor: '#EEF2FF',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: Radii.badge,
     alignSelf: 'flex-start',
     marginBottom: 4,
   },
@@ -513,6 +508,36 @@ const styles = StyleSheet.create({
   sizePillTextActive: {
     color: GroceryColors.white,
   },
+  // Wraps: four chips do not fit one line of a half-width grid card at every font scale.
+  sizeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginTop: 5,
+    marginBottom: 1 },
+  sizeChip: {
+    minWidth: 42,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: Radii.badge,
+    borderWidth: 1,
+    borderColor: GroceryColors.border,
+    backgroundColor: GroceryColors.white,
+    alignItems: 'center',
+    justifyContent: 'center' },
+  sizeChipActive: {
+    backgroundColor: GroceryColors.primary,
+    borderColor: GroceryColors.primary },
+  sizeChipText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: GroceryColors.textSecondary },
+  sizeChipTextActive: {
+    color: GroceryColors.white },
+  // The rail card is ~140px wide, so its chips have to give up the 42px floor the grid's keep.
+  sizeRowCompact: { gap: 4, marginTop: 4 },
+  sizeChipCompact: { minWidth: 0, paddingHorizontal: 5, paddingVertical: 3 },
+  sizeChipTextCompact: { fontSize: 9.5 },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -559,38 +584,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ── Missing Simple Layout Styles ──
-  sizeRowCompact: { gap: 4, marginTop: 4 },
-  sizeChipCompact: { minWidth: 0, paddingHorizontal: 5, paddingVertical: 3 },
-  sizeChipTextCompact: { fontSize: 9.5 },
-  sizeChip: {
-    minWidth: 42,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    backgroundColor: '#FAFAFA',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sizeChipActive: {
-    backgroundColor: GroceryColors.primary,
-    borderColor: GroceryColors.primary,
-  },
-  sizeChipText: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    color: GroceryColors.textSecondary,
-  },
-  sizeChipTextActive: {
-    color: GroceryColors.white,
-  },
-
   // ── Simple Card (horizontal rails) ──
   simpleCard: {
     backgroundColor: GroceryColors.white,
-    borderRadius: 18,
+    borderRadius: Radii.card,
     padding: 10,
     borderWidth: 1,
     borderColor: '#F2F2F2',
@@ -618,7 +615,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 80, // Taller
     backgroundColor: 'transparent',
-    borderRadius: 12,
+    borderRadius: Radii.control,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
@@ -665,7 +662,7 @@ const styles = StyleSheet.create({
   },
   simpleAddBtn: {
     backgroundColor: '#00845B',
-    borderRadius: 20,
+    borderRadius: Radii.pill,
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
@@ -680,7 +677,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#00845B',
-    borderRadius: 20,
+    borderRadius: Radii.pill,
     height: 32,
     paddingHorizontal: 4,
   },

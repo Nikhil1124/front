@@ -14,7 +14,7 @@ export function ChefGroceriesShortcut() {
 
   return (
     <AnimatedPress accessibilityRole="button" onPress={() => router.push('/groceries')}>
-      <ImageBackground source={{ uri: GROCERY_BG }} style={styles.groceryBanner} imageStyle={{ borderRadius: 20 }}>
+      <ImageBackground source={{ uri: GROCERY_BG }} style={styles.groceryBanner} imageStyle={{ borderRadius: Radii.card }}>
         <View style={styles.groceryOverlay} />
         <Row align="center" justify="space-between" style={{ zIndex: 2 }}>
           <Row align="center" gap={16}>
@@ -38,6 +38,6 @@ export function ChefGroceriesShortcut() {
 const styles = StyleSheet.create({
   groceryBanner: { height: 110, borderRadius: Radii.pill, overflow: 'hidden', backgroundColor: Colors.primaryDark, justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.primaryDark, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6, marginBottom: 4 },
   groceryOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(20, 10, 80, 0.4)' },
-  cartIconBox: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-  bannerArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  cartIconBox: { width: 48, height: 48, borderRadius: Radii.control, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  bannerArrow: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
 });

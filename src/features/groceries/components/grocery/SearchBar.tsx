@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF', // Solid white
+    backgroundColor: GroceryColors.surface, // Solid white
     borderRadius: Radii.card, // More rounded (card vs pill or larger)
     height: 52,
     paddingHorizontal: 16,

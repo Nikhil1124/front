@@ -99,10 +99,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  picture: {
-    width: 30,
-    height: 30,
-  },
   iconBoxActive: {
     backgroundColor: 'rgba(255,255,255,0.18)',
   },

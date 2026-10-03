@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Txt, Btn, Row, Spacer, AnimatedPress } from '@/components/ui';
+import { Txt, Btn, Row, Spacer, AnimatedPress, PGowDialog } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { Colors, Radii } from '@/theme';
@@ -23,6 +23,7 @@ export default function EditCustomDishScreen() {
 
   const dish = dishes?.find(d => d.id === dishId);
 
+  const [archiving, setArchiving] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [mealTypes, setMealTypes] = useState<MealType[]>([]);
@@ -108,28 +109,17 @@ export default function EditCustomDishScreen() {
     }
   };
 
-  const handleArchive = () => {
+  const confirmArchive = async () => {
     if (!dishId) return;
-    Alert.alert(
-      "Archive Dish?",
-      "Archiving this dish removes it from the catalog, but keeps it in your delivery history.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Archive", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await archiveDishMutation.mutateAsync(dishId);
-              toast('success', 'Dish Archived', 'The dish was removed from the catalog.');
-              router.back();
-            } catch (err) {
-              toast('error', 'Error', 'Failed to archive dish.');
-            }
-          }
-        }
-      ]
-    );
+    try {
+      await archiveDishMutation.mutateAsync(dishId);
+      setArchiving(false);
+      toast('success', 'Dish Archived', 'The dish was removed from the catalog.');
+      router.back();
+    } catch (err) {
+      setArchiving(false);
+      toast('error', 'Could not archive', err instanceof Error ? err.message : 'Failed to archive dish.');
+    }
   };
 
   if (isLoading || !dish) {
@@ -150,7 +140,7 @@ export default function EditCustomDishScreen() {
         onBack={() => router.back()} 
         actions={
           <Row gap={8}>
-             <HeaderChip icon="trash" label="Archive" onPress={handleArchive} />
+             <HeaderChip icon="trash" label="Archive" onPress={() => setArchiving(true)} />
           </Row>
         }
       />
@@ -256,6 +246,18 @@ export default function EditCustomDishScreen() {
           Save Changes
         </Btn>
       </View>
+
+      <PGowDialog
+        visible={archiving}
+        title={`Archive ${name || 'this dish'}?`}
+        message="It leaves the catalog so it can no longer be put on a menu, but past deliveries keep showing it. This cannot be undone from the app."
+        confirmLabel="Archive dish"
+        tone="destructive"
+        busy={archiveDishMutation.isPending}
+        onConfirm={confirmArchive}
+        onCancel={() => setArchiving(false)}
+        testID="archive_dish_dialog"
+      />
     </View>
   );
 }

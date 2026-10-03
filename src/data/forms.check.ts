@@ -42,6 +42,11 @@ const BESPOKE_SEARCH = new Set([
   // bugs (see the comment above the inputs); OutlinedTextField's wrapper layout breaks
   // that isolation. The Kushal redesign deliberately restructured these as raw inputs.
   'src/features/auth/SignInScreen.tsx',
+  // Room-number cell in the bed-layout builder: a 20-char input sharing one Row with a
+  // Stepper and a delete button. OutlinedTextField's label/error/helper wrapper is a
+  // block, which breaks that row into three lines on a narrow phone. No label is needed
+  // either — the Row's own accessibilityLabel names the floor and the room.
+  'src/features/property/LayoutSetupForm.tsx',
 ]);
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -57,7 +62,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const offenders: string[] = [];
 for (const dir of ['app', 'src']) {
   for (const file of walk(join(ROOT, dir))) {
-    const rel = file.slice(ROOT.length);
+    const rel = file.slice(ROOT.length).replace(/^[\\\/]+/, '').replace(/\\/g, '/');
     if (PRIMITIVES.has(rel) || BESPOKE_SEARCH.has(rel)) continue;
     if (readFileSync(file, 'utf8').includes('<TextInput')) offenders.push(rel);
   }

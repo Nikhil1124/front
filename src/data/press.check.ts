@@ -45,7 +45,7 @@ let groceries = 0;
 
 for (const dir of ['app', 'src']) {
   for (const file of walk(join(ROOT, dir))) {
-    const rel = file.slice(ROOT.length);
+    const rel = file.slice(ROOT.length).replace(/^[\\\/]+/, '').replace(/\\/g, '/');
     const n = (readFileSync(file, 'utf8').match(/<TouchableOpacity/g) ?? []).length;
     if (n === 0) continue;
     if (rel.includes('groceries')) groceries += n;

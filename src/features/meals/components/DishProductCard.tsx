@@ -168,11 +168,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 2,
+    borderRadius: Radii.mark,
   },
   vegDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: Radii.pill,
   }
 });

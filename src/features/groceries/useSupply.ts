@@ -19,7 +19,8 @@ export function useSupplyItems(pgId?: string, categoryId?: string, q?: string) {
       if (categoryId) params.append('category_id', categoryId);
       if (q) params.append('q', q);
       // The server already applies `category_id` and `q` — they are query params above — so
-      // there is nothing left to filter client-side.
+      // there is nothing left to filter client-side. The filtering that used to live here
+      // existed only to keep injected mock items out of the wrong category.
       return apiFetch<SupplyItem[]>(`/v1/supply/items?${params.toString()}`);
     },
     enabled: !!pgId,

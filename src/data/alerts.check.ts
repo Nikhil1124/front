@@ -40,7 +40,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const offenders: string[] = [];
 for (const dir of ['app', 'src']) {
   for (const file of walk(join(ROOT, dir))) {
-    const rel = file.slice(ROOT.length);
+    const rel = file.slice(ROOT.length).replace(/^[\\\/]+/, '').replace(/\\/g, '/');
     if (rel === 'src/data/alerts.check.ts') continue;
     const lines = readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {

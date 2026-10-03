@@ -5,10 +5,10 @@ import {
   View,
   StyleSheet,
   FlatList,
+  ScrollView,
   Image,
   useWindowDimensions,
   RefreshControl,
-  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -19,7 +19,7 @@ import { ProductCard } from '../components/grocery/ProductCard';
 import { useSupplyCategories, useSupplyItems } from '../useSupply';
 import { groupByVariant } from '../variantGroups';
 import { useAuthStore } from '@/store/authStore';
-import { GroceryColors } from '@/theme';
+import { GroceryColors, Radii } from '@/theme';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { FloatingCartBar } from '../components/FloatingCartBar';
 
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     backgroundColor: GroceryColors.white,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 8,
+    borderRadius: Radii.control,
     paddingHorizontal: 12,
     paddingVertical: 6,
     shadowColor: '#000',
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
 
   // ── Left Rail ──
   leftRail: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: GroceryColors.surface,
     borderRightWidth: 1,
     borderRightColor: '#F0F0F0',
   },
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   railIconBox: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: Radii.pill,
     backgroundColor: '#F9FAFB',
     justifyContent: 'center',
     alignItems: 'center',
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   },
   railLabel: {
     fontSize: 10,
-    color: '#6B7280',
+    color: GroceryColors.textSecondary,
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   },
   fbtSection: {
     backgroundColor: '#F5F3FF',
-    borderRadius: 16,
+    borderRadius: Radii.card,
     padding: 16,
     marginBottom: 16,
   },
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EEF2FF',
-    borderRadius: 12,
+    borderRadius: Radii.control,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E0E7FF',
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   deliveryPromoIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radii.pill,
     backgroundColor: '#E0E7FF',
     justifyContent: 'center',
     alignItems: 'center',

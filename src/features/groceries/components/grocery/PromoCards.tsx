@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPress, Txt } from '@/components/ui';
+import { GroceryColors, Radii } from '@/theme';
 
 import type { StorefrontCard } from '../../useStorefront';
 import { storefrontImage } from '../../useStorefront';
@@ -57,7 +58,7 @@ export const PromoCards: React.FC<PromoCardsProps> = ({ cards, onCardPress }) =>
               {/* Premium Action Pill */}
               <View style={styles.actionPill}>
                 <Txt maxFontSizeMultiplier={1.1} style={styles.actionText}>Shop Now</Txt>
-                <Ionicons name="chevron-forward" size={10} color="#FFFFFF" />
+                <Ionicons name="chevron-forward" size={10} color={GroceryColors.white} />
               </View>
             </AnimatedPress>
           );
@@ -79,13 +80,13 @@ const styles = StyleSheet.create({
   card: {
     width: 125, // Wider for the pill
     height: 200, // Taller to fix overlaying issues and give elements breathing room
-    borderRadius: 24, // Luxurious large curve
+    borderRadius: Radii.feature, // Luxurious large curve
     paddingVertical: 14,
     paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'flex-start',
     borderWidth: 1,
-    borderColor: '#FFFFFF', // Creates a glassmorphism reflection effect
+    borderColor: GroceryColors.white, // Creates a glassmorphism reflection effect
     shadowColor: '#1B1464', // Deep tinted shadow instead of harsh black
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.08,
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1B1464', // Matches the deep blue text
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: Radii.pill,
     marginTop: 'auto', // Pushes to the bottom
     shadowColor: '#1B1464',
     shadowOffset: { width: 0, height: 4 },
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: GroceryColors.white,
     marginRight: 2,
   },
   imageContainer: {
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 70,
     height: 70,
-    borderRadius: 35, // Perfect circle
+    borderRadius: Radii.pill, // Perfect circle
     top: 8, // Shifted slightly down so product sits 'on' it
   },
   image: {

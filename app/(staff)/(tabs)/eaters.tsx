@@ -99,7 +99,7 @@ function ChefEatersView() {
 
         {/* Active Meal Card */}
         {activeMeal ? (
-          <Card containerColor={Colors.surface} borderRadius={20} padding={[0,0]} style={styles.activeMealCard}>
+          <Card containerColor={Colors.surface} borderRadius={Radii.card} padding={[0,0]} style={styles.activeMealCard}>
             <ImageBackground source={{ uri: FOOD_BG }} style={styles.mealImagePlaceholder} imageStyle={{ borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
               <View style={styles.darkGradientOverlay} />
               <View style={styles.activeBadge}>
@@ -155,7 +155,7 @@ function ChefEatersView() {
               </AnimatedPress>
             </Row>
             
-            <Card containerColor={Colors.surface} borderRadius={24} padding={[0, 0]} style={styles.shadowCard}>
+            <Card containerColor={Colors.surface} borderRadius={Radii.feature} padding={[0, 0]} style={styles.shadowCard}>
               {pendingReplies.slice(0,5).map((r, i) => (
                 <View key={r.membership_id} style={[styles.pendingRow, i !== pendingReplies.slice(0,5).length - 1 && { borderBottomWidth: 1, borderColor: Colors.borderSubtle }]}>
                   <Row align="center" gap={14} style={{ flex: 1 }}>
@@ -550,22 +550,22 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8F9FE' },
   groceryBanner: { height: 110, borderRadius: Radii.pill, overflow: 'hidden', backgroundColor: Colors.primaryDark, justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.primaryDark, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
   groceryOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(20, 10, 80, 0.4)' },
-  cartIconBox: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-  bannerArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  cartIconBox: { width: 48, height: 48, borderRadius: Radii.control, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  bannerArrow: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
   mealTab: { flexGrow: 1, paddingVertical: 14, borderRadius: Radii.pill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   mealTabOn: { backgroundColor: Colors.primary, shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 5 },
   mealTabOff: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderSubtle },
   activeMealCard: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8, overflow: 'hidden', borderWidth: 0 },
-  mealImagePlaceholder: { height: 120, backgroundColor: '#E2E8F0', justifyContent: 'center' },
+  mealImagePlaceholder: { height: 120, backgroundColor: Colors.borderMuted, justifyContent: 'center' },
   darkGradientOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.3)' },
   activeBadge: { position: 'absolute', top: 12, left: 16, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: Radii.pill, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
+  activeDot: { width: 6, height: 6, borderRadius: Radii.pill, backgroundColor: Colors.success },
   divider: { height: 1, backgroundColor: Colors.borderSubtle, marginVertical: 12 },
   shadowCard: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6, borderWidth: 0 },
   chefHatIcon: { width: 52, height: 52, borderRadius: Radii.card, backgroundColor: 'rgba(91, 69, 232, 0.1)', alignItems: 'center', justifyContent: 'center' },
   navCirc: { width: 32, height: 32, borderRadius: Radii.card, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.borderSubtle },
   pendingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18 },
-  initialsBox: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(91, 69, 232, 0.08)', alignItems: 'center', justifyContent: 'center' },
+  initialsBox: { width: 44, height: 44, borderRadius: Radii.control, backgroundColor: 'rgba(91, 69, 232, 0.08)', alignItems: 'center', justifyContent: 'center' },
   mealPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   mealPill: { flexGrow: 1, flexBasis: 96, minWidth: 96, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radii.control, borderWidth: 1 },
   mealPillOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },

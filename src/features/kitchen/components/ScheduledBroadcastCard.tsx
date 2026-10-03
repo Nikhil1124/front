@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radii.pill,
     backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',

@@ -28,6 +28,9 @@ export const Spacing = {
  * probably wrong — not the scale.
  */
 export const Radii = {
+  /** The veg / non-veg mark — a 12–14px square whose corner has to stay almost square to
+   *  read as the regulatory symbol. `badge` is far too round at that size. */
+  mark: 2,
   /** Badges, tags, status chips, progress bars — anything small and decorative. */
   badge: 6,
   /** Buttons, inputs, chips, tiles: anything you tap or type into. */
