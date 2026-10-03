@@ -245,6 +245,43 @@ export function escalateComplaint(id: string, note?: string): Promise<RequestRec
 }
 
 /**
+ * POST /v1/requests/{id}/rate — the resident scoring the finished job.
+ *
+ * Server-side this is the raiser's alone (`req.raised_by`), and only once the work is done —
+ * `_work_is_done`, the last stage, not `status = 'resolved'`. Sending it again overwrites,
+ * which is deliberate: the first tap is a reaction, and the score that matters is the one
+ * they settle on. The score lands in `details.service_rating`.
+ */
+export function rateRequest(
+  id: string,
+  rating: number,
+  comment?: string
+): Promise<RequestRecord> {
+  return apiFetch<RequestRecord>(API.REQUEST_RATE(id), {
+    method: "POST",
+    body: JSON.stringify({ rating, comment: comment?.trim() || null }),
+  });
+}
+
+/**
+ * POST /v1/requests/{id}/mark-paid — the worker recording payment, which closes the job.
+ *
+ * `amount` omitted means "what it was quoted at", which the server reads off the ticket. This
+ * is the only route a technician or laundry provider has to close a job: `resolve` is
+ * staff-only, and a repair's stage machine stops short of resolving on purpose.
+ */
+export function markRequestPaid(
+  id: string,
+  amount?: number,
+  note?: string
+): Promise<RequestRecord> {
+  return apiFetch<RequestRecord>(API.REQUEST_MARK_PAID(id), {
+    method: "POST",
+    body: JSON.stringify({ amount: amount ?? null, note: note?.trim() || null }),
+  });
+}
+
+/**
  * One ticket, WITH its attachments.
  *
  * `listComplaints` cannot stand in for this. The list endpoint builds rows through
@@ -400,6 +437,24 @@ export function useAddCommentMutation(pgId?: string) {
  * live, after it had already been cancelled server-side. `onRequestChanged` writes the
  * server's own updated record into the detail cache first, so the status flips at once.
  */
+export function useRateRequestMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, rating, comment }: { id: string; rating: number; comment?: string }) =>
+      rateRequest(id, rating, comment),
+    onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
+  });
+}
+
+export function useMarkPaidMutation(pgId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, amount, note }: { id: string; amount?: number; note?: string }) =>
+      markRequestPaid(id, amount, note),
+    onSuccess: (updated) => onRequestChanged(qc, pgId, updated),
+  });
+}
+
 export function useCancelComplaintMutation(pgId?: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -433,5 +488,7 @@ export function useComplaints() {
     assignComplaint,
     resolveComplaint,
     cancelComplaint,
+    rateRequest,
+    markRequestPaid,
   };
 }

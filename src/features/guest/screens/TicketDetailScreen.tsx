@@ -23,9 +23,9 @@ import { HubScreenWrapper } from '@/components/HubScreenWrapper';
 import { Radii, Colors } from '@/theme';
 import { formatDateTime } from '@/utils/format';
 import { useAuthStore } from '@/store/authStore';
-import { useAddCommentMutation, useCancelComplaintMutation } from '@/features/requests/useComplaints';
+import { useCancelComplaintMutation, useRateRequestMutation } from '@/features/requests/useComplaints';
 import type { FeedbackComplaintEntity } from '@/types';
-import { Btn, Card, Col, OutlinedBtn, PGowDialog, Pill, Row, Spacer, Txt } from '@/components/ui';
+import { AnimatedPress, Btn, Card, Col, OutlinedBtn, PGowDialog, Pill, Row, Spacer, Txt } from '@/components/ui';
 import { OutlinedTextField } from '@/components/ui/OutlinedTextField';
 import { useToast } from '@/hooks/useToast';
 
@@ -74,7 +74,10 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
   // A repair's real progress is its stage, not its status. REPAIR's stage machine has
   // `resolves_on=None` — the desk still has to price the work before the ticket closes — so
   // `status` stops at "In Progress" and stays there after the technician has finished.
-  const workFinished = ticket.serviceStage === 'work_done';
+  // Each machine's LAST stage, which is where the work is over: `work_done` for a repair,
+  // `delivered` for laundry. A ticket carries one or the other, never both.
+  const workFinished =
+    ticket.serviceStage === 'work_done' || ticket.laundryStage === 'delivered';
   // Mirrors the server: RESOLVED and CANCELLED are both terminal (cancel_request:
   // "This ticket is already closed."), and REQUEST_STATUS collapses both into the single
   // UI label "Resolved" (mappers.ts) — so that's the one check needed here too.
@@ -85,22 +88,24 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
   // and the desk has not yet billed — so the button comes off once the work is in.
   const canCancel = ticket.status !== 'Resolved' && !workFinished;
 
-  // Real: POST /v1/requests/{id}/events, which `add_event` permits for the ticket's own
-  // raiser (`req.raised_by == membership.id`). It lands on the ticket's timeline, which is
-  // where the manager and PGow's desk read it. Not a star rating — nothing server-side
-  // stores one for a repair, and a star that goes nowhere is worse than no star.
-  const addComment = useAddCommentMutation(activePgId ?? undefined);
-  const [feedback, setFeedback] = useState('');
-  const [feedbackSent, setFeedbackSent] = useState(false);
+  // POST /v1/requests/{id}/rate. The raiser's alone server-side, and open from the last
+  // stage rather than from `resolved`, so a resident can rate the moment the technician
+  // leaves instead of waiting on somebody's paperwork. Re-rating overwrites on purpose.
+  const rate = useRateRequestMutation(activePgId ?? undefined);
+  const rated = ticket.serviceRating > 0;
+  const [stars, setStars] = useState(ticket.serviceRating || 0);
+  const [note, setNote] = useState(ticket.serviceRatingComment ?? '');
+  // Opens closed once a score is in: the card's job then is to show what they said, with
+  // changing it a deliberate second step rather than a form sitting there inviting a re-tap.
+  const [editingRating, setEditingRating] = useState(false);
+  const ratingFormOpen = !rated || editingRating;
 
-  const sendFeedback = async () => {
-    const body = feedback.trim();
-    if (!body) return;
+  const submitRating = async () => {
+    if (stars < 1) return;
     try {
-      await addComment.mutateAsync({ id: ticket.id, body });
-      setFeedback('');
-      setFeedbackSent(true);
-      toast('success', 'Thanks — sent', 'Your manager can see this on the ticket.');
+      await rate.mutateAsync({ id: ticket.id, rating: stars, comment: note });
+      setEditingRating(false);
+      toast('success', 'Thanks for rating', 'Your technician and your manager can see this.');
     } catch (err) {
       toast('error', 'Could not send', err instanceof Error ? err.message : 'Please try again.');
     }
@@ -188,58 +193,97 @@ export function TicketDetailScreen({ ticket, onRefresh, refreshing }: Props) {
             <Row gap={10} align="center">
               <Ionicons name="checkmark-done-circle" size={22} color={Colors.success} />
               <Col style={{ flex: 1 }}>
-                <Txt variant="body" weight="700" color={Colors.textPrimary}>Work finished</Txt>
+                <Txt variant="body" weight="700" color={Colors.textPrimary}>{ticket.laundryStage === 'delivered' ? 'Laundry delivered' : 'Work finished'}</Txt>
                 <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 16, marginTop: 2 }}>
-                  The technician is done. Your property is working out the final cost — your
-                  bill still shows the visit fee until they do.
+                  {ticket.paidAt
+                    ? 'Settled and closed.'
+                    : ticket.status === 'Resolved'
+                      // Closed by the desk. Saying "working out the final cost" here would be
+                      // describing a step that has already happened.
+                      ? 'Closed.'
+                      : ticket.laundryStage === 'delivered'
+                        ? 'Your laundry is back with you.'
+                        : 'The technician is done. Your property is working out the final cost — your bill still shows the visit fee until they do.'}
                 </Txt>
               </Col>
             </Row>
 
-            {feedbackSent ? (
+            <Spacer size={14} />
+            <View style={styles.ratingDivider} />
+            <Spacer size={12} />
+
+            <Txt variant="caption" weight="700" color={Colors.textPrimary}>
+              {rated ? 'You rated this' : 'How did it go?'}
+            </Txt>
+
+            <Spacer size={8} />
+            <Row gap={6} align="center">
+              {[1, 2, 3, 4, 5].map((n) => {
+                const filled = n <= (ratingFormOpen ? stars : ticket.serviceRating);
+                return (
+                  <AnimatedPress
+                    key={n}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${n} star${n === 1 ? '' : 's'}`}
+                    accessibilityState={{ selected: filled }}
+                    disabled={!ratingFormOpen || rate.isPending}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    onPress={() => setStars(n)}
+                  >
+                    <Ionicons
+                      name={filled ? 'star' : 'star-outline'}
+                      size={28}
+                      color={filled ? Colors.warning : Colors.borderMuted}
+                    />
+                  </AnimatedPress>
+                );
+              })}
+              {!ratingFormOpen ? (
+                <AnimatedPress
+                  accessibilityRole="button"
+                  accessibilityLabel="Change your rating"
+                  style={{ marginLeft: 'auto' }}
+                  onPress={() => setEditingRating(true)}
+                >
+                  <Txt variant="caption" weight="700" color={Colors.primary}>Change</Txt>
+                </AnimatedPress>
+              ) : null}
+            </Row>
+
+            {ratingFormOpen ? (
               <>
-                <Spacer size={12} />
-                <Row gap={8} align="center">
-                  <Ionicons name="chatbubble-ellipses" size={15} color={Colors.success} />
-                  <Txt variant="caption" weight="700" color={Colors.success}>
-                    Your note is on this ticket.
-                  </Txt>
-                </Row>
-              </>
-            ) : (
-              <>
-                <Spacer size={14} />
-                <Txt variant="caption" weight="700" color={Colors.textPrimary}>
-                  How did it go?
-                </Txt>
-                <Txt variant="caption" color={Colors.textMuted} style={{ lineHeight: 16, marginTop: 2 }}>
-                  Anything still not right, or worth passing on about the technician.
-                </Txt>
                 <Spacer size={10} />
                 <OutlinedTextField
-                  placeholder="Tap still drips a little…"
-                  value={feedback}
-                  onChangeText={setFeedback}
+                  placeholder="Anything worth passing on (optional)"
+                  value={note}
+                  onChangeText={setNote}
                   multiline
                   numberOfLines={3}
-                  maxLength={500}
+                  maxLength={1000}
                 />
                 <Spacer size={10} />
                 <Btn
-                  onPress={sendFeedback}
-                  loading={addComment.isPending}
-                  disabled={!feedback.trim()}
+                  onPress={submitRating}
+                  loading={rate.isPending}
+                  disabled={stars < 1}
                   containerColor={Colors.primary}
                   textColor={Colors.textInverse}
                   borderRadius={Radii.control}
                   height={46}
                 >
                   <Txt variant="body" weight="700" color={Colors.textInverse}>
-                    {addComment.isPending ? 'Sending…' : 'Send to my manager'}
+                    {rate.isPending ? 'Sending…' : rated ? 'Update rating' : 'Send rating'}
                   </Txt>
                 </Btn>
               </>
-            )}
+            ) : ticket.serviceRatingComment ? (
+              <>
+                <Spacer size={8} />
+                <Txt variant="caption" color={Colors.textSecondary} style={{ lineHeight: 17 }}>
+                  “{ticket.serviceRatingComment}”
+                </Txt>
+              </>
+            ) : null}
           </Card>
         </>
       ) : null}
@@ -374,6 +418,10 @@ const styles = StyleSheet.create({
     width: '100%', // stretches to the next dot
     height: 2,
     zIndex: 1,
+  },
+  ratingDivider: {
+    height: 1,
+    backgroundColor: Colors.borderSubtle,
   },
   attachmentImage: {
     width: '100%',

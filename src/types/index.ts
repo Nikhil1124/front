@@ -148,6 +148,15 @@ export interface FeedbackComplaintEntity {
    *  `resolves_on=None` (the desk still has to price the work), so `status` stops at
    *  "In Progress" and stays there even after the technician has finished. */
   serviceStage: string;
+  /** `details.laundry_stage` — the same idea for a laundry booking, under its own key:
+   *  '' | 'picked_up' | 'completed' | 'delivered'. Separate from `serviceStage` because the
+   *  two machines are separate server-side and a ticket only ever has one of them. */
+  laundryStage: string;
+  /** `details.service_rating` — 1-5 once the resident has rated the finished job, else 0. */
+  serviceRating: number;
+  serviceRatingComment: string | null;
+  /** `details.paid_at` — set once the worker (or staff) recorded payment. */
+  paidAt: string | null;
   mealRating: number;
   cleanlinessRating: number;
   managerRating: number;

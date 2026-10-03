@@ -6,12 +6,19 @@
  * Where the API lives. Set `EXPO_PUBLIC_API_URL` — in `.env.local` for a local build, or in
  * the profile's `env` block in `eas.json` for a cloud build.
  *
- * The default is PRODUCTION, deliberately. It used to be `http://localhost:8000`, which is
- * the phone itself on a real device — so a release APK built without the variable set would
- * have shipped unable to reach anything, and the failure would have surfaced as "the app is
- * broken" rather than "someone forgot a config value". Defaulting the other way means the
- * worst case for a forgotten variable is a dev build pointing at production, which is loud
- * and immediate rather than silent and shipped.
+ * There are two deployed environments, and the names are easy to get the wrong way round:
+ *
+ *   https://pgow.zoveyacms.in       the EC2 TEST box      <- the default below
+ *   https://pgow-prod.zoveyacms.in  ECS PRODUCTION
+ *
+ * The default is TEST, deliberately. It used to be `http://localhost:8000`, which is the
+ * phone itself on a real device — so a release APK built without the variable set shipped
+ * unable to reach anything, and the failure read as "the app is broken" rather than "someone
+ * forgot a config value". Defaulting to test means a forgotten variable costs you a build
+ * pointed at the test box, never one pointed at production.
+ *
+ * This comment used to call the default PRODUCTION, which it has never been. Before changing
+ * it, note that the host carrying no suffix is the test one.
  */
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://pgow.zoveyacms.in";
 
@@ -123,6 +130,13 @@ export const API = {
   REQUESTS_ESCALATED: "/v1/requests/escalated",
   REQUEST_RESOLVE: (id: string) => `/v1/requests/${id}/resolve`,
   REQUEST_CANCEL: (id: string) => `/v1/requests/${id}/cancel`,
+  // The resident scoring a finished job 1-5. Open at the last STAGE, not at `resolved` — a
+  // repair stays open for pricing after the technician leaves, and the resident should not
+  // have to wait on somebody else's paperwork to say how it went.
+  REQUEST_RATE: (id: string) => `/v1/requests/${id}/rate`,
+  // The worker recording that they have been paid, which is also what closes a repair:
+  // `REQUEST_RESOLVE` is staff-only and a repair's last stage deliberately does not close.
+  REQUEST_MARK_PAID: (id: string) => `/v1/requests/${id}/mark-paid`,
 
   // In-app inbox. Meal broadcasts are deliberately absent — the meals tab carries those.
   NOTIFICATIONS: "/v1/notifications",
