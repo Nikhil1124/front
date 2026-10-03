@@ -141,6 +141,13 @@ export interface FeedbackComplaintEntity {
   /** Who this ticket is assigned to, or null when unassigned. The staff-facing "my tickets"
    *  filter matches this against the signed-in staffer's own membership id. */
   assignedMembershipId: string | null;
+  /** True once PGow's desk holds this ticket. The property cannot escalate it again. */
+  withPgowSupport: boolean;
+  /** `details.service_stage` — '' | 'en_route' | 'on_site' | 'work_done'. This, not
+   *  `status`, is what a repair's real progress is: REPAIR's stage machine has
+   *  `resolves_on=None` (the desk still has to price the work), so `status` stops at
+   *  "In Progress" and stays there even after the technician has finished. */
+  serviceStage: string;
   mealRating: number;
   cleanlinessRating: number;
   managerRating: number;

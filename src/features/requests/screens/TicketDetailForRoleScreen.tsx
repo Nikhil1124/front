@@ -26,7 +26,22 @@ export function TicketDetailForRoleScreen() {
   const { data: ticket, isLoading, error, refetch, isRefetching } = useComplaintQuery(id, activePgId ?? undefined);
 
   const isComplaint = ticket?.type === 'COMPLAINT';
-  const canBook = isComplaint && ticket?.status !== 'Resolved';
+  // A repair's progress lives in the stage, not in `status`. REPAIR's stage machine has
+  // `resolves_on=None` — the desk still has to price the work — so `status` stops at
+  // "In Progress" and stays there after the technician has finished. Reading `status` alone
+  // is what put a "Book a technician" button on finished work.
+  const stage = ticket?.serviceStage ?? '';
+  const workFinished = stage === 'work_done';
+  // Mirrors `escalate_request`'s own guard (`assigned_platform_role_id is not None` ->
+  // 409 "This ticket is already with PGow support."), so the button is shown only when the
+  // call behind it would actually succeed.
+  const canBook = isComplaint && ticket?.status !== 'Resolved' && !ticket?.withPgowSupport;
+  const STAGE_SAID: Record<string, { headline: string; detail: string; icon: string }> = {
+    en_route: { headline: 'Technician on the way', detail: 'Assigned and travelling to the property.', icon: 'car-outline' },
+    on_site: { headline: 'Technician on site', detail: 'On the property and working on it now.', icon: 'construct-outline' },
+    work_done: { headline: 'Work finished', detail: 'The technician is done. Record the final cost to close this ticket.', icon: 'checkmark-done-circle' },
+  };
+  const said = STAGE_SAID[stage];
   const spec = ticket ? tradeForComplaint(ticket.category, ticket.title) : null;
 
   return (
@@ -73,6 +88,36 @@ export function TicketDetailForRoleScreen() {
               <Txt size={12} weight="700" color={Colors.textMuted} style={{ letterSpacing: 0.5 }}>YOUR RESPONSE</Txt>
               <Spacer size={6} />
               <Txt size={13} color={Colors.textPrimary}>{ticket.adminResponse}</Txt>
+            </Card>
+          ) : null}
+
+          {said ? (
+            <Card
+              containerColor={workFinished ? `${Colors.success}0F` : Colors.surfaceElevated}
+              borderRadius={Radii.card}
+              borderWidth={1}
+              borderColor={workFinished ? Colors.success : Colors.borderSubtle}
+              padding={[16, 16]}
+            >
+              <Row gap={10} align="center">
+                <Ionicons
+                  name={said.icon as any}
+                  size={20}
+                  color={workFinished ? Colors.success : Colors.primary}
+                />
+                <Col style={{ flex: 1 }}>
+                  <Txt size={14} weight="700" color={Colors.textPrimary}>{said.headline}</Txt>
+                  <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>{said.detail}</Txt>
+                </Col>
+              </Row>
+              {workFinished ? (
+                <>
+                  <Spacer size={10} />
+                  <Txt size={12} color={Colors.textMuted}>
+                    Until a final cost is recorded, the resident's invoice shows the visit fee only.
+                  </Txt>
+                </>
+              ) : null}
             </Card>
           ) : null}
 

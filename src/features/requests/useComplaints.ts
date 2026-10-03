@@ -53,6 +53,10 @@ export interface RequestRecord {
   status: "open" | "assigned" | "in_progress" | "resolved" | "cancelled";
   priority: "normal" | "express" | "scheduled";
   assigned_membership_id?: string | null;
+  /** Set once the ticket is with PGow's own desk rather than the property's staff.
+   *  `escalate_request` refuses a second escalation on this exact field, so any screen
+   *  offering "book a technician" has to read it or it offers a guaranteed 409. */
+  assigned_platform_role_id?: string | null;
   assigned_name?: string | null;
   assigned_role?: string | null;
   assigned_at?: string | null;

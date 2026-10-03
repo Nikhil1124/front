@@ -351,6 +351,8 @@ export function toComplaint(r: RequestRecord): FeedbackComplaintEntity {
     isVideo: !!photo?.content_type?.startsWith("video/"),
     adminResponse: r.resolution_note ?? lastComment?.body ?? null,
     assignedMembershipId: r.assigned_membership_id ?? null,
+    withPgowSupport: !!r.assigned_platform_role_id,
+    serviceStage: detailStr(r, "service_stage"),
     // Carried in `details` by submitFeedbackComplaint — see the note there on why that is
     // the extension point rather than a dedicated reviews endpoint. A ticket with no scores
     // (every complaint, and any feedback filed before this shipped) reads as 0, which every
