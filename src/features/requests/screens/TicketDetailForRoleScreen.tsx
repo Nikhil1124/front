@@ -30,8 +30,13 @@ export function TicketDetailForRoleScreen() {
   // `resolves_on=None` — the desk still has to price the work — so `status` stops at
   // "In Progress" and stays there after the technician has finished. Reading `status` alone
   // is what put a "Book a technician" button on finished work.
-  const stage = ticket?.serviceStage ?? '';
-  const workFinished = stage === 'work_done';
+  // A ticket carries one stage machine or the other, never both, so whichever is set is the
+  // one to read. Laundry was missing here: an owner tapping a laundry push landed on this
+  // screen and saw no stage at all, because `details.laundry_stage` is a different key.
+  const stage = ticket?.serviceStage || ticket?.laundryStage || '';
+  // Each machine's last stage. Laundry's also closes the ticket; a repair's deliberately
+  // does not, because the desk still has to price the work.
+  const workFinished = stage === 'work_done' || stage === 'delivered';
   // Mirrors `escalate_request`'s own guard (`assigned_platform_role_id is not None` ->
   // 409 "This ticket is already with PGow support."), so the button is shown only when the
   // call behind it would actually succeed.
@@ -40,6 +45,11 @@ export function TicketDetailForRoleScreen() {
     en_route: { headline: 'Technician on the way', detail: 'Assigned and travelling to the property.', icon: 'car-outline' },
     on_site: { headline: 'Technician on site', detail: 'On the property and working on it now.', icon: 'construct-outline' },
     work_done: { headline: 'Work finished', detail: 'The technician is done. Record the final cost to close this ticket.', icon: 'checkmark-done-circle' },
+    // Laundry's three. Its last stage resolves the ticket itself, so there is nothing for the
+    // desk to do afterwards — which is why this half was never missed.
+    picked_up: { headline: 'Laundry collected', detail: "Picked up and on its way to the provider.", icon: 'bag-handle-outline' },
+    completed: { headline: 'Laundry washed', detail: 'Done at the provider and ready to come back.', icon: 'water-outline' },
+    delivered: { headline: 'Laundry delivered', detail: 'Back with the resident. This ticket is closed.', icon: 'checkmark-done-circle' },
   };
   const said = STAGE_SAID[stage];
   const spec = ticket ? tradeForComplaint(ticket.category, ticket.title) : null;
@@ -110,7 +120,7 @@ export function TicketDetailForRoleScreen() {
                   <Txt size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>{said.detail}</Txt>
                 </Col>
               </Row>
-              {workFinished ? (
+              {workFinished && stage === 'work_done' ? (
                 <>
                   <Spacer size={10} />
                   <Txt size={12} color={Colors.textMuted}>
