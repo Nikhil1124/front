@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
   selectedMiniImg: {
     width: 24,
     height: 24,
-    borderRadius: 12
+    borderRadius: Radii.card
   },
   automationIconBadge: {
     width: 36,

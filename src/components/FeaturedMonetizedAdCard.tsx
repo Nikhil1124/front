@@ -28,7 +28,7 @@ export function FeaturedMonetizedAdCard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ad?.pg_id, ad?.brand_name]);
 
-  if (!ad) return null;
+  if (!ad || !ad.brand_name || !ad.brand_name.trim()) return null;
 
   const recordClick = () => recordEvent.mutate({ eventType: 'click' });
   const recordCouponCopy = () => recordEvent.mutate({ eventType: 'coupon_copy' });

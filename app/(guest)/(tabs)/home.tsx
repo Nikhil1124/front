@@ -47,6 +47,8 @@ import { useLaundryRequestsQuery } from '@/features/requests/useComplaints';
 import { GateNotice, gateCodeOf } from '@/components/GateNotice';
 import { AppHeader, HeaderChip } from '@/components/AppHeader';
 import { useDockScroll } from '@/components/HeadlessDockTabButton';
+import { qk } from '@/data/queryKeys';
+import { useQueryClient } from '@tanstack/react-query';
 
 const CUTOFF_HOURS: Record<string, number> = { BREAKFAST: 10, LUNCH: 14, DINNER: 21 };
 
@@ -81,6 +83,7 @@ export default function GuestHomeTab() {
   const guest = usePGowStore((s) => s.loggedInGuest);
   const activePgId = useAuthStore((s) => s.activePgId);
   const submitRSVP = usePGowStore((s) => s.submitRSVP);
+  const queryClient = useQueryClient();
 
   // Away/vacation mode — real, server-side (PATCH /v1/me/away): persists across devices and
   // shows up to staff reading a meal's roster (response.service.roster's `is_away`), not
@@ -382,8 +385,17 @@ export default function GuestHomeTab() {
                     : null
               }
               rsvpClosed={cutoffPassed}
-              onRespond={(payload) => {
-                submitRSVP(payload.notificationId, payload.response === 'eat' ? 'REQUIRED' : 'NOT_REQUIRED');
+              onRespond={async (payload) => {
+                const choice = payload.response === 'eat' ? 'REQUIRED' : 'NOT_REQUIRED';
+                const result = await submitRSVP(payload.notificationId, choice);
+                if (result.ok) {
+                  toast('success', choice === 'REQUIRED' ? "You're attending!" : 'Marked as not attending', 'Your portion status updated.');
+                  // Optimistically update the cache so the button state persists immediately
+                  queryClient.setQueryData(
+                    qk.meals.myResponse(activePgId ?? '', payload.notificationId),
+                    { choice: choice === 'REQUIRED' ? 'eating' : 'skipping' }
+                  );
+                }
                 nextAd();
               }}
               onAdImpression={(ad) => reportAd('impression', ad.id)}

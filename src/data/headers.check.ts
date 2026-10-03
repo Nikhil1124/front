@@ -10,8 +10,9 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('../..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 
 /** Files allowed to position themselves against the notch. */
 const ALLOWED = new Set([
@@ -51,7 +52,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const offenders: string[] = [];
 const hardcoded: string[] = [];
 for (const file of [...walk(join(ROOT, 'src')), ...walk(join(ROOT, 'app'))]) {
-  const rel = file.slice(ROOT.length).replace(/^\/+/, '');
+  const rel = file.slice(ROOT.length).replace(/^[\\\/]+/, '').replace(/\\/g, '/');
   if (ALLOWED.has(rel)) continue;
   const body = readFileSync(file, 'utf8');
   if (/paddingTop:\s*insets\.top/.test(body)) offenders.push(rel);

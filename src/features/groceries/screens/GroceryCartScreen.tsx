@@ -49,7 +49,8 @@ export function GroceryCartScreen() {
   );
 
   const subtotal = getCartTotal();
-  const { subtotal: billSubtotal } = getBillEstimate();
+  const billEstimate = getBillEstimate();
+  const billSubtotal = billEstimate.subtotal;
   const totalSavings = getTotalSavings();
 
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -313,7 +314,12 @@ export function GroceryCartScreen() {
 
               <View style={styles.billRow}>
                 <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery</Txt>
-                <Txt maxFontSizeMultiplier={1.3} style={styles.freeLabel}>FREE</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billEstimate.deliveryFee}</Txt>
+              </View>
+
+              <View style={styles.billRow}>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Platform Fee</Txt>
+                <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>₹{billEstimate.platformFee}</Txt>
               </View>
 
               <View style={[styles.billRow, styles.totalRow]}>
@@ -321,7 +327,7 @@ export function GroceryCartScreen() {
                 <Txt maxFontSizeMultiplier={1.3} style={styles.totalValue}>₹{billSubtotal}</Txt>
               </View>
               <Txt maxFontSizeMultiplier={1.2} style={styles.billFootnote}>
-                Item prices are GST-inclusive. Delivery is free.
+                Item prices are GST-inclusive.
               </Txt>
             </View>
 

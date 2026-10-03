@@ -43,6 +43,8 @@ export interface BillEstimate {
   tax: number;
   /** `subtotal - tax`. Shown as the pre-tax figure on the bill. */
   taxable: number;
+  deliveryFee: number;
+  platformFee: number;
 }
 
 interface CartState {
@@ -153,11 +155,15 @@ export const useCartStore = create<CartState>()(
         }
         subtotal = Math.round(subtotal * 100) / 100;
         tax = Math.round(tax * 100) / 100;
+        const deliveryFee = 30;
+        const platformFee = 5;
         return {
-          subtotal,
+          subtotal: Math.round((subtotal + deliveryFee + platformFee) * 100) / 100,
           tax,
           taxable: Math.round((subtotal - tax) * 100) / 100,
           savings: Math.round(get().getTotalSavings() * 100) / 100,
+          deliveryFee,
+          platformFee,
         };
       },
 

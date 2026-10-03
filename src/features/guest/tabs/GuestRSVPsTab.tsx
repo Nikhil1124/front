@@ -41,10 +41,11 @@ const CUTOFF_HOURS: Record<'breakfast' | 'lunch' | 'dinner', number> = {
   dinner: 19 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function getCutoffMs(mealType: string): number {
+function getCutoffMs(mealType: string, serviceDateMs?: number): number {
   const key = mealType.toLowerCase() as 'breakfast' | 'lunch' | 'dinner';
   const h = CUTOFF_HOURS[key] ?? 12;
-  const d = new Date(); d.setHours(h, 0, 0, 0);
+  const d = serviceDateMs ? new Date(serviceDateMs) : new Date();
+  d.setHours(h, 0, 0, 0);
   return d.getTime();
 }
 
@@ -100,7 +101,7 @@ export function GuestRSVPsTab() {
 
   const [rsvpChoices, setRsvpChoices] = useState<Record<string, 'REQUIRED' | 'NOT_REQUIRED'>>({});
   const [submittingId, setSubmittingId] = useState<string | null>(null);
-  const [activeMealTab, setActiveMealTab] = useState('LUNCH');
+  const [activeMealTab, setActiveMealTab] = useState<string>(''); // Will auto-select best tab
   const [selectedDay, setSelectedDay] = useState(0);
   // Feedback is per meal, and the banner is not. The meal being rated is the last one on the
   // selected day whose cut-off has already passed — the one they would actually have eaten.
@@ -187,10 +188,10 @@ export function GuestRSVPsTab() {
       // kitchen had set). No such meal, no cutoff to count down to.
       const now = Date.now();
       const open = notifications.filter(
-        (n) => n.mealType.toUpperCase() === mealType.toUpperCase() && (n.responseClosesAt ?? 0) > now,
+        (n) => n.mealType.toUpperCase() === mealType.toUpperCase() && (n.responseClosesAt ?? getCutoffMs(n.mealType, n.timestamp)) > now,
       );
       const notif = open[open.length - 1];
-      const nextCutoffMs = notif?.responseClosesAt ?? null;
+      const nextCutoffMs = notif?.responseClosesAt ?? (notif ? getCutoffMs(notif.mealType, notif.timestamp) : null);
       return {
         enabled: mealPrefs[mealType],
         cutoffTime: nextCutoffMs ? formatTime12h(nextCutoffMs) : '',
@@ -229,7 +230,9 @@ export function GuestRSVPsTab() {
     queries: dayMeals.map((n) => ({
       queryKey: qk.meals.myResponse(activePgId ?? '', n.id),
       queryFn: () => getMyResponse(n.id),
-      enabled: !!activePgId })) });
+      enabled: !!activePgId,
+      staleTime: 0,
+    })) });
   const serverRsvpChoices = useMemo(() => {
     const map: Record<string, 'REQUIRED' | 'NOT_REQUIRED'> = {};
     dayMeals.forEach((n, i) => {
@@ -248,15 +251,31 @@ export function GuestRSVPsTab() {
   // breakfast anywhere in the week — so the card could be showing Thursday's menu while the
   // day strip above it said Monday.
   const activeMealNotif = dayMeals.find(
-    (n) => n.mealType.toUpperCase() === activeMealTab
+    (n) => n.mealType.toUpperCase() === (activeMealTab || 'LUNCH')
   ) ?? null;
+
+  // Auto-select the first available meal tab for the selected day if empty or changing days
+  useEffect(() => {
+    if (dayMeals.length === 0) return;
+    
+    // Find the next upcoming meal for today
+    const now = Date.now();
+    const nextMeal = dayMeals.find((m) => {
+      const cutoff = m.responseClosesAt ?? getCutoffMs(m.mealType, m.timestamp);
+      return cutoff > now;
+    }) ?? dayMeals[0]; // Fallback to first meal if all passed
+
+    if (!activeMealTab || (activeMealTab && !dayMeals.some(m => m.mealType.toUpperCase() === activeMealTab))) {
+      setActiveMealTab(nextMeal.mealType.toUpperCase());
+    }
+  }, [dayMeals, activeMealTab]);
   // The server's own deadline first. `getCutoffMs` derives one from the meal TYPE against
   // today's date, while home.tsx derived it from the MEAL's date — two different answers for
   // the same meal, roughly two hours apart, and neither was the number the backend enforces.
   // `response_closes_at` is that number. The heuristic remains only for a meal with no
   // deadline set.
   const cutoffMs = activeMealNotif
-    ? activeMealNotif.responseClosesAt ?? getCutoffMs(activeMealNotif.mealType)
+    ? activeMealNotif.responseClosesAt ?? getCutoffMs(activeMealNotif.mealType, activeMealNotif.timestamp)
     : null;
   const cutoffPassed = cutoffMs ? cutoffMs <= Date.now() : false;
 
@@ -490,7 +509,7 @@ export function GuestRSVPsTab() {
         {/* ── 4. MEAL TYPE TABS ── */}
         <Row style={styles.tabRow} gap={8}>
           {MEAL_TABS.map((tab) => {
-            const active = activeMealTab === tab.key;
+            const active = (activeMealTab || 'LUNCH') === tab.key;
             return (
               <AnimatedPress accessibilityState={{ selected: !!active }} accessibilityRole="button"
                 key={tab.key}
@@ -508,7 +527,14 @@ export function GuestRSVPsTab() {
         </Row>
 
         {/* ── 5. MEAL HERO CARD ── */}
-        <AnimatedPress accessibilityRole="button" onPress={() => activeMealNotif && setDetailMeal(activeMealNotif)} style={styles.heroCard}>
+        <AnimatedPress 
+          accessibilityRole="button" 
+          onPress={() => {
+            if (activeMealNotif) setDetailMeal(activeMealNotif);
+            else toast('error', 'No Meal', 'No meal has been posted for this slot yet.');
+          }} 
+          style={styles.heroCard}
+        >
           {/* Food image - right */}
           <View style={styles.heroImageWrap}>
             <Image
@@ -676,7 +702,7 @@ export function GuestRSVPsTab() {
               // Only "Not decided" past the cutoff is actually something to act on.
               // The meal's own deadline: the fixed-hour guess is for today, so tomorrow's
               // unanswered lunch read "Not decided" from noon today.
-              const isUpcoming = !choice && (n.responseClosesAt ?? getCutoffMs(n.mealType)) > Date.now();
+              const isUpcoming = !choice && (n.responseClosesAt ?? getCutoffMs(n.mealType)) > Date.now(); // eslint-disable-line react-hooks/purity
               const status: { label: string; tone: StatusTone } =
                 isEat ? { label: 'Attending', tone: 'ok' }
                 : isSkip ? { label: 'Skipping', tone: 'neutral' }
@@ -687,6 +713,7 @@ export function GuestRSVPsTab() {
                 <AnimatedPress accessibilityRole="button"
                   key={n.id}
                   onPress={() => setDetailMeal(n)}
+                  android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
                   style={[styles.mealRow, !isLast && styles.mealRowBorder]}
                 >
                   <View style={styles.mealRowIcon}>
@@ -829,7 +856,7 @@ export function GuestRSVPsTab() {
           (() => {
             if (!detailMeal) return null;
             const cutoff = detailMeal.responseClosesAt ?? getCutoffMs(detailMeal.mealType);
-            if (cutoff <= Date.now()) {
+            if (cutoff <= Date.now()) { // eslint-disable-line react-hooks/purity
               return (
                 <View style={[styles.rsvpClosed, { height: 46 }]}>
                   <Ionicons name="lock-closed" size={16} color={Colors.textSecondary} />
@@ -889,7 +916,7 @@ export function GuestRSVPsTab() {
                 <>
                   <Spacer size={8} />
                   <View style={styles.chefNote}>
-                    <Txt size={12} weight="700" color={Colors.textPrimary}>Chef note: "{detailMeal.chefNote}"</Txt>
+                    <Txt size={12} weight="700" color={Colors.textPrimary}>Chef note: &quot;{detailMeal.chefNote}&quot;</Txt>
                   </View>
                 </>
               ) : null}
@@ -922,7 +949,7 @@ export function GuestRSVPsTab() {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(16,185,129,0.12)', borderColor: Colors.success }]}>
                     <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
-                    <Txt size={12} weight="700" color={Colors.success} style={{ marginLeft: 8 }}>You're eating! Your portion is reserved.</Txt>
+                    <Txt size={12} weight="700" color={Colors.success} style={{ marginLeft: 8 }}>You&apos;re eating! Your portion is reserved.</Txt>
                   </View>
                 );
               }
@@ -930,7 +957,7 @@ export function GuestRSVPsTab() {
                 return (
                   <View style={[styles.rsvpStatusBox, { backgroundColor: 'rgba(239,68,68,0.12)', borderColor: Colors.danger }]}>
                     <Ionicons name="close-circle" size={18} color={Colors.danger} />
-                    <Txt size={12} weight="700" color={Colors.danger} style={{ marginLeft: 8 }}>You're skipping. Thank you for helping reduce waste!</Txt>
+                    <Txt size={12} weight="700" color={Colors.danger} style={{ marginLeft: 8 }}>You&apos;re skipping. Thank you for helping reduce waste!</Txt>
                   </View>
                 );
               }

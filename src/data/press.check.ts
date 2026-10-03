@@ -23,8 +23,9 @@
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('../..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
 /** Total `<TouchableOpacity` still inside the groceries mini-app. Lower it as they convert. */
 const GROCERIES_BUDGET = 0;

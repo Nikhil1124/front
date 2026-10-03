@@ -68,13 +68,17 @@ export function DishProductCard({ dish, isSelected, onToggle, isEligible = true 
       </View>
 
       <View style={styles.foodCardBody}>
-        <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1}>{dish.name}</Txt>
+        <Row gap={6} align="center">
+          <View style={[styles.vegIndicator, { borderColor: dish.dietaryType === 'veg' ? Colors.success : Colors.danger }]}>
+            <View style={[styles.vegDot, { backgroundColor: dish.dietaryType === 'veg' ? Colors.success : Colors.danger }]} />
+          </View>
+          <Txt size={14} weight="700" color={Colors.textPrimary} numberOfLines={1} style={{ flex: 1 }}>{dish.name}</Txt>
+        </Row>
         
         <Row justify="space-between" align="center" style={{ marginTop: 6 }}>
           <Row gap={4} align="center">
-            <Txt size={11} weight="600" color={Colors.textMuted}>{dish.category}</Txt>
+            <Txt size={11} weight="600" color={dish.isActive ? Colors.success : Colors.textMuted}>{dish.isActive ? 'Available' : 'Unavailable'}</Txt>
           </Row>
-
         </Row>
       </View>
     </AnimatedPress>
@@ -158,4 +162,17 @@ const styles = StyleSheet.create({
   foodCardBody: {
     padding: 10,
   },
+  vegIndicator: {
+    width: 12,
+    height: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 2,
+  },
+  vegDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  }
 });

@@ -1066,91 +1066,94 @@ export function BedVisualizerScreen() {
               </ScrollView>
             </View>
           </View>
+
+          {/* 8. BED ASSIGNMENT / VACATE ACTION DIALOG */}
+          {activeBed && (
+            <Sheet
+              visible
+              title={`Room ${activeBed.room.roomNumber} · Bed ${activeBed.bed.bedNumber}`}
+              subtitle={activeBed.bed.status === 'occupied' ? 'Currently occupied' : 'Vacant and available'}
+              icon={activeBed.bed.status === 'occupied' ? 'person' : 'bed-outline'}
+              accent={activeBed.bed.status === 'occupied' ? Colors.primary : Colors.success}
+              onDismiss={() => setActiveBed(null)}
+            >
+
+                  {activeBed.bed.status === 'occupied' && activeBed.bed.tenant ? (
+                    <>
+                      <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.card} padding={[12, 12]}>
+                        <Txt size={13} weight="700" color={Colors.textPrimary}>
+                          {activeBed.bed.tenant.fullName}
+                        </Txt>
+                        <Txt size={11} color={Colors.textMuted}>
+                          {activeBed.bed.tenant.phone}
+                        </Txt>
+                        {activeBed.bed.tenant.checkInDate ? (
+                          <Txt size={11} color={Colors.textMuted}>
+                            Checked in {activeBed.bed.tenant.checkInDate}
+                          </Txt>
+                        ) : null}
+                      </Card>
+                      <Spacer size={14} />
+                      <Btn
+                        onPress={handleVacate}
+                        loading={vacateBed.isPending}
+                        disabled={vacateBed.isPending}
+                        containerColor={Colors.danger}
+                        textColor={Colors.textInverse}
+                        borderRadius={Radii.control}
+                        height={44}
+                      >
+                        <Txt size={12} weight="700" color={Colors.textInverse}>
+                          Vacate Bed
+                        </Txt>
+                      </Btn>
+                    </>
+                  ) : (
+                    <>
+                      <Txt size={12} weight="700" color={Colors.textPrimary}>
+                        Assign a resident to this bed
+                      </Txt>
+                      <Spacer size={8} />
+
+                      {unassignedGuests.length === 0 ? (
+                        <EmptyState
+                          icon="people-outline"
+                          title="No unassigned residents"
+                          subtitle="Add a resident from the Guests tab first, then assign them here."
+                        />
+                      ) : (
+                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                          <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
+                            <View style={{ gap: 8 }}>
+                              {unassignedGuests.map((g) => (
+                                <AnimatedPress accessibilityRole="button"
+                                  key={g.id}
+                                  disabled={assignBed.isPending}
+                                  onPress={() => handleAssign(g.id, g.name)}
+                                >
+                                  <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.control} padding={[10, 12]}>
+                                    <Txt size={12} weight="700" color={Colors.textPrimary}>
+                                      {g.name}
+                                    </Txt>
+                                    <Txt size={11} color={Colors.textMuted}>
+                                      {g.phone} • Room {g.roomNo}
+                                    </Txt>
+                                  </Card>
+                                </AnimatedPress>
+                              ))}
+                            </View>
+                          </ScrollView>
+                        </KeyboardAvoidingView>
+                      )}
+                    </>
+                  )}
+            </Sheet>
+          )}
+
         </Modal>
       )}
 
-      {/* 8. BED ASSIGNMENT / VACATE ACTION DIALOG */}
-      {activeBed && (
-        <Sheet
-          visible
-          title={`Room ${activeBed.room.roomNumber} · Bed ${activeBed.bed.bedNumber}`}
-          subtitle={activeBed.bed.status === 'occupied' ? 'Currently occupied' : 'Vacant and available'}
-          icon={activeBed.bed.status === 'occupied' ? 'person' : 'bed-outline'}
-          accent={activeBed.bed.status === 'occupied' ? Colors.primary : Colors.success}
-          onDismiss={() => setActiveBed(null)}
-        >
 
-              {activeBed.bed.status === 'occupied' && activeBed.bed.tenant ? (
-                <>
-                  <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.card} padding={[12, 12]}>
-                    <Txt size={13} weight="700" color={Colors.textPrimary}>
-                      {activeBed.bed.tenant.fullName}
-                    </Txt>
-                    <Txt size={11} color={Colors.textMuted}>
-                      {activeBed.bed.tenant.phone}
-                    </Txt>
-                    {activeBed.bed.tenant.checkInDate ? (
-                      <Txt size={11} color={Colors.textMuted}>
-                        Checked in {activeBed.bed.tenant.checkInDate}
-                      </Txt>
-                    ) : null}
-                  </Card>
-                  <Spacer size={14} />
-                  <Btn
-                    onPress={handleVacate}
-                    loading={vacateBed.isPending}
-                    disabled={vacateBed.isPending}
-                    containerColor={Colors.danger}
-                    textColor={Colors.textInverse}
-                    borderRadius={Radii.control}
-                    height={44}
-                  >
-                    <Txt size={12} weight="700" color={Colors.textInverse}>
-                      Vacate Bed
-                    </Txt>
-                  </Btn>
-                </>
-              ) : (
-                <>
-                  <Txt size={12} weight="700" color={Colors.textPrimary}>
-                    Assign a resident to this bed
-                  </Txt>
-                  <Spacer size={8} />
-
-                  {unassignedGuests.length === 0 ? (
-                    <EmptyState
-                      icon="people-outline"
-                      title="No unassigned residents"
-                      subtitle="Add a resident from the Guests tab first, then assign them here."
-                    />
-                  ) : (
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                      <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
-                        <View style={{ gap: 8 }}>
-                          {unassignedGuests.map((g) => (
-                            <AnimatedPress accessibilityRole="button"
-                              key={g.id}
-                              disabled={assignBed.isPending}
-                              onPress={() => handleAssign(g.id, g.name)}
-                            >
-                              <Card containerColor={Colors.surfaceMuted} borderRadius={Radii.control} padding={[10, 12]}>
-                                <Txt size={12} weight="700" color={Colors.textPrimary}>
-                                  {g.name}
-                                </Txt>
-                                <Txt size={11} color={Colors.textMuted}>
-                                  {g.phone} • Room {g.roomNo}
-                                </Txt>
-                              </Card>
-                            </AnimatedPress>
-                          ))}
-                        </View>
-                      </ScrollView>
-                    </KeyboardAvoidingView>
-                  )}
-                </>
-              )}
-        </Sheet>
-      )}
 
       {/* 9. ADD ROOM / FLOOR MODAL */}
       {showAddRoom && (

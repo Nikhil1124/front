@@ -45,12 +45,10 @@ interface CheckoutSlot {
 const PROPERTY_BILLED_METHODS = [
   { id: 'credit', label: 'Pay on credit (property account)', icon: 'business-outline' },
   { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
-  { id: 'upi', label: 'UPI Payment', icon: 'qr-code-outline' },
 ];
 
 const GUEST_BILLED_METHODS = [
   { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
-  { id: 'upi', label: 'UPI Payment', icon: 'qr-code-outline' },
 ];
 
 import { useActiveProperty } from '@/features/properties/useProperties';
@@ -64,6 +62,7 @@ import { formatINR } from '@/utils/format';
 import { AppHeader } from '@/components/AppHeader';
 import { AnimatedPress, OutlinedTextField, Txt } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
+import { launchUpiPayment } from '@/features/payments/usePayments';
 
 export function GroceryCheckoutScreen() {
   const { activeEntity: owner } = useActiveProperty();
@@ -115,8 +114,8 @@ export function GroceryCheckoutScreen() {
         day: 'Delivery Window',
         badge: s.scope_type === 'global' ? 'STANDARD' : 'AREA',
         window: `${s.label} (${s.start_time.slice(0, 5)} – ${s.end_time.slice(0, 5)})`,
-        fee: 0,
-        feeText: 'FREE',
+        fee: 30,
+        feeText: '₹30',
       })),
     [realSlots]
   );
@@ -134,18 +133,12 @@ export function GroceryCheckoutScreen() {
     [slotsList, selectedSlotId]
   );
 
+  const billEstimate = getBillEstimate();
   const subtotal = getCartTotal();
   const deliveryFee = selectedSlot?.fee ?? 0;
-  // GST is inside `subtotal`, not added to it — supply_items.price is tax-inclusive and the
-  // server splits it the same way (see getBillEstimate). Delivery fee is the only addition —
-  // there used to be a flat ₹10 "platform fee" and a delivery-partner tip selector here too,
-  // but `CreateOrderRequest` has no field for either (extra="forbid" rejects one if sent) and
-  // no tip/platform-fee concept exists anywhere in pg-backend's supply module. Both were pure
-  // client-side numbers added to what looked like the real total and then discarded on
-  // submit — the tip in particular promised "100% goes to your delivery partner" and never
-  // reached one. Estimated Total now matches what the server will actually total.
-  const { tax: billTax, taxable: billTaxable } = getBillEstimate();
-  const estimatedTotal = Math.round((subtotal + deliveryFee) * 100) / 100;
+  // GST is inside `subtotal`, not added to it.
+  const { tax: billTax, taxable: billTaxable, platformFee } = billEstimate;
+  const estimatedTotal = Math.round((subtotal + deliveryFee + platformFee) * 100) / 100;
   const cartItemCount = getItemCount();
   const totalSavings = getTotalSavings();
 
@@ -188,6 +181,19 @@ export function GroceryCheckoutScreen() {
       // Fresh key for any subsequent order placed without remounting this screen.
       idempotencyKey.current = `ord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       clearCart();
+      
+      if (paymentMethod === 'upi') {
+        const upiResult = await launchUpiPayment({
+          upiId: owner?.upiId || 'default@upi',
+          payeeName: 'Grocery Order',
+          amount: estimatedTotal,
+          note: `Order ${order.id}`
+        });
+        if (!upiResult.success) {
+          toast('error', 'UPI App Launch Failed', upiResult.message);
+        }
+      }
+
       router.push({ pathname: '/groceries/orders/[id]', params: { id: order.id } });
     } catch (err: any) {
       toast('error', 'Order failed', err?.message || 'Please try again.');
@@ -415,6 +421,13 @@ export function GroceryCheckoutScreen() {
               <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Delivery Fee</Txt>
               <Txt maxFontSizeMultiplier={1.3} style={[styles.billValue, deliveryFee === 0 && styles.greenText]}>
                 {deliveryFee === 0 ? 'FREE' : formatINR(deliveryFee, 2)}
+              </Txt>
+            </View>
+
+            <View style={styles.billRow}>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billLabel}>Platform Fee</Txt>
+              <Txt maxFontSizeMultiplier={1.3} style={styles.billValue}>
+                {formatINR(platformFee, 2)}
               </Txt>
             </View>
 
