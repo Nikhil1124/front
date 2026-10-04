@@ -192,6 +192,17 @@ export function GroceryOrderDetailScreen() {
                 {item.fulfilment_status ? (
                   <Txt maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>Status: {item.fulfilment_status}</Txt>
                 ) : null}
+                {/* A substituted line used to say only "substituted". The resident could see
+                    that what they ordered was not what came, and nothing about what did —
+                    the server sent a bare item id and no client rendered it. The charge is
+                    unchanged either way: `line_total` is snapshotted at order time and the
+                    substitute is never priced. */}
+                {item.substituted_with_item_name ? (
+                  <Txt maxFontSizeMultiplier={1.3} style={styles.lineStatusText}>
+                    Sent instead: {item.substituted_with_item_name}
+                    {item.substituted_quantity ? ` x ${item.substituted_quantity}` : ''}
+                  </Txt>
+                ) : null}
               </View>
               <Txt maxFontSizeMultiplier={1.3} style={styles.linePrice}>{formatINR(Number(item.line_total), 2)}</Txt>
             </View>

@@ -164,15 +164,24 @@ export async function registerMealRsvpCategory(): Promise<void> {
 /**
  * Where a tapped push goes.
  *
- * This DOES have to re-derive the screen: `lambdas/notify.py` builds the data block from a
- * fixed set — title, body, `category`, `action_type`, `action_id`, `urgent` — and there is no
- * `screen` key in it. An earlier comment here claimed there was, which is why the fallbacks
- * below matter so much; they are the normal path, not the degraded one.
+ * The data block is built by `push._gcm_payload`:
  *
- * And those keys are snake_case on the wire. Reading only `actionType`/`actionId` left both
- * undefined, so every ticket push resolved to the LIST fallback instead of the ticket: an
- * owner tapping "Work finished" landed on the Services tab, which opens on a grid of bookable
- * services, and read as the app offering to book a technician for work already finished.
+ *     data = _deep_link(action_type, action_id) | {"category": category}
+ *
+ * and `_deep_link` emits **camelCase** — `actionType`, `actionId` — plus `screen` for the four
+ * action types it has a route for (request, payment, kyc, meal). So the camelCase reads below
+ * are the real wire format, and `screen` genuinely does arrive. The snake_case fallbacks are
+ * belt-and-braces, not the normal path.
+ *
+ * `lambdas/notify.py` is not the contract: its `action_type`/`action_id` are keyword arguments
+ * it passes into `push.publish_*`, which then build the block above. Reading that dict as the
+ * wire format is a mistake this comment has made before, in the other direction.
+ *
+ * The overrides below deliberately REPLACE a `screen` the backend sent. `_deep_link` maps
+ * `request` to `/complaints` for everyone, which is wrong for two of the three roles — a
+ * resident wants their own ticket, an owner wants the ticket they have to act on, and
+ * maintenance wants the queue. `actionId` is present, so these resolve to the ticket route;
+ * the list fallbacks are for a push that carries no action id at all.
  */
 export function routeFromPushData(data: Record<string, unknown> | undefined): void {
   let screen = typeof data?.screen === "string" ? data.screen : null;

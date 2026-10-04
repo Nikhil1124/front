@@ -94,6 +94,12 @@ export interface SupplyOrderItem {
    *  `status` was always undefined and its row never rendered. */
   fulfilment_status?: string;
   substituted_with_item_id?: string | null;
+  /** How many packs of the substitute went out — not always the ordered quantity. */
+  substituted_quantity?: number | null;
+  /** What was actually sent, by name, as it read on the day. The id alone was never
+   *  renderable — resolving it needs a catalog lookup, and the row may since have been
+   *  renamed or deactivated, which is why the server snapshots the name beside it. */
+  substituted_with_item_name?: string | null;
   refunded_amount?: number | null;
 }
 
