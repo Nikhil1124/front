@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, Image, TextInput } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +29,53 @@ import { AnimatedPress, PGowDialog, Row, Txt } from '@/components/ui';
 // "Total ₹69" handed over to a checkout reading "₹34" and the resident was shown ₹35 of
 // charges nobody bills. Same call the laundry payment screen already made for its own
 // invented ₹30 "service fee". The cart now totals what the server will total.
+
+function CartItemQuantityInput({
+  quantity,
+  onChangeQuantity,
+  onRemove,
+}: {
+  quantity: number;
+  onChangeQuantity: (qty: number) => void;
+  onRemove: () => void;
+}) {
+  const [text, setText] = useState(String(quantity));
+
+  useEffect(() => {
+    setText(String(quantity));
+  }, [quantity]);
+
+  const handleChangeText = (valStr: string) => {
+    const cleaned = valStr.replace(/[^0-9]/g, '');
+    setText(cleaned);
+    if (cleaned === '') return;
+    const val = parseInt(cleaned, 10);
+    if (val === 0) {
+      onRemove();
+    } else if (val > 0 && val <= 99) {
+      onChangeQuantity(val);
+    }
+  };
+
+  const handleBlur = () => {
+    if (text === '' || parseInt(text, 10) < 1) {
+      setText(String(quantity));
+    }
+  };
+
+  return (
+    <TextInput
+      style={[styles.qtyText, { padding: 0 }]}
+      value={text}
+      keyboardType="number-pad"
+      selectTextOnFocus
+      maxLength={2}
+      onChangeText={handleChangeText}
+      onBlur={handleBlur}
+      accessibilityLabel="Item quantity"
+    />
+  );
+}
 
 export function GroceryCartScreen() {
   const { items, updateQuantity, removeItem, setReplacement, getCartTotal, getBillEstimate, clearCart, getTotalSavings } = useCartStore();
@@ -230,20 +277,10 @@ export function GroceryCartScreen() {
                         >
                           <Ionicons name="remove" size={14} color={GroceryColors.primary} />
                         </AnimatedPress>
-                        <TextInput
-                          style={[styles.qtyText, { padding: 0 }]}
-                          value={String(item.quantity)}
-                          keyboardType="numeric"
-                          onChangeText={(text) => {
-                            const val = parseInt(text, 10);
-                            if (!isNaN(val) && val >= 0) {
-                              if (val === 0) {
-                                handleRemoveItem(item.id, item.name);
-                              } else {
-                                updateQuantity(item.id, val);
-                              }
-                            }
-                          }}
+                        <CartItemQuantityInput
+                          quantity={item.quantity}
+                          onChangeQuantity={(val) => updateQuantity(item.id, val)}
+                          onRemove={() => handleRemoveItem(item.id, item.name)}
                         />
                         <AnimatedPress
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

@@ -80,15 +80,12 @@ export const Typography = {
 
 export type TypographyKey = keyof typeof Typography;
 
-import { responsiveFontSize, responsiveSpacing } from '@/utils/responsive';
-
-/** Convert a typography token to a RN TextStyle object. */
 export function textStyle(key: TypographyKey): TextStyle {
   const t = Typography[key];
   return {
     fontFamily: fontFamilyForWeight(t.fontWeight),
-    fontSize: responsiveFontSize(t.fontSize),
-    lineHeight: responsiveSpacing(t.lineHeight),
+    fontSize: t.fontSize,
+    lineHeight: t.lineHeight,
     letterSpacing: t.letterSpacing,
     fontWeight: t.fontWeight,
   };

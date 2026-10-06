@@ -25,7 +25,7 @@ import { FloatingCartBar } from '../components/FloatingCartBar';
 
 export function GroceryCategoryScreen() {
   const insets = useSafeAreaInsets();
-  const { width, isTablet, isLargePhone } = useResponsive();
+  const { width, isTablet } = useResponsive();
   const { name: initialSupplyCategory, filter } = useLocalSearchParams<{
     name?: string;
     filter?: string;
@@ -89,7 +89,7 @@ export function GroceryCategoryScreen() {
 
   const leftRailWidth = isTablet ? 120 : 85;
   const gridWidth = width - leftRailWidth;
-  const numColumns = isTablet ? 4 : isLargePhone ? 3 : 2;
+  const numColumns = isTablet ? 4 : width >= 600 ? 3 : 2;
   const productCardWidth = (gridWidth - 32) / numColumns;
 
   // Static list for frequently bought

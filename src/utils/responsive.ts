@@ -1,43 +1,55 @@
 import { Dimensions, PixelRatio, useWindowDimensions } from 'react-native';
 
-// Get initial dimensions (for static styles)
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 // Base dimensions (e.g., iPhone 12/13/14 Pro - 390x844)
 const guidelineBaseWidth = 390;
 const guidelineBaseHeight = 844;
 
-// Determine current dimensions based on orientation
-const [shortDimension, longDimension] = SCREEN_WIDTH < SCREEN_HEIGHT 
-  ? [SCREEN_WIDTH, SCREEN_HEIGHT] 
-  : [SCREEN_HEIGHT, SCREEN_WIDTH];
+function getWindowMetrics() {
+  const { width = 390, height = 844 } = Dimensions.get('window') || {};
+  const validW = width > 0 ? width : 390;
+  const validH = height > 0 ? height : 844;
+  return {
+    width: validW,
+    height: validH,
+    short: validW < validH ? validW : validH,
+    long: validW < validH ? validH : validW,
+  };
+}
 
 /**
  * Returns a percentage of the screen width
  * e.g., wp('50%') returns half of the screen width
  */
 export const wp = (widthPercent: number | string): number => {
+  const { width } = getWindowMetrics();
   const elemWidth = typeof widthPercent === "number" ? widthPercent : parseFloat(widthPercent);
-  return PixelRatio.roundToNearestPixel((SCREEN_WIDTH * elemWidth) / 100);
+  return PixelRatio.roundToNearestPixel((width * elemWidth) / 100);
 };
 
 /**
  * Returns a percentage of the screen height
  */
 export const hp = (heightPercent: number | string): number => {
+  const { height } = getWindowMetrics();
   const elemHeight = typeof heightPercent === "number" ? heightPercent : parseFloat(heightPercent);
-  return PixelRatio.roundToNearestPixel((SCREEN_HEIGHT * elemHeight) / 100);
+  return PixelRatio.roundToNearestPixel((height * elemHeight) / 100);
 };
 
 /**
  * Scales based on width. Good for horizontal margins, paddings, widths, etc.
  */
-export const scale = (size: number): number => (shortDimension / guidelineBaseWidth) * size;
+export const scale = (size: number): number => {
+  const { short } = getWindowMetrics();
+  return (short / guidelineBaseWidth) * size;
+};
 
 /**
  * Scales based on height. Good for vertical margins, paddings, heights, etc.
  */
-export const verticalScale = (size: number): number => (longDimension / guidelineBaseHeight) * size;
+export const verticalScale = (size: number): number => {
+  const { long } = getWindowMetrics();
+  return (long / guidelineBaseHeight) * size;
+};
 
 /**
  * Non-linear scaling. The factor controls how much it scales. 
@@ -45,7 +57,7 @@ export const verticalScale = (size: number): number => (longDimension / guidelin
  * Good for font sizes and icons where we don't want them to get too huge on tablets.
  */
 export const moderateScale = (size: number, factor = 0.5): number => {
-  return size + (scale(size) - size) * factor;
+  return PixelRatio.roundToNearestPixel(size + (scale(size) - size) * factor);
 };
 
 /**
@@ -76,13 +88,13 @@ export const Breakpoints = {
 } as const;
 
 /**
- * Static breakpoint helpers (evaluated once on load, useful outside of React components)
+ * Static breakpoint helpers (evaluated on load, useful outside of React components)
  */
-export const isCompactPhone = SCREEN_WIDTH <= Breakpoints.compact;
-export const isSmallPhone = SCREEN_WIDTH > Breakpoints.compact && SCREEN_WIDTH <= Breakpoints.small;
-export const isLargePhone = SCREEN_WIDTH > Breakpoints.small && SCREEN_WIDTH <= Breakpoints.large;
-export const isTablet = SCREEN_WIDTH >= Breakpoints.tablet;
-export const isLandscape = SCREEN_WIDTH > SCREEN_HEIGHT;
+export const isCompactPhone = getWindowMetrics().width <= Breakpoints.compact;
+export const isSmallPhone = getWindowMetrics().width > Breakpoints.compact && getWindowMetrics().width <= Breakpoints.small;
+export const isLargePhone = getWindowMetrics().width > Breakpoints.small && getWindowMetrics().width <= Breakpoints.large;
+export const isTablet = getWindowMetrics().width >= Breakpoints.tablet;
+export const isLandscape = getWindowMetrics().width > getWindowMetrics().height;
 
 /**
  * A central responsive hook providing dimensional data that re-renders on orientation changes.

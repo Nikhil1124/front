@@ -47,6 +47,11 @@ const BESPOKE_SEARCH = new Set([
   // block, which breaks that row into three lines on a narrow phone. No label is needed
   // either — the Row's own accessibilityLabel names the floor and the room.
   'src/features/property/LayoutSetupForm.tsx',
+  // Inline numeric quantity stepper inputs in groceries cart & product detail: compact
+  // field sharing a pill row with plus/minus Stepper buttons. OutlinedTextField's full-width
+  // block wrapper cannot fit inside a compact 60px stepper pill.
+  'src/features/groceries/screens/GroceryCartScreen.tsx',
+  'src/features/groceries/screens/GroceryProductScreen.tsx',
 ]);
 
 function walk(dir: string, out: string[] = []): string[] {

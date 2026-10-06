@@ -35,7 +35,7 @@ const ERROR = Colors.danger;
 
 export function ManagePropertiesScreen() {
   const toast = useToast();
-  const { isTablet, isLargePhone } = useResponsive();
+  const { isTablet } = useResponsive();
   const {
     data: allPGs = [],
     isLoading: pgsLoading,
@@ -143,7 +143,7 @@ export function ManagePropertiesScreen() {
         ) : (
           <View style={[
             { gap: 20 },
-            (isTablet || isLargePhone) && { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }
+            isTablet && { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }
           ]}>
             {filtered.map((pg) => {
               const isCurrent = currentOwner?.id === pg.id;
@@ -163,7 +163,7 @@ export function ManagePropertiesScreen() {
                   style={[
                     styles.propertyCard,
                     isCurrent && { borderColor: PRIMARY, borderWidth: 1.5 },
-                    (isTablet || isLargePhone) && { width: '48%' } // 2 columns on larger screens
+                    isTablet && { width: '48%' } // 2 columns on tablets
                   ]}
                 >
                   {/* Property Image Header */}

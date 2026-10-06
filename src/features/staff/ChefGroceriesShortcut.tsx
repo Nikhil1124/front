@@ -3,11 +3,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { StyleSheet, ImageBackground, View } from 'react-native';
 import { Colors, Radii } from '@/theme';
+import { useAuthStore } from '@/store/authStore';
 
 import { Col, Row, Txt } from '@/components/ui';
 
 export function ChefGroceriesShortcut() {
-  // No role check: used by Chef and Guest
+  const activeRole = useAuthStore((s) => s.activeRole);
+  const subtitle = activeRole === 'chef' ? 'Request kitchen supplies' : 'Order fresh groceries & essentials';
 
   const GROCERY_BG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80";
 
@@ -22,7 +24,7 @@ export function ChefGroceriesShortcut() {
             </View>
             <Col>
               <Txt size={18} weight="800" color={Colors.textInverse}>Groceries</Txt>
-              <Txt size={13} weight="600" color="rgba(255,255,255,0.85)" style={{ marginTop: 4 }}>Request kitchen supplies</Txt>
+              <Txt size={13} weight="600" color="rgba(255,255,255,0.85)" style={{ marginTop: 4 }}>{subtitle}</Txt>
             </Col>
           </Row>
           <View style={styles.bannerArrow}>
@@ -35,7 +37,7 @@ export function ChefGroceriesShortcut() {
 }
 
 const styles = StyleSheet.create({
-  groceryBanner: { height: 110, borderRadius: Radii.pill, overflow: 'hidden', backgroundColor: Colors.primaryDark, justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.primaryDark, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6, marginBottom: 4 },
+  groceryBanner: { height: 110, borderRadius: Radii.card, overflow: 'hidden', backgroundColor: Colors.primaryDark, justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.primaryDark, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6, marginBottom: 4 },
   groceryOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(20, 10, 80, 0.4)' },
   cartIconBox: { width: 48, height: 48, borderRadius: Radii.control, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
   bannerArrow: { width: 36, height: 36, borderRadius: Radii.pill, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },

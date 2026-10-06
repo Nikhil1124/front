@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Share, StyleSheet, View, ScrollView, Image, TextInput } from 'react-native';
 
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,6 +16,58 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+function ProductQuantityInput({
+  quantity,
+  onUpdateQuantity,
+  onAddItem,
+}: {
+  quantity: number;
+  onUpdateQuantity: (qty: number) => void;
+  onAddItem: (qty: number) => void;
+}) {
+  const displayQty = quantity > 0 ? quantity : 1;
+  const [text, setText] = useState(String(displayQty));
+
+  useEffect(() => {
+    setText(String(quantity > 0 ? quantity : 1));
+  }, [quantity]);
+
+  const handleChangeText = (valStr: string) => {
+    const cleaned = valStr.replace(/[^0-9]/g, '');
+    setText(cleaned);
+    if (cleaned === '') return;
+    const val = parseInt(cleaned, 10);
+    if (val === 0 && quantity > 0) {
+      onUpdateQuantity(0);
+    } else if (val > 0 && val <= 99) {
+      if (quantity === 0) {
+        onAddItem(val);
+      } else {
+        onUpdateQuantity(val);
+      }
+    }
+  };
+
+  const handleBlur = () => {
+    if (text === '' || parseInt(text, 10) < 1) {
+      setText(String(quantity > 0 ? quantity : 1));
+    }
+  };
+
+  return (
+    <TextInput
+      style={styles.inlineQtyInput}
+      value={text}
+      keyboardType="number-pad"
+      selectTextOnFocus
+      maxLength={2}
+      onChangeText={handleChangeText}
+      onBlur={handleBlur}
+      accessibilityLabel="Product quantity"
+    />
+  );
+}
 
 export function GroceryProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -167,24 +219,10 @@ export function GroceryProductScreen() {
               <AnimatedPress style={styles.inlineQtyBtn} onPress={quantity > 0 ? handleDecrease : undefined}>
                 <Ionicons name="remove" size={20} color={quantity > 0 ? '#1A1A1A' : '#CCC'} />
               </AnimatedPress>
-              <TextInput
-                style={styles.inlineQtyInput}
-                value={String(quantity > 0 ? quantity : 1)}
-                keyboardType="numeric"
-                onChangeText={(text) => {
-                  const val = parseInt(text, 10);
-                  if (!isNaN(val) && val >= 0) {
-                    if (val === 0 && quantity > 0) {
-                      updateQuantity(compoundId, 0);
-                    } else if (val > 0) {
-                      if (quantity === 0) {
-                        addItem(product, selectedOption, val);
-                      } else {
-                        updateQuantity(compoundId, val);
-                      }
-                    }
-                  }
-                }}
+              <ProductQuantityInput
+                quantity={quantity}
+                onUpdateQuantity={(val) => updateQuantity(compoundId, val)}
+                onAddItem={(val) => addItem(product, selectedOption, val)}
               />
               <AnimatedPress style={styles.inlineQtyBtn} onPress={handleIncrease}>
                 <Ionicons name="add" size={20} color="#1A1A1A" />
