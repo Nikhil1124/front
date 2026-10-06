@@ -23,8 +23,8 @@ interface ProductCardProps {
   style?: StyleProp<ViewStyle>;
   customQuantity?: number;
   onCustomAdd?: () => void;
-  onCustomIncrease?: () => void;
-  onCustomDecrease?: () => void;
+  // onCustomIncrease?: () => void;
+  // onCustomDecrease?: () => void;
   hideWishlist?: boolean;
   /**
    * The pack sizes of this product, smallest first, from `groupByVariant`. Give the card the
@@ -51,8 +51,8 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
   style,
   customQuantity,
   onCustomAdd,
-  onCustomIncrease,
-  onCustomDecrease,
+  // onCustomIncrease,
+  // onCustomDecrease,
   hideWishlist,
   variants,
 }) => {
@@ -65,7 +65,7 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
 
   const cartItems = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
-  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  // const updateQuantity = useCartStore((s) => s.updateQuantity);
   const isWishlistedStore = useWishlistStore((s) => s.isWishlisted(product.id));
   // Wishlist stays on the product, not the pack — someone saves "Onion", not "Onion (500 g)".
   const toggleItemStore = useWishlistStore((s) => s.toggleItem);
@@ -104,8 +104,8 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
     : 0;
 
   const handleAdd = onCustomAdd || (() => addItem(selectedPack, selectedOption, 1));
-  const handleIncrease = onCustomIncrease || (() => updateQuantity(compoundId, quantity + 1));
-  const handleDecrease = onCustomDecrease || (() => updateQuantity(compoundId, quantity - 1));
+  // const handleIncrease = onCustomIncrease || (() => updateQuantity(compoundId, quantity + 1));
+  // const handleDecrease = onCustomDecrease || (() => updateQuantity(compoundId, quantity - 1));
 
   // ── Compact "simple" layout for horizontal rails ──────────────────────────
   if (layout === 'simple') {
@@ -185,35 +185,15 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
           </View>
 
         {/* Add / qty control */}
-        {quantity > 0 ? (
-          <View style={styles.simpleQtyControl}>
-            <AnimatedPress
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              style={styles.simpleQtyBtn}
-              onPress={handleDecrease}
-            >
-              <Ionicons name="remove" size={12} color={GroceryColors.white} />
-            </AnimatedPress>
-            <Txt maxFontSizeMultiplier={1.1} style={styles.simpleQtyText}>{quantity}</Txt>
-            <AnimatedPress
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              style={styles.simpleQtyBtn}
-              onPress={handleIncrease}
-            >
-              <Ionicons name="add" size={12} color={GroceryColors.white} />
-            </AnimatedPress>
-          </View>
-        ) : (
-          <AnimatedPress
-            accessibilityRole="button"
-            style={styles.simpleAddBtn}
-            onPress={handleAdd}
-          >
-            <Txt maxFontSizeMultiplier={1.1} style={styles.simpleAddText}>Add</Txt>
-          </AnimatedPress>
-        )}
+        <AnimatedPress
+          accessibilityRole="button"
+          style={quantity > 0 ? [styles.simpleAddBtn, { backgroundColor: GroceryColors.lightGreen }] : styles.simpleAddBtn}
+          onPress={quantity > 0 ? undefined : handleAdd}
+        >
+          <Txt maxFontSizeMultiplier={1.1} style={quantity > 0 ? [styles.simpleAddText, { color: GroceryColors.primary }] : styles.simpleAddText}>
+            {quantity > 0 ? 'Added' : 'Add'}
+          </Txt>
+        </AnimatedPress>
         </View>
       </AnimatedPress>
     );
@@ -270,25 +250,13 @@ const ProductCardBase: React.FC<ProductCardProps> = ({
         {/* Floating Add/Qty Button (Overlaps image bottom edge) */}
         <View style={styles.floatingActionBtn}>
           {quantity > 0 ? (
-            <View style={styles.floatingQtyControl}>
-              <AnimatedPress
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                style={styles.floatingQtyBtn}
-                onPress={handleDecrease}
-              >
-                <Ionicons name="remove" size={16} color={GroceryColors.primary} />
-              </AnimatedPress>
-              <Txt maxFontSizeMultiplier={1.1} style={styles.floatingQtyText}>{quantity}</Txt>
-              <AnimatedPress
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                style={styles.floatingQtyBtn}
-                onPress={handleIncrease}
-              >
-                <Ionicons name="add" size={16} color={GroceryColors.primary} />
-              </AnimatedPress>
-            </View>
+            <AnimatedPress
+              accessibilityRole="button"
+              style={[styles.floatingAddBtn, { backgroundColor: GroceryColors.lightGreen }]}
+              onPress={undefined}
+            >
+              <Ionicons name="checkmark" size={20} color={GroceryColors.primary} />
+            </AnimatedPress>
           ) : (
             <AnimatedPress
               accessibilityRole="button"

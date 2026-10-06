@@ -5,7 +5,7 @@
  * can resolve to (`GET /v1/requests/{id}`, the detail endpoint, which is also the only one
  * that hydrates attachments). A FEEDBACK submission and a COMPLAINT arrive on the same push
  * shape server-side (`create_request` notifies for both, with `category: "complaint"` either
- * way), so this is also where the two are told apart — a "Book a technician" button on a
+ * way), so this is also where the two are told apart — a "Book a Technician" button on a
  * five-star meal review would be a design bug, not a helpful shortcut.
  */
 import { StyleSheet, View, RefreshControl } from 'react-native';
@@ -29,7 +29,7 @@ export function TicketDetailForRoleScreen() {
   // A repair's progress lives in the stage, not in `status`. REPAIR's stage machine has
   // `resolves_on=None` — the desk still has to price the work — so `status` stops at
   // "In Progress" and stays there after the technician has finished. Reading `status` alone
-  // is what put a "Book a technician" button on finished work.
+  // is what put a "Book a Technician" button on finished work.
   // A ticket carries one stage machine or the other, never both, so whichever is set is the
   // one to read. Laundry was missing here: an owner tapping a laundry push landed on this
   // screen and saw no stage at all, because `details.laundry_stage` is a different key.

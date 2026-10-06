@@ -28,6 +28,7 @@ import { useMapReady } from '@/features/places/useMapReady';
 import { useDeviceLocation } from '@/features/places/useDeviceLocation';
 import { Colors, Radii, Spacing } from '@/theme';
 import { AnimatedPress, PGowDialog, Txt } from '@/components/ui';
+import { AddressAutocompleteField } from '@/components/AddressAutocompleteField';
 
 interface Props {
   /** Where to open. Falls back to the city centre when the owner hasn't searched yet. */
@@ -73,6 +74,7 @@ export default function LocationPicker({ initial, onConfirm, onCancel }: Props) 
   const [zoom, setZoom] = useState(17);
   const [address, setAddress] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const seq = useRef(0);
 
   const [mapStyle, setMapStyle] = useState<StyleSpecification | null>(null);
@@ -219,18 +221,44 @@ export default function LocationPicker({ initial, onConfirm, onCancel }: Props) 
           </AnimatedPress>
         ) : null}
 
+        <View style={[styles.searchBar, { 
+          top: insets.top + Spacing.md, 
+          left: onCancel ? 40 + Spacing.md * 2 : Spacing.md,
+          backgroundColor: Colors.surface,
+          borderRadius: Radii.control,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+        }]}>
+          <AddressAutocompleteField
+            label="Search area or building"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onLocationResolved={(loc) => {
+              setSearchQuery(loc.formatted_address);
+              cameraRef.current?.flyTo({
+                center: [loc.longitude, loc.latitude],
+                zoom: 17,
+                duration: 600,
+              });
+            }}
+          />
+        </View>
+
         <View style={[styles.zoomStack, { top: insets.top + Spacing.md }]}>
           <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom in" accessibilityRole="button"
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.min(20, zoom + 1), { duration: 200 })}
           >
-            <Ionicons name="add" size={20} color={Colors.textInverse} />
+            <Ionicons name="add" size={20} color={Colors.textPrimary} />
           </AnimatedPress>
           <AnimatedPress hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Zoom out" accessibilityRole="button"
             style={styles.zoomBtn}
             onPress={() => cameraRef.current?.zoomTo(Math.max(3, zoom - 1), { duration: 200 })}
           >
-            <Ionicons name="remove" size={20} color={Colors.textInverse} />
+            <Ionicons name="remove" size={20} color={Colors.textPrimary} />
           </AnimatedPress>
         </View>
 
@@ -320,6 +348,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  searchBar: {
+    position: 'absolute',
+    right: 40 + Spacing.md * 2, // Leave space for zoom buttons
+    zIndex: 10,
   },
   zoomStack: { position: 'absolute', right: Spacing.md, top: Spacing.md, gap: Spacing.xs },
   zoomBtn: {

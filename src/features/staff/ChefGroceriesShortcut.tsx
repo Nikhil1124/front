@@ -3,12 +3,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { StyleSheet, ImageBackground, View } from 'react-native';
 import { Colors, Radii } from '@/theme';
-import { usePGowStore } from '@/store/usePGowStore';
+
 import { Col, Row, Txt } from '@/components/ui';
 
 export function ChefGroceriesShortcut() {
-  const activeRole = usePGowStore((s) => s.activeRole);
-  if (activeRole !== 'CHEF') return null;
+  // No role check: used by Chef and Guest
 
   const GROCERY_BG = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80";
 

@@ -45,10 +45,12 @@ interface CheckoutSlot {
 const PROPERTY_BILLED_METHODS = [
   { id: 'credit', label: 'Pay on credit (property account)', icon: 'business-outline' },
   { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
+  { id: 'upi', label: 'UPI / Online Payment', icon: 'qr-code-outline' },
 ];
 
 const GUEST_BILLED_METHODS = [
   { id: 'cod', label: 'Cash on Delivery', icon: 'cash-outline' },
+  { id: 'upi', label: 'UPI / Online Payment', icon: 'qr-code-outline' },
 ];
 
 import { useActiveProperty } from '@/features/properties/useProperties';

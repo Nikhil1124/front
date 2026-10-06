@@ -19,15 +19,17 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { Txt, Row, Col, Spacer, LoadingState, ErrorState, StatusChip } from '@/components/ui';
+import { Txt, Row, Col, LoadingState, ErrorState, StatusChip } from '@/components/ui';
 import { AnimatedPress } from '@/components/ui/AnimatedPress';
 import { Colors, Palette, Radii, DeckTints } from '@/theme';
+import { moderateScale } from '@/utils/responsive';
 import { usePGowStore } from '@/store/usePGowStore';
 import { KycUploadDialog } from '@/components/dialogs/KycUploadDialog';
 import { useKycStatus, canSubmitKyc } from '@/features/kyc/useKycStatus';
 import { loadKycDraft } from '@/features/kyc/kycDraft';
 import { serviceImage, useHubServices, useServiceTap } from '@/features/hubServices/useHubServices';
 import { ServiceRequestSheet } from '@/features/hubServices/ServiceRequestSheet';
+import { ChefGroceriesShortcut } from '@/features/staff/ChefGroceriesShortcut';
 import { useToast } from '@/hooks/useToast';
 import { useSetAwayMutation } from '@/features/auth/useAuth';
 import type { MealNotificationEntity } from '@/types';
@@ -416,6 +418,11 @@ export default function GuestHomeTab() {
           </View>
         )}
 
+        {/* ── GROCERIES SHORTCUT ── */}
+        <View style={{ marginTop: 14 }}>
+          <ChefGroceriesShortcut />
+        </View>
+
         {/* ── 5. QUICK SERVICES ── */}
         <Txt size={17} weight="700" color={Colors.textPrimary} style={{ marginTop: 28, marginBottom: 14 }}>
           Quick Services
@@ -600,7 +607,12 @@ export default function GuestHomeTab() {
           </ScrollView>
         )}
 
-        <Spacer size={32} />
+        {/* ── PGow Brand Footer ── */}
+        <View style={styles.footerBrand}>
+          <Ionicons name="leaf" size={28} color={Colors.primary} />
+          <Txt size={16} weight="800" color={Colors.primary} style={{ marginTop: 8, letterSpacing: 0.5 }}>PGow Resident</Txt>
+          <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginTop: 4 }}>Your Home • Your Community</Txt>
+        </View>
       </ScrollView>
 
       <KycUploadDialog visible={showKycDialog} onDismiss={() => setShowKycDialog(false)} />
@@ -651,7 +663,7 @@ const styles = StyleSheet.create({
 
   // ── Scroll
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 0 },
 
   // ── Residence card
   // It used to pull itself up 16px to sit over a curved header. The header is flat now, so
@@ -787,7 +799,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: Radii.card,
     padding: 16, borderWidth: 1, borderColor: '#D9EDED' },
   noticeCard: {
-    width: 290,
+    width: moderateScale(290),
     backgroundColor: Colors.surface,
     borderRadius: Radii.sheet, borderWidth: 1, borderColor: '#D9EDED',
     padding: 16,
@@ -797,4 +809,14 @@ const styles = StyleSheet.create({
   noticeIcon: {
     width: 44, height: 44, borderRadius: Radii.card,
     backgroundColor: Colors.primaryDark,
-    alignItems: 'center', justifyContent: 'center' } });
+    alignItems: 'center', justifyContent: 'center' },
+  // Brand Footer
+  footerBrand: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 16,
+    paddingBottom: 0,
+    opacity: 0.6,
+  },
+});
+

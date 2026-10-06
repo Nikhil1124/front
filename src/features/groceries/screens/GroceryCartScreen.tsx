@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { StyleSheet, View, ScrollView, Image } from 'react-native';
+import { StyleSheet, View, ScrollView, Image, TextInput } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -13,7 +13,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, GroceryColors, Radii } from '@/theme';
 import { useToast } from '@/hooks/useToast';
-import { MiniProductCard } from '../components/ui/MiniProductCard';
+import { ProductCard } from '../components/grocery/ProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useActiveProperty } from '@/features/properties/useProperties';
 import { usePGowStore } from '@/store/usePGowStore';
@@ -230,9 +230,21 @@ export function GroceryCartScreen() {
                         >
                           <Ionicons name="remove" size={14} color={GroceryColors.primary} />
                         </AnimatedPress>
-                        <Txt maxFontSizeMultiplier={1.2} style={styles.qtyText}>
-                          {item.quantity}
-                        </Txt>
+                        <TextInput
+                          style={[styles.qtyText, { padding: 0 }]}
+                          value={String(item.quantity)}
+                          keyboardType="numeric"
+                          onChangeText={(text) => {
+                            const val = parseInt(text, 10);
+                            if (!isNaN(val) && val >= 0) {
+                              if (val === 0) {
+                                handleRemoveItem(item.id, item.name);
+                              } else {
+                                updateQuantity(item.id, val);
+                              }
+                            }
+                          }}
+                        />
                         <AnimatedPress
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                           accessibilityRole="button"
@@ -344,7 +356,7 @@ export function GroceryCartScreen() {
                 contentContainerStyle={styles.recScrollContent}
               >
                 {recommendations.map((p) => (
-                  <MiniProductCard
+                  <ProductCard
                     key={p.id}
                     product={p}
                     onPress={() =>

@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextStyle, StyleProp } from 'react-native';
 import { Colors } from '@/theme';
 import { Typography, fontFamilyForWeight, normalizeFontWeight, type TypographyKey } from '@/theme/typography';
 import type { FontWeight } from '@/theme/typography';
+import { responsiveFontSize, responsiveSpacing } from '@/utils/responsive';
 
 type RNFontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
@@ -59,26 +60,34 @@ export function Txt({
   // sites across the app were passing a StyleSheet entry that way, and every one of them was
   // silently un-bolded. A weight named in `style` is a request like any other, so it counts
   // here — precedence is the explicit prop, then the style, then the variant, then 400.
+  // Extract font size from style if it was passed there instead of via the size prop
   const flat = style ? (StyleSheet.flatten(style) as TextStyle) : undefined;
-  const resolvedSize = size ?? base?.fontSize ?? 13;
+  
+  // Explicit size prop > style fontSize > variant fontSize > default 13
+  const rawSize = size ?? flat?.fontSize ?? base?.fontSize ?? 13;
+  const resolvedSize = responsiveFontSize(rawSize);
+  
   const requestedWeight =
     weight ?? (flat?.fontWeight as FontWeight | undefined) ?? base?.fontWeight ?? '400';
   const resolvedWeight = normalizeFontWeight(requestedWeight) as RNFontWeight;
-  const resolvedLineHeight = lineHeight ?? base?.lineHeight ?? resolvedSize * 1.35;
-  const resolvedLetterSpacing = letterSpacing ?? base?.letterSpacing ?? 0;
+  
+  // Same logic for lineHeight
+  const rawLineHeight = lineHeight ?? flat?.lineHeight ?? base?.lineHeight ?? (rawSize * 1.35);
+  const resolvedLineHeight = responsiveSpacing(rawLineHeight);
+  
+  const resolvedLetterSpacing = letterSpacing ?? flat?.letterSpacing ?? base?.letterSpacing ?? 0;
   return (
     <Text
       style={[{
         fontFamily: fontFamilyForWeight(requestedWeight),
-        fontSize: resolvedSize,
         fontWeight: resolvedWeight,
         color,
         textAlign: align,
+      }, style, tabular && styles.tabular, {
+        // Enforce resolved responsive sizes AFTER the caller's style to guarantee scaling
+        fontSize: resolvedSize,
         lineHeight: resolvedLineHeight,
         letterSpacing: resolvedLetterSpacing,
-      }, style, tabular && styles.tabular, {
-        // A caller that names a real family of its own keeps it; otherwise the family has to
-        // match the weight or the weight does not happen at all.
         fontFamily: flat?.fontFamily ?? fontFamilyForWeight(requestedWeight),
         fontWeight: resolvedWeight,
       }]}

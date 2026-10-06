@@ -16,6 +16,7 @@ import { Colors, Layout, Radii } from '@/theme';
 import type { FontWeight } from '@/theme/typography';
 import { Txt, type TxtProps } from './Txt';
 import { AnimatedPress } from './AnimatedPress';
+import { responsiveSpacing, moderateScale } from '@/utils/responsive';
 
 // Allow any string icon name to bypass TS strict glyph-map checking.
 type IconName = string | keyof typeof Ionicons.glyphMap;
@@ -38,11 +39,11 @@ export function Card({
   borderColor = Colors.borderSubtle, borderWidth = 1, padding, onPress, testID }: CardProps) {
   const paddingStyle: ViewStyle = (() => {
     if (padding == null) return {};
-    if (typeof padding === 'number') return { padding };
-    if (padding.length === 2) return { paddingHorizontal: padding[0], paddingVertical: padding[1] };
+    if (typeof padding === 'number') return { padding: responsiveSpacing(padding) };
+    if (padding.length === 2) return { paddingHorizontal: responsiveSpacing(padding[0]), paddingVertical: responsiveSpacing(padding[1]) };
     return {
-      paddingTop: padding[0], paddingRight: padding[1],
-      paddingBottom: padding[2], paddingLeft: padding[3] };
+      paddingTop: responsiveSpacing(padding[0]), paddingRight: responsiveSpacing(padding[1]),
+      paddingBottom: responsiveSpacing(padding[2]), paddingLeft: responsiveSpacing(padding[3]) };
   })();
   const cardStyle: ViewStyle = {
     backgroundColor: containerColor,
@@ -102,7 +103,7 @@ export function Btn({
         {
           backgroundColor: containerColor,
           borderRadius,
-          minHeight: height,
+          minHeight: height !== undefined ? responsiveSpacing(height) : responsiveSpacing(44),
           width,
           borderWidth: borderWidth ?? 0,
           borderColor: borderColor ?? 'transparent',
@@ -152,7 +153,7 @@ export function OutlinedBtn({
         {
           backgroundColor: containerColor,
           borderRadius,
-          minHeight: height,
+          minHeight: height !== undefined ? responsiveSpacing(height) : responsiveSpacing(44),
           width,
           borderWidth,
           borderColor,
@@ -195,11 +196,11 @@ export function IconBtn({
       hitSlop={hitSlop ?? { top: 8, bottom: 8, left: 8, right: 8 }}
       accessibilityLabel={accessibilityLabel}
       style={{
-        backgroundColor: containerColor, borderRadius, padding,
+        backgroundColor: containerColor, borderRadius, padding: responsiveSpacing(padding),
         alignItems: 'center', justifyContent: 'center' }}
     >
       {typeof icon === 'string' ? (
-        <Ionicons name={icon as any} size={size} color={tint} />
+        <Ionicons name={icon as any} size={moderateScale(size)} color={tint} />
       ) : (icon)}
     </AnimatedPress>
   );
@@ -211,7 +212,8 @@ export interface SpacerProps {
 }
 
 export function Spacer({ size = 8, horizontal = false }: SpacerProps) {
-  return <View style={horizontal ? { width: size } : { height: size }} />;
+  const scaledSize = responsiveSpacing(size);
+  return <View style={horizontal ? { width: scaledSize } : { height: scaledSize }} />;
 }
 
 export interface DividerProps {
@@ -249,7 +251,7 @@ export function Pill({
   borderWidth = 0, size = 10.5, weight = '600', paddingH = 10, paddingV = 4, borderRadius = Radii.pill }: PillProps) {
   return (
     <View style={{
-      backgroundColor: bg, borderRadius, paddingHorizontal: paddingH, paddingVertical: paddingV,
+      backgroundColor: bg, borderRadius, paddingHorizontal: responsiveSpacing(paddingH), paddingVertical: responsiveSpacing(paddingV),
       borderWidth, borderColor, alignSelf: 'flex-start' }}>
       <Txt size={size} weight={weight} color={color}>{label}</Txt>
     </View>
@@ -282,7 +284,7 @@ export function Chip({
       style={{
         backgroundColor: selected ? selectedColor : unselectedBg,
         borderRadius: Radii.pill,
-        paddingHorizontal: paddingH, paddingVertical: paddingV,
+        paddingHorizontal: responsiveSpacing(paddingH), paddingVertical: responsiveSpacing(paddingV),
         borderWidth: selected ? 0 : 1,
         borderColor: selected ? selectedColor : unselectedBorder }}
     >
@@ -309,7 +311,7 @@ export function Row({ children, align = 'center', justify = 'flex-start', gap = 
   return (
     <View style={[{
       flexDirection: 'row', alignItems: align, justifyContent: justify,
-      gap: gap > 0 ? gap : undefined }, style]}>
+      gap: gap > 0 ? responsiveSpacing(gap) : undefined }, style]}>
       {children}
     </View>
   );
@@ -327,7 +329,7 @@ export function Col({ children, align = 'stretch', justify = 'flex-start', gap =
   return (
     <View style={[{
       flexDirection: 'column', alignItems: align, justifyContent: justify,
-      gap: gap > 0 ? gap : undefined }, style]}>
+      gap: gap > 0 ? responsiveSpacing(gap) : undefined }, style]}>
       {children}
     </View>
   );

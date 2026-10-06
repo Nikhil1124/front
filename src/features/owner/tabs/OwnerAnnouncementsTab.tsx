@@ -260,7 +260,7 @@ function InboxRowActions({ item, dense = false }: { item: InboxItem; dense?: boo
           height={36}
           style={{ flex: 1 }}
         >
-          <Txt variant="button" color={Colors.textPrimary}>Book a technician</Txt>
+          <Txt variant="button" color={Colors.textPrimary}>Book a Technician</Txt>
         </Btn>
       </Row>
     );

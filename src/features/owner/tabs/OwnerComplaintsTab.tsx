@@ -244,7 +244,7 @@ export function OwnerComplaintsTab() {
                       onPress={() => { setActiveItem(null); router.push(`/book-technician/${activeItem.id}`); }}
                     >
                       <Ionicons name="build-outline" size={16} color={GREEN} />
-                      <Txt maxFontSizeMultiplier={1.3} style={styles.bookTechBtnText}>Book a technician for this issue</Txt>
+                      <Txt maxFontSizeMultiplier={1.3} style={styles.bookTechBtnText}>Book a Technician for this issue</Txt>
                     </AnimatedPress>
                   </>
                 )}

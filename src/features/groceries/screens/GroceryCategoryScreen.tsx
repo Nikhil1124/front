@@ -7,11 +7,11 @@ import {
   FlatList,
   ScrollView,
   Image,
-  useWindowDimensions,
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useResponsive } from '@/utils/responsive';
 import { categoryPicture } from '../categoryVisuals';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -25,7 +25,7 @@ import { FloatingCartBar } from '../components/FloatingCartBar';
 
 export function GroceryCategoryScreen() {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, isTablet, isLargePhone } = useResponsive();
   const { name: initialSupplyCategory, filter } = useLocalSearchParams<{
     name?: string;
     filter?: string;
@@ -87,9 +87,10 @@ export function GroceryCategoryScreen() {
 
   const productFamilies = useMemo(() => groupByVariant(products), [products]);
 
-  const leftRailWidth = 85;
+  const leftRailWidth = isTablet ? 120 : 85;
   const gridWidth = width - leftRailWidth;
-  const productCardWidth = (gridWidth - 32) / 2; // 10px gap between 2 cards + padding
+  const numColumns = isTablet ? 4 : isLargePhone ? 3 : 2;
+  const productCardWidth = (gridWidth - 32) / numColumns;
 
   // Static list for frequently bought
   const frequentlyBought = useMemo(() => {
@@ -130,7 +131,7 @@ export function GroceryCategoryScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fbtScroll}>
             {frequentlyBought.map(p => (
-              <View key={p.id} style={{ width: 140 }}>
+              <View key={p.id} style={{ width: isTablet ? 180 : 140 }}>
                  <ProductCard product={p} layout="deal" style={{ width: '100%', marginRight: 0 }} />
               </View>
             ))}
@@ -208,9 +209,10 @@ export function GroceryCategoryScreen() {
         {/* ── Right Product Grid ── */}
         <View style={[styles.rightGrid, { width: gridWidth }]}>
           <FlatList
+            key={numColumns} // Force re-render when columns change
             data={productFamilies}
             keyExtractor={(family) => family[0].id}
-            numColumns={2}
+            numColumns={numColumns}
             contentContainerStyle={styles.gridContent}
             columnWrapperStyle={styles.columnWrapper}
             showsVerticalScrollIndicator={false}

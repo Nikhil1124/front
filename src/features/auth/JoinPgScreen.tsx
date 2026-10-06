@@ -192,6 +192,13 @@ export function JoinPgScreen({ initialCode }: { initialCode?: string } = {}) {
                 <View style={styles.sep} />
                 <View style={styles.pad}>
                   <Txt size={13} weight="700" color={Colors.textPrimary}>Which room are you in?</Txt>
+                  <Spacer size={6} />
+                  <Row gap={6} align="flex-start" style={{ padding: 8, backgroundColor: '#FFFBEB', borderRadius: Radii.control, borderWidth: 1, borderColor: '#FEF3C7' }}>
+                    <Ionicons name="warning-outline" size={14} color={Colors.warning} />
+                    <Txt size={11} color={Colors.warning} style={{ flex: 1, lineHeight: 15 }}>
+                      Caution: Make sure you select the exact room assigned by your PG owner. Room changes later require owner approval.
+                    </Txt>
+                  </Row>
                   <Spacer size={10} />
                   <Row gap={7} style={styles.wrap}>
                     {preview.rooms.map((r) => (

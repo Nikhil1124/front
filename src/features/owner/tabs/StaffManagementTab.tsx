@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, FlatList, BackHandler } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 
 
 import { Ionicons } from '@expo/vector-icons';
@@ -31,10 +31,9 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
   manager: 'Manager',
   chef: 'Chef',
   kitchen_staff: 'Kitchen Staff',
-  maintenance: 'Maintenance Staff',
-  delivery_agent: 'Delivery Agent' };
+  maintenance: 'Maintenance Staff' };
 
-const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff', 'Delivery Agent'];
+const AVAILABLE_ROLES = ['Manager', 'Chef', 'Kitchen Staff', 'Maintenance Staff'];
 const SHIFT_OPTIONS = ['Day Shift (8 AM - 5 PM)', 'Night Shift (8 PM - 5 AM)', 'Part Time (9 AM - 1 PM)'];
 
 /**
@@ -50,7 +49,16 @@ const SHIFT_TIMES: Record<string, { shift_start: string; shift_end: string }> = 
 
 export function StaffManagementTab() {
   const dockScroll = useDockScroll();
-  const [subTab, setSubTab] = useState(0); // 0: Add Staff, 1: Staff Directory
+  const { action } = useLocalSearchParams<{ action?: string }>();
+  const [subTab, setSubTab] = useState(action === 'add' ? 0 : 1); // 0: Add Staff, 1: Staff Directory
+
+  useEffect(() => {
+    if (action === 'add') {
+      setSubTab(0);
+      router.setParams({ action: '' });
+    }
+  }, [action]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
 

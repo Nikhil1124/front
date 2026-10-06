@@ -1,5 +1,5 @@
 /**
- * "Book a technician" — the owner/manager end of a complaint that needs an outside trade.
+ * "Book a Technician" — the owner/manager end of a complaint that needs an outside trade.
  *
  * Reached from the complaint itself or from the push that announced it. Posts to
  * `POST /v1/requests/{id}/escalate`, which hands the ticket to the area manager covering this
@@ -79,7 +79,7 @@ export function BookTechnicianScreen() {
   };
 
   return (
-    <HubScreenWrapper title="Book a technician">
+    <HubScreenWrapper title="Book a Technician">
       {isLoading ? (
         <LoadingState label="Loading the ticket…" />
       ) : error || !ticket ? (

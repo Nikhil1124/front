@@ -439,6 +439,7 @@ export default function OwnerOverviewTab() {
                           Your Daily Needs, Just a Tap Away.
                         </Text>
                         {groceriesImage && <Image source={groceriesImage} style={styles.bentoTileImageBg} />}
+                        <View style={styles.bentoTileMask} />
                       </AnimatedPress>
 
                       <AnimatedPress accessibilityRole="button" scale={0.96} onPress={() => setShowAllActionsSheet(true)}
@@ -672,6 +673,13 @@ export default function OwnerOverviewTab() {
                 </Text>
               </Row>
             </Card>
+
+            {/* ── PGow Brand Footer ── */}
+            <View style={styles.footerBrand}>
+              <Ionicons name="leaf" size={28} color={PRIMARY} />
+              <Text maxFontSizeMultiplier={1.3} style={styles.footerBrandTitle}>PGow Owner</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.footerBrandSub}>Smart Management • Effortless Growth</Text>
+            </View>
 
           </>
         )}
@@ -1170,4 +1178,33 @@ const styles = StyleSheet.create({
   },
   modalSecondaryBtnText: { fontSize: 13, fontWeight: '700', color: CHARCOAL },
   // Food Savings Styles
+  footerBrand: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 16,
+    paddingBottom: 0,
+    opacity: 0.6,
+  },
+  footerBrandTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: PRIMARY,
+    marginTop: 8,
+    letterSpacing: 0.5,
+  },
+  footerBrandSub: {
+    fontSize: 11,
+    color: MUTED,
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  bentoTileMask: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    zIndex: 5,
+  },
 });

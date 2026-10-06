@@ -268,7 +268,7 @@ export default function OwnerTabsLayout() {
                   }]
                 : []),
               { label: 'Resident', icon: 'person-add-outline' as const, tint: 'success' as const, onPress: () => router.navigate('/guests') },
-              { label: 'Staff', icon: 'ribbon-outline' as const, tint: 'brand' as const, onPress: () => router.navigate('/staff') },
+              { label: 'Staff', icon: 'ribbon-outline' as const, tint: 'brand' as const, onPress: () => router.navigate('/staff?action=add') },
               { label: 'Property', icon: 'business-outline' as const, tint: 'warning' as const, onPress: () => router.push('/(owner)/property/new' as never) },
             ]}
           />

@@ -3,6 +3,7 @@ import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { GroceryColors, Radii } from '@/theme';
+import { moderateScale } from '@/utils/responsive';
 
 import type { StorefrontCard } from '../../useStorefront';
 import { storefrontImage } from '../../useStorefront';
@@ -78,11 +79,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   card: {
-    width: 125, // Wider for the pill
-    height: 200, // Taller to fix overlaying issues and give elements breathing room
+    width: moderateScale(125), // Wider for the pill
+    height: moderateScale(200), // Taller to fix overlaying issues and give elements breathing room
     borderRadius: Radii.feature, // Luxurious large curve
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    paddingVertical: moderateScale(14),
+    paddingHorizontal: moderateScale(8),
     alignItems: 'center',
     justifyContent: 'flex-start',
     borderWidth: 1,
@@ -130,19 +131,19 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   imageContainer: {
-    width: 85,
-    height: 85,
+    width: moderateScale(85),
+    height: moderateScale(85),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4, // Reduced to give title more space
+    marginBottom: moderateScale(4), // Reduced to give title more space
     position: 'relative',
   },
   imageBackdrop: {
     position: 'absolute',
-    width: 70,
-    height: 70,
+    width: moderateScale(70),
+    height: moderateScale(70),
     borderRadius: Radii.pill, // Perfect circle
-    top: 8, // Shifted slightly down so product sits 'on' it
+    top: moderateScale(8), // Shifted slightly down so product sits 'on' it
   },
   image: {
     width: '100%',

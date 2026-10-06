@@ -124,7 +124,7 @@ function ChefKitchenView() {
   };
 
   return (
-    <FormScroll {...dockScroll} contentContainerStyle={{ padding: 20, paddingBottom: 120, gap: 24, backgroundColor: '#FAFAF7' }}>
+    <FormScroll {...dockScroll} contentContainerStyle={{ padding: 20, paddingBottom: 0, gap: 24, backgroundColor: '#FAFAF7' }}>
       <ChefGroceriesShortcut />
       
       <RSVPTrendCard
@@ -171,6 +171,13 @@ function ChefKitchenView() {
           <Txt size={15} weight="800" color={Colors.textInverse}>Send Announcement to Residents 🚀</Txt>
         </Row>
       </Btn>
+
+      {/* ── PGow Brand Footer ── */}
+      <View style={styles.footerBrand}>
+        <Ionicons name="leaf" size={28} color={Colors.primary} />
+        <Txt size={16} weight="800" color={Colors.primary} style={{ marginTop: 8, letterSpacing: 0.5 }}>PGow Staff</Txt>
+        <Txt size={11} weight="600" color={Colors.textMuted} style={{ marginTop: 4 }}>Serve with Pride</Txt>
+      </View>
     </FormScroll>
   );
 }
@@ -192,7 +199,7 @@ function DeliveryProfileRoute() {
     <View style={styles.root}>
       <FormScroll
         {...dockScroll}
-        bottomPadding={120}
+        bottomPadding={0}
         contentContainerStyle={{ padding: 18, gap: 16 }}
         refreshControl={<RefreshControl refreshing={tripsRefetching} onRefresh={refetchTrips} tintColor={Colors.primary} />}
       >
@@ -264,4 +271,12 @@ const styles = StyleSheet.create({
   profileRow: { padding: 16 },
   divider: { height: 1, backgroundColor: Colors.borderSubtle, marginHorizontal: 16 },
   iconBox: { width: 32, height: 32, borderRadius: Radii.pill, alignItems: 'center', justifyContent: 'center' },
+  // Brand Footer
+  footerBrand: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 0,
+    opacity: 0.6,
+  },
 });

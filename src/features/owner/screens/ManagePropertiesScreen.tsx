@@ -20,6 +20,7 @@ import { usePortfolioDetail } from '@/features/properties/usePortfolio';
 import { Colors, Palette, Radii } from '@/theme';
 import { Btn, Card, Col, ErrorState, IconBtn, LoadingState, OutlinedBtn, Row, SearchField, Spacer, Txt } from '@/components/ui';
 import { useToast } from '@/hooks/useToast';
+import { useResponsive, moderateScale } from '@/utils/responsive';
 
 // ── Color System (Official LUNA Palette) ───────────────────────────────────
 const PRIMARY = Colors.primary;       // Deep Ocean Blue
@@ -34,6 +35,7 @@ const ERROR = Colors.danger;
 
 export function ManagePropertiesScreen() {
   const toast = useToast();
+  const { isTablet, isLargePhone } = useResponsive();
   const {
     data: allPGs = [],
     isLoading: pgsLoading,
@@ -139,7 +141,10 @@ export function ManagePropertiesScreen() {
             </Txt>
           </View>
         ) : (
-          <View style={{ gap: 20 }}>
+          <View style={[
+            { gap: 20 },
+            (isTablet || isLargePhone) && { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }
+          ]}>
             {filtered.map((pg) => {
               const isCurrent = currentOwner?.id === pg.id;
               // Real per-property numbers when the portfolio fan-out has them; the
@@ -157,7 +162,8 @@ export function ManagePropertiesScreen() {
                   key={pg.id}
                   style={[
                     styles.propertyCard,
-                    isCurrent && { borderColor: PRIMARY, borderWidth: 1.5 }
+                    isCurrent && { borderColor: PRIMARY, borderWidth: 1.5 },
+                    (isTablet || isLargePhone) && { width: '48%' } // 2 columns on larger screens
                   ]}
                 >
                   {/* Property Image Header */}
@@ -418,7 +424,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     gap: 12 },
   statCard: {
-    width: 125,
+    width: moderateScale(125),
     backgroundColor: WHITE,
     borderRadius: Radii.sheet,
     borderWidth: 1,

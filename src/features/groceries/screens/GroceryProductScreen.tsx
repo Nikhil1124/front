@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Share, StyleSheet, View, ScrollView, Image } from 'react-native';
+import { Share, StyleSheet, View, ScrollView, Image, TextInput } from 'react-native';
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import { useSupplyItems } from '../useSupply';
 import { useAuthStore } from '@/store/authStore';
 
 
-import { MiniProductCard } from '../components/ui/MiniProductCard';
+import { ProductCard } from '../components/grocery/ProductCard';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { AnimatedPress, Txt } from '@/components/ui';
 import { Radii, Colors } from '@/theme';
@@ -167,7 +167,25 @@ export function GroceryProductScreen() {
               <AnimatedPress style={styles.inlineQtyBtn} onPress={quantity > 0 ? handleDecrease : undefined}>
                 <Ionicons name="remove" size={20} color={quantity > 0 ? '#1A1A1A' : '#CCC'} />
               </AnimatedPress>
-              <Txt maxFontSizeMultiplier={1.2} style={styles.inlineQtyText}>{quantity > 0 ? quantity : 1}</Txt>
+              <TextInput
+                style={styles.inlineQtyInput}
+                value={String(quantity > 0 ? quantity : 1)}
+                keyboardType="numeric"
+                onChangeText={(text) => {
+                  const val = parseInt(text, 10);
+                  if (!isNaN(val) && val >= 0) {
+                    if (val === 0 && quantity > 0) {
+                      updateQuantity(compoundId, 0);
+                    } else if (val > 0) {
+                      if (quantity === 0) {
+                        addItem(product, selectedOption, val);
+                      } else {
+                        updateQuantity(compoundId, val);
+                      }
+                    }
+                  }
+                }}
+              />
               <AnimatedPress style={styles.inlineQtyBtn} onPress={handleIncrease}>
                 <Ionicons name="add" size={20} color="#1A1A1A" />
               </AnimatedPress>
@@ -214,13 +232,12 @@ export function GroceryProductScreen() {
                 contentContainerStyle={{ gap: 8 }}
               >
                 {relatedProducts.map((p) => (
-                  <MiniProductCard
+                  <ProductCard
                     key={p.id}
                     product={p}
                     onPress={() =>
                       router.push({ pathname: '/groceries/product/[id]', params: { id: p.id } })
                     }
-                    showWishlist
                   />
                 ))}
               </ScrollView>
@@ -361,6 +378,7 @@ const styles = StyleSheet.create({
   },
   inlineQtyBtn: { width: 36, height: 40, justifyContent: 'center', alignItems: 'center' },
   inlineQtyText: { fontSize: 16, fontWeight: '700', color: '#1A1A1A' },
+  inlineQtyInput: { fontSize: 16, fontWeight: '700', color: '#1A1A1A', textAlign: 'center', minWidth: 40 },
   inlineAddBtn: {
     flex: 1, backgroundColor: '#008040', borderRadius: Radii.feature, height: 48,
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center'
